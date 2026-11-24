@@ -71,7 +71,7 @@ The reader passes its `smartThreshold` (a word is coloured known exactly when sm
 every other caller passes 80. The mark wins over every card and threshold. Level lists never make a word
 known or learning.
 
-The mark is row `known:<entryId>` of plugin `qinqin-flashcards`, workspace-scoped (the book's workspace),
+The mark is the keyed row `known:<entryId>` (`keyed/`), workspace-scoped (the book's workspace),
 data `{version: 1, entryId, createdAt}`. Valid only when the key is `known:` + a canonical positive decimal
 (no sign, no leading zero) equal to `data.entryId` (a JSON integer) and `version` is 1; `createdAt` is
 informational; anything else is ignored. Unmarking tombstones the row; marking again revives it under the
@@ -102,7 +102,7 @@ Built server (scratch copy, `cedict` + `hsk-words` + `jmdict` seeded), two users
 30 082-code-point text of CC-CEDICT headwords (100 paragraphs, 8 chunks of at most 4 000 code points):
 `known:` rows for 3 entries pushed through `POST /api/sync/push`, one tombstoned: the pull shows 2 live
 marks; the second user sees none and gets 404 pushing or PUTting into the first user's workspace; the
-export lists the 2 live marks in `plugin-data/` and their entries in `refs/entries.json` (the tombstoned
+export lists the 2 live marks in `rows/` and their entries in `refs/entries.json` (the tombstoned
 mark is not exported); a restore on the same server brings back exactly the 2 marks. The real matches
 gave 12 617 tokens and 5 245 types; tally, coverage and list took 13 ms in vitest. Timings of the
 segment route on the shared, loaded build machine are in the plan's execution record.

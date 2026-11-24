@@ -143,44 +143,11 @@ type StudyEvent struct {
 	Payload     json.RawMessage `json:"payload"`
 }
 
-// PluginInfo is one plugin as listed for a user: its manifest and the
-// user's state for it: a registry row (built-in or admin-registered)
-// with its manifest verbatim. Data packs are no plugins (#198). Default
-// state — no plugin_states row — is enabled at order 0.
-type PluginInfo struct {
-	ID       string          `json:"id"`
-	Manifest json.RawMessage `json:"manifest"`
-	Enabled  bool            `json:"enabled"`
-	Order    int             `json:"order"`
-	// Hidden marks the app's own built-in rows that have no surface and are
-	// no feature (qinqin-core: registered only so its data is accepted).
-	// Clients leave them out of plugin lists; the routes and the state still
-	// work for them. The core features qinqin-flashcards and qinqin-reader
-	// are not hidden; clients know those reserved ids and show them as
-	// features.
-	Hidden bool `json:"hidden"`
-}
-
-// PluginState is one user's state for one plugin: whether it is
-// enabled and its position in the Plugins list (Order, also the order
-// of the nav links). The home layout is the per-user widget layout in
-// the qinqin-core plugin data, not Order.
-type PluginState struct {
-	PluginID  string    `json:"pluginId"`
-	UserID    int64     `json:"userId"`
-	Enabled   bool      `json:"enabled"`
-	Order     int       `json:"order"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// PluginData is one plugin-owned data row — settings, decks, anything a
-// plugin stores per key. A nil WorkspaceID is user-global data shared
-// by all the user's workspaces; a non-nil one scopes the row to a
-// single workspace. Version increments on every write, so clients can
-// sync by pulling rows changed since a timestamp; DeletedAt set marks
-// a tombstone.
-type PluginData struct {
-	PluginID    string          `json:"pluginId"`
+// KeyedRow is one row of the keyed settings store (internal/keyed): a
+// small JSON document of one user under a key of an accepted family. A nil
+// WorkspaceID is user-global; a non-nil one scopes the row to a workspace.
+// Version increments on every write; DeletedAt set marks a tombstone.
+type KeyedRow struct {
 	Key         string          `json:"key"`
 	UserID      int64           `json:"userId"`
 	WorkspaceID *int64          `json:"workspaceId"`

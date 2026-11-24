@@ -10,8 +10,8 @@ const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;
 /** The row shapes of pull-page.json `shapes` (every key always present). */
 const SHAPES: Record<string, readonly string[]> = {
 	workspaces: ['id', 'language', 'name', 'settings', 'updatedAt'],
-	pluginStates: ['pluginId', 'userId', 'enabled', 'order', 'updatedAt'],
-	pluginData: ['pluginId', 'key', 'userId', 'workspaceId', 'data', 'version', 'updatedAt', 'deletedAt'],
+	features: ['id', 'enabled', 'updatedAt'],
+	rows: ['key', 'userId', 'workspaceId', 'data', 'version', 'updatedAt', 'deletedAt'],
 	books: ['id', 'workspaceId', 'language', 'title', 'author', 'source', 'sourceId', 'sourceUrl', 'attribution', 'licenseNote', 'chapterCount', 'position', 'createdAt', 'updatedAt', 'deletedAt'],
 	bookmarks: ['id', 'bookId', 'position', 'label', 'createdAt', 'updatedAt', 'deletedAt'],
 	highlights: ['id', 'bookId', 'chapter', 'paragraph', 'start', 'end', 'text', 'color', 'note', 'createdAt', 'updatedAt', 'deletedAt'],
@@ -41,8 +41,8 @@ export function readableRow(collection: string, raw: unknown): boolean {
 	if ('deletedAt' in raw && raw.deletedAt !== null && !isTime(raw.deletedAt)) return false;
 	if (LIBRARY.has(collection) && raw.deletedAt !== null) return false; // a deleted library row is a tombstone
 	switch (collection) {
-		case 'pluginData':
-			return typeof raw.pluginId === 'string' && typeof raw.key === 'string' && Number.isInteger(raw.version);
+		case 'rows':
+			return typeof raw.key === 'string' && Number.isInteger(raw.version);
 		case 'events':
 			return raw.type !== 'lookup' && typeof raw.id === 'string';
 		case 'sentences':

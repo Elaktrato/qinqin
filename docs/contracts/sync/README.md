@@ -17,7 +17,7 @@ Fixtures:
   Go tests.
 - `push-result.json` — push requests and their status and body, as built.
 - `unreadable-rows.json` — a page with an unreadable row of every typed family (malformed, or written by a newer
-  client) and an unreadable `pluginData` row: what a reader loads, counts and must never rewrite ("Reading rows").
+  client) and an unreadable keyed row (`rows`): what a reader loads, counts and must never rewrite ("Reading rows").
 
 Error codes are in `docs/contracts/auth/errors.json`: `sync_collection_moved` (400), `sync_page_invalid` (400),
 `sync_cursor_expired` (410), `not_found` (404). v2 errors are JSON `{error, message}`.
@@ -35,7 +35,7 @@ an answer that says `no-store` (before this fix the pages said `no-store`, so of
 
 ### Collections and the round
 
-Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks`, `deckSettings`, `limits`,
+Round order (fixed): `workspaces`, `features`, `rows`, `cards`, `decks`, `deckSettings`, `limits`,
 `fsrsSets`, `fsrsActive`, `books`, `bookmarks`, `highlights`, `overlays`, `sentences`, `events`. Without
 `collections` a round carries all of them. An unknown name is 400 `sync_page_invalid`; a lexicon name
 (`entries`, `links`, `senses`, `levelMembers`, `dictionaries`, `schemes`, `levels`) is 400
@@ -75,8 +75,8 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
 
 ### Scope and the language filter
 
-- `workspace=<id>` narrows workspace rows (`workspaces`, `pluginData`, typed rows, library rows, `events`) to
-  that workspace plus user-global rows (`pluginData` with `workspaceId: null`, `pluginStates`) and
+- `workspace=<id>` narrows workspace rows (`workspaces`, `rows`, typed rows, library rows, `events`) to
+  that workspace plus user-global rows (`rows` with `workspaceId: null`, `features`) and
   entry-bound rows (`overlays`, `sentences`) to its language. Another user's or an unknown workspace is
   404 `not_found`.
 - `overlays` and own `sentences` ship only for entries whose language is in the round's language set: the
@@ -96,7 +96,7 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
 {"format": 2, "instanceId": "<ULID>", "until": "2026-11-12T10:00:00Z",
  "scope": {"workspaces": [{"id": 7, "language": "zh"}], "languages": ["zh"], "catalogue": "\"k-3fa9\""},
  "restarted": [],                        // on every page of the round; subset of [overlays, sentences]
- "collections": {"workspaces": [], "pluginData": [ /* rows */ ], "…": []},   // every requested key, arrays
+ "collections": {"workspaces": [], "rows": [ /* rows */ ], "…": []},   // every requested key, arrays
  "more": true, "next": "p2.…", "cursor": null}
 ```
 
@@ -105,8 +105,8 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 | Collection | Row |
 | --- | --- |
 | `workspaces` | `{id, language, name, settings, updatedAt}` (no tombstones) |
-| `pluginStates` | `{pluginId, userId, enabled, order, updatedAt}` (no tombstones) |
-| `pluginData` | `{pluginId, key, userId, workspaceId, data, version, updatedAt, deletedAt}` |
+| `features` | `{id, enabled, updatedAt}`: the caller's feature switches that were ever set (`features/`; no tombstones) |
+| `rows` | `{key, userId, workspaceId, data, version, updatedAt, deletedAt}` (the keyed rows, `keyed/`) |
 | `cards` … `fsrsActive` | the typed rows of `docs/contracts/study/rows.json` (strict decode) |
 | `books`, `bookmarks`, `highlights` | the rows of `docs/contracts/library/rows.json` plus `deletedAt: null`; a tombstone is exactly `{id, workspaceId, updatedAt, deletedAt}` (from `library_deletions`, `updatedAt` = `deletedAt`) |
 | `overlays` | `{entryId, written, readings, updatedAt}` (`null` = untouched; no tombstones) |
@@ -146,20 +146,18 @@ a row: a backup must not silently lose data.
 
 ## Push (`push-result.json`)
 
-`POST /api/sync/push` is unchanged: body `{events, pluginData, cards, decks, deckSettings, limits, fsrsSets,
-fsrsActive}` (each optional), answer `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped,
-dataRefused}` with every key always present. The whole body is validated first: a malformed item is 400 and
-a foreign workspace or unknown plugin 404, and then nothing is applied (400 `bad_request` naming the item,
-404 `not_found`). A plugin value or typed item above 256 KiB, or a body above 8 MiB, is 413 `too_large`. A
-row of a plugin without `owns-data` is refused alone (`dataRefused`), and so is a `pluginData` row of
-`qinqin-flashcards` whose key belongs to a typed family (`card:`, `deck:`, `deckcfg:`, `limits:workspace`,
-`limits:deck:`, `fsrs:set:`, `fsrs:active`; those travel as typed collections only, `study/README.md`). A data
-pack's id is no plugin (404 `not_found`, like any unknown plugin). Plugin rows and typed rows are
-last-write-wins on the edit time (`docs/contracts/study/README.md`); a typed row equal to the stored one
+`POST /api/sync/push`: body `{events, rows, cards, decks, deckSettings, limits, fsrsSets, fsrsActive}` (each
+optional), answer `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped, dataRefused}` with every key
+always present. The whole body is validated first: a malformed item is 400 and a foreign or unknown workspace
+404, and then nothing is applied (400 `bad_request` naming the item, 404 `not_found`). A row value or typed
+item above 256 KiB, or a body above 8 MiB, is 413 `too_large`. A keyed row of a key no family accepts, or in
+the wrong scope (`keyed/families.json`), is refused alone (`dataRefused`); a typed family's key (`card:`,
+`deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`, `fsrs:set:`, `fsrs:active`) is one of those: they
+travel as typed collections only (`study/README.md`). Keyed rows and typed rows are last-write-wins on the edit
+time (`docs/contracts/study/README.md`); a typed row equal to the stored one
 counts `dataAccepted` without a write.
 
 ## No legacy form
 
 A pull without `v=2` (the v0.3.x streaming form with `cursor=`) was removed in #198: it answers 404
-`not_found` (JSON), whatever the other parameters. The paged pull never ships a `qinqin-flashcards` row of a
-typed family in `pluginData` (a leftover a downgraded binary wrote; `study/README.md`).
+`not_found` (JSON), whatever the other parameters.

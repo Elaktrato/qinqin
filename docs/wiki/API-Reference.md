@@ -59,9 +59,9 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | `GET /api/packages?languages=` | Signed-in (tokens allowed). The data package catalogue: the packages of the caller's workspace languages, or `languages=zh,ja` or `all`, with revision, content hash, file SHA-256, size, state, licences and sources; `ETag` and `If-None-Match`. A build error shows only in an administrator's own session. Contract `docs/contracts/packages/`; see [Data packs on the server](Admin-data-packs#data-packages-what-clients-download) |
 | `GET /api/packages/{id}/{revision}` | Signed-in (tokens allowed). One package file (a zip with `manifest.json`, `NOTICE.md`, `LICENSES/`, `data.sqlite`); `Range`/`If-Range` resume it; `private, no-cache` with the file's `ETag` (304 on revalidation) and `nosniff`. 404 `package_not_found`, 410 `package_revision_gone` (purged 7 days after it was replaced), 429 `download_busy` with `Retry-After` (at most 2 downloads per user at a time; may be retried automatically) |
 | `GET /api/sync/pull?v=2&since=&collections=&workspace=&limit=&tombstones=&page=` | The paged pull: the caller's own rows, one page of at most `limit` rows (1 to 2,000, default 500) and 4 MiB, continued with the `next` token; the last page gives a `cursor` for the next round's `since`. A round from no `since` ships live rows only unless `tombstones=1`. Errors are JSON (`sync_page_invalid`, `sync_collection_moved`). Contract `docs/contracts/sync/` |
-| `POST /api/sync/push` | Push offline events and plugin data and the typed study rows (events idempotent by id, rows last write wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB. Rows of a plugin without `owns-data` are skipped and counted in `dataRefused` ([Plugin format](Plugin-format)) |
+| `POST /api/sync/push` | Push offline events, keyed rows and the typed study rows (events idempotent by id, rows last write wins); an unknown or foreign workspace is 404 and nothing is applied. Body up to 8 MiB. A keyed row of an unknown family or in the wrong scope is skipped and counted in `dataRefused` ([Core data API](Core-data-api)) |
 
-## Study events, stats and plugins
+## Study events, stats and features
 
 | Route | Purpose |
 |---|---|
@@ -69,11 +69,13 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | `GET /api/events?limit=&since=&workspace=`, `GET /api/events?page=&workspace=` | The caller's events from an RFC 3339 instant, optionally of one workspace, in `(ts, id)` order, in pages: `{"events": [...], "more": bool, "next": "e1.…" or null}` with at most `limit` events (1 to 2,000) and 4 MiB per page. Continue with `page=<next>` and the same `workspace=` as the first page (nothing else; an access token limited to a workspace needs it). A wrong `limit` or page token is 400 `events_page_invalid` (JSON); a bad `since` or `workspace` is 400 `bad_request`, another user's workspace 404 `workspace_not_found`. Contract `docs/contracts/events/` |
 | `GET /api/events?since=&workspace=` | The legacy form (no `limit`, no `page`): every matching event in one array, streamed. Deprecated (answers carry `Deprecation: true` and a `Link` to the paged form); kept for scripts, use the paged form |
 | `DELETE /api/events/lookups?workspace=` | Erases the caller's `lookup` events of one workspace (the lookup history's Clear): `{"deleted": n}`. The workspace is required. No other event type is ever deleted |
-| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day, workspace and type for the plugins' activity rules: `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates (default: today and the 90 days before; at most 366 days) |
+| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day, workspace and type for the core activity rules (`sources: [{type, feature, unit}]`): `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates (default: today and the 90 days before; at most 366 days) |
 | `GET /api/me/time-zone`, `PUT /api/me/time-zone` | The caller's learner time zone: `{zone, history: [{zone, from}]}` (`zone` null while none is set). `PUT {"zone": "Asia/Tokyo"[, "ifUnset": true]}` records a change effective from the server's now (the very first zone has `from: null` and applies to the whole log); IANA names only, body up to 1 KiB; errors `unknown_time_zone` (400), `bad_request` (400), `too_large` (413), `too_many_changes` (409) |
 | `PUT /api/me/interface-language` `{language}` | The caller's interface language: `""` (follow the browser) or a language tag; answers `200 {language}`, 422 `invalid_language`, 400 `bad_request`. `GET /api/auth/me` reads it back as `interfaceLanguage`. A full session only; tokens are refused. Contract `docs/contracts/i18n/` |
-| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave hidden rows out of plugin lists; data packs are not plugins and are listed by their own routes), and the caller's switch and (legacy) order for one plugin |
-| `GET /api/plugins/{id}/data?workspace=&prefix=`, `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | Plugin data rows ([Plugin data API](Plugin-data-api)) |
+| `GET /api/features`, `PUT /api/features/{id}` `{enabled}` | The caller's switch of each core feature (`flashcards`, `reader`, `journal`, `grammar`); a feature never switched is on ([Core data API](Core-data-api)) |
+| `GET /api/rows?workspace=&prefix=`, `GET`/`PUT`/`DELETE /api/rows/{key}?workspace=` | Keyed rows: notes, lookups, known marks, milestones, goals, vacations, layouts, appearance ([Core data API](Core-data-api)) |
+| `GET /api/journal/entries`, `GET`/`PUT`/`DELETE /api/journal/entries/{id}`, `GET /api/journal/entries/{id}/review`, `GET /api/journal/suggestions`, `GET`/`PUT /api/journal/settings` (each `?workspace=`) | The journal's documents ([Journal and AI](Journal-and-AI)) |
+| `GET`/`POST /api/grammar/progress?workspace=` | Grammar lesson progress; a run `{packId, lessonId, score, total}` keeps the best score ([Grammar lessons](Grammar-lessons)) |
 
 ## Workspaces
 
@@ -161,7 +163,6 @@ Administrator sessions only, never an access token. Re-authentication rules: [Us
 | `DELETE /api/admin/packs/{type}/{packId}` | Uninstall one pack of any type (204, 404 for an unknown type or pack) |
 | `POST /api/admin/languages` `{code}`, `DELETE /api/admin/languages/{code}`, `GET /api/admin/languages/usage` | Add a data-only language (201, 200 when it exists, 409 for a built-in); remove an unused one (409 "still used by: …" or for a built-in); the number of workspaces per language |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}` | Older pack routes: install a dictionary pack (multipart zip in `pack`, no total cap; beyond 32 MiB it spills to a temporary file) and soft-delete a dictionary, a level scheme or a sentence pack (entries survive) |
-| `POST /api/admin/plugins` | Register a plugin manifest (400 with every reason when it breaks the contract, 409 for a built-in or reserved id; [Plugin format](Plugin-format)) |
 
 ## Request body limits
 
@@ -171,15 +172,15 @@ A body over its limit is a 413 with the JSON body `{"error": "too_large", "messa
 |---|---|
 | `POST /api/auth/login`, `/register` | 4 KiB |
 | `POST /api/workspaces`, `PUT /api/workspaces/{id}` | 16 KiB; the merged workspace settings may total 64 KiB (413 "workspace settings too large") |
-| `POST /api/admin/plugins` (manifest), `PUT /api/plugins/{id}/state` | 64 KiB |
-| `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
+| `PUT /api/features/{id}`, `POST /api/grammar/progress` | 4 KiB |
+| `PUT /api/rows/{key}`, `PUT /api/journal/entries/{id}`, `PUT /api/journal/settings` | 256 KiB per value; the same cap applies to each keyed row inside `POST /api/sync/push` |
 | `PUT /api/ai/keys/{provider}`, `PUT /api/ai/active`, `POST /api/ai/custom-providers`, `POST /api/journal/review`, `POST /api/journal/suggestions`, `POST /api/journal/transcribe`, `POST /api/admin/packs/staged/{token}` | 4 KiB |
 | `PUT /api/entries/{id}` | 64 KiB |
 | `POST /api/entries/{id}/sentences`, `POST /api/library/books/{id}/highlights`, `POST /api/audio/resolve`, `POST /api/entries/bases`, `POST /api/entries/frequency-ranks` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks`, `POST /api/library/sources/{source}/import`, `PUT /api/me/time-zone` | 1 KiB |
 | `PUT /api/library/books/{id}/position` | 2 KiB |
 | `POST /api/events/batch` | 4 MiB |
-| `POST /api/sync/push` | 8 MiB in total |
+| `POST /api/sync/push` | Push offline events, keyed rows and the typed study rows (events idempotent by id, rows last write wins); an unknown or foreign workspace is 404 and nothing is applied. Body up to 8 MiB. A keyed row of an unknown family or in the wrong scope is skipped and counted in `dataRefused` ([Core data API](Core-data-api)) |
 | `POST /api/segment` | 256 KiB |
 | `POST /api/library/upload` | the epub up to 20 MiB (plus 1 MiB multipart overhead) |
 | `POST /api/journal/photos` | 10 MiB |

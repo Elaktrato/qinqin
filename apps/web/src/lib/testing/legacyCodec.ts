@@ -1,6 +1,6 @@
 // TEST-ONLY: the legacy row codec of server/internal/study/rows (FromLegacy,
 // ToLegacy), mirrored so web tests can describe study state as the v0.3.0
-// plugin rows it was and get the typed pull a migrated server serves for it
+// keyed rows it was and get the typed pull a migrated server serves for it
 // (`typedPull`). Production code never imports this file: the web reads and
 // writes typed rows only. Pinned by docs/contracts/backup/study-rows.json
 // (legacyCodec.test.ts).
@@ -20,7 +20,7 @@ type Obj = Record<string, unknown>;
 /**
  * legacyFamily: the typed collection of a legacy qinqin-flashcards key
  * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
- * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
+ * `fsrs:set:`, `fsrs:active`); null for the keyed rows (`keyed/`).
  */
 export function legacyFamily(key: string): StudyCollection | null {
 	if (key.startsWith('card:')) return 'cards';
@@ -58,7 +58,6 @@ function source(raw: unknown): Obj | null {
 	if (!isRecord(raw)) return null;
 	const s = (k: string) => typeof raw[k] === 'string';
 	if (raw.type === 'level' && s('packId') && s('level')) return { type: 'level', packId: raw.packId, level: raw.level };
-	if (raw.type === 'plugin' && s('pluginId') && s('key')) return { type: 'plugin', pluginId: raw.pluginId, key: raw.key };
 	if (raw.type === 'frequency' && s('packId') && entryInt(raw.size) !== null) {
 		return { type: 'frequency', packId: raw.packId, size: raw.size };
 	}
@@ -251,7 +250,6 @@ export function toLegacy(c: StudyCollection, body: StudyRowBody, modifiedAt?: st
 }
 
 interface LegacyRow {
-	pluginId?: unknown;
 	key?: unknown;
 	workspaceId?: unknown;
 	data?: unknown;
@@ -261,25 +259,26 @@ interface LegacyRow {
 }
 
 /**
- * typedPull: a pull body with v0.3.0 `qinqin-flashcards` rows, as the
- * migrated server answers it: every readable typed-family row of a workspace
- * moves into its typed collection (meta kept); unreadable or user-global ones
- * stay leftovers in `pluginData`; every typed collection is present.
+ * typedPull: a pull body with keyed rows in the old shape (typed study rows
+ * in their keyed form among the keyed rows), as the server answers it: every
+ * readable typed-family row of a workspace moves into its typed collection
+ * (meta kept); unreadable or user-global ones stay in `rows`; every typed
+ * collection is present.
  */
 export function typedPull(body: Obj): Obj {
-	if (!Array.isArray(body.pluginData)) return body;
-	const out: Obj = { ...body, pluginData: [] as unknown[] };
+	if (!Array.isArray(body.rows)) return body;
+	const out: Obj = { ...body, rows: [] as unknown[] };
 	for (const c of STUDY_COLLECTIONS) if (!Array.isArray(out[c])) out[c] = [];
-	for (const raw of body.pluginData as LegacyRow[]) {
+	for (const raw of body.rows as LegacyRow[]) {
 		const typed = typedOf(raw);
-		if (typed === null) (out.pluginData as unknown[]).push(raw);
+		if (typed === null) (out.rows as unknown[]).push(raw);
 		else (out[typed.collection] as unknown[]).push(typed.row);
 	}
 	return out;
 }
 
 function typedOf(raw: LegacyRow): { collection: StudyCollection; row: StudyRow } | null {
-	if (!isRecord(raw) || raw.pluginId !== 'qinqin-flashcards' || typeof raw.key !== 'string') return null;
+	if (!isRecord(raw) || typeof raw.key !== 'string') return null;
 	if (typeof raw.workspaceId !== 'number') return null;
 	let data = raw.data;
 	if (typeof data === 'string') {
@@ -303,22 +302,21 @@ function typedOf(raw: LegacyRow): { collection: StudyCollection; row: StudyRow }
 
 /**
  * pagedPull: the same body as the single page of a v2 round (docs/contracts/sync/):
- * typedPull's collections, plugin rows filled out to the contract shape, the
+ * typedPull's collections, keyed rows filled out to the contract shape, the
  * study collections the web asks for all present. Test-only.
  */
 export function pagedPull(body: Obj): Obj {
 	return pageOf(typedPull(body));
 }
 
-/** pageOf: a body already in the migrated shape (typed collections, leftovers in pluginData) as one v2 page. */
+/** pageOf: a body already in the migrated shape (typed collections, keyed rows in rows) as one v2 page. */
 export function pageOf(typed: Obj): Obj {
 	const collections: Obj = {};
-	for (const name of ['pluginStates', 'pluginData', ...STUDY_COLLECTIONS]) {
+	for (const name of ['rows', ...STUDY_COLLECTIONS]) {
 		const list = Array.isArray(typed[name]) ? (typed[name] as unknown[]) : [];
 		collections[name] =
-			name === 'pluginData'
+			name === 'rows'
 				? list.map((r) => ({
-						pluginId: 'qinqin-flashcards',
 						userId: 1,
 						workspaceId: null,
 						version: 1,
@@ -326,9 +324,7 @@ export function pageOf(typed: Obj): Obj {
 						deletedAt: null,
 						...(r as Obj)
 					}))
-				: name === 'pluginStates'
-					? list.map((r) => ({ userId: 1, enabled: true, order: 0, updatedAt: '2026-01-01T00:00:00Z', ...(r as Obj) }))
-					: list;
+				: list;
 	}
 	return {
 		format: 2,

@@ -13,7 +13,7 @@ import {
 	buryAfterAnswer,
 	clozeDistractorPool,
 	revealsOnKey,
-	isChinese,
+	languageCardKinds,
 	isEligible,
 	levelSessionItems,
 	pickSentence,
@@ -126,11 +126,13 @@ describe('isEligible', () => {
 });
 
 describe('helpers', () => {
-	it('isChinese matches zh and its regional tags only', () => {
-		expect(isChinese('zh')).toBe(true);
-		expect(isChinese('ZH_tw')).toBe(true);
-		expect(isChinese('ja')).toBe(false);
-		expect(isChinese('')).toBe(false);
+	it('languageCardKinds keeps the kinds the language profile has (#199)', () => {
+		const all = ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'] as const;
+		expect(languageCardKinds(all, 'zh')).toEqual([...all]);
+		expect(languageCardKinds(all, 'ZH_tw')).toEqual([...all]);
+		expect(languageCardKinds(all, 'ja')).toEqual(['vocab', 'sentence', 'writing', 'reverse', 'cloze']);
+		expect(languageCardKinds(all, 'es')).toEqual(['vocab', 'sentence', 'reverse', 'cloze']);
+		expect(languageCardKinds(all, '')).toEqual(['vocab', 'sentence', 'reverse', 'cloze']);
 	});
 
 	it('reviewCountFor counts valid reviews of one card', () => {

@@ -1,7 +1,7 @@
 // Package grammar stores grammar packs: lessons by level, each with a
 // pattern, an explanation and example sentences, imported from
 // lessons.json and served read-only. Practice progress lives in
-// workspace plugin data, not here.
+// grammar_progress (progress.go).
 package grammar
 
 import (

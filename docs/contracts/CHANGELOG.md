@@ -5,6 +5,55 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #199 — core features instead of code plugins
+
+- **Journal:** entries, reviews, topic ideas and settings are typed storage with their own routes
+  (`GET /api/journal/entries`, `GET/PUT/DELETE /api/journal/entries/{id}`, `GET
+  /api/journal/entries/{id}/review`, `GET /api/journal/suggestions`, `GET/PUT /api/journal/settings`;
+  `journal/README.md`). New fixture: `journal/entries.json`. The `qinqin-journal` plugin rows (`entry:`,
+  `review:`, `suggestions`, `settings`) are gone; a backup carries the documents as `journal:entry:<id>`,
+  `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`. The deletion previews count
+  `journalEntries`.
+- **Grammar:** lesson progress is typed storage: `GET /api/grammar/progress?workspace=` lists it, `POST
+  /api/grammar/progress?workspace= {packId, lessonId, score, total}` records a run; the server keeps the best
+  score (`grammar/README.md`). New fixture: `grammar/progress.json`. The `qinqin-grammar` plugin rows
+  (`lesson:<packId>:<lessonId>`) are gone; a backup carries the rows as `grammar:progress:<packId>:<lessonId>`.
+- **Keyed rows replace plugin data:** the core's remaining rows (notes, lookups, known marks, milestones, goals,
+  vacations, the home layout, the activity view, the widget options, the navigation layout, the appearance)
+  live in one store without a namespace (`keyed/README.md`, new fixture `keyed/families.json`) that accepts
+  only the listed key families, each in its scope. Routes: `GET /api/rows`, `GET/PUT/DELETE /api/rows/{key}`
+  replace `/api/plugins/{id}/data[/{key}]` (removed). Pull collection `rows` replaces `pluginData`; the push
+  member `rows` replaces `pluginData`; the row shape drops `pluginId`. A pushed row of an unknown family or in
+  the wrong scope is refused alone (`dataRefused`); on the key routes an unknown key is 404 `not_found`, the
+  wrong scope 400. Fixtures changed: `sync/pull-page.json`, `sync/pull-rounds.json`, `sync/push-result.json`,
+  `sync/unreadable-rows.json`, `backup/remap.json` (op `row`), `settings/*.json` and `themes/appearance.json`
+  (no `pluginId`), `auth/admin-users.json` (deletion preview `keyedRows`).
+- **Language profiles:** new fixture `languages/profiles.json` (zh, ja, es and the fallback): what a language
+  has (script, readings, segmentation, tones, strokes, kana, variants, card kinds, practice modes), resolved by
+  the primary subtag. Availability checks follow it; a regional tag such as `zh-TW` now gets everything `zh`
+  has (word counts, the variant label, the journal's Han check), and a language without writing or tone cards
+  no longer lists them in the study setup.
+- **Feature switches replace plugin states; the code plugins are retired:** `GET /api/features` lists the
+  caller's switch of the four core features (`flashcards`, `reader`, `journal`, `grammar`; no row is on), `PUT
+  /api/features/{id} {enabled}` stores one (`features/README.md`, new fixture `features/switches.json`). Removed:
+  `GET /api/plugins`, `PUT /api/plugins/{id}/state`, the admin registry route `POST /api/admin/plugins`,
+  every plugin id (`qinqin-core`, `qinqin-flashcards`, `qinqin-reader`,
+  `qinqin-journal`, `qinqin-grammar`) and the plugin manifest format. The pull collection `features` (`{id,
+  enabled, updatedAt}`) replaces `pluginStates`; a backup's `account.json` carries `features: [{id,
+  enabled}]`. The web's study pull no longer asks for the switches.
+- **Activity sources:** `GET /api/stats/activity` `sources` are `{type, feature, unit}` (no `plugin`, `label`
+  or `describe`: a client words a source from its catalogue, `activity.source.<type>.*`); `events/activity.json`
+  `rules` name the `feature`. The `plugin.*` catalogue keys are retired (`i18n/retired-keys.json`).
+- **Deck sources:** the variant `{type:"plugin", pluginId, key}` is gone (`study/rows.json` now refuses it,
+  `decks/system-deck-ids.json` drops the `d-plg-` case); migration 047 turns such a deck into a plain deck. The
+  legacy codec keeps an old plugin source in `extra` (`backup/study-rows.json`). The flashcards route
+  `system/plugin/...` is gone.
+- **Error catalogue:** `plugin_no_data` leaves `auth/errors.json` (nothing sends it).
+- **Backup format 2:** the family `plugin-data` becomes `rows` (no `pluginId`); typed study rows, journal
+  documents and grammar progress travel there in their keyed form. A format 1 archive is refused
+  (`backup_version_unsupported`; `backup/reject.json`). The dry-run report drops `pluginsNotInstalled`; its
+  counts say `rows` for `pluginData`. The sample archive is `backup/sample-v2/`.
+
 ## #192 — one pack system on the server
 
 No fixture changes; `packages/pack-types.json` is unchanged and still decoded by the Go and web tests. Two

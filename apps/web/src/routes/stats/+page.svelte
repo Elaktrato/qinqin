@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { webPlugins } from '$lib/plugins';
 	import { t } from '$lib/i18n';
 	import { placeWidgets } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
@@ -8,14 +7,14 @@
 
 	const session = useSession();
 	// The design's default arrangement first, then every other available
-	// widget in registry order (core, features, plugins); only the home
-	// page is arranged by the user. Plugin widgets join once the plugin
-	// states are loaded, as on home.
-	const states = $derived(session.plugins.status === 'ready' ? session.plugins.list : []);
+	// widget in registry order (core, then the features'); only the home
+	// page is arranged by the user. Feature widgets join once the feature
+	// switches are loaded, as on home.
+	const states = $derived(session.features.status === 'ready' ? session.features.list : []);
 	const placed = $derived(
 		placeWidgets(
 			statsOrder(
-				allWidgets(webPlugins, states, session.workspaces.language).filter((widget) =>
+				allWidgets(states, session.workspaces.language).filter((widget) =>
 					widget.surfaces.includes('stats')
 				)
 			)

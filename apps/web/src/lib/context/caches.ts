@@ -11,7 +11,7 @@ import type { ComponentIndex } from '../api/components';
 import type { StarterEntry } from '../api/frequency';
 import type { EntryBase } from '../api/types';
 import type { Slot } from '../audio/source';
-import type { JournalEntries } from '../plugins/journal/journalEntries.svelte';
+import type { JournalEntries } from '../features/journal/journalEntries.svelte';
 import type { SchemeLevelMembers } from '../study/charGroups';
 import type { LanguageRanks } from '../study/frequencyRanks';
 import type { StrokeResult } from '../study/strokeData';

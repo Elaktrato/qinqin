@@ -1,11 +1,11 @@
-// Options of individual home widgets: the user-global plugin data row
-// `qinqin-core` / `widget-options`, one member per widget id. Today only the
+// Options of individual home widgets: the user-global keyed row
+// `widget-options`, one member per widget id. Today only the
 // activity heatmap has one: its home layout. Unknown keys (top-level and
 // inside a widget's member) are never dropped; a write re-reads the row
 // first so keys another device wrote meanwhile survive.
 // Contract: docs/contracts/settings/README.md, widget-options.json.
 
-import { CORE_NAMESPACE, keyedData } from '$lib/sync/keyed';
+import { keyedData } from '$lib/sync/keyed';
 
 export const WIDGET_OPTIONS_KEY = 'widget-options';
 export const HEATMAP_LAYOUTS = ['garden', 'month', 'week'] as const;
@@ -60,7 +60,7 @@ export function withHeatmapLayout(stored: unknown, layout: HeatmapLayout): Recor
 }
 
 function store() {
-	return keyedData(CORE_NAMESPACE, null);
+	return keyedData(null);
 }
 
 /** loadWidgetOptions reads the row (find: no 404 for a never-saved row). Errors reject. */

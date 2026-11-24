@@ -45,10 +45,8 @@ function summary(over: Partial<Summary> = {}): Summary {
 }
 const journal: ActivitySource = {
 	type: 'journal',
-	plugin: 'qinqin-journal',
-	label: 'Journal entries',
-	unit: 'count',
-	describe: { one: '{n} journal entry', other: '{n} journal entries' }
+	feature: 'journal',
+	unit: 'count'
 };
 const view = (
 	over: Partial<Summary> = {},

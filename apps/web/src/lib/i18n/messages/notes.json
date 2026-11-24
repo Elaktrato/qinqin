@@ -4,6 +4,7 @@
 	"account.otp.codeWrongLeft": "{left} is account.otp.attemptsLeft (\"2 attempts left\").",
 	"account.recovery.fileTitle": "First line of the downloaded recovery-codes text file; {site} is the server's host name.",
 	"account.verify.intro": "<strong> wraps the email address.",
+	"activity.source.review.count": "{n} is a number or \"32 of 50\"; the plural follows the count (a goal's target).",
 	"admin.audit.line": "An audit log line: {who} is a username or admin.audit.system, {what} one of admin.audit.action.* (\"alice created the account\").",
 	"admin.audit.withField": "{line} is admin.audit.line, {field} a technical setting name (registration).",
 	"admin.audit.withTarget": "{line} is admin.audit.line, {target} the username the action was about.",
@@ -58,7 +59,6 @@
 	"packs.list.none": "<code> wraps a command; keep it untranslated.",
 	"packs.package.ready": "{id} is a technical package id (lexicon.zh); {mb} a formatted number with one decimal.",
 	"packs.uninstall.dictionary": "`qinqin seed` is a command; keep it untranslated, with its backticks.",
-	"plugin.qinqinCore.activity.review.count": "{n} is a number or \"32 of 50\"; the plural follows the count (a goal's target). Keep in step with server/internal/plugins/builtin/core.json describe.",
 	"reader.bookmarks.addedOn": "Screen-reader text before a bookmark's date; starts with a comma.",
 	"reader.chapterTitled": "{number} is reader.chapter (\"Chapter 3\"), {title} the chapter's own title.",
 	"reader.display.fontApp": "Reader font option that follows the app-wide hanzi font of Settings → Appearance; {font} is its current name (settings.appearance.hanziFont.sans, .serif or .kai).",
@@ -82,7 +82,7 @@
 	"settings.ai.usage": "All four arguments are formatted numbers.",
 	"settings.home.layoutSaveFailed": "{reason} is the server's or network's error text.",
 	"settings.home.layoutSaved": "Announced to screen readers after the choice is saved; {layout} is one of settings.home.layout.garden|month|week.",
-	"settings.home.parked": "Follows a list of widget names (\"Journal (qinqin-journal) stays in your layout …\"); the plural follows how many.",
+	"settings.home.parked": "Follows a list of widget names (\"Decks summary (Decks) stays in your layout …\"); the plural follows how many. Features is the Settings tab.",
 	"settings.home.thenJoin": "Joins widget titles in the default layout order (\"Today, then Activity, then Words\").",
 	"settings.navLayout.inBar": "Label of the switch that pins a section to the phone bottom bar.",
 	"settings.navLayout.ruleMore": "One line explaining the five-item rule of the phone bottom bar; More is the label of nav.more.",
@@ -124,7 +124,7 @@
 	"widgets.activity.stageNote": "Appended to a heatmap day's tooltip: {progress} is goals.progress.amountOfTarget (\"21 of 50\"), {stage} one of widgets.activity.stage.*.",
 	"widgets.activity.today": "Appended to the tooltip of today's heatmap tile, after \" · \"; lower case mid-sentence.",
 	"widgets.activity.week.link": "Accessible name of the heatmap's This week block, a link to the Week tab of Stats.",
-	"widgets.activity.week.toGo": "{amount} is an activity amount such as \"29 flashcard reviews\" (the plugin's own count wording).",
+	"widgets.activity.week.toGo": "{amount} is an activity amount such as \"29 flashcard reviews\" (the activity's count wording).",
 	"widgets.characters.stale": "<code> wraps the command name; keep it untranslated.",
 	"widgets.words.inDecks": "Follows the bold total (\"12 words in your decks ·\"); the number itself is shown before it, outside the message."
 }

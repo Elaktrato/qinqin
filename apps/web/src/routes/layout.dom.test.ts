@@ -279,7 +279,7 @@ describe('layout restricted sessions', () => {
 		await new Promise((r) => setTimeout(r, 30));
 		const urls = vi.mocked(api).mock.calls.map(([u]) => String(u));
 		expect(urls).not.toContain('/api/workspaces');
-		expect(urls.some((u) => u.startsWith('/api/plugins'))).toBe(false);
+		expect(urls.some((u) => u.startsWith('/api/features'))).toBe(false);
 	});
 
 	it('renders the change page itself and keeps Sign out within reach', async () => {
@@ -319,13 +319,13 @@ describe('layout theme store', () => {
 		const out = mountAt('/sources', null);
 		await out.findByText('page body');
 		await waitFor(() => expect(calls()).toContain('/api/themes'));
-		expect(calls().some((u) => u.startsWith('/api/plugins/qinqin-core/data'))).toBe(false);
+		expect(calls().some((u) => u.startsWith('/api/rows'))).toBe(false);
 		cleanup();
 		vi.clearAllMocks();
 		const view = mountAt('/search', 'tok');
 		await view.findByText('page body');
 		await waitFor(() =>
-			expect(calls().filter((u) => u.startsWith('/api/plugins/qinqin-core/data') && u.includes('prefix=appearance'))).toHaveLength(1)
+			expect(calls().filter((u) => u.startsWith('/api/rows') && u.includes('prefix=appearance'))).toHaveLength(1)
 		);
 	});
 

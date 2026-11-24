@@ -12,7 +12,10 @@ https://github.com/Elaktrato/qinqin/wiki
   let it sync, so reviews an old copy cached offline are sent first. Afterwards nothing is lost. Reviews that a
   copy from before v0.4.0 cached and never sent are **never** sent once the server is upgraded, even when that
   browser opens the upgraded app online later: the new app does not read the old copy's queue.
-- Personal backups from every earlier version, v0.3 included, still restore.
+- **The upgrade wipes** the admin-registered plugins and every plugin's order and settings, the plugin data of
+  plugins other than the core features, journal entries, reviews, topic ideas and settings and grammar progress
+  that do not convert cleanly, and decks copied from a plugin deck lose that origin (#199); personal backups made
+  before this version no longer restore (backup format 2), so make a new one after upgrading.
 - Every installed grammar pack now shows on the Grammar page; manage packs in Settings → Data.
 - Settings → Data (`GET /api/admin/packs`) no longer lists sentences imported before v0.2.0 without a registry
   row. Removing a language that still has such sentences answers 409 naming each pack and its removal route,
@@ -36,14 +39,24 @@ https://github.com/Elaktrato/qinqin/wiki
 - Signing out, a lapsed session or a user switch in another tab clears every per-user cache in the browser
   (#173).
 
+**Core features instead of plugins (#199)**
+- There are no plugins any more: flashcards, the reader, the journal and grammar are core features, each with
+  its own switch in Settings → Features (Settings → Plugins is gone). The journal lives at `/journal` and
+  grammar at `/grammar`; old `/p/journal` and `/p/grammar` links still land there.
+- Grammar keeps your best score on the server, so two tabs finishing a lesson can no longer lower it.
+- What a language offers (tone cards, word counts in the reader, the Characters tab, script variants) comes
+  from one language profile; a regional tag such as `zh-TW` now gets everything Chinese has.
+- The journal's entry box stops at the server's limit (50,000 characters) instead of failing to save.
+
 **Server and API**
 - Every error answer is JSON `{error, message}` with a code from `docs/contracts/auth/errors.json` (#168).
 - Clean shutdown: HTTP drains, then background work stops, then the database closes; an interrupted first-start
   seed finishes at the next start (#170, #171).
 - The v0.3 compatibility layer is gone (#198): `GET /api/sync/pull` without `v=2` answers 404; cards, decks,
-  deck settings, limits and FSRS sets are no longer served or accepted as `qinqin-flashcards` plugin data;
-  `GET /api/plugins` lists real plugins only, with no row per installed data pack (#169). The contract
-  changes are logged in `docs/contracts/CHANGELOG.md`.
+  deck settings, limits and FSRS sets are no longer served or accepted as `qinqin-flashcards` plugin data (#169).
+- The plugin routes are gone (#199): `/api/plugins`, `/api/plugins/{id}/state`, `/api/plugins/{id}/data/…` and
+  `POST /api/admin/plugins`. New: `/api/features`, `/api/rows`, `/api/journal/*`, `/api/grammar/progress`. The
+  contract changes are logged in `docs/contracts/CHANGELOG.md`.
 
 ## Known limits
 

@@ -94,7 +94,7 @@ describe('DeckList', () => {
 	it('ends with the section of level and plugin decks', async () => {
 		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
-		expect(await screen.findByRole('heading', { level: 2, name: 'Level and plugin decks' })).toBeTruthy();
+		expect(await screen.findByRole('heading', { level: 2, name: 'Level decks' })).toBeTruthy();
 	});
 
 	it('gives each bar a text alternative', async () => {

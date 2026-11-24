@@ -198,9 +198,6 @@
 		<p>{replaceSentence(r)}</p>
 		<p>{restoreSentence(r)}</p>
 		{#each r.warnings as w, i (i)}<p role="note">{w}</p>{/each}
-		{#if r.pluginsNotInstalled.length}
-			<p class="hint">{t('account.data.pluginsNotInstalled', { plugins: r.pluginsNotInstalled.join(', ') })}</p>
-		{/if}
 		{#if r.reidentifiedEvents}<p class="hint">{t('account.data.reidentified', { count: r.reidentifiedEvents })}</p>{/if}
 		{#if needsDropAck(r)}
 			<div role="group" aria-label={t('account.data.missingWords')}>

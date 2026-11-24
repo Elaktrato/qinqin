@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// The qinqin-core lookup history row (docs/contracts/lookups/README.md):
+// The lookup history row (docs/contracts/lookups/README.md):
 // one per workspace, {version: 1, clearedAt, items: [...], ...unknown}. The
 // server never reads it except here: an export names the items' entries in
 // refs/entries.json, a restore moves the items to the target's entries and
@@ -44,7 +44,7 @@ type lookupItem struct {
 	books           []int64
 }
 
-func isLookupsRow(r PluginRow) bool { return r.PluginID == CorePlugin && r.Key == lookupsKey }
+func isLookupsRow(r Row) bool { return r.Key == lookupsKey }
 
 // jsonInt reads a JSON number that is an integer (no fraction; 1.0 counts,
 // as in JavaScript) within the safe integer range.
@@ -201,7 +201,7 @@ func (it lookupItem) json() json.RawMessage {
 // removed); items landing on one target entry merge; the list is sorted
 // newest first and capped. Every other top-level member keeps its bytes.
 // A row that is not a version 1 object, or has no workspace, is dropped.
-func (m *Maps) lookups(r PluginRow) (PluginRow, bool) {
+func (m *Maps) lookups(r Row) (Row, bool) {
 	if r.WorkspaceID == nil {
 		return r, true
 	}
@@ -320,7 +320,7 @@ func mergeLookupItems(group []lookupItem) lookupItem {
 
 // lookupEntryIDs lists the entry ids of a lookups row's valid items (for
 // refs/entries.json); nil for any other row.
-func lookupEntryIDs(r PluginRow) []int64 {
+func lookupEntryIDs(r Row) []int64 {
 	if !isLookupsRow(r) {
 		return nil
 	}

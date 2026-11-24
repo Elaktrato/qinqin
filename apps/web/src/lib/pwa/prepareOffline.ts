@@ -18,7 +18,7 @@ import type { OfflineState } from './offlineState.svelte';
 export const OFFLINE_API_PATHS: readonly string[] = [
 	'/api/auth/me',
 	'/api/workspaces',
-	'/api/plugins',
+	'/api/features',
 	'/api/languages',
 	'/api/me/time-zone'
 ];

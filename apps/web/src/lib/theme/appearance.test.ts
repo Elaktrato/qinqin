@@ -12,7 +12,6 @@ import {
 
 describe('docs/contracts/themes/appearance.json', () => {
 	it('names the row', () => {
-		expect(fixture.pluginId).toBe('qinqin-core');
 		expect(APPEARANCE_KEY).toBe(fixture.key);
 	});
 

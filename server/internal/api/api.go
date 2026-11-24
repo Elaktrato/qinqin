@@ -353,6 +353,8 @@ func (s *server) routes() []route {
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},
+		{"GET /api/grammar/progress", s.handleListGrammarProgress, accUser, nil, noTok},
+		{"POST /api/grammar/progress", s.handleRecordGrammarRun, accUser, nil, noTok},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil, tokReadAny},
 		{"POST /api/audio/resolve", s.handleAudioResolve, accUser, nil, noTok},
 		{"GET /api/audio/clips/{file}", s.handleAudioClip, accUser, nil, tokReadAny},
@@ -384,7 +386,6 @@ func (s *server) routes() []route {
 		{"GET /fonts/{file}", s.handleFontFile, accPublic, nil, noTok},
 		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
 		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
-		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},
 		{"GET /api/ai/status", s.handleAIStatus, accUser, nil, noTok},
 		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil, noTok},
 		{"PUT /api/ai/keys/{provider}", s.handlePutAIKey, accUser, nil, noTok},
@@ -394,6 +395,14 @@ func (s *server) routes() []route {
 		{"POST /api/ai/custom-providers", s.handleCreateCustomProvider, accAdminSignedIn, nil, noTok},
 		{"PATCH /api/ai/custom-providers/{id}", s.handlePatchCustomProvider, accAdminSignedIn, nil, noTok},
 		{"DELETE /api/ai/custom-providers/{id}", s.handleDeleteCustomProvider, accAdminSignedIn, nil, noTok},
+		{"GET /api/journal/entries", s.handleListJournalEntries, accUser, nil, noTok},
+		{"GET /api/journal/entries/{id}", s.handleGetJournalEntry, accUser, nil, noTok},
+		{"PUT /api/journal/entries/{id}", s.handlePutJournalEntry, accUser, nil, noTok},
+		{"DELETE /api/journal/entries/{id}", s.handleDeleteJournalEntry, accUser, nil, noTok},
+		{"GET /api/journal/entries/{id}/review", s.handleGetJournalReview, accUser, nil, noTok},
+		{"GET /api/journal/suggestions", s.handleGetJournalSuggestions, accUser, nil, noTok},
+		{"GET /api/journal/settings", s.handleGetJournalSettings, accUser, nil, noTok},
+		{"PUT /api/journal/settings", s.handlePutJournalSettings, accUser, nil, noTok},
 		{"POST /api/journal/review", s.handleJournalReview, accUser, nil, noTok},
 		{"POST /api/journal/suggestions", s.handleJournalSuggestions, accUser, nil, noTok},
 		{"GET /api/journal/capabilities", s.handleJournalCapabilities, accUser, nil, noTok},
@@ -402,7 +411,7 @@ func (s *server) routes() []route {
 		{"GET /api/journal/photos/{id}", s.handleGetPhoto, accUser, nil, noTok},
 		{"PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive, accUser, nil, noTok},
 		{"DELETE /api/journal/photos/{id}", s.handleDeletePhoto, accUser, nil, noTok},
-		{"GET /api/plugins", s.handleListPlugins, accUser, nil, tokReadAny},
+		{"GET /api/features", s.handleListFeatures, accUser, nil, tokReadAny},
 		{"POST /api/library/upload", s.handleUploadBook, accUser, nil, tokWriteAny},
 		{"GET /api/library/books", s.handleListBooks, accUser, nil, tokReadWS},
 		{"GET /api/library/books/{id}", s.handleGetBook, accUser, nil, tokReadAny},
@@ -421,11 +430,11 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil, noTok},
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
-		{"PUT /api/plugins/{id}/state", s.handleSetPluginState, accUser, nil, tokWriteAny},
-		{"GET /api/plugins/{id}/data", s.handleListPluginData, accUser, nil, tokReadWS},
-		{"GET /api/plugins/{id}/data/{key}", s.handleGetPluginData, accUser, nil, tokReadWS},
-		{"PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData, accUser, nil, tokWriteWS},
-		{"DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData, accUser, nil, tokWriteWS},
+		{"PUT /api/features/{id}", s.handleSetFeature, accUser, nil, tokWriteAny},
+		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
+		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},
+		{"PUT /api/rows/{key}", s.handlePutRow, accUser, nil, tokWriteWS},
+		{"DELETE /api/rows/{key}", s.handleDeleteRow, accUser, nil, tokWriteWS},
 	}
 }
 
@@ -438,17 +447,14 @@ const (
 	// Small JSON bodies. Every route that reads a body caps it, so an
 	// oversized request is a 413 after at most the cap is read, never a
 	// 30 MB read (or a 30 MB row served back on every list and pull).
-	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
-	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
-	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
-	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
-	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
-	// maxPluginDataValue caps one plugin data value, on PUT
-	// /api/plugins/{id}/data/{key} and per item in a sync push. Real
-	// values are far smaller: a flashcards card or deck row is under
-	// 2 KiB, reader preferences a few hundred bytes; the headroom leaves
-	// room for a plugin that keeps a list in one key.
-	maxPluginDataValue = 256 << 10
+	maxAuthBody      = 4 << 10  // POST /api/auth/login and /register: a username and a password
+	maxWorkspaceBody = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
+	maxEntryBody     = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
+	// maxRowValue caps one keyed row value, on PUT /api/rows/{key}, and
+	// per item (keyed or typed) in a sync push. Real values are far
+	// smaller: a card or deck row is under 2 KiB, a layout a few hundred
+	// bytes; the lookup history (500 items) is the largest.
+	maxRowValue = 256 << 10
 
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points

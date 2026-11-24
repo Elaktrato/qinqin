@@ -1,7 +1,7 @@
 // TEST-ONLY: the fetch stubs and helpers of the study command tests (#193,
 // split from the old store tests): a pull answered as the typed rows a migrated
-// server serves for v0.3.0-style plugin rows (legacyCodec typedPull), the pushes
-// and plugin-data writes read back as legacy rows, and the one-storage check.
+// server serves for v0.3.0-style keyed rows (legacyCodec typedPull), the pushes
+// and keyed-row writes read back as legacy rows, and the one-storage check.
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "../study/types";
@@ -9,7 +9,6 @@ import { legacyFamily, pagedPull, toLegacy } from "./legacyCodec";
 import { STUDY_COLLECTIONS, type StudyCollection } from "../study/rows";
 import * as build from "./study";
 
-export const PLUGIN_ID = "qinqin-flashcards";
 export const WORKSPACE_ID = 7;
 export const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -29,12 +28,12 @@ export function fakeStorage(): Storage {
 
 /**
  * jsonResponse answers a request. A pull body is described as the v0.3.0
- * plugin rows the study state was; it is served as the migrated server
- * answers it (typed collections, leftovers in pluginData; typedPull).
+ * keyed rows the study state was; it is served as the migrated server
+ * answers it (typed collections, leftovers in rows; typedPull).
  */
 export function jsonResponse(body: unknown, status = 200): Response {
   const isPull =
-    typeof body === "object" && body !== null && Array.isArray((body as { pluginData?: unknown }).pluginData);
+    typeof body === "object" && body !== null && Array.isArray((body as { rows?: unknown }).rows);
   return rawResponse(isPull ? pagedPull(body as Record<string, unknown>) : body, status);
 }
 
@@ -46,8 +45,7 @@ export function rawResponse(body: unknown, status = 200): Response {
   });
 }
 
-export interface PluginDataRow {
-  pluginId: string;
+export interface KeyedDataRow {
   key: string;
   userId: number;
   workspaceId: number | null;
@@ -60,10 +58,9 @@ export interface PluginDataRow {
 export function pluginRow(
   key: string,
   data: unknown,
-  overrides: Partial<PluginDataRow> = {},
-): PluginDataRow {
+  overrides: Partial<KeyedDataRow> = {},
+): KeyedDataRow {
   return {
-    pluginId: PLUGIN_ID,
     key,
     userId: 1,
     workspaceId: WORKSPACE_ID,
@@ -100,7 +97,7 @@ export function calls(): Array<[string, RequestInit | undefined]> {
   >;
 }
 
-/** PUTs to the plugin-data routes: only the keyed rows (goals, known marks, vacations) still use them. */
+/** PUTs to the keyed-row routes: only the keyed rows (goals, known marks, vacations) still use them. */
 export function putBodies(): Array<{ url: string; body: unknown }> {
   return calls()
     .filter(([, init]) => init?.method === "PUT")
@@ -168,7 +165,7 @@ export function deletedKeys(): string[] {
 export function pushedRows(): Array<{ key: string; data: unknown; updatedAt: string }> {
   return pushBodies().flatMap((body) => [
     ...itemsOf(body).map(({ key, data, updatedAt }) => ({ key, data, updatedAt })),
-    ...(((body.pluginData as Array<{ key: string; data: unknown; updatedAt: string }>) ?? [])),
+    ...(((body.rows as Array<{ key: string; data: unknown; updatedAt: string }>) ?? [])),
   ]);
 }
 
@@ -177,7 +174,7 @@ export function pushAnswer(init: RequestInit | undefined, skip: (key: string) =>
   const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
   const keys = [
     ...itemsOf(body).map((w) => w.key),
-    ...((body.pluginData as Array<{ key: string }> | undefined) ?? []).map((r) => r.key),
+    ...((body.rows as Array<{ key: string }> | undefined) ?? []).map((r) => r.key),
   ];
   const skipped = keys.filter(skip).length;
   return rawResponse({ dataAccepted: keys.length - skipped, dataSkipped: skipped, dataRefused: 0 });
@@ -208,14 +205,14 @@ export function reviewEvent(
 
 // The one storage rule, checked after every test (each suite's afterEach
 // calls it before clearing the mocks): no typed study family ever goes
-// through the plugin-data routes or a pluginData push item.
+// through the keyed-row routes or a rows push item.
 export function expectOneStorage(): void {
   const onRoutes = calls()
-    .map(([url]) => /^\/api\/plugins\/qinqin-flashcards\/data\/([^?]+)/.exec(String(url))?.[1])
+    .map(([url]) => /^\/api\/rows\/([^?]+)/.exec(String(url))?.[1])
     .filter((key): key is string => key !== undefined && legacyFamily(decodeURIComponent(key)) !== null);
   expect(onRoutes).toEqual([]);
   const inPluginData = pushBodies()
-    .flatMap((b) => (b.pluginData as Array<{ key: string }> | undefined) ?? [])
+    .flatMap((b) => (b.rows as Array<{ key: string }> | undefined) ?? [])
     .filter((row) => legacyFamily(row.key) !== null);
   expect(inPluginData).toEqual([]);
 }

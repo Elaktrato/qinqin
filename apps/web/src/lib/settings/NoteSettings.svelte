@@ -1,5 +1,5 @@
 <script lang="ts">
-	// "Show my notes on the answer side": the workspace's qinqin-core notecfg row
+	// "Show my notes on the answer side": the workspace's keyed notecfg row
 	// (docs/contracts/notes/README.md). Missing or unreadable reads as on.
 	import type { NoteCfg } from '$lib/notes/notes';
 	import { t } from '$lib/i18n';

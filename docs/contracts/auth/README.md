@@ -200,7 +200,7 @@ credentials -> [mfa] -> [password change] -> [enrolment] -> full.
   `pack_invalid`, `pack_type_unsupported`, `pack_staged`, `pack_import_running`, `import_busy`, `book_exists`,
   `bookmark_limit`, `highlight_limit`, `highlight_overlap` (with `existingId`), `epub_unreadable`,
   `language_mismatch` (with `workspaceLanguage`, `bookLanguage`), `source_unavailable`,
-  `source_language_unavailable`, `plugin_no_data`, `licence_mismatch` (installing a staged pack with another
+  `source_language_unavailable`, `licence_mismatch` (installing a staged pack with another
   licence than the review showed), and the existing time-zone codes `unknown_time_zone` and
   `too_many_changes` joined the catalogue. `language_in_use` carries `usage` counts. A handler panic answers 500
   `internal` in the same shape. `invalid_language` now also covers a malformed workspace or admin

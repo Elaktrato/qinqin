@@ -635,8 +635,8 @@ func TestSelectionCheckedOnEveryAIRoute(t *testing.T) {
 	}
 	e.putEntry(t, e.ws, "e1", "你好。")
 	// Bob writes his own entry (the plugin data route is per user) and has no key.
-	body, _ := json.Marshal(map[string]any{"id": "b1", "date": "2026-11-15", "title": "T", "text": "你好。", "source": "typed"})
-	if r := doRaw(t, http.MethodPut, e.url, "/api/plugins/qinqin-journal/data/entry:b1?workspace="+strconv.FormatInt(bobWS, 10), bob, string(body)); r.StatusCode != 200 {
+	body, _ := json.Marshal(map[string]any{"date": "2026-11-15", "title": "T", "text": "你好。", "source": "typed"})
+	if r := doRaw(t, http.MethodPut, e.url, "/api/journal/entries/b1?workspace="+strconv.FormatInt(bobWS, 10), bob, string(body)); r.StatusCode != 200 {
 		t.Fatalf("bob entry: %d", r.StatusCode)
 	}
 	photo := e.uploadOK(t, bob, bobWS)

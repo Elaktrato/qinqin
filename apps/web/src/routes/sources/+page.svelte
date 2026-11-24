@@ -12,9 +12,9 @@
 	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
-	import { webPlugins } from '$lib/plugins';
-	import { listGrammar } from '$lib/plugins/grammar/api';
-	import type { PackInfo } from '$lib/plugins/grammar/types';
+	import { coreFeatures } from '$lib/features';
+	import { listGrammar } from '$lib/features/grammar/api';
+	import type { PackInfo } from '$lib/features/grammar/types';
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
@@ -25,7 +25,7 @@
 		creditView,
 		fontsSection,
 		packTable,
-		pluginCredits,
+		featureCredits,
 		sentencePackSources,
 		strokesSection,
 		themesSection,
@@ -33,12 +33,9 @@
 		type PackTable
 	} from '$lib/sources/sections';
 
-	// Credits declared in code: the app's own, and each web plugin's.
+	// Credits declared in code: the app's own, and each core feature's.
 	const coreViews = coreCredits.map(creditView);
-	const plugins = pluginCredits(
-		webPlugins.map((plugin) => plugin.manifest),
-		coreCredits
-	);
+	const features = featureCredits(coreFeatures, coreCredits);
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
@@ -847,14 +844,14 @@
 		</p>
 	</section>
 
-	{#if plugins.length > 0}
+	{#if features.length > 0}
 		<section>
-			<h2 id="sources-plugins">{t('sources.plugins.title')}</h2>
-			<p class="lede">{t('sources.plugins.lede')}</p>
-			{#each plugins as plugin (plugin.id)}
-				<h3 class="plugin-name">{plugin.name}</h3>
-				<ul class="credits" aria-label={t('sources.plugins.sources', { name: plugin.name })}>
-					{#each plugin.credits as view (view.name)}
+			<h2 id="sources-features">{t('sources.features.title')}</h2>
+			<p class="lede">{t('sources.features.lede')}</p>
+			{#each features as feature (feature.id)}
+				<h3 class="feature-name">{feature.name}</h3>
+				<ul class="credits" aria-label={t('sources.features.sources', { name: feature.name })}>
+					{#each feature.credits as view (view.name)}
 						{@render credit(view, 'h4')}
 					{/each}
 				</ul>
@@ -976,7 +973,7 @@
 		margin-top: 0;
 	}
 
-	.plugin-name {
+	.feature-name {
 		margin: 1.4rem 0 0.4rem;
 	}
 

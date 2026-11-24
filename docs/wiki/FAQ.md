@@ -12,7 +12,7 @@
 
 **Can I use qinqin offline?** Partly: install it as an app over HTTPS and your decks and today's queue work offline. See [Install as an app and study offline](Install-and-offline).
 
-**Is there an Android app?** Not yet. A native client is planned; its rules are the fixtures under `docs/contracts/`.
+**Is there an Android app?** Not yet. It is planned as the web app in a native shell that opens your own server; until then, install the web app ([Install and offline](Install-and-offline)).
 
 **Does a vacation hurt my streak?** No. Vacation days neither extend nor break it, and no reviews pile up ([Decks, limits and vacation](Flashcards-decks-limits-vacation)).
 

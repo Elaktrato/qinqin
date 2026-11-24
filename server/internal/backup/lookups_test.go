@@ -16,8 +16,8 @@ func putLookups(t *testing.T, w *baseWorld, uid, ws int64, data string, deleted 
 	if deleted {
 		del = "2026-11-12T00:00:00Z"
 	}
-	exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
-		VALUES ('qinqin-core', ?, ?, 'lookups', ?, 1, '2026-11-11T08:00:00Z', NULL, ?)`, uid, ws, data, del)
+	exec(t, w.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+		VALUES (?, ?, 'lookups', ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T08:00:00Z', ?)`, uid, ws, data, del)
 }
 
 func lookupsJSON(items ...string) string {
@@ -64,10 +64,10 @@ func TestExportLookupsAndTheirEntryRefs(t *testing.T) {
 		t.Errorf("a tombstoned or foreign history added a ref: %v", refs)
 	}
 	n := 0
-	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
-		var r PluginRow
+	for _, l := range lines(files[PartName(NameRows, 1)]) {
+		var r Row
 		strictDecode(t, []byte(l), &r)
-		if r.PluginID == CorePlugin && r.Key == "lookups" {
+		if r.Key == "lookups" {
 			n++
 		}
 	}
@@ -96,7 +96,7 @@ func TestRestoreLookupsOntoShiftedIds(t *testing.T) {
 		t.Fatal(err)
 	}
 	var data string
-	if err := tg.DB.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key = 'lookups'`, tg.UID).Scan(&data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT data FROM keyed_rows WHERE user_id = ? AND key = 'lookups'`, tg.UID).Scan(&data); err != nil {
 		t.Fatal(err)
 	}
 	var book int64
@@ -142,7 +142,7 @@ func TestInvalidLookupsRowIsDroppedAndCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 	var n int
-	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'lookups'`, tg.UID).Scan(&n)
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key = 'lookups'`, tg.UID).Scan(&n)
 	if n != 0 || res.DroppedRows < 1 {
 		t.Errorf("%d lookups rows restored (want 0), %d dropped", n, res.DroppedRows)
 	}
@@ -159,7 +159,7 @@ func TestLookupsRemapCaps(t *testing.T) {
 		items = append(items, lookupItemJSON(i, 0, from.Add(time.Duration(i)*time.Minute).Format(time.RFC3339)))
 	}
 	ws := int64(1)
-	r, drop := m.PluginRow(PluginRow{PluginID: CorePlugin, WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(lookupsJSON(items...))})
+	r, drop := m.Row(Row{WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(lookupsJSON(items...))})
 	if drop {
 		t.Fatal("dropped")
 	}
@@ -183,7 +183,7 @@ func TestLookupsRemapClampsSums(t *testing.T) {
 	data := lookupsJSON(
 		`{"entryId":1,"count":900000,"firstAt":"2026-11-01T09:00:00Z","lastAt":"2026-11-01T09:00:00Z","sources":{"reader":900000},"books":[]}`,
 		`{"entryId":2,"count":900000,"firstAt":"2026-11-02T09:00:00Z","lastAt":"2026-11-02T09:00:00Z","sources":{"reader":900000},"books":[]}`)
-	r, _ := m.PluginRow(PluginRow{PluginID: CorePlugin, WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(data)})
+	r, _ := m.Row(Row{WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(data)})
 	want := `{"version":1,"clearedAt":null,"items":[{"entryId":9,"count":1000000,"firstAt":"2026-11-01T09:00:00Z","lastAt":"2026-11-02T09:00:00Z","sources":{"reader":1000000},"books":[]}]}`
 	if string(r.Data) != want {
 		t.Errorf("got %s\nwant %s", r.Data, want)
@@ -208,7 +208,7 @@ func TestLookupsRemapCapsSourceKeys(t *testing.T) {
 	data := lookupsJSON(
 		`{"entryId":1,"count":1,"firstAt":"2026-11-01T09:00:00Z","lastAt":"2026-11-01T09:00:00Z","sources":{`+src("a")+`},"books":[]}`,
 		`{"entryId":2,"count":1,"firstAt":"2026-11-02T09:00:00Z","lastAt":"2026-11-02T09:00:00Z","sources":{`+src("b")+`,"search":2},"books":[]}`)
-	r, _ := m.PluginRow(PluginRow{PluginID: CorePlugin, WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(data)})
+	r, _ := m.Row(Row{WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(data)})
 	var got struct {
 		Items []struct {
 			Sources map[string]int64 `json:"sources"`

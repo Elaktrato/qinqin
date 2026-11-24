@@ -2,14 +2,14 @@
 
 ## Status
 
-Accepted, being implemented by #199
+Accepted
 
 Touched by: #199. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
-qinqin's code plugins are compiled into the app (`webPlugins`): nothing is installed at runtime, and the
-Android plan would implement every plugin twice. The plugin layer gives no extensibility; it provides an on/off
+qinqin's code plugins were compiled into the app (a list in the web build): nothing is installed at runtime, and the
+then-native Android plan would have implemented every plugin twice. The plugin layer gives no extensibility; it provides an on/off
 switch, a data namespace and a permission list, and core features already have switches (flashcards and the
 reader since #85). With those two in the core, the plugin machinery serves only the journal and grammar, while
 AI becomes a shared capability (#185, #186) and the AI service is already core on the server. The owner decided
@@ -26,22 +26,50 @@ on 2026-11-23 to retire the code-plugin system (#199).
   - journal entries, AI reviews and annotations, photos and settings move from plugin data to typed storage with
     a contract; the AI provider service stays core and is shared with #185 and #186.
 - **Data packs stay** the one content extension mechanism, unchanged.
-- **Language profiles.** One core definition per language says what it has: reading system (pinyin/zhuyin,
-  kana/romaji, ...), segmentation, tones, stroke data, kana, grammar lessons (when a pack is installed), and
-  which card kinds and practice modes apply. Features and card kinds switch on by profile, not by special cases
-  spread through the code. The profile is a shared contract, so Android uses the same one. A new language means
+- **Language profiles.** One core definition per language says what it has: script, reading system (pinyin,
+  kana), segmentation, tones, stroke data, kana, script variants, and which card kinds and practice modes apply
+  (grammar lessons come from packs of any language, so they are not in a profile). Features and card kinds switch on by profile, not by special cases
+  spread through the code. The profile is a shared contract (Go and web tables pinned to one fixture). A new language means
   its profile, any new reading code and its data packs.
 - **Order.** #199 builds on the study data layer (#193) and the state rewrite (#196): the owner's queue
   (2026-11-23) runs #193, then #196, then #199.
-- **Migration.** A frozen server migration step (like migration 038 for flashcards and the reader) moves the
-  journal and grammar plugin data into the new storage. The backup restore keeps accepting archives with the
-  old plugin-data rows, mapped to the new storage. Old routes and plugin ids for journal and grammar are not
-  kept.
+- **Migration.** Owner direction (2026-11-24): no backwards compatibility; stored data need not survive. The
+  migrations copy what maps one to one and drop the rest (`docs/releases/NEXT.md` says what an upgrade wipes).
+  The backup format becomes 2; format 1 archives are refused. Old routes and plugin ids are removed
+  (`docs/contracts/CHANGELOG.md`).
+
+### Where it lives (#199)
+
+| Part | Server | Web | Contract |
+| --- | --- | --- | --- |
+| Feature switches | `server/internal/features/` (table `feature_switches`, migration 047), `GET /api/features`, `PUT /api/features/{id}` | `apps/web/src/lib/features/` (`index.ts`: the four core features; `switches.svelte.ts`: the session's switches), Settings → Features | `docs/contracts/features/` |
+| Journal | `server/internal/journal/` (tables `journal_entries`, `journal_reviews`, `journal_suggestions`, `journal_settings`, migration 044), `/api/journal/*` | `apps/web/src/lib/features/journal/`, route `/journal` | `docs/contracts/journal/` |
+| Grammar progress | `server/internal/grammar/progress.go` (table `grammar_progress`, migration 045), `/api/grammar/progress` | `apps/web/src/lib/features/grammar/`, route `/grammar` | `docs/contracts/grammar/` |
+| Keyed rows (the core's small settings documents: notes, lookups, known marks, milestones, goals, vacations, layouts, appearance) | `server/internal/keyed/` (table `keyed_rows`, migration 046; `plugin_data` dropped), `/api/rows`, pull/push `rows` | `apps/web/src/lib/sync/keyed.ts` | `docs/contracts/keyed/` |
+| Activity sources | `server/internal/stats/rules.go` | `apps/web/src/lib/activity/sources.ts` | `docs/contracts/events/activity.json` |
+| Language profiles | `server/internal/lang/profile.go` (`ProfileOf`) | `apps/web/src/lib/languageProfiles.ts` (`profileOf`) | `docs/contracts/languages/` |
+| Old plugin URLs | — | `apps/web/src/lib/legacyRoutes.ts`, `apps/web/src/routes/p/[plugin]/[...rest]/+page.ts` (the four features redirect, any other id is 404) | — |
+
+### How to add a language
+
+1. Write its profile: a row in `docs/contracts/languages/profiles.json` (with a `resolve` case) and the same row
+   in `server/internal/lang/profile.go` and `apps/web/src/lib/languageProfiles.ts`. The tests of both tables
+   compare them with the fixture. Without a row the language gets the fallback (no readings, space
+   segmentation, the plain card kinds).
+2. Add its data packs (dictionary, levels, sentences, grammar; `docs/contracts/packages/`).
+3. Only when the profile names something the code cannot yet do (a reading system, dictionary segmentation,
+   tones): add the reading code as a code pack in `server/internal/lang` and the web reading helpers.
+
+No `if language is …` check is added for availability: a check asks the profile.
+
+Later, a course (`docs/superpowers/specs/2026-11-24-courses-design.md` §9–10) hangs off the language profile and a
+`course` pack of the language; nothing of it is built in #199.
 
 ## Consequences
 
-- One way to add a feature (core code plus a switch) and one way to add content (a data pack); Android
-  implements each feature once, with "core features plus switches" instead of a feature-plugin host (#38).
+- One way to add a feature (core code plus a switch) and one way to add content (a data pack). The Android app is
+  the web app in a Capacitor shell (`docs/superpowers/specs/2026-11-23-android-shell-design.md`), so it gets every core
+  feature and its switch with no plugin host at all; the contracts bind the server and the web app.
 - Typed storage with contracts replaces the generic plugin-data namespace for the journal and grammar.
 - A language's capabilities are read from its profile; adding a language does not mean finding the special
   cases.
@@ -64,13 +92,14 @@ Not allowed:
 
 ## Enforcement
 
-Planned by #199 ("done when"): no code-plugin machinery is left; feature switches and data packs work as before;
-language profiles drive which features appear in a workspace, tested with Chinese, Japanese and the Spanish
-demo; backups made before the change restore correctly. #199 names no automated guard against a new code
-plugin or a language special case; until one exists: review.
+- `server/internal/api/legacy_removed_test.go` keeps the plugin routes and tables out; the route table test
+  (`apps/web/src/lib/pwa/sw/routes.fixture.json`) lists every route.
+- The profile tables are pinned to `docs/contracts/languages/profiles.json` (Go and web tests, with zh, ja and
+  es); the feature list to `docs/contracts/features/switches.json`.
+- No automated guard against a new `if language is …` check: review.
 
 ## Open questions
 
-- Where the remaining `qinqin-core` plugin-data rows go (home layout, widget options, notes, lookups,
-  `nav-layout`): typed storage each, or one generic core "settings rows" store. Decided in #199's spec.
-- The form of the language-profile contract under `docs/contracts/`. Decided in #199.
+None. Resolved in #199: the remaining `qinqin-core` rows went to one generic store of keyed rows
+(`docs/contracts/keyed/`), not typed storage each; the language-profile contract is
+`docs/contracts/languages/profiles.json`.

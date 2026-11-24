@@ -36,7 +36,6 @@ func newTokenWorld(t *testing.T) tokenWorld {
 	w := tokenWorld{url: ts.URL, db: sqlDB}
 	w.alice = registerUser(t, ts.URL, "alice", "")
 	w.bob = registerUser(t, ts.URL, "bob", w.alice)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	w.aliceID, w.bobID = userID(t, sqlDB, "alice"), userID(t, sqlDB, "bob")
 	w.wsA = createWorkspace(t, ts.URL, w.alice, "zh", "A")
 	w.wsB = createWorkspace(t, ts.URL, w.alice, "zh", "B")
@@ -86,7 +85,7 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 		t.Errorf("books: %d %s", st, b)
 	}
 	// plugin data list and single row: A's row only.
-	st, b = get("/api/plugins/qinqin-flashcards/data?workspace=" + A)
+	st, b = get("/api/rows?workspace=" + A)
 	var rows []struct {
 		WorkspaceID *int64 `json:"workspaceId"`
 	}
@@ -100,7 +99,7 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 			t.Errorf("plugin data list row of another workspace: %s", b)
 		}
 	}
-	if st, b = get("/api/plugins/qinqin-flashcards/data/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
+	if st, b = get("/api/rows/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
 		t.Errorf("plugin data row: %d %s", st, b)
 	}
 	// stats: the handler is reached with A (no activity rule is installed
@@ -110,21 +109,21 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 	}
 	// The other own workspace, a missing parameter and bob's are refused.
 	for _, path := range []string{"/api/events?workspace=" + B, "/api/events", "/api/library/books?workspace=" + strconv.FormatInt(w.wsC, 10),
-		"/api/plugins/qinqin-flashcards/data", "/api/stats/activity?workspace=" + B} {
+		"/api/rows", "/api/stats/activity?workspace=" + B} {
 		if st, b := get(path); st != 403 || !strings.Contains(b, "token_workspace") {
 			t.Errorf("%s: %d %s, want 403 token_workspace", path, st, b)
 		}
 	}
 	// Writes: A's row changes, B's not; B and user-global are refused.
-	if resp := doRaw(t, http.MethodPut, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
+	if resp := doRaw(t, http.MethodPut, w.url, "/api/rows/known:1?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
 		t.Errorf("put A: %d %s", resp.StatusCode, body(t, resp))
 	}
-	for _, path := range []string{"/api/plugins/qinqin-flashcards/data/known:1?workspace=" + B, "/api/plugins/qinqin-flashcards/data/settings"} {
+	for _, path := range []string{"/api/rows/known:1?workspace=" + B, "/api/rows/home-layout"} {
 		if resp := doRaw(t, http.MethodPut, w.url, path, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 403 {
 			t.Errorf("put %s: %d, want 403", path, resp.StatusCode)
 		}
 	}
-	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+B, w.alice)
+	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/rows/known:1?workspace="+B, w.alice)
 	if strings.Contains(bRow, "changed") {
 		t.Error("B's row changed")
 	}
@@ -153,8 +152,8 @@ func TestTokenCannotReachAnotherUsersData(t *testing.T) {
 		{"GET", bookC + "/chapters/0"},
 		{"GET", "/api/events?workspace=" + C},
 		{"GET", "/api/library/books?workspace=" + C},
-		{"GET", "/api/plugins/qinqin-flashcards/data?workspace=" + C},
-		{"GET", "/api/plugins/qinqin-flashcards/data/known:1?workspace=" + C},
+		{"GET", "/api/rows?workspace=" + C},
+		{"GET", "/api/rows/known:1?workspace=" + C},
 		{"DELETE", bookC},
 	} {
 		tokSt, _ := doJSONBody(t, c.method, w.url, c.path, w.writeAll)

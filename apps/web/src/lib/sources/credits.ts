@@ -1,7 +1,7 @@
-// A credit for third-party material the app or a plugin ships or uses:
+// A credit for third-party material the app ships or uses:
 // the same fields a pack manifest carries (name, licence, attribution,
-// notice), declared in code by the app (coreCredits) and by web plugins
-// (PluginManifest.sources). The Sources page renders them.
+// notice), declared in code by the app (coreCredits) and by the core features
+// (FeatureDef.sources). The Sources page renders them.
 
 /** A licence text the app serves itself, such as `/ARPHICPL.TXT`. */
 export interface LicenseText {

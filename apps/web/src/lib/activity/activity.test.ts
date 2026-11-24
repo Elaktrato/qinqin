@@ -27,24 +27,18 @@ const fold = (
 const SOURCES: ActivitySource[] = [
 	{
 		type: 'review',
-		plugin: 'qinqin-flashcards',
-		label: 'Flashcard reviews',
-		unit: 'count',
-		describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+		feature: 'flashcards',
+		unit: 'count'
 	},
 	{
 		type: 'read',
-		plugin: 'qinqin-reader',
-		label: 'Reading',
-		unit: 'seconds',
-		describe: { one: '{n} minute of reading', other: '{n} minutes of reading' }
+		feature: 'reader',
+		unit: 'seconds'
 	},
 	{
 		type: 'journal',
-		plugin: 'qinqin-journal',
-		label: 'Journal entries',
-		unit: 'count',
-		describe: { one: '{n} journal entry', other: '{n} journal entries' }
+		feature: 'journal',
+		unit: 'count'
 	}
 ];
 

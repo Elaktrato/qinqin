@@ -1,12 +1,12 @@
-// Thin I/O for the lookup history (#72): the qinqin-core `lookups` row of a
-// workspace and the user-global `lookupcfg` switch, through the plugin SDK,
+// Thin I/O for the lookup history (#72): the keyed `lookups` row of a
+// workspace and the user-global `lookupcfg` switch, through lib/sync/keyed.ts,
 // plus the one lookup-specific route DELETE /api/events/lookups. Rules live
 // in lookups.ts, buffering in recorder.ts. Every write here reads the row
 // first in the same call (docs/contracts/lookups/README.md).
 
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
-import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
+import { keyedData, type KeyedScope } from '../sync/keyed';
 import { ownPartition } from '../pwa/partitions';
 import { clearReceipts } from '../pwa/prepareOffline';
 import { holdsLookups } from '../pwa/sw/classify';
@@ -35,8 +35,8 @@ export class LookupEventsNotDeletedError extends Error {
 	}
 }
 
-const rows = (ws: number): KeyedScope => keyedData(CORE_NAMESPACE, ws);
-const global = (): KeyedScope => keyedData(CORE_NAMESPACE, null);
+const rows = (ws: number): KeyedScope => keyedData(ws);
+const global = (): KeyedScope => keyedData(null);
 
 export async function loadHistory(ws: number): Promise<LookupHistory> {
 	return parseLookups(await rows(ws).find(LOOKUPS_KEY));

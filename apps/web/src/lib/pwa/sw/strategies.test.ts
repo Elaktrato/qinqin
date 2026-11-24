@@ -53,10 +53,10 @@ afterEach(() => vi.useRealTimers());
 
 describe('api: the lookup history never reaches Cache Storage (#72)', () => {
 	it('a saved pull holds no lookups rows and a saved event log no lookup events; the live answers are whole', async () => {
-		const pull = { format: 2, collections: { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-flashcards', key: 'known:5', data: {} }] } };
+		const pull = { format: 2, collections: { rows: [{ key: 'lookups', data: { items: [{ entryId: 5 }] } }, { key: 'known:5', data: {} }] } };
 		fetchMock.mockResolvedValueOnce(json(pull));
-		const live = await run(request('/api/sync/pull?v=2&collections=pluginData&workspace=3', { auth: 'Bearer a' }));
-		expect((await live.json()).collections.pluginData).toHaveLength(2);
+		const live = await run(request('/api/sync/pull?v=2&collections=rows&workspace=3', { auth: 'Bearer a' }));
+		expect((await live.json()).collections.rows).toHaveLength(2);
 		const evs = [{ id: '1', type: 'lookup', payload: { query: 'ma' } }, { id: '2', type: 'review' }];
 		fetchMock.mockResolvedValueOnce(json(evs));
 		const liveEvents = await run(request('/api/events?since=1970-01-01T00:00:00Z&workspace=3', { auth: 'Bearer a' }));
@@ -211,10 +211,10 @@ describe('api: network-first, partitioned by credential', () => {
 	});
 
 	it("pull v2 pages with the server's Cache-Control are saved and served offline", async () => {
-		const first = '/api/sync/pull?collections=pluginData&tombstones=1&v=2&workspace=3';
+		const first = '/api/sync/pull?collections=rows&tombstones=1&v=2&workspace=3';
 		const second = '/api/sync/pull?page=p2.abc&v=2';
-		const p1 = { format: 2, collections: { pluginData: [] }, more: true, next: 'p2.abc', cursor: null };
-		const p2 = { format: 2, collections: { pluginData: [] }, more: false, next: null, cursor: 'c2.x' };
+		const p1 = { format: 2, collections: { rows: [] }, more: true, next: 'p2.abc', cursor: null };
+		const p2 = { format: 2, collections: { rows: [] }, more: false, next: null, cursor: 'c2.x' };
 		fetchMock
 			.mockResolvedValueOnce(withServerHeaders(p1, pullPageFixture.cacheControl))
 			.mockResolvedValueOnce(withServerHeaders(p2, pullPageFixture.cacheControl));

@@ -1,7 +1,7 @@
 // Package rows holds the typed study rows (cards, decks, deck settings,
 // limits, FSRS parameter sets, the active set): their wire shapes, the
 // strict wire decode, and the codec to and from the legacy
-// qinqin-flashcards plugin-data rows they replaced. It knows no database.
+// keyed form (backups only). It knows no database.
 // Contract: docs/contracts/study/.
 package rows
 
@@ -14,10 +14,6 @@ import (
 	"slices"
 	"time"
 )
-
-// Namespace is the plugin-data namespace of the legacy rows (and of the
-// keyed study rows that stay plugin data: goals, known marks, vacations).
-const Namespace = "qinqin-flashcards"
 
 // Family is a typed study collection, named as on the wire.
 type Family string
@@ -90,14 +86,13 @@ type Card struct {
 	Meta
 }
 
-// DeckSource is where a copied deck came from: one of three variants.
+// DeckSource is where a copied deck came from: one of two variants (the
+// plugin variant went with the code plugins, #199).
 type DeckSource struct {
-	Type     string // level, plugin, frequency
-	PackID   string // level, frequency
-	Level    string // level
-	PluginID string // plugin
-	Key      string // plugin
-	Size     int64  // frequency, > 0
+	Type   string // level, frequency
+	PackID string // level, frequency
+	Level  string // level
+	Size   int64  // frequency, > 0
 }
 
 // Deck is a `decks` row.
@@ -266,12 +261,6 @@ func (s DeckSource) MarshalJSON() ([]byte, error) {
 			PackID string `json:"packId"`
 			Level  string `json:"level"`
 		}{s.Type, s.PackID, s.Level})
-	case "plugin":
-		return json.Marshal(struct {
-			Type     string `json:"type"`
-			PluginID string `json:"pluginId"`
-			Key      string `json:"key"`
-		}{s.Type, s.PluginID, s.Key})
 	case "frequency":
 		return json.Marshal(struct {
 			Type   string `json:"type"`
@@ -292,7 +281,7 @@ func (s *DeckSource) UnmarshalJSON(raw []byte) error {
 	if err := json.Unmarshal(m["type"], &typ); err != nil {
 		return errors.New("source type")
 	}
-	want := map[string][]string{"level": {"type", "packId", "level"}, "plugin": {"type", "pluginId", "key"}, "frequency": {"type", "packId", "size"}}[typ]
+	want := map[string][]string{"level": {"type", "packId", "level"}, "frequency": {"type", "packId", "size"}}[typ]
 	if want == nil || !sameKeys(m, want) {
 		return errors.New("source members")
 	}
@@ -300,15 +289,13 @@ func (s *DeckSource) UnmarshalJSON(raw []byte) error {
 	switch typ {
 	case "level":
 		err = errors.Join(json.Unmarshal(m["packId"], &out.PackID), json.Unmarshal(m["level"], &out.Level))
-	case "plugin":
-		err = errors.Join(json.Unmarshal(m["pluginId"], &out.PluginID), json.Unmarshal(m["key"], &out.Key))
 	case "frequency":
 		err = errors.Join(json.Unmarshal(m["packId"], &out.PackID), json.Unmarshal(m["size"], &out.Size))
 		if err == nil && out.Size <= 0 {
 			err = errors.New("source size")
 		}
 	}
-	if err != nil || isNull(m["packId"]) || isNull(m["level"]) || isNull(m["pluginId"]) || isNull(m["key"]) {
+	if err != nil || isNull(m["packId"]) || isNull(m["level"]) {
 		return errors.New("source member types")
 	}
 	*s = out
@@ -437,7 +424,7 @@ func Decode(f Family, raw json.RawMessage) (Row, error) {
 			return nil, fmt.Errorf("%w: %s row: %s: %v", ErrInvalid, f, k, err)
 		}
 	}
-	// The zero time is no edit time (a plugin-data push refuses it too): a
+	// The zero time is no edit time (a keyed-row push refuses it too): a
 	// client that forgot to stamp the item must not win or lose by accident.
 	if r.M().UpdatedAt.IsZero() {
 		return nil, fmt.Errorf("%w: %s row: updatedAt is the zero time", ErrInvalid, f)

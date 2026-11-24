@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { hasReadings } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languageProfiles';
 	import { UserError } from '$lib/api/userError';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
@@ -112,7 +114,7 @@
 
 	// The chosen script applies once its converter has loaded; until then
 	// (or if loading fails) the text stays as it is.
-	const wantedVariant = $derived<Variant>(book?.language === 'zh' ? prefs.variant : 'original');
+	const wantedVariant = $derived<Variant>(profileOf(book?.language ?? '').variants ? prefs.variant : 'original');
 	let variant = $state<Variant>('original');
 	let variantError = $state('');
 	$effect(() => {
@@ -934,9 +936,9 @@
 		jumpToBookmark(b);
 	}
 
-	// Display holds the readings, ruby and font settings: Chinese and
-	// Japanese books, or any book with ruby of its own.
-	const hasDisplay = $derived(book?.language === 'ja' || book?.language === 'zh' || hasRuby);
+	// Display holds the readings, ruby and font settings: books of a language
+	// with readings (its profile), or any book with ruby of its own.
+	const hasDisplay = $derived(hasReadings(book?.language ?? '') || hasRuby);
 	const railTabs = $derived([
 		{ id: 'contents' as const, label: t('reader.rail.contents'), icon: 'contents' as const },
 		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), icon: 'bookmark' as const, alert: bookmarksFailed || bookmarks.error !== '' },

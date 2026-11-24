@@ -86,7 +86,7 @@ describe('layout with a restricted session and the real api client', () => {
 		watch.disconnect();
 		expect(count('/api/me/time-zone')).toBeLessThanOrEqual(1);
 		expect(count('/api/workspaces')).toBe(0);
-		expect(count('/api/plugins')).toBe(0);
+		expect(count('/api/features')).toBe(0);
 		expect(count('/api/auth/me')).toBeLessThanOrEqual(2);
 		expect(sawAlert).toBe(false);
 		expect(container.querySelector('.workspace-error')).toBeNull();

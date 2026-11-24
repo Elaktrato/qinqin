@@ -308,8 +308,8 @@ func TestCustomEndToEndWithAitest(t *testing.T) {
 	if st := statusOfTok(t, e.url, bob); st.Active == nil || st.Active.Provider != sp.ID || st.Active.Model != "fake-model" {
 		t.Fatalf("status = %+v", st)
 	}
-	body, _ := json.Marshal(map[string]any{"id": "b1", "date": "2026-11-15", "title": "T", "text": "你好世界。", "source": "typed"})
-	if r := doRaw(t, http.MethodPut, e.url, "/api/plugins/qinqin-journal/data/entry:b1?workspace="+itoa(bobWS), bob, string(body)); r.StatusCode != 200 {
+	body, _ := json.Marshal(map[string]any{"date": "2026-11-15", "title": "T", "text": "你好世界。", "source": "typed"})
+	if r := doRaw(t, http.MethodPut, e.url, "/api/journal/entries/b1?workspace="+itoa(bobWS), bob, string(body)); r.StatusCode != 200 {
 		t.Fatalf("entry: %d", r.StatusCode)
 	}
 	resp = doJSON(t, http.MethodPost, e.url, "/api/journal/review", bob, map[string]any{"workspaceId": bobWS, "entryId": "b1"})

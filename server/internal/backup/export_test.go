@@ -76,7 +76,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	// manifest hashes and byte counts match the bytes
 	var m Manifest
 	strictDecode(t, files[NameManifest], &m)
-	if m.Format != FormatName || m.FormatVersion != 1 || m.User.Username != "alice" || m.User.ID != w.AliceUID {
+	if m.Format != FormatName || m.FormatVersion != 2 || m.User.Username != "alice" || m.User.ID != w.AliceUID {
 		t.Errorf("manifest %+v", m)
 	}
 	if len(m.Files) != len(order)-1 {
@@ -88,7 +88,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 			t.Errorf("%s: hash or size differs from the manifest", f.Name)
 		}
 	}
-	if man.Counts["workspaces"] != 2 || man.Counts["events"] != 4 || man.Counts["pluginData"] != 5 ||
+	if man.Counts["workspaces"] != 2 || man.Counts["events"] != 4 || man.Counts["rows"] != 5 ||
 		man.Counts["overlays"] != 1 || man.Counts["sentences"] != 1 || man.Counts["books"] != 1 ||
 		man.Counts["bookmarks"] != 1 || man.Counts["highlights"] != 1 {
 		t.Errorf("counts = %v", man.Counts)
@@ -98,17 +98,14 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 			t.Errorf("writer produced the unknown name %q", n)
 		}
 	}
-	// plugin data: tombstone absent, user-global rows present with null workspace, NULL modified_at kept null
-	rows := lines(files[PartName(NamePluginData, 1)])
+	// rows: tombstone absent, user-global rows present with null workspace, every row with its edit time
+	rows := lines(files[PartName(NameRows, 1)])
 	global, nullModified := 0, 0
 	for _, l := range rows {
-		var r PluginRow
+		var r Row
 		strictDecode(t, []byte(l), &r)
 		if r.Key == "card:TOMBSTONE" || r.Key == "deck:GONE" {
 			t.Error("tombstoned row exported")
-		}
-		if r.Key == "card:LEFTOVER" {
-			t.Error("a leftover typed-family plugin row was exported")
 		}
 		if r.WorkspaceID == nil {
 			global++
@@ -117,27 +114,27 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 			nullModified++
 		}
 	}
-	if len(rows) != 5 || global != 2 || nullModified != 1 {
-		t.Errorf("plugin rows %d global %d nullModified %d", len(rows), global, nullModified)
+	if len(rows) != 5 || global != 2 || nullModified != 0 {
+		t.Errorf("rows %d global %d nullModified %d", len(rows), global, nullModified)
 	}
 	// typed cards travel as their legacy qinqin-flashcards rows (rows.ToLegacy)
-	cards := map[string]PluginRow{}
+	cards := map[string]Row{}
 	for _, l := range rows {
-		var r PluginRow
+		var r Row
 		strictDecode(t, []byte(l), &r)
 		if strings.HasPrefix(r.Key, "card:") {
 			cards[r.Key] = r
 		}
 	}
 	rev := cards["card:c-reverse-"+strconv.FormatInt(w.E1, 10)]
-	if len(cards) != 3 || rev.PluginID != FlashcardsPlugin || rev.WorkspaceID == nil || *rev.WorkspaceID != w.Alice.WS1 ||
+	if len(cards) != 3 || rev.WorkspaceID == nil || *rev.WorkspaceID != w.Alice.WS1 ||
 		rev.Version != 2 || rev.UpdatedAt != "2026-11-10T08:00:00Z" || rev.ModifiedAt == nil || *rev.ModifiedAt != "2026-11-10T08:00:00Z" {
 		t.Errorf("exported cards %+v", cards)
 	}
 	if want := fmt.Sprintf(`{"createdAt":"2026-11-10T08:00:00Z","deckIds":["general"],"entryId":%d,"id":"c-reverse-%d","kind":"reverse","x-unknown":{"b":1,"a":2}}`, w.E1, w.E1); string(rev.Data) != want {
 		t.Errorf("reverse card data %s, want %s", rev.Data, want)
 	}
-	if strings.Contains(strings.Join(order, ","), "deletion") || m.FormatVersion != 1 {
+	if strings.Contains(strings.Join(order, ","), "deletion") || m.FormatVersion != 2 {
 		t.Errorf("archive names %v format %d", order, m.FormatVersion)
 	}
 	// own sentences only, none tombstoned
@@ -173,7 +170,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	// account
 	var acc Account
 	strictDecode(t, files[NameAccount], &acc)
-	if acc.Username != "alice" || len(acc.TimeZones) != 2 || acc.TimeZones[0].From != nil || len(acc.PluginStates) != 1 {
+	if acc.Username != "alice" || len(acc.TimeZones) != 2 || acc.TimeZones[0].From != nil || len(acc.Features) != 1 {
 		t.Errorf("account %+v", acc)
 	}
 	// book content is byte-identical
@@ -235,7 +232,7 @@ func TestWriteUserEmptyUser(t *testing.T) {
 	carol := mkUser(t, w.DB, "carol")
 	data, man := exportBytes(t, w, carol)
 	files, _ := unzipAll(t, data)
-	if man.Counts["events"] != 0 || files[NameWorkspaces] == nil || files[PartName(NamePluginData, 1)] != nil {
+	if man.Counts["events"] != 0 || files[NameWorkspaces] == nil || files[PartName(NameRows, 1)] != nil {
 		t.Errorf("empty export: %v", man.Counts)
 	}
 }
@@ -247,7 +244,7 @@ func TestWriteUserSplitsEveryFamilyByBytesAndTheArchiveStillOpens(t *testing.T) 
 	t.Cleanup(func() { partBytes = old })
 	data, man := exportBytes(t, w, w.AliceUID)
 	files, order := unzipAll(t, data)
-	for _, fam := range []string{FamEvents, NamePluginData} {
+	for _, fam := range []string{FamEvents, NameRows} {
 		n := 0
 		for _, name := range order {
 			if FamilyOf(name) == fam {
@@ -258,8 +255,8 @@ func TestWriteUserSplitsEveryFamilyByBytesAndTheArchiveStillOpens(t *testing.T) 
 			}
 		}
 		want := man.Counts["events"]
-		if fam == NamePluginData {
-			want = man.Counts["pluginData"]
+		if fam == NameRows {
+			want = man.Counts["rows"]
 		}
 		if n != want {
 			t.Errorf("%s: %d parts, want %d", fam, n, want)
@@ -276,8 +273,8 @@ func TestWriteUserSplitsEveryFamilyByBytesAndTheArchiveStillOpens(t *testing.T) 
 	}
 	defer a.Close()
 	rows := 0
-	a.PluginRows(func(PluginRow) error { rows++; return nil })
-	if rows != man.Counts["pluginData"] {
+	a.Rows(func(Row) error { rows++; return nil })
+	if rows != man.Counts["rows"] {
 		t.Errorf("read back %d plugin rows", rows)
 	}
 }
@@ -311,46 +308,6 @@ func TestWriteUserRefusesToProduceWhatARestoreWouldRefuse(t *testing.T) {
 	}
 }
 
-// A typed-family plugin row (a leftover a downgraded binary wrote) is never
-// exported, readable or not (#198 review: the typed rows are the only study
-// state); the counts the dry run shows agree.
-func TestExportNeverCarriesTypedFamilyLeftovers(t *testing.T) {
-	w := newWorld(t)
-	uid := w.AliceUID
-	e1 := strconv.FormatInt(w.E1, 10)
-	ins := func(ws int64, key, data string) {
-		exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-			VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-10T08:00:00Z', '2026-11-10T08:00:00Z')`, uid, ws, key, data)
-	}
-	// readable and unshadowed: still not exported
-	ins(w.Alice.WS2, "deck:PLAIN", `{"id":"PLAIN","name":"n","createdAt":"t"}`)
-	// readable but a typed row holds the key: only the typed row goes
-	ins(w.Alice.WS1, "card:c-vocab-"+e1, `{"id":"c-vocab-`+e1+`","kind":"vocab","entryId":`+e1+`,"deckIds":["SHADOWED"],"createdAt":"t"}`)
-	// readable but in another user's workspace: never
-	ins(w.Bob.WS1, "deck:FOREIGN", `{"id":"FOREIGN","name":"n","createdAt":"t"}`)
-	data, man := exportBytes(t, w, uid)
-	files, _ := unzipAll(t, data)
-	keys := map[string]int{}
-	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
-		var r PluginRow
-		strictDecode(t, []byte(l), &r)
-		keys[r.Key]++
-		if strings.Contains(string(r.Data), "SHADOWED") {
-			t.Error("a shadowed leftover was exported")
-		}
-	}
-	if keys["deck:PLAIN"] != 0 || keys["card:c-vocab-"+e1] != 1 || keys["deck:FOREIGN"] != 0 || keys["card:LEFTOVER"] != 0 {
-		t.Errorf("exported keys %v", keys)
-	}
-	c, err := CurrentCounts(context.Background(), w.DB, uid)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 5 || c.Cards != 3 {
-		t.Errorf("CurrentCounts %+v, export counts %v", c, man.Counts)
-	}
-}
-
 // Every typed study family travels as its legacy qinqin-flashcards row
 // (rows.ToLegacy): key, data, version, updatedAt and modifiedAt of the
 // typed row; the archive opens (no duplicate keys) and stays format v1.
@@ -379,13 +336,13 @@ func TestExportEveryTypedFamilyAsItsLegacyRow(t *testing.T) {
 		want[key] = r
 	}
 	data, man := exportBytes(t, w, uid)
-	if man.FormatVersion != 1 {
+	if man.FormatVersion != 2 {
 		t.Errorf("formatVersion %d", man.FormatVersion)
 	}
 	files, _ := unzipAll(t, data)
-	got := map[string]PluginRow{}
-	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
-		var r PluginRow
+	got := map[string]Row{}
+	for _, l := range lines(files[PartName(NameRows, 1)]) {
+		var r Row
 		strictDecode(t, []byte(l), &r)
 		if r.WorkspaceID != nil && *r.WorkspaceID == w.Alice.WS2 {
 			got[r.Key] = r
@@ -401,7 +358,7 @@ func TestExportEveryTypedFamilyAsItsLegacyRow(t *testing.T) {
 		var a, b any
 		json.Unmarshal(g.Data, &a)
 		json.Unmarshal(wantData, &b)
-		if wantKey != key || fmt.Sprint(a) != fmt.Sprint(b) || g.PluginID != FlashcardsPlugin || g.Version != 7 ||
+		if wantKey != key || fmt.Sprint(a) != fmt.Sprint(b) || g.Version != 7 ||
 			g.UpdatedAt != "2026-11-12T10:00:00Z" || g.ModifiedAt == nil || *g.ModifiedAt != "2026-11-12T09:59:58Z" {
 			t.Errorf("%s exported %+v %s, want %s", key, g, g.Data, wantData)
 		}

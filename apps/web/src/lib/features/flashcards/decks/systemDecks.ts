@@ -1,19 +1,10 @@
-// System decks: level decks of installed level packs and decks a plugin
-// ships. They are computed, never stored (nothing to sync or migrate, a
+// System decks: the level decks of installed level packs. They are computed, never stored (nothing to sync or migrate, a
 // pack update shows at once, read-only by construction). Copying one into
 // an owned deck uses the deterministic ids below, which every client
 // derives identically (docs/contracts/decks/system-deck-ids.json).
 
 import type { EntryBase, Scheme } from '$lib/api/types';
 import type { DeckSource } from '$lib/study/types';
-
-/** A deck a plugin ships: its items are entry ids. */
-export interface SystemDeckDef {
-	key: string;
-	title: string;
-	language: string;
-	entryIds: number[];
-}
 
 export interface LevelDeck {
 	kind: 'level';
@@ -79,11 +70,6 @@ export function ownedLevelDeckId(packId: string, level: string): string {
 	return `d-lvl-${slugId(packId)}-${fnv1a32(`${packId}\u0000${level}`)}`;
 }
 
-/** The id of the owned copy of a plugin deck. */
-export function ownedPluginDeckId(pluginId: string, key: string): string {
-	return `d-plg-${slugId(pluginId)}-${fnv1a32(`${pluginId}\u0000${key}`)}`;
-}
-
 /**
  * The id of the owned copy of a starter deck (#75):
  * `d-frq-<slug(packId)>-<fnv1a32(packId NUL "top-" size)>`.
@@ -97,8 +83,6 @@ export function copiedFrom(source: DeckSource): string {
 	switch (source.type) {
 		case 'level':
 			return `${source.packId} · ${source.level}`;
-		case 'plugin':
-			return `${source.pluginId} · ${source.key}`;
 		case 'frequency':
 			return `${source.packId} · Top ${source.size}`;
 	}

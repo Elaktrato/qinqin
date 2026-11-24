@@ -3,6 +3,8 @@
 // "variant" when the script cannot be told. Japanese forms are never
 // variants (they stay in the "Also written" line).
 
+import { profileOf } from '$lib/languageProfiles';
+
 export type VariantLabel = 'traditional' | 'simplified' | 'variant';
 
 export function variantLabel(
@@ -13,7 +15,7 @@ export function variantLabel(
 	},
 	variant: { written: string }
 ): VariantLabel {
-	if (entry.language !== 'zh') return 'variant';
+	if (!profileOf(entry.language).variants) return 'variant';
 	const forms = entry.forms ?? [];
 	if (forms.some((f) => f.text === variant.written && (f.flags ?? []).includes('trad'))) {
 		return 'traditional';

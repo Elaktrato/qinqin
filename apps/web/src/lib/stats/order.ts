@@ -1,6 +1,6 @@
 // Stats → Overview's default arrangement: the design's order first, then
 // every other available widget in registry order. The widget surface
-// contract is untouched; a plugin widget is never dropped.
+// contract is untouched; a feature widget is never dropped.
 
 import type { WidgetDef } from '$lib/widgets/types';
 
@@ -18,7 +18,7 @@ export const STATS_ORDER: readonly string[] = [
 /**
  * statsOrder places the default ids in their design order, then every
  * other widget in the order it came in (the registry's: core, features,
- * plugins). A default id that is unavailable is simply absent.
+ * features). A default id that is unavailable is simply absent.
  */
 export function statsOrder(widgets: readonly WidgetDef[]): WidgetDef[] {
 	const byId = new Map<string, WidgetDef>();

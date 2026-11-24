@@ -13,7 +13,6 @@ import (
 
 	"qinqin/internal/db"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
@@ -22,7 +21,7 @@ type largeFixture struct {
 	db    *sql.DB
 	path  string
 	user  int64
-	rules []plugins.RuleOf
+	rules []stats.Rule
 	rows  int
 }
 

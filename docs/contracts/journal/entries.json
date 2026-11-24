@@ -1,0 +1,42 @@
+{
+ "version": 1,
+ "rule": "journal/entries",
+ "note": "The journal's typed documents (#199): an entry, the settings and their validation on PUT. The server stamps updatedAt; createdAt is the first write's and never changes.",
+ "entry": {
+  "id": "01JD0000000000000000000001",
+  "date": "2026-11-19",
+  "title": "Monday",
+  "text": "今天我去了学校。",
+  "source": "typed",
+  "createdAt": "2026-11-19T08:00:00.123Z",
+  "updatedAt": "2026-11-19T08:05:00Z"
+ },
+ "puts": [
+  {"name": "a typed entry", "id": "01JD0000000000000000000001", "body": {"date": "2026-11-19", "title": "Monday", "text": "今天我去了学校。", "source": "typed", "createdAt": "2026-11-19T08:00:00.123Z"}, "ok": true},
+  {"name": "a photo entry without title or createdAt", "id": "E-2_b", "body": {"date": "2026-02-28", "text": "", "source": "photo"}, "ok": true},
+  {"name": "line breaks and tabs are text", "id": "E3", "body": {"date": "2026-11-19", "title": "a", "text": "one\nline\ttwo\r\n", "source": "typed"}, "ok": true},
+  {"name": "an empty id", "id": "", "body": {"date": "2026-11-19", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "an id with a dot", "id": "a.b", "body": {"date": "2026-11-19", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "an id of 65 characters", "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "body": {"date": "2026-11-19", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "no calendar date", "id": "E4", "body": {"date": "2026-02-30", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "another date form", "id": "E4", "body": {"date": "19.11.2026", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "an unknown source", "id": "E4", "body": {"date": "2026-11-19", "text": "t", "source": "voice"}, "ok": false},
+  {"name": "a missing source", "id": "E4", "body": {"date": "2026-11-19", "text": "t"}, "ok": false},
+  {"name": "a control character in the title", "id": "E4", "body": {"date": "2026-11-19", "title": "a\u0000b", "text": "t", "source": "typed"}, "ok": false},
+  {"name": "createdAt that is no time", "id": "E4", "body": {"date": "2026-11-19", "text": "t", "source": "typed", "createdAt": "yesterday"}, "ok": false}
+ ],
+ "limits": {"idPattern": "^[0-9A-Za-z_-]{1,64}$", "titleCodePoints": 200, "textCodePoints": 50000, "guidanceCodePoints": 2000},
+ "settings": {
+  "defaults": {"guidance": "", "explanationLanguage": "en"},
+  "explanationLanguages": ["en", "de", "fr", "es", "it", "pt", "nl", "ru", "ja", "zh-Hans", "zh-Hant", "ko"],
+  "puts": [
+   {"name": "German explanations", "body": {"guidance": "Be strict about particles.", "explanationLanguage": "de"}, "ok": true},
+   {"name": "an unknown language", "body": {"guidance": "", "explanationLanguage": "klingon"}, "ok": false},
+   {"name": "a regional tag that is not listed", "body": {"guidance": "", "explanationLanguage": "zh"}, "ok": false}
+  ],
+  "reads": [
+   {"name": "a stored language that is no longer listed reads as en", "stored": {"guidance": "g", "explanationLanguage": "xx"}, "expect": {"guidance": "g", "explanationLanguage": "en"}},
+   {"name": "anything but an object reads as the defaults", "stored": 42, "expect": {"guidance": "", "explanationLanguage": "en"}}
+  ]
+ }
+}

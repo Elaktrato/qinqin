@@ -141,7 +141,7 @@ The full documentation is the [qinqin wiki](https://github.com/Elaktrato/qinqin/
 - **Building a client**: [API overview](https://github.com/Elaktrato/qinqin/wiki/API-Overview),
   [API reference](https://github.com/Elaktrato/qinqin/wiki/API-Reference),
   [API access tokens](https://github.com/Elaktrato/qinqin/wiki/API-Access-tokens),
-  [Plugin format](https://github.com/Elaktrato/qinqin/wiki/Plugin-format),
+  [Core data API](https://github.com/Elaktrato/qinqin/wiki/Core-data-api),
   [Data pack format](https://github.com/Elaktrato/qinqin/wiki/Data-pack-format), and the shared rules with
   JSON fixtures in [`docs/contracts/`](docs/contracts/overview.md).
 - **Reference**: [Data and licences](https://github.com/Elaktrato/qinqin/wiki/Data-and-licences),

@@ -1,6 +1,7 @@
 // Word Salad: pure tokenising, tiering, shuffling and grading logic. No UI.
 // All offsets and splitting work in code points, never UTF-16 units.
 
+import { profileOf } from '../languageProfiles';
 import type { ReviewGrade } from './types';
 
 /** 0 = whole words, 1 = words (stability >= 4), 2 = single characters (>= 21). */
@@ -40,9 +41,9 @@ function isOpeningPunct(token: string): boolean {
 	return OPENING_PUNCT.test(token);
 }
 
+/** A language whose words are found by dictionary segmentation, not spaces (its profile, #199). */
 function isCjk(language: string): boolean {
-	const base = language.toLowerCase().split(/[-_]/)[0];
-	return base === 'zh' || base === 'ja';
+	return profileOf(language).segmentation === 'dictionary';
 }
 
 const WHITESPACE = /^\s+$/u;

@@ -1,0 +1,17 @@
+{
+ "username": "alice",
+ "timeZones": [
+  {
+   "zone": "Europe/Berlin",
+   "from": null,
+   "createdAt": "2026-11-01T00:00:00Z"
+  }
+ ],
+ "interfaceLanguage": "en",
+ "features": [
+  {
+   "id": "flashcards",
+   "enabled": true
+  }
+ ]
+}

@@ -18,6 +18,8 @@ func TestCorrectionFitsLanguage(t *testing.T) {
 		{"zh", "", true}, {"zh", "。", true}, {"en", ";", true}, {"en", "", true}, {"ja", "、", true},
 		{"zh", "了 !", true}, {"zh", "A。", false}, {"en", "去了,", false},
 		{"xx", "anything", true}, {"xx", "去了", true},
+		// The script comes from the language profile, by the primary subtag (#199).
+		{"zh-TW", "去了", true}, {"zh-TW", "went", false}, {"ja-JP", "ikimashita", false},
 	}
 	for _, c := range cases {
 		if got := journal.CorrectionFitsLanguage(c.lang, c.s); got != c.want {

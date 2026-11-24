@@ -30,12 +30,12 @@
 		"reason": "An example URL as the placeholder of the site-address field: the same in every language."
 	},
 	{
-		"file": "lib/plugins/journal/manifest.ts",
+		"file": "lib/features/journal/manifest.ts",
 		"text": "Tesseract OCR",
 		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
 	},
 	{
-		"file": "lib/plugins/journal/manifest.ts",
+		"file": "lib/features/journal/manifest.ts",
 		"text": "Anthropic Go SDK",
 		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
 	},

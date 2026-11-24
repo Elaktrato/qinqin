@@ -39,16 +39,15 @@ describe('test-only legacy codec (docs/contracts/backup/study-rows.json)', () =>
 	it('typedPull moves readable workspace rows and leaves the rest', () => {
 		const card = { id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['general'], createdAt: 'x' };
 		const pull = typedPull({
-			pluginData: [
-				{ pluginId: 'qinqin-flashcards', key: 'card:c1', workspaceId: 7, data: card, version: 3, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null },
-				{ pluginId: 'qinqin-flashcards', key: 'card:c2', workspaceId: 7, data: { id: 'other' } },
-				{ pluginId: 'qinqin-flashcards', key: 'known:5', workspaceId: 7, data: {} },
-				{ pluginId: 'qinqin-core', key: 'card:c1', workspaceId: 7, data: card }
+			rows: [
+				{ key: 'card:c1', workspaceId: 7, data: card, version: 3, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null },
+				{ key: 'card:c2', workspaceId: 7, data: { id: 'other' } },
+				{ key: 'known:5', workspaceId: 7, data: {} }
 			]
 		});
 		expect((pull.cards as unknown[]).length).toBe(1);
 		expect(pull.cards).toMatchObject([{ id: 'c1', version: 3, workspaceId: 7 }]);
-		expect((pull.pluginData as { key: string }[]).map((r) => r.key)).toEqual(['card:c2', 'known:5', 'card:c1']);
+		expect((pull.rows as { key: string }[]).map((r) => r.key)).toEqual(['card:c2', 'known:5']);
 		expect(pull.decks).toEqual([]);
 	});
 });

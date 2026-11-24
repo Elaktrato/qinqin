@@ -36,7 +36,6 @@ func newBackupEnv(t *testing.T, opts ...api.Option) *backupEnv {
 	opts = append([]api.Option{api.WithAuthPolicy(p), api.WithStageDone(e.done)}, opts...)
 	e.ts = httptest.NewServer(api.New(sqlDB, e.data, nil, opts...))
 	t.Cleanup(e.ts.Close)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	return e
 }
 
@@ -139,12 +138,12 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	aliceID, bobID := userID(t, e.db, "alice"), userID(t, e.db, "bobby")
 	wsA := createWorkspace(t, e.ts.URL, alice, "zh", "")
 	wsB := createWorkspace(t, e.ts.URL, bob, "zh", "")
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:keep?workspace="+itoa(wsA), alice, `{"id":"keep"}`)
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/vacation:V1", alice, `{"version":1,"id":"V1","scope":{"workspaces":[`+itoa(wsA)+`]}}`)
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:bobs?workspace="+itoa(wsB), bob, `{"id":"bobs"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/rows/milestone:keep?workspace="+itoa(wsA), alice, `{"id":"keep"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/rows/vacation:V1", alice, `{"version":1,"id":"V1","scope":{"workspaces":[`+itoa(wsA)+`]}}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/rows/milestone:bobs?workspace="+itoa(wsB), bob, `{"id":"bobs"}`)
 	archive := e.export(t, alice)
 	// change alice's data afterwards, and a second device of hers
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:later?workspace="+itoa(wsA), alice, `{"id":"later"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/rows/milestone:later?workspace="+itoa(wsA), alice, `{"id":"later"}`)
 	other := login(t, e.ts.URL, "alice")
 
 	code, rt, eb := e.upload(t, alice, archive)
@@ -163,7 +162,7 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	}
 	st, view := e.status(t, alice, rt)
 	if st != 200 || view.Status != "ready" || view.Report == nil || view.Report.Backup.Username != "alice" ||
-		view.Report.Replaces["pluginData"] != 3 || view.Report.Restores["pluginData"] != 2 {
+		view.Report.Replaces["rows"] != 3 || view.Report.Restores["rows"] != 2 {
 		t.Fatalf("status %d %+v %+v err %+v", st, view, view.Report, view.Error)
 	}
 	// destructive: password, username
@@ -176,7 +175,7 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice"}); c != 403 || eb.Error != "current_password_required" {
 		t.Errorf("no password = %d %+v", c, eb)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:later'`, aliceID); n != 1 {
+	if n := e.count(t, `SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key = 'milestone:later'`, aliceID); n != 1 {
 		t.Fatal("data changed before the restore was confirmed")
 	}
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice", "password": "secret-pass-alice", "surprise": 1}); c != 400 {
@@ -190,20 +189,20 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	if view.Status != "done" || view.Result == nil {
 		t.Fatalf("after apply: %+v", view)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:later'`, aliceID); n != 0 {
+	if n := e.count(t, `SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key = 'milestone:later'`, aliceID); n != 0 {
 		t.Error("data after the backup survived the restore")
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key IN ('test:keep','vacation:V1')`, aliceID); n != 2 {
+	if n := e.count(t, `SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key IN ('milestone:keep','vacation:V1')`, aliceID); n != 2 {
 		t.Errorf("restored rows: %d", n)
 	}
 	var vac string
-	e.db.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND key = 'vacation:V1'`, aliceID).Scan(&vac)
+	e.db.QueryRow(`SELECT data FROM keyed_rows WHERE user_id = ? AND key = 'vacation:V1'`, aliceID).Scan(&vac)
 	var newWS int64
 	e.db.QueryRow(`SELECT id FROM workspaces WHERE user_id = ?`, aliceID).Scan(&newWS)
 	if !strings.Contains(vac, `"workspaces":[`+itoa(newWS)+`]`) || newWS == wsA {
 		t.Errorf("vacation %s, workspace %d (old %d)", vac, newWS, wsA)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:bobs'`, bobID); n != 1 {
+	if n := e.count(t, `SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key = 'milestone:bobs'`, bobID); n != 1 {
 		t.Error("bob's data was touched")
 	}
 	// sessions: the restoring one lives, the other device is signed out
@@ -285,8 +284,8 @@ func TestRestoreInvalidArchivesAreMarkedInvalidAndChangeNothing(t *testing.T) {
 	}{
 		"not a zip": {[]byte("hello"), "backup_invalid"},
 		"zip slip":  {build(func(m map[string][]byte) { m["../../etc/passwd"] = []byte("x") }), "backup_invalid"},
-		"version 2": {build(func(m map[string][]byte) {
-			m["manifest.json"] = bytes.Replace(m["manifest.json"], []byte(`"formatVersion": 1`), []byte(`"formatVersion": 2`), 1)
+		"version 1": {build(func(m map[string][]byte) {
+			m["manifest.json"] = bytes.Replace(m["manifest.json"], []byte(`"formatVersion": 2`), []byte(`"formatVersion": 1`), 1)
 			delete(m, "../../etc/passwd")
 		}), "backup_version_unsupported"},
 	}
@@ -336,7 +335,7 @@ func TestRestoreUnresolvedNeedsTheAcknowledgement(t *testing.T) {
 	}
 	// cards are typed study rows (migration 038); a leftover plugin row would count too
 	cards := `SELECT (SELECT COUNT(*) FROM study_cards WHERE user_id = ?1 AND deleted_at IS NULL) +
-		(SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND key LIKE 'card:%')`
+		(SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?1 AND key LIKE 'card:%')`
 	if n := e.count(t, cards, aliceID); n != 1 {
 		t.Error("data changed")
 	}

@@ -14,6 +14,7 @@ import { isVacationDay, type Run } from '../study/vacation';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { reviewsKey } from './replay';
 import { isSkippedDate, isoWeekday, weekDates, weekOf } from './week';
+import { activityLabel } from '../activity/sources';
 
 export type DayState = 'active' | 'inactive' | 'vacation' | 'upcoming' | 'skipped';
 
@@ -178,7 +179,7 @@ export function weekSummary(passes: WeekPasses, input: WeekInputs): WeekSummary 
 
 	const others = (activity?.sources ?? [])
 		.filter((s) => !BUILT_IN_TYPES.has(s.type))
-		.sort((a, b) => a.label.localeCompare(b.label) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+		.sort((a, b) => activityLabel(a).localeCompare(activityLabel(b)) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
 		.map((s) => activityRow(`activity:${s.type}`, s.type, s.unit))
 		.filter((row) => (row.value ?? 0) > 0 || (row.previous ?? 0) > 0);
 

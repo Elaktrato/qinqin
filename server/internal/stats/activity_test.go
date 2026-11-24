@@ -13,7 +13,6 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
@@ -27,19 +26,7 @@ func newUser(t testing.TB, sqlDB *sql.DB, name string) int64 {
 	return u.ID
 }
 
-func builtinRules(t testing.TB, sqlDB *sql.DB) []plugins.RuleOf {
-	t.Helper()
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
-	rules, err := plugins.ActivityRules(context.Background(), sqlDB)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return rules
-}
+func builtinRules(testing.TB, *sql.DB) []stats.Rule { return stats.Rules }
 
 var seq int
 
@@ -83,12 +70,12 @@ func date(s string) studyday.Date {
 }
 
 // run buckets by UTC days (a user with no zone).
-func run(t *testing.T, sqlDB *sql.DB, user int64, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
+func run(t *testing.T, sqlDB *sql.DB, user int64, from, to string, ws *int64, rules []stats.Rule) []stats.Cell {
 	t.Helper()
 	return runIn(t, sqlDB, user, studyday.UTCHistory(), from, to, ws, rules)
 }
 
-func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
+func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to string, ws *int64, rules []stats.Rule) []stats.Cell {
 	t.Helper()
 	cells, err := stats.Activity(context.Background(), sqlDB, user, h.Windows(date(from), date(to)), ws, rules)
 	if err != nil {

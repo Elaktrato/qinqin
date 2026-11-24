@@ -27,8 +27,8 @@ func TestWidgetOptionsRowSurvivesExportAndRestore(t *testing.T) {
 	}
 	src := newWorld(t)
 	tg := newTarget(t, nil)
-	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
-		VALUES ('qinqin-core', ?, NULL, 'widget-options', ?, 1, '2026-11-17T08:00:00Z', '2026-11-17T08:00:00Z', NULL)`,
+	exec(t, src.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+		VALUES (?, NULL, 'widget-options', ?, 1, '2026-11-17T08:00:00Z', '2026-11-17T08:00:00Z', NULL)`,
 		src.AliceUID, string(fixture.Row))
 
 	data, _ := exportBytes(t, src, src.AliceUID)
@@ -37,7 +37,7 @@ func TestWidgetOptionsRowSurvivesExportAndRestore(t *testing.T) {
 	for name, body := range files {
 		for _, line := range bytes.Split(body, []byte("\n")) {
 			if bytes.Contains(line, []byte(`"widget-options"`)) {
-				if !strings.HasPrefix(name, "plugin-data/") {
+				if !strings.HasPrefix(name, "rows/") {
 					t.Errorf("widget-options in %s", name)
 				}
 				lines = append(lines, string(line))
@@ -53,7 +53,7 @@ func TestWidgetOptionsRowSurvivesExportAndRestore(t *testing.T) {
 	}
 	var body string
 	var ws any
-	if err := tg.DB.QueryRow(`SELECT data, workspace_id FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key = 'widget-options' AND deleted_at IS NULL`,
+	if err := tg.DB.QueryRow(`SELECT data, workspace_id FROM keyed_rows WHERE user_id = ? AND key = 'widget-options' AND deleted_at IS NULL`,
 		tg.UID).Scan(&body, &ws); err != nil {
 		t.Fatal(err)
 	}

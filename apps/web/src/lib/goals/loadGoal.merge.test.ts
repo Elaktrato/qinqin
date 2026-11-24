@@ -29,7 +29,6 @@ const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
 	new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
 const row = (key: string, data: unknown) => ({
-	pluginId: 'qinqin-flashcards',
 	key,
 	userId: 1,
 	workspaceId: 3,
@@ -65,7 +64,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 				const url = String(input);
 				if (url.startsWith('/api/sync/pull')) {
 					return json(pagedPull({
-						pluginData: [
+						rows: [
 							row('goals:workspace', {
 								version: 1,
 								showStreak: false,

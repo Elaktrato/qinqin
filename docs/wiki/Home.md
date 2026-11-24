@@ -37,7 +37,7 @@ This wiki has five parts. Pick the one that matches why you are here.
 - [API reference](API-Reference): every route with its rules, by area.
 - [API routes](API-Routes) and [API errors](API-Errors): both generated from the code.
 - [API access tokens](API-Access-tokens) for scripts and other clients.
-- [Plugin data API](Plugin-data-api), [Plugin format](Plugin-format) and [Data pack format](Data-pack-format).
+- [Core data API](Core-data-api) and [Data pack format](Data-pack-format).
 
 ## Reference
 

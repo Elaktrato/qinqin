@@ -19,14 +19,14 @@ The **Previous week** and **Next week** arrows step through the weeks; at the ol
 | Flashcard study time | time spent answering cards, at most 60 seconds per card |
 | Reading | minutes read in the Reader |
 | Journal entries | journal entries written |
-| Other activity | each plugin activity that was counted this week or last week |
+| Other activity | each further activity type the server counted this week or last week |
 | Days active | days on which you did anything that counts (vacation days are left out, see below); today joins the count once you have done something today |
 | Streak | your review streak at the end of the week (today for the current week) |
 | Words reaching mature | words whose flashcard became mature that week: in review with a stability of 21 days or more, as on the decks view. A word that became mature and slipped back in the same week does not count |
 | Characters learned | Chinese and Japanese workspaces only: characters whose score reached 80 of 100 that week, as on the character map. This row appears a moment after the others ("Counting characters…") |
 | Daily goal | the days on which you reached your [daily goal](Daily-goals) out of the days it counted; today counts once its goal is reached |
 
-The Week tab puts four numbers first — **Reviews**, **New cards**, **Flashcard study time** and **Journal entries** — each with its change from last week. When the journal plugin is off, **Reading** takes the fourth place; every other row is listed under **More this week**. Below the four numbers the paired bars show each day of the week beside the same weekday of the week before: the accent bar is this week, the muted one last week, both scaled to the busiest day of the two weeks. The whole of last week is drawn, even while the four numbers compare only up to the same weekday.
+The Week tab puts four numbers first — **Reviews**, **New cards**, **Flashcard study time** and **Journal entries** — each with its change from last week. When the journal is switched off, **Reading** takes the fourth place; every other row is listed under **More this week**. Below the four numbers the paired bars show each day of the week beside the same weekday of the week before: the accent bar is this week, the muted one last week, both scaled to the busiest day of the two weeks. The whole of last week is drawn, even while the four numbers compare only up to the same weekday.
 
 ## Compared with last week
 
@@ -42,7 +42,7 @@ On the Week tab the paired bars carry each day's state (active, not active, vaca
 
 ## Offline
 
-Without a connection the summary still shows what this device knows: new cards, study time, the streak and mature words. Reviews, reading, journal entries and plugin activity say "Not available offline"; so does **Characters learned** when the language's character list was not loaded yet in this session. **Retry** loads them again. Days active then counts flashcard reviews only and says so.
+Without a connection the summary still shows what this device knows: new cards, study time, the streak and mature words. Reviews, reading, journal entries and other activity say "Not available offline"; so does **Characters learned** when the language's character list was not loaded yet in this session. **Retry** loads them again. Days active then counts flashcard reviews only and says so.
 
 ## Milestones
 

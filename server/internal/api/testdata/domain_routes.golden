@@ -67,8 +67,8 @@ events batch foreign: POST /api/events/batch -> 404 [application/json] {"error":
 lookups foreign: DELETE /api/events/lookups?workspace=2 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
 lookups own: DELETE /api/events/lookups?workspace=5 -> 200 [application/json] {"deleted":0}
 activity foreign: GET /api/stats/activity?workspace=2 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
-plugin data foreign: GET /api/plugins/qinqin-flashcards/data?workspace=2 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
-plugin data own: GET /api/plugins/qinqin-flashcards/data?workspace=5 -> 404 [application/json] {"error":"not_found","message":"Plugin not found."}
+rows foreign: GET /api/rows?workspace=2 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
+rows own: GET /api/rows?workspace=5 -> 200 [application/json] []
 journal foreign: GET /api/journal/capabilities?workspace=2 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
 journal unknown: GET /api/journal/capabilities?workspace=999 -> 404 [application/json] {"error":"workspace_not_found","message":"No such workspace."}
 journal own: GET /api/journal/capabilities?workspace=5 -> 200 [application/json] {"ai":{"secret":"missing","provider":"","fake":false,"key":null,"keys":[],"active":null,"models":[{"id":"claude-opus-5-5","label":"Claude Opus 5.5"},{"id":"claude-sonnet-5-5","label":"Claude Sonnet 5.5"},{"id":"claude-haiku-5-5","label":"Claude Haiku 5.5"}],"usage":{"callsLastHour":0,"limitPerHour":0,"inputTokens":0,"outputTokens":0},"available":false,"reason":"no_secret"},"ocr":{"available":false,"language":"ko","languageReady":false}}

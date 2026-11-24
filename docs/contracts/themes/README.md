@@ -217,10 +217,10 @@ Android builds the same set in Compose). Every visible word is a prop the caller
 
 ## The `appearance` row
 
-The person's choice: a plugin data row of `qinqin-core`, key `appearance`, **user-global** (`workspaceId: null`;
-written with `PUT /api/plugins/qinqin-core/data/appearance` without `workspace`, or pushed). One per user, shared
+The person's choice: the keyed row `appearance` (`keyed/`), **user-global** (`workspaceId: null`;
+written with `PUT /api/rows/appearance` without `workspace`, or pushed). One per user, shared
 by every device and by Android, last write wins (`sync/`); it backs up and restores unchanged (`backup/`). The
-server stores it like any plugin row and never validates it.
+server stores it like any keyed row and never validates it.
 
 ```json
 { "version": 1, "mode": "system",

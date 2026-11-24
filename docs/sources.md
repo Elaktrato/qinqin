@@ -5,7 +5,7 @@ credits. It is public: anyone can open it without signing in. It is built at run
 manifests (`license`, `attribution` and the optional `notice`, served by
 `GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes`,
 `/api/component-packs` and `/api/lemma-packs`), the
-`sources` that a web plugin declares in its manifest, and the app's own
+`sources` that a core feature declares (`FeatureDef.sources`), and the app's own
 credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
 overview of the same material: the per-language tables and the notes on
 licences, provenance and how each pack is made. It is not generated, so keep
@@ -824,9 +824,9 @@ pack (Settings → Data), whose review shows the measured contrast.
 
 The Reader (see `docs/wiki/Reader.md`) imports public-domain works on user request. Nothing
 from these sources is bundled; each imported book stores its source link,
-attribution, and a licence note, which the Reader shows. The Reader plugin
-credits both sources, and `opencc-js` below, on the Sources page through the
-`sources` in its manifest (`apps/web/src/lib/features/reader/manifest.ts`).
+attribution, and a licence note, which the Reader shows. The app
+credits both sources, and `opencc-js` below, on the Sources page among its own
+credits (`apps/web/src/lib/sources/coreCredits.ts`).
 
 - **Aozora Bunko** (<https://www.aozora.gr.jp/>) — only works in the public domain
   are listed or importable: the catalog's work copyright flag **and** person
@@ -847,8 +847,8 @@ Traditional/simplified conversion in the Reader runs in the browser with
 the licence as `MIT AND Apache-2.0`: the library code is MIT, and its conversion
 dictionaries are generated from [`opencc-data`](https://github.com/nk2028/opencc-data)
 under the Apache License, Version 2.0. It is bundled in the web build and loaded
-only when a script conversion is selected. The Sources page credits it (a
-`sources` entry of the Reader plugin's manifest), and both
+only when a script conversion is selected. The Sources page credits it (an entry of
+`apps/web/src/lib/sources/coreCredits.ts`), and both
 licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
 package; a web test keeps them identical) and served by the running app at

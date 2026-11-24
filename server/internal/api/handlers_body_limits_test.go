@@ -124,17 +124,14 @@ func TestWorkspaceBodyLimits(t *testing.T) {
 	}
 }
 
-func TestPluginBodyLimits(t *testing.T) {
-	ts, sqlDB := newServer(t)
+func TestRowAndFeatureBodyLimits(t *testing.T) {
+	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
-	wantTooLarge(t, "register plugin", doRaw(t, http.MethodPost, ts.URL, "/api/admin/plugins", admin,
-		padded(`"id":"big","name":"Big","version":"1","type":"feature"`, 64<<10)))
-	wantTooLarge(t, "plugin state", doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/state", admin,
-		padded(`"enabled":true,"order":1`, 64<<10)))
+	wantTooLarge(t, "feature switch", doRaw(t, http.MethodPut, ts.URL, "/api/features/journal", admin,
+		padded(`"enabled":true`, 4<<10)))
 
 	ws := strconv.FormatInt(createWorkspace(t, ts.URL, admin, "zh", "w"), 10)
-	data := "/api/plugins/qinqin-flashcards/data/x?workspace=" + ws
+	data := "/api/rows/notecfg?workspace=" + ws
 	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded(`"id":"x"`, 200<<10)); resp.StatusCode != http.StatusOK {
 		t.Errorf("200 KiB plugin data: status = %d, want 200", resp.StatusCode)
 	}
@@ -142,7 +139,7 @@ func TestPluginBodyLimits(t *testing.T) {
 
 	// Sync push carries plugin data too: one oversized value is refused
 	// there as well, so the push cannot bypass the per-value cap.
-	push := `{"events":[],"pluginData":[{"pluginId":"qinqin-flashcards","workspaceId":` + ws +
+	push := `{"events":[],"rows":[{"workspaceId":` + ws +
 		`,"key":"card:y","data":` + padded("", 256<<10) + `,"updatedAt":"2026-11-14T10:00:00Z"}]}`
 	wantTooLarge(t, "sync push plugin data", doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, push))
 

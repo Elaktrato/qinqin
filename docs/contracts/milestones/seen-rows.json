@@ -1,7 +1,7 @@
 {
   "version": 1,
   "rule": "milestones/seen-rows",
-  "note": "rows: qinqin-flashcards plugin rows of one workspace as the pull gives them (decoded data). seen: id -> {seenAt, reachedDay} of every live milestone: row (the key minus the prefix, whatever the data says); seenAt is a non-empty string or null, reachedDay a real YYYY-MM-DD or null. listed: the seen ids this client can title, in catalogue order (family order, higher threshold first).",
+  "note": "rows: keyed rows of one workspace as the pull gives them (decoded data). seen: id -> {seenAt, reachedDay} of every live milestone: row (the key minus the prefix, whatever the data says); seenAt is a non-empty string or null, reachedDay a real YYYY-MM-DD or null. listed: the seen ids this client can title, in catalogue order (family order, higher threshold first).",
   "cases": [
     {"name": "a live row is seen; its data gives the date", "rows": [{"key": "milestone:reviews:1000", "data": {"version": 1, "id": "reviews:1000", "seenAt": "2026-11-17T08:00:00.000Z", "reachedDay": "2026-11-03"}, "deletedAt": null}], "expect": {"seen": {"reviews:1000": {"seenAt": "2026-11-17T08:00:00.000Z", "reachedDay": "2026-11-03"}}, "listed": ["reviews:1000"]}},
     {"name": "a tombstone is not seen", "note": "deletedAt set: absent (sync model); no client writes one", "rows": [{"key": "milestone:reviews:1000", "data": {"version": 1, "id": "reviews:1000", "seenAt": "2026-11-17T08:00:00.000Z", "reachedDay": "2026-11-03"}, "deletedAt": "2026-11-18T00:00:00Z"}], "expect": {"seen": {}, "listed": []}},

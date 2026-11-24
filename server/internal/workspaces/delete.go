@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/library"
 	"qinqin/internal/study"
@@ -36,13 +37,17 @@ func byWorkspace(table string) rule {
 }
 
 // rules are the delete rules in the order Delete runs them: the study
-// events, the plugin data rows (user-global rows have no workspace and
-// stay), the typed study rows (migration 038), the access tokens limited
+// events, the keyed rows (user-global rows have no workspace and
+// stay), the typed study rows (migration 038), the journal's documents
+// (migration 044), the grammar lesson progress (045), the access tokens limited
 // to the workspace, the library books with their bookmarks and highlights,
 // the journal photos.
 func rules() []rule {
-	out := []rule{byWorkspace("study_events"), byWorkspace("plugin_data")}
+	out := []rule{byWorkspace("study_events"), byWorkspace("keyed_rows")}
 	for _, table := range study.Tables() {
+		out = append(out, byWorkspace(table))
+	}
+	for _, table := range append(journal.Tables(), grammar.ProgressTables()...) {
 		out = append(out, byWorkspace(table))
 	}
 	return append(out,
@@ -97,7 +102,7 @@ type Deleted struct {
 // Delete deletes one of the user's workspaces and everything scoped to it
 // (rules) in one transaction. Foreign keys are not enforced in this
 // database, so every table is deleted from explicitly; user-scoped data
-// (overlays, own sentences, plugin states) is not the workspace's and
+// (overlays, own sentences, feature switches) is not the workspace's and
 // stays. The first statement deletes the workspace row only when the user
 // keeps another one: being a write, it takes SQLite's write lock before
 // reading, so concurrent deletes serialise and two of them can never

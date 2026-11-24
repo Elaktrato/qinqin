@@ -41,7 +41,7 @@ func wantCoded404(t *testing.T, what string, status int, body []byte) {
 // a paged pull ships rows stamped before the current second only.
 func backdate(t *testing.T, exec func(string, ...any) (sql.Result, error)) {
 	t.Helper()
-	tables := []string{"plugin_data"}
+	tables := []string{"keyed_rows"}
 	for _, f := range rows.Families {
 		tables = append(tables, study.TableOf(f))
 	}
@@ -55,27 +55,21 @@ func backdate(t *testing.T, exec func(string, ...any) (sql.Result, error)) {
 func TestLegacyPullAndViewAreGone(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
 	ws := createWorkspace(t, ts.URL, alice, "zh", "")
 	aliceID := userID(t, sqlDB, "alice")
 	w := itoa(ws)
 
-	// a typed card through the typed push, and a leftover plugin row of a
-	// typed family (what an old binary could leave behind)
+	// a typed card through the typed push
 	card := map[string]any{"workspaceId": ws, "id": "c-vocab-1", "kind": "vocab", "entryId": 1, "written": nil, "entryKind": nil,
 		"sentenceId": nil, "skipKinds": []string{}, "deckIds": []string{"general"}, "createdAt": "2026-11-10T08:00:00Z", "extra": map[string]any{},
 		"updatedAt": "2026-11-10T08:00:00Z"}
 	if r := doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"cards": []any{card}}); r.StatusCode != 200 {
 		t.Fatalf("typed push = %d", r.StatusCode)
 	}
-	if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-		VALUES ('qinqin-flashcards', ?, ?, 'card:left', '{"id":"other"}', 1, '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z')`, aliceID, ws); err != nil {
-		t.Fatal(err)
-	}
 
 	// the legacy pull: every request without v=2
 	for _, path := range []string{"/api/sync/pull", "/api/sync/pull?cursor=1970-01-01T00:00:00Z",
-		"/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates", "/api/sync/pull?v=1"} {
+		"/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,features", "/api/sync/pull?v=1"} {
 		status, h, body := get(t, ts.URL, path, alice)
 		wantCoded404(t, "GET "+path, status, body)
 		if h.Get("Deprecation") != "" {
@@ -83,9 +77,9 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 		}
 	}
 
-	// the legacy view: typed-family keys are not plugin data
-	for _, key := range append([]string{"card:left"}, typedKeys...) {
-		path := "/api/plugins/qinqin-flashcards/data/" + key + "?workspace=" + w
+	// the legacy view: typed-family keys are no keyed rows
+	for _, key := range typedKeys {
+		path := "/api/rows/" + key + "?workspace=" + w
 		status, _, body := get(t, ts.URL, path, alice)
 		wantCoded404(t, "GET "+key, status, body)
 		r := doRaw(t, "PUT", ts.URL, path, alice, `{"id":"c-vocab-1","kind":"vocab","entryId":1,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`)
@@ -102,7 +96,7 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 	if live != 1 {
 		t.Errorf("live typed cards = %d, want 1 (a legacy DELETE or PUT changed them)", live)
 	}
-	for _, path := range []string{"/api/plugins/qinqin-flashcards/data?workspace=" + w, "/api/plugins/qinqin-flashcards/data?workspace=" + w + "&prefix=card:"} {
+	for _, path := range []string{"/api/rows?workspace=" + w, "/api/rows?workspace=" + w + "&prefix=card:"} {
 		status, _, body := get(t, ts.URL, path, alice)
 		var list []struct {
 			Key string `json:"key"`
@@ -117,14 +111,14 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 		}
 	}
 
-	// a push of any typed-family key as plugin data is refused alone
-	items := []any{map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": "known:2", "updatedAt": "2026-11-10T08:00:00Z",
+	// a push of any typed-family key as a keyed row is refused alone
+	items := []any{map[string]any{"workspaceId": ws, "key": "known:2", "updatedAt": "2026-11-10T08:00:00Z",
 		"data": map[string]any{"version": 1, "entryId": 2, "createdAt": "2026-11-10T08:00:00Z"}}}
 	for _, key := range typedKeys {
-		items = append(items, map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": key, "updatedAt": "2026-11-10T08:00:00Z",
+		items = append(items, map[string]any{"workspaceId": ws, "key": key, "updatedAt": "2026-11-10T08:00:00Z",
 			"data": map[string]any{"id": "x", "kind": "vocab", "entryId": 2, "deckIds": []string{"general"}, "createdAt": "2026-11-10T08:00:00Z"}})
 	}
-	r := doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"pluginData": items})
+	r := doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"rows": items})
 	var res struct {
 		DataAccepted, DataSkipped, DataRefused int
 	}
@@ -134,9 +128,9 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 	}
 	for _, key := range typedKeys {
 		var n int
-		sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE key = ?`, key).Scan(&n)
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE key = ?`, key).Scan(&n)
 		if n != 0 {
-			t.Errorf("the refused %s was stored as plugin data", key)
+			t.Errorf("the refused %s was stored as a keyed row", key)
 		}
 	}
 	var typedRows int
@@ -146,14 +140,14 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 		t.Errorf("typed rows = %d after the refused push, want the one card", typedRows)
 	}
 
-	// the paged pull never ships a typed-family leftover in pluginData
+	// the paged pull never ships a typed-family key in rows
 	backdate(t, sqlDB.Exec)
-	status, _, body := get(t, ts.URL, "/api/sync/pull?v=2&collections=pluginData,cards", alice)
+	status, _, body := get(t, ts.URL, "/api/sync/pull?v=2&collections=rows,cards", alice)
 	var page v2Page
 	if status != 200 || json.Unmarshal(body, &page) != nil {
 		t.Fatalf("v2 pull = %d %s", status, body)
 	}
-	for _, raw := range page.Collections["pluginData"] {
+	for _, raw := range page.Collections["rows"] {
 		if strings.Contains(string(raw), `"key":"card:`) {
 			t.Errorf("v2 pull ships the leftover %s", raw)
 		}
@@ -163,11 +157,11 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 	}
 }
 
-// zipSampleV1 zips the committed v0.3.0 sample archive
-// (docs/contracts/backup/sample-v1, keyed qinqin-flashcards study rows).
-func zipSampleV1(t *testing.T) []byte {
+// zipSample zips the committed sample archive (docs/contracts/backup/sample-v2,
+// typed study rows in their keyed form).
+func zipSample(t *testing.T) []byte {
 	t.Helper()
-	root := "../../../docs/contracts/backup/sample-v1"
+	root := "../../../docs/contracts/backup/sample-v2"
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	var manifest []byte
@@ -201,11 +195,11 @@ func zipSampleV1(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
-// Ruling (plan 2026-11-23-remove-v03-compat): an old-format backup — keyed
-// study rows, written by a v0.3.0 server — still restores, through the
-// restore path only: its rows land in the typed tables, the paged pull ships
-// them typed, and their old keys are not served as plugin data.
-func TestOldFormatBackupRestoresIntoTypedRows(t *testing.T) {
+// A backup carries typed study rows in their keyed form; they restore through
+// the restore path only: they land in the typed tables, the paged pull ships
+// them typed, and their keys are not served as keyed rows. (Format 1 archives
+// are refused since #199.)
+func TestKeyedFormBackupRestoresIntoTypedRows(t *testing.T) {
 	e := newBackupEnv(t)
 	alice := registerUser(t, e.ts.URL, "alice", "")
 	createWorkspace(t, e.ts.URL, alice, "zh", "")
@@ -222,7 +216,7 @@ func TestOldFormatBackupRestoresIntoTypedRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	code, rt, eb := e.upload(t, alice, zipSampleV1(t))
+	code, rt, eb := e.upload(t, alice, zipSample(t))
 	if code != 202 {
 		t.Fatalf("upload = %d %+v", code, eb)
 	}
@@ -242,7 +236,7 @@ func TestOldFormatBackupRestoresIntoTypedRows(t *testing.T) {
 	cardID := "c-vocab-" + itoa(entry)
 	backdate(t, e.db.Exec)
 
-	status, _, body := get(t, e.ts.URL, "/api/sync/pull?v=2&collections=cards,decks,limits,pluginData&workspace="+itoa(ws), alice)
+	status, _, body := get(t, e.ts.URL, "/api/sync/pull?v=2&collections=cards,decks,limits,rows&workspace="+itoa(ws), alice)
 	var page v2Page
 	if status != 200 || json.Unmarshal(body, &page) != nil {
 		t.Fatalf("v2 pull = %d %s", status, body)
@@ -259,72 +253,27 @@ func TestOldFormatBackupRestoresIntoTypedRows(t *testing.T) {
 		t.Errorf("restored typed rows: %s cards %d (want %s), decks %d, limits %d", body, len(page.Collections["cards"]), cardID,
 			len(page.Collections["decks"]), len(page.Collections["limits"]))
 	}
-	for _, raw := range page.Collections["pluginData"] {
+	for _, raw := range page.Collections["rows"] {
 		var d struct {
-			PluginID, Key string
+			Key string
 		}
 		json.Unmarshal(raw, &d)
-		if d.PluginID == "qinqin-flashcards" && (strings.HasPrefix(d.Key, "card:") || strings.HasPrefix(d.Key, "deck:") || strings.HasPrefix(d.Key, "limits:")) {
-			t.Errorf("restored keyed study row %s left in plugin data", d.Key)
+		if strings.HasPrefix(d.Key, "card:") || strings.HasPrefix(d.Key, "deck:") || strings.HasPrefix(d.Key, "limits:") {
+			t.Errorf("restored keyed study row %s left in the keyed rows", d.Key)
 		}
 	}
-	status, _, body = get(t, e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:"+cardID+"?workspace="+itoa(ws), alice)
+	status, _, body = get(t, e.ts.URL, "/api/rows/card:"+cardID+"?workspace="+itoa(ws), alice)
 	wantCoded404(t, "GET card:"+cardID, status, body)
-}
-
-// GET /api/plugins lists registry plugins only: no row per installed data
-// pack (#169), and a data pack's id is no plugin for the state and data
-// routes or a push.
-func TestDataPackPluginRowsAreGone(t *testing.T) {
-	ts, sqlDB := newServer(t)
-	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
-	ws := createWorkspace(t, ts.URL, alice, "zh", "")
-	for _, q := range []string{
-		`INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, levels_json, updated_at) VALUES ('zh-grammar', 'n', '1', 'zh', 'l', 'a', '[]', 't')`,
-		`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at) VALUES ('zh-audio', 'zh', 'n', '1', 'l', 'a', 't', 't')`,
-		`INSERT INTO frequency_packs (id, pack_id, name, version, language, license, attribution, ord, updated_at) VALUES (1, 'zh-freq', 'n', '1', 'zh', 'l', 'a', 1, 't')`,
-	} {
-		if _, err := sqlDB.Exec(q); err != nil {
-			t.Fatal(err)
-		}
-	}
-	status, _, body := get(t, ts.URL, "/api/plugins", alice)
-	var list []struct {
-		ID string `json:"id"`
-	}
-	if status != 200 || json.Unmarshal(body, &list) != nil {
-		t.Fatalf("GET /api/plugins = %d %s", status, body)
-	}
-	for _, p := range list {
-		if strings.HasPrefix(p.ID, "zh-") {
-			t.Errorf("GET /api/plugins lists the data pack %s", p.ID)
-		}
-	}
-	for _, id := range []string{"zh-grammar", "zh-audio", "zh-freq"} {
-		r := doRaw(t, "PUT", ts.URL, "/api/plugins/"+id+"/state", alice, `{"enabled":false,"order":0}`)
-		var b bytes.Buffer
-		b.ReadFrom(r.Body)
-		wantCoded404(t, "PUT state of "+id, r.StatusCode, b.Bytes())
-		status, _, body := get(t, ts.URL, "/api/plugins/"+id+"/data?workspace="+itoa(ws), alice)
-		wantCoded404(t, "GET data of "+id, status, body)
-		r = doRaw(t, "PUT", ts.URL, "/api/plugins/"+id+"/data/k?workspace="+itoa(ws), alice, `{}`)
-		b.Reset()
-		b.ReadFrom(r.Body)
-		wantCoded404(t, "PUT data of "+id, r.StatusCode, b.Bytes())
-		r = doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"pluginData": []any{
-			map[string]any{"pluginId": id, "key": "k", "workspaceId": ws, "data": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z"}}})
-		if r.StatusCode != http.StatusNotFound {
-			t.Errorf("push of %s data = %d, want 404 (an unknown plugin)", id, r.StatusCode)
-		}
-	}
 }
 
 // The removed identifiers stay out of the server's code: a grep guard
 // next to the behaviour tests above.
 func TestLegacyCompatCodeStaysGone(t *testing.T) {
 	banned := []string{"StreamLegacy", "LegacyGet(", "LegacyList(", "ApplyLegacy(", "legacyView", "mergeLegacyList", "legacyPut(",
-		"legacyRows", "LegacyPluginRow", "sentencePlugins", "warnEntryIDUsers", "dataPlugin("}
+		"legacyRows", "LegacyPluginRow", "sentencePlugins", "warnEntryIDUsers", "dataPlugin(",
+		// #199: the code plugins, their registry, states and data store
+		"plugin_data", "PluginData", "/api/plugins", "plugin_states", "plugin_registry", "PluginState", "PluginInfo",
+		"isHiddenBuiltin", "RegisterBuiltin", "internal/plugins\""}
 	err := filepath.WalkDir("../..", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -337,8 +286,12 @@ func TestLegacyCompatCodeStaysGone(t *testing.T) {
 			return err
 		}
 		for _, s := range banned {
+			// the frozen migration steps of 038 still read the old table
+			if (s == "plugin_data" || s == "plugin_states" || s == "plugin_registry") && strings.Contains(filepath.ToSlash(path), "internal/db/") {
+				continue
+			}
 			if strings.Contains(string(b), s) {
-				t.Errorf("%s contains %q (removed in #198)", path, s)
+				t.Errorf("%s contains %q (removed in #198 or #199)", path, s)
 			}
 		}
 		return nil

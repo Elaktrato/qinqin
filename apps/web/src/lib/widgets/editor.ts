@@ -1,7 +1,7 @@
 // Pure helpers for the Settings → Home layout editor. They edit the
 // stored layout, not only what is listed: ids of widgets that are
-// unavailable right now (a disabled plugin, a widget this build no
-// longer has) keep their place, so re-enabling the plugin restores them.
+// unavailable right now (a switched-off feature, a widget this build no
+// longer has) keep their place, so switching the feature on restores them.
 
 import { DEFAULT_LAYOUT } from './layout';
 import type { WidgetDef } from './types';

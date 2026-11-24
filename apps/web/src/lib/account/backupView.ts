@@ -9,7 +9,7 @@ export interface Counts {
 	workspaces: number;
 	events: number;
 	cards: number;
-	pluginData: number;
+	rows: number;
 	overlays: number;
 	sentences: number;
 	books: number;
@@ -31,7 +31,6 @@ export interface Report {
 	replaces: Counts;
 	restores: Counts;
 	unresolved: { entries: UnresolvedEntry[]; entryCount: number; sentences: number; droppedRows: number };
-	pluginsNotInstalled: string[];
 	reidentifiedEvents: number;
 	blocking: string[];
 	warnings: string[];

@@ -1,6 +1,6 @@
 # Install as an app and study offline
 
-qinqin is an installable web app (PWA). It is a stopgap for phones; a native Android client is planned.
+qinqin is an installable web app (PWA). An Android app is planned as this same web app in a native shell.
 
 ## Requirements
 

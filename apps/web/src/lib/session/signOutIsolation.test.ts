@@ -17,8 +17,8 @@ import { loadEntryBases } from '../api/entryBases';
 import { getEntryAudio } from '../api/audio';
 import { fetchSchemeCharacters } from '../api/schemes';
 import { fetchCharacters } from '../api/characters';
-import { loadProviderNames } from '../plugins/journal/providerNames';
-import { journalEntriesFor } from '../plugins/journal/journalEntries.svelte';
+import { loadProviderNames } from '../features/journal/providerNames';
+import { journalEntriesFor } from '../features/journal/journalEntries.svelte';
 import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
 import type { StudyCard } from '../study/types';
 
@@ -74,7 +74,7 @@ function answer(path: string, method: string, tag: string): unknown {
 		return {
 			format: 2, instanceId: '01JD8Z3Q4M5N6P7R8S9T0V1W2X', until: '2026-11-12T10:00:00Z',
 			scope: { workspaces: [{ id: WS, language: 'zh' }], languages: ['zh'], catalogue: '"k"' }, restarted: [],
-			collections: { pluginStates: [], pluginData: [], cards: [typedCard(tag)], decks: [], deckSettings: [], limits: [], fsrsSets: [], fsrsActive: [] },
+			collections: { rows: [], cards: [typedCard(tag)], decks: [], deckSettings: [], limits: [], fsrsSets: [], fsrsActive: [] },
 			more: false, next: null, cursor: 'c2.x'
 		};
 	}

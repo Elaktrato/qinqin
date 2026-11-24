@@ -142,7 +142,7 @@ describe('UsersAdmin', () => {
 
 	it('delete dialog lists the preview counts and enables Delete only for the typed name', async () => {
 		vi.mocked(adminUsers.deletionPreview).mockResolvedValue({
-			workspaces: 2, studyEvents: 30, pluginData: 0, books: 1, journalPhotos: 0, aiKeys: 1, sessions: 1, overlays: 0, sentences: 0
+			workspaces: 2, studyEvents: 30, keyedRows: 0, books: 1, journalPhotos: 0, aiKeys: 1, sessions: 1, overlays: 0, sentences: 0
 		});
 		vi.mocked(adminUsers.deleteUser).mockResolvedValue(undefined as never);
 		render(UsersAdmin, { context: ctx.context });
@@ -341,7 +341,7 @@ describe('UsersAdmin: the code of an administrator with an authenticator', () =>
 
 	it('asks for it in the delete dialog', async () => {
 		vi.mocked(adminUsers.deletionPreview).mockResolvedValue({
-			workspaces: 0, studyEvents: 0, pluginData: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 0, overlays: 0, sentences: 0
+			workspaces: 0, studyEvents: 0, keyedRows: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 0, overlays: 0, sentences: 0
 		});
 		vi.mocked(adminUsers.deleteUser).mockResolvedValue(undefined as never);
 		await rowAction('Delete');

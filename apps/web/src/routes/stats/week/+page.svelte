@@ -118,7 +118,7 @@
 					? { timelines, chars: null }
 					: { timelines, chars: universe.chars, cards: universe.cards };
 		try {
-			const loaded = await loadMilestones(session, id, { scope: 'week', language: lang, states: session.plugins, ...(week === undefined ? {} : { week }) });
+			const loaded = await loadMilestones(session, id, { scope: 'week', language: lang, states: session.features, ...(week === undefined ? {} : { week }) });
 			if (seq === requestSeq) milestones = loaded;
 		} catch {
 			// The milestones are extra: the week stays without them.

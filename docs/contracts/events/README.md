@@ -21,7 +21,7 @@ Fixtures:
 - `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
   events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
   `apps/web/src/lib/eventPayloads.test.ts` (the builders of `lib/eventPayloads.ts`, member order included),
-  `features/reader/readingTimer.test.ts`, `plugins/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
+  `features/reader/readingTimer.test.ts`, `features/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 - `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
@@ -143,20 +143,19 @@ copy byte for byte; the server accepts either.
 Ruling: the overview's former "keeps `ts` verbatim" is corrected, not the server — changing storage would
 alter every stored log and the pull's string comparison — cost: none.
 
-## Declared types
+## Event types
 
-| Type | Declared by (manifest) | Activity rule |
+| Type | Written by | Activity rule (feature) |
 | --- | --- | --- |
-| `session` | `qinqin-core` | none |
-| `view` | `qinqin-core` | none |
-| `lookup` | `qinqin-core` | none (legacy; never written since #72) |
-| `review` | `qinqin-core` | count |
-| `read` | `qinqin-core` | measure `seconds` (min 30, max 7200, 300 per point) |
-| `journal` | `qinqin-journal` | distinct `entryId` |
+| `session` | the app | none |
+| `view` | the app | none |
+| `lookup` | nobody | none (legacy; never written since #72) |
+| `review` | flashcards | count (`flashcards`) |
+| `read` | the reader | measure `seconds` (min 30, max 7200, 300 per point) (`reader`) |
+| `journal` | the journal | distinct `entryId` (`journal`) |
 
-The manifests are `server/internal/plugins/builtin/*.json`; other plugins may declare more types. The server
-stores any type; the web plugin SDK refuses to record a type the recording plugin's manifest does not declare.
-A client records only types declared by enabled plugins.
+The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
+there are no plugin manifests (#199). The server stores any type; a client writes only these.
 
 ## Payloads and emit rules
 

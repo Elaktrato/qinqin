@@ -47,8 +47,8 @@
 		drawer: { label: 'settings.navLayout.mode.drawer', description: 'settings.navLayout.mode.drawerDescription' }
 	};
 
-	const ready = $derived(session.plugins.status === 'ready');
-	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.plugins)]);
+	const ready = $derived(session.features.status === 'ready');
+	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.features)]);
 	const visibleIds = $derived(sections.map((s) => s.id));
 	const phone = $derived(store.phone);
 	const bar = $derived(store.bar);
@@ -66,7 +66,7 @@
 	let touched = false;
 
 	onMount(() => {
-		if (session.plugins.status === 'idle') void session.plugins.load();
+		if (session.features.status === 'idle') void session.features.load();
 		// Fresh from the server: another device may have changed it.
 		load().then(
 			(fresh) => {

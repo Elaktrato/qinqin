@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { profileOf } from '$lib/languageProfiles';
+	import { hasCharacterMap } from '$lib/languageProfiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';
@@ -8,7 +10,6 @@
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 	import { levelAttributionLine } from '$lib/study/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
-	import { usesHan } from '$lib/languages';
 	import CellTip from '$lib/components/map/CellTip.svelte';
 	import CharGrid from '$lib/components/map/CharGrid.svelte';
 	import StageBar from '$lib/components/map/StageBar.svelte';
@@ -229,12 +230,12 @@
 	// The map is built from Han characters; other languages get a note
 	// instead (Stats hides the tab, but the URL can still be visited).
 	const notHan = $derived(
-		session.workspaces.current !== null && !usesHan(session.workspaces.current.language)
+		session.workspaces.current !== null && !hasCharacterMap(session.workspaces.current.language)
 	);
 
 	$effect(() => {
 		const workspace = session.workspaces.current;
-		if (workspace && !usesHan(workspace.language)) {
+		if (workspace && !hasCharacterMap(workspace.language)) {
 			// Drop any in-flight load for a previous workspace.
 			requestSeq++;
 			loading = false;
@@ -828,7 +829,7 @@
 				</section>
 			{/each}
 
-			{#if language.toLowerCase().startsWith('zh')}
+			{#if profileOf(language).variants}
 				<p class="hint small foot">
 					{t('stats.map.zhFoot')}
 				</p>

@@ -54,13 +54,12 @@ import * as build from '$lib/testing/study';
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => newSession(ctx));
 import {
-  PLUGIN_ID,
   WORKSPACE_ID,
   ULID,
   fakeStorage,
   jsonResponse,
   rawResponse,
-  type PluginDataRow,
+  type KeyedDataRow,
   pluginRow,
   deck,
   card,
@@ -108,7 +107,7 @@ describe("vacation rows", () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return jsonResponse([]);
       return jsonResponse({
-        pluginData: [
+        rows: [
           vacRow("A"),
           vacRow("B", {}, { deletedAt: "2026-11-02T00:00:00Z" }),
           vacRow("C", {}, { pluginId: "other" }),
@@ -128,9 +127,9 @@ describe("vacation rows", () => {
     await saveVacation(ctx.session.study, { version: 1, id: "A", start: "2026-12-01", end: null, scope: "all", createdDay: "2026-11-15", createdAt: "2026-11-15T08:00:00Z" });
     await deleteVacation(ctx.session.study, "A");
     off();
-    expect(putBodies()[0].url).toBe(`/api/plugins/${PLUGIN_ID}/data/vacation:A`);
+    expect(putBodies()[0].url).toBe(`/api/rows/vacation:A`);
     const del = calls().find(([, init]) => init?.method === "DELETE");
-    expect(String(del?.[0])).toBe(`/api/plugins/${PLUGIN_ID}/data/vacation:A`);
+    expect(String(del?.[0])).toBe(`/api/rows/vacation:A`);
     expect(seen).toEqual([ALL_WORKSPACES, ALL_WORKSPACES]);
   });
 });
@@ -151,10 +150,10 @@ describe("goal row", () => {
     note: "kept",
     history: [{ from: "2026-11-16", metric: "activity:review", target: 50, by: "android" }],
   };
-  function pull(rows: PluginDataRow[]) {
+  function pull(rows: KeyedDataRow[]) {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return jsonResponse([]);
-      return jsonResponse({ pluginData: rows });
+      return jsonResponse({ rows: rows });
     });
   }
 
@@ -190,7 +189,7 @@ describe("goal row", () => {
     await saveGoals(ctx.session.study, 3, goal as never);
     off();
     expect(putBodies()).toEqual([
-      { url: `/api/plugins/${PLUGIN_ID}/data/goals:workspace?workspace=3`, body: goal },
+      { url: `/api/rows/goals:workspace?workspace=3`, body: goal },
     ]);
     expect(seen).toEqual([3]);
   });
@@ -217,10 +216,9 @@ describe("known marks", () => {
 
   it("reads the live marks of the workspace only", async () => {
     respondPull({
-      pluginData: [
+      rows: [
         pluginRow("known:5", mark(5), { workspaceId: 3 }),
         pluginRow("known:6", mark(6), { workspaceId: 4 }),
-        pluginRow("known:7", mark(7), { workspaceId: 3, pluginId: "other" }),
         pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" }),
         pluginRow("known:9", mark(10), { workspaceId: 3 }),
         pluginRow("known:11", JSON.stringify(mark(11)), { workspaceId: 3 }),
@@ -230,7 +228,7 @@ describe("known marks", () => {
   });
 
   it("leaves known absent without live marks", async () => {
-    respondPull({ pluginData: [pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })] });
+    respondPull({ rows: [pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })] });
     const data = await loadStudyData(ctx.session.study, 3);
     expect("known" in data).toBe(false);
   });
@@ -242,7 +240,7 @@ describe("known marks", () => {
     await setKnownMark(ctx.session.study, 3, 41, true);
     off();
     const [put] = putBodies();
-    expect(put.url).toBe(`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`);
+    expect(put.url).toBe(`/api/rows/known:41?workspace=3`);
     expect(put.body).toMatchObject({ version: 1, entryId: 41 });
     expect(Number.isNaN(Date.parse((put.body as { createdAt: string }).createdAt))).toBe(false);
     expect(seen).toEqual([3]);
@@ -255,7 +253,7 @@ describe("known marks", () => {
     await setKnownMark(ctx.session.study, 3, 41, false);
     off();
     expect(calls().map(([url, init]) => [String(url), init?.method])).toEqual([
-      [`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`, "DELETE"],
+      [`/api/rows/known:41?workspace=3`, "DELETE"],
     ]);
     expect(seen).toEqual([3]);
   });
@@ -270,7 +268,7 @@ describe("known marks", () => {
     expect(calls()).toHaveLength(0);
   });
 
-  function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+  function pushBodies(): Array<{ rows: Array<Record<string, unknown>> }> {
     return calls()
       .filter(([url]) => String(url) === "/api/sync/push")
       .map(([, init]) => JSON.parse(String(init?.body)));
@@ -279,8 +277,8 @@ describe("known marks", () => {
   const accept = () =>
     vi.mocked(fetch).mockImplementation(async (url, init) =>
       String(url).startsWith("/api/sync/pull")
-        ? jsonResponse({ pluginData: [] })
-        : jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }),
+        ? jsonResponse({ rows: [] })
+        : jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).rows.length, dataSkipped: 0, dataRefused: 0 }),
     );
 
   it("setKnownMarks pushes 450 marks as 200/200/50", async () => {
@@ -288,15 +286,15 @@ describe("known marks", () => {
     const ids = Array.from({ length: 450 }, (_, i) => i + 1);
     await setKnownMarks(ctx.session.study, 3, ids, true);
     const bodies = pushBodies();
-    expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
-    expect(bodies[0].pluginData[0]).toMatchObject({ key: "known:1", workspaceId: 3, data: { version: 1, entryId: 1 } });
-    expect(bodies[0].pluginData[0].deletedAt).toBeUndefined();
+    expect(bodies.map((b) => b.rows.length)).toEqual([200, 200, 50]);
+    expect(bodies[0].rows[0]).toMatchObject({ key: "known:1", workspaceId: 3, data: { version: 1, entryId: 1 } });
+    expect(bodies[0].rows[0].deletedAt).toBeUndefined();
   });
 
   it("setKnownMarks off sends tombstones with deletedAt", async () => {
     accept();
     await setKnownMarks(ctx.session.study, 3, [4, 5, 4], false);
-    const rows = pushBodies().flatMap((b) => b.pluginData);
+    const rows = pushBodies().flatMap((b) => b.rows);
     expect(rows.map((r) => r.key)).toEqual(["known:4", "known:5"]);
     for (const r of rows) {
       expect(typeof r.deletedAt).toBe("string");
@@ -308,16 +306,16 @@ describe("known marks", () => {
     vi.mocked(fetch).mockImplementation(async (input, init) => {
       if (String(input).startsWith("/api/sync/pull")) {
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:00Z", deletedAt: "2099-01-01T00:00:05Z" }),
             pluginRow("known:5", mark(5), { workspaceId: 4, updatedAt: "2099-06-01T00:00:00Z" }),
           ],
         });
       }
-      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).rows.length, dataSkipped: 0, dataRefused: 0 });
     });
     await setKnownMarks(ctx.session.study, 3, [4, 5], true);
-    const rows = pushBodies().flatMap((b) => b.pluginData);
+    const rows = pushBodies().flatMap((b) => b.rows);
     expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
     // known:5 of another workspace does not count: stamped now.
     expect(Date.parse(String(rows.find((r) => r.key === "known:5")?.updatedAt))).toBeLessThan(Date.parse("2099-01-01T00:00:00Z"));
@@ -330,23 +328,23 @@ describe("known marks", () => {
       if (url.startsWith("/api/sync/pull")) {
         const tombs = new URL(url, "https://x.invalid").searchParams.get("tombstones") === "1";
         const dead = pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:05Z", deletedAt: "2099-01-01T00:00:05Z" });
-        return jsonResponse({ pluginData: tombs ? [dead] : [] });
+        return jsonResponse({ rows: tombs ? [dead] : [] });
       }
-      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).rows.length, dataSkipped: 0, dataRefused: 0 });
     });
     await setKnownMarks(ctx.session.study, 3, [4], true);
     const pulls = calls().map(([url]) => String(url)).filter((u) => u.startsWith("/api/sync/pull"));
     expect(pulls[0]).toBe(
-      "/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
+      "/api/sync/pull?collections=rows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
     );
-    const rows = pushBodies().flatMap((b) => b.pluginData);
+    const rows = pushBodies().flatMap((b) => b.rows);
     expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
   });
 
   it("a skipped mark is an error", async () => {
     vi.mocked(fetch).mockImplementation(async (input) =>
       String(input).startsWith("/api/sync/pull")
-        ? jsonResponse(pagedPull({ pluginData: [] }))
+        ? jsonResponse(pagedPull({ rows: [] }))
         : jsonResponse({ dataAccepted: 1, dataSkipped: 1, dataRefused: 0 }),
     );
     await expect(setKnownMarks(ctx.session.study, 3, [1, 2], true)).rejects.toBeInstanceOf(PartialPushError);
@@ -371,11 +369,10 @@ describe("seen milestone rows", () => {
 
   it("parses the live milestone: rows of the workspace only", async () => {
     respondPull({
-      pluginData: [
+      rows: [
         pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 }),
         pluginRow("milestone:streak:7", seen("streak:7"), { workspaceId: 4 }),
         pluginRow("milestone:streak:3", seen("streak:3"), { workspaceId: null }),
-        pluginRow("milestone:streak:14", seen("streak:14"), { workspaceId: 3, pluginId: "qinqin-core" }),
         pluginRow("milestone:days-active:10", seen("days-active:10"), { workspaceId: 3, deletedAt: "2026-11-17T09:00:00Z" }),
         pluginRow("milestone:journal-entries:1", JSON.stringify(seen("journal-entries:1", "2026-11-05")), { workspaceId: 3 }),
         pluginRow("milestone:quiz:5", { version: 2 }, { workspaceId: 3 }),
@@ -390,7 +387,7 @@ describe("seen milestone rows", () => {
   });
 
   it("leaves seenMilestones absent without live rows; a milestone row is never a deck or a card", async () => {
-    respondPull({ pluginData: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, deletedAt: "2026-11-17T09:00:00Z" })] });
+    respondPull({ rows: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, deletedAt: "2026-11-17T09:00:00Z" })] });
     const data = await loadStudyData(ctx.session.study, 3);
     expect("seenMilestones" in data).toBe(false);
     expect(data.cards).toEqual([]);
@@ -398,14 +395,14 @@ describe("seen milestone rows", () => {
   });
 
   it("a typed-family key in pluginData is still never study state", async () => {
-    respondPull({ pluginData: [pluginRow("card:milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
+    respondPull({ rows: [pluginRow("card:milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
     const data = await loadStudyData(ctx.session.study, 3);
     expect("seenMilestones" in data).toBe(false);
   });
 
   it("keeps the stamps of tombstoned milestone rows (a re-dismiss must be stamped after them)", async () => {
     respondPull({
-      pluginData: [
+      rows: [
         pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, updatedAt: "2026-11-17T09:00:00Z", deletedAt: "2026-11-17T09:00:00Z" }),
         pluginRow("milestone:streak:7", seen("streak:7"), { workspaceId: 3 }),
       ],
@@ -417,16 +414,16 @@ describe("seen milestone rows", () => {
   it("saveSeenMilestones stamps a row after the tombstone it revives", async () => {
     vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 0, dataRefused: 0 }));
     await saveSeenMilestones(ctx.session.study, 3, [{ key: "milestone:reviews:100", data: seen("reviews:100"), knownAt: "2099-01-01T00:00:00Z" }]);
-    expect(pushes()[0].pluginData[0].updatedAt).toBe("2099-01-01T00:00:00.001Z");
+    expect(pushes()[0].rows[0].updatedAt).toBe("2099-01-01T00:00:00.001Z");
   });
 
   it("loadStudyData passes seenMilestones through", async () => {
-    respondPull({ pluginData: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
+    respondPull({ rows: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
     const data = await loadStudyData(ctx.session.study, 3);
     expect([...(data.seenMilestones?.keys() ?? [])]).toEqual(["reviews:100"]);
   });
 
-  function pushes(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+  function pushes(): Array<{ rows: Array<Record<string, unknown>> }> {
     return calls()
       .filter(([url]) => String(url) === "/api/sync/push")
       .map(([, init]) => JSON.parse(String(init?.body)));
@@ -444,13 +441,13 @@ describe("seen milestone rows", () => {
     off();
     const bodies = pushes();
     expect(bodies).toHaveLength(1);
-    expect(bodies[0].pluginData).toHaveLength(2);
-    for (const item of bodies[0].pluginData) {
-      expect(item).toMatchObject({ pluginId: PLUGIN_ID, workspaceId: 3 });
+    expect(bodies[0].rows).toHaveLength(2);
+    for (const item of bodies[0].rows) {
+      expect(item).toMatchObject({ workspaceId: 3 });
       expect(typeof item.updatedAt).toBe("string");
       expect(item).not.toHaveProperty("deletedAt");
     }
-    expect(bodies[0].pluginData.map((i) => i.key)).toEqual(rows.map((r) => r.key));
+    expect(bodies[0].rows.map((i) => i.key)).toEqual(rows.map((r) => r.key));
     expect(touched).toEqual([3]);
   });
 

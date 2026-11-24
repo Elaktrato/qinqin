@@ -12,7 +12,8 @@
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
-	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
+	import { deckSessionItems, sessionCounts } from '$lib/study/cardFlow';
+	import { profileOf } from '$lib/languageProfiles';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
 		defaultExtraTypes,
@@ -439,7 +440,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	const visibleTypes = $derived(
 		CARD_TYPES.filter(
 			(type) =>
-				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
+				profileOf(workspaceLanguage ?? '').cardKinds.includes(type.id) &&
 				(mode === 'decks' || !isOptIn(type.id))
 		)
 	);

@@ -90,7 +90,7 @@ const AUDITED = [
 	'routes/lookups/+page.svelte',
 	'routes/search/ResultRow.svelte',
 	'lib/features/reader/BookView.svelte',
-	'lib/plugins/grammar/lessonData.ts'
+	'lib/features/grammar/lessonData.ts'
 ];
 
 describe('the audited components', () => {

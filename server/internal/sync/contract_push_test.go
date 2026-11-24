@@ -29,9 +29,9 @@ func TestContractPushThroughPush(t *testing.T) {
 		Cases []struct {
 			Name  string `json:"name"`
 			Setup *struct {
-				Events     []json.RawMessage `json:"events"`
-				PluginData []json.RawMessage `json:"pluginData"`
-				Cards      []json.RawMessage `json:"cards"`
+				Events []json.RawMessage `json:"events"`
+				Rows   []json.RawMessage `json:"rows"`
+				Cards  []json.RawMessage `json:"cards"`
 			} `json:"setup"`
 			Body   json.RawMessage `json:"body"`
 			Expect struct {
@@ -54,7 +54,6 @@ func TestContractPushThroughPush(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			ctx := context.Background()
 			sqlDB := dbtest.Open(t)
-			registerReserved(t, sqlDB)
 			alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 			ws, bobWS := newWorkspace(t, sqlDB, alice), newWorkspace(t, sqlDB, bob)
 			expand := func(raw json.RawMessage) []byte {
@@ -69,16 +68,15 @@ func TestContractPushThroughPush(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
-				for _, d := range s.PluginData {
+				for _, d := range s.Rows {
 					var r struct {
-						PluginID  string          `json:"pluginId"`
 						Key       string          `json:"key"`
 						Data      json.RawMessage `json:"data"`
 						UpdatedAt string          `json:"updatedAt"`
 					}
 					json.Unmarshal(expand(d), &r)
-					if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-						r.PluginID, alice, ws, r.Key, string(r.Data), r.UpdatedAt, r.UpdatedAt); err != nil {
+					if _, err := sqlDB.Exec(`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, 1, ?, ?)`,
+						alice, ws, r.Key, string(r.Data), r.UpdatedAt, r.UpdatedAt); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -94,7 +92,7 @@ func TestContractPushThroughPush(t *testing.T) {
 				}
 			}
 			count := func() (n int) {
-				sqlDB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_events) + (SELECT COUNT(*) FROM plugin_data) + (SELECT COUNT(*) FROM study_cards)`).Scan(&n)
+				sqlDB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_events) + (SELECT COUNT(*) FROM keyed_rows) + (SELECT COUNT(*) FROM study_cards)`).Scan(&n)
 				return n
 			}
 			before := count()

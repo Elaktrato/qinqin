@@ -28,8 +28,15 @@ describe('legacyRedirect', () => {
 		expect(at('/p/flashcards/system/level/hsk-words/HSK%201')).toBe('/flashcards/system/level/hsk-words/HSK%201');
 	});
 
-	it('leaves the plugins and lookalikes alone', () => {
-		for (const path of ['/p/journal', '/p/journal/settings', '/p/grammar', '/p/flashcardsx', '/p/readers/x', '/flashcards', '/reader']) {
+	it('sends the old plugin URLs of the journal and grammar to their core routes (#199)', () => {
+		const at = (pathname: string, search = '', hash = '') => legacyRedirect({ pathname, search, hash });
+		expect(at('/p/journal')).toBe('/journal');
+		expect(at('/p/journal/entry/e1', '?x=1', '#a')).toBe('/journal/entry/e1?x=1#a');
+		expect(at('/p/grammar/lesson/p/l')).toBe('/grammar/lesson/p/l');
+	});
+
+	it('leaves lookalikes alone', () => {
+		for (const path of ['/p/notes', '/p/journalx', '/p/flashcardsx', '/p/readers/x', '/flashcards', '/reader', '/journal']) {
 			expect(legacyRedirect({ pathname: path, search: '', hash: '' }), path).toBeNull();
 		}
 	});

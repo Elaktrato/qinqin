@@ -49,7 +49,7 @@ func TestContractActivity(t *testing.T) {
 		t.Fatalf("%d built-in rules, fixture lists %d", len(rules), len(f.Rules))
 	}
 	for i, r := range rules {
-		got, _ := json.Marshal(r.Rule)
+		got, _ := json.Marshal(r)
 		if r.Type != f.Rules[i].Type || !jsonEqual(got, f.Rules[i].Rule) {
 			t.Errorf("rule %d: %s %s, fixture %s %s", i, r.Type, got, f.Rules[i].Type, f.Rules[i].Rule)
 		}

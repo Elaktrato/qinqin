@@ -68,7 +68,7 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 	decodeJSON(t, r, &sent)
 	put := func(ws int64, key, body string) {
 		t.Helper()
-		path := "/api/plugins/qinqin-flashcards/data/" + key
+		path := "/api/rows/" + key
 		if ws != 0 {
 			path += "?workspace=" + itoa(ws)
 		}
@@ -118,6 +118,19 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 	// a read event for the book (reads follow the NEW book id)
 	doJSON(t, "POST", e.ts.URL, "/api/events/batch", w.alice, map[string]any{"events": []map[string]any{
 		{"id": "01JD0000000000000000000004", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T10:00:00Z", "type": "read", "payload": map[string]any{"bookId": b.ID, "seconds": 90}}}})
+	// a journal entry and the journal settings (#199: typed storage, keyed form in the archive)
+	if r := doJSON(t, "PUT", e.ts.URL, "/api/journal/entries/J1?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"date": "2026-11-10", "title": "Day", "text": "今天很好。", "source": "typed", "createdAt": "2026-11-10T08:00:00Z"}); r.StatusCode != 200 {
+		t.Fatalf("journal entry = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "PUT", e.ts.URL, "/api/journal/settings?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"guidance": "short", "explanationLanguage": "de"}); r.StatusCode != 200 {
+		t.Fatalf("journal settings = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, "/api/grammar/progress?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"packId": "zh-grammar", "lessonId": "le-change", "score": 2, "total": 3}); r.StatusCode != 200 {
+		t.Fatalf("grammar progress = %d", r.StatusCode)
+	}
 	// bob has data of his own
 	wsB := createWorkspace(t, e.ts.URL, w.bob, "zh", "")
 	pushTyped(t, e, w.bob, map[string]any{"cards": []any{map[string]any{"workspaceId": wsB, "id": "bobs", "kind": "vocab", "entryId": 1,
@@ -160,12 +173,25 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		scopes = append(scopes, fmt.Sprintf("?workspace=%d", int64(id)))
 	}
 	for _, sc := range scopes {
-		rows := getJSON(t, e.ts.URL, "/api/plugins/qinqin-flashcards/data"+sc, w.alice).([]any)
+		rows := getJSON(t, e.ts.URL, "/api/rows"+sc, w.alice).([]any)
 		for _, x := range rows {
 			m := x.(map[string]any)
 			b, _ := json.Marshal(m["data"])
 			out = append(out, fmt.Sprintf("PD %q %v %s", sc2name(sc, name), m["key"], mapEntryIDs(sub(string(b)), mapEntry)))
 		}
+	}
+	for id, n := range name {
+		q := fmt.Sprintf("?workspace=%d", int64(id))
+		for _, x := range getJSON(t, e.ts.URL, "/api/journal/entries"+q, w.alice).([]any) {
+			m := x.(map[string]any)
+			delete(m, "updatedAt") // the restore's write stamp
+			b, _ := json.Marshal(m)
+			out = append(out, fmt.Sprintf("JE ws=%s %s", n, b))
+		}
+		b, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/journal/settings"+q, w.alice))
+		out = append(out, fmt.Sprintf("JS ws=%s %s", n, b))
+		gp, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/grammar/progress"+q, w.alice))
+		out = append(out, fmt.Sprintf("GP ws=%s %s", n, gp))
 	}
 	for _, r := range typedRows(t, e, w.alice) {
 		ws := name[r.row["workspaceId"].(float64)]

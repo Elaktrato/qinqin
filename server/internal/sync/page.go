@@ -34,7 +34,7 @@ var (
 )
 
 // V2Collections are the collections of a round, in round order.
-var V2Collections = []string{"workspaces", "pluginStates", "pluginData", "cards", "decks", "deckSettings", "limits",
+var V2Collections = []string{"workspaces", "features", "rows", "cards", "decks", "deckSettings", "limits",
 	"fsrsSets", "fsrsActive", "books", "bookmarks", "highlights", "overlays", "sentences", "events"}
 
 // MovedCollections are the lexicon collections that left the pull.

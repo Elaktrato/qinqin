@@ -1,5 +1,6 @@
 // The Words rail tab's view model (#68): texts, paging and the deck list.
 // Pure; WordsPanel.svelte only renders it.
+import { profileOf } from '$lib/languageProfiles';
 import { GENERAL_DECK_ID } from '$lib/study/types';
 import { familiarity, type KnownIndex } from '$lib/study/known';
 import type { Deck } from '$lib/study/types';
@@ -12,8 +13,9 @@ export const PAGE_SIZE = 50;
 
 const n = (x: number): string => formatNumber(x);
 
+/** Word counts need dictionary segmentation (the language profile, #199). */
 export function wordCountsSupported(lang: string): boolean {
-	return lang === 'zh' || lang === 'ja';
+	return profileOf(lang).segmentation === 'dictionary';
 }
 
 export function coverageText(c: Coverage, scope: 'chapter' | 'book'): string {

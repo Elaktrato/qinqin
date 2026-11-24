@@ -142,7 +142,7 @@ describe('resetLayout', () => {
 
 describe('displayItems', () => {
 	const heat = widget('activity-heatmap', { size: 'wide' });
-	const cards = widget('flashcards-summary', { owner: 'qinqin-flashcards' });
+	const cards = widget('flashcards-summary', { owner: 'flashcards' });
 	const map = widget('map', { appliesTo: (language) => language === 'zh' });
 	const statsOnly = widget('stats-only', { surfaces: ['stats'] });
 	const all = [heat, cards, map, statsOnly];

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 	"qinqin/internal/workspaces"
@@ -14,15 +13,13 @@ import (
 // at most this many days, both ends included.
 const maxActivitySpanDays = 366
 
-// sourceJSON describes one activity rule so clients can draw chips and
-// words without knowing the plugins: unit is "seconds" for measure
-// rules, "count" otherwise.
+// sourceJSON describes one activity rule (stats.Rules) so clients can draw
+// chips and words: feature is the core feature it belongs to, unit "seconds"
+// for measure rules, "count" otherwise. Labels and wordings are client text.
 type sourceJSON struct {
-	Type     string         `json:"type"`
-	Plugin   string         `json:"plugin"`
-	Label    string         `json:"label"`
-	Unit     string         `json:"unit"`
-	Describe plugins.Plural `json:"describe"`
+	Type    string `json:"type"`
+	Feature string `json:"feature"`
+	Unit    string `json:"unit"`
 }
 
 // activityResponse is the body of GET /api/stats/activity.
@@ -37,7 +34,7 @@ type activityResponse struct {
 // handleActivity serves GET /api/stats/activity: the caller's activity
 // by learner day (the caller's time zone history, see studyday),
 // workspace and type over from..to (learner dates, inclusive; default
-// today and the 90 days before) for the rules of the registered plugins;
+// today and the 90 days before) for the core activity rules (stats.Rules);
 // timeZone is the caller's current zone (UTC while none is set).
 // An optional workspace restricts the cells; unknown and foreign ones
 // are 404. Every rule is listed in sources, also those without cells.
@@ -96,11 +93,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 		}
 		workspace = &id
 	}
-	rules, err := plugins.ActivityRules(r.Context(), s.db)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
+	rules := stats.Rules
 	cells, err := stats.Activity(r.Context(), s.db, u.ID, hist.Windows(from, to), workspace, rules)
 	if err != nil {
 		writeInternal(w, r)
@@ -108,14 +101,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	}
 	sources := make([]sourceJSON, 0, len(rules))
 	for _, rule := range rules {
-		unit := "count"
-		if rule.Rule.Kind() == plugins.KindMeasure {
-			unit = "seconds"
-		}
-		sources = append(sources, sourceJSON{
-			Type: rule.Type, Plugin: rule.Plugin, Label: rule.Rule.Label,
-			Unit: unit, Describe: rule.Rule.Describe,
-		})
+		sources = append(sources, sourceJSON{Type: rule.Type, Feature: rule.Feature, Unit: rule.Unit()})
 	}
 	writeJSON(w, http.StatusOK, activityResponse{
 		From: from.String(), To: to.String(), TimeZone: hist.Zone(), Sources: sources, Cells: cells,

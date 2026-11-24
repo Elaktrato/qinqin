@@ -28,7 +28,7 @@ describe('fetchWorkspaceContents', () => {
 	});
 
 	function row(key: string, data: unknown, over: Record<string, unknown> = {}) {
-		return { pluginId: 'qinqin-flashcards', key, workspaceId: 7, data, deletedAt: null, ...over };
+		return { key, workspaceId: 7, data, deletedAt: null, ...over };
 	}
 	function card(id: string, entryId: number, createdAt: string) {
 		return { id, kind: 'vocab', entryId, deckIds: ['general'], createdAt };
@@ -50,14 +50,13 @@ describe('fetchWorkspaceContents', () => {
 			if (url === '/api/library/books?workspace=7') return jsonResponse([{ id: 1 }, { id: 2 }]);
 			if (url.startsWith('/api/sync/pull')) {
 				return jsonResponse(pagedPull({
-					pluginData: [
+					rows: [
 						row(`card:${a.id}`, a),
 						row(`card:${aDup.id}`, aDup),
 						row(`card:${b.id}`, b),
 						row(`card:${gone.id}`, gone, { deletedAt: '2026-01-06T00:00:00Z' }),
 						row('deck:d', { id: 'd', name: 'D', createdAt: '2026-01-01T00:00:00Z' }),
-						row(`card:${other.id}`, other, { workspaceId: 3 }),
-						row(`card:${other.id}`, other, { pluginId: 'other' })
+						row(`card:${other.id}`, other, { workspaceId: 3 })
 					]
 				}));
 			}

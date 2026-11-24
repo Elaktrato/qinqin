@@ -13,8 +13,8 @@ beforeEach(() => {
 
 const sections = frameSections({
 	list: [
-		{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: READER_ID, manifest: {}, enabled: true, order: 0 }
+		{ id: FLASHCARDS_ID, enabled: true },
+		{ id: READER_ID, enabled: true }
 	],
 	status: 'ready'
 });

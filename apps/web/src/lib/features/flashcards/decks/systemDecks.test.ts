@@ -8,17 +8,13 @@ import {
 	levelDecks,
 	levelItems,
 	ownedLevelDeckId,
-	ownedPluginDeckId,
 	slugId
 } from './systemDecks';
-import { pluginDeckProviders } from './providers';
 
 interface Case {
-	kind: 'level' | 'plugin';
-	packId?: string;
-	level?: string;
-	pluginId?: string;
-	key?: string;
+	kind: 'level';
+	packId: string;
+	level: string;
 	fnv1a32: string;
 	id: string;
 }
@@ -30,14 +26,10 @@ describe('system deck ids contract', () => {
 	});
 
 	for (const c of fixture.cases as Case[]) {
-		it(`${c.kind} ${c.packId ?? c.pluginId} / ${c.level ?? c.key}`, () => {
-			if (c.kind === 'level') {
-				expect(fnv1a32(`${c.packId}\u0000${c.level}`)).toBe(c.fnv1a32);
-				expect(ownedLevelDeckId(c.packId!, c.level!)).toBe(c.id);
-			} else {
-				expect(fnv1a32(`${c.pluginId}\u0000${c.key}`)).toBe(c.fnv1a32);
-				expect(ownedPluginDeckId(c.pluginId!, c.key!)).toBe(c.id);
-			}
+		it(`${c.kind} ${c.packId} / ${c.level}`, () => {
+			expect(c.kind).toBe('level');
+			expect(fnv1a32(`${c.packId}\u0000${c.level}`)).toBe(c.fnv1a32);
+			expect(ownedLevelDeckId(c.packId, c.level)).toBe(c.id);
 		});
 	}
 
@@ -115,16 +107,9 @@ describe('levelItems', () => {
 	});
 });
 
-describe('plugin deck providers', () => {
-	it('none ships one in v0.3.0', () => {
-		expect(pluginDeckProviders).toEqual([]);
-	});
-});
-
 describe('copiedFrom', () => {
 	it('names the system deck a copy came from', () => {
 		expect(copiedFrom({ type: 'level', packId: 'hsk-words', level: 'HSK 1' })).toBe('hsk-words · HSK 1');
-		expect(copiedFrom({ type: 'plugin', pluginId: 'p', key: 'k' })).toBe('p · k');
 		expect(copiedFrom({ type: 'frequency', packId: 'jiten-frequency', size: 500 })).toBe('jiten-frequency · Top 500');
 	});
 });

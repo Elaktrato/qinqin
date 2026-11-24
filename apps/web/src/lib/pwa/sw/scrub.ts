@@ -1,11 +1,9 @@
 // What a saved API copy may hold (#72): the lookup history never reaches
-// Cache Storage. A whole-account pull keeps every row except the
-// qinqin-core `lookups` / `lookupcfg` rows, and an event log (the array or a
+// Cache Storage. A whole-account pull keeps every row except the keyed
+// `lookups` / `lookupcfg` rows, and an event log (the array or a
 // page's `events`) every event except `lookup` events (older web clients stored search queries in them).
 // Shared by the worker (before cache.put) and the page (scrubbing copies
 // saved by an older worker). Pure.
-
-const CORE = 'qinqin-core';
 
 function decodedPath(pathname: string): string | null {
 	try {
@@ -22,8 +20,8 @@ export function scrubbedPath(pathname: string): boolean {
 }
 
 const isLookupRow = (r: unknown): boolean => {
-	const row = r as { pluginId?: unknown; key?: unknown } | null;
-	return row?.pluginId === CORE && typeof row.key === 'string' && row.key.startsWith('lookup');
+	const row = r as { key?: unknown } | null;
+	return typeof row?.key === 'string' && row.key.startsWith('lookup');
 };
 
 /**
@@ -54,16 +52,12 @@ export function scrubForCache(pathname: string, text: string): string | null {
 		return kept.length === page.events.length ? text : JSON.stringify({ ...page, events: kept });
 	}
 	if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
-	const pull = body as { pluginData?: unknown; collections?: unknown };
+	const pull = body as { collections?: unknown };
 	// A v2 page keeps its rows under `collections` (docs/contracts/sync/).
 	const paged = pull.collections;
-	if (typeof paged === 'object' && paged !== null && !Array.isArray(paged)) {
-		const rows = (paged as { pluginData?: unknown }).pluginData;
-		if (!Array.isArray(rows)) return text;
-		const keptRows = rows.filter((r) => !isLookupRow(r));
-		return keptRows.length === rows.length ? text : JSON.stringify({ ...pull, collections: { ...paged, pluginData: keptRows } });
-	}
-	if (!Array.isArray(pull.pluginData)) return text;
-	const kept = pull.pluginData.filter((r) => !isLookupRow(r));
-	return kept.length === pull.pluginData.length ? text : JSON.stringify({ ...pull, pluginData: kept });
+	if (typeof paged !== 'object' || paged === null || Array.isArray(paged)) return text;
+	const rows = (paged as { rows?: unknown }).rows;
+	if (!Array.isArray(rows)) return text;
+	const keptRows = rows.filter((r) => !isLookupRow(r));
+	return keptRows.length === rows.length ? text : JSON.stringify({ ...pull, collections: { ...paged, rows: keptRows } });
 }

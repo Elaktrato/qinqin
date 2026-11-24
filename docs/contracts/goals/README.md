@@ -9,7 +9,7 @@ format: see `docs/contracts/README.md`. The server is unchanged: no Go test deco
 Progress is **never stored**: nothing writes amounts or statuses; they are derived from the event log every
 time.
 
-## Storage row (plugin `qinqin-flashcards`, plugin data)
+## Storage row (a keyed row, `keyed/`)
 
 `goals:workspace`, **workspace-scoped** (written with `?workspace=<id>`, never user-global):
 
@@ -125,7 +125,7 @@ The fixture's `day` is a goal-days output (with its `fraction`), `expect` the st
 
 ## Android and other clients
 
-Read `goals:workspace` with the `limits:*` rows (one plugin-data pull, rows of the current workspace only;
+Read `goals:workspace` with the `limits:*` rows (one pull of `rows` and `limits`, rows of the current workspace only;
 a tombstone is absent). Amounts for `activity:*` come from `GET /api/stats/activity?from=&to=&workspace=`
 (the server buckets cells by the learner's day); `flashcards:*` from the local review log by the learner's day
 (`dayOf` of `study-day/`, never the study clock), so reviews still in the outbox count for those. Request the activity window only when a goal in effect inside it has an `activity:*` metric; when

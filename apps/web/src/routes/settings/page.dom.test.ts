@@ -20,7 +20,7 @@ beforeEach(() => {
 	ctx = testContext();
 });
 
-const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal', version: '1.2.3' }, enabled: true, order: 2 };
+const journal = { id: 'journal', enabled: true, updatedAt: null };
 
 beforeEach(() => {
 	setUrl('/settings');
@@ -28,7 +28,7 @@ beforeEach(() => {
 	ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), false);
 	ctx.session.workspaces.loadError = '';
 	vi.mocked(api).mockImplementation((async (url: string) => {
-		if (url === '/api/plugins') return [plugin];
+		if (url === '/api/features') return [journal];
 		if (url.startsWith('/api/ai/providers')) return { providers: [], canManageCustom: false, privateAllowed: false };
 		if (url.startsWith('/api/ai')) return { key: null, keys: [], active: null, fake: false, models: [], available: false, reason: '', usage: { callsLastHour: 0, limitPerHour: 10, inputTokens: 0, outputTokens: 0 } };
 		return [];
@@ -42,7 +42,7 @@ afterEach(() => {
 describe('the settings tab row in the lighter look (#106)', () => {
 	afterEach(() => ctx.app.auth.set({ token: null, user: null }));
 
-	it('is a tablist with eight tabs for a member and ten for an admin', async () => {
+	it('is a tablist with seven tabs for a member and nine for an admin', async () => {
 		render(Page, { context: ctx.context });
 		const list = screen.getByRole('tablist', { name: 'Settings' });
 		expect([...list.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim())).toEqual([
@@ -51,14 +51,13 @@ describe('the settings tab row in the lighter look (#106)', () => {
 			'Appearance',
 			'Study',
 			'Features',
-			'Plugins',
 			'AI',
 			'Account'
 		]);
 		cleanup();
 		ctx.app.auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
 		render(Page, { context: ctx.context });
-		expect(screen.getAllByRole('tab')).toHaveLength(10);
+		expect(screen.getAllByRole('tab')).toHaveLength(9);
 	});
 
 	it('the ?tab=data deep link selects Data', async () => {
@@ -145,58 +144,9 @@ describe('settings after a failed shell load', () => {
 		expect(screen.queryByText('Loading workspaces…')).toBeNull();
 		expect(screen.getByText('Could not load workspaces.')).toBeTruthy();
 		vi.mocked(api).mockImplementation((async (url: string) =>
-			url === '/api/workspaces' ? [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }] : url === '/api/plugins' ? [] : []) as never);
+			url === '/api/workspaces' ? [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }] : url === '/api/features' ? [] : []) as never);
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await waitFor(() => expect(screen.queryByText('Could not load workspaces.')).toBeNull());
-	});
-});
-
-describe('plugin order validation', () => {
-	it('disables Save and explains when the order is cleared', async () => {
-		setUrl('/settings?tab=plugins');
-		render(Page, { context: ctx.context });
-		const order = (await screen.findByLabelText('Order')) as HTMLInputElement;
-		const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
-		expect(save.disabled).toBe(false);
-		await fireEvent.input(order, { target: { value: '' } });
-		await waitFor(() => expect(save.disabled).toBe(true));
-		expect(screen.getByText('Enter a whole number of 0 or more.')).toBeTruthy();
-		await fireEvent.input(order, { target: { value: '0' } });
-		await waitFor(() => expect(save.disabled).toBe(false));
-		expect(screen.queryByText('Enter a whole number of 0 or more.')).toBeNull();
-	});
-});
-
-describe('the plugin list in the lighter look (#106)', () => {
-	it('shows the version as a chip and saves with a secondary Button; no primary', async () => {
-		setUrl('/settings?tab=plugins');
-		render(Page, { context: ctx.context });
-		// "Journal" is also a section row of Settings → Layout (hidden panel).
-		const row = (await screen.findByText('1.2.3')).closest('li')!;
-		expect(within(row).getByText('Journal')).toBeTruthy();
-		const save = within(row).getByRole('button', { name: 'Save' });
-		expect(save.className).toContain('secondary');
-		expect(primaryActions(document.body)).toHaveLength(0);
-	});
-});
-
-describe('hidden plugins', () => {
-	it('leaves out plugins the server flags hidden, whatever their id', async () => {
-		setUrl('/settings?tab=plugins');
-		const base = vi.mocked(api).getMockImplementation()!;
-		vi.mocked(api).mockImplementation((async (url: string, ...rest: unknown[]) => {
-			if (url === '/api/plugins') {
-				return [
-					plugin,
-					{ id: 'internal-thing', manifest: { name: 'Internal thing' }, enabled: true, order: 0, hidden: true }
-				];
-			}
-			return (base as (...a: unknown[]) => unknown)(url, ...rest);
-		}) as never);
-		render(Page, { context: ctx.context });
-		// "Journal" is also a section row of Settings → Layout (hidden panel).
-		expect((await screen.findAllByText('Journal')).length).toBeGreaterThan(0);
-		expect(screen.queryByText('Internal thing')).toBeNull();
 	});
 });
 

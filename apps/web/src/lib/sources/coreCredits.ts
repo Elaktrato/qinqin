@@ -1,5 +1,5 @@
 // Third-party material built into the app itself (not a pack, not a
-// plugin), shown under "Built into the app" on the Sources page. Licence
+// feature's own credit), shown under "Built into the app" on the Sources page. Licence
 // names and copyright lines are taken from each package's own
 // package.json/LICENSE; the licence texts listed ship under
 // apps/web/static, copied verbatim from the packages. The stroke data is not

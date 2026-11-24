@@ -73,7 +73,7 @@ function select(id: number | null, language = 'zh'): void {
 
 beforeEach(() => {
 	select(1);
-	ctx.session.plugins.set({ list: [], status: 'ready' });
+	ctx.session.features.set({ list: [], status: 'ready' });
 	vi.mocked(loadMilestones).mockResolvedValue(milestones());
 	vi.mocked(markSeen).mockResolvedValue(undefined);
 });
@@ -81,7 +81,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	select(null);
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 const cardHeading = () => screen.queryByRole('heading', { level: 2, name: 'Milestone reached' });
@@ -119,11 +119,11 @@ describe('home milestones', () => {
 	});
 
 	it('nothing before the plugin states are ready, and nothing without a workspace', async () => {
-		ctx.session.plugins.set({ list: [], status: 'loading' });
+		ctx.session.features.set({ list: [], status: 'loading' });
 		render(Page, { context: ctx.context });
 		await tick();
 		expect(loadMilestones).not.toHaveBeenCalled();
-		ctx.session.plugins.set({ list: [], status: 'ready' });
+		ctx.session.features.set({ list: [], status: 'ready' });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		select(null);
 		await waitFor(() => expect(cardHeading()).toBeNull());
@@ -208,14 +208,14 @@ describe('home heading and search', () => {
 describe('home with a feature switched off', () => {
 	it('shows no widget of a switched-off feature', async () => {
 		const actual = await vi.importActual<typeof import('$lib/widgets/registry')>('$lib/widgets/registry');
-		vi.mocked(allWidgets).mockImplementation((plugins, states, language) =>
-			actual.allWidgets(plugins, states, language, [])
+		vi.mocked(allWidgets).mockImplementation((states, language) =>
+			actual.allWidgets(states, language, [])
 		);
-		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }], status: 'ready' });
 		const { unmount } = render(Page, { context: ctx.context });
 		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
 		unmount();
-		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: false }], status: 'ready' });
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
 		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();

@@ -66,10 +66,8 @@ describe('ActivityHeatmap accessibility', () => {
 			sources: [
 				{
 					type: 'review',
-					plugin: 'flashcards',
-					label: 'Reviews',
-					unit: 'count',
-					describe: { one: 'flashcard review', other: 'flashcard reviews' }
+					feature: 'flashcards',
+					unit: 'count'
 				}
 			],
 			cells: [{ day: today, workspace: 3, type: 'review', points: 5, raw: 5 }]
@@ -142,10 +140,8 @@ describe('ActivityHeatmap vacation marks', () => {
 
 const REVIEWS = {
 	type: 'review',
-	plugin: 'flashcards',
-	label: 'Reviews',
-	unit: 'count' as const,
-	describe: { one: 'flashcard review', other: 'flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 const WS = { id: 3, language: 'zh', name: 'zh' } as never;
 
@@ -297,7 +293,7 @@ describe('ActivityHeatmap controls', () => {
 			cells: [{ day: today, workspace: 3, type: 'review', points: 2, raw: 2 }]
 		});
 		render(ActivityHeatmap, { context: ctx.context });
-		const tab = await screen.findByRole('button', { name: 'Reviews, 2 points' });
+		const tab = await screen.findByRole('button', { name: 'Flashcard reviews, 2 points' });
 		expect(tab.getAttribute('aria-pressed')).toBe('true');
 		await fireEvent.click(tab);
 		await waitFor(() => expect(saveActivityView).toHaveBeenCalledWith({ scope: 'workspace', hidden: ['review'] }));

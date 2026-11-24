@@ -21,7 +21,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	document.title = '';
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 	ctx.session.workspaces.set({ list: [], current: null });
 });
 
@@ -29,12 +29,12 @@ describe('/flashcards', () => {
 	it('renders the flashcards views at the core route, with their titles', async () => {
 		const ws = { id: 1, language: 'zh', name: 'zh' } as never;
 		ctx.session.workspaces.set({ list: [ws], current: ws });
-		ctx.session.plugins.set({ list: [], status: 'loading' });
+		ctx.session.features.set({ list: [], status: 'loading' });
 		setUrl('/flashcards/deck/general/settings');
 		(page as unknown as { params: Record<string, string> }).params = { rest: 'deck/general/settings' };
 		render(Page, { context: ctx.context });
 		expect(document.title).toBe('Decks · qinqin');
-		ctx.session.plugins.set({ list: [], status: 'ready' });
+		ctx.session.features.set({ list: [], status: 'ready' });
 		await waitFor(() => expect(document.title).toBe('Deck settings · Flashcards · qinqin'));
 	});
 });

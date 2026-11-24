@@ -38,7 +38,6 @@ import (
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/packs"
-	"qinqin/internal/plugins"
 	"qinqin/internal/webdist"
 )
 
@@ -94,48 +93,6 @@ func defaultData() string {
 		return d
 	}
 	return "./data"
-}
-
-// retiredHeatmapPlugin is the plugin id earlier builds registered for
-// the generic home heatmap. The flashcards widget replaced it; an
-// upgraded database still carries the old registry row, so startup
-// unregisters it to keep Settings free of a dead plugin.
-const retiredHeatmapPlugin = "qinqin-heatmap"
-
-// registerBuiltinPlugins puts the feature plugins this build ships (the
-// embedded manifests of internal/plugins/builtin, the same files the web
-// build imports) into the server registry and retires the ones it no
-// longer ships. It runs at serve startup, after migrations and before
-// the HTTP server accepts requests; both steps are idempotent. A built-in
-// wins an event-type conflict with an admin-registered plugin; the
-// conflict is logged, never fatal.
-func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
-	for _, raw := range plugins.Builtin() {
-		m, err := plugins.ParseManifest(raw)
-		if err != nil {
-			return fmt.Errorf("built-in plugin manifest: %w", err)
-		}
-		conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, raw)
-		if err != nil {
-			return fmt.Errorf("register built-in plugin %s: %w", m.ID, err)
-		}
-		for _, other := range conflicts {
-			log.Printf("plugin %s also claims event types of %s; the built-in wins", other, m.ID)
-		}
-	}
-	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
-		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
-	}
-	// Rows that fail the manifest contract stay writable but count for
-	// neither event ownership nor activity rules: say so once.
-	bad, err := plugins.UnparsableRows(ctx, sqlDB)
-	if err != nil {
-		return fmt.Errorf("check plugin registry: %w", err)
-	}
-	if len(bad) > 0 {
-		log.Printf("plugin registry rows that do not parse as manifests (re-register or remove them): %s", strings.Join(bad, ", "))
-	}
-	return nil
 }
 
 // openData creates the data directory if needed and opens (migrating)
@@ -218,9 +175,6 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	// A fresh instance gets its admin here (when configured), before the
 	// port opens, so first registration never decides who is admin.
 	if err := bootstrapAdminFromEnv(ctx, sqlDB, os.Getenv, log.Printf); err != nil {
-		return stopped(err)
-	}
-	if err := registerBuiltinPlugins(ctx, sqlDB); err != nil {
 		return stopped(err)
 	}
 	// The Sources page shows the stored terms; say when seed is due.

@@ -23,7 +23,7 @@ const (
 
 // FamilyOf reports the typed family a legacy qinqin-flashcards key belongs
 // to. A key of a family may still be unreadable (FromLegacy decides); every
-// other key stays a keyed plugin-data row.
+// other key is no typed row.
 func FamilyOf(key string) (Family, bool) {
 	switch {
 	case strings.HasPrefix(key, cardPrefix):
@@ -262,12 +262,6 @@ func sourceFromLegacy(raw json.RawMessage) *DeckSource {
 		level, ok2 := str("level")
 		if ok1 && ok2 {
 			return &DeckSource{Type: "level", PackID: pack, Level: level}
-		}
-	case "plugin":
-		plugin, ok1 := str("pluginId")
-		k, ok2 := str("key")
-		if ok1 && ok2 {
-			return &DeckSource{Type: "plugin", PluginID: plugin, Key: k}
 		}
 	case "frequency":
 		pack, ok1 := str("packId")

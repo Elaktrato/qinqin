@@ -1,10 +1,9 @@
 {
  "version": 1,
  "rule": "sync/unreadable-rows",
- "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable pluginData row. A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. A tombstone (deletedAt set) that does not decode is protected but not counted: there is nothing to show. A row of another workspace is neither counted nor protected. Keyed pluginData rows are protected by key (pluginData:<key>) when the row shape or the keyed payload (goals/, known marks, vacations) does not decode. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
+ "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable keyed row (rows). A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. A tombstone (deletedAt set) that does not decode is protected but not counted: there is nothing to show. A row of another workspace is neither counted nor protected. Keyed rows are protected by key (rows:<key>) when the row shape or the keyed payload (goals/, known marks, vacations) does not decode. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
  "requested": [
-  "pluginStates",
-  "pluginData",
+  "rows",
   "cards",
   "decks",
   "deckSettings",
@@ -34,12 +33,10 @@
   "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
  },
  "rows": {
-  "pluginStates": [],
-  "pluginData": [
+  "rows": [
    {
     "_why": "readable",
     "row": {
-     "pluginId": "qinqin-flashcards",
      "key": "known:1201",
      "userId": 1,
      "workspaceId": 7,
@@ -56,7 +53,6 @@
    {
     "_why": "malformed: the row has no version",
     "row": {
-     "pluginId": "qinqin-flashcards",
      "key": "known:1202",
      "userId": 1,
      "workspaceId": 7,
@@ -72,7 +68,6 @@
    {
     "_why": "malformed keyed data: the row shape is fine but the goal row is not (goals/): counted and protected",
     "row": {
-     "pluginId": "qinqin-flashcards",
      "key": "goals:workspace",
      "userId": 1,
      "workspaceId": 7,
@@ -407,7 +402,7 @@
  },
  "expect": {
   "readable": {
-   "pluginData": [
+   "rows": [
     "known:1201"
    ],
    "cards": [
@@ -428,7 +423,7 @@
    "fsrsActive": []
   },
   "unreadable": {
-   "pluginData": 2,
+   "rows": 2,
    "cards": 3,
    "decks": 1,
    "deckSettings": 1,
@@ -457,7 +452,7 @@
    "fsrsActive": [
     ""
    ],
-   "pluginData": [
+   "rows": [
     "known:1202",
     "goals:workspace"
    ]

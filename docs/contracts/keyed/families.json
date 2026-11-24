@@ -1,0 +1,36 @@
+{
+ "version": 1,
+ "rule": "keyed/families",
+ "note": "The keyed rows store (#199) accepts only these key families, each in its one scope. A family with prefix true is the prefix followed by at least one character; any other is the exact key. Keys are 1 to 512 bytes.",
+ "families": [
+  {"key": "note:", "prefix": true, "scope": "workspace", "contract": "notes/"},
+  {"key": "notecfg", "prefix": false, "scope": "workspace", "contract": "notes/"},
+  {"key": "lookups", "prefix": false, "scope": "workspace", "contract": "lookups/"},
+  {"key": "lookupcfg", "prefix": false, "scope": "user-global", "contract": "lookups/"},
+  {"key": "known:", "prefix": true, "scope": "workspace", "contract": "reader/"},
+  {"key": "milestone:", "prefix": true, "scope": "workspace", "contract": "milestones/"},
+  {"key": "goals:workspace", "prefix": false, "scope": "workspace", "contract": "goals/"},
+  {"key": "vacation:", "prefix": true, "scope": "user-global", "contract": "scheduler/"},
+  {"key": "home-layout", "prefix": false, "scope": "user-global", "contract": "settings/"},
+  {"key": "activity-view", "prefix": false, "scope": "user-global", "contract": "settings/"},
+  {"key": "widget-options", "prefix": false, "scope": "user-global", "contract": "settings/"},
+  {"key": "nav-layout", "prefix": false, "scope": "user-global", "contract": "settings/"},
+  {"key": "appearance", "prefix": false, "scope": "user-global", "contract": "themes/"}
+ ],
+ "cases": [
+  {"name": "a note in a workspace", "key": "note:1201", "scope": "workspace", "accept": true},
+  {"name": "a note without a workspace", "key": "note:1201", "scope": "user-global", "accept": false, "answer": "scope"},
+  {"name": "the prefix alone is no key", "key": "note:", "scope": "workspace", "accept": false, "answer": "unknown"},
+  {"name": "a vacation is user-global", "key": "vacation:01JD0000000000000000000001", "scope": "user-global", "accept": true},
+  {"name": "a vacation in a workspace", "key": "vacation:01JD0000000000000000000001", "scope": "workspace", "accept": false, "answer": "scope"},
+  {"name": "the home layout", "key": "home-layout", "scope": "user-global", "accept": true},
+  {"name": "an exact key with more after it", "key": "home-layout2", "scope": "user-global", "accept": false, "answer": "unknown"},
+  {"name": "the lookup history of a workspace", "key": "lookups", "scope": "workspace", "accept": true},
+  {"name": "a known mark", "key": "known:5", "scope": "workspace", "accept": true},
+  {"name": "a milestone seen", "key": "milestone:reviews:1000", "scope": "workspace", "accept": true},
+  {"name": "the daily goal", "key": "goals:workspace", "scope": "workspace", "accept": true},
+  {"name": "a typed study key is no keyed row", "key": "card:c-vocab-1", "scope": "workspace", "accept": false, "answer": "unknown"},
+  {"name": "a former journal key", "key": "entry:01JD0000000000000000000001", "scope": "workspace", "accept": false, "answer": "unknown"},
+  {"name": "an unknown key", "key": "knownfilter", "scope": "workspace", "accept": false, "answer": "unknown"}
+ ]
+}

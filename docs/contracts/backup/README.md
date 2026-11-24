@@ -1,24 +1,24 @@
-# Personal backup archive, format v1 (#61)
+# Personal backup archive, format v2 (#61, #199)
 
 A user's own data as a zip of JSON (`qinqin-<username>-<YYYYMMDD-HHMMSS>.zip`). Server routes:
 `POST /api/account/export` (ticket) and the staged restore under `/api/account/restore`; see
-`docs/superpowers/specs/2026-11-15-v030-backup-design.md`. `sample-v1/` is a valid unpacked archive
+`docs/superpowers/specs/2026-11-15-v030-backup-design.md`. `sample-v2/` is a valid unpacked archive
 (the Go test zips it and restores it); `remap.json`, `reject.json` and `study-rows.json` are fixtures every
 implementation runs.
 
 ## Entries (Store or Deflate only, no encryption)
 
 ```
-manifest.json            written LAST: format, formatVersion (1), appVersion, schemaVersion, createdAt,
+manifest.json            written LAST: format, formatVersion (2), appVersion, schemaVersion, createdAt,
                          user {id, username}, counts, files [{name, bytes, sha256}]
-account.json             {username, timeZones [{zone, from, createdAt}], pluginStates [{pluginId, enabled, order}],
+account.json             {username, timeZones [{zone, from, createdAt}], features [{id, enabled}],
                          interfaceLanguage?}  optional (#73): '' or a language tag (i18n/language-tags.json)
 refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to (cards, notes, edits, events)
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries
 refs/sentences.json      [{id, entryId, own, sourcePack, hanzi}]    sentences cards point at
 workspaces.json          [{id, language, name, settings, updatedAt}]
 events/NNNNNN.jsonl      {id, workspaceId, device, ts, type, payload, updatedAt}
-plugin-data/NNNNNN.jsonl {pluginId, workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
+rows/NNNNNN.jsonl        {workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
 overlays/NNNNNN.jsonl    {entryId, written, readings, updatedAt}
 sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt}     own sentences only
 library/books.json       [{id, workspaceId, language, title, author, source, sourceId, sourceUrl,
@@ -31,29 +31,44 @@ and about 32 MiB, so no entry outgrows the per-entry cap; a family without rows 
 parts in name order.
 ```
 
-Ids in the archive are the SOURCE server's ids. A `workspaceId: null` plugin row is a user-global row
-(for example `vacation:<ULID>` rows of `qinqin-flashcards`): ALL of the user's live rows are exported,
+Ids in the archive are the SOURCE server's ids. A `workspaceId: null` row is a user-global row
+(for example `vacation:<ULID>` rows): ALL of the user's live rows are exported,
 global ones included, and a restore writes them back as global rows.
 
-### Typed study rows (v0.4.0, still format 1)
+### Typed study rows
 
 Cards, decks, deck settings, limits, FSRS sets and the active set live in typed tables on a v0.4 server
-(`docs/contracts/study/`). The archive carries each LIVE typed row as its legacy `qinqin-flashcards` plugin
-row (`card:<id>`, `deck:<id>`, `deckcfg:<deckId>`, `limits:workspace`, `limits:deck:<deckId>`,
+(`docs/contracts/study/`). The archive carries each LIVE typed row in its keyed form in the `rows` family
+(`card:<id>`, `deck:<id>`, `deckcfg:<deckId>`, `limits:workspace`, `limits:deck:<deckId>`,
 `fsrs:set:<id>`, `fsrs:active`; the keyed-row codec's `ToLegacy`: same key, data, `version`, `updatedAt`,
-`modifiedAt`), counted under `pluginData`, so a v0.4 archive restores on a v0.3 server and a v0.3 archive on
-a v0.4 or later one. This keyed form exists only in archives: since #198 no route reads or writes it, and
-old-format archives (a v0.3.0 server's, like `sample-v1/`) are still accepted, through the restore only. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is never exported
-(#198; before, a readable one no typed row shadowed was).
+`modifiedAt`), counted under `rows`. This keyed form exists only in archives: no route reads or writes it
+(the keyed rows store refuses these keys, `keyed/`). Typed tombstones are never exported.
 
-A restore remaps these rows exactly like every plugin row (workspaces, derived card ids, entry and
+A restore remaps these rows exactly like every row (workspaces, derived card ids, entry and
 sentence ids, `remap.json`), then decodes each with the codec into its typed table: `version` and the edit
-time (`modifiedAt`, else `updatedAt`) are kept, `updatedAt` is the restore time (like every restored plugin
+time (`modifiedAt`, else `updatedAt`) are kept, `updatedAt` is the restore time (like every restored
 row). A typed-family row the codec cannot read, or one without a workspace, is dropped and counted in
-`droppedRows` (the dry-run report counts it too); v0.3.0 restored such rows as inert plugin rows no client
-read. The restore clears the user's typed rows (tombstones included) and the library deletion log
+`droppedRows` (the dry-run report counts it too). The restore clears the user's typed rows (tombstones included) and the library deletion log
 (`library_deletions`, sync bookkeeping that is never exported); every client pulls in full after a
 restore.
+
+### Journal documents (#199)
+
+The journal's entries, reviews, topic ideas and settings are typed storage (`journal/README.md`). The archive
+carries each as a workspace row of the `rows` family in its keyed form: `journal:entry:<id>` (the entry
+as the routes answer it), `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`, version 1,
+`updatedAt` the document's stamp, counted under `rows`; per workspace the entries come before their
+reviews. A restore remaps the workspace and writes each into its table through the store's own validation;
+one that does not decode, that the store refuses, or a review whose entry the archive did not restore first is
+dropped and counted in `droppedRows`.
+
+Grammar lesson progress (`grammar/README.md`) travels the same way: a workspace row of the `rows` family
+per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`; a restore writes it back
+with the archive's `completedAt` (the contract's rules apply; one they refuse is dropped and counted). The
+row's `updatedAt` is the server's write time of the progress. An export never writes a stamp a restore refuses:
+a `completedAt`, a review's or an entry's `createdAt` or the topic ideas' `createdAt` that is not an RFC 3339
+time (left by an older server) is replaced by the row's write time (for the topic ideas, the export's). A journal
+or grammar row without a workspace is dropped by both the dry run and the restore.
 
 ### The keyed-row codec (`study-rows.json`)
 
@@ -70,11 +85,13 @@ mirror (`apps/web/src/lib/testing/legacyCodec.ts`) that builds old-shaped test d
 
 ## Version rule
 
-`formatVersion` is the only compatibility key. A reader accepts exactly the versions it knows (1) and
+`formatVersion` is the only compatibility key. A reader accepts exactly the versions it knows (2) and
 rejects everything else (`backup_version_unsupported`); `appVersion`/`schemaVersion` are informational.
-A newer server must keep reading v1; an older server rejects a newer format.
+Format 2 (#199) replaced the `plugin-data` family (rows with a `pluginId`) by `rows` and `account.json`
+`pluginStates` by `features`; a format 1 archive (every archive from before #199) is refused (owner
+direction 2026-11-24: old backups need not restore). An older server rejects a newer format.
 
-Optional additions stay version 1: `account.json` `interfaceLanguage` (#73) is written by every export since
+Optional additions keep the version: `account.json` `interfaceLanguage` (#73) is written by every export since
 then; a restore sets it when present and valid (`i18n/language-tags.json`), leaves the current setting when the
 key is absent or null (older archives), and ignores an invalid tag without failing (a preference is not worth a
 refused restore). A server from before #73 decodes `account.json` strictly and refuses such an archive as malformed: restoring
@@ -84,7 +101,7 @@ into an older server is not supported.
 
 Password hash, email, sessions, personal access tokens, reset links, one-time-code challenges, TOTP secrets and recovery codes,
 AI keys and AI selection and usage, invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo
-drafts, tombstoned (deleted) plugin rows and typed study rows, own sentences, the library deletion log,
+drafts, tombstoned (deleted) keyed rows and typed study rows, own sentences, the library deletion log,
 dictionary and pack content, data packages (`<data>/packages`: shared data, rebuilt by the server, never user
 data). A restore never changes who can sign in.
 
@@ -92,7 +109,7 @@ data). A restore never changes who can sign in.
 
 Upload 128 MiB (a server never PRODUCES an archive above its own upload cap, 2 GiB expanded or 64 MiB per book:
 the export is refused with `backup_too_large_to_restore`); manifest 1 MiB; one JSONL line 1 MiB; a JSON array file or book file 64 MiB; all
-entries together 2 GiB; at most 10 000 entries; a plugin value 256 KiB; names exactly as above, no
+entries together 2 GiB; at most 10 000 entries; a row value 256 KiB; names exactly as above, no
 duplicates; book files only for ids listed in `library/books.json`. Entry names are never joined into
 a path: only integer book ids build file names.
 
@@ -111,28 +128,29 @@ restoring user's rows are read or written (Go: `restore_test.go` `TestRestoreKee
 (`scope.workspaces`) and `hiddenDictionaries` (by dictionary pack id) are remapped; a vacation whose
 workspace list becomes empty is dropped (`"all"` stays). Workspace and book ids are always new.
 
-Personal notes (`qinqin-core` rows `note:<entryId>` whose key number equals `data.entryId`,
+Personal notes (rows `note:<entryId>` whose key number equals `data.entryId`,
 `docs/contracts/notes/`): export lists each live note's entry in `refs/entries.json`; restore rewrites the
 key and `entryId` together to the target entry, every other member byte for byte, and drops the note when
 the entry is unresolved (the dry-run report counts it under that entry's `notes` and in `droppedRows`).
 If two archive notes of one workspace would land on the same target entry, the newest
 (`modifiedAt ?? updatedAt`, ties: the smaller source entry id) is kept and the other dropped, never a
 blocking collision. (Today's entry resolution maps at most one archive entry to a target entry, so this
-cannot happen through `resolveEntries`; the rule keeps a restore safe if that ever changes.) Invalid note rows are dropped: a `qinqin-core` row whose key starts with `note:` but
+cannot happen through `resolveEntries`; the rule keeps a restore safe if that ever changes.) Invalid note rows are dropped: a row whose key starts with `note:` but
 is not canonical (`note:01`, `note:+1`, `note:`) or whose `data` is not an object with a JSON integer
 `entryId` equal to the key's number is never restored (kept verbatim it would annotate whatever entry its
 key names on the target, or collide with a remapped note); it counts in `droppedRows`. Every other
-`qinqin-core` row (`notecfg`, the home layout, ...) is restored unchanged.
+keyed row (`notecfg`, the home layout, ...) is restored unchanged.
 
-Manual known marks (`qinqin-flashcards` rows `known:<entryId>`, `reader/README.md`) follow the same rules as
+Manual known marks (rows `known:<entryId>`, `reader/README.md`) follow the same rules as
 notes: export lists the entry of each live mark in `refs/entries.json`; restore rewrites key and `entryId`
 together (other members byte for byte), drops a mark whose entry is unresolved, drops an invalid `known:`
 row (key not canonical, `data` not an object with a JSON integer `entryId` equal to the key's number, or
 no workspace: marks are workspace rows) and
 keeps the newest of two marks that would land on one target; every dropped mark counts in `droppedRows`.
-Other `qinqin-flashcards` keys (`knownfilter`, ...) are untouched.
+A key no store takes (`keyed/families.json`, a typed family, `journal:`, `grammar:progress:`) is dropped and
+counted in `droppedRows`.
 
-The lookup history (`qinqin-core` row `lookups`, one per workspace, `docs/contracts/lookups/`): export lists
+The lookup history (row `lookups`, one per workspace, `docs/contracts/lookups/`): export lists
 the entry of every valid item in `refs/entries.json`. Restore parses the row with the lookups parse rules,
 moves each item to the target entry (unresolved: the item is dropped), maps `books` through the book map
 (unresolved ids removed), merges items that land on one target entry (`count` and every `sources` member

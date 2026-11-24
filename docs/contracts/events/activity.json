@@ -1,29 +1,20 @@
 {
  "version": 1,
  "rule": "events/activity",
- "note": "cells of GET /api/stats/activity for the built-in activity rules (rules lists them as the manifests declare them); events default to workspace 1",
+ "note": "cells of GET /api/stats/activity for the built-in activity rules (rules lists the core table, server/internal/stats/rules.go: type, feature and the scoring; labels and wordings are client catalogue text); events default to workspace 1",
  "rules": [
   {
    "type": "review",
    "rule": {
-    "label": "Flashcard reviews",
-    "describe": {
-     "one": "{n} flashcard review",
-     "other": "{n} flashcard reviews"
-    }
+    "feature": "flashcards"
    }
   },
   {
    "type": "read",
    "rule": {
-    "label": "Reading",
-    "describe": {
-     "one": "{n} minute of reading",
-     "other": "{n} minutes of reading"
-    },
+    "feature": "reader",
     "measure": {
      "field": "seconds",
-     "unit": "seconds",
      "min": 30,
      "max": 7200
     },
@@ -33,11 +24,7 @@
   {
    "type": "journal",
    "rule": {
-    "label": "Journal entries",
-    "describe": {
-     "one": "{n} journal entry",
-     "other": "{n} journal entries"
-    },
+    "feature": "journal",
     "distinctBy": "entryId"
    }
   }

@@ -19,10 +19,8 @@ import {
 const L = 'en-GB';
 const drill: ActivitySource = {
 	type: 'drill',
-	plugin: 'grammar-drills',
-	label: 'Grammar drills',
-	unit: 'count',
-	describe: { one: '{n} drill', other: '{n} drills' }
+	feature: 'grammar',
+	unit: 'count'
 };
 
 // ICU versions differ in the spaces around a range's dash (none, thin, normal).
@@ -101,13 +99,13 @@ describe('rows', () => {
 		previous: 0,
 		unit
 	});
-	it('labels the built-in rows and the plugin sources', () => {
+	it('labels the built-in rows and the activity sources (one the catalogue does not know by its type)', () => {
 		expect(rowLabel(row('reviews', 1), [])).toBe('Reviews');
 		expect(rowLabel(row('newCards', 1), [])).toBe('New cards');
 		expect(rowLabel(row('studyTime', 1), [])).toBe('Flashcard study time');
 		expect(rowLabel(row('reading', 1), [])).toBe('Reading');
 		expect(rowLabel(row('journal', 1), [])).toBe('Journal entries');
-		expect(rowLabel(row('activity:drill', 1), [drill])).toBe('Grammar drills');
+		expect(rowLabel(row('activity:drill', 1), [drill])).toBe('drill');
 		expect(rowLabel(row('activity:gone', 1), [drill])).toBe('gone');
 	});
 
@@ -196,7 +194,7 @@ describe('summaryLines', () => {
 			'Flashcard study time',
 			'Reading',
 			'Journal entries',
-			'Grammar drills',
+			'drill',
 			'Days active',
 			'Streak',
 			'Words reaching mature',

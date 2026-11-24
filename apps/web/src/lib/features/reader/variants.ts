@@ -1,5 +1,5 @@
 // Chinese script variants via opencc-js. Its dictionaries are large (about
-// half a megabyte gzipped), and the reader plugin is part of the app's
+// half a megabyte gzipped), and the reader is part of the app's
 // eagerly loaded registry, so each one-way converter bundle is fetched on
 // first use (prepareVariant) rather than imported statically. Only the two
 // one-way bundles are used, never the full build.

@@ -66,7 +66,7 @@ func TestBigExportStaysMemoryBound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if man.Counts["events"] != 1000004 || man.Counts["pluginData"] != 20005 {
+	if man.Counts["events"] != 1000004 || man.Counts["rows"] != 20005 {
 		t.Errorf("counts %v", man.Counts)
 	}
 	if mib := peak.Load() >> 20; mib >= 64 {

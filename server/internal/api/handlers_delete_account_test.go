@@ -15,16 +15,15 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 	ts, sqlDB, dataDir := newServerWithDir(t)
 	owner := registerUser(t, ts.URL, "owner", "")
 	bob := registerUser(t, ts.URL, "bobby", owner)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	bobID := userID(t, sqlDB, "bobby")
 	ws := createWorkspace(t, ts.URL, bob, "zh", "")
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	populateWorkspace(t, ts.URL, bob, store, bobID, ws, 7)
-	doRaw(t, "PUT", ts.URL, "/api/plugins/qinqin-flashcards/data/settings", bob, `{"a":1}`)
+	doRaw(t, "PUT", ts.URL, "/api/rows/home-layout", bob, `{"a":1}`)
 
 	var prev map[string]int
 	decodeJSON(t, doJSON(t, "GET", ts.URL, "/api/admin/users/"+itoa(bobID)+"/deletion-preview", owner, nil), &prev)
-	if prev["workspaces"] != 1 || prev["studyEvents"] != 1 || prev["books"] != 1 || prev["pluginData"] != 2 || prev["sessions"] != 1 || prev["cards"] != 1 {
+	if prev["workspaces"] != 1 || prev["studyEvents"] != 1 || prev["books"] != 1 || prev["keyedRows"] != 2 || prev["sessions"] != 1 || prev["cards"] != 1 {
 		t.Errorf("preview = %v", prev)
 	}
 	path := "/api/admin/users/" + itoa(bobID)
@@ -43,7 +42,7 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 	}
 	for _, q := range []string{
 		`SELECT COUNT(*) FROM workspaces WHERE user_id = ?`, `SELECT COUNT(*) FROM study_events WHERE user_id = ?`,
-		`SELECT COUNT(*) FROM plugin_data WHERE user_id = ?`, `SELECT COUNT(*) FROM library_books WHERE user_id = ?`,
+		`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?`, `SELECT COUNT(*) FROM library_books WHERE user_id = ?`,
 		`SELECT COUNT(*) FROM library_bookmarks WHERE user_id = ?`, `SELECT COUNT(*) FROM users WHERE id = ?`,
 		`SELECT COUNT(*) FROM study_cards WHERE user_id = ?`, `SELECT COUNT(*) FROM study_decks WHERE user_id = ?`,
 		`SELECT COUNT(*) FROM study_deck_settings WHERE user_id = ?`, `SELECT COUNT(*) FROM study_limits WHERE user_id = ?`,

@@ -54,9 +54,9 @@
 	const workspaceError = $derived(session?.workspaces.loadError ?? '');
 
 	const path = $derived(normalizePath(page.url.pathname));
-	// The frame's sections (lib/frame/sections.ts): the core features, the
-	// enabled plugin pages in the user's order, Search, Stats.
-	const sections = $derived(frameSections(session?.plugins ?? { list: [], status: 'idle' }));
+	// The frame's sections (lib/frame/sections.ts): Search, the core features
+	// that are switched on, Stats.
+	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }));
 	const current = $derived(currentSection(path, sections));
 	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
@@ -137,7 +137,7 @@
 		booted = true;
 	});
 
-	// Load the app once per session: the workspaces, the plugin states, and
+	// Load the app once per session: the workspaces, the feature switches, and
 	// the review outbox (reviews queued while offline drain on whichever route
 	// the user opens). A new session is a new set of objects (record 0009), so
 	// nothing of the previous user is left to drop here.
@@ -154,7 +154,7 @@
 		if (current === loadedSession) return;
 		loadedSession = current;
 		current.outbox.start();
-		void current.plugins.load();
+		void current.features.load();
 		void loadShellWorkspaces();
 	});
 

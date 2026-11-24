@@ -54,13 +54,12 @@ import * as build from '$lib/testing/study';
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => newSession(ctx));
 import {
-  PLUGIN_ID,
   WORKSPACE_ID,
   ULID,
   fakeStorage,
   jsonResponse,
   rawResponse,
-  type PluginDataRow,
+  type KeyedDataRow,
   pluginRow,
   deck,
   card,
@@ -94,8 +93,8 @@ describe("loading the study state", () => {
     it("follows `next` and merges a split across two pages in the middle of cards", async () => {
       const c1 = card("card-1", 41, ["general"]);
       const c2 = card("card-2", 42, ["general"]);
-      const page1 = pagedPull({ pluginData: [pluginRow("card:card-1", c1)] });
-      const page2 = pagedPull({ pluginData: [pluginRow("card:card-2", c2)] });
+      const page1 = pagedPull({ rows: [pluginRow("card:card-1", c1)] });
+      const page2 = pagedPull({ rows: [pluginRow("card:card-2", c2)] });
       Object.assign(page1, { more: true, next: "p2.abc", cursor: null });
       const urls: string[] = [];
       vi.mocked(fetch).mockImplementation(async (input) => {
@@ -110,7 +109,7 @@ describe("loading the study state", () => {
     });
 
     it("refuses a page that does not match the contract", async () => {
-      vi.mocked(fetch).mockImplementation(async () => rawResponse({ pluginData: [] }));
+      vi.mocked(fetch).mockImplementation(async () => rawResponse({ rows: [] }));
       await expect(loadStudyData(ctx.session.study, WORKSPACE_ID)).rejects.toThrow(/contract/);
     });
 
@@ -148,16 +147,12 @@ describe("loading the study state", () => {
       // poisoning the card.
       const badWritten = { ...card("card-3", 44, ["general"]), written: 42 };
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("deck:general", general),
           pluginRow("deck:deck-1", custom),
           pluginRow("card:card-1", word),
           pluginRow("card:card-2", sentenceCard),
           pluginRow("card:card-3", badWritten),
-          // Another plugin's data is not study data.
-          pluginRow("deck:other-plugin", deck("other-plugin", "Other"), {
-            pluginId: "qinqin-heatmap",
-          }),
           // Another workspace's data never leaks in.
           pluginRow(
             "deck:other-workspace",
@@ -174,15 +169,11 @@ describe("loading the study state", () => {
           pluginRow("deck:gone", deck("gone", "Gone"), {
             deletedAt: "2026-01-03T00:00:00Z",
           }),
-          // qinqin-core rows (personal notes, even one keyed like a card) are not study data.
+          // The core's other keyed rows (personal notes) are not study data.
           pluginRow(
             "note:42",
             { version: 1, entryId: 42, text: "mnemonic" },
-            { pluginId: "qinqin-core" },
           ),
-          pluginRow("card:core-card", card("core-card", 45, ["general"]), {
-            pluginId: "qinqin-core",
-          }),
           // Keys the study layer does not own are ignored.
           pluginRow("settings:study", { newLimit: 20 }),
           // A malformed payload is skipped rather than crashing.
@@ -200,7 +191,7 @@ describe("loading the study state", () => {
       ]);
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
-        `/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
+        `/api/sync/pull?collections=rows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
         `/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });
@@ -213,7 +204,7 @@ describe("loading the study state", () => {
       }));
       const bad = { ...card("card-bad", 50, ["general"]), kind: "bogus" };
       respondPull({
-        pluginData: [
+        rows: [
           ...good.map((row) => pluginRow(`card:${row.id}`, row)),
           pluginRow("card:card-bad", bad),
         ],
@@ -232,7 +223,7 @@ describe("loading the study state", () => {
       const plain = card("c-vocab-2", 2, ["general"]);
       const empty = { ...card("c-vocab-3", 3, ["general"]), skipKinds: ["bogus"] };
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("card:c-vocab-1", row),
           pluginRow("card:c-vocab-2", plain),
           pluginRow("card:c-vocab-3", empty),
@@ -260,7 +251,7 @@ describe("loading the study state", () => {
 
     it("returns empty arrays when matching rows only hold other keys", async () => {
       respondPull({
-        pluginData: [pluginRow("settings:study", { newLimit: 20 })],
+        rows: [pluginRow("settings:study", { newLimit: 20 })],
       });
 
       await expect(loadStudyData(ctx.session.study, WORKSPACE_ID)).resolves.toEqual({
@@ -281,7 +272,7 @@ describe("loading the study state", () => {
     it("reads an explicitly given workspace for both the cards and the reviews", async () => {
       respondPull(
         {
-          pluginData: [
+          rows: [
             pluginRow("card:card-1", card("card-1", 42, ["general"]), {
               workspaceId: 9,
             }),
@@ -312,7 +303,7 @@ describe("loading the study state", () => {
         if (url === "/api/events?page=e1.k&workspace=9")
           return jsonResponse({ events: [ev("r2")], more: false, next: null });
         if (url.startsWith("/api/events")) return jsonResponse({ error: "unexpected" }, 500);
-        return rawResponse(pagedPull({ pluginData: [] }));
+        return rawResponse(pagedPull({ rows: [] }));
       });
 
       const data = await loadStudyData(ctx.session.study, 9);
@@ -321,7 +312,7 @@ describe("loading the study state", () => {
     });
 
     it("keeps only well-formed reviews of the workspace", async () => {
-      respondPull({ pluginData: [] }, [
+      respondPull({ rows: [] }, [
         reviewEvent("r1", "card-1"),
         { ...reviewEvent("r2", "card-1"), type: "view" },
         {
@@ -353,7 +344,7 @@ describe("loading the study state", () => {
       );
       respondPull(
         {
-          pluginData: [
+          rows: [
             pluginRow(`card:${late.id}`, late),
             pluginRow(`card:${early.id}`, early),
           ],
@@ -448,7 +439,7 @@ describe("typed study collections", () => {
   function serve(pull: Record<string, unknown>): void {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return rawResponse([]);
-      return rawResponse(pageOf({ ...empty, pluginData: [], ...pull }));
+      return rawResponse(pageOf({ ...empty, rows: [], ...pull }));
     });
   }
 
@@ -519,7 +510,7 @@ describe("typed study collections", () => {
 
   it("ignores typed-family keys left in pluginData and keeps reading the keyed rows", async () => {
     serve({
-      pluginData: [
+      rows: [
         // A leftover the migration could not read: never study state.
         pluginRow("card:c-vocab-9", card("c-vocab-9", 9, ["general"])),
         pluginRow("deck:d9", deck("d9", "Leftover")),
@@ -551,7 +542,7 @@ describe("typed study collections", () => {
       if (String(input).startsWith("/api/events")) return rawResponse([]);
       return rawResponse(pageOf({
         ...empty,
-        pluginData: [],
+        rows: [],
         cards: [{ ...cardBody("c-vocab-1", 1, { color: "red" }), ...meta() }],
         decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: { pinned: true }, ...meta() }],
       }));
@@ -573,7 +564,7 @@ describe("typed study collections", () => {
         if (isPush(input, init)) return pushAnswer(init);
         return rawResponse(pageOf({
           ...empty,
-          pluginData: [],
+          rows: [],
           decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: {}, ...meta({ updatedAt: "2026-02-01T00:00:09Z" }) }],
         }));
       });
@@ -655,7 +646,7 @@ describe("queued reviews count in the loaded history", () => {
   }
 
   const word = card("card-1", 42, ["general"], "2026-01-02T00:00:00Z", "猫");
-  const pull = { pluginData: [pluginRow("card:card-1", word)] };
+  const pull = { rows: [pluginRow("card:card-1", word)] };
 
   it("a queued review is part of the history before it is sent", async () => {
     respondPull(pull, []);

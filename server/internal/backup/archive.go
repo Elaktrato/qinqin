@@ -325,17 +325,17 @@ func (a *Archive) validate() error {
 	}
 	counts["events"] = evCount
 	seenRows := map[string]struct{}{}
-	n, err := a.countLines(read, NamePluginData, func(b []byte) error {
-		var r PluginRow
+	n, err := a.countLines(read, NameRows, func(b []byte) error {
+		var r Row
 		if err := decodeStrict(b, &r); err != nil {
-			return invalid("%s holds a malformed line", NamePluginData)
+			return invalid("%s holds a malformed line", NameRows)
 		}
-		return checkPluginRow(r, wsIDs, seenRows)
+		return checkRow(r, wsIDs, seenRows)
 	})
 	if err != nil {
 		return err
 	}
-	counts["pluginData"] = n
+	counts["rows"] = n
 	seenEdit := map[int64]struct{}{}
 	if counts["overlays"], err = a.countLines(read, NameOverlays, func(b []byte) error {
 		var o Overlay
@@ -548,7 +548,7 @@ func okText(s string, max int) bool {
 }
 
 func (a *Archive) checkAccount() error {
-	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.PluginStates) > 1000 {
+	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.Features) > 1000 {
 		return invalid("account.json is malformed")
 	}
 	for _, tz := range a.Account.TimeZones {
@@ -562,11 +562,11 @@ func (a *Archive) checkAccount() error {
 		}
 	}
 	seen := map[string]bool{}
-	for _, ps := range a.Account.PluginStates {
-		if ps.PluginID == "" || !okText(ps.PluginID, 128) || seen[ps.PluginID] {
-			return invalid("account.json has a bad plugin state")
+	for _, f := range a.Account.Features {
+		if f.ID == "" || !okText(f.ID, 128) || seen[f.ID] {
+			return invalid("account.json has a bad feature switch")
 		}
-		seen[ps.PluginID] = true
+		seen[f.ID] = true
 	}
 	return nil
 }
@@ -648,24 +648,24 @@ func checkEvent(e Event, ws map[int64]bool) error {
 	return nil
 }
 
-func checkPluginRow(r PluginRow, ws map[int64]bool, seen map[string]struct{}) error {
-	if r.PluginID == "" || !okText(r.PluginID, 128) || r.Key == "" || !okText(r.Key, 512) || r.Version < 0 ||
+func checkRow(r Row, ws map[int64]bool, seen map[string]struct{}) error {
+	if r.Key == "" || !okText(r.Key, 512) || r.Version < 0 ||
 		len(r.Data) == 0 || !json.Valid(r.Data) || r.UpdatedAt == "" || len(r.UpdatedAt) > 64 {
-		return invalid("a plugin data row is malformed")
+		return invalid("a row is malformed")
 	}
-	if len(r.Data) > MaxPluginValue {
-		return tooLarge("a plugin data value is larger than %d bytes", MaxPluginValue)
+	if len(r.Data) > MaxRowValue {
+		return tooLarge("a row value is larger than %d bytes", MaxRowValue)
 	}
 	var wsKey int64
 	if r.WorkspaceID != nil {
 		if !ws[*r.WorkspaceID] {
-			return invalid("a plugin data row names an unknown workspace")
+			return invalid("a row names an unknown workspace")
 		}
 		wsKey = *r.WorkspaceID
 	}
-	k := r.PluginID + "\x00" + strconv.FormatInt(wsKey, 10) + "\x00" + r.Key
+	k := strconv.FormatInt(wsKey, 10) + "\x00" + r.Key
 	if _, dup := seen[k]; dup {
-		return invalid("plugin-data.jsonl holds a row twice")
+		return invalid("rows holds a row twice")
 	}
 	seen[k] = struct{}{}
 	return nil
@@ -710,9 +710,9 @@ func eachFamily[T any](a *Archive, family string, fn func(T) error) error {
 // Events streams every event, files in name order.
 func (a *Archive) Events(fn func(Event) error) error { return eachFamily(a, FamEvents, fn) }
 
-// PluginRows streams plugin-data.jsonl.
-func (a *Archive) PluginRows(fn func(PluginRow) error) error {
-	return eachFamily(a, NamePluginData, fn)
+// Rows streams the rows family.
+func (a *Archive) Rows(fn func(Row) error) error {
+	return eachFamily(a, NameRows, fn)
 }
 
 // Overlays streams overlays.jsonl.

@@ -56,8 +56,8 @@ function select(id: number | null): void {
 }
 
 function flashcards(enabled: boolean): void {
-	ctx.session.plugins.set({
-		list: [{ id: 'qinqin-flashcards', manifest: {}, enabled, order: 0 }],
+	ctx.session.features.set({
+		list: [{ id: 'flashcards', enabled }],
 		status: 'ready'
 	});
 }
@@ -72,7 +72,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	select(null);
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 describe('SummaryWidget', () => {

@@ -57,8 +57,9 @@ func TestMigration022NeverReusesWorkspaceIds(t *testing.T) {
 		return out
 	}
 	before := snapshot()
-	if err := migrate(sqlDB); err != nil {
-		t.Fatalf("migrate to latest: %v", err)
+	// Through 043: migration 046 (#199) replaces plugin_data.
+	if err := migrateThrough(sqlDB, "043_lemma_rules"); err != nil {
+		t.Fatalf("migrate: %v", err)
 	}
 	after := snapshot()
 	if len(before) != 5 || len(after) != len(before) {

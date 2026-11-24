@@ -1,3 +1,4 @@
+import { profileOf } from '../languageProfiles';
 import type { ReviewGrade } from './types';
 import { isHan } from './writing';
 
@@ -180,10 +181,9 @@ export function cleanReadings(readings: string[]): Syllable[][] {
 	return readings.map(parsePinyin).filter((syllables) => syllables.length > 0 && syllables.every(isClean));
 }
 
-/** Tone practice needs Chinese and at least one clean pinyin reading. */
+/** Tone practice needs a tonal language (its profile) and at least one clean pinyin reading. */
 export function eligibleForTone(language: string, pinyinReadings: string[]): boolean {
-	const base = language.toLowerCase().split(/[-_]/)[0];
-	return base === 'zh' && cleanReadings(pinyinReadings).length > 0;
+	return profileOf(language).tones && cleanReadings(pinyinReadings).length > 0;
 }
 
 /** The pinyin reading values of an entry, in order. */

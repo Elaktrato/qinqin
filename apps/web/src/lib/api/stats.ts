@@ -3,10 +3,9 @@ import { api } from './client';
 
 export interface ActivitySource {
 	type: string;
-	plugin: string;
-	label: string;
+	/** The core feature the activity belongs to (flashcards, reader, journal). */
+	feature: string;
 	unit: 'count' | 'seconds';
-	describe: { one: string; other: string };
 }
 
 /** One learner day (the user's time zone, lib/time/studyDay.ts) of one workspace and activity type. */

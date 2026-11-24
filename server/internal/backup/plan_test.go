@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 
 	"qinqin/internal/dbtest"
@@ -55,7 +54,7 @@ func newTarget(t *testing.T, mod func(w *baseWorld)) *targetWorld {
 func tableCounts(t *testing.T, db *sql.DB) map[string]int {
 	t.Helper()
 	out := map[string]int{}
-	for _, tb := range []string{"users", "workspaces", "study_events", "plugin_data", "plugin_states", "user_edits", "sentences",
+	for _, tb := range []string{"users", "workspaces", "study_events", "keyed_rows", "feature_switches", "user_edits", "sentences",
 		"library_books", "library_bookmarks", "library_highlights", "user_time_zones", "sessions", "entries",
 		"study_cards", "study_decks", "study_deck_settings", "study_limits", "study_fsrs_sets", "study_fsrs_active", "library_deletions"} {
 		var n int
@@ -82,14 +81,11 @@ func TestPlanSameServerIsIdentity(t *testing.T) {
 	if rep.Replaces != rep.Restores {
 		t.Errorf("replaces %+v != restores %+v", rep.Replaces, rep.Restores)
 	}
-	if rep.Replaces.Events != 4 || rep.Replaces.Cards != 3 || rep.Replaces.PluginData != 5 || rep.Replaces.Workspaces != 2 || rep.Replaces.Books != 1 {
+	if rep.Replaces.Events != 4 || rep.Replaces.Cards != 3 || rep.Replaces.Rows != 5 || rep.Replaces.Workspaces != 2 || rep.Replaces.Books != 1 {
 		t.Errorf("counts %+v", rep.Replaces)
 	}
 	if m.Dicts[w.Dict] != w.Dict || m.Sentences[w.Alice.PackSent] != w.Alice.PackSent {
 		t.Errorf("dict/sentence maps %v %v", m.Dicts, m.Sentences)
-	}
-	if !slices.Contains(rep.PluginsNotInstalled, "qinqin-flashcards") || !slices.Contains(rep.PluginsNotInstalled, "other-plugin") {
-		t.Errorf("not installed %v", rep.PluginsNotInstalled)
 	}
 	if after := tableCounts(t, w.DB); !equalCounts(before, after) {
 		t.Errorf("Plan wrote: %v -> %v", before, after)

@@ -20,7 +20,6 @@ beforeEach(() => {
 		now: () => Date.now(),
 		timers: browserTimers,
 		local: () => webStorage('localStorage'),
-		manifests: () => null,
 		studyDay: () => days.day(),
 		whenStudyDaySettled: () => days.settled()
 	});

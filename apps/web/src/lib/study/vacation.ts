@@ -1,4 +1,4 @@
-// Vacation periods: plugin rows -> runs of dates, and the edits the UI may
+// Vacation periods: keyed rows -> runs of dates, and the edits the UI may
 // make. Pure. Rule and fixtures: docs/contracts/scheduler/.
 
 import { addDays, daysBetweenDates, isDay } from '../time/studyDay';

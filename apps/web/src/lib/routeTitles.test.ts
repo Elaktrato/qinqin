@@ -2,13 +2,12 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_NAME } from './app';
-import { webPlugins } from './plugins';
 import { coreFeatures } from './features';
-import { featurePageImports, pluginPageImports, setsTitle } from './testing/routeTitles';
+import { featurePageImports, setsTitle } from './testing/routeTitles';
 
 // Route-walk (#12): every page in the route tree sets a document title
 // with pageTitle(), itself or through an ancestor +layout.svelte, and so
-// does every plugin page rendered by /p/[plugin]/[...rest]. A new route
+// does every core feature page rendered by its feature route. A new route
 // without a title fails here.
 const web = resolve(__dirname, '../..');
 const routes = resolve(web, 'src/routes');
@@ -42,7 +41,8 @@ describe('document titles on every route', () => {
 			'search/parts/+page.svelte',
 			'lookups/+page.svelte',
 			'account/two-factor-setup/+page.svelte',
-			'p/[plugin]/[...rest]/+page.svelte'
+			'journal/[...rest]/+page.svelte',
+			'grammar/[...rest]/+page.svelte'
 		]) {
 			expect(names).toContain(known);
 		}
@@ -58,22 +58,16 @@ describe('document titles on every route', () => {
 		expect(viaLayout).toEqual(['stats/+page.svelte', 'stats/characters/+page.svelte', 'stats/week/+page.svelte']);
 	});
 
-	const index = resolve(web, 'src/lib/plugins/index.ts');
-	const pluginPages = pluginPageImports(readFileSync(index, 'utf8')).map((p) => resolve(dirname(index), p));
-
 	const featuresFile = resolve(web, 'src/lib/features/index.ts');
 	const featurePages = featurePageImports(readFileSync(featuresFile, 'utf8')).map((p) => resolve(web, 'src/lib', p));
 
-	it('finds every registered plugin and core feature page', () => {
-		// The source scan must see exactly the pages webPlugins and coreFeatures
-		// register, so a page registered in another form cannot slip past the title check.
-		const registered = webPlugins.flatMap((plugin) => plugin.pages ?? []);
-		expect(registered.length).toBeGreaterThanOrEqual(2);
-		expect(pluginPages).toHaveLength(registered.length);
+	it('finds every registered core feature page', () => {
+		// The source scan must see exactly the pages coreFeatures registers, so a
+		// page registered in another form cannot slip past the title check.
 		expect(featurePages).toHaveLength(coreFeatures.length);
 	});
 
-	it.each([...pluginPages, ...featurePages].map((p) => [relative(web, p), p]))('plugin or feature page %s sets a title', (_name, page) => {
+	it.each(featurePages.map((p) => [relative(web, p), p]))('feature page %s sets a title', (_name, page) => {
 		expect(setsTitle(readFileSync(page, 'utf8'))).toBe(true);
 	});
 

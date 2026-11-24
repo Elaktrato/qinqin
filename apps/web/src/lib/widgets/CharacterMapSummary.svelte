@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { hasCharacterMap } from '$lib/languageProfiles';
 	import StageBar from '$lib/components/map/StageBar.svelte';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { usesHan } from '$lib/languages';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
 	import { errorText } from '$lib/api/apiErrors';
 	import type { SectionStats } from '$lib/study/charGroups';
@@ -60,7 +60,7 @@
 			loading = false;
 			return;
 		}
-		if (!usesHan(lang)) {
+		if (!hasCharacterMap(lang)) {
 			// The registry hides the tile for such languages; this is a guard.
 			stats = null;
 			notHan = true;

@@ -18,12 +18,12 @@ beforeEach(() => {
 /** The signed-in user, as `me` answered it. */
 const me = { set: (user: Record<string, unknown>) => ctx.app.auth.set({ token: 'test-token', user: testUser(user as never) }) };
 
-const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
+const zero = { workspaces: 0, events: 0, cards: 0, rows: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
 const ready = (unresolved = 0) => ({
 	status: 'ready', error: null, result: null,
 	report: {
 		backup: { username: 'alice', createdAt: '2026-11-15T12:00:00Z', appVersion: '0.3.0' }, replaces: { ...zero, workspaces: 3, events: 9876 },
-		restores: { ...zero, workspaces: 2 }, pluginsNotInstalled: [], reidentifiedEvents: 0, blocking: [], warnings: [], bytes: 2048,
+		restores: { ...zero, workspaces: 2 }, reidentifiedEvents: 0, blocking: [], warnings: [], bytes: 2048,
 		unresolved: { entries: unresolved ? [{ written: '水', language: 'zh', cards: 2, overlays: 0 }] : [], entryCount: unresolved, sentences: 0, droppedRows: unresolved }
 	}
 });

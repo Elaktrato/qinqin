@@ -16,14 +16,14 @@ func putKnown(t *testing.T, w *baseWorld, uid, ws, entry int64, deleted bool) {
 		del = "2026-11-12T00:00:00Z"
 	}
 	data, _ := json.Marshal(map[string]any{"version": 1, "entryId": entry, "createdAt": "2026-11-11T07:59:00.000Z"})
-	exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
-		VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T07:59:00Z', ?)`,
+	exec(t, w.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+		VALUES (?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T07:59:00Z', ?)`,
 		uid, ws, fmt.Sprintf("known:%d", entry), string(data), del)
 }
 
-func flashRow(ws int64, key, data, updated string) PluginRow {
+func flashRow(ws int64, key, data, updated string) Row {
 	w := ws
-	return PluginRow{PluginID: FlashcardsPlugin, WorkspaceID: &w, Key: key, Data: json.RawMessage(data), Version: 1, UpdatedAt: updated}
+	return Row{WorkspaceID: &w, Key: key, Data: json.RawMessage(data), Version: 1, UpdatedAt: updated}
 }
 
 // A live mark names its entry in refs/entries.json; a tombstoned one is not
@@ -65,7 +65,7 @@ func TestPlanAndRestoreKnownMarks(t *testing.T) {
 	if rep.Unresolved.DroppedRows != baseRep.Unresolved.DroppedRows+1 {
 		t.Errorf("dropped rows %d, want %d + 1", rep.Unresolved.DroppedRows, baseRep.Unresolved.DroppedRows)
 	}
-	if rep.Restores.PluginData != baseRep.Restores.PluginData+1 || len(rep.Blocking) != 0 {
+	if rep.Restores.Rows != baseRep.Restores.Rows+1 || len(rep.Blocking) != 0 {
 		t.Errorf("restores %+v (base %+v) blocking %v", rep.Restores, baseRep.Restores, rep.Blocking)
 	}
 	if tg.E2 == src.E2 {
@@ -74,7 +74,7 @@ func TestPlanAndRestoreKnownMarks(t *testing.T) {
 	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
 		t.Fatal(err)
 	}
-	rs, err := tg.DB.Query(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-flashcards' AND key LIKE 'known:%'`, tg.UID)
+	rs, err := tg.DB.Query(`SELECT key, data FROM keyed_rows WHERE user_id = ? AND key LIKE 'known:%'`, tg.UID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,8 +101,8 @@ func TestInvalidKnownRowIsDroppedAndCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-		VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', NULL)`,
+	exec(t, src.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES (?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T08:00:00Z')`,
 		src.AliceUID, src.Alice.WS2, fmt.Sprintf("known:%d", src.E1), fmt.Sprintf(`{"version":1,"entryId":"%d"}`, src.E1))
 	a := openExport(t, src, src.AliceUID)
 	rep, _, err := Plan(context.Background(), tg.DB, a, tg.UID)
@@ -117,7 +117,7 @@ func TestInvalidKnownRowIsDroppedAndCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 	var n int
-	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key LIKE 'known:%'`, tg.UID).Scan(&n)
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key LIKE 'known:%'`, tg.UID).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d known rows restored, want 0", n)
 	}
@@ -135,16 +135,16 @@ func TestKnownMarkCollisionKeepsOne(t *testing.T) {
 	a := flashRow(7, "known:1", `{"version":1,"entryId":1}`, "2026-11-05T00:00:00Z")
 	b := flashRow(7, "known:2", `{"version":1,"entryId":2}`, "2026-11-06T00:00:00Z")
 	n := coreNote(7, "note:1", `{"version":1,"entryId":1,"text":"a"}`, "2026-11-07T00:00:00Z", nil)
-	for _, r := range []PluginRow{a, b, n} {
+	for _, r := range []Row{a, b, n} {
 		m.RegisterNote(r)
 	}
-	if _, drop := m.PluginRow(a); !drop {
+	if _, drop := m.Row(a); !drop {
 		t.Error("the older mark was kept")
 	}
-	if nr, drop := m.PluginRow(b); drop || nr.Key != "known:500" {
+	if nr, drop := m.Row(b); drop || nr.Key != "known:500" {
 		t.Errorf("newest mark: drop=%v key=%s", drop, nr.Key)
 	}
-	if nr, drop := m.PluginRow(n); drop || nr.Key != "note:500" {
+	if nr, drop := m.Row(n); drop || nr.Key != "note:500" {
 		t.Errorf("note: drop=%v key=%s", drop, nr.Key)
 	}
 }

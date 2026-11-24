@@ -9,7 +9,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 }));
 
 import { api } from '$lib/api/client';
-import type { PluginInfo } from '$lib/api/types';
+import type { FeatureSwitch } from '$lib/features/switches.svelte';
 import { primaryActions } from '$lib/ui/testing/primary';
 import FeatureSettings from './FeatureSettings.svelte';
 
@@ -18,18 +18,19 @@ beforeEach(() => {
 	ctx = testContext();
 });
 
-let server: PluginInfo[];
+let server: FeatureSwitch[];
 
 beforeEach(() => {
 	server = [
-		{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 3 },
-		{ id: 'qinqin-reader', manifest: {}, enabled: false, order: 0 },
-		{ id: 'qinqin-journal', manifest: {}, enabled: true, order: 1 }
+		{ id: 'flashcards', enabled: true },
+		{ id: 'reader', enabled: false },
+		{ id: 'journal', enabled: true },
+		{ id: 'grammar', enabled: false }
 	];
-	ctx.session.plugins.set({ list: structuredClone(server), status: 'ready' });
+	ctx.session.features.set({ list: structuredClone(server), status: 'ready' });
 	vi.mocked(api).mockImplementation((async (url: string, init?: { method?: string; body?: { enabled: boolean } }) => {
-		if (url === '/api/plugins') return structuredClone(server);
-		const m = /^\/api\/plugins\/([^/]+)\/state$/.exec(url);
+		if (url === '/api/features') return structuredClone(server);
+		const m = /^\/api\/features\/([^/]+)$/.exec(url);
 		if (m && init?.method === 'PUT') {
 			const row = server.find((s) => s.id === decodeURIComponent(m[1]))!;
 			row.enabled = init.body!.enabled;
@@ -41,26 +42,26 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 describe('Settings -> Features', () => {
-	it('lists Decks and Reader with the user state, and no plugin', () => {
+	it('lists the four core features with the user switch', () => {
 		render(FeatureSettings, { context: ctx.context });
-		const decks = screen.getByRole('checkbox', { name: /Decks/ }) as HTMLInputElement;
-		const reader = screen.getByRole('checkbox', { name: /Reader/ }) as HTMLInputElement;
-		expect(decks.checked).toBe(true);
-		expect(reader.checked).toBe(false);
-		expect(screen.queryByText(/Journal/)).toBeNull();
+		const checked = (name: RegExp) => (screen.getByRole('checkbox', { name }) as HTMLInputElement).checked;
+		expect(checked(/Decks/)).toBe(true);
+		expect(checked(/Reader/)).toBe(false);
+		expect(checked(/Journal/)).toBe(true);
+		expect(checked(/Grammar/)).toBe(false);
 	});
 
-	it('a switch PUTs {enabled, order: 0} for the feature and refreshes the shared states', async () => {
+	it('a switch PUTs {enabled} for the feature and refreshes the shared switches', async () => {
 		render(FeatureSettings, { context: ctx.context });
 		await fireEvent.click(screen.getByRole('checkbox', { name: /Reader/ }));
 		await waitFor(() => expect($state()).toEqual(true));
-		expect(vi.mocked(api)).toHaveBeenCalledWith('/api/plugins/qinqin-reader/state', {
+		expect(vi.mocked(api)).toHaveBeenCalledWith('/api/features/reader', {
 			method: 'PUT',
-			body: { enabled: true, order: 0 }
+			body: { enabled: true }
 		});
 		expect(await screen.findByText('Saved')).toBeTruthy();
 	});
@@ -72,7 +73,7 @@ describe('Settings -> Features', () => {
 
 	it('the switches are hairline rows and the view has no primary action (#106)', () => {
 		render(FeatureSettings, { context: ctx.context });
-		expect(document.querySelectorAll('.features li').length).toBe(2);
+		expect(document.querySelectorAll('.features li').length).toBe(4);
 		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 
@@ -88,5 +89,5 @@ describe('Settings -> Features', () => {
 });
 
 function $state(): boolean | undefined {
-	return ctx.session.plugins.list.find((p) => p.id === 'qinqin-reader')?.enabled;
+	return ctx.session.features.list.find((p) => p.id === 'reader')?.enabled;
 }

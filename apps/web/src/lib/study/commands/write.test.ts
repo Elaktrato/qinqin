@@ -71,7 +71,7 @@ describe('a write the server skips', () => {
 
 	it('keyed batch rows re-plan the same way', async () => {
 		await getStudyData(ctx.session.study, WS);
-		server.putData({ pluginId: 'qinqin-flashcards', key: 'known:5', workspaceId: WS, data: { version: 1, entryId: 5, createdAt: '2026-01-01T00:00:00Z' }, updatedAt: new Date(Date.now() + AHEAD - 1_000).toISOString(), deletedAt: null });
+		server.putData({ key: 'known:5', workspaceId: WS, data: { version: 1, entryId: 5, createdAt: '2026-01-01T00:00:00Z' }, updatedAt: new Date(Date.now() + AHEAD - 1_000).toISOString(), deletedAt: null });
 		server.resetCounts();
 		await setKnownMarks(ctx.session.study, WS, [5], false);
 		expect(server.counts).toMatchObject({ pushes: 2, pullPages: 1 });
@@ -81,7 +81,7 @@ describe('a write the server skips', () => {
 
 describe('held keyed writes (review fixes)', () => {
 	it("a deleted keyed row is held stamped just after what the server held, not by this device's clock", async () => {
-		server.putData({ pluginId: 'qinqin-flashcards', key: 'known:5', workspaceId: WS, data: { version: 1, entryId: 5, createdAt: '2026-01-01T00:00:00Z' }, updatedAt: '2026-01-02T00:00:00Z', deletedAt: null });
+		server.putData({ key: 'known:5', workspaceId: WS, data: { version: 1, entryId: 5, createdAt: '2026-01-01T00:00:00Z' }, updatedAt: '2026-01-02T00:00:00Z', deletedAt: null });
 		await getStudyData(ctx.session.study, WS);
 		await setKnownMark(ctx.session.study, WS, 5, false);
 		expect(ctx.session.study.cache.peek(WS)?.snapshot.knownAt.get('known:5')).toBe('2026-01-02T00:00:00.001Z');

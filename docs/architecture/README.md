@@ -66,7 +66,7 @@ repository path it names in backticks exists.
 | [0003](0003-domain-packages-own-their-sql.md) | Server: domain packages own their SQL | Accepted |
 | [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted, being implemented by #195 |
 | [0005](0005-test-conventions.md) | Test conventions | Accepted |
-| [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted, being implemented by #199 |
+| [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted |
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
 | [0008](0008-pack-types.md) | Server: one pack system and how to add a pack type | Accepted |
 | [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted |

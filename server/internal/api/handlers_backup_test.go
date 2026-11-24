@@ -66,7 +66,6 @@ func TestExportRequiresASessionAndServesOwnDataOnce(t *testing.T) {
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bobby", alice)
 	aliceID, bobID := userID(t, sqlDB, "alice"), userID(t, sqlDB, "bobby")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	wsA := createWorkspace(t, ts.URL, alice, "zh", "")
 	wsB := createWorkspace(t, ts.URL, bob, "zh", "")

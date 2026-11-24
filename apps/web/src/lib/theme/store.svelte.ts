@@ -9,7 +9,7 @@
 // rewritten for it.
 
 import { getThemes, type ListedTheme, type ThemePack, type ThemesAnswer } from '$lib/api/themes';
-import { CORE_NAMESPACE, keyedData } from '$lib/sync/keyed';
+import { keyedData } from '$lib/sync/keyed';
 import {
 	APPEARANCE_KEY,
 	parseAppearance,
@@ -52,7 +52,7 @@ export interface ResolvedPair {
 }
 
 function coreData() {
-	return keyedData(CORE_NAMESPACE, null);
+	return keyedData(null);
 }
 
 const defaultDeps: ThemeStoreDeps = {

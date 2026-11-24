@@ -23,9 +23,8 @@
 	const session = useSession();
 
 	// A read-only level deck: its items with the learner's state, a level
-	// session, and "Add to my decks" (idempotent, see addToDeck.ts). Plugin
-	// decks (providers.ts) are wired here when a plugin ships one.
-	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
+	// session, and "Add to my decks" (idempotent, see addToDeck.ts).
+	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' }> } = $props();
 
 	const store = createDecksData(session);
 	const workspace = $derived(session.workspaces.current);
