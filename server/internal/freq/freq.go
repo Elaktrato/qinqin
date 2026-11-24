@@ -24,7 +24,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -120,7 +119,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	defer tx.Rollback()
 
 	result := Result{Entries: len(rows)}
-	id, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "frequency_packs", PackID: m.ID, Stamp: time.Now().UTC().Format(time.RFC3339),
+	id, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "frequency_packs", PackID: m.ID, Stamp: pack.Now(),
 		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
 			pack.Column{Name: "content_hash", Value: hash},
 			pack.Column{Name: "ord", Expr: "(SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs)", InsertOnly: true})})
@@ -500,7 +499,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE frequency_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, id); err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
@@ -588,7 +587,7 @@ func (s Store) Rows(ctx context.Context, terms []string) ([]Row, error) {
 		rows, err := s.DB.QueryContext(ctx, `
 			SELECT f.term, f.reading, f.rank, f.display, p.id, p.name, p.ord, f.rowid
 			FROM frequency f JOIN frequency_packs p ON p.id = f.pack_id
-			WHERE p.deleted_at IS NULL AND f.term IN (`+strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")+`)
+			WHERE p.deleted_at IS NULL AND f.term IN (`+pack.Placeholders(len(chunk))+`)
 			ORDER BY p.ord, p.id, f.rowid`, args...)
 		if err != nil {
 			return nil, err

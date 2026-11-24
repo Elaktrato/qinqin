@@ -11,7 +11,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -135,7 +134,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 			return Result{}, fmt.Errorf("import theme pack %s: %w", m.ID, err)
 		}
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "theme_packs", PackID: m.ID, Stamp: stamp,
 		Columns: pack.ManifestColumns(m, pack.Column{Name: "content_hash", Value: hash})})
 	if err != nil {
@@ -167,7 +166,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 		return fmt.Errorf("uninstall theme pack %s: %w", packID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE theme_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

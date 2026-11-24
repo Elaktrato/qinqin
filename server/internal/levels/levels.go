@@ -204,7 +204,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 		return fmt.Errorf("uninstall scheme %d: %w", id, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE level_members SET deleted_at = ?, updated_at = ?
 		WHERE deleted_at IS NULL AND level_id IN (
@@ -514,7 +514,7 @@ func writeScheme(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, unit strin
 		return fmt.Errorf("import scheme %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 
 	// The scheme row is written only when a manifest field (the notice
 	// included) or the unit changed, or the scheme returns from an
@@ -730,10 +730,4 @@ func distinctHan(written string) []rune {
 		rs = append(rs, r)
 	}
 	return rs
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

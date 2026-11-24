@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -64,12 +63,12 @@ func LoadFile(dir string) ([]byte, *lemma.Table, error) {
 		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
-	raw, err := io.ReadAll(io.LimitReader(f, MaxFileBytes+1))
+	raw, err := pack.ReadCapped(f, MaxFileBytes)
+	if errors.Is(err, pack.ErrTooLarge) {
+		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", pack.ErrInvalidPack, DataFile)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
-	}
-	if len(raw) > MaxFileBytes {
-		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", pack.ErrInvalidPack, DataFile)
 	}
 	t, err := lemma.Parse(raw)
 	if err != nil {
@@ -141,7 +140,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	if err := CheckLanguage(ctx, tx, m.ID, m.Language); err != nil {
 		return Result{}, err
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "lemma_rule_packs", PackID: m.ID, Stamp: stamp,
 		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
 			pack.Column{Name: "rules_json", Value: string(raw)}, pack.Column{Name: "content_hash", Value: hash})})
@@ -162,7 +161,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 // re-import revives it) and reloads the overlay. An unknown or already
 // uninstalled pack is ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := sqlDB.ExecContext(ctx, `
 		UPDATE lemma_rule_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

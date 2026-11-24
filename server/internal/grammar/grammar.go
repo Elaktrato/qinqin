@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -91,7 +90,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
 		return Result{}, fmt.Errorf("import grammar %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 
 	packRow, err := upsertPack(ctx, tx, m, string(levelsJSON), stamp)
 	if err != nil {
@@ -186,7 +185,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
 	}
-	stamp := now()
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE grammar_lessons SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`,
 		stamp, stamp, id); err != nil {
@@ -355,10 +354,4 @@ func LessonByID(ctx context.Context, sqlDB *sql.DB, packID, lessonID string) (Le
 	pk.Lessons = nil
 	v.Pack = pk
 	return v, nil
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

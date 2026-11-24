@@ -119,12 +119,12 @@ var DefaultZipLimits = ZipLimits{MaxFiles: 2000, MaxBytes: 512 << 20}
 func ExtractZip(r io.Reader, dir string) error {
 	// An archive larger than the whole unpack budget cannot be a pack, so
 	// the compressed input is capped too.
-	data, err := io.ReadAll(io.LimitReader(r, DefaultZipLimits.MaxBytes+1))
+	data, err := ReadCapped(r, DefaultZipLimits.MaxBytes)
+	if errors.Is(err, ErrTooLarge) {
+		return fmt.Errorf("%w: zip is larger than %d MiB", ErrInvalidPack, mib(DefaultZipLimits.MaxBytes))
+	}
 	if err != nil {
 		return fmt.Errorf("read zip: %w", err)
-	}
-	if int64(len(data)) > DefaultZipLimits.MaxBytes {
-		return fmt.Errorf("%w: zip is larger than %d MiB", ErrInvalidPack, mib(DefaultZipLimits.MaxBytes))
 	}
 	return ExtractZipAt(bytes.NewReader(data), int64(len(data)), dir, DefaultZipLimits)
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -58,7 +57,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) (Uni
 	if _, err := tx.ExecContext(ctx, `DELETE FROM audio_clips WHERE pack_id = ?`, row); err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `UPDATE audio_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, row); err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}

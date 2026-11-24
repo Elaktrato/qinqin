@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
@@ -53,7 +52,7 @@ func registerLanguage(ctx context.Context, sqlDB *sql.DB, m pack.Manifest) error
 	if _, err := sqlDB.ExecContext(ctx, `
 		INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 		ON CONFLICT (code) DO NOTHING`,
-		m.Language, m.Name, now()); err != nil {
+		m.Language, m.Name, pack.Now()); err != nil {
 		return fmt.Errorf("register language %s: %w", m.Language, err)
 	}
 	return nil
@@ -82,7 +81,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 		return fmt.Errorf("uninstall dictionary %d: %w", id, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 	// The senses become tombstones, so delta sync ships the removal.
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE senses SET deleted_at = ?, updated_at = ?
@@ -219,10 +218,4 @@ func readJSONPack(dir string) ([]entry, error) {
 		es[i] = je.toEntry()
 	}
 	return es, nil
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

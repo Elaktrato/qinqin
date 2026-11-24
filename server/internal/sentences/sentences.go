@@ -208,7 +208,7 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 	res, err := sqlDB.ExecContext(ctx, `
 		INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 		VALUES (?, '', ?, ?, ?, ?, ?)`,
-		entryID, userID, s.Hanzi, s.Pinyin, s.Translation, now())
+		entryID, userID, s.Hanzi, s.Pinyin, s.Translation, pack.Now())
 	if err != nil {
 		return 0, fmt.Errorf("add sentence of user %d on entry %d: %w", userID, entryID, err)
 	}
@@ -223,7 +223,7 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 // pack. User-owned sentences never carry a source pack and survive. An
 // unknown or already-uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, pk string) error {
-	stamp := now()
+	stamp := pack.Now()
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("uninstall sentences of pack %s: %w", pk, err)
@@ -338,7 +338,7 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sente
 		return fmt.Errorf("import sentences %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 	if err := upsertRegistry(ctx, tx, m, stamp); err != nil {
 		return err
 	}
@@ -432,10 +432,4 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sente
 		return fmt.Errorf("import sentences %s: %w", m.ID, err)
 	}
 	return nil
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

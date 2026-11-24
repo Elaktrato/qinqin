@@ -152,7 +152,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, er
 		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}
 	defer tx.Rollback()
-	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, m.Language, src.license, src.attribution, m.Notice, now())
+	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, m.Language, src.license, src.attribution, m.Notice, pack.Now())
 	if err != nil {
 		return Result{}, err
 	}

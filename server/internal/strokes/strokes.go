@@ -20,8 +20,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
-	"time"
 	"unicode/utf8"
 
 	"qinqin/internal/model"
@@ -109,7 +107,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "stroke_packs", PackID: m.ID, Stamp: stamp,
 		Columns: pack.ManifestColumns(m, pack.Column{Name: "languages", Value: string(langsJSON)},
 			pack.Column{Name: "content_hash", Value: hash},
@@ -129,7 +127,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 		if len(batch) == 0 {
 			return nil
 		}
-		q := "INSERT INTO strokes (pack_id, char, data) VALUES " + strings.TrimSuffix(strings.Repeat("(?, ?, ?), ", len(batch)/3), ", ")
+		q := "INSERT INTO strokes (pack_id, char, data) VALUES " + pack.Tuples(len(batch)/3, 3)
 		_, err := tx.ExecContext(ctx, q, batch...)
 		batch = batch[:0]
 		return err
@@ -259,7 +257,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE stroke_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

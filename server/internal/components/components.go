@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -96,7 +95,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	// The lookup asks by primary subtag (a zh-TW workspace asks for zh), so a
 	// pack's language is stored as its primary subtag: zh-tw -> zh.
 	language, _, _ := strings.Cut(m.Language, "-")
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "component_packs", PackID: m.ID, Stamp: stamp,
 		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: language}, pack.Column{Name: "content_hash", Value: hash})})
 	if err != nil {
@@ -174,7 +173,7 @@ func insert(ctx context.Context, tx *sql.Tx, table string, n int, row func(i int
 		for i := start; i < end; i++ {
 			args = append(args, row(i)...)
 		}
-		q := "INSERT INTO " + table + " VALUES " + strings.TrimSuffix(strings.Repeat("(?, ?, ?), ", end-start), ", ")
+		q := "INSERT INTO " + table + " VALUES " + pack.Tuples(end-start, 3)
 		if _, err := tx.ExecContext(ctx, q, args...); err != nil {
 			return err
 		}
@@ -191,7 +190,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 		return fmt.Errorf("uninstall components pack %s: %w", packID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE component_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

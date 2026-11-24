@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -92,7 +91,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, storeDir string) (
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	// The registry row holds no fingerprint of the clips, so a change of
 	// them alone writes it too (Force): its updated_at says the pack changed.
 	packRow, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "audio_packs", PackID: m.ID, Stamp: stamp,

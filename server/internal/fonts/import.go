@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"qinqin/internal/pack"
 )
@@ -156,7 +155,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack, storeDir string) (r
 	// The registry row holds no fingerprint of the slices, so a change of
 	// them alone writes it too (Force): its updated_at says the pack changed.
 	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "font_packs", PackID: m.ID,
-		Stamp: time.Now().UTC().Format(time.RFC3339), Columns: pack.ManifestColumns(m), Force: !slices.Equal(have, want)})
+		Stamp: pack.Now(), Columns: pack.ManifestColumns(m), Force: !slices.Equal(have, want)})
 	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}

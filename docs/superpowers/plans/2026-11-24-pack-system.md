@@ -116,6 +116,15 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
 - Ruling: the error texts of a failed registry write are now "register <type> pack <id>: write <table> row
   of <id>: ..." style (internal errors, logged, never in an answer) — cost if wrong: none.
 
+- Ruling: the shared helpers (`pack.Now`, `pack.Placeholders`, `pack.Tuples`, `pack.ReadCapped`) replace the
+  copies in the pack packages only (`dict`, `freq`, `levels`, `sentences`, `grammar`, `audio`, `components`,
+  `strokes`, `lemmapack`, `themes`, `fonts`, `pack`). The other copies (`auth`, `events`, `plugins`,
+  `overlay`, `lexicon`, `study`, `api`) are not pack code; #194 moves the API ones anyway — cost if wrong:
+  a few `now()` copies outside the pack system remain.
+- Ruling: the theme and font readers keep their `io.LimitReader(max+1)` reads: their parsers own the size
+  rule and its message (shared with the contract tests), so `ReadCapped` would change a message — cost if
+  wrong: two capped reads stay spelled out.
+
 ## Execution record
 
 - Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
@@ -140,3 +149,5 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   After: 0 for all 11. All eleven importers write their registry row through the helper. One run of the
   `api` package failed `TestPackageDownload` once under the parallel targeted run; it passed in the next
   full `api` run and 40 times alone (not reproduced; watched in the final gates).
+- Task 6: `TestNowIsAnRFC3339UTCSecond`, `TestPlaceholders`, `TestReadCapped` written first against stubs and
+  seen failing, then the helpers; the copies replaced (imports fixed with goimports).
