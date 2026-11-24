@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -427,7 +428,8 @@ func (a *Archive) validate() error {
 		}); err != nil {
 			return err
 		}
-		img, err := avatar.Normalize(pic)
+		// Decoded in one of the server's shared decode slots, like an upload.
+		img, err := avatar.Normalize(context.Background(), pic)
 		if err != nil {
 			return invalid("%s is not a usable picture", NameAvatar)
 		}

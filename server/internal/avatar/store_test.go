@@ -13,7 +13,7 @@ import (
 
 func images(t *testing.T, w, h int) Images {
 	t.Helper()
-	img, err := Normalize(pngOf(t, picture(w, h)))
+	img, err := Normalize(context.Background(), pngOf(t, picture(w, h)))
 	if err != nil {
 		t.Fatal(err)
 	}

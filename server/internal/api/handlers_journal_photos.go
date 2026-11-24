@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/imaging"
 	"qinqin/internal/journal"
 )
 
@@ -23,19 +24,15 @@ const (
 	maxPhotoFormMemory = 1 << 20
 )
 
-// photoWork bounds the photos decoded at once: a 25 MP decode takes a
-// couple of hundred MiB.
-var photoWork = make(chan struct{}, 2)
-
-// normalizeBounded waits for a decode slot, normalises the photo and always
-// gives the slot back.
+// normalizeBounded waits for one of the server's decode slots
+// (imaging.AcquireDecode, shared with the profile pictures), normalises the
+// photo and always gives the slot back.
 func normalizeBounded(ctx context.Context, data []byte) ([]byte, error) {
-	select {
-	case photoWork <- struct{}{}:
-	case <-ctx.Done():
-		return nil, ctx.Err()
+	release, err := imaging.AcquireDecode(ctx)
+	if err != nil {
+		return nil, err
 	}
-	defer func() { <-photoWork }()
+	defer release()
 	return journal.NormalizePhoto(data)
 }
 

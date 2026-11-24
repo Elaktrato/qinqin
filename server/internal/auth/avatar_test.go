@@ -19,7 +19,7 @@ func storedAvatar(t *testing.T, st avatar.Store, userID int64) string {
 	t.Helper()
 	var b bytes.Buffer
 	png.Encode(&b, image.NewRGBA(image.Rect(0, 0, 20, 20)))
-	img, err := avatar.Normalize(b.Bytes())
+	img, err := avatar.Normalize(context.Background(), b.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}

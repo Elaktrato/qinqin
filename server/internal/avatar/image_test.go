@@ -2,6 +2,7 @@ package avatar
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"hash/crc32"
@@ -12,7 +13,10 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"runtime"
 	"testing"
+
+	"qinqin/internal/imaging"
 )
 
 // picture is w×h with a red block in the top-left quarter on a green-blue
@@ -216,7 +220,7 @@ func TestNormalizeStripsExifAndGPS(t *testing.T) {
 	if !bytes.Contains(in, []byte(gpsMark)) || !bytes.Contains(in, []byte("Exif\x00\x00")) {
 		t.Fatal("the fixture carries no EXIF or GPS")
 	}
-	got, err := Normalize(in)
+	got, err := Normalize(context.Background(), in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +237,7 @@ func TestNormalizeStripsPNGTextAndExifChunks(t *testing.T) {
 	if _, err := png.Decode(bytes.NewReader(in)); err != nil {
 		t.Fatalf("the fixture is not a valid PNG: %v", err)
 	}
-	got, err := Normalize(in)
+	got, err := Normalize(context.Background(), in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +253,7 @@ func TestNormalizeMakesTwoSquares(t *testing.T) {
 		"webp": stillWebP(t),
 		"tiny": pngOf(t, picture(4, 4)),
 	} {
-		got, err := Normalize(in)
+		got, err := Normalize(context.Background(), in)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -270,7 +274,7 @@ func TestNormalizeCropsTheCentre(t *testing.T) {
 			img.Set(x, y, color.RGBA{255, 0, 0, 255})
 		}
 	}
-	got, err := Normalize(pngOf(t, img))
+	got, err := Normalize(context.Background(), pngOf(t, img))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +289,7 @@ func TestNormalizeCropsTheCentre(t *testing.T) {
 
 func TestNormalizeAppliesOrientation(t *testing.T) {
 	// Orientation 3 is a half turn: the red top-left block ends bottom-right.
-	got, err := Normalize(withExif(t, jpegOf(t, picture(64, 64)), 3))
+	got, err := Normalize(context.Background(), withExif(t, jpegOf(t, picture(64, 64)), 3))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +303,7 @@ func TestNormalizeAppliesOrientation(t *testing.T) {
 }
 
 func TestNormalizeFlattensTransparencyOnWhite(t *testing.T) {
-	got, err := Normalize(pngOf(t, image.NewNRGBA(image.Rect(0, 0, 10, 10))))
+	got, err := Normalize(context.Background(), pngOf(t, image.NewNRGBA(image.Rect(0, 0, 10, 10))))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +341,7 @@ func TestNormalizeRefusesOtherTypes(t *testing.T) {
 		"jpeg header":   {0xFF, 0xD8, 0xFF, 0xE0, 0, 0},
 		"truncated png": pngOf(t, picture(50, 50))[:60],
 	} {
-		if _, err := Normalize(in); !errors.Is(err, ErrUnsupported) {
+		if _, err := Normalize(context.Background(), in); !errors.Is(err, ErrUnsupported) {
 			t.Errorf("%s: err = %v, want ErrUnsupported", name, err)
 		}
 	}
@@ -357,12 +361,12 @@ func TestNormalizeRefusesAnimation(t *testing.T) {
 		"webp frame, no flag": riff(vp8x(0x00, 150, 100), riffChunk("ANMF", append(make([]byte, 16), vp8...))),
 		"webp anim flag only": riff(vp8x(0x02, 150, 100), vp8),
 	} {
-		if _, err := Normalize(in); !errors.Is(err, ErrAnimated) {
+		if _, err := Normalize(context.Background(), in); !errors.Is(err, ErrAnimated) {
 			t.Errorf("%s: err = %v, want ErrAnimated", name, err)
 		}
 	}
 	// A still extended WebP (VP8X without the animation flag) is fine.
-	if _, err := Normalize(riff(vp8x(0x00, 150, 100), vp8)); err != nil {
+	if _, err := Normalize(context.Background(), riff(vp8x(0x00, 150, 100), vp8)); err != nil {
 		t.Errorf("still VP8X WebP: %v", err)
 	}
 }
@@ -376,7 +380,7 @@ func TestNormalizeRefusesHugeDimensionsBeforeDecoding(t *testing.T) {
 		"9000 px high":  pngHeaderOnly(10, 9000),
 		"webp 16k":      riff(vp8x(0x00, 16000, 16000), vp8Chunk(t)),
 	} {
-		if _, err := Normalize(in); !errors.Is(err, ErrTooLarge) {
+		if _, err := Normalize(context.Background(), in); !errors.Is(err, ErrTooLarge) {
 			t.Errorf("%s: err = %v, want ErrTooLarge", name, err)
 		}
 	}
@@ -384,19 +388,98 @@ func TestNormalizeRefusesHugeDimensionsBeforeDecoding(t *testing.T) {
 
 func TestNormalizeRefusesTooManyBytes(t *testing.T) {
 	big := append(pngOf(t, picture(8, 8)), make([]byte, MaxBytes)...)
-	if _, err := Normalize(big); !errors.Is(err, ErrTooLarge) {
+	if _, err := Normalize(context.Background(), big); !errors.Is(err, ErrTooLarge) {
 		t.Fatalf("err = %v, want ErrTooLarge", err)
 	}
 }
 
 func TestNormalizeIsDeterministic(t *testing.T) {
 	in := pngOf(t, picture(90, 70))
-	a, err := Normalize(in)
+	a, err := Normalize(context.Background(), in)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, _ := Normalize(in)
+	b, _ := Normalize(context.Background(), in)
 	if !bytes.Equal(a.Large, b.Large) || !bytes.Equal(a.Small, b.Small) {
 		t.Fatal("the same input gave different files (the hash would change)")
+	}
+}
+
+func pngHeader(w, h uint32, depth, colourType byte) []byte {
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:], w)
+	binary.BigEndian.PutUint32(ihdr[4:], h)
+	ihdr[8], ihdr[9] = depth, colourType
+	var b bytes.Buffer
+	b.WriteString("\x89PNG\r\n\x1a\n")
+	b.Write(chunk("IHDR", ihdr))
+	b.Write(chunk("IDAT", []byte{0x78, 0x9c, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01}))
+	b.Write(chunk("IEND", nil))
+	return b.Bytes()
+}
+
+// A 16-bit picture decodes to 8 bytes a pixel: the cap is on the decoded
+// bytes, so 16 megapixels of 16-bit RGBA are refused from the header.
+func TestNormalizeCapsTheDecodedBytes(t *testing.T) {
+	for name, in := range map[string][]byte{
+		"16-bit RGBA 16 MP": pngHeader(4000, 4000, 16, 6),
+		"16-bit RGB 16 MP":  pngHeader(4000, 4000, 16, 2),
+	} {
+		if _, err := Normalize(context.Background(), in); !errors.Is(err, ErrTooLarge) {
+			t.Errorf("%s: err = %v, want ErrTooLarge", name, err)
+		}
+	}
+}
+
+func allocated(t *testing.T, in []byte) uint64 {
+	t.Helper()
+	runtime.GC()
+	var m0, m1 runtime.MemStats
+	runtime.ReadMemStats(&m0)
+	if _, err := Normalize(context.Background(), in); err != nil {
+		t.Fatal(err)
+	}
+	runtime.ReadMemStats(&m1)
+	return m1.TotalAlloc - m0.TotalAlloc
+}
+
+// No full-size copy besides the decode itself: a 2000×2000 PNG decodes to
+// 16 MB, a 3000×2000 JPEG to 9 MB (YCbCr 4:2:0); the rest (the halvings
+// of the square and the scaling) stays under about 10 MB.
+func TestNormalizeMakesNoFullSizeCopies(t *testing.T) {
+	if got := allocated(t, pngOf(t, picture(2000, 2000))); got > 30<<20 {
+		t.Errorf("a 2000×2000 PNG allocated %d MB, want under 30", got>>20)
+	}
+	if got := allocated(t, withExif(t, jpegOf(t, picture(3000, 2000)), 6)); got > 24<<20 {
+		t.Errorf("an oriented 3000×2000 JPEG allocated %d MB, want under 24", got>>20)
+	}
+}
+
+// Orientation 6 turns the picture a quarter clockwise: the red block of the
+// top-left quarter lands top-right in the centre square.
+func TestNormalizeOrientsNonSquarePictures(t *testing.T) {
+	got, err := Normalize(context.Background(), withExif(t, jpegOf(t, picture(300, 200)), 6))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, _ := jpeg.Decode(bytes.NewReader(got.Large))
+	red := func(x, y int) bool { r, g, _, _ := dec.At(x, y).RGBA(); return r>>8 > 180 && g>>8 < 80 }
+	if !red(240, 15) || red(15, 15) {
+		t.Fatalf("top-right red %v, top-left red %v: want only top-right", red(240, 15), red(15, 15))
+	}
+}
+
+func TestNormalizeTakesADecodeSlot(t *testing.T) {
+	r1, _ := imaging.AcquireDecode(context.Background())
+	r2, _ := imaging.AcquireDecode(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := Normalize(ctx, pngOf(t, picture(8, 8))); !errors.Is(err, context.Canceled) {
+		t.Fatalf("with every slot taken and the caller gone: err = %v, want context.Canceled", err)
+	}
+	r1()
+	r2()
+	if _, err := Normalize(context.Background(), pngOf(t, picture(8, 8))); err != nil {
+		t.Fatal(err)
 	}
 }

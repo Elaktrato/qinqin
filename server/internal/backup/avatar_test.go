@@ -12,8 +12,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"qinqin/internal/avatar"
+	"qinqin/internal/imaging"
 )
 
 func solidPNG(t *testing.T, c color.RGBA) []byte {
@@ -33,7 +35,7 @@ func avatars(w *baseWorld) avatar.Store {
 
 func setPicture(t *testing.T, w *baseWorld, uid int64, c color.RGBA) string {
 	t.Helper()
-	img, err := avatar.Normalize(solidPNG(t, c))
+	img, err := avatar.Normalize(context.Background(), solidPNG(t, c))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +148,7 @@ func TestRestoreWithoutAPictureRemovesTheCurrentOne(t *testing.T) {
 }
 
 func TestArchivePictureIsCheckedLikeAnUpload(t *testing.T) {
-	good, err := avatar.Normalize(solidPNG(t, color.RGBA{1, 2, 3, 255}))
+	good, err := avatar.Normalize(context.Background(), solidPNG(t, color.RGBA{1, 2, 3, 255}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,5 +212,41 @@ func TestServerBackupCarriesThePictures(t *testing.T) {
 		if filepath.Dir(filepath.Dir(name)) == "avatars" {
 			t.Errorf("%s is in a backup without the database", name)
 		}
+	}
+}
+
+// The archive's picture is decoded in one of the server's decode slots,
+// shared with uploads, so restores of many users cannot decode unbounded.
+func TestArchivePictureTakesADecodeSlot(t *testing.T) {
+	good, err := avatar.Normalize(context.Background(), solidPNG(t, color.RGBA{1, 2, 3, 255}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := sampleFiles(t)
+	files[NameAvatar] = good.Large
+	path := writeZip(t, files, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["avatar"] = 1 }})
+	var releases []func()
+	for range imaging.DecodeSlots {
+		r, _ := imaging.AcquireDecode(context.Background())
+		releases = append(releases, r)
+	}
+	done := make(chan error, 1)
+	go func() {
+		a, err := Open(path)
+		if err == nil {
+			a.Close()
+		}
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		t.Fatalf("Open finished (%v) while every decode slot was taken", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+	for _, r := range releases {
+		r()
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
 	}
 }

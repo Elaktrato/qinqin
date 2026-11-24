@@ -28,18 +28,6 @@ func (s *server) avatars() avatar.Store {
 	return avatar.Store{DB: s.db, Dir: avatar.Dir(s.dataDir)}
 }
 
-// normalizeAvatarBounded decodes in one of the photo decode slots (a 25 MP
-// decode takes a couple of hundred MiB, whichever route asks for it).
-func normalizeAvatarBounded(ctx context.Context, data []byte) (avatar.Images, error) {
-	select {
-	case photoWork <- struct{}{}:
-	case <-ctx.Done():
-		return avatar.Images{}, ctx.Err()
-	}
-	defer func() { <-photoWork }()
-	return avatar.Normalize(data)
-}
-
 func avatarTooLarge(w http.ResponseWriter) {
 	writeError(w, http.StatusRequestEntityTooLarge, "photo_too_large", "That picture is larger than 5 MB.")
 }
@@ -107,7 +95,7 @@ func (s *server) handleUploadAvatar(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "You have changed your picture "+strconv.Itoa(avatarUploadsHour)+" times this hour. Try again later.")
 		return
 	}
-	img, err := normalizeAvatarBounded(r.Context(), data)
+	img, err := avatar.Normalize(r.Context(), data) // in one of the shared decode slots
 	switch {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		writeClientGone(w)

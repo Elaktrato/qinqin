@@ -5,6 +5,7 @@ package avatar
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"image"
@@ -25,7 +26,10 @@ const (
 	MaxBytes  = 5 << 20    // an upload, counted while it is read
 	MaxSide   = 8192       // px, either side, from the header
 	MaxPixels = 25_000_000 // from the header, before any pixel is decoded
-	quality   = 85
+	// MaxDecodedBytes caps the decoded picture: 25 MP at 4 bytes a pixel,
+	// so a 16-bit picture (8 bytes a pixel) may have half as many pixels.
+	MaxDecodedBytes = 100 << 20
+	quality         = 85
 )
 
 var (
@@ -101,14 +105,36 @@ func webpAnimated(b []byte) bool {
 	return false
 }
 
+// bytesPerPixel is what the standard decoders allocate per pixel for a
+// colour model (YCbCr counted as 4:4:4, the largest).
+func bytesPerPixel(m color.Model) int64 {
+	switch m {
+	case color.RGBA64Model, color.NRGBA64Model:
+		return 8
+	case color.Gray16Model:
+		return 2
+	case color.GrayModel, color.AlphaModel:
+		return 1
+	case color.YCbCrModel:
+		return 3
+	}
+	if _, ok := m.(color.Palette); ok {
+		return 1
+	}
+	return 4
+}
+
 // Normalize turns an upload into the two stored files: the type sniffed
 // from the content (JPEG, PNG, WebP; anything else, SVG and GIF included, is
 // ErrUnsupported), animation refused (ErrAnimated), the size checked from
-// the header before any pixel is decoded (ErrTooLarge), the EXIF orientation
-// of a JPEG applied, transparency flattened onto white, the centre square
-// cropped and scaled to 256 and 64 px, each encoded as a new JPEG. EXIF, XMP,
-// ICC profiles and text chunks do not survive: only pixels are copied.
-func Normalize(data []byte) (Images, error) {
+// the header before any pixel is decoded (ErrTooLarge: pixels, sides and the
+// decoded bytes), the decode in one of the shared decode slots
+// (imaging.AcquireDecode; ctx ends the wait), the centre square scaled
+// straight from the decoded picture onto white 256 and 64 px squares (no
+// full-size copy), the EXIF orientation of a JPEG applied to those squares,
+// each encoded as a new JPEG. EXIF, XMP, ICC profiles and text chunks do not
+// survive: only pixels are copied.
+func Normalize(ctx context.Context, data []byte) (Images, error) {
 	if len(data) > MaxBytes {
 		return Images{}, ErrTooLarge
 	}
@@ -123,34 +149,49 @@ func Normalize(data []byte) (Images, error) {
 	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 {
 		return Images{}, ErrUnsupported
 	}
-	if cfg.Width > MaxSide || cfg.Height > MaxSide || int64(cfg.Width)*int64(cfg.Height) > MaxPixels {
+	px := int64(cfg.Width) * int64(cfg.Height)
+	if cfg.Width > MaxSide || cfg.Height > MaxSide || px > MaxPixels || px*bytesPerPixel(cfg.ColorModel) > MaxDecodedBytes {
 		return Images{}, ErrTooLarge
 	}
+	release, err := imaging.AcquireDecode(ctx)
+	if err != nil {
+		return Images{}, err
+	}
+	defer release()
 	src, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return Images{}, ErrUnsupported
 	}
-	b := src.Bounds()
-	flat := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-	xdraw.Draw(flat, flat.Bounds(), image.NewUniform(color.White), image.Point{}, xdraw.Src)
-	xdraw.Draw(flat, flat.Bounds(), src, b.Min, xdraw.Over)
-	var upright image.Image = flat
+	orientation := 1
 	if k == kindJPEG {
-		upright = imaging.Orient(flat, imaging.JPEGOrientation(data))
+		orientation = imaging.JPEGOrientation(data)
 	}
-	ub := upright.Bounds()
-	side := min(ub.Dx(), ub.Dy())
-	x0, y0 := ub.Min.X+(ub.Dx()-side)/2, ub.Min.Y+(ub.Dy()-side)/2
+	// Every orientation turns or flips about the centre, so the centre
+	// square of the upright picture is the centre square of the source.
+	b := src.Bounds()
+	side := min(b.Dx(), b.Dy())
+	x0, y0 := b.Min.X+(b.Dx()-side)/2, b.Min.Y+(b.Dy()-side)/2
 	square := image.Rect(x0, y0, x0+side, y0+side)
+	// Halve the square (a 2×2 average each time) while it is at least twice
+	// the large size, so CatmullRom, whose buffer is the target's width times
+	// the source's height, works on at most about 512 px.
+	var from image.Image = src
+	fromRect := square
+	for fromRect.Dx() >= 2*LargeSize {
+		half := image.NewRGBA(image.Rect(0, 0, fromRect.Dx()/2, fromRect.Dy()/2))
+		xdraw.ApproxBiLinear.Scale(half, half.Bounds(), from, fromRect, xdraw.Src, nil)
+		from, fromRect = half, half.Bounds()
+	}
 	var out Images
 	for _, s := range []struct {
 		size int
 		dst  *[]byte
 	}{{LargeSize, &out.Large}, {SmallSize, &out.Small}} {
 		dst := image.NewRGBA(image.Rect(0, 0, s.size, s.size))
-		xdraw.CatmullRom.Scale(dst, dst.Bounds(), upright, square, xdraw.Src, nil)
+		xdraw.Draw(dst, dst.Bounds(), image.NewUniform(color.White), image.Point{}, xdraw.Src)
+		xdraw.CatmullRom.Scale(dst, dst.Bounds(), from, fromRect, xdraw.Over, nil)
 		var buf bytes.Buffer
-		if err := jpeg.Encode(&buf, dst, &jpeg.Options{Quality: quality}); err != nil {
+		if err := jpeg.Encode(&buf, imaging.Orient(dst, orientation), &jpeg.Options{Quality: quality}); err != nil {
 			return Images{}, err
 		}
 		*s.dst = buf.Bytes()
