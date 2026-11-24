@@ -22,6 +22,7 @@
 	import { emailSection } from '$lib/account/emailView';
 	import DeleteAccountDialog from './DeleteAccountDialog.svelte';
 	import YourData from '$lib/account/YourData.svelte';
+	import ProfilePicture from '$lib/account/ProfilePicture.svelte';
 	import TwoFactorManage from '$lib/account/TwoFactorManage.svelte';
 	import EmailVerify from '$lib/account/EmailVerify.svelte';
 	import { mailAvailable } from '$lib/account/mfaView';
@@ -230,6 +231,7 @@
 			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
 		>
 	</p>
+	<ProfilePicture />
 	<EmailBanner link={false} />
 	{#if emailView.visible}
 		<form

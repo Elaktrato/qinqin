@@ -72,7 +72,8 @@ describe('Settings → Account: password', () => {
 		expect((screen.getByLabelText('Sign out my other sessions') as HTMLInputElement).checked).toBe(true);
 		await fillPassword('secret-pass-alice', 'a-new-long-password', 'a-new-long-password');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
-		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Password changed'));
+		// The profile picture has a status line of its own: find the password's.
+		await waitFor(() => expect(screen.getAllByRole('status').some((s) => s.textContent?.includes('Password changed'))).toBe(true));
 		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/password');
 		expect(call?.[1]).toMatchObject({
 			method: 'POST',
@@ -85,7 +86,7 @@ describe('Settings → Account: password', () => {
 		await fireEvent.click(screen.getByLabelText('Sign out my other sessions'));
 		await fillPassword('secret-pass-alice', 'a-new-long-password', 'a-new-long-password');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
-		await waitFor(() => screen.getByRole('status'));
+		await waitFor(() => expect(vi.mocked(api).mock.calls.some(([u]) => u === '/api/account/password')).toBe(true));
 		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/password');
 		expect(call?.[1]).toMatchObject({ body: { signOutOthers: false } });
 	});
