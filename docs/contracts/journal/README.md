@@ -1,17 +1,37 @@
-# Journal review documents (`qinqin-journal` / `review:<entryId>`)
+# Journal documents (`/api/journal/*`)
 
-Issue #103. The journal stores each entry's review as a workspace-scoped
-plugin-data row of the built-in plugin `qinqin-journal`:
+Issues #103 and #199. The journal is a core feature with a per-user switch (`features/`). Its documents are
+typed storage of the server (`server/internal/journal/store.go`, migration 044), each scoped to one workspace
+of one user. None of them is in the paged pull; clients read and write them through these routes (every one
+takes `?workspace=<id>` of the caller: missing or not an integer is 400 `bad_request`, an unknown or foreign
+workspace 404 `workspace_not_found`; no route takes an access token):
 
-| Key | Scope | Shape |
-| --- | --- | --- |
-| `review:<entryId>` | workspace | `{entryId, textHash, annotations[], overall, model, provider?, fallbackFrom?, dropped, createdAt}` |
+| Document | Read | Write | Shape |
+| --- | --- | --- | --- |
+| entry | `GET /api/journal/entries` (all, newest `date` first, then newest `updatedAt`), `GET /api/journal/entries/{id}` (404 `not_found` when missing) | `PUT /api/journal/entries/{id}` `{date, title, text, source, createdAt?}` answers the stored entry; `DELETE` (204; the review goes too; 404 when missing) | `{id, date, title, text, source: "typed"\|"photo", createdAt, updatedAt}` |
+| review | `GET /api/journal/entries/{id}/review` → `{review: … \| null}` | `POST /api/journal/review` (the AI review; stored only while the entry exists) | below |
+| topic ideas | `GET /api/journal/suggestions` → `{suggestions: … \| null}` | `POST /api/journal/suggestions` | `{items: [{title, prompt, words}], model, provider?, createdAt}` |
+| settings | `GET /api/journal/settings` (the defaults when none is stored) | `PUT /api/journal/settings` `{guidance, explanationLanguage}` answers the stored settings | `{guidance, explanationLanguage}` |
 
-The row is written by `POST /api/journal/review`; clients read it through the
-plugin-data list route (`GET /api/plugins/qinqin-journal/data?workspace=<id>&prefix=review:<entryId>`)
-or receive it as the answer of the review route. The journal is **not** in
-Android's first plugin set; this folder pins the document so any client that
-shows a review (web, the Android plugin later) shows the same corrections.
+Entries ([`entries.json`](entries.json), decoded by `server/internal/journal/entries_contract_test.go` and
+`apps/web/src/lib/plugins/journal/entries.contract.test.ts`): `id` matches `^[0-9A-Za-z_-]{1,64}$` (clients use
+a ULID), `date` is a calendar date `YYYY-MM-DD` (the learner's day when it was started), `title` at most 200
+and `text` at most 50000 code points of plain text (no control characters but line breaks and tabs),
+`source` is `typed` or `photo`. `updatedAt` is the server's RFC 3339 stamp of the last write; `createdAt` is
+the first write's (the client's when it sent one) and never changes. Anything else is 400 `bad_request`.
+
+Settings: `explanationLanguage` is one of the fixture's `explanationLanguages` (a PUT of anything else is 400);
+a stored value that is no longer listed reads as `en`, and `guidance` (at most 2000 code points) is cut to
+that length when read.
+
+A personal backup carries these documents in their keyed form (`journal:entry:<id>`, `journal:review:<entryId>`,
+`journal:suggestions`, `journal:settings`; `backup/README.md`).
+
+## Review documents
+
+The review of an entry: `{entryId, textHash, annotations[], overall, model, provider?, fallbackFrom?, dropped,
+createdAt}`, written by `POST /api/journal/review` or answered by it. This folder pins the document so every
+client that shows a review shows the same corrections.
 
 ## Annotation
 
@@ -64,6 +84,7 @@ list-only / missing sections rather than dropping it. An annotation whose
 | --- | --- | --- |
 | `kind-resolve.json` | model kind → stored kind (trim, case fold, closed set, default mistake) | `server/internal/journal/resolve_contract_test.go` |
 | `review-docs.json` | stored document → what a client shows (kinds, legacy rows, bogus kinds, malformed fields, extra keys) | `apps/web/src/lib/plugins/journal/review.test.ts` |
+| `entries.json` | what `PUT` of an entry and of the settings accepts, the limits, the settings defaults and lenient reads | `server/internal/journal/entries_contract_test.go`, `apps/web/src/lib/plugins/journal/entries.contract.test.ts` |
 
 Fixtures win over code. The server is the only writer of `kind`; every client
 reads it with the same fallback.

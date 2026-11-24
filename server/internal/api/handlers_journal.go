@@ -13,7 +13,6 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/journal"
-	"qinqin/internal/plugins"
 	"qinqin/internal/workspaces"
 )
 
@@ -45,16 +44,12 @@ func (s *server) journalTarget(w http.ResponseWriter, r *http.Request, userID, w
 		writeInternal(w, r)
 		return aiTarget{}, false
 	}
-	t := aiTarget{userID: userID, ws: workspaceID, language: lang, settings: journal.ParseSettings(nil)}
-	d, err := plugins.GetData(r.Context(), s.db, userID, &workspaceID, journal.PluginID, journal.SettingsKey)
-	switch {
-	case err == nil:
-		t.settings = journal.ParseSettings(d.Data)
-	case !errors.Is(err, plugins.ErrNotFound):
+	settings, err := journal.GetSettings(r.Context(), s.db, userID, workspaceID)
+	if err != nil {
 		writeInternal(w, r)
 		return aiTarget{}, false
 	}
-	return t, true
+	return aiTarget{userID: userID, ws: workspaceID, language: lang, settings: settings}, true
 }
 
 // aiRun is what a finished provider call used.
@@ -114,15 +109,6 @@ func (s *server) recordAICalls(ctx context.Context, userID int64, kind, provider
 	}
 }
 
-func (s *server) putJournalDoc(ctx context.Context, userID, ws int64, key string, v any) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	_, err = plugins.PutData(ctx, s.db, userID, &ws, journal.PluginID, key, b)
-	return err
-}
-
 // handleJournalReview serves POST /api/journal/review.
 func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -145,18 +131,13 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, err := plugins.GetData(r.Context(), s.db, u.ID, &t.ws, journal.PluginID, journal.EntryKey(req.EntryID))
-	if errors.Is(err, plugins.ErrNotFound) {
+	entry, err := journal.GetEntry(r.Context(), s.db, u.ID, t.ws, req.EntryID)
+	if errors.Is(err, journal.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	}
 	if err != nil {
 		writeInternal(w, r)
-		return
-	}
-	entry, err := journal.ParseEntry(d.Data)
-	if err != nil || entry.ID != req.EntryID {
-		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	}
 	text := entry.Text
@@ -195,17 +176,12 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	}
 	rev.FallbackFrom = reply.FallbackFrom
 	wctx := context.WithoutCancel(r.Context())
-	// The entry may have been deleted while the provider worked: do not leave
-	// an orphaned review behind. (A delete in the instant between this check
-	// and the write is rare and harmless: the review is swept with its entry.)
-	if _, err := plugins.GetData(wctx, s.db, u.ID, &t.ws, journal.PluginID, journal.EntryKey(entry.ID)); errors.Is(err, plugins.ErrNotFound) {
+	// The entry may have been deleted while the provider worked: PutReview
+	// writes nothing then, so no orphaned review is left behind.
+	if err := journal.PutReview(wctx, s.db, u.ID, t.ws, rev); errors.Is(err, journal.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	} else if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := s.putJournalDoc(wctx, u.ID, t.ws, journal.ReviewKey(entry.ID), rev); err != nil {
 		log.Printf("journal: store review: %v", err)
 		writeInternal(w, r)
 		return
@@ -258,7 +234,7 @@ func (s *server) handleJournalSuggestions(w http.ResponseWriter, r *http.Request
 	if doc.Items == nil {
 		doc.Items = []ai.SuggestionItem{}
 	}
-	if err := s.putJournalDoc(context.WithoutCancel(r.Context()), u.ID, t.ws, journal.SuggestionsKey, doc); err != nil {
+	if err := journal.PutSuggestions(context.WithoutCancel(r.Context()), s.db, u.ID, t.ws, doc); err != nil {
 		log.Printf("journal: store suggestions: %v", err)
 		writeInternal(w, r)
 		return

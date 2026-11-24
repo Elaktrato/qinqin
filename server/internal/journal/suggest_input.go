@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"sort"
 	"strings"
 	"time"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/events"
 	"qinqin/internal/lexicon"
-	"qinqin/internal/plugins"
 	"qinqin/internal/study"
 )
 
@@ -97,22 +95,11 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 		}
 	}
 
-	rows, err := plugins.ListData(ctx, sqlDB, userID, &workspaceID, PluginID, "entry:")
+	// ListEntries orders newest date first, then the most recently saved.
+	entries, err := ListEntries(ctx, sqlDB, userID, workspaceID)
 	if err != nil {
 		return nil, nil, err
 	}
-	var entries []Entry
-	for _, row := range rows {
-		if e, err := ParseEntry(row.Data); err == nil {
-			entries = append(entries, e)
-		}
-	}
-	sort.SliceStable(entries, func(i, j int) bool {
-		if entries[i].Date != entries[j].Date {
-			return entries[i].Date > entries[j].Date
-		}
-		return entries[i].UpdatedAt > entries[j].UpdatedAt
-	})
 	for _, e := range entries {
 		if len(recent) == maxSuggestRecent {
 			break

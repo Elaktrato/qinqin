@@ -34,6 +34,10 @@ var seedSQL = map[string][]string{
 	"study_fsrs_active":   {`INSERT INTO study_fsrs_active (user_id, workspace_id, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 1, 't', 't')`},
 	"library_deletions":   {`INSERT INTO library_deletions (user_id, collection, row_id, workspace_id, deleted_at) VALUES (?1, 'books', 1000 + ?1, 1, 't')`},
 	"user_time_zones":     {`INSERT INTO user_time_zones (user_id, seq, zone, created_at) VALUES (?1, 0, 'UTC', 't')`},
+	"journal_entries":     {`INSERT INTO journal_entries (user_id, workspace_id, id, date, title, text, source, created_at, updated_at) VALUES (?1, 1, 'e', '2026-11-19', '', 't', 'typed', 't', 't')`},
+	"journal_reviews":     {`INSERT INTO journal_reviews (user_id, workspace_id, entry_id, text_hash, annotations, overall, model, dropped, created_at) VALUES (?1, 1, 'e', 'h', '[]', '{}', 'm', '{}', 't')`},
+	"journal_suggestions": {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, 1, '[]', 'm', 't')`},
+	"journal_settings":    {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
 	"journal_photos":      {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
 	"ai_keys":             {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},
 	"ai_selection":        {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
@@ -163,7 +167,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Cards: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
@@ -310,7 +314,8 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 	rows := map[string]bool{"workspaces": true, "study_events": true, "plugin_data": true, "plugin_states": true,
 		"user_edits": true, "sentences": true, "library_books": true, "library_bookmarks": true,
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
-		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true}
+		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
+		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)

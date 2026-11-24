@@ -43,7 +43,6 @@ const ALLOWED: Record<string, string> = {
 	'lib/milestones/reached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/milestones/replayReached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/api/client.ts:observer': "the one observer slot of the API client: the app context installs it at start and removes it at dispose",
-	'lib/plugins/journal/store.ts:sdk': "the journal plugin's SDK: permission checks over the manifest, no state of its own",
 	'lib/plugins/grammar/progress.ts:sdk': "the grammar plugin's SDK, the same way",
 	'lib/weekly/replay.ts:replayStats': 'an operation counter the performance tests read, no user data',
 	'lib/weekly/summary.ts:summaryStats': 'an operation counter the performance tests read, no user data',

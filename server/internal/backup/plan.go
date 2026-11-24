@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/study"
 )
@@ -443,11 +444,15 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	return rep, m, nil
 }
 
-// typedLiveCount adds the user's live typed study rows (?1) to a count.
+// typedLiveCount adds the user's live typed study rows and journal
+// documents (?1) to a count.
 var typedLiveCount = func() string {
 	out := ""
 	for _, t := range study.Tables() {
 		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1 AND deleted_at IS NULL)`
+	}
+	for _, t := range journal.Tables() {
+		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1)`
 	}
 	return out
 }()

@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"qinqin/internal/journal"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
@@ -491,6 +492,13 @@ func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID i
 		}); err != nil {
 			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
 		}
+	}
+	// the journal's documents in their keyed form (journal/keyed.go)
+	if err := journal.EachKeyed(ctx, tx, userID, func(d journal.KeyedDoc) error {
+		ws := d.WorkspaceID
+		return pw.encode(PluginRow{PluginID: JournalPlugin, WorkspaceID: &ws, Key: d.Key, Data: d.Data, Version: 1, UpdatedAt: d.UpdatedAt})
+	}); err != nil {
+		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
 	}
 	return pw.total, pw.close()
 }

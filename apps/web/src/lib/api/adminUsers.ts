@@ -22,6 +22,8 @@ export interface DeletionPreview {
 	/** Live flashcards (typed study rows; absent from servers before v0.4.0). */
 	cards?: number;
 	books: number;
+	/** Journal entries (typed storage since #199). */
+	journalEntries?: number;
 	journalPhotos: number;
 	aiKeys: number;
 	sessions: number;

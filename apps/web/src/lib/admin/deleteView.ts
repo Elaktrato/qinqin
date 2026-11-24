@@ -9,6 +9,7 @@ const LINES: [keyof DeletionPreview, MessageKey][] = [
 	['books', 'admin.delete.preview.books'],
 	['overlays', 'admin.delete.preview.overlays'],
 	['sentences', 'admin.delete.preview.sentences'],
+	['journalEntries', 'admin.delete.preview.journalEntries'],
 	['journalPhotos', 'admin.delete.preview.journalPhotos'],
 	['aiKeys', 'admin.delete.preview.aiKeys'],
 	['sessions', 'admin.delete.preview.sessions'],

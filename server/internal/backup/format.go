@@ -306,6 +306,10 @@ func ParseDerivedCardID(id string) (kind string, entryID int64, ok bool) {
 // vacation periods (vacation:<ULID>, user-global).
 const FlashcardsPlugin = "qinqin-flashcards"
 
+// JournalPlugin carries the journal's documents in their keyed form
+// (journal:entry:<id>, ...; journal/keyed.go).
+const JournalPlugin = "qinqin-journal"
+
 // CorePlugin is the built-in plugin whose workspace rows hold personal
 // notes on entries (note:<entryId>, docs/contracts/notes/).
 const CorePlugin = "qinqin-core"

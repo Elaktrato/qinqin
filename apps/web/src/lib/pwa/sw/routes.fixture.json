@@ -76,6 +76,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/journal/entries/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/journal/photos/{id}",
 		"access": "user"
 	},
@@ -252,7 +256,27 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/journal/entries",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/entries/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/entries/{id}/review",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/journal/photos/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/settings",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/suggestions",
 		"access": "user"
 	},
 	{
@@ -632,7 +656,15 @@
 		"access": "user"
 	},
 	{
+		"pattern": "PUT /api/journal/entries/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "PUT /api/journal/photos/{id}/keepalive",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/journal/settings",
 		"access": "user"
 	},
 	{

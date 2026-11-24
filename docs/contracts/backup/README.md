@@ -55,6 +55,17 @@ read. The restore clears the user's typed rows (tombstones included) and the lib
 (`library_deletions`, sync bookkeeping that is never exported); every client pulls in full after a
 restore.
 
+### Journal documents (#199)
+
+The journal's entries, reviews, topic ideas and settings are typed storage (`journal/README.md`). The archive
+carries each as a workspace plugin row of `qinqin-journal` in its keyed form: `journal:entry:<id>` (the entry
+as the routes answer it), `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`, version 1,
+`updatedAt` the document's stamp, counted under `pluginData`; per workspace the entries come before their
+reviews. A restore remaps the workspace and writes each into its table through the store's own validation;
+one that does not decode, that the store refuses, a review whose entry the archive did not restore first, or
+a `qinqin-journal` row of any other key (an archive from before #199) is dropped and counted in
+`droppedRows`.
+
 ### The keyed-row codec (`study-rows.json`)
 
 `FromLegacy(key, data)` reads a keyed row exactly as the v0.3.0 web parsers did (key/payload agreement,

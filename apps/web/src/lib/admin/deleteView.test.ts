@@ -16,7 +16,7 @@ describe('previewLines', () => {
 	it('counts flashcards apart from the other saved items', () => {
 		expect(previewLines({ ...zero, cards: 1, pluginData: 2 })).toEqual([
 			'1 flashcard, with its decks and study settings',
-			'2 other saved items (journal entries, notes, known words, settings)'
+			'2 other saved items (notes, known words, settings)'
 		]);
 		expect(previewLines({ ...zero, cards: 3 })).toEqual(['3 flashcards, with their decks and study settings']);
 	});

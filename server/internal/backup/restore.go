@@ -21,6 +21,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/i18n"
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -471,6 +472,23 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 			if row.Family() == rows.Cards {
 				res.Restored.Cards++
 			}
+			return nil
+		}
+		// The journal's documents go to their tables (journal/keyed.go); a
+		// row of an older layout, or one the store refuses, is dropped.
+		if nr.PluginID == JournalPlugin {
+			ok := false
+			if nr.WorkspaceID != nil && journal.IsKeyed(nr.Key) {
+				var err error
+				if ok, err = journal.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+					return fmt.Errorf("backup: journal document: %w", err)
+				}
+			}
+			if !ok {
+				res.DroppedRows++
+				return nil
+			}
+			res.Restored.PluginData++
 			return nil
 		}
 		var ws any

@@ -77,6 +77,10 @@ var seedSQL = map[string][]string{
 	"study_fsrs_sets":     {`INSERT INTO study_fsrs_sets (user_id, workspace_id, id, w, created_at, source, version, updated_at, modified_at) VALUES (?1, ?2, 's', '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', 't', 'imported', 1, 't', 't')`},
 	"study_fsrs_active":   {`INSERT INTO study_fsrs_active (user_id, workspace_id, version, updated_at, modified_at) VALUES (?1, ?2, 1, 't', 't')`},
 	"library_deletions":   {`INSERT INTO library_deletions (user_id, collection, row_id, workspace_id, deleted_at) VALUES (?1, 'books', 1000 + ?3, ?2, 't')`},
+	"journal_entries":     {`INSERT INTO journal_entries (user_id, workspace_id, id, date, title, text, source, created_at, updated_at) VALUES (?1, ?2, 'e' || ?3, '2026-11-19', '', 't', 'typed', 't', 't')`},
+	"journal_reviews":     {`INSERT INTO journal_reviews (user_id, workspace_id, entry_id, text_hash, annotations, overall, model, dropped, created_at) VALUES (?1, ?2, 'e' || ?3, 'h', '[]', '{}', 'm', '{}', 't')`},
+	"journal_suggestions": {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, ?2, '[]', 'm', 't')`},
+	"journal_settings":    {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, ?2, '', 'en', 't')`},
 	"journal_photos":      {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?3, ?1, ?2, 't', 't')`},
 	"access_tokens":       {`INSERT INTO access_tokens (user_id, workspace_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, ?2, 'n', 'ah' || ?3, 'abcdef', 'read', 't', '9999')`},
 }

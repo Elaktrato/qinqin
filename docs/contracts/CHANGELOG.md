@@ -5,6 +5,16 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #199 — core features instead of code plugins
+
+- **Journal:** entries, reviews, topic ideas and settings are typed storage with their own routes
+  (`GET /api/journal/entries`, `GET/PUT/DELETE /api/journal/entries/{id}`, `GET
+  /api/journal/entries/{id}/review`, `GET /api/journal/suggestions`, `GET/PUT /api/journal/settings`;
+  `journal/README.md`). New fixture: `journal/entries.json`. The `qinqin-journal` plugin rows (`entry:`,
+  `review:`, `suggestions`, `settings`) are gone; a backup carries the documents as `journal:entry:<id>`,
+  `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`. The deletion previews count
+  `journalEntries`.
+
 ## #192 — one pack system on the server
 
 No fixture changes; `packages/pack-types.json` is unchanged and still decoded by the Go and web tests. Two

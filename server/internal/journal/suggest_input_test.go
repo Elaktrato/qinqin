@@ -13,7 +13,6 @@ import (
 	"qinqin/internal/journal"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
@@ -72,10 +71,6 @@ func TestSuggestionInput(t *testing.T) {
 	card(w, "c4", e2, "老师")
 	card(v, "cv", e1, "只在V")
 	cardAt(w, "gone", e1, "删掉", true) // a deleted card is never suggested
-	// A leftover plugin row (unreadable to every client) is not a card.
-	if _, err := plugins.PutData(ctx, sqlDB, uid, &w, "qinqin-flashcards", "card:old", json.RawMessage(`{"id":"old","entryId":1,"written":"旧"}`)); err != nil {
-		t.Fatal(err)
-	}
 
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	ev := func(n int, ws int64, card string, ago time.Duration) model.StudyEvent {
@@ -91,9 +86,8 @@ func TestSuggestionInput(t *testing.T) {
 	}
 
 	for i := 0; i < 12; i++ {
-		b, _ := json.Marshal(map[string]any{"id": fmt.Sprint(i), "date": fmt.Sprintf("2026-11-%02d", i+1), "title": fmt.Sprint("T", i),
-			"text": strings.Repeat("字", 300), "updatedAt": "2026-11-15T00:00:00Z"})
-		if _, err := plugins.PutData(ctx, sqlDB, uid, &w, journal.PluginID, journal.EntryKey(fmt.Sprint(i)), b); err != nil {
+		if _, err := journal.PutEntry(ctx, sqlDB, uid, w, journal.Entry{ID: fmt.Sprint(i), Date: fmt.Sprintf("2026-11-%02d", i+1),
+			Title: fmt.Sprint("T", i), Text: strings.Repeat("字", 300), Source: "typed"}); err != nil {
 			t.Fatal(err)
 		}
 	}

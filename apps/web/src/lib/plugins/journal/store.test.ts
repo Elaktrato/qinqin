@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import {
-	JOURNAL_PLUGIN_ID,
 	deleteEntry,
 	getEntry,
 	getJournalSettings,
@@ -15,14 +14,9 @@ import {
 	saveEntry,
 	saveJournalSettings
 } from './store';
-import { dataRow } from '../../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status });
-}
-
-function row(key: string, data: unknown) {
-	return dataRow({ pluginId: JOURNAL_PLUGIN_ID, key, workspaceId: 3, data });
 }
 
 function entry(id: string, date: string, updatedAt: string) {
@@ -37,52 +31,43 @@ describe('journal store', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('lists entries by prefix, newest date then newest update first', async () => {
+	it('lists the workspace entries, newest date then newest update first', async () => {
 		vi.mocked(fetch).mockResolvedValue(
 			json([
-				row('entry:a', entry('a', '2026-11-01', '2026-11-01T10:00:00Z')),
-				row('entry:b', entry('b', '2026-11-02', '2026-11-02T08:00:00Z')),
-				row('entry:c', entry('c', '2026-11-02', '2026-11-02T09:00:00Z'))
+				entry('a', '2026-11-01', '2026-11-01T10:00:00Z'),
+				entry('b', '2026-11-02', '2026-11-02T08:00:00Z'),
+				entry('c', '2026-11-02', '2026-11-02T09:00:00Z')
 			])
 		);
 		const list = await listEntries(3);
 		expect(list.map((e) => e.id)).toEqual(['c', 'b', 'a']);
-		const url = vi.mocked(fetch).mock.calls[0][0] as string;
-		expect(url).toContain('/api/plugins/qinqin-journal/data?');
-		expect(url).toContain('workspace=3');
-		expect(url).toContain('prefix=entry%3A');
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/journal/entries?workspace=3');
 	});
 
-	it('skips malformed rows and decodes string data', async () => {
-		vi.mocked(fetch).mockResolvedValue(
-			json([
-				row('entry:a', entry('other', '2026-11-01', 'x')),
-				row('entry:b', { ...entry('b', '2026-11-01', 'x'), text: 5 }),
-				row('entry:c', 'not json'),
-				row('entry:d', JSON.stringify(entry('d', '2026-11-01', 'x'))),
-				row('entry:e', null)
-			])
-		);
+	it('skips malformed entries', async () => {
+		vi.mocked(fetch).mockResolvedValue(json([{ ...entry('b', '2026-11-01', 'x'), text: 5 }, 'not an entry', null, entry('d', '2026-11-01', 'x')]));
 		expect((await listEntries(3)).map((e) => e.id)).toEqual(['d']);
 	});
 
-	it('gets one entry, null when missing or malformed', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json(row('entry:a', entry('a', '2026-11-01', 'x'))));
+	it('gets one entry, null when missing or another id', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json(entry('a', '2026-11-01', 'x')));
 		expect((await getEntry(3, 'a'))?.id).toBe('a');
-		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/plugins/qinqin-journal/data/entry:a?workspace=3');
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/journal/entries/a?workspace=3');
+		vi.mocked(fetch).mockResolvedValueOnce(json({ error: 'not_found', message: 'Entry not found.' }, 404));
+		expect(await getEntry(3, 'a')).toBeNull();
+		vi.mocked(fetch).mockResolvedValueOnce(json(entry('b', '2026-11-01', 'x')));
 		expect(await getEntry(3, 'a')).toBeNull();
 	});
 
-	it('saves an entry with a fresh updatedAt', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({}));
+	it('saves an entry and answers it as the server stored it', async () => {
+		vi.mocked(fetch).mockResolvedValue(json(entry('a', '2026-11-01', '2026-11-05T10:00:00Z')));
 		const before = entry('a', '2026-11-01', '2020-01-01T00:00:00.000Z') as ReturnType<typeof newEntry>;
 		const saved = await saveEntry(3, before);
-		expect(saved.updatedAt).not.toBe('2020-01-01T00:00:00.000Z');
+		expect(saved.updatedAt).toBe('2026-11-05T10:00:00Z');
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
-		expect(url).toBe('/api/plugins/qinqin-journal/data/entry:a?workspace=3');
+		expect(url).toBe('/api/journal/entries/a?workspace=3');
 		expect(init?.method).toBe('PUT');
-		expect(JSON.parse(init?.body as string)).toEqual(saved);
+		expect(JSON.parse(init?.body as string)).toEqual({ date: '2026-11-01', title: 'a', text: 'text', source: 'typed', createdAt: '2020-01-01T00:00:00.000Z' });
 	});
 
 	it("dates a new entry by the learner's day, not the browser's", () => {
@@ -101,48 +86,50 @@ describe('journal store', () => {
 		expect(e.createdAt).toBe(e.updatedAt);
 	});
 
-	it('deletes the entry and its review, tolerating a 404', async () => {
+	it('deletes the entry (its review goes with it), tolerating a 404', async () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(new Response(null, { status: 204 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
+			.mockResolvedValueOnce(json({ error: 'not_found', message: 'Entry not found.' }, 404));
 		await deleteEntry(3, 'a');
-		const calls = vi.mocked(fetch).mock.calls;
-		expect(calls.map((c) => [c[0], c[1]?.method])).toEqual([
-			['/api/plugins/qinqin-journal/data/entry:a?workspace=3', 'DELETE'],
-			['/api/plugins/qinqin-journal/data/review:a?workspace=3', 'DELETE']
+		await deleteEntry(3, 'a');
+		expect(vi.mocked(fetch).mock.calls.map((c) => [c[0], c[1]?.method])).toEqual([
+			['/api/journal/entries/a?workspace=3', 'DELETE'],
+			['/api/journal/entries/a?workspace=3', 'DELETE']
 		]);
 	});
 
-	it('reads the review and suggestions through the list route, null when absent', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [{ id: 'a1', quote: 'x', correction: 'y' }] })]));
+	it('reads the review and suggestions, null when absent (no 404 requests)', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json({ review: { entryId: 'a', annotations: [{ id: 'a1', quote: 'x', correction: 'y' }] } }));
 		const review = await getReview(3, 'a');
 		expect(review?.entryId).toBe('a');
 		expect(review?.annotations[0].kind).toBe('mistake');
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:b', { annotations: [] })]));
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/journal/entries/a/review?workspace=3');
+		vi.mocked(fetch).mockResolvedValueOnce(json({ review: null }));
 		expect(await getReview(3, 'b')).toBeNull();
-		expect(vi.mocked(fetch).mock.calls[0][0]).toContain('prefix=review%3Aa');
-		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ suggestions: null }));
 		expect(await getSuggestions(3)).toBeNull();
-		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3); // no 404 requests
+		vi.mocked(fetch).mockResolvedValueOnce(json({ suggestions: { items: [], model: 'm', createdAt: 'c' } }));
+		expect((await getSuggestions(3))?.model).toBe('m');
+		expect(vi.mocked(fetch).mock.calls[2][0]).toBe('/api/journal/suggestions?workspace=3');
 	});
 
-	it('applies settings defaults for no row, bad data and an unknown language', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+	it('applies settings defaults for bad data and an unknown language', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json(42));
 		expect(await getJournalSettings(3)).toEqual({ guidance: '', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', 42)]));
-		expect(await getJournalSettings(3)).toEqual({ guidance: '', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', { guidance: 'be kind', explanationLanguage: 'klingon' })]));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ guidance: 'be kind', explanationLanguage: 'klingon' }));
 		expect(await getJournalSettings(3)).toEqual({ guidance: 'be kind', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', { guidance: 'g', explanationLanguage: 'de' })]));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ guidance: 'g', explanationLanguage: 'de' }));
 		expect(await getJournalSettings(3)).toEqual({ guidance: 'g', explanationLanguage: 'de' });
+		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/journal/settings?workspace=3');
 	});
 
 	it('saves settings', async () => {
 		vi.mocked(fetch).mockResolvedValue(json({}));
 		await saveJournalSettings(3, { guidance: 'g', explanationLanguage: 'de' });
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
-		expect(url).toBe('/api/plugins/qinqin-journal/data/settings?workspace=3');
+		expect(url).toBe('/api/journal/settings?workspace=3');
 		expect(init?.method).toBe('PUT');
+		expect(JSON.parse(init?.body as string)).toEqual({ guidance: 'g', explanationLanguage: 'de' });
 	});
 
 	it('saves with keepalive for a small entry when asked, and without for a large one', async () => {

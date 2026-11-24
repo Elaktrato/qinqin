@@ -91,6 +91,13 @@ var userTables = []UserTable{
 	{Name: "library_deletions", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM library_deletions WHERE user_id = ?1`},
 		Export: ExportSkip, ExportReason: "sync bookkeeping (deletion log); clients pull in full after a restore", Restore: RestoreDrop},
 	{Name: "user_time_zones", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_time_zones WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	// The journal's documents (migration 044): exported in their keyed form,
+	// replaced on restore.
+	{Name: "journal_entries", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_entries WHERE user_id = ?1`},
+		PreviewKey: "journalEntries", Count: `SELECT COUNT(*) FROM journal_entries WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "journal_reviews", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_reviews WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "journal_suggestions", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_suggestions WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "journal_settings", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_settings WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
 		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},
@@ -149,17 +156,18 @@ func UserTables() []UserTable {
 
 // Preview is what deleting a user would remove, as counts.
 type Preview struct {
-	Workspaces    int `json:"workspaces"`
-	StudyEvents   int `json:"studyEvents"`
-	PluginData    int `json:"pluginData"`
-	Cards         int `json:"cards"`
-	Books         int `json:"books"`
-	JournalPhotos int `json:"journalPhotos"`
-	AIKeys        int `json:"aiKeys"`
-	Sessions      int `json:"sessions"`
-	Overlays      int `json:"overlays"`
-	Sentences     int `json:"sentences"`
-	AccessTokens  int `json:"accessTokens"`
+	Workspaces     int `json:"workspaces"`
+	StudyEvents    int `json:"studyEvents"`
+	PluginData     int `json:"pluginData"`
+	Cards          int `json:"cards"`
+	Books          int `json:"books"`
+	JournalEntries int `json:"journalEntries"`
+	JournalPhotos  int `json:"journalPhotos"`
+	AIKeys         int `json:"aiKeys"`
+	Sessions       int `json:"sessions"`
+	Overlays       int `json:"overlays"`
+	Sentences      int `json:"sentences"`
+	AccessTokens   int `json:"accessTokens"`
 }
 
 // DeletionPreview counts what DeleteUser would remove, from the same
@@ -173,7 +181,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 	}
 	var p Preview
 	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "pluginData": &p.PluginData, "cards": &p.Cards,
-		"books": &p.Books, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
+		"books": &p.Books, "journalEntries": &p.JournalEntries, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
 		"overlays": &p.Overlays, "sentences": &p.Sentences, "accessTokens": &p.AccessTokens}
 	for _, t := range userTables {
 		if t.PreviewKey == "" {
