@@ -343,7 +343,7 @@ func (s *server) hideEmailWhenOff(r *http.Request, u *model.User) {
 }
 
 // handleAuthOptions serves GET /api/auth/options: the instance-level
-// switches the sign-in and register pages (and the Kotlin client) need
+// switches the sign-in and register pages need
 // before anyone is signed in. Public, never cached.
 func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	set, err := auth.LoadSettings(r.Context(), s.db)
@@ -402,6 +402,11 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
+	avatarURL, err := s.avatarURLOf(r.Context(), p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
 	writeJSON(w, http.StatusOK, struct {
 		model.User
 		MFA         auth.MFAState `json:"mfa"`
@@ -413,7 +418,9 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		// InterfaceLanguage is the stored interface language, '' = follow
 		// the browser/device (PUT /api/me/interface-language).
 		InterfaceLanguage string `json:"interfaceLanguage"`
-	}{p.User, st, p.Restriction(), !p.TemporarySession, lang})
+		// AvatarURL is the profile picture (#189, auth/avatar.json), null for none.
+		AvatarURL *string `json:"avatarUrl"`
+	}{p.User, st, p.Restriction(), !p.TemporarySession, lang, avatarURL})
 }
 
 // The access gate. Every handler reaches a session through one of the

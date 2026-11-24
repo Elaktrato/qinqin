@@ -118,7 +118,8 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-server", "", now, "tar.gz")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	err = backup.WriteServer(r.Context(), s.db, s.dataDir, inc, tw, backup.Meta{
-		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now})
+		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now,
+		Lock: s.users.WithUserLock}) // the pictures' files match the snapshot
 	if err != nil {
 		log.Printf("backup: server backup failed: %v", err)
 		if !tw.wrote {

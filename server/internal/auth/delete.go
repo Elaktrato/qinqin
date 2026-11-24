@@ -114,6 +114,11 @@ var userTables = []UserTable{
 	{Name: "journal_messages", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_messages WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	// Grammar lesson progress (migration 045): exported in its keyed form, replaced on restore.
 	{Name: "grammar_progress", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM grammar_progress WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	// The profile picture (#189, migration 050): its row here, its files in
+	// <data>/avatars/<id> (UserDirs). A personal export carries the picture as
+	// account/avatar.jpg; a restore replaces it.
+	{Name: "user_avatars", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_avatars WHERE user_id = ?1`},
+		PreviewKey: "avatar", Count: `SELECT COUNT(*) FROM user_avatars WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
 		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},
@@ -161,8 +166,9 @@ var keptTables = []UserTable{
 
 // UserDirs are the per-user directories under the data directory that the
 // deletion removes after the commit.
-// "backups/pre-restore" holds the safety exports a restore writes first.
-var UserDirs = []string{"books", "journal", "backups/pre-restore"}
+// "backups/pre-restore" holds the safety exports a restore writes first,
+// "avatars" the profile pictures.
+var UserDirs = []string{"books", "journal", "avatars", "backups/pre-restore"}
 
 // UserTables returns the registry (deleted, then kept) for features that
 // must make the same per-table decision, such as the personal export.
@@ -186,6 +192,7 @@ type Preview struct {
 	Sentences            int `json:"sentences"`
 	ExampleReports       int `json:"exampleReports"`
 	AccessTokens         int `json:"accessTokens"`
+	Avatar               int `json:"avatar"` // 1 when the user has a profile picture
 }
 
 // DeletionPreview counts what DeleteUser would remove, from the same
@@ -200,7 +207,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 	var p Preview
 	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "keyedRows": &p.KeyedRows, "cards": &p.Cards,
 		"books": &p.Books, "journalEntries": &p.JournalEntries, "journalConversations": &p.JournalConversations, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
-		"overlays": &p.Overlays, "sentences": &p.Sentences, "exampleReports": &p.ExampleReports, "accessTokens": &p.AccessTokens}
+		"overlays": &p.Overlays, "sentences": &p.Sentences, "exampleReports": &p.ExampleReports, "accessTokens": &p.AccessTokens, "avatar": &p.Avatar}
 	for _, t := range userTables {
 		if t.PreviewKey == "" {
 			continue

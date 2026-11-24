@@ -5,6 +5,21 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #189 — profile pictures
+
+- **Profile pictures:** new routes `POST /api/account/avatar` (multipart field `file`; JPEG, PNG or WebP, 5 MB,
+  25 megapixels and 8192 px a side, not animated; 200 `{avatarUrl}`), `DELETE /api/account/avatar`, `GET
+  /api/avatars/{user}/{hash}[?size=64]` (any signed-in user; `private, no-cache`) and `DELETE
+  /api/admin/users/{id}/avatar` (audited `avatar_removed`), no access token (`auth/avatar.json`, new fixture). `GET
+  /api/auth/me` and the administrator user object carry `avatarUrl` (string or null; `auth/me.json`,
+  `auth/admin-users.json`); the deletion previews count `avatar`. New error code `animated_image` (415);
+  `photo_too_large`, `unsupported_image` and `image_too_large` now also answer the picture upload.
+- **Backups:** a personal archive may hold `account/avatar.jpg` with the manifest count `avatar`; the server backup
+  holds `avatars/` (`backup/README.md`).
+- **auth/README.md** no longer names a Kotlin client: the Android app is the web app in a Capacitor shell.
+- **Fix wave:** the picture upload also caps the decoded bytes (100 MiB, so 12.5 megapixels for a 16-bit picture;
+  `image_too_large`), and an upload whose account was deleted or disabled meanwhile is 401 with nothing stored.
+
 ## #186 — AI example sentences on demand
 
 - **AI examples:** new routes `GET/POST /api/entries/{id}/examples` (the caller's drafts; one AI call with the

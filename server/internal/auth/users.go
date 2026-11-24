@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"qinqin/internal/avatar"
 	"qinqin/internal/model"
 )
 
@@ -121,6 +123,8 @@ type AdminUser struct {
 	CreatedAt          string   `json:"createdAt"`
 	LastSeenAt         *string  `json:"lastSeenAt"`
 	MFA                AdminMFA `json:"mfa"`
+	// AvatarURL is the profile picture (#189, auth/avatar.json), nil for none.
+	AvatarURL *string `json:"avatarUrl"`
 }
 
 // AdminMFA tells an administrator which second factors a user has (never a
@@ -133,7 +137,8 @@ type AdminMFA struct {
 const adminUserSelect = `
 	SELECT u.id, u.username, u.email, u.email_verified_at, u.admin, u.disabled_at, u.must_change_password, u.created_at,
 	       (SELECT MAX(s.last_used_at) FROM sessions s WHERE s.user_id = u.id),
-	       EXISTS (SELECT 1 FROM mfa_totp t WHERE t.user_id = u.id AND t.confirmed_at IS NOT NULL), u.mfa_email
+	       EXISTS (SELECT 1 FROM mfa_totp t WHERE t.user_id = u.id AND t.confirmed_at IS NOT NULL), u.mfa_email,
+	       COALESCE((SELECT a.hash FROM user_avatars a WHERE a.user_id = u.id), '')
 	FROM users u`
 
 type rowScanner interface{ Scan(dest ...any) error }
@@ -142,9 +147,11 @@ func scanAdminUser(r rowScanner) (AdminUser, error) {
 	var a AdminUser
 	var email, verified, disabled, seen sql.NullString
 	var admin, must, totp, mfaEmail int
-	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen, &totp, &mfaEmail); err != nil {
+	var avatarHash string
+	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen, &totp, &mfaEmail, &avatarHash); err != nil {
 		return AdminUser{}, err
 	}
+	a.AvatarURL = avatar.URLOf(a.ID, avatarHash)
 	a.MFA = AdminMFA{TOTP: totp != 0, Email: mfaEmail != 0}
 	a.Admin, a.MustChangePassword = admin != 0, must != 0
 	a.Disabled, a.EmailVerified = disabled.Valid, verified.Valid
@@ -601,4 +608,44 @@ func (u *Users) ResetUserMFA(ctx context.Context, actorID, id int64) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// ErrNoAvatar: the user has no profile picture to remove.
+var ErrNoAvatar = errors.New("user has no profile picture")
+
+// RemoveAvatar removes user id's profile picture for an administrator
+// (#189): the row and the audit row (avatar_removed, no detail) in one
+// transaction, the files after the commit. ErrUserNotFound, ErrNoAvatar:
+// nothing changed and nothing is audited.
+func (u *Users) RemoveAvatar(ctx context.Context, actorID, id int64, dataDir string) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin remove avatar: %w", err)
+	}
+	defer tx.Rollback()
+	var exists int
+	if err := tx.QueryRowContext(ctx, `SELECT 1 FROM users WHERE id = ?`, id).Scan(&exists); errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
+		return fmt.Errorf("read user: %w", err)
+	}
+	had, err := avatar.DeleteTx(ctx, tx, id)
+	if err != nil {
+		return err
+	}
+	if !had {
+		return ErrNoAvatar
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "avatar_removed", ActorID: actorID, TargetID: &id}); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit remove avatar: %w", err)
+	}
+	if err := avatar.RemoveFiles(avatar.Dir(dataDir), id); err != nil {
+		log.Printf("remove avatar of user %d: %v", id, err)
+	}
+	return nil
 }

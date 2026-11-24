@@ -15,7 +15,8 @@ const LINES: [keyof DeletionPreview, MessageKey][] = [
 	['journalPhotos', 'admin.delete.preview.journalPhotos'],
 	['aiKeys', 'admin.delete.preview.aiKeys'],
 	['sessions', 'admin.delete.preview.sessions'],
-	['accessTokens', 'admin.delete.preview.accessTokens']
+	['accessTokens', 'admin.delete.preview.accessTokens'],
+	['avatar', 'admin.delete.preview.avatar']
 ];
 
 /**

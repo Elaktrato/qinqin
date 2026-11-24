@@ -88,6 +88,8 @@ export interface SelfDeletionPreview {
 	exampleReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
+	/** 1 when the account has a profile picture (#189). */
+	avatar?: number;
 }
 
 export function accountDeletionPreview(): Promise<SelfDeletionPreview> {

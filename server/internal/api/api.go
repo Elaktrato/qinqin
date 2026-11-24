@@ -34,6 +34,9 @@ type server struct {
 	// ("releasing") (tests).
 	aiSlotHook func(kind, phase string)
 	segments   inFlight
+	// avatarHook runs in POST /api/account/avatar between the decode and
+	// the store (tests).
+	avatarHook func()
 
 	db        *sql.DB
 	dataDir   string
@@ -42,6 +45,7 @@ type server struct {
 	ocr       journal.OCR // nil: offline reading is not installed
 	ocrUse    hourlyUse   // offline reads per user and hour
 	uploadUse hourlyUse   // photo uploads per user and hour
+	avatarUse hourlyUse   // profile picture uploads per user and hour
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
@@ -298,6 +302,12 @@ func (s *server) routes() []route {
 		{"POST /api/account/email/resend", s.handleEmailResend, accSession, []string{restrictionMFAEnrollment}, noTok},
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil, noTok},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil, noTok},
+		// Profile pictures (#189): any signed-in user of the server sees a
+		// picture, only its owner (or an administrator) changes it; no tokens.
+		{"POST /api/account/avatar", s.handleUploadAvatar, accUser, nil, noTok},
+		{"DELETE /api/account/avatar", s.handleRemoveAvatar, accUser, nil, noTok},
+		{"GET /api/avatars/{user}/{hash}", s.handleGetAvatar, accUser, nil, noTok},
+		{"DELETE /api/admin/users/{id}/avatar", s.handleAdminRemoveAvatar, accAdmin, nil, noTok},
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil, noTok},
 		{"POST /api/admin/backup", s.handleAdminBackupStart, accAdmin, nil, noTok},
 		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil, noTok},

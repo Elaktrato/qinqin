@@ -1,6 +1,7 @@
 # Auth: sessions, sign-in states, errors (contract)
 
-For the web app and the future Kotlin client. Fixtures in this folder are decoded and compared
+For the server and the web app, which is also the Android app (the web app in a Capacitor shell,
+`docs/superpowers/specs/2026-11-23-android-shell-design.md`). Fixtures in this folder are decoded and compared
 with real server responses by `server/internal/api/contract_auth_test.go`; run it with
 `go test -count=1` after editing a fixture (Go does not track files outside the module in its test
 cache). Sign-in throttling has its own page: `throttling.md` and `throttle-responses.json`.
@@ -11,11 +12,12 @@ examples of its throttling subset and a test checks that both agree on every cod
 |---|---|
 | `errors.json` | Every API error code (all routes, not only auth), its status and meaning. Bodies are always `{"error","message"}`, plus the extra members a meaning names |
 | `login-responses.json` | The three answers of `POST /api/auth/login` that carry no throttle code |
-| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` and the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) |
+| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction`, the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) and `avatarUrl` (`avatar.json`) |
+| `avatar.json` | Profile pictures (#189): upload, remove, the picture files (sizes, headers), an administrator's removal and every refusal (decoded by Go and web tests) |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
 | `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |
-| `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
+| `admin-users.json` | `AdminUser` (with `avatarUrl`), create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
 | `admin-settings.json` | Re-authentication of the Security and Email settings routes (PATCH settings/auth, PUT and DELETE settings/smtp) |
 | `admin-reauth.json` | The rule for when PATCH users/{id} and PATCH settings/auth need re-authentication, as cases (decoded by Go and web tests) |
 | `mfa-login.json` | `mfa_required`, the second step, `mfa_enrollment_required`, sign-in by emailed code |
@@ -107,8 +109,8 @@ answers `201` with the user; then sign in as usual. `403 registration_closed` (m
 missing one in invite mode), `422 email_required | email_disabled | invalid_email`, `409 email_taken |
 username_taken`, `422 weak_password | invalid_username`. An invite supplied in `open` mode is spent too and
 must be valid. The first user on an empty instance registers in every mode and becomes administrator.
-An invite arrives as a link `https://host/register#invite=<token>`: the Kotlin client opens it as a deep
-link, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
+An invite arrives as a link `https://host/register#invite=<token>`: the web app (in the Android shell too) opens
+it, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
 the token. The token is in the fragment so it never reaches a server log.
 
 ## Reset links
@@ -140,7 +142,7 @@ only second step is the emailed code gives the password alone. Exactly these act
 
 The conditional rules are pinned as cases in `admin-reauth.json`.
 `/api/admin/users`, `/api/admin/invites`, `/api/admin/settings/auth`, `/api/admin/audit` are used by the web
-admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
+admin screens; an account's own settings use the routes above, `PUT /api/account/email`,
 `GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409
 `last_admin` for the last active administrator). Deleting an account removes its data in one transaction (the
 exact list is on the wiki page `docs/wiki/Admin-users-and-registration.md`, "What deleting an account removes").

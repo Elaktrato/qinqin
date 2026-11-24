@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"qinqin/internal/avatar"
 	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/study"
@@ -33,6 +34,10 @@ type Meta struct {
 	// may produce: beyond it the export fails with ErrTooLargeToRestore
 	// instead of producing a file this server would then refuse to restore.
 	MaxBytes int64
+	// Lock, when set, runs the server backup's snapshot and the staging of
+	// the profile pictures under the lock the pictures' writers hold
+	// (auth.Users.WithUserLock), so the files match the snapshot's rows.
+	Lock func(func() error) error
 }
 
 // ErrTooLargeToRestore: the archive would exceed what a restore accepts
@@ -210,6 +215,23 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	}
 	if err := a.jsonFile(NameAccount, acc); err != nil {
 		return man, err
+	}
+	// account/avatar.jpg: the 256 px file of the profile picture, if any
+	counts["avatar"] = 0
+	if _, pic, err := avatar.ReadLarge(ctx, tx, avatar.Dir(dataDir), userID); err != nil {
+		return man, fmt.Errorf("backup: profile picture: %w", err)
+	} else if pic != nil {
+		o, err := a.begin(NameAvatar)
+		if err != nil {
+			return man, err
+		}
+		if _, err := o.bw.Write(pic); err != nil {
+			return man, err
+		}
+		if err := o.finish(); err != nil {
+			return man, err
+		}
+		counts["avatar"] = 1
 	}
 
 	// workspaces.json

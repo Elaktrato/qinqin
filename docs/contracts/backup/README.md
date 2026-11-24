@@ -13,6 +13,7 @@ manifest.json            written LAST: format, formatVersion (2), appVersion, sc
                          user {id, username}, counts, files [{name, bytes, sha256}]
 account.json             {username, timeZones [{zone, from, createdAt}], features [{id, enabled}],
                          interfaceLanguage?}  optional (#73): '' or a language tag (i18n/language-tags.json)
+account/avatar.jpg       optional (#189): the profile picture, its 256 px JPEG (manifest count `avatar`, 0 or 1)
 refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to (cards, notes, edits, events)
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries
 refs/sentences.json      [{id, entryId, own, sourcePack, hanzi}]    sentences cards point at
@@ -98,6 +99,15 @@ key is absent or null (older archives), and ignores an invalid tag without faili
 refused restore). A server from before #73 decodes `account.json` strictly and refuses such an archive as malformed: restoring
 into an older server is not supported.
 
+### Profile picture (#189)
+
+`account/avatar.jpg` is the 256 px square the server serves (`auth/avatar.json`); the manifest counts it as
+`avatar` (1, or 0 / absent without the entry, and a count without the entry or the entry without the count is
+invalid). A reader checks it exactly like an upload: at most 5 MB, a still JPEG, PNG or WebP of at most 25
+megapixels and 8192 px a side, otherwise the archive is invalid. A restore never writes the archive's bytes: the
+picture is decoded and encoded again (both sizes), and it REPLACES the current picture; an archive without one
+removes it, like every other part of the account data.
+
 ## Never in an archive
 
 Password hash, email, sessions, personal access tokens, reset links, one-time-code challenges, TOTP secrets and recovery codes,
@@ -180,7 +190,8 @@ the commit. Restore replaces; there is no merging import.
 
 ## Server backup (not a user archive)
 
-`qinqin-server-<date>.tar.gz`: `qinqin.db` (VACUUM INTO snapshot), `books/`, `packs/`, `audio/`,
+`qinqin-server-<date>.tar.gz`: `qinqin.db` (VACUUM INTO snapshot) with `avatars/` (the profile pictures its rows
+name, part of `db`; linked under the pictures' lock together with the snapshot, so the files match its rows), `books/`, `packs/`, `audio/`,
 `BACKUP-INFO.json` last (`format: qinqin-server-backup`, `formatVersion`, per-file SHA-256). It holds
 password hashes and sealed secrets; restoring is offline (`tar xzf` into an empty volume). `<data>/packages` is
 not in it: the restored server rebuilds every package at start, to the same revisions and content hashes.

@@ -39,6 +39,8 @@ const (
 	NameRefSentences = "refs/sentences.json"
 	NameWorkspaces   = "workspaces.json"
 	NameBooks        = "library/books.json"
+	// NameAvatar is the profile picture (#189): the 256 px JPEG, optional.
+	NameAvatar = "account/avatar.jpg"
 )
 
 // The JSONL collections are "families": numbered parts <family>/NNNNNN.jsonl,
@@ -67,7 +69,7 @@ var (
 	bookName   = regexp.MustCompile(`^library/books/(0|[1-9]\d{0,17})\.json$`)
 	fixedNames = map[string]bool{
 		NameManifest: true, NameAccount: true, NameRefEntries: true, NameRefDicts: true,
-		NameRefSentences: true, NameWorkspaces: true, NameBooks: true,
+		NameRefSentences: true, NameWorkspaces: true, NameBooks: true, NameAvatar: true,
 	}
 	partName = regexp.MustCompile(`^(events|rows|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
 )

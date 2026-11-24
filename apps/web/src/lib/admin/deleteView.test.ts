@@ -31,6 +31,10 @@ describe('previewLines', () => {
 		expect(previewLines({ ...zero, accessTokens: 1 })).toEqual(['1 personal access token']);
 		expect(previewLines({ ...zero, accessTokens: 3 })).toEqual(['3 personal access tokens']);
 	});
+	it('counts the profile picture (#189)', () => {
+		expect(previewLines({ ...zero, avatar: 1 })).toEqual(['The profile picture']);
+		expect(previewLines({ ...zero, avatar: 0 })).toEqual(['Nothing else: there is no data in this account yet.']);
+	});
 	it('says so when there is nothing', () => {
 		expect(previewLines(zero)).toEqual(['Nothing else: there is no data in this account yet.']);
 	});

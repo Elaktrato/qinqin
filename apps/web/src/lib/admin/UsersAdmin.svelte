@@ -16,6 +16,8 @@
 		type AdminUserDto
 	} from '$lib/api/adminUsers';
 	import { passwordHint } from '$lib/account/passwordRules';
+	import { removeUserAvatar } from '$lib/api/avatar';
+	import Avatar from '$lib/frame/Avatar.svelte';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
 	import ResetMfaDialog from './ResetMfaDialog.svelte';
 	import { resetNotice, type MfaFactors } from './mfaResetView';
@@ -46,6 +48,9 @@
 	let resettingMfa = $state<{ id: number; username: string; mfa: MfaFactors } | null>(null);
 	// An action waiting for the acting administrator's own password.
 	let askPassword = $state<{ id: number; username: string; action: UserActionId } | null>(null);
+	// Removing a picture asks once (no password: moderation, audited).
+	let confirmPicture = $state<{ id: number; username: string } | null>(null);
+	let confirmPictureFirst = $state<HTMLElement>();
 	let ownPassword = $state('');
 	let ownCode = $state('');
 	// Creating an administrator re-authenticates too.
@@ -128,7 +133,7 @@
 		if (refused) await reauthRefused(refused, 'create');
 	}
 
-	async function run(row: { id: number; username: string }, id: UserActionId, reauth?: Reauth): Promise<void> {
+	async function run(row: { id: number; username: string }, id: UserActionId, reauth?: Reauth, confirmed = false): Promise<void> {
 		if (busy) return;
 		if (id === 'delete') {
 			deleting = { id: row.id, username: row.username };
@@ -140,6 +145,14 @@
 			resettingMfa = { id: row.id, username: row.username, mfa };
 			return;
 		}
+		if (id === 'removePicture' && !confirmed) {
+			error = notice = '';
+			confirmPicture = { id: row.id, username: row.username };
+			await tick();
+			confirmPictureFirst?.focus();
+			return;
+		}
+		confirmPicture = null;
 		const target = users.find((u) => u.id === row.id);
 		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === app.auth.user?.id }) && !reauth) {
 			askPassword = { id: row.id, username: row.username, action: id };
@@ -175,6 +188,10 @@
 					notice = t('admin.users.notice.signedOut', { name: row.username, count: out.revoked });
 					break;
 				}
+				case 'removePicture':
+					await removeUserAvatar(row.id);
+					notice = t('admin.users.notice.pictureRemoved', { name: row.username });
+					break;
 				case 'revokeResetLink':
 					await revokeResetLink(row.id);
 					notice = t('admin.users.notice.resetLinkRevoked', { name: row.username });
@@ -233,6 +250,17 @@
 <Section title={t('admin.users.title')} headingId="admin-users-heading" focusable>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{notice}</p>
+
+	{#if confirmPicture}
+		{@const who = confirmPicture}
+		<Panel class="link" role="group" aria-label={t('admin.users.confirm.removePicture', { name: who.username })}>
+			<p>{t('admin.users.confirm.removePicture', { name: who.username })}</p>
+			<Button bind:element={confirmPictureFirst} tone="danger" disabled={busy} onclick={() => run(who, 'removePicture', undefined, true)}
+				>{t('settings.account.avatar.remove')}</Button
+			>
+			<Button onclick={() => (confirmPicture = null)}>{t('common.action.cancel')}</Button>
+		</Panel>
+	{/if}
 
 	{#if askPassword}
 		<form
@@ -297,7 +325,7 @@
 			<tbody>
 				{#each rows as row (row.id)}
 					<tr>
-						<th scope="row">{row.username}{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
+						<th scope="row"><span class="who"><Avatar name={row.username} src={row.avatarUrl} />{row.username}</span>{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
 						{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
 						<td>{row.role}</td>
 						<td>{#each row.status as s (s)}<Chip>{s}</Chip>{/each}</td>
@@ -309,7 +337,7 @@
 									{#each row.actions as action (action.id)}
 										<li>
 											<Button
-												tone={/delete|disable|removeAdmin|resetMfa/i.test(action.id) ? 'danger' : 'default'}
+												tone={/delete|disable|removeAdmin|resetMfa|removePicture/i.test(action.id) ? 'danger' : 'default'}
 												disabled={busy || action.disabled}
 												aria-describedby={action.reason ? `why-${row.id}-${action.id}` : undefined}
 												onclick={() => run(row, action.id)}>{action.label}</Button
@@ -383,6 +411,11 @@
 {/if}
 
 <style>
+	.who {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
 	.stack {
 		display: grid;
 		gap: var(--space-3);

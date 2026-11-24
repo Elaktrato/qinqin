@@ -20,6 +20,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/avatar"
 	"qinqin/internal/features"
 	"qinqin/internal/grammar"
 	"qinqin/internal/i18n"
@@ -213,6 +214,21 @@ func Restore(ctx context.Context, d RestoreDeps, userID, keepSessionID int64, a 
 				}
 			}
 		}
+		// The picture's files are written before the transaction (named by
+		// their content, so the current ones stay); Prune keeps whatever the
+		// row names once the transaction has ended, either way.
+		pics := avatar.Store{DB: d.DB, Dir: avatar.Dir(d.DataDir)}
+		var picHash string
+		if a.Avatar != nil {
+			if picHash, err = pics.WriteFiles(userID, *a.Avatar); err != nil {
+				return err
+			}
+		}
+		defer func() {
+			if err := pics.Prune(context.WithoutCancel(ctx), userID); err != nil {
+				log.Printf("restore of user %d: prune profile pictures: %v", userID, err)
+			}
+		}()
 		tx, err := d.DB.BeginTx(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("backup: begin restore: %w", err)
@@ -223,6 +239,13 @@ func Restore(ctx context.Context, d RestoreDeps, userID, keepSessionID int64, a 
 			return err
 		}
 		oldBooks = ob
+		// The registry cleared user_avatars (RestoreReplace); the archive's
+		// picture, if any, takes its place.
+		if picHash != "" {
+			if err := avatar.SetTx(ctx, tx, userID, picHash, d.now().UTC().Format(time.RFC3339)); err != nil {
+				return fmt.Errorf("backup: profile picture: %w", err)
+			}
+		}
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("backup: commit restore: %w", err)
 		}

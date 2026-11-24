@@ -7,7 +7,7 @@
 
 ### Server backup in the app
 
-Under **Include** choose the database, books, packs and audio, enter **Your password** (and an authenticator or recovery code if you use one), and **Create server backup**: a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent `VACUUM INTO` snapshot taken while the server runs), `books/`, `packs/` and `audio/`. It never holds `journal/`, `cache/`, `tmp/`, `backups/`, `packages/` or `fonts/`.
+Under **Include** choose the database, books, packs and audio, enter **Your password** (and an authenticator or recovery code if you use one), and **Create server backup**: a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent `VACUUM INTO` snapshot taken while the server runs) with `avatars/` (the profile pictures, which travel with the database), `books/`, `packs/` and `audio/`. It never holds `journal/`, `cache/`, `tmp/`, `backups/`, `packages/` or `fonts/`.
 
 - **Data packages are rebuilt, not backed up**: after a restore the server builds them again at start, to the same revisions and content hashes, so clients keep the files they have.
 - **Font packs**: their slices live in `/data/fonts`, which the archive does not include. Copy that folder yourself, or install the font packs again after a restore ([Data packs on the server](Admin-data-packs)).

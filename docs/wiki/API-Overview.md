@@ -69,7 +69,7 @@ Start with `docs/contracts/overview.md` (the read order, device-local state and 
 
 | Area | Folders |
 |---|---|
-| Sign-in and accounts | `auth/` (sessions, errors, two-step sign-in, invites, reset links, access tokens, throttling) |
+| Sign-in and accounts | `auth/` (sessions, errors, two-step sign-in, invites, reset links, access tokens, throttling, profile pictures) |
 | Sync and shared data | `sync/` (the paged pull and the push answer), `packages/` (data packages), `events/` (the event envelope and payloads), `study/` (typed study rows), `settings/`, `overlays/` (a user's edits of entries) |
 | Studying | `study-day/` (the learner's day and time zone), `scheduler/` (FSRS, vacation, limits), `cards/`, `decks/`, `levels/`, `frequency/`, `goals/`, `milestones/`, `weekly/`, `stats/`, `radicals/` |
 | Reading and writing | `reader/` (display settings, furigana), `library/` (books, bookmarks, highlights), `journal/`, `notes/`, `lookups/` |

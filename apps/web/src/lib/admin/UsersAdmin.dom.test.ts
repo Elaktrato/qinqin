@@ -441,3 +441,51 @@ describe('UsersAdmin: taking another administrator out of the way', () => {
 		expect(screen.queryByLabelText(/Your own password, to confirm/)).toBeNull();
 	});
 });
+
+vi.mock('$lib/api/avatar', () => ({ removeUserAvatar: vi.fn(async () => undefined), avatarObjectUrl: vi.fn(async () => 'blob:pic') }));
+
+describe('UsersAdmin: profile pictures (#189)', () => {
+	const pic = '/api/avatars/2/0123456789abcdef0123456789abcdef';
+
+	it('shows each picture beside the name and the letter without one', async () => {
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { avatarUrl: pic })] as never);
+		const { avatarObjectUrl } = await import('$lib/api/avatar');
+		render(UsersAdmin, { context: ctx.context });
+		const row2 = (await screen.findByRole('rowheader', { name: /user2/ })).closest('tr')!;
+		await waitFor(() => expect(row2.querySelector('img')?.getAttribute('src')).toBe('blob:pic'));
+		expect(vi.mocked(avatarObjectUrl).mock.calls[0][1]).toBe(`${pic}?size=64`);
+		const row1 = screen.getByRole('rowheader', { name: /user1/ });
+		expect(row1.querySelector('.avatar')?.textContent).toBe('U');
+	});
+
+	it('removes a picture after the confirmation, says so and reloads the list', async () => {
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { avatarUrl: pic })] as never);
+		const { removeUserAvatar } = await import('$lib/api/avatar');
+		render(UsersAdmin, { context: ctx.context });
+		const row = (await screen.findByRole('rowheader', { name: /user2/ })).closest('tr')!;
+		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		await fireEvent.click(within(await screen.findByRole('group', { name: 'Remove the profile picture of user2?' })).getByRole('button', { name: 'Remove picture' }));
+		await waitFor(() => expect(removeUserAvatar).toHaveBeenCalledWith(2));
+		expect(await screen.findByText('The profile picture of user2 was removed.')).toBeTruthy();
+		expect(vi.mocked(adminUsers.listUsers).mock.calls.length).toBeGreaterThan(1);
+	});
+});
+
+describe('UsersAdmin: removing a picture asks first', () => {
+	const pic = '/api/avatars/2/0123456789abcdef0123456789abcdef';
+	it('confirms before it removes, and Cancel removes nothing', async () => {
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { avatarUrl: pic })] as never);
+		const { removeUserAvatar } = await import('$lib/api/avatar');
+		render(UsersAdmin, { context: ctx.context });
+		const row = (await screen.findByRole('rowheader', { name: /user2/ })).closest('tr')!;
+		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		const ask = await screen.findByRole('group', { name: 'Remove the profile picture of user2?' });
+		expect(removeUserAvatar).not.toHaveBeenCalled();
+		await fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }));
+		expect(screen.queryByRole('group', { name: 'Remove the profile picture of user2?' })).toBeNull();
+		expect(removeUserAvatar).not.toHaveBeenCalled();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		await fireEvent.click(within(await screen.findByRole('group', { name: 'Remove the profile picture of user2?' })).getByRole('button', { name: 'Remove picture' }));
+		await waitFor(() => expect(removeUserAvatar).toHaveBeenCalledWith(2));
+	});
+});
