@@ -147,7 +147,7 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
   per-sentence delete and a backup restore remove them — cost if wrong: a learner with two workspaces of one
   language sees the same examples in both; a later scope is a column and a filter.
 - Ruling: drafts live in their own table `example_drafts` (one generation's undecided output per entry); a new
-  generation replaces them — a draft must never feed a card, the pull or the backup, and a separate table keeps
+  generation that kept sentences replaces them, one that kept none leaves them (fix wave) — a draft must never feed a card, the pull or the backup, and a separate table keeps
   every existing reader of `sentences` untouched; a replaced draft was never kept — cost if wrong: a learner who
   generates again loses the undecided drafts of the previous call (the panel says so next to the button).
 - Ruling: no feature switch — the panel is a button that does nothing until pressed, sends nothing without the
@@ -162,6 +162,11 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
 - Ruling: the "few examples" threshold is fewer than 3 sentences with text (pack, own and AI together); the panel
   also shows while drafts exist — 3 is the low end of the issue's 3–5 and the cloze rotates through what there is
   — cost if wrong: a word with exactly 3 weak examples offers no button (the learner can still delete one).
+- Ruling (fix wave): for a word whose written form has a Han character, a segmenter match whose text has none
+  (はし) counts only when the entry is its first candidate (`entries[0]`): a later candidate is a homophone (箸 before
+  橋). The rule is the same in the server's check and in the cloze card's blanks (`cards/cloze.json` gains two cases,
+  `cloze.ts` changed), so a kept example and a cloze blank never disagree — cost if wrong: a learner of a word that
+  is usually written in kana but has a kanji headword gets fewer kept sentences when a homophone ranks first.
 - Ruling: the word check is the cloze card's blank rule (`docs/contracts/cards/cloze.json`): the server segmenter's
   matches that resolve to the entry, else a literal occurrence of the written form or a form text outside a strictly
   longer match — inflected Japanese (食べた for 食べる) resolves through the lemmatizer as it does in the reader and
@@ -174,8 +179,10 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
 - Ruling: a sentence must be mostly in the language's script (the journal's majority rule of the #185 fix wave,
   moved from `journal` to `lang.FitsScript`/`lang.MostlyInScript` because two domains now use it); a failing one
   is dropped, the rest kept — cost if wrong: none found; a Latin-script language passes as before.
-- Ruling: a reading with a Han character, or a reading for a language whose profile has no reading system, is
-  emptied rather than the sentence dropped — the reading is optional everywhere (pack sentences leave it out rather
+- Ruling (fix wave): a reading is kept only when it holds the reading system's letters (kana: hiragana, katakana,
+  ー; pinyin: Latin letters with or without tone marks, the tone numbers 1–5, the apostrophe), punctuation and
+  spaces; otherwise (romaji for Japanese, kana for Chinese, a Han character, no reading system) it is emptied
+  rather than the sentence dropped — the reading is optional everywhere (pack sentences leave it out rather
   than guess); the reading of a kept example is AI-written and marked as such with the sentence — cost if wrong: a
   wrong pinyin or kana reading slips through (the learner can report `wrong_reading`).
 - Ruling: translations are in English — the bundled sentences, the dictionaries' glosses and the interface are
@@ -185,16 +192,33 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
   draft or kept example, else `beginner` (no new setting) — the levels packs (HSK, JLPT) say nothing about grammar
   and a closed set is no injection channel — cost if wrong: one more choice.
 - Ruling: the prompt sends the word, its first reading, up to 5 glosses (which sense) and up to 10 existing
-  sentences of the entry (not to repeat), never the learner's studied words or anything else — the least that gives
+  sentences of the entry (not to repeat; the learner's own saved sentences among them, which the panel and Settings
+  → AI say since the fix wave), never the learner's studied words or anything else — the least that gives
   good sentences; what leaves the server is the dictionary's own data — cost if wrong: sentences use words the
   learner has not studied (the level keeps them simple).
-- Ruling: a generation is idempotent by a client request id (`requestId`, required, stored on its drafts) — a
-  retry after a lost answer answers the stored drafts and never pays a second call (the #185 fix wave's turn id);
-  the web reuses its id until the answer arrives and polls `GET …/examples` after a lost answer or `in_flight` for
-  drafts with that id — cost if wrong: a retry with a new id pays again. A retried answer reports `dropped: 0`.
-- Ruling: the handler reads the kept count and the drafts again inside the provider call's closure, while it holds
-  the user's one AI slot (the #185 fix wave), and writes the drafts in a write-lock-first transaction
-  (`pack.BeginWrite`); keep, delete and report read then write and take the write lock first too — cost if wrong:
+- Ruling (fix wave): a generation is idempotent by a client request id (`requestId`, required): every stored
+  generation leaves a marker in `example_generations` (request id, level, dropped count, provider, model), so a
+  retry is answered from it, also when every sentence was dropped, with its real `dropped`; `GET …/examples`
+  reports the entry's `lastRequest`, which the web's poll after a lost answer accepts — cost if wrong: a retry with
+  a new id pays again.
+- Ruling (fix wave): markers are kept a day (pruned at the next generation of the user) — the web polls for at
+  most 180 s, a day covers a laptop closed mid-request — cost if wrong: a retry the next day pays again.
+- Ruling (fix wave): a generation that kept nothing leaves the earlier undecided drafts — they were not refused by
+  the learner, and deleting them under an open panel made its Keep answer 404 — cost if wrong: an old draft
+  lingers until the next generation that keeps something replaces it (Delete still removes it).
+- Ruling (fix wave): migration 049 is changed in place (the `example_generations` table) — it never reached
+  develop or a release — cost if wrong: a developer database of this branch needs a fresh start.
+- Ruling (fix wave): `in_flight` is a refusal, not a lost answer: the request never ran. The web sends the same id
+  again after 2, 4, 8 and 16 s and then gives up, and polls `GET` only after a network error, 502 or 504; the
+  journal's conversation turn does the same (`sendRetryingInFlight` in `reviewPoll.ts`) — cost if wrong: a learner
+  with a long-running review in another tab waits half a minute and then sees "Another AI request is still
+  running".
+- Ruling (fix wave): the handler reads the marker and the kept count again, calls the provider, checks the
+  sentences and stores the generation all inside the provider call's closure, while it holds the user's one AI
+  slot, so a retry with the same id can never land between the call and the store; the conversation turn of #185
+  now validates and stores its reply the same way. A store failure there is a 500, the call is still recorded as
+  made. Writes are write-lock-first transactions (`pack.BeginWrite`); keep, delete and report read then write and
+  take the write lock first too — cost if wrong:
   a writer waits up to the busy timeout instead of failing.
 - Ruling: an answer where every sentence failed the checks is 200 with `drafts: []` and `dropped: n` (the call
   counts against the limit) — a 422 would hide what happened; the panel says none contained the word — cost if
@@ -211,12 +235,17 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
   learning data); a restore drops the drafts and keeps the reports; both go with the account delete, whose preview
   counts reports (`exampleReports`); kept examples are counted in `sentences` — cost if wrong: a restore on
   another server loses the reports.
-- Ruling: a kept AI example travels in the backup's own sentences part with its `ai` member, and the restore
-  applies the live rules (a provider and model of at most 64 and 200 bytes, both or neither) — the mark must
-  survive a restore, a hand-edited archive is refused — cost if wrong: none.
+- Ruling (fix wave): a kept AI example travels in the backup's own sentences part with `ai: {provider, model,
+  level}`, and the restore applies the live rules: provider (at most 64 bytes), model (at most 200) and level all
+  required, a text of at most 200 code points, a translation of 1 to 400, a reading of at most 400, at most 10 AI
+  examples per entry; an archive that breaks one is refused whole — the mark must survive a restore, a hand-edited
+  archive is refused — cost if wrong: an archive from a future server with looser rules does not restore.
 - Ruling: kept examples sync through the pull: they are own sentences, so the `sentences` collection ships them
   (with `ai`) for the round's languages; cards study them offline through the cached entry answers, like every
   other sentence — cost if wrong: none; nothing new is cached.
+- Ruling (fix wave): after a keep or a delete the entry page fetches the entry again in the background, so the
+  service worker's network-first copy of `/api/entries/{id}` follows (one GET) — cost if wrong: offline, a copy
+  saved on another device before the keep still lacks the example until that device opens the word online.
 - Ruling: a kept AI example comes after the pack sentences and the other own sentences in the entry answer (the
   existing `ForEntry` order: pack first, then own by id) — the curated sentences stay the cloze card's first
   candidates — cost if wrong: an AI example on a word with eight pack sentences never becomes a cloze sentence.
@@ -306,3 +335,49 @@ Not verified:
   spec runs on a desktop viewport.
 - Offline: kept examples reach offline study through the cached entry answer like every sentence; no new offline
   test was written for them.
+
+### Fix wave (review)
+
+The review found no blocker (privacy and authorization hold on every read path of `sentences`); four should-fix
+items and nits, all fixed:
+
+1. `aa4a4013` server: generation markers (`example_generations`, migration 049 changed in place) make a generation
+   that kept nothing idempotent and leave the earlier drafts; `lastRequest` on `GET …/examples`, `requestId` on the
+   answer; the examples and #185's turn check and store inside the `runAI` closure; a test hook on the AI slot
+   (`WithAISlotHook`, `export_test.go`) for handler-level tests of the under-the-slot paths. The web decoder and
+   poll accept the marker.
+2. `c3d77802` readings in their system, kana homophones (server and cloze card), strict restore with the level.
+3. `f41a5d44` web: `in_flight` resends (examples and the turn), focus after Keep, Delete and Report (panel and
+   kept examples), the AI-status gate, a new request id per level, the poll aborted on unmount, the offline copy
+   refreshed after a keep or delete, the privacy lines, a VocabCard mark test.
+4. the docs commit (wiki, contract README and CHANGELOG lines, these Rulings and this record).
+
+Review items: 1 (empty generation) — markers; 2 (`in_flight`) — resend with backoff, both features; 3 (focus) —
+next button or heading; 4 (the #185 `errors.Unwrap` line) — `TestConversationTurnUnderTheSlot` deletes the
+conversation from the slot hook: it answered 500 with the old line (seen, with the line restored for the run) and
+404 now; 5 (slot released before the store) — store in the closure, `TestExamplesAreStoredBeforeTheSlotIsReleased`
+and the turn's half of `TestConversationTurnUnderTheSlot` check the stored rows from the "releasing" hook (both
+failed before the move); 6 (readings) — reading-system letters; 7 (homophones) — first candidate; 8 (restore) —
+the Ruling, contract and code agree; 9 (nits) — all done.
+
+Test-first: red seen for the store tests (build failure on `StoreGeneration`), the schema guard (the marker table),
+the slot-hook API tests (store before release: 10 instead of 11; the turn's 404 with the old line), the contract
+checks (romaji and kana readings, the homophone) and both cloze implementations on the new cloze cases, the
+backup tests (build failure on `Level`), the web poll and `generatedText` tests, `sendRetryingInFlight` and the
+`in_flight` cases of the examples and the turn, the focus tests (panel and entry page), the AI-status gate, the
+request-id and abort tests, the offline-copy refetch and the privacy strings. `TestAnEmptyGenerationRetryIsFree`
+was written after the markers (the reviewer's probe had shown two calls before). The VocabCard mark test was
+written after the tag existed and checked to fail with it removed. Old tests changed on purpose:
+`TestExampleRequestIsIdempotent` (a retry now reports the stored `dropped`), `TestExampleChecksDropSentences` (an
+empty generation keeps the earlier drafts), the turn's "polls on `in_flight`" test (now resends).
+
+Gates after the fix wave: Go full `./...` 53 packages ok, only the known `internal/ai` IPv6 test failing; `gofmt -l`
+empty; web check 0 errors, 0 warnings (1743 files); build passes; vitest under Node 26 608 files, 12,820 passed,
+2 skipped; e2e 16 passed, three runs; script tests 157 (156 passed, 1 skipped); `gen-api-docs --check` clean.
+
+Mistake on the way: a second careless `cat >` overwrote the existing `VocabCard.dom.test.ts`; restored from HEAD
+with the new case appended before the commit.
+
+Not verified in the fix wave: the "releasing" hook proves the store happens before the slot is released, not
+that no real-world retry can slip in elsewhere; the Android keyboard and focus on a real device; a homophone rule
+for languages other than Japanese (only a Han word with a kana-only match is affected).
