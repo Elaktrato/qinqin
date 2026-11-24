@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // The keyed form of the journal's documents: how a personal backup carries
@@ -72,6 +73,8 @@ func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(KeyedDoc) e
 			return err
 		}
 		for _, e := range entries {
+			// A stamp a restore would refuse is replaced by the entry's write time.
+			e.CreatedAt = stampOr(e.CreatedAt, e.UpdatedAt)
 			if err := emit(ws, entryKey+e.ID, e, e.UpdatedAt); err != nil {
 				return err
 			}
@@ -82,6 +85,7 @@ func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(KeyedDoc) e
 				return err
 			}
 			if r != nil {
+				r.CreatedAt = stampOr(r.CreatedAt, e.UpdatedAt)
 				if err := emit(ws, reviewKey+e.ID, r, r.CreatedAt); err != nil {
 					return err
 				}
@@ -90,6 +94,7 @@ func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(KeyedDoc) e
 		if sg, err := GetSuggestions(ctx, q, userID, ws); err != nil {
 			return err
 		} else if sg != nil {
+			sg.CreatedAt = stampOr(sg.CreatedAt, stampNow())
 			if err := emit(ws, suggestionsKey, sg, sg.CreatedAt); err != nil {
 				return err
 			}
@@ -167,4 +172,14 @@ func refused(err error) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+// stampOr is s when it is an RFC 3339 time, else fallback: an archive row
+// needs a readable stamp (backup/archive.go), and a restore refuses an
+// unreadable one.
+func stampOr(s, fallback string) string {
+	if _, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return s
+	}
+	return fallback
 }

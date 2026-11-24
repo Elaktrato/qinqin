@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -17,6 +18,11 @@ import (
 
 // MaxExercises caps a run's number of exercises.
 const MaxExercises = 1000
+
+// MaxProgressRows caps the lessons with progress per user, over all
+// workspaces (a pack has a few hundred lessons): a run of a new lesson beyond
+// it is refused, a stored lesson still records.
+const MaxProgressRows = 10000
 
 var packIDPattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,128}$`)
 
@@ -83,13 +89,18 @@ func record(ctx context.Context, q Querier, userID, workspaceID int64, packID, l
 	var p Progress
 	err := q.QueryRowContext(ctx, `
 		INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at)
-		VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+		SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+		WHERE EXISTS (SELECT 1 FROM grammar_progress WHERE user_id = ?1 AND workspace_id = ?2 AND pack_id = ?3 AND lesson_id = ?4)
+			OR (SELECT COUNT(*) FROM grammar_progress WHERE user_id = ?1) < ?9
 		ON CONFLICT (user_id, workspace_id, pack_id, lesson_id) DO UPDATE SET
 			best = CASE WHEN grammar_progress.total = excluded.total THEN max(grammar_progress.best, excluded.best) ELSE excluded.best END,
 			total = excluded.total, completed_at = excluded.completed_at, updated_at = excluded.updated_at
 		RETURNING pack_id, lesson_id, completed_at, best, total`,
-		userID, workspaceID, packID, lessonID, completedAt, score, total, time.Now().UTC().Format(time.RFC3339)).
+		userID, workspaceID, packID, lessonID, completedAt, score, total, time.Now().UTC().Format(time.RFC3339), MaxProgressRows).
 		Scan(&p.PackID, &p.LessonID, &p.CompletedAt, &p.Best, &p.Total)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Progress{}, &InvalidError{Msg: fmt.Sprintf("at most %d lessons can have progress.", MaxProgressRows)}
+	}
 	if err != nil {
 		return Progress{}, fmt.Errorf("grammar: record run: %w", err)
 	}
@@ -111,6 +122,48 @@ func KeyedOf(p Progress) (string, json.RawMessage) {
 		Total       int    `json:"total"`
 	}{p.CompletedAt, p.Best, p.Total})
 	return KeyPrefix + p.PackID + ":" + p.LessonID, b
+}
+
+// EachKeyed streams every lesson's progress of the user in its keyed form, by
+// workspace, with the row's write time as the stamp. A completedAt that is
+// not an RFC 3339 time (left by an older server) is replaced by that write
+// time, so a restore takes the row back.
+func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(ws int64, key string, data json.RawMessage, at string) error) error {
+	rows, err := q.QueryContext(ctx, `SELECT workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at FROM grammar_progress
+		WHERE user_id = ? ORDER BY workspace_id, pack_id, lesson_id`, userID)
+	if err != nil {
+		return fmt.Errorf("grammar: keyed progress: %w", err)
+	}
+	type item struct {
+		ws int64
+		p  Progress
+		at string
+	}
+	var all []item
+	for rows.Next() {
+		var it item
+		if err := rows.Scan(&it.ws, &it.p.PackID, &it.p.LessonID, &it.p.CompletedAt, &it.p.Best, &it.p.Total, &it.at); err != nil {
+			rows.Close()
+			return fmt.Errorf("grammar: scan progress: %w", err)
+		}
+		all = append(all, it)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, it := range all {
+		if _, err := time.Parse(time.RFC3339Nano, it.p.CompletedAt); err != nil {
+			it.p.CompletedAt = it.at
+		}
+		key, data := KeyedOf(it.p)
+		if err := fn(it.ws, key, data, it.at); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // RestoreKeyed writes one lesson's progress of the keyed form into workspace

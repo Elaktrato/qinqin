@@ -64,7 +64,11 @@ dropped and counted in `droppedRows`.
 
 Grammar lesson progress (`grammar/README.md`) travels the same way: a workspace row of the `rows` family
 per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`; a restore writes it back
-with the archive's `completedAt` (the contract's rules apply; one they refuse is dropped and counted).
+with the archive's `completedAt` (the contract's rules apply; one they refuse is dropped and counted). The
+row's `updatedAt` is the server's write time of the progress. An export never writes a stamp a restore refuses:
+a `completedAt`, a review's or an entry's `createdAt` or the topic ideas' `createdAt` that is not an RFC 3339
+time (left by an older server) is replaced by the row's write time (for the topic ideas, the export's). A journal
+or grammar row without a workspace is dropped by both the dry run and the restore.
 
 ### The keyed-row codec (`study-rows.json`)
 

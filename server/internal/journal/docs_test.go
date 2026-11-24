@@ -25,3 +25,12 @@ func TestFilterSuggestionWords(t *testing.T) {
 		t.Errorf("invented word kept: %+v", got[1])
 	}
 }
+
+// Fix wave (#199): an idea's title becomes an entry title, so it is plain
+// text of at most MaxTitleRunes code points.
+func TestFilterSuggestionWordsCapsTitles(t *testing.T) {
+	got := journal.FilterSuggestionWords([]ai.SuggestionItem{{Title: "a\u000bb" + strings.Repeat("长", 300), Prompt: "p\u000c"}}, nil)
+	if n := len([]rune(got[0].Title)); n != journal.MaxTitleRunes || strings.ContainsAny(got[0].Title, "\v\f") || got[0].Prompt != "p" {
+		t.Errorf("title %d runes %q…, prompt %q", n, string([]rune(got[0].Title)[:3]), got[0].Prompt)
+	}
+}

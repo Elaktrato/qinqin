@@ -3,6 +3,7 @@ package grammar
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"qinqin/internal/dbtest"
@@ -58,5 +59,37 @@ func TestRecordRunKeepsTheBestAndIsolates(t *testing.T) {
 		if _, err := RecordRun(ctx, sqlDB, alice, ws, c.pack, c.lesson, c.score, c.total); !errors.As(err, &inv) {
 			t.Errorf("%s: %v, want an InvalidError", name, err)
 		}
+	}
+}
+
+// Fix wave (#199): a user holds at most MaxProgressRows lessons' progress; a
+// new lesson beyond it is refused, a lesson already stored still records.
+func TestRecordRunCapsTheRowsOfAUser(t *testing.T) {
+	sqlDB := dbtest.Open(t)
+	ctx := context.Background()
+	alice, bob := dbtest.User(t, sqlDB, "alice"), dbtest.User(t, sqlDB, "bob")
+	ws, bobWS := dbtest.Workspace(t, sqlDB, alice, "zh"), dbtest.Workspace(t, sqlDB, bob, "zh")
+	tx, err := sqlDB.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < MaxProgressRows; i++ {
+		if _, err := tx.Exec(`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at)
+			VALUES (?, ?, 'p', ?, '2026-11-20T10:00:00Z', 0, 1, '2026-11-20T10:00:00Z')`, alice, ws, fmt.Sprintf("l%d", i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	var inv *InvalidError
+	if _, err := RecordRun(ctx, sqlDB, alice, ws, "p", "one-more", 1, 1); !errors.As(err, &inv) {
+		t.Errorf("a lesson beyond the cap: %v, want InvalidError", err)
+	}
+	if _, err := RecordRun(ctx, sqlDB, alice, ws, "p", "l7", 1, 1); err != nil {
+		t.Errorf("a stored lesson: %v", err)
+	}
+	if _, err := RecordRun(ctx, sqlDB, bob, bobWS, "p", "one-more", 1, 1); err != nil {
+		t.Errorf("another user: %v", err)
 	}
 }

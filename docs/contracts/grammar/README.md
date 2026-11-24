@@ -14,7 +14,9 @@ Both need a user (no access token) and one of the caller's workspaces (missing o
 `bad_request`; unknown or foreign: 404 `workspace_not_found`). A run is refused with 400 `bad_request` unless
 `0 <= score <= total <= 1000`, `lessonId` is a lesson id (`^[a-z0-9]+(-[a-z0-9]+)*$`) and `packId` matches
 `^[A-Za-z0-9._-]{1,128}$`. The server does not check that the lesson is installed: progress of a pack that
-was removed is kept and shows again when the pack is reinstalled.
+was removed is kept and shows again when the pack is reinstalled. A user holds the progress of at most 10000 lessons over all workspaces
+(`grammar.MaxProgressRows`): a run of a new lesson beyond it is refused with 400 `bad_request`; a stored lesson
+still records.
 
 The rule (`runs`): `completedAt` is the server's time of the run; `best` is the higher of the stored best and
 the run's score when the stored `total` equals the run's, else the run's score (a lesson whose number of

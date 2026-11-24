@@ -307,12 +307,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	if err := a.Rows(func(r Row) error {
 		nr, drop := m.Row(r)
 		if !drop {
-			// a row no store takes, and a typed study row the codec cannot
-			// read, is dropped (restore does the same)
-			kind := kindOf(nr)
-			if _, typed, ok := typedRow(nr); kind == kindDrop || (typed && !ok) {
-				drop = true
-			}
+			drop = planDrops(nr)
 		}
 		noteID, isNote := noteEntryID(r)
 		_, isKeyed := entryKeyedID(r)
@@ -456,4 +451,15 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 		}
 	}
 	return c, nil
+}
+
+// planDrops reports whether the restore drops a row the maps kept, as
+// restore.go decides: a row no store takes, a typed study row the codec
+// cannot read, and a journal or grammar row without a workspace.
+func planDrops(nr Row) bool {
+	kind := kindOf(nr)
+	if _, typed, ok := typedRow(nr); kind == kindDrop || (typed && !ok) {
+		return true
+	}
+	return (kind == kindJournal || kind == kindGrammar) && nr.WorkspaceID == nil
 }

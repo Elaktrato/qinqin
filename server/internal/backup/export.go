@@ -663,36 +663,9 @@ func hiddenDictionaryIDs(settings json.RawMessage) []int64 {
 }
 
 // writeGrammarProgress writes every lesson's progress of the user as a row
-// of its keyed form, workspace by workspace.
+// of its keyed form, stamped with the row's write time.
 func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userID int64) error {
-	rs, err := tx.QueryContext(ctx, `SELECT DISTINCT workspace_id FROM grammar_progress WHERE user_id = ? ORDER BY workspace_id`, userID)
-	if err != nil {
-		return err
-	}
-	var wss []int64
-	for rs.Next() {
-		var ws int64
-		if err := rs.Scan(&ws); err != nil {
-			rs.Close()
-			return err
-		}
-		wss = append(wss, ws)
-	}
-	if err := closeRows(rs); err != nil {
-		return err
-	}
-	for _, ws := range wss {
-		list, err := grammar.ListProgress(ctx, tx, userID, ws)
-		if err != nil {
-			return err
-		}
-		for _, p := range list {
-			key, data := grammar.KeyedOf(p)
-			w := ws
-			if err := pw.encode(Row{WorkspaceID: &w, Key: key, Data: data, Version: 1, UpdatedAt: p.CompletedAt}); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return grammar.EachKeyed(ctx, tx, userID, func(ws int64, key string, data json.RawMessage, at string) error {
+		return pw.encode(Row{WorkspaceID: &ws, Key: key, Data: data, Version: 1, UpdatedAt: at})
+	})
 }
