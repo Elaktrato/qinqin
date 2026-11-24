@@ -148,18 +148,21 @@ Tracker [#166](https://github.com/Elaktrato/qinqin/issues/166). Handoff: `docs/s
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`). The ten-lesson demo was replaced by the HSK-aligned pack `zh-grammar` (design `docs/superpowers/specs/2026-11-18-grammar-hsk-pack-design.md`, [#111](https://github.com/Elaktrato/qinqin/issues/111)–[#118](https://github.com/Elaktrato/qinqin/issues/118)): seven levels ≈ HSK 1 to 7–9, one lesson per row of the HSK 3.0 grammar outline, used as a topic index with attribution (this supersedes #111's earlier "nothing from the grammar outline" rule); native-speaker review of the pack open. The Japanese pack `ja-grammar` (design `docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`, [#119](https://github.com/Elaktrato/qinqin/issues/119)–[#123](https://github.com/Elaktrato/qinqin/issues/123)) has five levels ≈ N5 to N1 with qinqin's own selection of points; the owner's sign-off on the point lists and the native-speaker review are open
 - ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days~~ — done in v0.3.0 (design `docs/superpowers/specs/2026-11-15-v030-study-day-design.md`; per-user zone history, Settings → Study, `docs/contracts/study-day/`)
 
-### Android client (unscheduled)
+### Android app (unscheduled)
 
-Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan. v0.4.0 shipped without the client; it starts when the web build is satisfactory.
+The web app in a native shell (Capacitor, `apps/android`), loaded from the user's own qinqin server — design
+`docs/superpowers/specs/2026-11-23-android-shell-design.md` (approved 2026-11-23), which replaces the native Kotlin plan. The shell runs the same web app, so
+every feature, its switch (Settings → Features) and the language profiles come with it; native pieces only where
+the WebView falls short (secure token storage, text-to-speech, camera and files, share, back button, system bars,
+local notifications). `docs/contracts/` stay the source of truth for the server and the web app. It starts when
+the web build is satisfactory.
 
-- [#34](https://github.com/Elaktrato/qinqin/issues/34) Kotlin scaffold, auth, workspaces
-- [#35](https://github.com/Elaktrato/qinqin/issues/35) offline-first store and sync engine
-- [#36](https://github.com/Elaktrato/qinqin/issues/36) core views parity (entry, search, strokes)
-- [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing
-- [#38](https://github.com/Elaktrato/qinqin/issues/38) core features plus switches (flashcards, reader, journal, grammar; `docs/contracts/features/`, language profiles in `docs/contracts/languages/`) and study parity incl. native writing — no plugin host: the code plugins are retired (#199, record 0006)
+- [#34](https://github.com/Elaktrato/qinqin/issues/34)–[#38](https://github.com/Elaktrato/qinqin/issues/38) were
+  written for the native Kotlin client; under the shell design they shrink to the shell, its first-run screen
+  ("Server address") and the native pieces above (no Kotlin store, sync engine, views or feature host)
 - [#147](https://github.com/Elaktrato/qinqin/issues/147) release path — CI, signing and store presence
-  ([#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed artifacts,
-  [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid; blocked by #36 and #38)
+  ([#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed APK/AAB,
+  [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid)
 
 ### Ideas, not scheduled (Future)
 
@@ -210,8 +213,6 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
 what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
 (#12, #17, #18 leftovers, #55 zombie CI runs; #86 login rate limiting is done on the v0.3.0 branch).
-
-Note: the Android client (Future) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
 
 Design documents: `docs/superpowers/specs/`; plans: `docs/superpowers/plans/`.
 Branching and releases: `docs/git-flow.md`.

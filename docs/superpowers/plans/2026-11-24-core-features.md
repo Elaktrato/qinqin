@@ -294,12 +294,12 @@ Not verified:
 
 ## Comment for #38 (to be posted by the orchestrator)
 
-> #199 retired the code plugins (record 0006). Android needs no feature-plugin host: flashcards, the reader, the
-> journal and grammar are core features, each with a per-user switch (`GET /api/features`, `PUT
-> /api/features/{id}`, pull collection `features`; `docs/contracts/features/`). Their data: typed study rows
-> (`docs/contracts/study/`), the journal's routes (`docs/contracts/journal/`), grammar progress
-> (`docs/contracts/grammar/`) and one store of keyed rows for the small settings documents
-> (`docs/contracts/keyed/`). What a language offers (script, readings, segmentation, tones, strokes, kana,
-> variants, card kinds, practice modes) is one shared table, `docs/contracts/languages/profiles.json`, with a
-> fallback for other codes. Suggest renaming this issue to "core features plus switches (Kotlin) and study
-> parity incl. native writing".
+> #199 retired the code plugins (record 0006): flashcards, the reader, the journal and grammar are core features,
+> each with a per-user switch (`GET /api/features`, `PUT /api/features/{id}`; `docs/contracts/features/`), and what
+> a language offers comes from one profile table (`docs/contracts/languages/profiles.json`). Under the approved
+> Android shell design (`docs/superpowers/specs/2026-11-23-android-shell-design.md`, 2026-11-23) the Android app runs the same web app from the user's server, so
+> a Kotlin feature host is not needed at all: every feature and switch arrives with the web app. The contracts in
+> `docs/contracts/` stay the source of truth for the server and the web app. Suggestion for the owner: close this
+> issue, or retitle it to the shell's native pieces (secure token storage, text-to-speech, camera and files, share,
+> back button and system bars, local notifications) and drop "study parity incl. native writing", which the web
+> app already gives.

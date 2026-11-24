@@ -9,7 +9,7 @@ Touched by: #199. A merge from one of these issues that changes what this record
 ## Context
 
 qinqin's code plugins were compiled into the app (a list in the web build): nothing is installed at runtime, and the
-Android plan would implement every plugin twice. The plugin layer gives no extensibility; it provides an on/off
+then-native Android plan would have implemented every plugin twice. The plugin layer gives no extensibility; it provides an on/off
 switch, a data namespace and a permission list, and core features already have switches (flashcards and the
 reader since #85). With those two in the core, the plugin machinery serves only the journal and grammar, while
 AI becomes a shared capability (#185, #186) and the AI service is already core on the server. The owner decided
@@ -29,7 +29,7 @@ on 2026-11-23 to retire the code-plugin system (#199).
 - **Language profiles.** One core definition per language says what it has: script, reading system (pinyin,
   kana), segmentation, tones, stroke data, kana, script variants, and which card kinds and practice modes apply
   (grammar lessons come from packs of any language, so they are not in a profile). Features and card kinds switch on by profile, not by special cases
-  spread through the code. The profile is a shared contract, so Android uses the same one. A new language means
+  spread through the code. The profile is a shared contract (Go and web tables pinned to one fixture). A new language means
   its profile, any new reading code and its data packs.
 - **Order.** #199 builds on the study data layer (#193) and the state rewrite (#196): the owner's queue
   (2026-11-23) runs #193, then #196, then #199.
@@ -62,10 +62,14 @@ on 2026-11-23 to retire the code-plugin system (#199).
 
 No `if language is …` check is added for availability: a check asks the profile.
 
+Later, a course (`docs/superpowers/specs/2026-11-24-courses-design.md` §9–10) hangs off the language profile and a
+`course` pack of the language; nothing of it is built in #199.
+
 ## Consequences
 
-- One way to add a feature (core code plus a switch) and one way to add content (a data pack); Android
-  implements each feature once, with "core features plus switches" instead of a feature-plugin host (#38).
+- One way to add a feature (core code plus a switch) and one way to add content (a data pack). The Android app is
+  the web app in a Capacitor shell (`docs/superpowers/specs/2026-11-23-android-shell-design.md`), so it gets every core
+  feature and its switch with no plugin host at all; the contracts bind the server and the web app.
 - Typed storage with contracts replaces the generic plugin-data namespace for the journal and grammar.
 - A language's capabilities are read from its profile; adding a language does not mean finding the special
   cases.

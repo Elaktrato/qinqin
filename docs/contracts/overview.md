@@ -1,6 +1,8 @@
 # Contracts overview (read this first, Android)
 
-Everything a second client (Kotlin, #34–#38) must do the same way as the web app and the server. This page
+Everything a second client must do the same way as the web app and the server. (Under the approved Android
+shell design, `docs/superpowers/specs/2026-11-23-android-shell-design.md`, the Android app runs the web app itself;
+these contracts stay the source of truth for the server and the web app.) This page
 is the **single entry point**: start here, follow the read order, and build from `docs/contracts/` alone,
 without reading TypeScript or Go. The folders next to this file hold the rules (README) and JSON fixtures;
 this page says how they fit together, lists every stored row convention, what is device-local and what is
