@@ -23,7 +23,7 @@ import (
 
 // ErrNotFound reports an uninstall of an unknown — or already
 // uninstalled — sentence pack.
-var ErrNotFound = errors.New("sentence pack not found")
+var ErrNotFound = pack.NotFound("sentence pack not found")
 
 // ErrSentenceNotFound reports a sentence that does not exist or that the
 // viewer may not see.

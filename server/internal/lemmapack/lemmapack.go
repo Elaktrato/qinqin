@@ -35,7 +35,7 @@ const MaxFileBytes = 1 << 20
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // pack.
-var ErrNotFound = errors.New("lemmapack: pack not found")
+var ErrNotFound = pack.NotFound("lemmapack: pack not found")
 
 // Result describes an import.
 type Result struct {

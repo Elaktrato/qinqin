@@ -50,7 +50,7 @@ const insertBatch = 300
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // strokes pack.
-var ErrNotFound = errors.New("strokes: pack not found")
+var ErrNotFound = pack.NotFound("strokes: pack not found")
 
 // Result counts an import.
 type Result struct{ Chars int }

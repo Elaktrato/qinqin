@@ -26,7 +26,7 @@ const insertBatch = 300
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // components pack.
-var ErrNotFound = errors.New("components: pack not found")
+var ErrNotFound = pack.NotFound("components: pack not found")
 
 // Result counts an import: the characters and the distinct parts they
 // use.

@@ -15,7 +15,7 @@ import (
 
 // ErrNotFound reports a lesson (or its pack) that does not exist or was
 // removed by a re-import.
-var ErrNotFound = errors.New("grammar lesson not found")
+var ErrNotFound = pack.NotFound("grammar lesson not found")
 
 // ErrNotGrammar reports an Import of a pack whose manifest type is not
 // "grammar"; pack dispatch happens in the seed CLI, which routes by

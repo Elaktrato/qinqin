@@ -46,8 +46,9 @@ type Installed struct {
 	UpdatedAt   string   `json:"updatedAt"` // RFC 3339
 }
 
-// ErrNotFound reports a pack that is not installed.
-var ErrNotFound = errors.New("packs: not found")
+// ErrNotFound reports a pack that is not installed: pack.ErrNotFound, which
+// every type package's not-found error is (errors.Is).
+var ErrNotFound = pack.ErrNotFound
 
 // ErrUnknownType reports a pack type this package does not manage.
 var ErrUnknownType = errors.New("packs: unknown type")
@@ -330,14 +331,6 @@ var operations = map[string]operation{
 	},
 }
 
-// notFound reports a type package's error for a pack that is not installed.
-func notFound(err error) bool {
-	return errors.Is(err, ErrNotFound) || errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) ||
-		errors.Is(err, freq.ErrNotFound) || errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) ||
-		errors.Is(err, audio.ErrPackNotFound) || errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) ||
-		errors.Is(err, themes.ErrNotFound) || errors.Is(err, fonts.ErrNotFound) || errors.Is(err, lemmapack.ErrNotFound)
-}
-
 // Uninstall removes the live pack of type typ with registry id packID and
 // its licence texts.
 // Unknown types return ErrUnknownType, packs that are not installed
@@ -364,7 +357,7 @@ func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	err := op.uninstall(ctx, sqlDB, packID, o)
-	if notFound(err) {
+	if errors.Is(err, pack.ErrNotFound) {
 		return ErrNotFound
 	}
 	if err != nil {

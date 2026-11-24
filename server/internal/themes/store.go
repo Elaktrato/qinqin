@@ -21,7 +21,7 @@ const DataFile = "themes.json"
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // theme pack.
-var ErrNotFound = errors.New("themes: pack not found")
+var ErrNotFound = pack.NotFound("themes: pack not found")
 
 // Result counts an import.
 type Result struct{ Themes int }

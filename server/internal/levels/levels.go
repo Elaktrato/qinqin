@@ -26,7 +26,7 @@ import (
 
 // ErrNotFound reports an uninstall or level lookup for an unknown (or
 // already uninstalled) scheme or level.
-var ErrNotFound = errors.New("level scheme not found")
+var ErrNotFound = pack.NotFound("level scheme not found")
 
 // ErrNotLevels reports an Import of a pack whose manifest type is not
 // "levels". Pack dispatch happens in the seed CLI and admin layer, which

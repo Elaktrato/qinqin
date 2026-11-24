@@ -18,7 +18,7 @@ const DataFile = "faces.json"
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // font pack.
-var ErrNotFound = errors.New("fonts: pack not found")
+var ErrNotFound = pack.NotFound("fonts: pack not found")
 
 // Result counts an import.
 type Result struct{ Faces, Slices int }

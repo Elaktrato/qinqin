@@ -284,3 +284,15 @@ func isOSMetadata(name string) bool {
 	}
 	return false
 }
+
+// NotFound returns a domain package's error for a pack (or an item of one)
+// that is not installed: its own text and identity, and a ErrNotFound for
+// errors.Is, so a caller that handles every type checks ErrNotFound once.
+func NotFound(text string) error { return &notFound{text} }
+
+type notFound struct{ text string }
+
+func (e *notFound) Error() string { return e.text }
+
+// Is makes the error a ErrNotFound.
+func (e *notFound) Is(target error) bool { return target == ErrNotFound }

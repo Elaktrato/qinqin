@@ -26,7 +26,7 @@ import (
 var ErrNotDictionary = errors.New("dict: manifest type is not \"dictionary\"")
 
 // ErrNotFound reports an uninstall of an unknown dictionary.
-var ErrNotFound = errors.New("dictionary not found")
+var ErrNotFound = pack.NotFound("dictionary not found")
 
 // dictionaryFile is the data file of a format "json" dictionary pack.
 const dictionaryFile = "dictionary.json"

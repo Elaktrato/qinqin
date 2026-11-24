@@ -505,7 +505,7 @@ func denseRanks(rows []row) {
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // frequency pack.
-var ErrNotFound = errors.New("freq: pack not found")
+var ErrNotFound = pack.NotFound("freq: pack not found")
 
 // Uninstall soft-deletes the pack with manifest id packID and removes its
 // frequency rows (they carry no tombstone; a reinstall rewrites them), in

@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"qinqin/internal/pack"
 )
 
 // ErrPackNotFound reports an uninstall of a pack that is not installed.
-var ErrPackNotFound = errors.New("audio pack not installed")
+var ErrPackNotFound = pack.NotFound("audio pack not installed")
 
 // UninstallResult counts what an uninstall removed.
 type UninstallResult struct{ Clips int }
