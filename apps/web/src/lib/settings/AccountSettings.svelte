@@ -31,12 +31,13 @@
 		sessionRows,
 		type SessionDto
 	} from '$lib/account/sessionsView';
-	import { loadMe, logout, user } from '$lib/auth';
 	import { clearPending } from '$lib/study/events';
 	import AppSection from '$lib/pwa/AppSection.svelte';
 	import AccessTokens from './AccessTokens.svelte';
 	import { containmentNote } from '$lib/account/tokensView';
 	import { Button, Field, Section, Select } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let current = $state('');
 	let next = $state('');
@@ -82,7 +83,7 @@
 	let optionsAll = $state<AuthOptions | null>(null);
 	let verifying = $state(false);
 	let deleting = $state(false);
-	const emailView = $derived(emailSection(emailPolicy, $user?.email ?? null));
+	const emailView = $derived(emailSection(emailPolicy, app.auth.user?.email ?? null));
 
 	async function saveEmail(next: string | null): Promise<void> {
 		if (emailBusy) return;
@@ -98,7 +99,7 @@
 						? t('settings.account.email.savedConfirm')
 						: t('settings.account.email.saved');
 			emailPassword = emailDraft = emailCode = '';
-			await loadMe();
+			await app.auth.loadMe();
 		} catch (err) {
 			emailError = errorText(err, t('settings.account.email.error'));
 		} finally {
@@ -110,7 +111,7 @@
 	const browserLanguages = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
 	const languageChoices = SUPPORTED_LANGUAGES.map((code) => ({ code, label: languageName(code, code) }));
 	const browserDefault = languageName(resolveInterfaceLanguage('', browserLanguages), resolveInterfaceLanguage('', browserLanguages));
-	let languageDraft = $state($user?.interfaceLanguage ?? '');
+	let languageDraft = $state(app.auth.user?.interfaceLanguage ?? '');
 	let languageBusy = $state(false);
 	let languageError = $state('');
 	let languageNotice = $state('');
@@ -154,7 +155,7 @@
 		pwError = '';
 		pwDone = '';
 		const problem =
-			passwordProblem($user?.username ?? '', next) ?? confirmProblem(next, confirm);
+			passwordProblem(app.auth.user?.username ?? '', next) ?? confirmProblem(next, confirm);
 		if (problem) {
 			pwError = problem;
 			return;
@@ -214,7 +215,7 @@
 		try {
 			await revokeSessions('all');
 			// Every session is gone, this one too: clear the local state.
-			logout();
+			app.auth.logout();
 		} catch (err) {
 			sessionsError = errorText(err, t('settings.account.sessions.error.all'));
 			confirmingAll = false;
@@ -226,7 +227,7 @@
 
 <Section title={t('settings.account.profile.title')}>
 	<p>
-		<Msg key="settings.account.profile.username" args={{ name: $user?.username ?? '' }}
+		<Msg key="settings.account.profile.username" args={{ name: app.auth.user?.username ?? '' }}
 			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
 		>
 	</p>
@@ -240,7 +241,7 @@
 			class="stack"
 		>
 			<p class="hint">
-				{#if $user?.email}{t('settings.account.email.current', { email: $user.email })}{:else}{t(
+				{#if app.auth.user?.email}{t('settings.account.email.current', { email: app.auth.user.email })}{:else}{t(
 						'settings.account.email.none'
 					)}{/if}
 			</p>
@@ -252,7 +253,7 @@
 				bind:value={emailPassword}
 				required
 			/>
-			{#if $user?.mfa?.totp}
+			{#if app.auth.user?.mfa?.totp}
 				<label>
 					{t('settings.account.email.code')}
 					<input name="email-code" autocomplete="one-time-code" bind:value={emailCode} required />
@@ -271,9 +272,9 @@
 				{/if}
 			</div>
 		</form>
-		{#if $user?.email && !$user.emailVerified && mailAvailable(optionsAll)}
+		{#if app.auth.user?.email && !app.auth.user.emailVerified && mailAvailable(optionsAll)}
 			{#if verifying}
-				<EmailVerify address={$user.email} onverified={async () => { verifying = false; await loadMe(); }} />
+				<EmailVerify address={app.auth.user.email} onverified={async () => { verifying = false; await app.auth.loadMe(); }} />
 			{:else}
 				<p class="hint">{t('settings.account.email.unconfirmed')}
 					<Button variant="plain" onclick={() => (verifying = true)}>{t('settings.account.email.confirm')}</Button></p>
@@ -405,15 +406,15 @@
 	<Button tone="danger" onclick={() => (deleting = true)}>{t('settings.account.delete.open')}</Button>
 </Section>
 
-{#if deleting && $user}
+{#if deleting && app.auth.user}
 	<DeleteAccountDialog
-		username={$user.username}
+		username={app.auth.user.username}
 		onclose={() => (deleting = false)}
 		ondone={() => {
 			deleting = false;
 			// The account is gone: its unsent reviews can never be sent.
-			if ($user) clearPending($user.id);
-			logout();
+			if (app.auth.user) clearPending(app.auth.user.id);
+			app.auth.logout();
 		}}
 	/>
 {/if}

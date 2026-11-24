@@ -6,7 +6,6 @@
 	// menu as on desktop). Following a link or switching closes the drawer
 	// (onnavigate).
 	import { t } from '$lib/i18n';
-	import { user } from '$lib/auth';
 	import Flag from '$lib/components/Flag.svelte';
 	import { workspaceDisplay } from '$lib/languages';
 	import { select, workspaces } from '$lib/workspaces';
@@ -15,6 +14,8 @@
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccountMenu from './AccountMenu.svelte';
 	import { homeSection, type FrameSection } from './sections';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
 		sections,
@@ -81,10 +82,10 @@
 	{/each}
 </nav>
 
-{#if $user}
+{#if app.auth.user}
 	<div class="account">
 		<AccountMenu direction="up" align="start" />
-		<span class="who">{$user.username}</span>
+		<span class="who">{app.auth.user.username}</span>
 		<IconButton href="/settings" label={t('nav.settings')} icon="settings" placement="above" onclick={onnavigate} />
 	</div>
 {/if}

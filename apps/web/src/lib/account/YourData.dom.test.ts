@@ -1,12 +1,8 @@
+import { testContext, testUser, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-const me = await vi.hoisted(async () => {
-	const { writable } = await import('svelte/store');
-	return writable<unknown>({ username: 'alice', mfa: { totp: false } });
-});
-vi.mock('$lib/auth', () => ({ user: me }));
 vi.mock('$lib/api/backup', () => ({
 	downloadMyData: vi.fn(), uploadRestore: vi.fn(), restoreStatus: vi.fn(), applyRestore: vi.fn(), discardRestore: vi.fn(), safetyExportTicket: vi.fn()
 }));
@@ -14,6 +10,14 @@ import * as api from '$lib/api/backup';
 import { primaryActions } from '$lib/ui/testing/primary';
 import YourData from './YourData.svelte';
 import { setOutboxUser } from '$lib/study/outboxUser';
+
+const initial = { username: 'alice', mfa: { totp: false } };
+let ctx: TestContext = testContext({ user: initial as never });
+beforeEach(() => {
+	ctx = testContext({ user: initial as never });
+});
+/** The signed-in user, as `me` answered it. */
+const me = { set: (user: Record<string, unknown>) => ctx.app.auth.set({ token: 'test-token', user: testUser(user as never) }) };
 
 const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
 const ready = (unresolved = 0) => ({
@@ -42,7 +46,7 @@ afterEach(() => { cleanup(); vi.resetAllMocks(); });
 describe('YourData', () => {
 	it('uses a Section and Field underlines; the restore is the section primary', async () => {
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready() as never);
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		await choose();
 		await screen.findByText(/replace everything you have now/);
 		expect(screen.getByLabelText('Your password').closest('.field')).toBeTruthy();
@@ -51,14 +55,14 @@ describe('YourData', () => {
 	});
 
 	it('links the lookup history (#72)', () => {
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
 	});
 
 	it('downloads through a ticket and navigates to it', async () => {
 		const assign = vi.fn();
 		vi.mocked(api.downloadMyData).mockImplementation(async (a) => a?.('/api/account/export/t1'));
-		render(YourData, { assign });
+		render(YourData, { props: { assign }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Download my data' }));
 		await waitFor(() => expect(assign).toHaveBeenCalledWith('/api/account/export/t1'));
 	});
@@ -70,7 +74,7 @@ describe('YourData', () => {
 		setOutboxUser(1, 'tok');
 		const queue = JSON.stringify([{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'b', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 2, queuedAt: 't', event: { id: 'bob', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'c', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }]);
 		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending.v2' ? queue : null), setItem: vi.fn(), removeItem: vi.fn() };
-		render(YourData, { reload, storage });
+		render(YourData, { props: { reload, storage }, context: ctx.context });
 		await choose();
 		expect(api.uploadRestore).toHaveBeenCalled();
 		expect(await screen.findByText(/replace everything you have now: 3 workspaces, 9,876 study events/)).toBeTruthy();
@@ -97,7 +101,7 @@ describe('YourData', () => {
 		let release: (v: { token: string }) => void = () => undefined;
 		vi.mocked(api.uploadRestore).mockImplementation((_f, onProgress) => new Promise((res) => { onProgress?.({ loaded: 1, total: 4 }); release = res; }));
 		vi.mocked(api.restoreStatus).mockResolvedValue({ status: 'validating', error: null, report: null, result: null } as never);
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		await choose();
 		const bar = await screen.findByRole('progressbar');
 		expect(bar.getAttribute('aria-valuenow')).toBe('25');
@@ -108,7 +112,7 @@ describe('YourData', () => {
 	it('needs the acknowledgement for missing words and the code for two-factor users', async () => {
 		me.set({ username: 'alice', mfa: { totp: true } });
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready(1) as never);
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		await choose();
 		expect(await screen.findByText('水 (2 cards)')).toBeTruthy();
 		await fireEvent.input(screen.getByLabelText('Your password'), { target: { value: 'pw' } });
@@ -126,7 +130,7 @@ describe('YourData', () => {
 		vi.mocked(api.applyRestore).mockRejectedValue(new ApiError(403, JSON.stringify({ error: 'wrong_password', message: 'x' })));
 		const assign = vi.fn();
 		vi.mocked(api.downloadMyData).mockImplementation(async (a) => a?.('/x'));
-		render(YourData, { assign });
+		render(YourData, { props: { assign }, context: ctx.context });
 		await choose();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Download a backup of my current data first' }));
 		await waitFor(() => expect(assign).toHaveBeenCalled());
@@ -138,7 +142,7 @@ describe('YourData', () => {
 
 	it('says why an invalid file was refused', async () => {
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce({ status: 'invalid', report: null, result: null, error: { code: 'backup_version_unsupported', message: 'm' } } as never);
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		await choose();
 		expect((await screen.findByRole('alert')).textContent).toContain('format this server cannot read');
 	});
@@ -150,7 +154,7 @@ describe('YourData', () => {
 		const failed = { status: 'failed', report: null, result: null, error: { code: 'internal', message: 'The restore failed.' } };
 		vi.mocked(api.restoreStatus).mockImplementation((async () => (calls++ === 0 ? r : failed)) as never);
 		vi.mocked(api.applyRestore).mockResolvedValue({ status: 'running' });
-		render(YourData);
+		render(YourData, { context: ctx.context });
 		await choose();
 		expect((await screen.findAllByText('same')).length).toBe(2);
 		await fireEvent.input(screen.getByLabelText('Your password'), { target: { value: 'pw' } });

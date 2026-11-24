@@ -1,21 +1,26 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('$lib/api/adminUsers', () => ({ resetUserMfa: vi.fn() }));
 
 import { resetUserMfa } from '$lib/api/adminUsers';
 import { ApiError } from '$lib/api/client';
-import { auth } from '$lib/auth';
 import { deferred, escape, pressEnter } from '$lib/ui/testing/dialogForm';
 import ResetMfaDialog from './ResetMfaDialog.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const refusal = (error: string) => new ApiError(403, JSON.stringify({ error, message: 'server words' }));
 
 function setup(totp = false) {
-	auth.set({ token: 't', user: { id: 1, username: 'root', admin: true, mfa: { totp, email: false } } as never });
+	ctx.app.auth.set({ token: 't', user: { id: 1, username: 'root', admin: true, mfa: { totp, email: false } } as never });
 	const onclose = vi.fn();
 	const ongone = vi.fn();
-	render(ResetMfaDialog, { id: 7, username: 'li', mfa: { totp: true, email: true }, onclose, ongone });
+	render(ResetMfaDialog, { props: { id: 7, username: 'li', mfa: { totp: true, email: true }, onclose, ongone }, context: ctx.context });
 	const dialog = screen.getByRole('dialog', { name: 'Reset two-step sign-in for “li”?' });
 	const password = screen.getByLabelText('Your own password') as HTMLInputElement;
 	const submit = screen.getByRole('button', { name: 'Reset two-step sign-in' }) as HTMLButtonElement;

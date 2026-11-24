@@ -8,7 +8,6 @@
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
 	import { segmentBatch } from '$lib/api/segment';
-	import { token } from '$lib/auth';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { withShownWritten } from '$lib/study/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
@@ -107,6 +106,8 @@ import type { Run } from '$lib/study/vacation';
 	import Chip from '$lib/ui/Chip.svelte';
 	import Section from '$lib/ui/Section.svelte';
 	import Stat from '$lib/ui/Stat.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_NAMES: Record<ReviewGrade, string> = {
@@ -763,7 +764,7 @@ import type { Run } from '$lib/study/vacation';
 	 */
 	function prefetchAudio(seq: number): void {
 		const ids = [...queue, ...reserve].filter(hasWordAudio).map((i) => i.entryId);
-		if (!$token || ids.length === 0) {
+		if (!app.auth.token || ids.length === 0) {
 			audioSettled = true;
 			return;
 		}

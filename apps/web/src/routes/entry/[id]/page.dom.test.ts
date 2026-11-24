@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,6 +34,11 @@ import { workspaces } from '$lib/workspaces';
 import type { Workspace } from '$lib/api/types';
 import Page from './+page.svelte';
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 function entry(over: Partial<Entry> = {}): Entry {
 	return {
 		id: 5,
@@ -63,7 +69,7 @@ describe('entry page robustness', () => {
 	it('still shows the entry when the optional /chars request fails', async () => {
 		vi.mocked(getEntry).mockResolvedValue(entry());
 		vi.mocked(getCharsUnderRadical).mockRejectedValue(new Error('chars down'));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { name: '你' })).toBeTruthy();
 		// Let the failing optional request settle before asserting nothing broke.
 		await waitFor(() => expect(getCharsUnderRadical).toHaveBeenCalled());
@@ -74,7 +80,7 @@ describe('entry page robustness', () => {
 
 	it('does not request /chars for a word', async () => {
 		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '你好' }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '你好' });
 		expect(getCharsUnderRadical).not.toHaveBeenCalled();
 	});
@@ -84,7 +90,7 @@ describe('entry page robustness', () => {
 		vi.mocked(getCharsUnderRadical).mockResolvedValue([
 			{ id: 6, language: 'zh', kind: 'character', written: '他', readings: [{ type: 'pinyin', value: 'ta1', plain: 'ta', ord: 0 }] }
 		] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: '他' });
 		// Same display form as the main readings section (formatReading).
 		expect(link.parentElement?.textContent).toContain('Pinyin: ta1');
@@ -94,7 +100,7 @@ describe('entry page robustness', () => {
 		vi.mocked(getEntry).mockImplementation((async (id: number) =>
 			id === 9 ? entry({ id: 9, written: '亻' }) : entry({ radicalId: 9 })) as never);
 		vi.mocked(getCharsUnderRadical).mockResolvedValue([]);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('link', { name: /亻/ })).toBeTruthy();
 		await waitFor(() => expect(screen.queryByText(/Radical entry #9/)).toBeNull());
 	});
@@ -105,7 +111,7 @@ describe('entry page robustness', () => {
 			return entry({ radicalId: 9 });
 		}) as never);
 		vi.mocked(getCharsUnderRadical).mockResolvedValue([]);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { name: '你' })).toBeTruthy();
 		expect(await screen.findByRole('link', { name: 'Radical entry #9' })).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
@@ -121,7 +127,7 @@ describe('entry page robustness', () => {
 				] as never
 			})
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: '妳 traditional' });
 		expect(link.getAttribute('href')).toBe('/entry/7');
 	});
@@ -130,7 +136,7 @@ describe('entry page robustness', () => {
 		vi.mocked(getEntry).mockImplementation((async (id: number) =>
 			id === 9 ? entry({ id: 9, language: 'ja', written: '言' }) : entry({ language: 'ja', written: '語', radicalId: 9 })) as never);
 		vi.mocked(getCharsUnderRadical).mockResolvedValue([]);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: 'All characters with this radical' });
 		expect(link.getAttribute('href')).toBe('/search/parts?r=149');
 	});
@@ -140,7 +146,7 @@ describe('entry page robustness', () => {
 		vi.mocked(getCharsUnderRadical).mockResolvedValue([
 			{ id: 6, language: 'zh', kind: 'character', written: '河', readings: [] }
 		] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: 'Browse by stroke count' });
 		expect(link.getAttribute('href')).toBe('/search/parts?r=85');
 	});
@@ -158,7 +164,7 @@ describe('entry page note', () => {
 				senses: [{ dictionaryId: 1, dictionaryName: 'D', license: '', attribution: '', gloss: 'horse' }] as never
 			})
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const text = await screen.findByTestId('note-text');
 		expect(text.textContent).toBe('my mnemonic');
 		expect(loadNote).toHaveBeenCalledWith(3, 5);
@@ -172,7 +178,7 @@ describe('entry page note', () => {
 		setUrl('/entry/5?edit=1');
 		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }));
 		vi.mocked(getSharedEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '马' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('region', { name: 'Your note' })).toBeNull();
@@ -180,7 +186,7 @@ describe('entry page note', () => {
 
 	it('has no note section without a current workspace', async () => {
 		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '马' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('region', { name: 'Your note' })).toBeNull();
@@ -203,7 +209,7 @@ describe('entry page written forms', () => {
 				]
 			})
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: 'こと' });
 		const line = screen.getByText(/Also written/);
 		expect(line.textContent).toBe('Also written: 事、縡');
@@ -213,7 +219,7 @@ describe('entry page written forms', () => {
 		vi.mocked(getEntry).mockResolvedValue(
 			entry({ language: 'ja', kind: 'word', written: '犬', forms: [{ text: '犬', flags: [] }] })
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '犬' });
 		expect(screen.queryByText(/Also written/)).toBeNull();
 	});
@@ -223,7 +229,7 @@ describe('entry page written forms', () => {
 describe('entry page titles and the phone bar (#104)', () => {
 	it('names the frame and the document after the word', async () => {
 		vi.mocked(getEntry).mockResolvedValue(entry({ written: '你' }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '你' });
 		await waitFor(() => expect(pageFrame.title).toBe('你'));
 		expect(document.title).toBe('你 · qinqin');
@@ -236,7 +242,7 @@ describe('entry page titles and the phone bar (#104)', () => {
 				reject = rej;
 			}) as never
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await tick();
 		expect(document.title).toBe('qinqin');
 		reject(new ApiError(500, 'down'));
@@ -249,7 +255,7 @@ describe('entry page titles and the phone bar (#104)', () => {
 			if (id === 999) throw new ApiError(404, 'not found');
 			return entry({ written: '你' });
 		}) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '你' });
 		expect(document.title).toBe('你 · qinqin');
 		(page as unknown as { params: Record<string, string> }).params = { id: '999' };

@@ -1,11 +1,16 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { auth } from '$lib/auth';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { workspaces } from '$lib/workspaces';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const sections = frameSections({
 	list: [
@@ -17,14 +22,14 @@ const sections = frameSections({
 const ws = (id: number, language: string, name = '') => ({ id, language, name, settings: {}, updatedAt: '' });
 
 function signIn(admin = false) {
-	auth.set({
+	ctx.app.auth.set({
 		token: 'tok',
 		user: { id: 1, username: 'mei', admin, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
 }
 
 async function openDrawer(current: string | null = 'reader') {
-	render(PhoneHarness, { sections, current });
+	render(PhoneHarness, { props: { sections, current }, context: ctx.context });
 	const opener = screen.getByRole('button', { name: 'Open menu' });
 	opener.focus();
 	await fireEvent.click(opener);
@@ -39,7 +44,7 @@ beforeEach(() => {
 });
 afterEach(() => {
 	cleanup();
-	auth.set({ token: null, user: null });
+	ctx.app.auth.set({ token: null, user: null });
 });
 
 describe('NavDrawer', () => {

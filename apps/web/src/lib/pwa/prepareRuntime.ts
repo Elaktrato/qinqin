@@ -4,7 +4,7 @@
 import { get } from 'svelte/store';
 import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
-import { user } from '../auth';
+import type { AppContext } from '../context/app.svelte';
 import { contextForData } from '../study/currentContext';
 import { loadConfig } from '../study/session';
 import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/cardTypesMemory';
@@ -43,8 +43,8 @@ async function cachedInPartition(path: string): Promise<boolean> {
 }
 
 /** prepareActiveWorkspace: best effort, never throws, never blocks the page. */
-export async function prepareActiveWorkspace(): Promise<void> {
-	const me = get(user);
+export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
+	const me = app.auth.user;
 	const ws = get(workspaces).current;
 	if (me === null || ws === null || ws === undefined) return;
 	await prepareOffline(ws.id, {

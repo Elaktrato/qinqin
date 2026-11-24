@@ -10,14 +10,23 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	record: vi.fn()
 }));
 vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
+vi.mock('$lib/workspaceGone', () => ({ recoverFromDeletedWorkspace: vi.fn(() => Promise.resolve()) }));
 
 import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';
-import { auth } from '$lib/auth';
+import { createAppContext, type AppContext } from '$lib/context/app.svelte';
+import { contextOf } from '$lib/context/context';
+import { fakeDeps } from '$lib/testing/context';
 import { clearStudyDay } from '$lib/time/zone';
 import { setUrl } from '$lib/testing/appState.svelte';
 import Layout from './+layout.svelte';
+
+/** The app context the layout mounts with (a fresh one per mount, as a page load). */
+let app: AppContext;
+function freshApp(): Map<unknown, unknown> {
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window }));
+	return contextOf(app);
+}
 
 const children = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 const json = (body: unknown, status = 200) =>
@@ -43,7 +52,6 @@ beforeEach(() => {
 	urls = [];
 	meBody = restrictedMe;
 	clearStudyDay();
-	auth.set({ token: null, user: null });
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	setUrl('/account/password');
@@ -68,7 +76,7 @@ afterEach(() => {
 
 describe('layout with a restricted session and the real api client', () => {
 	it('does not loop on 403s: bounded requests, no alert banner', async () => {
-		const { container, findByText } = render(Layout, { children });
+		const { container, findByText } = render(Layout, { props: { children }, context: freshApp() });
 		await findByText('page body');
 		let sawAlert = false;
 		const watch = new MutationObserver(() => {
@@ -88,7 +96,7 @@ describe('layout with a restricted session and the real api client', () => {
 	it('a session that turns restricted mid-use is still moved to /account/password', async () => {
 		meBody = fullMe;
 		setUrl('/search');
-		const { findByText } = render(Layout, { children });
+		const { findByText } = render(Layout, { props: { children }, context: freshApp() });
 		await findByText('page body');
 		meBody = restrictedMe;
 		await expect(api('/api/something')).rejects.toMatchObject({ status: 403 });

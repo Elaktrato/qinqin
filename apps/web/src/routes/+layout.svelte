@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/app';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
-	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
 	import { barHiddenOn } from '$lib/frame/barItems';
@@ -37,7 +35,6 @@
 	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
-	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { themeStore } from '$lib/theme/store.svelte';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
@@ -49,6 +46,18 @@
 	} from '$lib/workspaces';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
+	import { existingApp, provideApp } from '$lib/context/context';
+	import { createAppContext } from '$lib/context/app.svelte';
+	import { browserDeps } from '$lib/context/deps';
+
+	// The tab's app context (record 0009): a test may provide one; otherwise
+	// the root layout creates it and disposes it when it unmounts.
+	const given = existingApp();
+	const app = provideApp(given ?? createAppContext(browserDeps()));
+	onMount(() => app.start());
+	onDestroy(() => {
+		if (given === null) app.dispose();
+	});
 
 	let { children } = $props();
 
@@ -63,7 +72,7 @@
 	// enabled plugin pages in the user's order, Search, Stats.
 	const sections = $derived(frameSections($pluginStates));
 	const current = $derived(currentSection(path, sections));
-	const signedIn = $derived($auth.token !== null);
+	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
 	// bar: the logo (to sign in) and a sign-in link, nothing private.
 	const openSignedOut = $derived(!signedIn && routeAccess(path) === 'open');
@@ -72,9 +81,9 @@
 	// once signed in, and open pages show either way (lib/routeAccess.ts).
 	// A restricted session (forced password change, MFA enrolment) sees only
 	// its own page and the open Sources page, and loads nothing of the app.
-	const restricted = $derived(signedIn && $restriction !== null);
+	const restricted = $derived(signedIn && app.auth.restriction !== null);
 	const allowed = $derived(
-		routeAllowed(path, signedIn, booted) && restrictedTarget(path, $restriction) === null
+		routeAllowed(path, signedIn, booted) && restrictedTarget(path, app.auth.restriction) === null
 	);
 	// The frame (window frame, bar, raised panel) shows with a bar: signed
 	// in, or signed out on an open page. Sign-in pages stay plain.
@@ -127,9 +136,6 @@
 	}
 
 	onMount(async () => {
-		// A workspace deleted in another tab or on another device: the
-		// first workspace_not_found reloads the list and falls back.
-		watchDeletedWorkspaces();
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
 		void registerWorker();
 		captureInstallPrompt(window); // the root layout lives as long as the page
@@ -138,7 +144,7 @@
 		void themeStore.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
-			await loadMe();
+			await app.auth.loadMe();
 		} catch {
 			// api() has already cleared the token and redirected on 401.
 		}
@@ -149,7 +155,7 @@
 	// logout so another account never sees the previous user's list.
 	$effect(() => {
 		if (!booted) return;
-		const token = $auth.token;
+		const token = app.auth.token;
 		if (token === null) {
 			loadedToken = null;
 			workspacesLoaded.set(false);
@@ -161,7 +167,7 @@
 		}
 		// Nothing of the app loads for a restricted session; the effect runs
 		// again when the restriction clears.
-		if ($restriction !== null) return;
+		if (app.auth.restriction !== null) return;
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspacesLoaded.set(false);
@@ -176,9 +182,9 @@
 	// active workspace is up, and again whenever the app comes back to the
 	// front (throttled inside; a no-op without a controlling worker).
 	$effect(() => {
-		const id = $workspacesLoaded && $restriction === null ? ($workspaces.current?.id ?? null) : null;
+		const id = $workspacesLoaded && app.auth.restriction === null ? ($workspaces.current?.id ?? null) : null;
 		if (id === null) return;
-		const run = () => void prepareActiveWorkspace();
+		const run = () => void prepareActiveWorkspace(app);
 		const timer = setTimeout(run, 4000);
 		const onVisible = () => {
 			if (document.visibilityState === 'visible') run();
@@ -194,7 +200,7 @@
 	// restricted session); signing out forgets it and keeps what is painted.
 	let themeUser: number | null | undefined = undefined;
 	$effect(() => {
-		const id = booted && signedIn && $restriction === null ? ($user?.id ?? null) : null;
+		const id = booted && signedIn && app.auth.restriction === null ? (app.auth.user?.id ?? null) : null;
 		if (id === themeUser) return;
 		themeUser = id;
 		void themeStore.setUser(id);
@@ -228,7 +234,7 @@
 	// loads it again instead of falling back to the browser zone.
 	// Not for a restricted session: the zone call would 403 and loop.
 	$effect(() => {
-		void syncStudyDayUser($restriction === null ? ($user?.id ?? null) : null);
+		void syncStudyDayUser(app.auth.restriction === null ? (app.auth.user?.id ?? null) : null);
 	});
 
 	// One session event per workspace per learner day, recorded for whichever
@@ -245,7 +251,7 @@
 	// Open pages never redirect.
 	$effect(() => {
 		if (!booted) return;
-		const restrictedTo = restrictedTarget(path, $restriction);
+		const restrictedTo = restrictedTarget(path, app.auth.restriction);
 		if (restrictedTo !== null) {
 			void navigate(restrictedTo);
 			return;
@@ -255,6 +261,9 @@
 	});
 </script>
 
+<!-- A new session mounts a new page tree: nothing a page held of the
+     previous user survives a switch (record 0009). -->
+{#key app.session}
 {#if allowed}
 	<!-- First focusable element on every page: jumps past the bar. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>{t('nav.skipToContent')}</a>
@@ -348,6 +357,7 @@
 {:else}
 	<p class="booting">{t('app.loading')}</p>
 {/if}
+{/key}
 
 <style>
 	/* The frame (#99, design §9 frame A): the window frame in --chrome holds

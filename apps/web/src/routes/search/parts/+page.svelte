@@ -6,7 +6,6 @@
 	import { fetchCharacters } from '$lib/api/characters';
 	import { fetchComponents, type ComponentIndex } from '$lib/api/components';
 	import type { CharRow } from '$lib/api/types';
-	import { user } from '$lib/auth';
 	import { dictionaryHint } from '$lib/coverage';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { pageTitle } from '$lib/pageTitle';
@@ -25,6 +24,8 @@
 	import { partsHref, selectionFromParams } from '$lib/radicals/url';
 	import { currentLanguage, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	const lang = $derived($currentLanguage);
 	const supported = $derived(lang !== null && usesHan(lang));
@@ -114,7 +115,7 @@
 	{:else if chars === null}
 		<p class="hint" aria-live="polite">{t('common.loading')}</p>
 	{:else if chars.length === 0}
-		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
+		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), app.auth.user?.admin === true)}</p>
 	{:else}
 		<form class="typed" onsubmit={submitTyped}>
 			<div class="typed-field">

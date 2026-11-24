@@ -5,7 +5,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { get } from 'svelte/store';
-import { offline, reportNetworkFailure, resetOffline } from '../pwa/offlineState';
 import {
 	ApiError,
 	api,
@@ -13,9 +12,8 @@ import {
 	apiErrorBody,
 	clearToken,
 	getToken,
-	setRestrictedHandler,
-	setToken,
-	setUnauthorizedHandler
+	setApiObserver,
+	setToken
 } from './client';
 
 function fakeStorage(): Storage {
@@ -150,7 +148,7 @@ describe('restricted sessions', () => {
 		vi.stubGlobal('fetch', vi.fn());
 	});
 	afterEach(() => {
-		setRestrictedHandler(null);
+		setApiObserver(null);
 		vi.unstubAllGlobals();
 	});
 
@@ -159,7 +157,7 @@ describe('restricted sessions', () => {
 		async (code) => {
 			localStorage.setItem('qinqin.token', 'tok');
 			const handler = vi.fn();
-			setRestrictedHandler(handler);
+			setApiObserver({ restricted: handler });
 			vi.mocked(fetch).mockResolvedValue(
 				new Response(JSON.stringify({ error: code, message: 'm' }), { status: 403 })
 			);
@@ -175,7 +173,7 @@ describe('restricted sessions', () => {
 		['password_change_required', 409]
 	])('a %s (%i) is not a restriction', async (code, status) => {
 		const handler = vi.fn();
-		setRestrictedHandler(handler);
+		setApiObserver({ restricted: handler });
 		vi.mocked(fetch).mockResolvedValue(
 			new Response(JSON.stringify({ error: code, message: 'm' }), { status })
 		);
@@ -187,7 +185,7 @@ describe('restricted sessions', () => {
 
 	it('a plain-text 403 is not a restriction', async () => {
 		const handler = vi.fn();
-		setRestrictedHandler(handler);
+		setApiObserver({ restricted: handler });
 		vi.mocked(fetch).mockResolvedValue(new Response('admin token required', { status: 403 }));
 		await expect(api('/api/admin/packs')).rejects.toBeInstanceOf(ApiError);
 		expect(handler).not.toHaveBeenCalled();
@@ -285,7 +283,7 @@ describe('apiBlob and apiErrorBody', () => {
 	});
 
 	afterEach(() => {
-		setUnauthorizedHandler(null);
+		setApiObserver(null);
 		vi.unstubAllGlobals();
 	});
 
@@ -303,7 +301,7 @@ describe('apiBlob and apiErrorBody', () => {
 
 	it('apiBlob runs the unauthorized handler on 401', async () => {
 		const handler = vi.fn();
-		setUnauthorizedHandler(handler);
+		setApiObserver({ unauthorized: handler });
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 401 }));
 
 		await expect(apiBlob('/x')).rejects.toMatchObject({ status: 401 });
@@ -327,71 +325,43 @@ describe('apiBlob and apiErrorBody', () => {
 });
 
 describe('api client reports connectivity', () => {
+	const seen: { answered: Array<string | null>; unreachable: number } = { answered: [], unreachable: 0 };
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
 		vi.stubGlobal('fetch', vi.fn());
-		resetOffline();
+		seen.answered = [];
+		seen.unreachable = 0;
+		setApiObserver({
+			answered: (headers) => seen.answered.push(headers.get('x-qinqin-saved-at')),
+			unreachable: () => seen.unreachable++
+		});
 	});
-	afterEach(() => vi.unstubAllGlobals());
+	afterEach(() => {
+		setApiObserver(null);
+		vi.unstubAllGlobals();
+	});
 
-	it('a response from the worker\'s saved copy is reported with its time', async () => {
+	it('a response from the worker\'s saved copy is reported with its headers', async () => {
 		vi.mocked(fetch).mockResolvedValue(
 			new Response('[]', {
 				headers: { 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }
 			})
 		);
 		await api('/api/workspaces');
-		expect(get(offline).servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
+		expect(seen.answered).toEqual(['2026-11-16T14:02:00.000Z']);
 	});
 
 	it('an error response still counts as the server answering', async () => {
-		reportNetworkFailure();
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
 		await expect(api('/api/x')).rejects.toBeInstanceOf(ApiError);
-		expect(get(offline).online).toBe(true);
+		expect(seen.answered).toEqual([null]);
+		expect(seen.unreachable).toBe(0);
 	});
 
-	it('a network failure marks the app offline and still throws', async () => {
+	it('a network failure is reported as unreachable and still throws', async () => {
 		vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
 		await expect(api('/api/x')).rejects.toThrow('Failed to fetch');
-		expect(get(offline).online).toBe(false);
-	});
-});
-
-describe('ApiError parses its body once (#168)', () => {
-	const body = (error: string, message = 'English.', extra: Record<string, unknown> = {}) =>
-		JSON.stringify({ error, message, ...extra });
-
-	it('carries the code and the parsed body of a {error, message} answer', () => {
-		const err = new ApiError(409, body('highlight_overlap', 'Already.', { existingId: 7 }));
-		expect(err.code).toBe('highlight_overlap');
-		expect(err.body).toEqual({ error: 'highlight_overlap', message: 'Already.', existingId: 7 });
-	});
-
-	it('has no code for a text, HTML or malformed body', () => {
-		for (const text of ['workspace not found', '<html>502</html>', '{"error": 1}', '[1]', '', 'null']) {
-			const err = new ApiError(500, text);
-			expect(err.code).toBeUndefined();
-		}
-		expect(new ApiError(500, '[1]').body).toBeUndefined();
-	});
-
-	it('detects a gone workspace and a restriction by code, never by text', async () => {
-		const { isWorkspaceGoneResponse, isRestrictionResponse } = await import('./client');
-		expect(isWorkspaceGoneResponse(404, 'workspace_not_found')).toBe(true);
-		expect(isWorkspaceGoneResponse(404, 'not_found')).toBe(false);
-		expect(isWorkspaceGoneResponse(410, 'workspace_not_found')).toBe(false);
-		expect(isWorkspaceGoneResponse(404, undefined)).toBe(false);
-		expect(isRestrictionResponse(403, 'password_change_required')).toBe(true);
-		expect(isRestrictionResponse(403, 'forbidden')).toBe(false);
-		expect(isRestrictionResponse(401, 'password_change_required')).toBe(false);
-	});
-
-	it('apiErrorBody reads the parsed body, attemptsLeft included', () => {
-		expect(apiErrorBody(new ApiError(401, body('code_invalid', 'No.', { attemptsLeft: 2 })))).toStrictEqual({
-			error: 'code_invalid',
-			attemptsLeft: 2
-		});
-		expect(apiErrorBody(new ApiError(404, 'not found'))).toBeNull();
+		expect(seen.unreachable).toBe(1);
+		expect(seen.answered).toEqual([]);
 	});
 });

@@ -10,13 +10,22 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	record: vi.fn()
 }));
 vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
+vi.mock('$lib/workspaceGone', () => ({ recoverFromDeletedWorkspace: vi.fn(() => Promise.resolve()) }));
 
 import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';
-import { auth } from '$lib/auth';
+import { createAppContext, type AppContext } from '$lib/context/app.svelte';
+import { contextOf } from '$lib/context/context';
+import { fakeDeps } from '$lib/testing/context';
 import { setUrl } from '$lib/testing/appState.svelte';
 import Layout from './+layout.svelte';
+
+/** The app context the layout mounts with (a fresh one per mount, as a page load). */
+let app: AppContext;
+function freshApp(): Map<unknown, unknown> {
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window }));
+	return contextOf(app);
+}
 
 const children = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 const json = (body: unknown, status = 200) =>
@@ -24,7 +33,6 @@ const json = (body: unknown, status = 200) =>
 const ws = { id: 4, language: 'zh', name: 'w', settings: {}, updatedAt: '' };
 
 beforeEach(() => {
-	auth.set({ token: null, user: null });
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	localStorage.setItem('qinqin.workspace', '4');
@@ -48,7 +56,7 @@ afterEach(() => {
 
 describe('layout with the real api client', () => {
 	it('a mid-session 401 clears the store, the guard redirects, the workspace choice stays', async () => {
-		const { findByText } = render(Layout, { children });
+		const { findByText } = render(Layout, { props: { children }, context: freshApp() });
 		await findByText('page body');
 		await expect(api('/api/expired')).rejects.toMatchObject({ status: 401 });
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/login', { replaceState: true }));

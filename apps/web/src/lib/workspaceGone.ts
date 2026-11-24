@@ -7,7 +7,7 @@
 // (pages, widgets, the review outbox) cannot loop.
 
 import { get } from 'svelte/store';
-import { ApiError, isWorkspaceGoneResponse, setWorkspaceGoneHandler } from './api/client';
+import { ApiError, isWorkspaceGoneResponse } from './api/client';
 import { t } from './i18n';
 import { showNotice } from './notices';
 import { confirmLabel, forgetWorkspace } from './workspaceDelete';
@@ -65,11 +65,4 @@ export function recoverFromDeletedWorkspace(): Promise<void> {
 		inFlight = null;
 	});
 	return inFlight;
-}
-
-/** watchDeletedWorkspaces hooks the recovery into every API call. */
-export function watchDeletedWorkspaces(): void {
-	setWorkspaceGoneHandler(() => {
-		void recoverFromDeletedWorkspace();
-	});
 }

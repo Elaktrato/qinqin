@@ -15,18 +15,27 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	record: vi.fn()
 }));
 vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
+vi.mock('$lib/workspaceGone', () => ({ recoverFromDeletedWorkspace: vi.fn(() => Promise.resolve()) }));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
 import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
-import { auth } from '$lib/auth';
+import { createAppContext, type AppContext } from '$lib/context/app.svelte';
+import { contextOf } from '$lib/context/context';
+import { fakeDeps } from '$lib/testing/context';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
 import { dataRow } from '../lib/testing/keyed';
+
+/** The app context the layout mounts with (a fresh one per mount, as a page load). */
+let app: AppContext;
+function freshApp(): Map<unknown, unknown> {
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window }));
+	return contextOf(app);
+}
 
 /** The desktop bar (both bars are in the DOM; CSS shows one, and jsdom has no CSS). */
 function desktop(container: HTMLElement): HTMLElement {
@@ -44,12 +53,11 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 		if (navLayout !== null && url.includes('prefix=nav-layout')) return [dataRow({ key: 'nav-layout', workspaceId: null, data: navLayout })];
 		return [];
 	}) as never);
-	return render(Layout, { children });
+	return render(Layout, { props: { children }, context: freshApp() });
 }
 
 beforeEach(() => {
 	void navLayoutStore.setUser(null);
-	auth.set({ token: null, user: null });
 	workspaces.set({ list: [], current: null });
 });
 afterEach(() => {
@@ -197,7 +205,7 @@ describe('layout auth guard', () => {
 	it('guards again when the token disappears (logout or expiry)', async () => {
 		const { findByText, queryByText } = mountAt('/search', 'tok');
 		await findByText('page body');
-		auth.set({ token: null, user: null });
+		app.auth.set({ token: null, user: null });
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/login', { replaceState: true }));
 		await waitFor(() => expect(queryByText('page body')).toBeNull());
 	});
@@ -219,7 +227,7 @@ describe('layout workspaces', () => {
 			}
 			return [];
 		}) as never);
-		const view = render(Layout, { children });
+		const view = render(Layout, { props: { children }, context: freshApp() });
 		await view.findByText('Could not load workspaces.');
 		fail = false;
 		await fireEvent.click(view.getByRole('button', { name: 'Try again' }));
@@ -236,7 +244,7 @@ describe('layout workspaces', () => {
 			if (url === '/api/workspaces') return [ws(1), ws(2)];
 			return [];
 		}) as never);
-		render(Layout, { children });
+		render(Layout, { props: { children }, context: freshApp() });
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(1));
 		select(2);
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(2));
@@ -263,7 +271,7 @@ describe('layout restricted sessions', () => {
 			if (url === '/api/auth/me') return me(restriction);
 			return [];
 		}) as never);
-		return render(Layout, { children });
+		return render(Layout, { props: { children }, context: freshApp() });
 	}
 
 	it('sends a password-change session from a private page to /account/password', async () => {

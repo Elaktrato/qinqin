@@ -4,7 +4,6 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { putEmail, type AuthOptions } from '$lib/api/account';
 	import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup, type TotpSetup } from '$lib/api/mfa';
-	import { loadMe, user } from '$lib/auth';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { Button, Field } from '$lib/ui';
@@ -13,6 +12,8 @@
 	import EmailVerify from './EmailVerify.svelte';
 	import QrCode from './QrCode.svelte';
 	import RecoveryCodes from './RecoveryCodes.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// One component for the forced enrolment page and for Settings, Account.
 	// `forced`: the session is an enrolment session: no password is asked (the
@@ -43,7 +44,7 @@
 
 	const choices = $derived(twoFactorChoices(options));
 	const attrs = otpAttrs('totp');
-	const emailReady = $derived($user?.email && $user.emailVerified);
+	const emailReady = $derived(app.auth.user?.email && app.auth.user.emailVerified);
 
 	async function go(next: Step) {
 		step = next;
@@ -104,7 +105,7 @@
 	}
 
 	async function finish() {
-		await loadMe();
+		await app.auth.loadMe();
 		onfinished();
 	}
 
@@ -119,7 +120,7 @@
 			verifyAddress = emailDraft.trim();
 			if (res.verification === 'sent') verifying = true;
 			else error = t('account.setup.noMail');
-			await loadMe();
+			await app.auth.loadMe();
 		} catch (err) {
 			error = fail(err, t('account.setup.saveEmailFailed'));
 		} finally {
@@ -224,7 +225,7 @@
 		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.email')}</h2>
 		{#if confirming}
 			<EmailVerify
-				address={$user?.email ?? ''}
+				address={app.auth.user?.email ?? ''}
 				verify={confirmEmailMethod}
 				resend={async () => (await setEmailMethod(true)) as { resendAfter?: number }}
 				submitLabel={t('account.setup.turnOnEmail')}
@@ -232,7 +233,7 @@
 			/>
 		{:else if emailReady}
 			<p>
-				<Msg key="account.setup.codesGoTo" args={{ address: $user?.email ?? '' }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+				<Msg key="account.setup.codesGoTo" args={{ address: app.auth.user?.email ?? '' }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
 			<form onsubmit={enableEmail}>
 				{#if !forced}
@@ -256,7 +257,7 @@
 				address={verifyAddress}
 				onverified={async () => {
 					verifying = false;
-					await loadMe();
+					await app.auth.loadMe();
 				}}
 			/>
 		{:else}

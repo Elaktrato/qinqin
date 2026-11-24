@@ -24,7 +24,6 @@ const ALLOWED: Record<string, string> = {
 	'i18n/message.ts:numberFormats': 'Intl.NumberFormat by locale',
 	'time/studyDay.ts:formatters': 'Intl.DateTimeFormat by zone',
 	'radicals/kangxi.ts:numbers': 'built from the bundled Kangxi table at load',
-	'auth.ts:auth': 'the session itself: auth.ts ends it',
 	'session/sessionEnd.ts:clears': 'the registry itself',
 	'account/logoutFlow.ts:logoutPrompt': 'the open state of the sign-out prompt, no data',
 	'components/map/CharGrid.svelte:waiting': 'render jobs of mounted grids, no data',

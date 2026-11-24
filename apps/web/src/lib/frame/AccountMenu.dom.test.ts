@@ -1,3 +1,5 @@
+import type { User } from '$lib/auth.svelte';
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,10 +7,14 @@ vi.mock('$lib/account/signOut', () => ({ requestSignOut: vi.fn(() => Promise.res
 
 import { requestSignOut } from '$lib/account/signOut';
 import type { ListedTheme } from '$lib/api/themes';
-import { auth, type User } from '$lib/auth';
 import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore } from '$lib/theme/store.svelte';
 import AccountMenu from './AccountMenu.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
 const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
@@ -44,8 +50,8 @@ async function store(failSave = false): Promise<ThemeStore> {
 }
 
 async function mount(user: User, restricted = false, failSave = false) {
-	auth.set({ token: 'tok', user });
-	render(AccountMenu, { store: await store(failSave), restricted });
+	ctx.app.auth.set({ token: 'tok', user });
+	render(AccountMenu, { props: { store: await store(failSave), restricted }, context: ctx.context });
 	const trigger = screen.getByRole('button', { name: 'Account menu' });
 	return trigger;
 }
@@ -57,7 +63,7 @@ afterEach(() => {
 	vi.useRealTimers();
 	cleanup();
 	vi.clearAllMocks();
-	auth.set({ token: null, user: null });
+	ctx.app.auth.set({ token: null, user: null });
 	root.removeAttribute('style');
 });
 

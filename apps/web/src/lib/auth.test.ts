@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
@@ -8,8 +7,19 @@ const { reloadPage } = vi.hoisted(() => ({ reloadPage: vi.fn() }));
 vi.mock('./i18n/reloadPage', () => ({ reloadPage }));
 
 import { getToken, notifyUnauthorized } from './api/client';
-import { auth, loadMe, login, logout, register, restriction } from './auth';
-import { onSessionEnd, type SessionEndReason } from './session/sessionEnd';
+import { createAppContext, type AppContext } from './context/app.svelte';
+import type { SessionEndReason } from './context/session.svelte';
+import { fakeDeps } from './testing/context';
+
+let app: AppContext = createAppContext(fakeDeps());
+let stop: () => void = () => undefined;
+
+function freshApp(): void {
+	stop();
+	app.dispose();
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window: null }));
+	stop = app.start();
+}
 
 const user = {
 	id: 1,
@@ -55,7 +65,7 @@ describe('auth store', () => {
 				return new Response('not found', { status: 404 });
 			})
 		);
-		auth.set({ token: null, user: null });
+		freshApp();
 		goto.mockReset();
 	});
 
@@ -64,10 +74,10 @@ describe('auth store', () => {
 	});
 
 	it('logs in, persists the token, and hydrates the user', async () => {
-		await login('ada', 'pw');
+		await app.auth.login('ada', 'pw');
 
 		expect(localStorage.getItem('qinqin.token')).toBe('token-1');
-		expect(get(auth)).toEqual({ token: 'token-1', user });
+		expect(app.auth.state).toEqual({ token: 'token-1', user });
 		expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual([
 			'/api/auth/login',
 			'/api/auth/me'
@@ -85,24 +95,24 @@ describe('auth store', () => {
 			return new Response('not found', { status: 404 });
 		});
 
-		await login('ada', 'pw');
+		await app.auth.login('ada', 'pw');
 
 		expect(localStorage.getItem('qinqin.token')).toBe('token-2');
-		expect(get(auth).token).toBe('token-2');
-		expect(get(restriction)).toBe('password_change');
+		expect(app.auth.state.token).toBe('token-2');
+		expect(app.auth.restriction).toBe('password_change');
 	});
 
 	it('a full session has no restriction', async () => {
-		await login('ada', 'pw');
-		expect(get(restriction)).toBeNull();
+		await app.auth.login('ada', 'pw');
+		expect(app.auth.restriction).toBeNull();
 	});
 
 	it('registers and then auto-logs-in', async () => {
-		const created = await register('ada', 'pw');
+		const created = await app.auth.register('ada', 'pw');
 
 		expect(created).toEqual(user);
 		expect(localStorage.getItem('qinqin.token')).toBe('token-1');
-		expect(get(auth)).toEqual({ token: 'token-1', user });
+		expect(app.auth.state).toEqual({ token: 'token-1', user });
 		expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual([
 			'/api/auth/register',
 			'/api/auth/login',
@@ -113,15 +123,15 @@ describe('auth store', () => {
 	it('hydrates the user from a stored token', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 
-		await loadMe();
+		await app.auth.loadMe();
 
-		expect(get(auth)).toEqual({ token: 'stored', user });
+		expect(app.auth.state).toEqual({ token: 'stored', user });
 	});
 
 	it('mirrors the account interface language and reloads only when it differs from the running one', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		reloadPage.mockReset();
-		await loadMe();
+		await app.auth.loadMe();
 		expect(localStorage.getItem('qq.interfaceLanguage')).toBe('en');
 		expect(reloadPage).not.toHaveBeenCalled();
 	});
@@ -130,15 +140,15 @@ describe('auth store', () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
 
-		await expect(loadMe()).rejects.toThrow('offline');
+		await expect(app.auth.loadMe()).rejects.toThrow('offline');
 
-		expect(get(auth)).toEqual({ token: 'stored', user: null });
+		expect(app.auth.state).toEqual({ token: 'stored', user: null });
 	});
 
 	it('stays signed out when no token is stored', async () => {
-		await loadMe();
+		await app.auth.loadMe();
 
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
@@ -149,19 +159,15 @@ describe('auth store', () => {
 			return new Response('boom', { status: 500 });
 		});
 
-		const seen: Array<string | null> = [];
-		const stop = auth.subscribe((state) => seen.push(state.token));
-		try {
-			await expect(login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
-		} finally {
-			stop();
-		}
+		const set = vi.spyOn(app.auth, 'set');
+		await expect(app.auth.login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
+		const seen = set.mock.calls.map(([state]) => state.token);
 		// The store never claimed a session, so the guard cannot bounce the
 		// login page away before it shows the error.
 		expect(seen.every((t) => t === null)).toBe(true);
 
 		expect(getToken()).toBeNull();
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 	});
 
 	it('login works when storage is blocked: the known token is used for /me', async () => {
@@ -180,38 +186,39 @@ describe('auth store', () => {
 			return jsonResponse(user);
 		});
 
-		await login('ada', 'pw');
+		await app.auth.login('ada', 'pw');
 
 		expect(calls).toEqual(['Bearer token-1']);
-		expect(get(auth)).toEqual({ token: 'token-1', user });
+		expect(app.auth.state).toEqual({ token: 'token-1', user });
 	});
 
 	it('logout forgets the persisted workspace selection', () => {
+		app.auth.set({ token: 'stored', user });
 		localStorage.setItem('qinqin.workspace', '3');
-		logout();
+		app.auth.logout();
 		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
 	});
 
 	it('logout clears storage and the store; the layout guard does the navigation', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
-		auth.set({ token: 'stored', user });
+		app.auth.set({ token: 'stored', user });
 
-		logout();
+		app.auth.logout();
 
 		expect(getToken()).toBeNull();
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 		expect(goto).not.toHaveBeenCalled();
 	});
 
 	it('logout asks the server to end the session, then clears local state', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
-		auth.set({ token: 'stored', user });
+		app.auth.set({ token: 'stored', user });
 		vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
 
-		logout();
+		app.auth.logout();
 
 		// State is cleared at once, without waiting for the request.
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 		expect(getToken()).toBeNull();
 		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
@@ -223,64 +230,66 @@ describe('auth store', () => {
 
 	it('logout clears local state even when the request fails', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
-		auth.set({ token: 'stored', user });
+		app.auth.set({ token: 'stored', user });
 		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
 
-		expect(() => logout()).not.toThrow();
+		expect(() => app.auth.logout()).not.toThrow();
 
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 		await new Promise((r) => setTimeout(r, 0));
-		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(app.auth.state).toEqual({ token: null, user: null });
 	});
 
 	it('logout without a token sends nothing', () => {
-		logout();
+		app.auth.logout();
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	describe('ends the session for every registered cache (#173)', () => {
+	describe('ends the session with its reason (#173, record 0009)', () => {
 		const ended: SessionEndReason[] = [];
-		let off: () => void = () => undefined;
 		beforeEach(() => {
 			ended.length = 0;
-			off = onSessionEnd((reason) => ended.push(reason));
 		});
-		afterEach(() => off());
+		/** Signs `who` in and records how its session ends. */
+		function signedIn(who = user, token = 'stored'): void {
+			app.auth.set({ token, user: who });
+			app.session?.onDispose((reason) => ended.push(reason));
+		}
 
 		it('logout: signOut, and the workspace choice goes', () => {
-			auth.set({ token: 'stored', user });
+			signedIn();
 			localStorage.setItem('qinqin.workspace', '3');
-			logout();
+			app.auth.logout();
 			expect(ended).toEqual(['signOut']);
 			expect(localStorage.getItem('qinqin.workspace')).toBeNull();
 		});
 
 		it('a 401 that ends the session: expired, and the workspace choice stays', () => {
-			auth.set({ token: 'stored', user });
+			signedIn();
 			localStorage.setItem('qinqin.workspace', '3');
 			notifyUnauthorized();
 			expect(ended).toEqual(['expired']);
-			expect(get(auth)).toEqual({ token: null, user: null });
+			expect(app.auth.state).toEqual({ token: null, user: null });
 			expect(localStorage.getItem('qinqin.workspace')).toBe('3');
 		});
 
 		it('the user changing under this tab (another tab, a token swap): switched, once', () => {
-			auth.set({ token: 'stored', user });
-			auth.set({ token: 'other', user: { ...user, id: 2 } });
+			signedIn();
+			signedIn({ ...user, id: 2 }, 'other');
 			expect(ended).toEqual(['switched']);
-			auth.set({ token: 'other', user: { ...user, id: 2 } });
+			app.auth.set({ token: 'other', user: { ...user, id: 2 } });
 			expect(ended).toEqual(['switched']);
 		});
 
 		it('another tab signing out ends it too', () => {
-			auth.set({ token: 'stored', user });
-			auth.set({ token: null, user: null });
+			signedIn();
+			app.auth.set({ token: null, user: null });
 			expect(ended).toEqual(['switched']);
 		});
 
 		it('hydrating the same user again (a reload of me) ends nothing', () => {
-			auth.set({ token: 'stored', user });
-			auth.set({ token: 'stored', user: { ...user, username: 'ada2' } });
+			signedIn();
+			app.auth.set({ token: 'stored', user: { ...user, username: 'ada2' } });
 			expect(ended).toEqual([]);
 		});
 	});
@@ -292,8 +301,8 @@ describe('an unknown login status', () => {
 			'fetch',
 			vi.fn(async () => jsonResponse({ status: 'mfa_required', token: 'half' }))
 		);
-		auth.set({ token: null, user: null });
-		await expect(login('ada', 'pw')).rejects.toThrow(/not supported/);
+		app.auth.set({ token: null, user: null });
+		await expect(app.auth.login('ada', 'pw')).rejects.toThrow(/not supported/);
 		expect(getToken()).toBeNull();
 		vi.unstubAllGlobals();
 	});

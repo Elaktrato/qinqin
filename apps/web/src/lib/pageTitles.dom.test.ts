@@ -11,6 +11,7 @@ vi.mock('$lib/events', async (importOriginal) => ({
 }));
 
 import { setUrl } from '$lib/testing/appState.svelte';
+import { testContext } from '$lib/testing/context';
 import Login from '../routes/login/+page.svelte';
 import Register from '../routes/register/+page.svelte';
 import Search from '../routes/search/+page.svelte';
@@ -34,7 +35,9 @@ describe('per-route document titles', () => {
 	] as const) {
 		it(`${name} sets "${title}"`, async () => {
 			setUrl(`/${name}`);
-			render(component as never);
+			// Signed out for the sign-in pages, signed in for the others.
+			const signedOut = name === 'login' || name === 'register';
+			render(component as never, { context: testContext(signedOut ? { user: null } : {}).context });
 			await waitFor(() => expect(document.title).toBe(title));
 		});
 	}

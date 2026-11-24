@@ -31,7 +31,6 @@
 	import { dictionaryHint } from '$lib/coverage';
 	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
-	import { user } from '$lib/auth';
 	import { FRAME_PHONE_BREAKPOINT, PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import Field from '$lib/ui/Field.svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -41,6 +40,8 @@
 	import MenuItem from '$lib/ui/MenuItem.svelte';
 	import ResultRow from './ResultRow.svelte';
 	import EntryView from '$lib/entry/EntryView.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
 	const RESULT_CAP = 50;
@@ -421,7 +422,7 @@
 	<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
 
 	{#if noDictionary && lang !== null}
-		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
+		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), app.auth.user?.admin === true)}</p>
 	{/if}
 
 	{#if lang === null && $workspacesLoaded}

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getToken } from '$lib/api/client';
-	import { user } from '$lib/auth';
 	import { t } from '$lib/i18n';
 	import { Button, Section } from '$lib/ui';
 	import { workspaces } from '$lib/workspaces';
@@ -10,6 +9,8 @@
 	import { currentIos, currentStandalone, installPrompt, promptInstall } from './install';
 	import { offline, setPrepared } from './offlineState';
 	import { readReceipt } from './prepareOffline';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	const secure = typeof window !== 'undefined' && window.isSecureContext === true;
 	let usage = $state<{ usage: number; quota: number } | null>(null);
@@ -32,8 +33,8 @@
 	const prepared = $derived.by(() => {
 		if ($offline.prepared !== null && partition !== null) return $offline.prepared;
 		const ws = $workspaces.current;
-		if (!$user || !ws || cleared) return null;
-		return readReceipt(typeof localStorage === 'undefined' ? null : localStorage, $user.id, ws.id, partition);
+		if (!app.auth.user || !ws || cleared) return null;
+		return readReceipt(typeof localStorage === 'undefined' ? null : localStorage, app.auth.user.id, ws.id, partition);
 	});
 
 	const view = $derived(

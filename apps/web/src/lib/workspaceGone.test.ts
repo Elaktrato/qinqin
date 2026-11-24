@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest';
 import { get } from 'svelte/store';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
@@ -8,7 +8,14 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { ApiError, api } from './api/client';
 import type { Workspace } from './api/types';
 import { dismissNotice, notice } from './notices';
-import { isWorkspaceGone, recoverFromDeletedWorkspace, watchDeletedWorkspaces } from './workspaceGone';
+import { isWorkspaceGone, recoverFromDeletedWorkspace } from './workspaceGone';
+import { createAppContext } from './context/app.svelte';
+import { fakeDeps } from './testing/context';
+
+/** A running app context routes workspace_not_found answers to the recovery. */
+function watchDeletedWorkspaces(): void {
+	onTestFinished(createAppContext(fakeDeps(undefined, { window: null })).start());
+}
 import { workspaces } from './workspaces';
 
 function fakeStorage(): Storage {

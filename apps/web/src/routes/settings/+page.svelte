@@ -30,7 +30,6 @@
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import FeatureSettings from '$lib/settings/FeatureSettings.svelte';
-	import { user } from '$lib/auth';
 	import {
 		RENAMED_TABS,
 		SETTINGS_TAB_LABELS,
@@ -42,6 +41,8 @@
 	} from '$lib/settings/tabs';
 	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	interface PluginRow {
 		id: string;
@@ -59,7 +60,7 @@
 	// The open tab lives in the URL (`?tab=`), so it can be linked to;
 	// switching replaces the history entry instead of adding one. The
 	// panels stay mounted (only hidden), so drafts survive a tab switch.
-	const admin = $derived($user?.admin === true);
+	const admin = $derived(app.auth.user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
 	// A renamed tab's old link (`?tab=home`) lands on the new tab, and the

@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,17 +7,21 @@ vi.mock('$lib/api/backup', () => ({ downloadMyData: vi.fn() }));
 
 import { accountDeletionPreview, deleteAccount } from '$lib/api/account';
 import { ApiError } from '$lib/api/client';
-import { auth } from '$lib/auth';
 import { deferred, escape, pressEnter } from '$lib/ui/testing/dialogForm';
 import DeleteAccountDialog from './DeleteAccountDialog.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const refusal = (error: string) => new ApiError(409, JSON.stringify({ error, message: 'server words' }));
 
 function setup(totp = false) {
-	auth.set({ token: 't', user: { id: 1, username: 'mei', mfa: { totp, email: false } } as never });
+	ctx.app.auth.set({ token: 't', user: { id: 1, username: 'mei', mfa: { totp, email: false } } as never });
 	const ondone = vi.fn();
 	const onclose = vi.fn();
-	render(DeleteAccountDialog, { username: 'mei', ondone, onclose });
+	render(DeleteAccountDialog, { props: { username: 'mei', ondone, onclose }, context: ctx.context });
 	const dialog = screen.getByRole('dialog', { name: 'Delete your account?' });
 	const password = screen.getByLabelText('Your password') as HTMLInputElement;
 	const typed = screen.getByLabelText('Type mei to confirm') as HTMLInputElement;

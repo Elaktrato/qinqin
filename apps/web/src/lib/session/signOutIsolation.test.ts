@@ -8,7 +8,8 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 
 import { setToken } from '../api/client';
-import { auth, logout } from '../auth';
+import { createAppContext, type AppContext } from '../context/app.svelte';
+import { fakeDeps } from '../testing/context';
 import { fillMissingWritten } from '../study/entriesCache';
 import { loadStarterEntries } from '../features/flashcards/decks/starterDecks';
 import { loadLevelItems } from '../features/flashcards/decks/systemDeckItems';
@@ -83,8 +84,11 @@ function answer(path: string, method: string, tag: string): unknown {
 	throw new Error(`unexpected ${method} ${path}`);
 }
 
+let app: AppContext;
+
 beforeEach(() => {
 	vi.stubGlobal('localStorage', storage());
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window: null }));
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: unknown, init?: RequestInit) => {
@@ -102,7 +106,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	logout();
+	app.auth.logout();
+	app.dispose();
 	holdForA = [];
 	held.length = 0;
 	vi.unstubAllGlobals();
@@ -110,7 +115,7 @@ afterEach(() => {
 
 function signIn(token: Token): void {
 	setToken(token);
-	auth.set({ token, user: { id: USERS[token].id, username: token, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: '2026-01-01T00:00:00Z' } });
+	app.auth.set({ token, user: { id: USERS[token].id, username: token, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: '2026-01-01T00:00:00Z' } });
 }
 
 const legacyCard = (entryId: number): StudyCard => ({ id: `c-vocab-${entryId}`, kind: 'vocab', entryId, deckIds: ['general'], createdAt: '2026-11-10T08:00:00Z' });
@@ -146,7 +151,7 @@ describe('sign-out isolation (#173)', () => {
 		expect(studyPullPages(WS)).toBeGreaterThan(0);
 		unreadableRows.set({ workspaceId: WS, counts: { cards: 1 }, total: 1 });
 
-		logout();
+		app.auth.logout();
 		expect(studyPullPages(WS)).toBe(0);
 		expect(get(unreadableRows)).toBeNull();
 		signIn('tok-B');
@@ -174,7 +179,7 @@ describe('sign-out isolation (#173)', () => {
 		// The history and the raw data share one study round (#193): six requests held.
 		await vi.waitFor(() => expect(held.length).toBe(6));
 
-		logout();
+		app.auth.logout();
 		signIn('tok-B');
 		// A's answers arrive only now, after B signed in.
 		for (const release of held) release();

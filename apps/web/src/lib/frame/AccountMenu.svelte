@@ -9,7 +9,6 @@
 	// change, MFA enrolment) gets Sources (an open page) and Sign out only.
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { user } from '$lib/auth';
 	import { requestSignOut } from '$lib/account/signOut';
 	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -17,6 +16,8 @@
 	import MenuItem from '$lib/ui/MenuItem.svelte';
 	import Avatar from './Avatar.svelte';
 	import ThemeMenuItems from './ThemeMenuItems.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
 		store = themeStore,
@@ -36,7 +37,7 @@
 	let error = $state('');
 	let wrapper = $state<HTMLElement>();
 
-	const name = $derived($user?.username ?? '');
+	const name = $derived(app.auth.user?.username ?? '');
 	const themeName = $derived(store.themeOf(store.current.theme)?.name ?? store.current.theme);
 
 	// A closed menu opens at the first level again; opening it clears an
@@ -88,14 +89,14 @@
 							><span>{t('nav.account.theme')}</span> <span class="value">{themeName}<Icon name="forward" size="s" /></span></span
 						></MenuItem
 					>
-					{#if $user?.admin}
+					{#if app.auth.user?.admin}
 						<MenuItem href="/settings?tab=admin" icon="admin">{t('nav.account.adminSettings')}</MenuItem>
 					{/if}
 				{/if}
 				<!-- The open Sources page, for a restricted session too. -->
 				<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
 				<MenuItem separator />
-				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
+				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut(app)}>{t('nav.signOut')}</MenuItem>
 			</div>
 		{:else}
 			<!-- The group only listens for ArrowLeft bubbling from its items (back one level). -->

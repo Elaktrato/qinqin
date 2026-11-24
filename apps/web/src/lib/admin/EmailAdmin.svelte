@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { user } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 	import { ApiError, apiErrorBody } from '$lib/api/client';
@@ -9,6 +8,8 @@
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteSmtp, getSmtp, putSmtp, testSmtp, type SmtpSettings } from '$lib/api/adminSettings';
 	import { plainWarning, draftFrom, passwordNote, payloadFrom, portForMode, testFailure, type SmtpDraft, type TlsMode } from './smtpForm';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let saved = $state<SmtpSettings | null>(null);
 	let draft = $state<SmtpDraft | null>(null);
@@ -22,7 +23,7 @@
 	let ownPassword = $state('');
 	let ownCode = $state('');
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($user?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	const reauthOk = $derived(reauthReady(ownPassword, needsCode, ownCode));
 	let saveFields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let removeFields = $state<ReturnType<typeof ReauthFields> | null>(null);

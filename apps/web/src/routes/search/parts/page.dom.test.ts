@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,6 +22,11 @@ import { page, setUrl } from '$lib/testing/appState.svelte';
 import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const chars: CharRow[] = [
 	{ i: 1, c: '海', s: 9, k: 85 },
@@ -72,7 +78,7 @@ afterEach(() => {
 
 describe('radical and part lookup page', () => {
 	it('has one primary Add and a Field for the typed part', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Type a radical or part');
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Add' }).className).toContain('primary');
@@ -80,7 +86,7 @@ describe('radical and part lookup page', () => {
 	});
 
 	it('shows 17 stroke groups, the parts picker and no results before a pick', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const table = await screen.findByRole('group', { name: 'Radicals' });
 		expect(within(table).getAllByRole('heading')).toHaveLength(17);
 		expect(await screen.findByRole('group', { name: 'Parts' })).toBeTruthy();
@@ -91,7 +97,7 @@ describe('radical and part lookup page', () => {
 	});
 
 	it('clicking 氵 sets ?r=85 and lists the cells grouped by strokes', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const water = await screen.findByRole('button', { name: /^水/ });
 		expect(water.getAttribute('aria-pressed')).toBe('false');
 		await fireEvent.click(water);
@@ -106,7 +112,7 @@ describe('radical and part lookup page', () => {
 
 	it('picking a part narrows and disables impossible parts; strokes narrow; Clear resets', async () => {
 		setUrl('/search/parts?r=85');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cells()).toHaveLength(4));
 		const parts = screen.getByRole('group', { name: 'Parts' });
 		await fireEvent.click(within(parts).getByRole('button', { name: '口' }));
@@ -126,7 +132,7 @@ describe('radical and part lookup page', () => {
 
 	it('stroke chips narrow the result', async () => {
 		setUrl('/search/parts?r=85');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cells()).toHaveLength(4));
 		const strokes = screen.getByRole('group', { name: 'Total strokes' });
 		await fireEvent.click(within(strokes).getByRole('button', { name: '9' }));
@@ -135,7 +141,7 @@ describe('radical and part lookup page', () => {
 	});
 
 	it('"Show all parts" lifts the use threshold', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const parts = await screen.findByRole('group', { name: 'Parts' });
 		expect(within(parts).queryByRole('button', { name: '可' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show all parts' }));
@@ -144,7 +150,7 @@ describe('radical and part lookup page', () => {
 
 	it('chosen parts the picker hides are shown as removable chips', async () => {
 		setUrl('/search/parts?r=85&p=%E5%8F%AF');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cells()).toEqual(['河']));
 		const parts = screen.getByRole('group', { name: 'Parts' });
 		expect(within(parts).queryByRole('button', { name: '可' })).toBeNull();
@@ -159,7 +165,7 @@ describe('radical and part lookup page', () => {
 	});
 
 	it('a typed 氵 selects radical 85; a typed part adds it', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = await screen.findByLabelText('Type a radical or part');
 		await fireEvent.input(input, { target: { value: '氵' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -179,7 +185,7 @@ describe('radical and part lookup page', () => {
 			parts: [...components.parts, { c: '⻖', s: 3, n: 30 }, { c: '⻏', s: 3, n: 20 }],
 			chars: { ...components.chars, 陽: ['⻖', '昜'], 都: ['者', '⻏'] }
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = await screen.findByLabelText('Type a radical or part');
 		await fireEvent.input(input, { target: { value: '阝' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -199,7 +205,7 @@ describe('radical and part lookup page', () => {
 	it('a zh workspace without components shows no parts picker but a note', async () => {
 		workspace('zh-TW');
 		vi.mocked(fetchComponents).mockResolvedValue({ packs: [], parts: [], chars: {} });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('group', { name: 'Radicals' });
 		expect(fetchCharacters).toHaveBeenCalledWith('zh-TW');
 		expect(screen.queryByRole('group', { name: 'Parts' })).toBeNull();
@@ -211,7 +217,7 @@ describe('radical and part lookup page', () => {
 	it('a failed components request still shows the radical table, without parts', async () => {
 		vi.mocked(fetchComponents).mockRejectedValue(new Error('components down'));
 		setUrl('/search/parts?r=85');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('group', { name: 'Radicals' })).toBeTruthy();
 		await waitFor(() => expect(cells()).toEqual(['池', '河', '沽', '海']));
 		expect(screen.queryByRole('alert')).toBeNull();
@@ -221,21 +227,21 @@ describe('radical and part lookup page', () => {
 
 	it('a language without a character universe says so', async () => {
 		workspace('es');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText('Radical lookup is available in Chinese and Japanese workspaces.')).toBeTruthy();
 		expect(fetchCharacters).not.toHaveBeenCalled();
 	});
 
 	it('an empty universe shows the dictionary hint', async () => {
 		vi.mocked(fetchCharacters).mockResolvedValue({ chars: [], count: 0 });
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/dictionary/i)).toBeTruthy();
 		expect(screen.queryByRole('group', { name: 'Radicals' })).toBeNull();
 	});
 
 	it('a load error shows a retry that reloads', async () => {
 		vi.mocked(fetchCharacters).mockRejectedValueOnce(new Error('down'));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect((await screen.findByRole('alert')).textContent).toContain('Could not load.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		expect(await screen.findByRole('group', { name: 'Radicals' })).toBeTruthy();
@@ -246,7 +252,7 @@ describe('radical and part lookup page', () => {
 		const many: CharRow[] = Array.from({ length: 301 }, (_, j) => ({ i: 100 + j, c: String.fromCodePoint(0x4e00 + j), s: 1, k: 1 }));
 		vi.mocked(fetchCharacters).mockResolvedValue({ chars: many, count: many.length });
 		setUrl('/search/parts?r=1');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cells()).toHaveLength(300));
 		expect(screen.getByRole('status').textContent).toBe('301 characters');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show all 301' }));

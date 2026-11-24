@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,6 +37,11 @@ import { pluginStates } from '$lib/plugins/states';
 import { onStudyChange } from '$lib/study/data';
 import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function milestones(title = '100 reviews'): MilestonesView {
 	const r = { id: 'reviews:100', at: Date.parse('2026-11-17T09:00:00Z'), day: '2026-11-17' };
@@ -76,7 +82,7 @@ const cardHeading = () => screen.queryByRole('heading', { level: 2, name: 'Miles
 
 describe('home milestones', () => {
 	it('shows the card for the log families above the widgets', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		expect(loadMilestones).toHaveBeenCalledWith(1, { scope: 'home', language: 'zh' });
 		expect(screen.getByText(/^100 reviews, reached/)).toBeTruthy();
@@ -85,7 +91,7 @@ describe('home milestones', () => {
 	it('the status region is there before the card loads, and the card sits outside it', async () => {
 		const later = deferred<MilestonesView>();
 		vi.mocked(loadMilestones).mockReturnValueOnce(later.promise);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const status = document.querySelector('.milestone-status[role="status"]')!;
 		expect(status).not.toBeNull();
 		later.resolve(milestones());
@@ -98,7 +104,7 @@ describe('home milestones', () => {
 	it('Dismiss hides it and marks the covered ids', async () => {
 		const ms = milestones();
 		vi.mocked(loadMilestones).mockResolvedValue(ms);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 		expect(markSeen).toHaveBeenCalledWith(ms);
@@ -108,7 +114,7 @@ describe('home milestones', () => {
 
 	it('nothing before the plugin states are ready, and nothing without a workspace', async () => {
 		pluginStates.set({ list: [], status: 'loading' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await tick();
 		expect(loadMilestones).not.toHaveBeenCalled();
 		pluginStates.set({ list: [], status: 'ready' });
@@ -118,7 +124,7 @@ describe('home milestones', () => {
 	});
 
 	it('a workspace switch removes the old card at once: its ids are never written into the new workspace', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		const next = deferred<MilestonesView>();
 		vi.mocked(loadMilestones).mockReturnValueOnce(next.promise);
@@ -132,7 +138,7 @@ describe('home milestones', () => {
 	it('a workspace switch reloads and drops the stale answer', async () => {
 		const first = deferred<MilestonesView>();
 		vi.mocked(loadMilestones).mockReturnValueOnce(first.promise).mockResolvedValueOnce(milestones('from workspace 2'));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await tick();
 		select(2);
 		await waitFor(() => expect(screen.getByText(/^from workspace 2, reached/)).toBeTruthy());
@@ -145,7 +151,7 @@ describe('home milestones', () => {
 
 	it('a study write or a posted event of the workspace loads again; another workspace does not', async () => {
 		vi.mocked(loadMilestones).mockResolvedValue({ ...milestones(), plan: { kind: 'none' } });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
 		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
 		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
@@ -170,7 +176,7 @@ describe('home heading and search', () => {
 	])('the h1 is the greeting for the device hour (%i:00)', async (hour, greeting) => {
 		vi.useFakeTimers({ toFake: ['Date'] });
 		vi.setSystemTime(new Date(2026, 10, 16, hour, 0, 0));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const headings = screen.getAllByRole('heading', { level: 1 });
 		expect(headings).toHaveLength(1);
 		expect(headings[0].textContent).toBe(greeting);
@@ -180,12 +186,12 @@ describe('home heading and search', () => {
 		vi.useFakeTimers({ toFake: ['Date'] });
 		vi.setSystemTime(new Date('2026-11-16T20:00:00Z')); // already the 17th in Tokyo
 		vi.mocked(currentStudyDay).mockReturnValue(studyDay([{ zone: 'Asia/Tokyo', from: null }]));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(document.querySelector('.date')?.textContent).toBe('Tuesday 17 November');
 	});
 
 	it('the search is a labelled field that goes to /search?q=', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const field = screen.getByRole('searchbox', { name: 'Search entries' });
 		await fireEvent.input(field, { target: { value: ' 你好 ' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Search' }));
@@ -200,11 +206,11 @@ describe('home with a feature switched off', () => {
 			actual.allWidgets(plugins, states, language, [])
 		);
 		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
-		const { unmount } = render(Page);
+		const { unmount } = render(Page, { context: ctx.context });
 		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
 		unmount();
 		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
 		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();
 		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });

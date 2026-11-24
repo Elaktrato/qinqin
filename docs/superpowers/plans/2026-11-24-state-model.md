@@ -38,20 +38,21 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 ## Tasks
 
 1. **This plan and record 0009** (`Accepted, being implemented by #196`), the records index.
-2. **Context core**, test first: `AppContext` and `Session` lifecycle (created on a token, a user adopted, disposed
-   on sign-out / expiry / a switch with the reason; owned disposers run once, a throwing one is logged; `alive`),
-   `context.ts` accessors, `lib/testing/context.ts`. Not wired yet.
-3. **Auth** into the app context (`lib/auth.svelte.ts`, class `Auth`): sign-in, `me`, sign-out, the 401 and
-   restricted handlers, the cross-tab follow. The root layout creates the app context and keys the frame on the
-   session (a new session mounts a new page tree). Every `$auth`/`$user`/`$token`/`$restriction` reader moves to
-   `useApp().auth`; the session's dispose ends the old registry for the caches not moved yet.
-4. **Workspaces, notices and the deleted-workspace recovery** into the session (`Workspaces`, `Notices`,
-   `WorkspaceRecovery`).
+2. **Context core and auth**, the lifecycle test first: `AppContext` and `Session` (created on a token, a user
+   adopted, disposed on sign-out / expiry / a switch with the reason; owned disposers run once, a throwing one is
+   logged; `alive`), `context.ts` accessors, `lib/testing/context.ts`; auth into the app context
+   (`lib/auth.svelte.ts`, class `Auth`: sign-in, `me`, sign-out, the 401 and restricted reactions, the cross-tab
+   follow); the API client's three handler setters become one observer the app context installs. The root layout
+   creates the app context and keys the page tree on the session. Every `$auth`/`$user`/`$token`/`$restriction`
+   reader moves to `useApp().auth`; the session's end still runs the old registry for the caches not moved yet.
+3. (merged into 2.)
+4. **Workspaces, notices, the deleted-workspace recovery and the review outbox** into the session (`Workspaces`,
+   `Notices`, `WorkspaceRecovery`, `Outbox`); the outbox user mirror (`outboxUser.ts`) goes.
 5. **Plugin states** into the session (`PluginStates`); the registered manifests follow it.
 6. **PWA and offline state** into the app context (`OfflineState`, the install prompt, the update banner, the
-   sign-out prompt); the outbox user mirror goes (the outbox reads the session).
+   sign-out prompt).
 7. **Study data** into the session: the `StudyCache` of #193, the reads of `data.ts` and the commands, the
-   unreadable report, the written-by-entry cache, the outbox, the recently sent reviews, the event log.
+   unreadable report, the written-by-entry cache, the recently sent reviews, the event log.
 8. **The other per-user caches and memos** into the session: the study day (zone), weekly replay and week passes,
    milestones (load and reached), goals, day counts, audio, characters, components, entry bases, schemes, clips,
    starter decks, system deck items, stroke data, frequency ranks, lookups, the journal entries and provider names.
@@ -63,8 +64,36 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 
 ## Rulings
 
-(Filled while building; each `Ruling: <what> — <why> — <cost if wrong>`.)
+- Ruling: a session exists while a token does — created when a token appears (sign-in, a boot with a stored token,
+  before `me` answered), it adopts the user `me` names, and it ends when the token goes (`signOut`, `expired`) or
+  when `me` names another user than the one it holds (`switched`; a blanked user while another tab's token is
+  checked counts, as #173's subscription did) — the outbox and an offline boot need a session before `me` answers
+  — cost if wrong: a session briefly without a user id (it then owns nothing user-keyed until `me` answers).
+- Ruling: the root layout keys its page tree on the session (`{#key app.session}`), so a new session mounts new
+  components that read the new session at init; components read `useSession()` once — a switch in another tab used
+  to leave the mounted page holding the previous user's data in its own `$state`; now it is gone. The sign-in pages
+  are never shown signed in, so a sign-in remounts nothing visible — cost if wrong: a user switch in another tab
+  loses unsaved input of the page (it belonged to the previous user).
+- Ruling: the HTTP client stays a module function with one observer slot (`setApiObserver`: a 401, a restriction,
+  a deleted workspace, every answer's headers, an unreachable server) that the running app context installs; the
+  state objects receive `api` as a dependency and the plain helpers in `lib/api/*.ts` keep calling it — it is the
+  tab's one transport and its token is the credential, not user data; making every helper take a client would only
+  move the singleton — cost if wrong: a test that fakes `api` for a state object still mocks the module for a
+  helper.
+- Ruling: `testContext()` uses the module `api` unless the test passes `routes` (then `fakeApi`) — a test that
+  mocks `lib/api/client` or stubs `fetch` then answers the state objects and the helpers alike — cost if wrong: none
+  (both are fresh per test).
+- Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
+  choice and the lookup buffer go with the session that held them — cost if wrong: none found; two tests now sign
+  in before signing out.
 
 ## Execution record
 
-(Filled per task.)
+Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
+
+1. Plan, record 0009 (`Accepted, being implemented by #196`), the index row.
+2. Context core and auth. `context/app.test.ts` was written before the classes; I ran it only once they existed
+   (a deviation from strict test-first), then checked it by mutation: without the switch check one test fails.
+   `auth.test.ts`, `authTabs.dom.test.ts`, `authCleanup.dom.test.ts` and the layout tests were moved onto the app
+   context (their assertions unchanged, apart from signing in before a sign-out that expects something cleared);
+   component tests render with `ctx.context`. Full vitest under Node 26: 599 files, 12,657 passed, 8 skipped.

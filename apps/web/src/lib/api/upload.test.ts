@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { ApiError, setRestrictedHandler, setUnauthorizedHandler, setWorkspaceGoneHandler } from './client';
+import { ApiError, setApiObserver } from './client';
 import { uploadWithProgress } from './upload';
 import { installStaged, stagedStatus, waitForImport, type StagedStatus } from './packs';
 
@@ -54,7 +54,7 @@ describe('uploadWithProgress', () => {
 	});
 	afterEach(() => {
 		vi.unstubAllGlobals();
-		setUnauthorizedHandler(null);
+		setApiObserver(null);
 	});
 
 	it('sends the bearer token and forwards progress', async () => {
@@ -87,7 +87,7 @@ describe('uploadWithProgress', () => {
 	it('treats a 401 like api(): clears the token and runs the handler once', async () => {
 		const { x, xhr } = setup();
 		const handler = vi.fn();
-		setUnauthorizedHandler(handler);
+		setApiObserver({ unauthorized: handler });
 		const p = uploadWithProgress('/api/admin/packs', new FormData(), { xhr });
 		x.finish(401, 'unauthorized');
 		await expect(p).rejects.toMatchObject({ status: 401 });
@@ -97,8 +97,7 @@ describe('uploadWithProgress', () => {
 	it('tells the workspace-gone and restriction handlers, like api() (#168 review)', async () => {
 		const gone = vi.fn();
 		const restricted = vi.fn();
-		setWorkspaceGoneHandler(gone);
-		setRestrictedHandler(restricted);
+		setApiObserver({ workspaceGone: gone, restricted });
 		try {
 			let { x, xhr } = setup();
 			let p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
@@ -116,8 +115,7 @@ describe('uploadWithProgress', () => {
 			await expect(p).rejects.toMatchObject({ status: 404 });
 			expect(gone).toHaveBeenCalledTimes(1);
 		} finally {
-			setWorkspaceGoneHandler(null);
-			setRestrictedHandler(null);
+			setApiObserver(null);
 		}
 	});
 

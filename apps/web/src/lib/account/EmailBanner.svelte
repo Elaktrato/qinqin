@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
-	import { user } from '$lib/auth';
 	import { t } from '$lib/i18n';
 	import { emailBannerText, emailSection } from './emailView';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// A soft prompt: under the "required" email policy, accounts that have no
 	// address yet are asked to add one. Nothing is blocked.
@@ -17,7 +18,7 @@
 		);
 	});
 
-	const show = $derived(emailSection(policy, $user?.email ?? null).banner);
+	const show = $derived(emailSection(policy, app.auth.user?.email ?? null).banner);
 </script>
 
 {#if show}

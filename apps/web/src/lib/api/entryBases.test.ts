@@ -123,8 +123,8 @@ describe('loadEntryBases', () => {
 		expect(calls[1].ids).toEqual([1]);
 		calls[1].resolve([base(1)]);
 		await again;
-		const { logout } = await import('../auth');
-		logout();
+		const { endSession } = await import('../session/sessionEnd');
+		endSession('signOut');
 		const third = loadEntryBases([1, 2]);
 		await Promise.resolve();
 		expect(calls[2].ids).toEqual([1, 2]);

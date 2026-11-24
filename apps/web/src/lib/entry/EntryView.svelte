@@ -16,7 +16,6 @@
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
-	import { token } from '$lib/auth';
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
@@ -39,6 +38,8 @@
 	import { getEntryRanks } from '$lib/api/frequency';
 	import { getStudyData } from '$lib/study/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
 		entryId: requestedId,
@@ -198,7 +199,7 @@
 	$effect(() => {
 		const id = entry?.id ?? null;
 		audio = null;
-		if (id === null || !$token) return;
+		if (id === null || !app.auth.token) return;
 		void getEntryAudio(id).then(
 			(r) => {
 				if (entry?.id === id) audio = r;
@@ -211,7 +212,7 @@
 	$effect(() => {
 		const current = entry;
 		rank = null;
-		if (!current || !$token) return;
+		if (!current || !app.auth.token) return;
 		void getEntryRanks(current.language, [current.id]).then(
 			(r) => {
 				if (entry?.id === current.id) rank = r.ranks.find((x) => x.id === current.id)?.rank ?? null;
