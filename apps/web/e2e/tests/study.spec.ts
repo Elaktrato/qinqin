@@ -65,9 +65,15 @@ async function leaveTextField(page: Page): Promise<void> {
 /** Waits for card n of 8 and reads it. */
 async function cardAt(page: Page, n: number): Promise<Face> {
 	await expect(page.getByText(new RegExp(`^${n} / 8`))).toBeVisible();
-	const f = await face(page);
-	expect(f.n).toBe(n);
-	return f;
+	// The counter can change a frame before the new card's face has rendered:
+	// read the face until it is card n with a fixture word on it (a condition,
+	// not a sleep; it fails after the timeout like any other expectation).
+	let f: Face | undefined;
+	await expect(async () => {
+		f = await face(page);
+		expect(f.n).toBe(n);
+	}).toPass({ timeout: 10_000 });
+	return f as Face;
 }
 
 test('a mixed session: both card types interleave, Z and Back change a grade', async ({ page, learner }) => {
