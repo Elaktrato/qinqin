@@ -191,15 +191,15 @@ func (s *server) handleExportDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer s.backups.endExport(uid)
-	var username string
-	if err := s.db.QueryRowContext(r.Context(), `SELECT username FROM users WHERE id = ? AND disabled_at IS NULL`, uid).Scan(&username); err != nil {
+	who, err := auth.ActiveUser(r.Context(), s.db, uid)
+	if err != nil {
 		writeError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
 		return
 	}
 	now := s.now()
 	tw := &trackWriter{ResponseWriter: w}
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin", username, now, "zip")+`"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin", who.Username, now, "zip")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	man, err := backup.WriteUser(r.Context(), s.db, s.dataDir, uid, tw, backup.Meta{
 		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now, MaxBytes: s.exportLimit()})

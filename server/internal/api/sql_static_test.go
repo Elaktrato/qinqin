@@ -42,19 +42,10 @@ var sqlStatement = regexp.MustCompile(`^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|
 // declaration as "<package>"), each with its reason. An entry without a
 // finding is stale and fails the test, so the list only shrinks with the code.
 var sqlAllowed = map[string]string{
-	"handlers_admin_audit.go handleAdminAudit":              "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_admin_backup.go handleAdminBackupDownload":    "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_ai.go handleDeleteAIKey":                      "debt of #194: moves into internal/ai (plan task 9)",
-	"handlers_ai_custom.go handleDeleteCustomProvider":      "debt of #194: moves into internal/ai (plan task 9)",
-	"handlers_auth.go handleAuthOptions":                    "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_auth.go handleRegister":                       "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_backup.go handleExportDownload":               "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_backup_restore.go handleSafetyExportDownload": "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_levels.go handleUninstallScheme":              "debt of #194: moves into internal/levels (plan task 9)",
-	"handlers_login_mfa.go handleEmailLoginVerify":          "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_login_mfa.go mfaChallenge":                    "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_mfa.go handleTOTPDisable":                     "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_packs.go handleListSentencePacks":             "debt of #194: moves into internal/sentences (plan task 9)",
+	"handlers_ai.go handleDeleteAIKey":                 "debt of #194: moves into internal/ai (plan task 9)",
+	"handlers_ai_custom.go handleDeleteCustomProvider": "debt of #194: moves into internal/ai (plan task 9)",
+	"handlers_levels.go handleUninstallScheme":         "debt of #194: moves into internal/levels (plan task 9)",
+	"handlers_packs.go handleListSentencePacks":        "debt of #194: moves into internal/sentences (plan task 9)",
 }
 
 type sqlFinding struct {

@@ -259,21 +259,7 @@ func (s *server) handleTOTPDisable(w http.ResponseWriter, r *http.Request) {
 	if !s.verifyOwnPassword(w, r, u.ID, req.Password) || !s.secondFactorOK(w, r, u.ID, req.Code) {
 		return
 	}
-	tx, err := s.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	defer tx.Rollback()
-	if err := auth.RemoveTOTP(r.Context(), tx, u.ID); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := auth.Audit(r.Context(), tx, auth.AuditEvent{Action: "mfa_disabled", ActorID: u.ID, TargetID: &u.ID, Detail: map[string]any{"scope": "totp"}}); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := tx.Commit(); err != nil {
+	if err := auth.DisableTOTP(r.Context(), s.db, u.ID); err != nil {
 		writeInternal(w, r)
 		return
 	}
