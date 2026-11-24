@@ -11,7 +11,7 @@ implementation runs.
 ```
 manifest.json            written LAST: format, formatVersion (2), appVersion, schemaVersion, createdAt,
                          user {id, username}, counts, files [{name, bytes, sha256}]
-account.json             {username, timeZones [{zone, from, createdAt}], pluginStates [{pluginId, enabled, order}],
+account.json             {username, timeZones [{zone, from, createdAt}], features [{id, enabled}],
                          interfaceLanguage?}  optional (#73): '' or a language tag (i18n/language-tags.json)
 refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to (cards, notes, edits, events)
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries

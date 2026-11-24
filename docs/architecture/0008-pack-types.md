@@ -126,7 +126,7 @@ Not allowed:
 - `server/internal/packs/notfound_test.go`: `TestEveryNotFoundErrorIsPackNotFound`, over the handler table.
 - `server/internal/packs/faketype_test.go`: `TestAFakePackTypeNeedsOnlyItsTableEntry` (`AddTypeForTest`).
 - `server/internal/pack/contract_test.go`: `TestTableMatchesTheContract` against
-  `docs/contracts/packages/pack-types.json`, which the web test `apps/web/src/lib/plugins/packTypes.contract.test.ts`
+  `docs/contracts/packages/pack-types.json`, which the web test `apps/web/src/lib/settings/packTypes.contract.test.ts`
   decodes too; `server/internal/pack/types_test.go`: `TestTableInvariants`.
 - `server/internal/pack/manifest_messages_test.go`: `TestManifestMessagesArePinned`;
   `server/internal/pack/upsert_test.go`: `TestUpsertRegistry`.

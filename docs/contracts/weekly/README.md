@@ -58,11 +58,11 @@ min(d₇, today)`. A week after the current one is an error.
 The five built-in rows are always present. A row's `value` and `previous` are `null` for activity rows while the
 activity response is unavailable (offline); the local rows are always numbers.
 
-Ruling: a plugin source is shown when either window is non-zero (not only the week) — a source that dropped to 0
+Ruling: an activity source beyond the built-in rows is shown when either window is non-zero (not only the week) — a source that dropped to 0
 this week is the comparison the learner wants to see — cost: a source unused this week shows "0".
 
 Ruling: reviews, reading and journal come from the activity route, not the local log — one meaning of "reviews"
-across heatmap, daily goal and week (the #67 ruling); plugin activity types appear without client changes — cost:
+across heatmap, daily goal and week (the #67 ruling); a new activity type appears without client changes — cost:
 a review still in this device's outbox counts once it reaches the server (new cards, study time, streak and mature
 words are local and include it).
 

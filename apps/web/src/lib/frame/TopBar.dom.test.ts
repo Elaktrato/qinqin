@@ -12,10 +12,10 @@ beforeEach(() => {
 
 const sections = frameSections({
 	list: [
-		{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: READER_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: 'qinqin-journal', manifest: {}, enabled: true, order: 0 },
-		{ id: 'qinqin-grammar', manifest: {}, enabled: true, order: 1 }
+		{ id: FLASHCARDS_ID, enabled: true },
+		{ id: READER_ID, enabled: true },
+		{ id: 'journal', enabled: true },
+		{ id: 'grammar', enabled: true }
 	],
 	status: 'ready'
 });
@@ -53,7 +53,7 @@ describe('TopBar', () => {
 		const nav = screen.getByRole('navigation', { name: 'Main' });
 		const links = within(nav).getAllByRole('link');
 		expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
-		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/search', '/flashcards', '/reader', '/p/journal', '/p/grammar', '/stats']);
+		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/stats']);
 		for (const link of links) {
 			expect(link.textContent?.trim()).toBe('');
 			expect(link.querySelector('svg')).not.toBeNull();

@@ -170,7 +170,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	// account
 	var acc Account
 	strictDecode(t, files[NameAccount], &acc)
-	if acc.Username != "alice" || len(acc.TimeZones) != 2 || acc.TimeZones[0].From != nil || len(acc.PluginStates) != 1 {
+	if acc.Username != "alice" || len(acc.TimeZones) != 2 || acc.TimeZones[0].From != nil || len(acc.Features) != 1 {
 		t.Errorf("account %+v", acc)
 	}
 	// book content is byte-identical

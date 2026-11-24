@@ -12,7 +12,7 @@ import type { StudyCard, StudyCardKind } from './types';
 /**
  * What the server holds for the rows of one workspace, read with the study
  * data, so a write can be planned against it (studyWrite): `knownAt` is the
- * newest time per row (`<collection>:<identity>` for typed rows, the plugin
+ * newest time per row (`<collection>:<identity>` for typed rows, the keyed
  * key for keyed rows), `stored` every typed row, tombstones included, and
  * `unreadable` the keys of typed rows this version cannot read (malformed,
  * or written by a newer client): never rewritten (docs/contracts/sync/,

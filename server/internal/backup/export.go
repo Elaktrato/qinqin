@@ -175,7 +175,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	counts := map[string]int{}
 
 	// account.json
-	acc := Account{Username: username, TimeZones: []TimeZone{}, PluginStates: []PluginState{}, InterfaceLanguage: &interfaceLanguage}
+	acc := Account{Username: username, TimeZones: []TimeZone{}, Features: []FeatureSwitch{}, InterfaceLanguage: &interfaceLanguage}
 	rows, err := tx.QueryContext(ctx, `SELECT zone, effective_from, created_at FROM user_time_zones WHERE user_id = ? ORDER BY seq`, userID)
 	if err != nil {
 		return man, fmt.Errorf("backup: time zones: %w", err)
@@ -191,19 +191,19 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	if err := closeRows(rows); err != nil {
 		return man, err
 	}
-	rows, err = tx.QueryContext(ctx, `SELECT pack_id, enabled, ord FROM plugin_states WHERE user_id = ? ORDER BY pack_id`, userID)
+	rows, err = tx.QueryContext(ctx, `SELECT feature, enabled FROM feature_switches WHERE user_id = ? ORDER BY feature`, userID)
 	if err != nil {
-		return man, fmt.Errorf("backup: plugin states: %w", err)
+		return man, fmt.Errorf("backup: feature switches: %w", err)
 	}
 	for rows.Next() {
-		var ps PluginState
+		var f FeatureSwitch
 		var en int
-		if err := rows.Scan(&ps.PluginID, &en, &ps.Order); err != nil {
+		if err := rows.Scan(&f.ID, &en); err != nil {
 			rows.Close()
 			return man, err
 		}
-		ps.Enabled = en != 0
-		acc.PluginStates = append(acc.PluginStates, ps)
+		f.Enabled = en != 0
+		acc.Features = append(acc.Features, f)
 	}
 	if err := closeRows(rows); err != nil {
 		return man, err

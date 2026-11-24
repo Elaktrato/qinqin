@@ -13,11 +13,11 @@
 	let { feature, rest }: { feature: Pick<CoreFeature, 'id' | 'title' | 'component'>; rest: string } =
 		$props();
 
-	const on = $derived(session.plugins.status === 'ready' && featureEnabled(feature.id, session.plugins.list));
+	const on = $derived(session.features.status === 'ready' && featureEnabled(feature.id, session.features.list));
 
 	// A direct page load can mount before the shell has loaded the states.
 	onMount(() => {
-		if (session.plugins.status === 'idle') void session.plugins.load();
+		if (session.features.status === 'idle') void session.features.load();
 	});
 </script>
 
@@ -26,9 +26,9 @@
 	<Page {rest} />
 {:else}
 	<div class="page-body">
-		{#if session.plugins.status === 'idle' || session.plugins.status === 'loading'}
+		{#if session.features.status === 'idle' || session.features.status === 'loading'}
 			<p class="notice" role="status">{t('app.loading')}</p>
-		{:else if session.plugins.status === 'error'}
+		{:else if session.features.status === 'error'}
 			<p class="notice" role="alert">{t('features.switchedOff.loadFailed')}</p>
 		{:else}
 			<h1>{switchedOffTitle(feature.id)}</h1>

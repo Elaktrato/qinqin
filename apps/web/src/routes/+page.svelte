@@ -9,7 +9,6 @@
 	import Msg from '$lib/i18n/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
-	import { webPlugins } from '$lib/plugins';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { useSession } from '$lib/context/context';
@@ -34,12 +33,12 @@
 
 	// Plugin widgets join once the shared plugin states are loaded; until
 	// then, or when they failed, only the core widgets can be shown.
-	const states = $derived(session.plugins.status === 'ready' ? session.plugins.list : []);
+	const states = $derived(session.features.status === 'ready' ? session.features.list : []);
 	const placed = $derived(
-		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home'))
+		placeWidgets(resolveLayout(stored, allWidgets(states, session.workspaces.language), 'home'))
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
-	const hasPlugins = $derived(session.plugins.status === 'ready' || session.plugins.status === 'error');
+	const hasPlugins = $derived(session.features.status === 'ready' || session.features.status === 'error');
 
 	onMount(async () => {
 		try {

@@ -22,8 +22,9 @@ where the rule is implemented today.
 | Reader | `lemma/` (rule tables of the lemmatizer: deinflection, ranking keys, token boundaries), `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (the journal's entries, reviews, topic ideas and settings; the mistake/suggestion kind), `grammar/` (lesson progress) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
+| Features | `features/` (the per-user switches of the four core features) |
 | Settings | `settings/` (workspace settings keys and their merge; the user-global keyed rows `home-layout`, `activity-view`, `widget-options` and `nav-layout`) |
-| Data safety | `backup/` (archive format v1, id remapping) |
+| Data safety | `backup/` (archive format 2, id remapping) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
 | Interface text | `i18n/` (catalogue format, key scheme, message syntax, Android conversion, interface-language negotiation, formatting locale) |
 
@@ -31,7 +32,7 @@ where the rule is implemented today.
 
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
-`auth/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
+`auth/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `journal/` → `grammar/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
@@ -46,7 +47,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
   unsupported or reset per row. Package files are replaced, never merged into the client's own data.
 - User data by the paged pull (`sync/`): `GET /api/sync/pull?v=2` pages the caller's own rows in a **round**:
   the round fixes `until` at its first page and ships, collection by collection in a fixed order
-  (`workspaces, pluginStates, rows, cards, decks, deckSettings, limits, fsrsSets, fsrsActive, books,
+  (`workspaces, features, rows, cards, decks, deckSettings, limits, fsrsSets, fsrsActive, books,
   bookmarks, highlights, overlays, sentences, events`), every row with `since <= updatedAt < until`, at most
   `limit` rows (default 500, 1..2000) and 4 MiB of rows per page (a larger row alone). A page names the next
   one (`next`, `p2.…`, sent alone as `page=`); the last page has `more: false` and a **cursor** (`c2.…`,
@@ -103,11 +104,11 @@ Every folder, in dependency order (this page's sync model and Events sections af
   use `rows` only for the keyed rows below.
 - The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`, `milestone:*`), the personal notes (`note:*`,
   `notecfg`), the lookup history (`lookups`, `lookupcfg`) and the user-global UI rows (`home-layout`,
-  `activity-view`, `widget-options`, `nav-layout`, `appearance`) are keyed rows (`keyed/`). The registry ids `qinqin-core`,
-  `qinqin-flashcards` and `qinqin-reader` are reserved: the last two are the core features flashcards and
-  the reader, and the caller's `pluginStates` row of each is that user's switch for the feature
-  (`PUT /api/plugins/{id}/state {enabled, order: 0}`). Switching off only hides the feature in the client;
-  the server never refuses or hides its data or events.
+  `activity-view`, `widget-options`, `nav-layout`, `appearance`) are keyed rows (`keyed/`).
+- There are no code plugins (#199, record 0006). Flashcards, the reader, the journal and grammar are core
+  features with a per-user switch (`features/`: `GET /api/features`, `PUT /api/features/{id} {enabled}`; the
+  pull collection `features`). Switching off only hides the feature in the client; the server never refuses
+  or hides its data or events.
 
 ## Events (`events/`)
 
@@ -128,9 +129,10 @@ Every folder, in dependency order (this page's sync model and Events sections af
   `{bookId, seconds}` (one per reading-timer flush of ≥ 30 whole seconds; consumers ignore `seconds` under 30 (it counts 0),
   cap it at 7200, and count a `read` without `bookId`), `journal` `{entryId: string}` (once per journal entry per learner day
   when its text changed). `read` and `journal` are written exactly so by every client.
-- Declared types: `qinqin-core` declares `session`, `view`, `lookup`, `review`, `read`; `qinqin-journal`
-  declares `journal`; other plugins may declare more. A client records only types declared by enabled
-  plugins.
+- Types: `session`, `view`, `lookup`, `review`, `read` and `journal` are the core's; nothing declares more (the
+  plugin manifests are gone, #199). The activity sources (`activity.json` `rules`, `GET /api/stats/activity`
+  `sources: [{type, feature, unit}]`) are `review` (flashcards), `read` (the reader) and `journal`; a client
+  words them from its own catalogue.
 - Heatmap scoring (`activity.json`): per learner day, workspace and type: `review` counts events; `read`
   sums `ceil(min(seconds, 7200) / 300)` per event with `seconds` a number ≥ 30 (raw = the seconds); `journal`
   counts distinct string `entryId`s. Goals and the weekly summary read `raw`.
@@ -142,7 +144,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 | Collection | Keyed form (backups only) | Identity | Wire shape | Owner code path | Pinned by |
 | --- | --- | --- | --- | --- | --- |
 | `cards` | `card:<cardId>` | `id` (`c-<kind>-<entryId>` or a ULID) | `{id, kind: vocab\|sentence\|writing\|tone\|reverse\|cloze, entryId: int, written: string\|null, entryKind: "character"\|null, sentenceId: int\|null, skipKinds: kind[] (vocab only), deckIds: string[], createdAt, extra}`; a card may be in several decks | `study/rows.ts`, `study/readModel.ts`, `study/commands/cards.ts`, `study/canonical.ts` (`newCardId`); Go `study/rows` | `study/rows.json`, `backup/study-rows.json`, `cards/card-ids.json` |
-| `decks` | `deck:<deckId>` | `id` (ULID, or `d-lvl-…`/`d-plg-…`/`d-frq-…` for copies; `general` has no row) | `{id, name, createdAt, source: null \| {type:"level", packId, level} \| {type:"plugin", pluginId, key} \| {type:"frequency", packId, size}, extra}` | same | `study/rows.json`, `decks/system-deck-ids.json`, `frequency/starter-deck-ids.json` |
+| `decks` | `deck:<deckId>` | `id` (ULID, or `d-lvl-…`/`d-frq-…` for copies; `general` has no row) | `{id, name, createdAt, source: null \| {type:"level", packId, level} \| {type:"frequency", packId, size}, extra}` | same | `study/rows.json`, `decks/system-deck-ids.json`, `frequency/starter-deck-ids.json` |
 | `deckSettings` | `deckcfg:<deckId>` | `deckId` (also `general`) | `{deckId, cardTypes: ("reverse"\|"cloze")[], newOrder: null \| {by:"added"} \| {by:"frequency"} \| {by:"level", packId}, extra}` | `study/rows.ts`, `study/deckSettings.ts`, `study/newOrder.ts` | `study/rows.json`, `frequency/deckcfg-new-order.json` |
 | `limits` | `limits:workspace`, `limits:deck:<deckId>` | `deckId` (`null` = the workspace row) | `{deckId, new: null \| {limit: 0..9999 \| null}, reviews: same, extra}`; `null` = not set (deck, then workspace, then 20 new / 200 reviews), `{limit: null}` = unlimited | `study/rows.ts`, `study/limits.ts` | `study/rows.json`, `scheduler/limits-rows.json`, `scheduler/daily-limits.json` |
 | `fsrsSets` | `fsrs:set:<setId>` | `id` | `{id, w: 21 numbers, createdAt, source: "optimized"\|"imported", labelled, logLoss, baselineLogLoss: number\|null, extra}`; weights outside the ts-fsrs ranges make the set unusable (default weights) | `study/rows.ts`, `study/fsrs/params.ts` | `study/rows.json`, `scheduler/optimizer-steps*.json` |
@@ -177,8 +179,8 @@ fixes the shape.
 | Overlays (entry edits) | per user and entry (`user_edits`, not a keyed row); pulled as `overlays` | `{entryId, written: string\|null, readings: [{type, value}]\|null, updatedAt}`; `null` = untouched; server-stamped, last arrival wins | `server/internal/overlay` | `overlays/overlay.json` |
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |
-| Grammar lesson progress | workspace (`grammar_progress`, not rows); not in the pull: `/api/grammar/progress` | `{packId, lessonId, completedAt, best, total}`; the server keeps the best score of runs with the same `total` | `plugins/grammar/progress.ts`; server `internal/grammar/progress.go` | `grammar/progress.json` |
-| Journal entries, reviews, topic ideas, settings | workspace (`journal_*` tables, not rows); not in the pull: `/api/journal/*` | see `journal/README.md` | `plugins/journal/store.ts`; server `internal/journal/store.go` | `journal/entries.json`, `journal/review-docs.json`, `journal/kind-resolve.json` |
+| Grammar lesson progress | workspace (`grammar_progress`, not rows); not in the pull: `/api/grammar/progress` | `{packId, lessonId, completedAt, best, total}`; the server keeps the best score of runs with the same `total` | `features/grammar/progress.ts`; server `internal/grammar/progress.go` | `grammar/progress.json` |
+| Journal entries, reviews, topic ideas, settings | workspace (`journal_*` tables, not rows); not in the pull: `/api/journal/*` | see `journal/README.md` | `features/journal/store.ts`; server `internal/journal/store.go` | `journal/entries.json`, `journal/review-docs.json`, `journal/kind-resolve.json` |
 
 Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/time-zone` (`study-day/`).
 
@@ -214,8 +216,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   /api/me/interface-language {language}` stores it (422 `invalid_language`; sessions only, never access tokens).
   Resolve with `negotiate.json` (the setting if non-empty, else the device list; `en` today). Formatting uses the
   interface language plus the device region (`negotiate.json` `formatLocale`; English without a region → `en-GB`).
-- Show API errors by `error` code from the catalogue (`apiError.*`), never the English `message`. Built-in plugin
-  names and activity labels come from `plugin.<idCamel>.*`. Study text carries the study language, interface text
+- Show API errors by `error` code from the catalogue (`apiError.*`), never the English `message`. The activity
+  sources' labels come from `activity.source.<type>.*`. Study text carries the study language, interface text
   none of its own (`i18n/README.md`, "`lang` and `dir` attributes").
 - Android checklist: convert the catalogue, implement `negotiate.json` (both lists), read and write the setting,
   and decode `messages.json`, `plural-categories.json` and `language-tags.json` in the Android tests.
@@ -248,9 +250,9 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 
 ## Backup archive (`backup/`)
 
-Zip of JSON, `formatVersion` 1 (the only compatibility key; unknown versions are rejected). Entry names,
+Zip of JSON, `formatVersion` 2 (the only compatibility key; any other version is rejected). Entry names,
 row shapes, caps and the remapping of entry, card, workspace and book ids on restore are in
-`backup/README.md`; `backup/sample-v2/` is a valid unpacked archive. `workspaceId: null` plugin rows are
+`backup/README.md`; `backup/sample-v2/` is a valid unpacked archive. `workspaceId: null` keyed rows are
 exported and restored as global rows. Never in an archive: password hash, email, sessions, TOTP secrets,
 AI keys, SMTP settings, QINQIN_SECRET.
 
@@ -285,9 +287,8 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 - Do not cache admin, account, AI, journal photo, audio, search or lookup responses as truth.
 - Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
-- A data pack is not a plugin: `GET /api/plugins` lists registry plugins only (#198), a pack id has no plugin
-  state, and an installed pack is always shown (packs are managed in Settings → Data). Leave rows with
-  `hidden: true` (the surface-less built-ins such as `qinqin-core`) out of plugin lists.
+- A data pack has no switch: an installed pack is always shown (packs are managed in Settings → Data); only
+  the four core features have switches (`features/`).
 
 ## Not specified (on purpose)
 
@@ -299,11 +300,9 @@ each with its owner:
   #38's own work.
 - **Offline search normalisation** (tone- and romaji-insensitive search) — pinned when #36 decides to search
   offline (#36).
-- **Journal entries, settings and photos, and the grammar plugin rows** — not in Android's first plugin set.
-  The review document itself is pinned (`journal/`), because a client that shows a review must show the same
-  mistake/suggestion split; only the `journal` event payload is otherwise pinned (`events/`).
+- **Journal photos** — the OCR import is online only. The entries, reviews (a client that shows one must show
+  the same mistake/suggestion split), topic ideas, settings and the grammar progress are pinned (`journal/`,
+  `grammar/`), and so is the `journal` event payload (`events/`).
 - **The FSRS optimizer** (training, evaluation) — Android reads `fsrsSets`, it does not optimise; its step input
   is pinned (`scheduler/optimizer-steps.json`).
-- **The plugin manifest format for Kotlin plugins** — belongs to #38's host design (`docs/wiki/Plugin-format.md`
-  describes the web one).
 - **Interface strings and their key scheme** — v0.4.0 prep item 8 (#73).

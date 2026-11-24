@@ -8,7 +8,7 @@ import { keyedData } from '../sync/keyed';
 import { LOOKUPS_KEY, LOOKUP_CFG_KEY } from './lookups';
 import { LookupRecorder, type RecorderIO } from './recorder';
 
-/** recorderIO: the recorder's reads and writes of the qinqin-core rows. */
+/** recorderIO: the recorder's reads and writes of the keyed rows. */
 export const recorderIO: RecorderIO = {
 	readRow: (ws) => keyedData(ws).find(LOOKUPS_KEY),
 	writeRow: async (ws, data) => void (await keyedData(ws).put(LOOKUPS_KEY, data)),

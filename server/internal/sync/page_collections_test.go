@@ -38,8 +38,10 @@ func seedEverything(w *world, user, ws string) {
 	e := ws + "-e"
 	w.entry(e, "zh")
 	at := func(m int) string { return time.Date(2026, 11, 12, 8, m, 0, 0, time.UTC).Format(time.RFC3339) }
+	// The switches are user-global: each seeded workspace switches its own feature.
+	feature := map[string]string{"a": "journal", "b": "grammar"}[ws]
 	for i, r := range []roundRow{
-		{Ref: ws + "-s", Collection: "pluginStates"},
+		{Ref: ws + "-s", Collection: "features", Feature: feature},
 		{Ref: ws + "-d", Collection: "rows", Workspace: strp(ws)},
 		{Ref: ws + "-dg", Collection: "rows"},
 		{Ref: ws + "-dx", Collection: "rows", Workspace: strp(ws), DeletedAt: "x"},
@@ -116,7 +118,7 @@ func TestV2ShipsEveryCollectionOfTheCaller(t *testing.T) {
 	now := at("2026-11-12T10:00:00Z")
 	got, cur := roundRefs(t, w, alice, PageRequest{Limit: 3, Now: now})
 	want := map[string][]string{
-		"workspaces": {"a"}, "pluginStates": {"a-s"}, "rows": {"a-d", "a-dg"}, "cards": {"a-c"},
+		"workspaces": {"a"}, "features": {"a-s"}, "rows": {"a-d", "a-dg"}, "cards": {"a-c"},
 		"books": {"a-b"}, "bookmarks": {"a-m"}, "highlights": {"a-h"}, "overlays": {"a-o"}, "sentences": {"a-n"},
 		"events": {"a-v"},
 	}
@@ -143,7 +145,7 @@ func TestV2DeltaShipsTombstones(t *testing.T) {
 	seedEverything(w, "alice", "a")
 	got, _ := roundRefs(t, w, alice, PageRequest{Since: cur, Now: at("2026-11-12T10:00:00Z")})
 	want := map[string][]string{
-		"pluginStates": {"a-s"}, "rows": {"a-d", "a-dg", "a-dx"}, "cards": {"a-c", "a-cx"},
+		"features": {"a-s"}, "rows": {"a-d", "a-dg", "a-dx"}, "cards": {"a-c", "a-cx"},
 		"books": {"a-b", "a-bx"}, "bookmarks": {"a-m", "a-mx"}, "highlights": {"a-h", "a-hx"}, "overlays": {"a-o"},
 		"sentences": {"a-n", "a-nx"}, "events": {"a-v"},
 	}

@@ -1,4 +1,4 @@
-// Personal notes on entries (issue #77): pure rules of the qinqin-core rows
+// Personal notes on entries (issue #77): pure rules of the keyed rows
 // note:<entryId> = {version:1, entryId, text} and notecfg = {version:1,
 // onAnswer}. The contract is docs/contracts/notes/README.md; the fixtures
 // note-rows.json and note-text.json pin every rule here.
@@ -44,7 +44,7 @@ export function noteChars(text: string): number {
 	return Array.from(text).length;
 }
 
-// A string holding JSON text is decoded, as the plugin SDK does for every row.
+// A string holding JSON text is decoded, as the keyed-row layer does for every row.
 function asObject(data: unknown): Record<string, unknown> | null {
 	let value = data;
 	if (typeof value === 'string') {

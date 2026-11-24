@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { pluginName } from '$lib/plugins/manifestText';
 	// Settings → Home: which widgets the home page shows, and in what
 	// order. The layout is one list per user (every workspace and device
 	// shares it), so widgets that do not apply to the active workspace's
@@ -12,7 +11,6 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { languageLabel } from '$lib/languages';
 	import { coreFeatures } from '$lib/features';
-	import { pluginState, webPlugins } from '$lib/plugins';
 	import {
 		displayItems,
 		editableLayout,
@@ -114,13 +112,13 @@
 		}
 	}
 
-	// Every widget owner this build knows: the core features, then the plugins.
-	const owners = [...coreFeatures, ...webPlugins];
-	const states = $derived(session.plugins.status === 'ready' ? session.plugins.list : []);
-	// Every enabled plugin's widgets, whatever the language: the layout
+	// Every widget owner this build knows: the core features.
+	const owners = coreFeatures;
+	const states = $derived(session.features.status === 'ready' ? session.features.list : []);
+	// Every widget of a feature that is on, whatever the language: the layout
 	// is global, so a Chinese-only widget can be placed from a Spanish
 	// workspace too.
-	const all = $derived(allWidgets(webPlugins, states, null));
+	const all = $derived(allWidgets(states, null));
 	const listed = $derived(all.filter((widget) => widget.surfaces.includes('home')).map((w) => w.id));
 	const items = $derived(displayItems(stored, all, session.workspaces.language));
 	const onItems = $derived(items.filter((item) => item.on));
@@ -128,23 +126,23 @@
 	const language = $derived(session.workspaces.language ? languageLabel(session.workspaces.language) : '');
 	const preview = $derived(
 		placeWidgets(
-			resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home')
+			resolveLayout(stored, allWidgets(states, session.workspaces.language), 'home')
 		)
 	);
 	const isDefault = $derived(
 		JSON.stringify(editableLayout(stored)) === JSON.stringify([...DEFAULT_LAYOUT])
 	);
 
-	// Stored ids of widgets this build knows but whose plugin is disabled
-	// (or not installed): they stay in the layout and come back with it.
+	// Stored ids of widgets this build knows but whose feature is switched
+	// off: they stay in the layout and come back with it.
 	const parked = $derived.by(() => {
-		if (session.plugins.status !== 'ready') return [];
+		if (session.features.status !== 'ready') return [];
 		const shown = new Set(listed);
 		return editableLayout(stored).flatMap((id) => {
 			if (shown.has(id)) return [];
-			for (const plugin of owners) {
-				const widget = plugin.manifest.widgets?.find((w) => w.id === id);
-				if (widget) return [{ id, title: widget.title, plugin: pluginName(plugin.manifest) }];
+			for (const feature of owners) {
+				const widget = feature.def.widgets?.find((w) => w.id === id);
+				if (widget) return [{ id, title: widget.title, feature: feature.title }];
 			}
 			return [];
 		});
@@ -152,7 +150,7 @@
 
 	// The default layout's titles, from every widget this build knows.
 	const defaultTitles = $derived.by(() => {
-		const known = [...coreWidgets, ...owners.flatMap((p) => p.manifest.widgets ?? [])];
+		const known = [...coreWidgets, ...owners.flatMap((f) => f.def.widgets ?? [])];
 		return DEFAULT_LAYOUT.map((id) => known.find((w) => w.id === id)?.title ?? id).reduce((before, after) =>
 			t('settings.home.thenJoin', { before, after })
 		);
@@ -160,10 +158,7 @@
 
 	function ownerLabel(owner: string): string {
 		if (owner === 'core') return t('settings.home.core');
-		const plugin = owners.find((p) => p.manifest.id === owner);
-		if (plugin) return pluginName(plugin.manifest);
-		const name = pluginState(owner, states)?.manifest?.name;
-		return pluginName({ id: owner, name: typeof name === 'string' && name.trim() ? name : owner });
+		return owners.find((f) => f.id === owner)?.title ?? owner;
 	}
 
 	async function load(): Promise<void> {
@@ -180,7 +175,7 @@
 	}
 
 	onMount(() => {
-		if (session.plugins.status === 'idle') void session.plugins.load();
+		if (session.features.status === 'idle') void session.features.load();
 		void load();
 		void loadOptions();
 	});
@@ -378,12 +373,12 @@
 		</div>
 	{/if}
 
-	{#if session.plugins.status === 'loading' || session.plugins.status === 'idle'}
-		<p class="hint">{t('settings.home.loadingPlugins')}</p>
-	{:else if session.plugins.status === 'error'}
+	{#if session.features.status === 'loading' || session.features.status === 'idle'}
+		<p class="hint">{t('settings.home.loadingFeatures')}</p>
+	{:else if session.features.status === 'error'}
 		<p class="error">
-			{t('settings.home.pluginsFailed')}
-			<Button variant="plain" onclick={() => session.plugins.load()}>{t('settings.home.retry')}</Button>
+			{t('settings.home.featuresFailed')}
+			<Button variant="plain" onclick={() => session.features.load()}>{t('settings.home.retry')}</Button>
 		</p>
 	{/if}
 
@@ -412,7 +407,7 @@
 	{#if parked.length > 0}
 		<p class="hint parked">
 			{#each parked as widget, index (widget.id)}{index > 0 ? ', ' : ''}<strong>{widget.title}</strong
-				> ({widget.plugin}){/each}
+				> ({widget.feature}){/each}
 			{t('settings.home.parked', { count: parked.length })}
 		</p>
 	{/if}

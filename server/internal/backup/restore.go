@@ -20,6 +20,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/features"
 	"qinqin/internal/grammar"
 	"qinqin/internal/i18n"
 	"qinqin/internal/journal"
@@ -307,15 +308,19 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 			}
 		}
 	}
-	// 3. account state: plugin states and the time zone history
-	for _, ps := range a.Account.PluginStates {
+	// 3. account state: feature switches (an id this build does not know is
+	// skipped) and the time zone history
+	for _, f := range a.Account.Features {
+		if !slices.Contains(features.IDs, f.ID) {
+			continue
+		}
 		en := 0
-		if ps.Enabled {
+		if f.Enabled {
 			en = 1
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, ?, ?, ?, ?)`,
-			userID, ps.PluginID, en, ps.Order, now); err != nil {
-			return nil, fmt.Errorf("backup: plugin state: %w", err)
+		if _, err := tx.ExecContext(ctx, `INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?, ?, ?, ?)`,
+			userID, f.ID, en, now); err != nil {
+			return nil, fmt.Errorf("backup: feature switch: %w", err)
 		}
 	}
 	if l := a.Account.InterfaceLanguage; l != nil && i18n.IsLanguageSetting(*l) {

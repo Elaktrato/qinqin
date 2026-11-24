@@ -279,7 +279,7 @@ describe('layout restricted sessions', () => {
 		await new Promise((r) => setTimeout(r, 30));
 		const urls = vi.mocked(api).mock.calls.map(([u]) => String(u));
 		expect(urls).not.toContain('/api/workspaces');
-		expect(urls.some((u) => u.startsWith('/api/plugins'))).toBe(false);
+		expect(urls.some((u) => u.startsWith('/api/features'))).toBe(false);
 	});
 
 	it('renders the change page itself and keeps Sign out within reach', async () => {

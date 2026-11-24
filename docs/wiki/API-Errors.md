@@ -76,7 +76,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `token_not_allowed` | 403 | Access tokens cannot be used on this route (account, sign-in, admin, backup, AI, journal, workspace management, the token routes themselves). Use a signed-in session. |
 | `token_read_only` | 403 | The access token is read-only and the route writes. |
 | `token_workspace` | 403 | The access token is limited to one workspace and the request is not inside it: ?workspace= is missing or names another workspace, or the route spans workspaces or addresses objects by id. |
-| `study_row_unreadable` | 409 | A write (POST /api/sync/push, or a plugin-data PUT or DELETE of a typed study key) would replace a stored typed study row this server version cannot read back: stored JSON it does not know, such as a deck source type or a new-card order written by a newer server, or a damaged row. Nothing in the request is applied and the stored row is kept unchanged; reads skip it (docs/contracts/sync/README.md, Reading rows). |
+| `study_row_unreadable` | 409 | A write (POST /api/sync/push) would replace a stored typed study row this server version cannot read back: stored JSON it does not know, such as a deck source type or a new-card order written by a newer server, or a damaged row. Nothing in the request is applied and the stored row is kept unchanged; reads skip it (docs/contracts/sync/README.md, Reading rows). |
 | `sync_collection_moved` | 400 | GET /api/sync/pull?v=2 named a lexicon collection (entries, links, senses, levelMembers, dictionaries, schemes, levels). Those moved to data packages: read GET /api/packages (docs/contracts/packages/). |
 | `sync_page_invalid` | 400 | A paged pull (v=2) parameter is wrong: a page or since token that is malformed, belongs to another user or to other filters (collections, workspace, tombstones), a page= request that repeats since, collections, workspace, limit or tombstones, a limit outside 1-2000, a tombstones value other than 1, or an unknown collection. Start the round again without page (docs/contracts/sync/). |
 | `sync_cursor_expired` | 410 | The paged pull's since cursor is older than the server keeps deletions for. Discard local user data and pull again without since (docs/contracts/sync/). Defined for a future tombstone purge. |
@@ -114,7 +114,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `ocr_unavailable` | 409 | Journal photos: offline reading (OCR) is not installed on this server. |
 | `ocr_language_missing` | 409 | Journal photos: offline reading has no model for the entry's language; the message names it. |
 | `ocr_failed` | 422 | Journal photos: offline reading failed on this photo. |
-| `conflict` | 409 | The request conflicts with the current state and no more specific code applies (for example a plugin manifest that reuses a built-in plugin id). |
+| `conflict` | 409 | The request conflicts with the current state and no more specific code applies (for example installing a staged pack that was already installed or refused). |
 | `method_not_allowed` | 405 | The API path exists but not with this method; the Allow header lists the methods it takes. |
 | `range_not_satisfiable` | 416 | A download's Range header lies outside the file (package, audio clip, font slice, backup and stroke downloads). |
 | `precondition_failed` | 412 | A download's If-Match or If-Unmodified-Since condition failed. |
@@ -138,7 +138,6 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `language_mismatch` | 422 | The book's language is not the workspace's; workspaceLanguage and bookLanguage name both. |
 | `source_unavailable` | 502 | The library source did not answer; try again later. |
 | `source_language_unavailable` | 422 | The library source has no books in the workspace's language. |
-| `plugin_no_data` | 403 | The plugin does not declare owns-data, so it has no data rows. |
 | `unknown_time_zone` | 400 | PUT /api/me/time-zone: the zone is not an IANA name this server knows (study-day/time-zone-api.json). |
 | `too_many_changes` | 409 | PUT /api/me/time-zone: the account has the most zone changes the history keeps (study-day/). |
 | `licence_mismatch` | 409 | POST /api/admin/packs/staged/{token}: the licence sent is not exactly the staged pack's (the administrator confirms the licence the review showed). |

@@ -901,7 +901,7 @@
    }
   },
   {
-   "name": "plugin copy",
+   "name": "plugin copy: the retired source variant reads as no source, kept in extra (#199)",
    "key": "deck:d-plg-x",
    "data": {
     "id": "d-plg-x",
@@ -919,12 +919,14 @@
      "id": "d-plg-x",
      "name": "J",
      "createdAt": "2026-11-10T08:00:00Z",
-     "source": {
-      "type": "plugin",
-      "pluginId": "qinqin-journal",
-      "key": "deck:1"
-     },
-     "extra": {}
+     "source": null,
+     "extra": {
+      "source": {
+       "type": "plugin",
+       "pluginId": "qinqin-journal",
+       "key": "deck:1"
+      }
+     }
     }
    },
    "roundTrip": {

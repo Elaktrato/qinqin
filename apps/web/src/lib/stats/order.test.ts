@@ -32,7 +32,7 @@ describe('statsOrder', () => {
 			widget('plugin-b', 'qinqin-b'),
 			widget('reviews-per-day'),
 			widget('plugin-a', 'qinqin-a'),
-			widget('word-states', 'qinqin-flashcards')
+			widget('word-states', 'flashcards')
 		];
 
 		expect(ids(statsOrder(registry))).toEqual([
@@ -47,7 +47,7 @@ describe('statsOrder', () => {
 	it('ignores missing defaults (Characters summary in a Spanish workspace)', () => {
 		const registry = [
 			widget('summary-numbers'),
-			widget('word-states', 'qinqin-flashcards'),
+			widget('word-states', 'flashcards'),
 			widget('plugin-a', 'qinqin-a')
 		];
 

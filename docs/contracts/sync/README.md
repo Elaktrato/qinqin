@@ -35,7 +35,7 @@ an answer that says `no-store` (before this fix the pages said `no-store`, so of
 
 ### Collections and the round
 
-Round order (fixed): `workspaces`, `pluginStates`, `rows`, `cards`, `decks`, `deckSettings`, `limits`,
+Round order (fixed): `workspaces`, `features`, `rows`, `cards`, `decks`, `deckSettings`, `limits`,
 `fsrsSets`, `fsrsActive`, `books`, `bookmarks`, `highlights`, `overlays`, `sentences`, `events`. Without
 `collections` a round carries all of them. An unknown name is 400 `sync_page_invalid`; a lexicon name
 (`entries`, `links`, `senses`, `levelMembers`, `dictionaries`, `schemes`, `levels`) is 400
@@ -76,7 +76,7 @@ Round order (fixed): `workspaces`, `pluginStates`, `rows`, `cards`, `decks`, `de
 ### Scope and the language filter
 
 - `workspace=<id>` narrows workspace rows (`workspaces`, `rows`, typed rows, library rows, `events`) to
-  that workspace plus user-global rows (`rows` with `workspaceId: null`, `pluginStates`) and
+  that workspace plus user-global rows (`rows` with `workspaceId: null`, `features`) and
   entry-bound rows (`overlays`, `sentences`) to its language. Another user's or an unknown workspace is
   404 `not_found`.
 - `overlays` and own `sentences` ship only for entries whose language is in the round's language set: the
@@ -105,7 +105,7 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 | Collection | Row |
 | --- | --- |
 | `workspaces` | `{id, language, name, settings, updatedAt}` (no tombstones) |
-| `pluginStates` | `{pluginId, userId, enabled, order, updatedAt}` (no tombstones) |
+| `features` | `{id, enabled, updatedAt}`: the caller's feature switches that were ever set (`features/`; no tombstones) |
 | `rows` | `{key, userId, workspaceId, data, version, updatedAt, deletedAt}` (the keyed rows, `keyed/`) |
 | `cards` … `fsrsActive` | the typed rows of `docs/contracts/study/rows.json` (strict decode) |
 | `books`, `bookmarks`, `highlights` | the rows of `docs/contracts/library/rows.json` plus `deletedAt: null`; a tombstone is exactly `{id, workspaceId, updatedAt, deletedAt}` (from `library_deletions`, `updatedAt` = `deletedAt`) |

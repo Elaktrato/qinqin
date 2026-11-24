@@ -58,10 +58,8 @@ const WITH_GOAL: GoalView = {
 	sources: [
 		{
 			type: 'review',
-			plugin: 'qinqin-flashcards',
-			label: 'Flashcard reviews',
-			unit: 'count',
-			describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+			feature: 'flashcards',
+			unit: 'count'
 		}
 	],
 	limitsNew: 20,

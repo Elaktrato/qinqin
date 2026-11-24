@@ -54,7 +54,6 @@ func TestContractPushThroughPush(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			ctx := context.Background()
 			sqlDB := dbtest.Open(t)
-			registerReserved(t, sqlDB)
 			alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 			ws, bobWS := newWorkspace(t, sqlDB, alice), newWorkspace(t, sqlDB, bob)
 			expand := func(raw json.RawMessage) []byte {

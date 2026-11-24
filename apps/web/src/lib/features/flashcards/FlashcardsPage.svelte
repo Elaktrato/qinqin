@@ -23,7 +23,7 @@
 			<DeckDetail deckId={route.deckId} />
 		{:else if route.view === 'settings'}
 			<DeckSettingsView deckId={route.deckId} />
-		{:else if route.view === 'system-level' || route.view === 'system-plugin'}
+		{:else if route.view === 'system-level'}
 			<SystemDeckDetail {route} />
 		{:else if route.view === 'system-frequency'}
 			<StarterDeckDetail {route} />

@@ -19,7 +19,7 @@ import (
 var seedSQL = map[string][]string{
 	"workspaces":          {`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?1, 'zh', 'w', 't')`},
 	"study_events":        {`INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('ev' || ?1, ?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'd', 't', 'review', '{}', 't')`},
-	"plugin_states":       {`INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?1, 'p', 1, 0, 't')`},
+	"feature_switches":    {`INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?1, 'journal', 0, 't')`},
 	"keyed_rows":          {`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?1, NULL, 'home-layout', '{}', 1, 't', 't')`},
 	"user_edits":          {`INSERT INTO user_edits (user_id, entry_id, updated_at) VALUES (?1, 1, 't')`},
 	"sentences":           {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
@@ -312,7 +312,7 @@ func TestSweepOrphanUserDirs(t *testing.T) {
 // user table: data the learner made is exported and replaced on restore;
 // security and account state is never exported and never touched.
 func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
-	rows := map[string]bool{"workspaces": true, "study_events": true, "keyed_rows": true, "plugin_states": true,
+	rows := map[string]bool{"workspaces": true, "study_events": true, "keyed_rows": true, "feature_switches": true,
 		"user_edits": true, "sentences": true, "library_books": true, "library_bookmarks": true,
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
 		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,

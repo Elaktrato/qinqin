@@ -1,5 +1,5 @@
-// Thin I/O for the lookup history (#72): the qinqin-core `lookups` row of a
-// workspace and the user-global `lookupcfg` switch, through the plugin SDK,
+// Thin I/O for the lookup history (#72): the keyed `lookups` row of a
+// workspace and the user-global `lookupcfg` switch, through lib/sync/keyed.ts,
 // plus the one lookup-specific route DELETE /api/events/lookups. Rules live
 // in lookups.ts, buffering in recorder.ts. Every write here reads the row
 // first in the same call (docs/contracts/lookups/README.md).

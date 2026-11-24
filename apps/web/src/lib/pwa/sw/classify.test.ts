@@ -72,7 +72,7 @@ describe('classify: spec table', () => {
 		for (const url of [
 			'/api/auth/me',
 			'/api/workspaces',
-			'/api/plugins',
+			'/api/features',
 			'/api/languages',
 			'/api/me/time-zone',
 			'/api/rows?workspace=3&prefix=note%3A',
@@ -139,10 +139,10 @@ describe('classify: spec table', () => {
 	// #198: the legacy pull (no v=2) is gone; the server answers 404, and no copy is kept.
 	it('a sync/pull without v=2 is never cached', () => {
 		for (const url of [
-			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
+			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
 			'/api/sync/pull?collections=cards',
 			'/api/sync/pull?collections=fsrsActive,rows',
-			'/api/sync/pull?collections=rows,pluginStates',
+			'/api/sync/pull?collections=rows',
 			'/api/sync/pull?collections=pluginStates',
 			'/api/sync/pull'
 		]) {
@@ -151,7 +151,7 @@ describe('classify: spec table', () => {
 	});
 
 	it('a v2 study page is cacheable: first page with workspace and a study subset, and a p2 continuation', () => {
-		const study = 'pluginStates,rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
+		const study = 'rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
 		for (const url of [
 			`/api/sync/pull?collections=${study}&v=2&workspace=3`,
 			`/api/sync/pull?collections=${study}&tombstones=1&v=2&workspace=3`, // the web study pull
@@ -189,8 +189,8 @@ describe('classify: spec table', () => {
 		expect(kind('/api/sync/pull?collections=cards&v=2&workspace=3', { auth: false }), 'no Authorization').toBe('bypass');
 	});
 
-	it('the cacheable pull collections are the plugin ones and every typed study collection', () => {
-		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['rows', 'pluginStates', ...STUDY_COLLECTIONS]);
+	it('the cacheable pull collections are the keyed rows and every typed study collection', () => {
+		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['rows', ...STUDY_COLLECTIONS]);
 	});
 
 	it('sync/pull only for the plugin collections', () => {
@@ -235,7 +235,7 @@ describe('classify: the server route table', () => {
 	const CACHEABLE = new Set([
 		'GET /api/auth/me',
 		'GET /api/workspaces',
-		'GET /api/plugins',
+		'GET /api/features',
 		'GET /api/languages',
 		'GET /api/me/time-zone',
 		'GET /api/sync/pull',
@@ -248,13 +248,13 @@ describe('classify: the server route table', () => {
 	]);
 
 	function sample(pattern: string): string {
-		if (pattern === 'GET /api/sync/pull') return '/api/sync/pull?v=2&collections=rows,pluginStates&workspace=3';
+		if (pattern === 'GET /api/sync/pull') return '/api/sync/pull?v=2&collections=rows&workspace=3';
 		if (pattern === 'GET /api/rows') return '/api/rows?workspace=3&prefix=note%3A';
 		const path = pattern.split(' ')[1]
 			.replace('{id}', pattern.includes('/entries/') ? '12' : 'qinqin-flashcards')
 			.replace('{key}', 'note%3A1')
 			.replace(/\{[a-z]+\}/g, '1');
-		return `${path}?collections=rows,pluginStates&workspace=3&since=1970-01-01T00:00:00Z`;
+		return `${path}?collections=rows&workspace=3&since=1970-01-01T00:00:00Z`;
 	}
 
 	it('the opt-in list only names routes that exist', () => {

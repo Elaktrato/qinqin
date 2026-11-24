@@ -15,7 +15,6 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/plugins"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
@@ -104,13 +103,7 @@ func TestContractPushResult(t *testing.T) {
 	}
 	for _, c := range file.Cases {
 		t.Run(c.Name, func(t *testing.T) {
-			ctx := context.Background()
 			ts, sqlDB := newServer(t)
-			for _, m := range plugins.Builtin() {
-				if _, err := plugins.RegisterBuiltin(ctx, sqlDB, m); err != nil {
-					t.Fatal(err)
-				}
-			}
 			alice := registerUser(t, ts.URL, "alice", "")
 			bob := registerUser(t, ts.URL, "bob", alice)
 			ws := createWorkspace(t, ts.URL, alice, "zh", "Chinese")

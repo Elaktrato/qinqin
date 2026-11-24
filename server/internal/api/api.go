@@ -386,7 +386,6 @@ func (s *server) routes() []route {
 		{"GET /fonts/{file}", s.handleFontFile, accPublic, nil, noTok},
 		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
 		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
-		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},
 		{"GET /api/ai/status", s.handleAIStatus, accUser, nil, noTok},
 		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil, noTok},
 		{"PUT /api/ai/keys/{provider}", s.handlePutAIKey, accUser, nil, noTok},
@@ -412,7 +411,7 @@ func (s *server) routes() []route {
 		{"GET /api/journal/photos/{id}", s.handleGetPhoto, accUser, nil, noTok},
 		{"PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive, accUser, nil, noTok},
 		{"DELETE /api/journal/photos/{id}", s.handleDeletePhoto, accUser, nil, noTok},
-		{"GET /api/plugins", s.handleListPlugins, accUser, nil, tokReadAny},
+		{"GET /api/features", s.handleListFeatures, accUser, nil, tokReadAny},
 		{"POST /api/library/upload", s.handleUploadBook, accUser, nil, tokWriteAny},
 		{"GET /api/library/books", s.handleListBooks, accUser, nil, tokReadWS},
 		{"GET /api/library/books/{id}", s.handleGetBook, accUser, nil, tokReadAny},
@@ -431,7 +430,7 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil, noTok},
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
-		{"PUT /api/plugins/{id}/state", s.handleSetPluginState, accUser, nil, tokWriteAny},
+		{"PUT /api/features/{id}", s.handleSetFeature, accUser, nil, tokWriteAny},
 		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
 		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},
 		{"PUT /api/rows/{key}", s.handlePutRow, accUser, nil, tokWriteWS},
@@ -448,11 +447,9 @@ const (
 	// Small JSON bodies. Every route that reads a body caps it, so an
 	// oversized request is a 413 after at most the cap is read, never a
 	// 30 MB read (or a 30 MB row served back on every list and pull).
-	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
-	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
-	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
-	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
-	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
+	maxAuthBody      = 4 << 10  // POST /api/auth/login and /register: a username and a password
+	maxWorkspaceBody = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
+	maxEntryBody     = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
 	// maxRowValue caps one keyed row value, on PUT /api/rows/{key}, and
 	// per item (keyed or typed) in a sync push. Real values are far
 	// smaller: a card or deck row is under 2 KiB, a layout a few hundred

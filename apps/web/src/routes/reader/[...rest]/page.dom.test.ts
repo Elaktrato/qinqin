@@ -16,12 +16,12 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	document.title = '';
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 describe('/reader', () => {
 	it('says the reader is switched off for a user who switched it off', async () => {
-		ctx.session.plugins.set({ list: [{ id: 'qinqin-reader', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		ctx.session.features.set({ list: [{ id: 'reader', enabled: false }], status: 'ready' });
 		setUrl('/reader/book/3/0');
 		(page as unknown as { params: Record<string, string> }).params = { rest: 'book/3/0' };
 		render(Page, { context: ctx.context });

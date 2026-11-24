@@ -30,7 +30,7 @@ beforeEach(() => {
 			await gate;
 			const url = String(input);
 			if (url === '/api/workspaces') return Response.json([{ id: 7, language: 'zh', name: 'A', settings: {}, updatedAt: '2026-01-01T00:00:00Z' }]);
-			if (url === '/api/plugins') return Response.json([{ id: 'qinqin-journal', enabled: true, manifest: {} }]);
+			if (url === '/api/features') return Response.json([{ id: 'journal', enabled: true, updatedAt: null }]);
 			return new Response('{}', { status: 404 });
 		})
 	);
@@ -56,12 +56,12 @@ describe('late answers after the session ended (#173)', () => {
 	it('plugin states in flight set nothing', async () => {
 		const ctx = testContext();
 		const session = ctx.session;
-		const late = session.plugins.load();
+		const late = session.features.load();
 		ctx.app.auth.expire();
 		release();
 		await late;
-		expect(session.plugins.list).toEqual([]);
-		expect(session.plugins.status).not.toBe('ready');
+		expect(session.features.list).toEqual([]);
+		expect(session.features.status).not.toBe('ready');
 	});
 });
 

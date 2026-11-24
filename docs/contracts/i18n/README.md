@@ -31,15 +31,15 @@ at most 120 characters. The first segment is one of this closed list:
 <!-- areas:start -->
 `app`, `nav`, `common`, `auth`, `account`, `search`, `entry`, `study`, `flashcards`, `reader`, `journal`,
 `grammar`, `stats`, `weekly`, `goals`, `notes`, `lookups`, `settings`, `admin`, `sources`, `packs`, `pwa`,
-`widgets`, `plugin`, `apiError`, `format`, `features`, `milestones`
+`widgets`, `activity`, `apiError`, `format`, `features`, `milestones`
 <!-- areas:end -->
 
 - A key is **stable and never reused**. Changing a message's meaning means a new key; a removed key is appended
   to `retired-keys.json`, and no catalogue may contain a retired key.
 - `common.*` holds only context-free UI words (`common.action.save`, `.cancel`, `.close`, `.delete`,
   `.retry`); every sentence or label with context has its own key even where the English text repeats.
-- API errors: `apiError.<code in lower camelCase>` (`rate_limited` → `apiError.rateLimited`); built-in plugin
-  manifest text: `plugin.<id in lower camelCase>.*`.
+- API errors: `apiError.<code in lower camelCase>` (`rate_limited` → `apiError.rateLimited`); the activity
+  sources: `activity.source.<type>.*`.
 
 ## Message syntax (an ICU subset)
 
@@ -136,13 +136,13 @@ lists the AI and journal photo codes), with context wording where a screen needs
 know shows a generic text (web `apiError.unknown`, naming the code) or the screen's own fallback — never
 `message`. Every API error carries a code (#168): there is no uncoded text answer left to translate.
 
-## Plugin manifests
+## Activity sources
 
-Built-in plugins (`server/internal/plugins/builtin/*.json`) are shown with catalogue text: `plugin.<idCamel>.name`,
-`.description`, `.activity.<type>.label` and `.activity.<type>.count` (the manifest's `describe` pair as one
-whole-message plural with `{n}`), with the same English as the manifest (web `lib/plugins/manifestText.ts`, whose
-test reads the manifests). A third-party manifest's text is shown verbatim; manifest localisation is a follow-up
-(sdk 2). Pack names, licences, attributions and book metadata are data and never translated.
+The code plugins are retired (#199): there are no manifests to translate. The activity sources of the core table
+(`server/internal/stats/rules.go`, `docs/contracts/events/activity.json`) are worded by the client alone:
+`activity.source.<type>.label` and `activity.source.<type>.count` (one whole-message plural with `{n}`; web
+`lib/activity/sources.ts`). The `plugin.*` keys are retired. Pack names, licences, attributions and book metadata
+are data and never translated.
 
 ## Rulings
 
@@ -178,7 +178,7 @@ Copied from the design (`docs/superpowers/specs/2026-11-16-v040p-i18n-design.md`
 - Ruling: the API `message` stays an English sentence for developers and logs; clients show text from their catalogue by `error` code (`apiError.<code camelCased>`), with context overrides where wording differs (`auth.login.error.rateLimited`); `authErrors.ts` stops reading and parsing `message`; an unknown code (newer server) shows `apiError.unknown` ("Something went wrong ({code}).") — clients already must branch on codes, and a server cannot know the client's catalogue — cost if wrong: a new server code shows the generic text until the client adds a key (a test pins that every code in `auth/errors.json` and the area READMEs has a key). Adaptation: that includes item 4's `study_row_invalid` and item 5's `sync_collection_moved`, `sync_page_invalid`, `sync_cursor_expired`, `package_not_found`, `package_revision_gone`, `download_busy` (429, "another package download is running").
 - Ruling: `Error`s a client throws for developers (`sync/pager.ts` "a page does not match the contract", `maxPages`) stay English and are never shown; the UI shows a catalogue text for "sync failed" instead, and a user-facing client error (`PartialPushError` "rows were not written …") becomes a catalogue plural — the lint's `Error`-argument exemption must therefore not hide user-facing texts: an `Error` whose `message` is rendered (`errorMessage(err, …)`) is extracted — cost if wrong: an English developer message could reach the screen; the pseudo-locale sample of each area catches it.
 - Ruling: mails are localised by the user's language: stored setting if set, else the triggering request's `Accept-Language`, else `en`, negotiated against the languages present in `server/internal/mail/messages/`; subjects and bodies move into that catalogue (`mail.reset.subject`, `mail.reset.body`, …) in the shared syntax, formatted by a small Go implementation of the same subset (plural categories from `golang.org/x/text/feature/plural`, already a dependency, BSD-3) and checked against the same fixtures — mails reach people who cannot read English, and one syntax for both sides keeps translators on one format — cost if wrong: a Go formatter to keep in step with TS (fixtures pin both). The "within 1 hour" plural is fixed by the catalogue plural.
-- Ruling: plugin manifests: built-in plugins' `name`, `description` and activity `label`/`describe` are looked up as `plugin.<id camelCased>.*` with the manifest text as fallback; third-party manifest text is shown verbatim (no translation, no `lang` override) and manifest localisation is a follow-up (sdk 2) — the sdk 1 contract cannot change in this item — cost if wrong: third-party plugins stay English.
+- Ruling: plugin manifests: built-in plugins' `name`, `description` and activity `label`/`describe` are looked up as `plugin.<id camelCased>.*` with the manifest text as fallback; third-party manifest text is shown verbatim (no translation, no `lang` override) and manifest localisation is a follow-up (sdk 2) — the sdk 1 contract cannot change in this item — cost if wrong: third-party plugins stay English. (Superseded by #199: the plugins and their manifests are gone; see "Activity sources".)
 - Ruling: pack names, licence text, attribution and book metadata are data, never translated; they keep the `lang` the data declares (`cjkLang`) — cost if wrong: none.
 - Ruling: `manifest.webmanifest` stays English (one static file) — cost if wrong: an English install name on a non-English device; revisit with a second language.
 - Ruling: plural fixtures are limited to integers where CLDR versions agree (0–25, 100, 101, 1000000) and to the six locales above; a locale where Node's ICU and x/text disagree is dropped and recorded — cost if wrong: thinner cross-implementation coverage.

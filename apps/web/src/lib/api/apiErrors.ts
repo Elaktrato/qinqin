@@ -139,7 +139,6 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	language_mismatch: 'apiError.languageMismatch',
 	source_unavailable: 'apiError.sourceUnavailable',
 	source_language_unavailable: 'apiError.sourceLanguageUnavailable',
-	plugin_no_data: 'apiError.pluginNoData',
 	unknown_time_zone: 'apiError.unknownTimeZone',
 	too_many_changes: 'apiError.tooManyChanges',
 	licence_mismatch: 'apiError.licenceMismatch'

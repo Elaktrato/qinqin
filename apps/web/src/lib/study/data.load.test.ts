@@ -191,7 +191,7 @@ describe("loading the study state", () => {
       ]);
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
-        `/api/sync/pull?collections=pluginStates%2Crows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
+        `/api/sync/pull?collections=rows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
         `/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });

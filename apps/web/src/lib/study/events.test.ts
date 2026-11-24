@@ -28,7 +28,6 @@ const eventLog = new EventLog({
 	now: () => Date.now(),
 	timers: browserTimers,
 	local: () => webStorage('localStorage'),
-	manifests: () => null,
 	studyDay: () => studyDay([]),
 	whenStudyDaySettled: async () => undefined
 });

@@ -124,14 +124,11 @@ func TestWorkspaceBodyLimits(t *testing.T) {
 	}
 }
 
-func TestPluginBodyLimits(t *testing.T) {
-	ts, sqlDB := newServer(t)
+func TestRowAndFeatureBodyLimits(t *testing.T) {
+	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
-	wantTooLarge(t, "register plugin", doRaw(t, http.MethodPost, ts.URL, "/api/admin/plugins", admin,
-		padded(`"id":"big","name":"Big","version":"1","type":"feature"`, 64<<10)))
-	wantTooLarge(t, "plugin state", doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/state", admin,
-		padded(`"enabled":true,"order":1`, 64<<10)))
+	wantTooLarge(t, "feature switch", doRaw(t, http.MethodPut, ts.URL, "/api/features/journal", admin,
+		padded(`"enabled":true`, 4<<10)))
 
 	ws := strconv.FormatInt(createWorkspace(t, ts.URL, admin, "zh", "w"), 10)
 	data := "/api/rows/notecfg?workspace=" + ws

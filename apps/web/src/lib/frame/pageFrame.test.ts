@@ -10,7 +10,7 @@ import { phoneTitle } from './pageFrame.svelte';
 import { currentSection, frameSections } from './sections';
 import layout from '../../routes/+layout.svelte?raw';
 
-const sections = frameSections({ list: [{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+const sections = frameSections({ list: [{ id: FLASHCARDS_ID, enabled: true }], status: 'ready' });
 const at = (path: string, override: string | null = null) =>
 	phoneTitle(override, currentSection(path, sections), sections, path);
 
@@ -41,9 +41,9 @@ describe('phoneTitle', () => {
 			);
 		const everything = frameSections({
 			list: [
-				{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 },
-				{ id: READER_ID, manifest: {}, enabled: true, order: 0 },
-				{ id: 'qinqin-journal', manifest: {}, enabled: true, order: 0 }
+				{ id: FLASHCARDS_ID, enabled: true },
+				{ id: READER_ID, enabled: true },
+				{ id: 'journal', enabled: true }
 			],
 			status: 'ready'
 		});

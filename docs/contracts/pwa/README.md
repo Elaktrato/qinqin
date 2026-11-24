@@ -48,10 +48,10 @@ arrives after its target; if not, the rule still holds (the late target is repla
 
 The service worker answers from its saved copy only for these `GET`s, and only
 when the request carries an `Authorization` header: `/api/auth/me`,
-`/api/workspaces`, `/api/plugins`, `/api/languages`, `/api/me/time-zone`,
+`/api/workspaces`, `/api/features`, `/api/languages`, `/api/me/time-zone`,
 `/api/sync/pull` in two forms. Paged (`v=2`, `docs/contracts/sync/`): a round's first
 page with `workspace=<id>` and `collections` a non-empty subset of
-`rows,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
+`rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
 (optionally `limit` and `tombstones=1`, which the web study pull sends; never `since`, a delta is not offline data, never `events`,
 `overlays`, `books` or a moved name), and its continuations `v=2&page=p2.<token>`
 (nothing else in the query; the token carries its filters, the server validates

@@ -274,10 +274,4 @@ describe('SystemDeckDetail', () => {
 		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'nope', level: 'x' } }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
 	});
-
-	it('a plugin deck nobody ships is not found', async () => {
-		render(SystemDeckDetail, { props: { route: { view: 'system-plugin', plugin: 'starter', key: 'k' } }, context: ctx.context });
-		expect(await screen.findByText('Deck not found.')).toBeTruthy();
-		await waitFor(() => expect(getSchemeEntries).not.toHaveBeenCalled());
-	});
 });

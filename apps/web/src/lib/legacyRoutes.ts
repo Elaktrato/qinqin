@@ -2,15 +2,15 @@
 
 import { normalizePath } from './routeAccess';
 
-// Flashcards and the reader were plugins at /p/<slug> until v0.4.0; the
-// sub-route grammar did not change.
-const FEATURE_PREFIXES = ['/p/flashcards', '/p/reader'];
+// The core features were plugins at /p/<slug>: flashcards and the reader
+// until v0.4.0, the journal and grammar until #199. The sub-routes did not
+// change.
+const FEATURE_PREFIXES = ['/p/flashcards', '/p/reader', '/p/journal', '/p/grammar'];
 
 /**
  * legacyRedirect maps an old URL to where it lives now, keeping the query
  * and fragment: the map's /study/map to Stats -> Characters, and
- * /p/flashcards[/rest] and /p/reader[/rest] to /flashcards[/rest] and
- * /reader[/rest]. null for any other path.
+ * /p/<feature>[/rest] of the four core features to /<feature>[/rest]. null for any other path.
  */
 export function legacyRedirect(url: {
 	pathname: string;

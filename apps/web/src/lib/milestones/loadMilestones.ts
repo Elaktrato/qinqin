@@ -8,11 +8,10 @@ import type { Session } from '$lib/context/session.svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
 
-import { FLASHCARDS_ID, READER_ID, featureEnabled } from '$lib/features';
+import { FLASHCARDS_ID, JOURNAL_ID, READER_ID, featureEnabled } from '$lib/features';
 import { levelDecks, levelItems, ownedLevelDeckId } from '$lib/features/flashcards/decks/systemDecks';
 import { usesHan } from '$lib/languages';
-import { pluginEnabled } from '$lib/plugins';
-import type { PluginStatesValue } from '$lib/plugins/states.svelte';
+import type { FeatureSwitchesValue } from '$lib/features/switches.svelte';
 import { buildSections } from '$lib/study/charGroups';
 import { loadStudyHistory } from '$lib/study/data';
 import { saveSeenMilestones } from '$lib/study/commands/keyed';
@@ -34,8 +33,6 @@ import {
 	seenWritePlan,
 	type SeenMilestone
 } from './seen';
-
-export const JOURNAL_PLUGIN_ID = 'qinqin-journal';
 
 export interface MilestonesView {
 	/** The workspace this view was loaded for: a dismiss writes there, never into another one. */
@@ -171,13 +168,13 @@ async function loadLevels(
  * loadMilestones: the card plan, the history and the titles of one
  * workspace. `scope: 'home'` computes the log families only; 'week' adds
  * the replay families from `week` and the installed levels. Before the
- * plugin states are loaded nothing is computed: no card, seen rows only.
+ * feature switches are loaded nothing is computed: no card, seen rows only.
  * Callers guard against a stale answer (workspace switch) themselves.
  */
 export async function loadMilestones(
 	session: Session,
 	workspaceId: number,
-	opts: { scope: 'home' | 'week'; language: string; states: PluginStatesValue; now?: number; week?: WeekInputs }
+	opts: { scope: 'home' | 'week'; language: string; states: FeatureSwitchesValue; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
 	hookOnline(session);
 	const now = opts.now ?? Date.now();
@@ -203,7 +200,7 @@ export async function loadMilestones(
 		const all = enabledFamilies({
 			flashcards: featureEnabled(FLASHCARDS_ID, states.list),
 			reader: featureEnabled(READER_ID, states.list),
-			journal: pluginEnabled(JOURNAL_PLUGIN_ID, states.list),
+			journal: featureEnabled(JOURNAL_ID, states.list),
 			han: usesHan(opts.language)
 		});
 		const families = opts.scope === 'home' || opts.week === undefined ? logFamilies(all) : all;

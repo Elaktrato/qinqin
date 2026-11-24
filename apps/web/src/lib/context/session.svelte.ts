@@ -8,7 +8,7 @@
 import type { Auth } from '../auth.svelte';
 import { EventLog } from '../events';
 import { LookupsState } from '../lookups/state';
-import { PluginStates } from '../plugins/states.svelte';
+import { FeatureSwitches } from '../features/switches.svelte';
 import { StudyDays } from '../time/studyDays';
 import { Notices } from '../notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
@@ -43,8 +43,8 @@ export class Session {
 
 	/** The one-line notice of the shell. */
 	readonly notices = new Notices();
-	/** The caller's plugin and feature states. */
-	readonly plugins: PluginStates;
+	/** The caller's feature switches. */
+	readonly features: FeatureSwitches;
 	/** Event posting and the short-lived log cache of the widgets. */
 	readonly events: EventLog;
 	/** The learner's zone history and the StudyDay of now. */
@@ -67,7 +67,7 @@ export class Session {
 		this.deps = deps;
 		this.#user = user;
 		const { api, local, session, now } = deps;
-		this.plugins = new PluginStates({ api, alive: () => this.alive });
+		this.features = new FeatureSwitches({ api, alive: () => this.alive });
 		this.zone = new StudyDays({ local });
 		this.onDispose(() => this.zone.dispose());
 		this.events = new EventLog({
@@ -75,7 +75,6 @@ export class Session {
 			now,
 			timers: deps.timers,
 			local,
-			manifests: () => this.plugins.manifests,
 			studyDay: () => this.zone.day(),
 			whenStudyDaySettled: () => this.zone.settled()
 		});

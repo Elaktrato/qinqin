@@ -11,7 +11,6 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/plugins"
 )
 
 func b64(b byte) string { return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{b}, 32)) }
@@ -209,19 +208,4 @@ func TestAIJanitorPrunesOldCalls(t *testing.T) {
 	}
 	cancel()
 	<-done
-}
-
-func TestBuiltinJournalManifest(t *testing.T) {
-	sqlDB := dbtest.Open(t)
-	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
-		t.Fatal(err)
-	}
-	var m string
-	if err := sqlDB.QueryRow(`SELECT manifest_json FROM plugin_registry WHERE pack_id = 'qinqin-journal'`).Scan(&m); err != nil {
-		t.Fatalf("journal not registered: %v", err)
-	}
-	parsed, err := plugins.ParseManifest([]byte(m))
-	if err != nil || parsed.Name != "Journal" || len(parsed.Surfaces) != 1 || parsed.Surfaces[0] != "page" {
-		t.Errorf("manifest = %s (err %v)", m, err)
-	}
 }

@@ -37,10 +37,8 @@ beforeEach(() => {
 const NOW = Date.parse('2026-11-18T12:00:00Z');
 const REVIEW_SOURCE = {
 	type: 'review',
-	plugin: 'qinqin-flashcards',
-	label: 'Flashcard reviews',
-	unit: 'count' as const,
-	describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 
 function rv(n: number, cardId: string, ts: string, grade = 4): ReviewEvent {

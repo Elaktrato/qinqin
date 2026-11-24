@@ -1,6 +1,6 @@
 // Package stats aggregates the study-event log into the numbers the
-// home heatmap shows, in SQL, driven by the activity rules plugins
-// declare in their manifests.
+// home heatmap shows, in SQL, driven by the core activity rules
+// (rules.go).
 package stats
 
 import (
@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"qinqin/internal/events"
-	"qinqin/internal/plugins"
 	"qinqin/internal/studyday"
 )
 
@@ -36,7 +35,7 @@ type Cell struct {
 // skipped date, has no events and no cell). A non-nil workspace
 // restricts the cells to that workspace. The result is sorted by day,
 // workspace, type and is never nil.
-func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, windows []studyday.Window, workspace *int64, rules []plugins.RuleOf) ([]Cell, error) {
+func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, windows []studyday.Window, workspace *int64, rules []Rule) ([]Cell, error) {
 	cells := []Cell{}
 	type jsonWindow struct {
 		D  string `json:"d"`
@@ -64,8 +63,8 @@ func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, windows []studyd
 	}
 	fromS, toS := first.UTC().Format(tsLayout), last.UTC().Format(tsLayout)
 	for _, r := range rules {
-		query := ruleQuery(r.Rule, workspace != nil)
-		args := ruleArgs(r.Rule, userID, r.Type, fromS, toS, workspace, string(encoded))
+		query := ruleQuery(r, workspace != nil)
+		args := ruleArgs(r, userID, r.Type, fromS, toS, workspace, string(encoded))
 		if r.Type == reviewType {
 			voided, err := replacedReviews(ctx, sqlDB, userID, fromS, toS)
 			if err != nil {
@@ -134,13 +133,13 @@ const window = `FROM json_each(?10) AS w CROSS JOIN study_events INDEXED BY idx_
 
 // ruleQuery returns the SQL that scores one rule, grouped by learner day
 // and workspace, selecting day, workspace, points, raw.
-func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
+func ruleQuery(rule Rule, withWorkspace bool) string {
 	where := window
 	if withWorkspace {
 		where += ` AND workspace_id = ?5`
 	}
 	switch rule.Kind() {
-	case plugins.KindMeasure:
+	case KindMeasure:
 		// Real division: integer r / p would truncate (301 s must give 2).
 		return `SELECT d, ws, SUM(CAST(q AS INTEGER) + (q > CAST(q AS INTEGER))), SUM(r) FROM (
 			SELECT d, ws, r, r * 1.0 / ?9 AS q FROM (
@@ -153,7 +152,7 @@ func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
 				) WHERE v >= ?7
 			)
 		) GROUP BY d, ws`
-	case plugins.KindDistinct:
+	case KindDistinct:
 		return `SELECT d, ws, COUNT(DISTINCT v), COUNT(DISTINCT v) FROM (
 			SELECT w.value->>'d' AS d, workspace_id AS ws,
 				CASE WHEN json_valid(payload) THEN
@@ -171,16 +170,16 @@ func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
 // ruleArgs returns the ten positional arguments every statement refers
 // to (SQLite counts up to the highest ?N used, and ?10 is always used);
 // slots a rule does not need stay nil.
-func ruleArgs(rule plugins.ActivityRule, userID int64, typ, from, to string, workspace *int64, windows string) []any {
+func ruleArgs(rule Rule, userID int64, typ, from, to string, workspace *int64, windows string) []any {
 	var ws any
 	if workspace != nil {
 		ws = *workspace
 	}
 	args := []any{userID, typ, from, to, ws, nil, nil, nil, nil, windows}
 	switch rule.Kind() {
-	case plugins.KindMeasure:
+	case KindMeasure:
 		args[5], args[6], args[7], args[8] = rule.Measure.Field, rule.Measure.Min, rule.Measure.Max, rule.PointsPer
-	case plugins.KindDistinct:
+	case KindDistinct:
 		args[5] = rule.DistinctBy
 	}
 	return args

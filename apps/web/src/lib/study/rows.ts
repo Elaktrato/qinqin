@@ -177,9 +177,6 @@ function parseSource(raw: unknown): DeckSource | null | undefined {
 	if (raw.type === 'level' && sameKeys(raw, ['type', 'packId', 'level']) && isStr(raw.packId) && isStr(raw.level)) {
 		return { type: 'level', packId: raw.packId, level: raw.level };
 	}
-	if (raw.type === 'plugin' && sameKeys(raw, ['type', 'pluginId', 'key']) && isStr(raw.pluginId) && isStr(raw.key)) {
-		return { type: 'plugin', pluginId: raw.pluginId, key: raw.key };
-	}
 	if (raw.type === 'frequency' && sameKeys(raw, ['type', 'packId', 'size']) && isStr(raw.packId) && isId(raw.size)) {
 		return { type: 'frequency', packId: raw.packId, size: raw.size };
 	}

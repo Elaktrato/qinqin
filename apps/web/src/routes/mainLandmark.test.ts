@@ -79,7 +79,6 @@ describe('the main landmark', () => {
 		'routes/entry/[id]/+page.svelte',
 		'routes/login/+page.svelte',
 		'routes/lookups/+page.svelte',
-		'routes/p/[plugin]/[...rest]/+page.svelte',
 		'routes/register/+page.svelte',
 		'routes/reset/+page.svelte',
 		'routes/search/+page.svelte',
@@ -94,10 +93,10 @@ describe('the main landmark', () => {
 		'lib/features/reader/BookView.svelte',
 		'lib/features/reader/Library.svelte',
 		'lib/features/reader/SourceBrowser.svelte',
-		'lib/plugins/grammar/GrammarBrowse.svelte',
-		'lib/plugins/grammar/LessonView.svelte',
-		'lib/plugins/grammar/PracticeRun.svelte',
-		'lib/plugins/journal/JournalPage.svelte'
+		'lib/features/grammar/GrammarBrowse.svelte',
+		'lib/features/grammar/LessonView.svelte',
+		'lib/features/grammar/PracticeRun.svelte',
+		'lib/features/journal/JournalPage.svelte'
 	];
 	it.each(columns)('%s keeps the page column (.page-body)', (file) => {
 		expect(markup(readFileSync(resolve(src, file), 'utf8'))).toMatch(/class="page-body\b/);

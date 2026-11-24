@@ -8,7 +8,7 @@
 		type Structured
 	} from '$lib/api/ai';
 	import { apiErrorBody } from '$lib/api/client';
-	import { aiErrorView } from '$lib/plugins/journal/aiErrors';
+	import { aiErrorView } from '$lib/features/journal/aiErrors';
 	import { t } from '$lib/i18n';
 	import { Button, Field, Select } from '$lib/ui';
 

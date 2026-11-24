@@ -31,10 +31,8 @@ beforeEach(() => {
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const REVIEW = {
 	type: 'review',
-	plugin: 'qinqin-flashcards',
-	label: 'Flashcard reviews',
-	unit: 'count' as const,
-	describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 
 function history(extra: Partial<StudyHistory>): StudyHistory {

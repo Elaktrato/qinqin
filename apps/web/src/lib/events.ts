@@ -9,7 +9,7 @@ import type { Api, Timers } from './context/deps';
 import { firstEventsPageUrl, readEventLog } from './eventPages';
 import { pruneSavedEventPages, type PageCachesLike } from './pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
-import { logChangingTypes } from './plugins/contract';
+import { LOG_CHANGING_TYPES } from './activity/sources';
 import type { StudyEventBody } from './api/types';
 import type { StudyDay } from './time/studyDay';
 import { newUlid } from './ulid';
@@ -73,8 +73,6 @@ export interface EventLogDeps {
 	now(): number;
 	timers: Timers;
 	local(): Storage | null;
-	/** The registered plugins' manifests (their event types change the log too); null before they loaded. */
-	manifests(): readonly unknown[] | null;
 	/** The learner's day now (the session receipt is keyed by it). */
 	studyDay(): StudyDay;
 	/** Resolves once the learner's zone has loaded. */
@@ -215,7 +213,7 @@ export class EventLog {
 	}
 
 	#changed(events: readonly StudyEventBody[]): void {
-		const types = logChangingTypes(this.#deps.manifests());
+		const types = LOG_CHANGING_TYPES;
 		const touched = new Set<number>();
 		for (const event of events) {
 			if (types.has(event.type)) touched.add(event.workspaceId);

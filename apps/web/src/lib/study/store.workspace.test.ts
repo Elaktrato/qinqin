@@ -54,7 +54,7 @@ function page(workspace: number) {
 		scope: { workspaces: [{ id: A, language: 'zh' }, { id: B, language: 'zh' }], languages: ['zh'], catalogue: '"k"' },
 		restarted: [],
 		collections: {
-			pluginStates: [], rows: [],
+			rows: [],
 			cards: own ? [cardRow('c-vocab-5', 'vocab', 5, [D1], ['tone']), cardRow('c-sentence-5', 'sentence', 5, [D1])] : [],
 			decks: own ? [deckRow(D1), deckRow(D2)] : [],
 			deckSettings: own ? [{ workspaceId: A, deckId: D1, cardTypes: [], newOrder: null, extra: {}, ...meta }] : [],

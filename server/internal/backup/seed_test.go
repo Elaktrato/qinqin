@@ -131,7 +131,7 @@ func seedUserData(t *testing.T, sqlDB *sql.DB, dataDir string, uid, e1, e2, dict
 	if err := study.InsertStored(context.Background(), sqlDB, uid, gone, 3, deletedAt, deletedAt, &deletedAt); err != nil {
 		t.Fatal(err)
 	}
-	exec(t, sqlDB, `INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, 'qinqin-flashcards', 1, 2, 't')`, uid)
+	exec(t, sqlDB, `INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?, 'flashcards', 1, 't')`, uid)
 	exec(t, sqlDB, `INSERT INTO user_edits (user_id, entry_id, written, readings, updated_at) VALUES (?, ?, 'edited', NULL, '2026-11-09T00:00:00Z')`, uid, e1)
 	exec(t, sqlDB, `INSERT INTO user_time_zones (user_id, seq, zone, effective_from, created_at) VALUES (?, 0, 'Europe/Berlin', NULL, 't'), (?, 1, 'Asia/Tokyo', '2026-11-05T00:00:00Z', 't')`, uid, uid)
 	s.Book = ins(`INSERT INTO library_books (user_id, workspace_id, language, title, source, source_id, chapter_count, position, created_at) VALUES (?, ?, 'zh', 'Book', 'upload', 's', 1, '0:0', 't')`, uid, s.WS1)

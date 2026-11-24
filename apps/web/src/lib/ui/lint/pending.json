@@ -10,12 +10,12 @@
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ReverseCard.svelte",
 		"lib/features/flashcards/cards/WritingCard.svelte",
+		"lib/features/journal/EntryEditor.svelte",
+		"lib/features/journal/PhotoImport.svelte",
 		"lib/features/reader/BookView.svelte",
 		"lib/features/reader/PopupFrameView.svelte",
 		"lib/features/reader/ReaderRail.svelte",
 		"lib/notes/NoteAnswer.svelte",
-		"lib/plugins/journal/EntryEditor.svelte",
-		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/weekly/WeekStrip.svelte"
 	],
 	"shadow": [

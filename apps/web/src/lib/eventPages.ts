@@ -152,7 +152,7 @@ export async function readEventLog(
 /**
  * readAllEvents follows a walk to its last page and returns the events in
  * page order ((ts, id)). A bare array answer is the whole log: a server
- * without paging ignores `limit`. Any failure throws (the plugin SDK).
+ * without paging ignores `limit`. Any failure throws (as the keyed-row layer).
  */
 export async function readAllEvents(
   get: (path: string) => Promise<unknown>,

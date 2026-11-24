@@ -28,6 +28,22 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   wrong scope 400. Fixtures changed: `sync/pull-page.json`, `sync/pull-rounds.json`, `sync/push-result.json`,
   `sync/unreadable-rows.json`, `backup/remap.json` (op `row`), `settings/*.json` and `themes/appearance.json`
   (no `pluginId`), `auth/admin-users.json` (deletion preview `keyedRows`).
+- **Feature switches replace plugin states; the code plugins are retired:** `GET /api/features` lists the
+  caller's switch of the four core features (`flashcards`, `reader`, `journal`, `grammar`; no row is on), `PUT
+  /api/features/{id} {enabled}` stores one (`features/README.md`, new fixture `features/switches.json`). Removed:
+  `GET /api/plugins`, `PUT /api/plugins/{id}/state`, the admin registry route `POST /api/admin/plugins`,
+  every plugin id (`qinqin-core`, `qinqin-flashcards`, `qinqin-reader`,
+  `qinqin-journal`, `qinqin-grammar`) and the plugin manifest format. The pull collection `features` (`{id,
+  enabled, updatedAt}`) replaces `pluginStates`; a backup's `account.json` carries `features: [{id,
+  enabled}]`. The web's study pull no longer asks for the switches.
+- **Activity sources:** `GET /api/stats/activity` `sources` are `{type, feature, unit}` (no `plugin`, `label`
+  or `describe`: a client words a source from its catalogue, `activity.source.<type>.*`); `events/activity.json`
+  `rules` name the `feature`. The `plugin.*` catalogue keys are retired (`i18n/retired-keys.json`).
+- **Deck sources:** the variant `{type:"plugin", pluginId, key}` is gone (`study/rows.json` now refuses it,
+  `decks/system-deck-ids.json` drops the `d-plg-` case); migration 047 turns such a deck into a plain deck. The
+  legacy codec keeps an old plugin source in `extra` (`backup/study-rows.json`). The flashcards route
+  `system/plugin/...` is gone.
+- **Error catalogue:** `plugin_no_data` leaves `auth/errors.json` (nothing sends it).
 - **Backup format 2:** the family `plugin-data` becomes `rows` (no `pluginId`); typed study rows, journal
   documents and grammar progress travel there in their keyed form. A format 1 archive is refused
   (`backup_version_unsupported`; `backup/reject.json`). The dry-run report drops `pluginsNotInstalled`; its

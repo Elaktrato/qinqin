@@ -1,7 +1,7 @@
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PluginInfo } from '$lib/api/types';
+import type { FeatureSwitch } from '$lib/features/switches.svelte';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { DEFAULT_BAR, type NavLayout, type NavLayoutChange } from '$lib/frame/navLayout';
 import { createNavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
@@ -12,11 +12,11 @@ beforeEach(() => {
 	ctx = testContext();
 });
 
-const state = (id: string, order: number, enabled = true): PluginInfo => ({ id, manifest: {}, enabled, order });
+const state = (id: string, _order: number, enabled = true): FeatureSwitch => ({ id, enabled });
 // Home, Search, Decks, Reader, Journal, Grammar, Stats: seven sections.
-const seven = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('qinqin-journal', 0), state('qinqin-grammar', 1)];
+const seven = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('journal', 0), state('grammar', 1)];
 // Home, Search, Decks, Reader, Stats: five fit.
-const five = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('qinqin-journal', 0, false), state('qinqin-grammar', 1, false)];
+const five = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('journal', 0, false), state('grammar', 1, false)];
 
 let saved: NavLayoutChange[];
 
@@ -43,11 +43,11 @@ const previewNames = () =>
 
 beforeEach(() => {
 	saved = [];
-	ctx.session.plugins.set({ list: seven, status: 'ready' });
+	ctx.session.features.set({ list: seven, status: 'ready' });
 });
 afterEach(() => {
 	cleanup();
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 describe('Settings → Layout: phone navigation', () => {
@@ -81,7 +81,7 @@ describe('Settings → Layout: the bottom bar', () => {
 		setup();
 		expect(screen.getByText('Up to four sections, then More with the rest.')).toBeTruthy();
 		cleanup();
-		ctx.session.plugins.set({ list: five, status: 'ready' });
+		ctx.session.features.set({ list: five, status: 'ready' });
 		setup();
 		expect(screen.getByText('All your sections fit, so the bar shows them all.')).toBeTruthy();
 		expect(previewNames()).toEqual(['Home', 'Decks', 'Reader', 'Search', 'Stats']);

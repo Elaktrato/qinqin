@@ -9,7 +9,6 @@ const ROUTES: FlashcardsRoute[] = [
 	{ view: 'system-level', packId: 'hsk-words', level: 'HSK 7–9' },
 	{ view: 'system-level', packId: 'tgh-chars', level: '一级' },
 	{ view: 'system-level', packId: 'x', level: 'a/b %' },
-	{ view: 'system-plugin', plugin: 'starter', key: 'basics 1' },
 	{ view: 'system-frequency', packId: 'jiten-frequency', size: 500 },
 	{ view: 'system-frequency', packId: 'My Pack/ü', size: 2000 }
 ];
@@ -28,6 +27,8 @@ describe('flashcards route', () => {
 		expect(parseFlashcardsRoute('/')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('nope')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('deck')).toEqual({ view: 'list' });
+		// The plugin decks went with the code plugins (#199).
+		expect(parseFlashcardsRoute('system/plugin/starter/k')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('deck/a/b/c')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('system/level/only-pack')).toEqual({ view: 'list' });
 	});
@@ -80,7 +81,6 @@ describe('flashcardsTitle', () => {
 		expect(flashcardsTitle({ view: 'deck', deckId: 'general' })).toEqual(['Deck', 'Flashcards']);
 		expect(flashcardsTitle({ view: 'settings', deckId: 'general' })).toEqual(['Deck settings', 'Flashcards']);
 		expect(flashcardsTitle({ view: 'system-level', packId: 'hsk', level: '1' })).toEqual(['Level deck', 'Flashcards']);
-		expect(flashcardsTitle({ view: 'system-plugin', plugin: 'qinqin-grammar', key: 'k' })).toEqual(['Deck', 'Flashcards']);
 		expect(flashcardsTitle({ view: 'system-frequency', packId: 'f', size: 500 })).toEqual(['Starter deck', 'Flashcards']);
 	});
 });

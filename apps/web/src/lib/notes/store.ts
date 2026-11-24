@@ -1,5 +1,5 @@
-// Thin I/O for personal notes: qinqin-core plugin data of one workspace,
-// through the plugin SDK (docs/contracts/notes/README.md). Rules live in
+// Thin I/O for personal notes: keyed rows of one workspace,
+// through lib/sync/keyed.ts (docs/contracts/notes/README.md). Rules live in
 // notes.ts.
 
 import { keyedData, type KeyedScope } from '../sync/keyed';

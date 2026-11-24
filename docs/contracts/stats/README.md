@@ -57,12 +57,12 @@ workspaces are never counted in any of the four numbers or the series.
 The two core widgets read flashcards data, so with the feature switched off both say
 "Switch on flashcards in Settings → Features to see these numbers." and the reviews chart is left out (no
 reviews can be made; historical counts are not shown). The Stats → Overview page keeps its widget grid;
-plugins' widgets stay after the default arrangement.
+the features' widgets stay after the default arrangement.
 
 ## The default arrangement (`statsOrder`)
 
 Stats → Overview shows the design's default arrangement first, then every other available widget in registry
-order (core, features, plugins; a plugin widget is never dropped):
+order (core, then the features'; a feature widget is never dropped):
 
 1. `summary-numbers`
 2. `word-states`

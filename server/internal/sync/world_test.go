@@ -108,7 +108,7 @@ func lexID(t *testing.T, sqlDB *sql.DB, language, kind, form string) int64 {
 func backdate(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
 	for _, table := range []string{"entries", "forms", "readings", "senses", "entry_links",
-		"level_members", "sentences", "keyed_rows", "plugin_states", "dictionaries", "schemes", "levels"} {
+		"level_members", "sentences", "keyed_rows", "feature_switches", "dictionaries", "schemes", "levels"} {
 		if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '2020-01-01T00:00:00Z'`); err != nil {
 			t.Fatalf("backdate %s: %v", table, err)
 		}

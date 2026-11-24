@@ -1,25 +1,15 @@
 package stats
 
 import (
-	"context"
 	"strings"
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/plugins"
 )
 
 func TestActivityUsesTypeIndex(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
-	rules, err := plugins.ActivityRules(context.Background(), sqlDB)
-	if err != nil || len(rules) != 3 {
-		t.Fatalf("rules = %v, err %v", rules, err)
-	}
+	rules := Rules
 	ws := int64(1)
 	for _, r := range rules {
 		for _, withWS := range []bool{false, true} {
@@ -27,8 +17,8 @@ func TestActivityUsesTypeIndex(t *testing.T) {
 			if withWS {
 				w = &ws
 			}
-			args := ruleArgs(r.Rule, 1, r.Type, "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", w, `[{"d":"2026-01-01","lo":"2026-01-01T00:00:00Z","hi":"2026-01-02T00:00:00Z"}]`)
-			rows, err := sqlDB.Query("EXPLAIN QUERY PLAN "+ruleQuery(r.Rule, withWS), args...)
+			args := ruleArgs(r, 1, r.Type, "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", w, `[{"d":"2026-01-01","lo":"2026-01-01T00:00:00Z","hi":"2026-01-02T00:00:00Z"}]`)
+			rows, err := sqlDB.Query("EXPLAIN QUERY PLAN "+ruleQuery(r, withWS), args...)
 			if err != nil {
 				t.Fatalf("%s ws=%v: %v", r.Type, withWS, err)
 			}

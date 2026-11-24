@@ -330,6 +330,8 @@ type roundRow struct {
 	DeletedAt  string  `json:"deletedAt"`
 	DataString int     `json:"dataString"`
 	Type       string  `json:"type"`
+	// Feature is the feature a features row switches (default journal).
+	Feature string `json:"feature"`
 }
 
 type roundCase struct {
@@ -453,9 +455,13 @@ func (w *world) addRow(r roundRow) {
 	}
 	entry := w.entries[r.Entry]
 	switch r.Collection {
-	case "pluginStates":
-		w.exec(`INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, ?, 1, 0, ?)`, uid, r.Ref, r.UpdatedAt)
-		w.place(r.Ref, placed{coll: r.Collection, user: uid, id: r.Ref})
+	case "features":
+		feature := r.Feature
+		if feature == "" {
+			feature = "journal"
+		}
+		w.exec(`INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?, ?, 1, ?)`, uid, feature, r.UpdatedAt)
+		w.place(r.Ref, placed{coll: r.Collection, user: uid, id: feature})
 	case "rows":
 		data := `{}`
 		if r.DataString > 0 {
@@ -552,7 +558,7 @@ func naturalID(coll string, row json.RawMessage) (string, bool, error) {
 	if err := json.Unmarshal(row, &m); err != nil {
 		return "", false, err
 	}
-	field := map[string]string{"pluginStates": "pluginId", "rows": "key", "overlays": "entryId"}[coll]
+	field := map[string]string{"features": "id", "rows": "key", "overlays": "entryId"}[coll]
 	if field == "" {
 		field = "id"
 	}

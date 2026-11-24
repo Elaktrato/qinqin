@@ -36,7 +36,6 @@ const ALLOWED: Record<string, string> = {
 	'lib/components/map/CharGrid.svelte:waiting': 'render jobs of mounted grids, no data',
 	'lib/components/map/CharGrid.svelte:pumping': 'whether a render frame is scheduled, no data',
 	'lib/features/flashcards/Mascot.svelte:probes': 'whether bundled mascot images exist, no user data',
-	'lib/features/flashcards/decks/providers.ts:pluginDeckProviders': 'deck providers plugins register at load, no data',
 	'lib/features/reader/variants.ts:converters': 'script converters built from bundled tables',
 	'lib/features/reader/variants.ts:loading': 'the converter tables loading, no user data',
 	'lib/study/scheduler.ts:schedulers': "ts-fsrs instances by weight values (at most 16): a pure function's memo, no rows",

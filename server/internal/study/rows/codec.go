@@ -263,12 +263,6 @@ func sourceFromLegacy(raw json.RawMessage) *DeckSource {
 		if ok1 && ok2 {
 			return &DeckSource{Type: "level", PackID: pack, Level: level}
 		}
-	case "plugin":
-		plugin, ok1 := str("pluginId")
-		k, ok2 := str("key")
-		if ok1 && ok2 {
-			return &DeckSource{Type: "plugin", PluginID: plugin, Key: k}
-		}
 	case "frequency":
 		pack, ok1 := str("packId")
 		n, ok2 := m["size"].(json.Number)

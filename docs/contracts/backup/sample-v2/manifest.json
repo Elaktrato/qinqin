@@ -21,8 +21,8 @@
  "files": [
   {
    "name": "account.json",
-   "bytes": 266,
-   "sha256": "a654c690ad692a7ce283370bc5810717da9bc43910153ff0a446d483453ce3e3"
+   "bytes": 234,
+   "sha256": "92e53537b02bc00ba47e038bb6ab2b1df418b413569c6202eff7d2c070b116a5"
   },
   {
    "name": "events/000001.jsonl",

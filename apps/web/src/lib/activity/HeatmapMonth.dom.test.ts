@@ -40,10 +40,8 @@ beforeEach(() => {
 const WS = { id: 3, language: 'zh', name: 'zh' } as never;
 const REVIEWS = {
 	type: 'review',
-	plugin: 'flashcards',
-	label: 'Reviews',
-	unit: 'count' as const,
-	describe: { one: 'flashcard review', other: 'flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 
 function reply(from: string, to: string, cells: ActivityResponse['cells'] = []): ActivityResponse {

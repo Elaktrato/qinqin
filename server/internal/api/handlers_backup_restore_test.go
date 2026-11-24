@@ -36,7 +36,6 @@ func newBackupEnv(t *testing.T, opts ...api.Option) *backupEnv {
 	opts = append([]api.Option{api.WithAuthPolicy(p), api.WithStageDone(e.done)}, opts...)
 	e.ts = httptest.NewServer(api.New(sqlDB, e.data, nil, opts...))
 	t.Cleanup(e.ts.Close)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	return e
 }
 

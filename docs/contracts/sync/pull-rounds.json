@@ -40,7 +40,7 @@
      {
       "ref": "s1",
       "user": "alice",
-      "collection": "pluginStates",
+      "collection": "features",
       "updatedAt": "2026-11-12T08:00:00Z"
      },
      {
@@ -156,7 +156,7 @@
        "workspaces": [
         "z"
        ],
-       "pluginStates": [
+       "features": [
         "s1"
        ],
        "rows": [
@@ -565,7 +565,7 @@
      {
       "ref": "s1",
       "user": "alice",
-      "collection": "pluginStates",
+      "collection": "features",
       "updatedAt": "2026-11-12T09:30:00Z"
      },
      {
@@ -605,7 +605,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginStates",
+       "features",
        "rows",
        "cards"
       ],
@@ -614,7 +614,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginStates": [
+       "features": [
         "s1"
        ],
        "rows": [
@@ -912,7 +912,7 @@
      {
       "ref": "s1",
       "user": "alice",
-      "collection": "pluginStates",
+      "collection": "features",
       "updatedAt": "2026-11-12T08:00:00Z"
      },
      {
@@ -1047,7 +1047,7 @@
        "workspaces": [
         "z"
        ],
-       "pluginStates": [
+       "features": [
         "s1"
        ],
        "rows": [
@@ -1097,7 +1097,7 @@
         "z",
         "j"
        ],
-       "pluginStates": [
+       "features": [
         "s1"
        ],
        "rows": [
@@ -1678,7 +1678,7 @@
       "status": 200,
       "keys": [
        "workspaces",
-       "pluginStates",
+       "features",
        "rows",
        "cards",
        "decks",

@@ -34,10 +34,10 @@ const registry: WidgetDef[] = [
 	widget('activity-heatmap', 'core', { size: 'wide' }),
 	widget('character-map-summary', 'core'),
 	widget('summary-numbers', 'core', { size: 'wide' }),
-	widget('word-states', 'qinqin-flashcards'),
-	widget('flashcards-summary', 'qinqin-flashcards'),
+	widget('word-states', 'flashcards'),
+	widget('flashcards-summary', 'flashcards'),
 	widget('reviews-per-day', 'core', { size: 'wide' }),
-	widget('reading-time', 'qinqin-reader'),
+	widget('reading-time', 'reader'),
 	widget('plugin-widget', 'qinqin-plugin')
 ];
 
@@ -45,14 +45,14 @@ const ids = () => [...document.querySelectorAll<HTMLElement>('[data-widget]')].m
 
 beforeEach(() => {
 	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'Chinese' } as never });
-	ctx.session.plugins.set({ list: [], status: 'ready' });
+	ctx.session.features.set({ list: [], status: 'ready' });
 	vi.mocked(allWidgets).mockReturnValue(registry);
 });
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	ctx.session.workspaces.set({ list: [], current: null });
-	ctx.session.plugins.set({ list: [], status: 'idle' });
+	ctx.session.features.set({ list: [], status: 'idle' });
 });
 
 describe('Stats → Overview', () => {

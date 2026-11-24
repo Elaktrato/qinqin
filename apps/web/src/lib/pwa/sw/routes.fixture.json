@@ -232,6 +232,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/features",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/fonts",
 		"access": "user"
 	},
@@ -337,10 +341,6 @@
 	},
 	{
 		"pattern": "GET /api/packages/{id}/{revision}",
-		"access": "user"
-	},
-	{
-		"pattern": "GET /api/plugins",
 		"access": "user"
 	},
 	{
@@ -497,10 +497,6 @@
 	},
 	{
 		"pattern": "POST /api/admin/packs/staged/{token}",
-		"access": "admin"
-	},
-	{
-		"pattern": "POST /api/admin/plugins",
 		"access": "admin"
 	},
 	{
@@ -664,6 +660,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "PUT /api/features/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "PUT /api/journal/entries/{id}",
 		"access": "user"
 	},
@@ -693,10 +693,6 @@
 	},
 	{
 		"pattern": "PUT /api/me/time-zone",
-		"access": "user"
-	},
-	{
-		"pattern": "PUT /api/plugins/{id}/state",
 		"access": "user"
 	},
 	{

@@ -2,7 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import { activityLabel } from '$lib/plugins/manifestText';
+	import { activityLabel } from '$lib/activity/sources';
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 	import {
 		HEATMAP_DAYS,
@@ -66,7 +66,7 @@
 	//
 	// A failed request shows a clear message with "Try again"; once data
 	// is on screen a failed background refresh keeps it. There is no
-	// client-side scoring fallback: the rules live in plugin manifests.
+	// client-side scoring fallback: the rules are the core table (lib/activity/sources.ts).
 
 	interface Props {
 		layout?: HeatmapLayout;

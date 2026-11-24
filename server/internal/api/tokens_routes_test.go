@@ -36,7 +36,6 @@ func newTokenWorld(t *testing.T) tokenWorld {
 	w := tokenWorld{url: ts.URL, db: sqlDB}
 	w.alice = registerUser(t, ts.URL, "alice", "")
 	w.bob = registerUser(t, ts.URL, "bob", w.alice)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	w.aliceID, w.bobID = userID(t, sqlDB, "alice"), userID(t, sqlDB, "bob")
 	w.wsA = createWorkspace(t, ts.URL, w.alice, "zh", "A")
 	w.wsB = createWorkspace(t, ts.URL, w.alice, "zh", "B")

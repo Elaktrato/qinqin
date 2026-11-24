@@ -27,4 +27,4 @@ A personal backup carries each row in its keyed form `grammar:progress:<packId>:
 
 | File | Rule | Decoded by |
 | --- | --- | --- |
-| `progress.json` | the keep-the-best rule, refused runs, which rows a client reads | `server/internal/grammar/progress_contract_test.go`, `apps/web/src/lib/plugins/grammar/progress.test.ts` |
+| `progress.json` | the keep-the-best rule, refused runs, which rows a client reads | `server/internal/grammar/progress_contract_test.go`, `apps/web/src/lib/features/grammar/progress.test.ts` |

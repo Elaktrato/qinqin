@@ -77,7 +77,7 @@ describe('lookups store', () => {
 			['/api/events/lookups?workspace=3', 'DELETE']
 		]);
 		expect(JSON.parse(String(c[1][2]))).toEqual({ x: 1, version: 1, clearedAt: '2026-11-16T12:00:00.000Z', items: [] });
-		expect(c.some(([url, method]) => method === 'DELETE' && url.includes('/api/plugins/'))).toBe(false);
+		expect(c.some(([url, method]) => method === 'DELETE' && url.includes('/api/rows/'))).toBe(false);
 		expect(invalidate).toHaveBeenCalledWith(3);
 	});
 
@@ -167,7 +167,7 @@ describe('lookups store', () => {
 });
 
 describe('scrubOfflineLookups', () => {
-	const pullUrl = 'https://app.test/api/sync/pull?collections=pluginData%2CpluginStates&cursor=1970-01-01T00%3A00%3A00Z';
+	const pullUrl = 'https://app.test/api/sync/pull?collections=rows&v=2&cursor=1970-01-01T00%3A00%3A00Z';
 	const eventsUrl = 'https://app.test/api/events?since=1970-01-01T00%3A00%3A00Z&workspace=3';
 	const noteUrl = 'https://app.test/api/rows?workspace=3&prefix=note%3A';
 	const savedAt = { 'content-type': 'application/json', 'x-qinqin-saved-at': '2026-11-16T10:00:00.000Z' };

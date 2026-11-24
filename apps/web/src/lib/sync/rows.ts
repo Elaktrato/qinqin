@@ -10,7 +10,7 @@ const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;
 /** The row shapes of pull-page.json `shapes` (every key always present). */
 const SHAPES: Record<string, readonly string[]> = {
 	workspaces: ['id', 'language', 'name', 'settings', 'updatedAt'],
-	pluginStates: ['pluginId', 'userId', 'enabled', 'order', 'updatedAt'],
+	features: ['id', 'enabled', 'updatedAt'],
 	rows: ['key', 'userId', 'workspaceId', 'data', 'version', 'updatedAt', 'deletedAt'],
 	books: ['id', 'workspaceId', 'language', 'title', 'author', 'source', 'sourceId', 'sourceUrl', 'attribution', 'licenseNote', 'chapterCount', 'position', 'createdAt', 'updatedAt', 'deletedAt'],
 	bookmarks: ['id', 'bookId', 'position', 'label', 'createdAt', 'updatedAt', 'deletedAt'],

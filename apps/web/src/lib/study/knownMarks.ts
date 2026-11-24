@@ -1,5 +1,5 @@
-// The learner's manual "I know this word" mark (#68): plugin row
-// known:<entryId> of qinqin-flashcards, workspace-scoped, data
+// The learner's manual "I know this word" mark (#68): keyed row
+// known:<entryId>, workspace-scoped, data
 // {version: 1, entryId, createdAt}. Valid only when the key is canonical
 // (positive decimal, no sign, no leading zero) and equals data.entryId;
 // anything else is ignored. Unmarking tombstones the row. Contract:

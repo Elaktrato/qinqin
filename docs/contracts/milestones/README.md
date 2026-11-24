@@ -39,7 +39,7 @@ Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, 
   (`seen`), the push answer (`push`), pruning the pending list (`prune`). Decoded by `seen.test.ts`.
 - `show-plan.json` — the card plan (`card`), the history list (`history`) and the week's items (`week`).
   Decoded by `plan.test.ts`.
-- `backup/remap.json` — two `pluginRow` cases (`milestone:reviews:1000`, `milestone:level-complete:<id>`):
+- `backup/remap.json` — two `row` cases (`milestone:reviews:1000`, `milestone:level-complete:<id>`):
   restored with the workspace remapped, key and data unchanged. Decoded by `server/internal/backup/remap_test.go`;
   `server/internal/backup/milestones_test.go` exports and restores a seen row end to end.
 
@@ -81,15 +81,15 @@ decks contract's `ownedLevelDeckId(packId, level)` (`d-lvl-<slug(packId)>-<fnv1a
   client that posted numeric ids gets no milestone for those entries.
 - Ruling: families follow the feature switches: with flashcards switched off the review, word, character,
   streak and level families are neither computed nor shown; with the reader off `reading-hours`; with the
-  journal plugin off `journal-entries`; `days-active` always (and it still counts reviews) — a milestone for a
+  journal off `journal-entries`; `days-active` always (and it still counts reviews) — a milestone for a
   feature the learner switched off is noise; their seen rows stay untouched — cost: switching a feature back on
   can surface a catch-up card (below).
-- Ruling: milestones are computed only when the plugin states are loaded (web: `pluginStates.status ===
+- Ruling: milestones are computed only when the feature switches are loaded (web: `features.status ===
   'ready'`); before that no card is shown and the history lists only seen rows — a missing state row reads as
   "on", so computing early would flash a card of a switched-off feature — cost: no card while the states are
   unavailable (offline start without a cached answer).
-- Ruling: other plugin activity types never form or feed families, also not `days-active` — a client cannot
-  compute arbitrary plugin rules from the log, and the activity route (366-day cap) cannot give all-time totals —
+- Ruling: other activity types never form or feed families, also not `days-active` — a client cannot
+  compute arbitrary rules from the log, and the activity route (366-day cap) cannot give all-time totals —
   cost: grammar practice does not move "days active" here although it does in the week's "Days active" line.
 
 ## When is a milestone reached?

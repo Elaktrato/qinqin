@@ -6,7 +6,6 @@ export type FlashcardsRoute =
 	| { view: 'deck'; deckId: string }
 	| { view: 'settings'; deckId: string }
 	| { view: 'system-level'; packId: string; level: string }
-	| { view: 'system-plugin'; plugin: string; key: string }
 	| { view: 'system-frequency'; packId: string; size: 500 | 1000 | 2000 };
 
 const STARTER_SIZES: Record<string, 500 | 1000 | 2000> = { '500': 500, '1000': 1000, '2000': 2000 };
@@ -30,9 +29,6 @@ export function parseFlashcardsRoute(rest: string): FlashcardsRoute {
 	}
 	if (parts.length === 4 && parts[0] === 'system' && parts[1] === 'level') {
 		return { view: 'system-level', packId: parts[2], level: parts[3] };
-	}
-	if (parts.length === 4 && parts[0] === 'system' && parts[1] === 'plugin') {
-		return { view: 'system-plugin', plugin: parts[2], key: parts[3] };
 	}
 	if (parts.length === 4 && parts[0] === 'system' && parts[1] === 'frequency') {
 		const size = STARTER_SIZES[parts[3]];
@@ -66,8 +62,6 @@ export function flashcardsHref(route: FlashcardsRoute): string {
 			return `/flashcards/deck/${enc(route.deckId)}/settings`;
 		case 'system-level':
 			return `/flashcards/system/level/${enc(route.packId)}/${enc(route.level)}`;
-		case 'system-plugin':
-			return `/flashcards/system/plugin/${enc(route.plugin)}/${enc(route.key)}`;
 		case 'system-frequency':
 			return `/flashcards/system/frequency/${enc(route.packId)}/${route.size}`;
 	}
@@ -78,7 +72,6 @@ const VIEW_TITLES: Record<FlashcardsRoute['view'], MessageKey> = {
 	deck: 'flashcards.title.deck',
 	settings: 'flashcards.title.settings',
 	'system-level': 'flashcards.title.levelDeck',
-	'system-plugin': 'flashcards.title.deck',
 	'system-frequency': 'flashcards.title.starterDeck'
 };
 

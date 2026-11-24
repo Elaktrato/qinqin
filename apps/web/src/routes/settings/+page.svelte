@@ -7,15 +7,12 @@
 	import { page } from '$app/state';
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemes } from '$lib/api/schemes';
-	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
-	import { pluginName as manifestPluginName } from '$lib/plugins/manifestText';
+	import type { Dictionary, Scheme, Workspace } from '$lib/api/types';
 	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { webPlugins } from '$lib/plugins';
-	import { listedPlugins, pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';
 	import AdminSettings from '$lib/settings/AdminSettings.svelte';
@@ -45,18 +42,6 @@
 	const session = useSession();
 	const app = useApp();
 
-	interface PluginRow {
-		id: string;
-		name: string;
-		version: string;
-		enabled: boolean;
-		order: number;
-		permissions: string;
-		notice: 'app-update' | 'legacy' | null;
-		saving: boolean;
-		saved: boolean;
-		error: string;
-	}
 
 	// The open tab lives in the URL (`?tab=`), so it can be linked to;
 	// switching replaces the history entry instead of adding one. The
@@ -100,41 +85,6 @@
 		if (!deleted && id !== undefined && deleteButtons[id]) deleteButtons[id].focus();
 		else workspacesHeading?.focus();
 	}
-
-	let plugins = $state<PluginRow[]>([]);
-	let pluginsLoading = $state(true);
-	let pluginsError = $state('');
-
-	function pluginName(plugin: PluginInfo): string {
-		const name = plugin.manifest?.name;
-		return manifestPluginName({ id: plugin.id, name: typeof name === 'string' && name.trim() ? name : plugin.id });
-	}
-
-	async function loadPlugins(): Promise<void> {
-		pluginsLoading = true;
-		pluginsError = '';
-		try {
-			const list = await api<PluginInfo[]>('/api/plugins');
-			// Plugins only: never the core row or the core features (lib/features).
-			plugins = listedPlugins(list).map((plugin) => ({
-				id: plugin.id,
-				name: pluginName(plugin),
-				version: typeof plugin.manifest?.version === 'string' ? plugin.manifest.version : '',
-				enabled: plugin.enabled,
-				order: plugin.order,
-				...pluginRowInfo(plugin, webPlugins),
-				saving: false,
-				saved: false,
-				error: ''
-			}));
-		} catch (err) {
-			pluginsError = errorText(err, t('settings.plugins.loadFailed'));
-		} finally {
-			pluginsLoading = false;
-		}
-	}
-
-	onMount(loadPlugins);
 
 	// Bumped when the Packs section changes, so Languages reloads.
 	let languagesKey = $state(0);
@@ -206,26 +156,6 @@
 		}
 	}
 
-	async function savePlugin(row: PluginRow): Promise<void> {
-		if (row.saving || !validOrder(row.order)) return;
-
-		row.saving = true;
-		row.saved = false;
-		row.error = '';
-		try {
-			await api(`/api/plugins/${encodeURIComponent(row.id)}/state`, {
-				method: 'PUT',
-				body: { enabled: row.enabled, order: row.order }
-			});
-			row.saved = true;
-			// The shell nav and /p/<plugin> read the shared store.
-			void session.plugins.load();
-		} catch (err) {
-			row.error = errorText(err, t('settings.plugins.saveFailed'));
-		} finally {
-			row.saving = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -387,84 +317,6 @@
 				<FeatureSettings />
 			</div>
 
-			<div class="group" hidden={activeTab !== 'plugins'}>
-		<h2>{t('settings.plugins.title')}</h2>
-		<p class="hint">{t('settings.plugins.hint')}</p>
-
-		{#if pluginsLoading}
-			<p>{t('settings.plugins.loading')}</p>
-		{:else if pluginsError}
-			<p class="error" role="alert">{pluginsError}</p>
-		{:else if plugins.length === 0}
-			<p>{t('settings.plugins.none')}</p>
-		{:else}
-			<ul class="plugins">
-				{#each plugins as plugin (plugin.id)}
-					<li class="plugin">
-						<div class="plugin-head">
-							<strong>{plugin.name}</strong>
-							{#if plugin.version}<Chip>{plugin.version}</Chip>{/if}
-							<code>{plugin.id}</code>
-							{#if plugin.notice === 'app-update'}
-								<Chip>{t('settings.plugins.needsUpdate')}</Chip>
-							{:else if plugin.notice === 'legacy'}
-								<Chip>{t('settings.plugins.legacy')}</Chip>
-							{/if}
-						</div>
-						{#if plugin.permissions}
-							<p class="plugin-permissions"><span class="plugin-permissions-label">{t('settings.plugins.permissions')}</span> {plugin.permissions}</p>
-						{/if}
-
-						<div class="plugin-controls">
-							<label class="inline">
-								<input
-									type="checkbox"
-									bind:checked={plugin.enabled}
-									onchange={() => (plugin.saved = false)}
-								/>
-								{t('settings.plugins.enabled')}
-							</label>
-
-							<div class="order">
-								<Field
-									label={t('settings.plugins.order')}
-									type="number"
-									min="0"
-									step="1"
-									value={String(plugin.order)}
-									oninput={(event) => {
-										const raw = (event.currentTarget as HTMLInputElement).value;
-										plugin.order = raw === '' ? Number.NaN : Number(raw);
-										plugin.saved = false;
-									}}
-								/>
-							</div>
-
-							<Button
-								onclick={() => savePlugin(plugin)}
-								disabled={plugin.saving || !validOrder(plugin.order)}
-								busy={plugin.saving}
-							>
-								{plugin.saving ? t('common.state.saving') : t('common.action.save')}
-							</Button>
-							{#if !validOrder(plugin.order)}
-								<span class="error" role="alert">{t('settings.plugins.orderInvalid')}</span>
-							{/if}
-
-							{#if plugin.saved}
-								<span class="saved">{t('settings.plugins.saved')}</span>
-							{/if}
-						</div>
-
-						{#if plugin.error}
-							<p class="error" role="alert">{plugin.error}</p>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-			</div>
-
 			<div class="group" hidden={activeTab !== 'appearance'}>
 				<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
 				{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
@@ -542,21 +394,6 @@
 		border-top: 1px solid var(--hair);
 	}
 
-	/* Plugin rows are hairline rows, not a box per plugin (#106). */
-	.plugins {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.plugin {
-		padding-block: var(--space-3);
-	}
-
-	.plugin + .plugin {
-		border-top: 1px solid var(--hair);
-	}
-
 	.workspaces .row,
 	.rename {
 		display: flex;
@@ -573,61 +410,11 @@
 		outline: none;
 	}
 
-	.plugin-permissions {
-		margin: 0.25rem 0 0;
-		font-size: 0.9rem;
-	}
-
-	.plugin-permissions-label {
-		font-weight: var(--weight-strong);
-	}
-
-	.plugin-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.5rem;
-	}
-
-	.plugin-controls {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.75rem;
-		margin-top: 0.5rem;
-	}
-
-	.plugin-controls .inline {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	.order {
-		width: 5rem;
-	}
-
 	.error {
 		margin: 0.5rem 0 0;
 		color: var(--readable-bad);
 		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
-	}
-
-	/* Success: the text in --text, a --good dot as the shape cue (design §5). */
-	.saved {
-		color: var(--text);
-		font-weight: 600;
-	}
-	.saved::before {
-		content: '';
-		display: inline-block;
-		width: 0.5em;
-		height: 0.5em;
-		margin-inline-end: 0.35em;
-		border-radius: 50%;
-		background: var(--good);
-		vertical-align: 0.1em;
 	}
 </style>

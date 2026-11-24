@@ -33,8 +33,8 @@
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
-		session.plugins.status === 'ready'
-			? featureEnabled(FLASHCARDS_ID, session.plugins.list)
+		session.features.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, session.features.list)
 			: true
 	);
 

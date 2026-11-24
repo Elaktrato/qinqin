@@ -114,7 +114,7 @@ describe('interface language (#73)', () => {
 			'## `lang` and `dir` attributes',
 			'## Locale formatting',
 			'## API errors',
-			'## Plugin manifests',
+			'## Activity sources',
 			'## Rulings',
 			'## Fixtures'
 		])

@@ -15,7 +15,6 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 	ts, sqlDB, dataDir := newServerWithDir(t)
 	owner := registerUser(t, ts.URL, "owner", "")
 	bob := registerUser(t, ts.URL, "bobby", owner)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	bobID := userID(t, sqlDB, "bobby")
 	ws := createWorkspace(t, ts.URL, bob, "zh", "")
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}

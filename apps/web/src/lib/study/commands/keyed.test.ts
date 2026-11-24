@@ -335,7 +335,7 @@ describe("known marks", () => {
     await setKnownMarks(ctx.session.study, 3, [4], true);
     const pulls = calls().map(([url]) => String(url)).filter((u) => u.startsWith("/api/sync/pull"));
     expect(pulls[0]).toBe(
-      "/api/sync/pull?collections=pluginStates%2Crows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
+      "/api/sync/pull?collections=rows%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
     );
     const rows = pushBodies().flatMap((b) => b.rows);
     expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");

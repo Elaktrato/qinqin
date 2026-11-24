@@ -1,0 +1,22 @@
+{
+ "version": 1,
+ "rule": "features/switches",
+ "note": "GET /api/features answers the caller's switch of every core feature, in this order; a feature never switched is on (updatedAt null). reads: how a client reads a list (no row, or a row it cannot read, is on).",
+ "features": ["flashcards", "reader", "journal", "grammar"],
+ "list": [
+  {"id": "flashcards", "enabled": true, "updatedAt": null},
+  {"id": "reader", "enabled": true, "updatedAt": null},
+  {"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"},
+  {"id": "grammar", "enabled": true, "updatedAt": "2026-11-24T10:01:00Z"}
+ ],
+ "reads": [
+  {"name": "the stored switches", "list": [{"id": "flashcards", "enabled": true, "updatedAt": null}, {"id": "reader", "enabled": true, "updatedAt": null}, {"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"}, {"id": "grammar", "enabled": true, "updatedAt": null}], "enabled": {"flashcards": true, "reader": true, "journal": false, "grammar": true}},
+  {"name": "a missing row is on", "list": [{"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"}], "enabled": {"flashcards": true, "grammar": true, "journal": false}},
+  {"name": "an unreadable row is skipped (on)", "list": [{"id": "grammar", "enabled": "no"}, {"id": 3, "enabled": false}], "enabled": {"grammar": true}}
+ ],
+ "put": [
+  {"name": "switch one off", "id": "journal", "body": {"enabled": false}, "status": 200},
+  {"name": "an unknown feature", "id": "qinqin-journal", "body": {"enabled": false}, "status": 404},
+  {"name": "no enabled", "id": "journal", "body": {}, "status": 400}
+ ]
+}

@@ -5,7 +5,7 @@
  "_doc": "One answer of GET /api/sync/pull?v=2. requested is the collection set of the round; position is first (scope set), middle, last (cursor set) or only (first and last). valid pages are what the server may send; the server never sends an invalid one (the Go harness refuses each for the reason given). A reader refuses an invalid page whole only when the fault is in the envelope; a case with level row has a bad row inside a good envelope: a reader decodes the page, skips that row as unreadable and keeps the rest (README, Reading rows; unreadable-rows.json). Row shapes: shapes (every key always present; library rows have deletedAt null when live, and a library tombstone is exactly libraryTombstone); typed rows decode as docs/contracts/study/rows.json. Typed rows here are copied from study/rows.json, library keys from library/rows.json shapes. Tokens are opaque: only the p2./c2. prefixes are a contract. Decoded by server/internal/sync (B2) and apps/web/src/lib/sync/pager.ts (the envelope) with apps/web/src/lib/sync/rows.ts (the rows). cacheControl is the Cache-Control of every v2 page (private, no-cache: never kept by a shared cache, revalidated, and saved by the web service worker for offline study, which skips answers that say no-store).",
  "collections": [
   "workspaces",
-  "pluginStates",
+  "features",
   "rows",
   "cards",
   "decks",
@@ -30,7 +30,6 @@
   "levels"
  ],
  "studyCollections": [
-  "pluginStates",
   "rows",
   "cards",
   "decks",
@@ -47,11 +46,9 @@
    "settings",
    "updatedAt"
   ],
-  "pluginStates": [
-   "pluginId",
-   "userId",
+  "features": [
+   "id",
    "enabled",
-   "order",
    "updatedAt"
   ],
   "rows": [
@@ -152,7 +149,7 @@
    "valid": true,
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -200,12 +197,10 @@
        "updatedAt": "2026-11-01T08:00:00Z"
       }
      ],
-     "pluginStates": [
+     "features": [
       {
-       "pluginId": "qinqin-journal",
-       "userId": 1,
+       "id": "journal",
        "enabled": true,
-       "order": 2,
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
@@ -257,7 +252,7 @@
    "valid": true,
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -281,7 +276,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -367,7 +362,7 @@
    "valid": true,
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -391,7 +386,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -509,7 +504,6 @@
    "name": "a one-page round of the web's study collections with workspace=7",
    "valid": true,
    "requested": [
-    "pluginStates",
     "rows",
     "cards",
     "decks",
@@ -541,7 +535,6 @@
     },
     "restarted": [],
     "collections": {
-     "pluginStates": [],
      "rows": [
       {
        "key": "lookups",
@@ -648,7 +641,7 @@
    "reason": "every requested collection key is present",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -671,7 +664,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -756,7 +749,7 @@
    "valid": false,
    "reason": "only requested collections",
    "requested": [
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -787,7 +780,7 @@
     },
     "restarted": [],
     "collections": {
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "lookups",
@@ -838,7 +831,7 @@
    "valid": false,
    "reason": "only requested collections",
    "requested": [
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -869,7 +862,7 @@
     },
     "restarted": [],
     "collections": {
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "lookups",
@@ -921,7 +914,7 @@
    "reason": "collections are arrays",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -944,7 +937,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -994,7 +987,7 @@
    "reason": "a page with more has next and no cursor",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1017,7 +1010,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -1104,7 +1097,7 @@
    "reason": "the last page has cursor and no next",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1127,7 +1120,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -1247,7 +1240,7 @@
    "reason": "the last page has cursor and no next",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1270,7 +1263,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -1390,7 +1383,7 @@
    "reason": "next starts with p2.",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1413,7 +1406,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -1500,7 +1493,7 @@
    "reason": "cursor starts with c2.",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1523,7 +1516,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -1643,7 +1636,7 @@
    "reason": "format is 2",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1666,7 +1659,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -1753,7 +1746,7 @@
    "reason": "instanceId is a 26-character ULID",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1776,7 +1769,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -1863,7 +1856,7 @@
    "reason": "until is an RFC 3339 UTC time",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1886,7 +1879,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -1973,7 +1966,7 @@
    "reason": "restarted is a subset of [overlays, sentences]",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -1998,7 +1991,7 @@
     ],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -2085,7 +2078,7 @@
    "reason": "restarted is an array",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2108,7 +2101,7 @@
     "restarted": null,
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -2195,7 +2188,7 @@
    "reason": "scope has workspaces, languages, catalogue",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2241,12 +2234,10 @@
        "updatedAt": "2026-11-01T08:00:00Z"
       }
      ],
-     "pluginStates": [
+     "features": [
       {
-       "pluginId": "qinqin-journal",
-       "userId": 1,
+       "id": "journal",
        "enabled": true,
-       "order": 2,
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
@@ -2299,7 +2290,7 @@
    "reason": "scope.workspaces sorted by id",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2346,12 +2337,10 @@
        "updatedAt": "2026-11-01T08:00:00Z"
       }
      ],
-     "pluginStates": [
+     "features": [
       {
-       "pluginId": "qinqin-journal",
-       "userId": 1,
+       "id": "journal",
        "enabled": true,
-       "order": 2,
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
@@ -2404,7 +2393,7 @@
    "reason": "scope.languages sorted, unique",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2451,12 +2440,10 @@
        "updatedAt": "2026-11-01T08:00:00Z"
       }
      ],
-     "pluginStates": [
+     "features": [
       {
-       "pluginId": "qinqin-journal",
-       "userId": 1,
+       "id": "journal",
        "enabled": true,
-       "order": 2,
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
@@ -2509,7 +2496,7 @@
    "reason": "unknown key",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2532,7 +2519,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -2621,7 +2608,7 @@
    "reason": "row shape",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2668,12 +2655,10 @@
        "updatedAt": "2026-11-01T08:00:00Z"
       }
      ],
-     "pluginStates": [
+     "features": [
       {
-       "pluginId": "qinqin-journal",
-       "userId": 1,
+       "id": "journal",
        "enabled": true,
-       "order": 2,
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
@@ -2726,7 +2711,7 @@
    "reason": "typed rows decode strictly (study/rows.json)",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2749,7 +2734,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [
       {
        "key": "known:1201",
@@ -2838,7 +2823,7 @@
    "reason": "row shape",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -2861,7 +2846,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -2981,7 +2966,7 @@
    "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -3004,7 +2989,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -3126,7 +3111,7 @@
    "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -3149,7 +3134,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -3270,7 +3255,7 @@
    "reason": "row shape",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -3293,7 +3278,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -3415,7 +3400,7 @@
    "reason": "events never carry type lookup",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -3438,7 +3423,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],
@@ -3559,7 +3544,7 @@
    "reason": "sentences are own sentences (sourcePack \"\", userId set)",
    "requested": [
     "workspaces",
-    "pluginStates",
+    "features",
     "rows",
     "cards",
     "decks",
@@ -3582,7 +3567,7 @@
     "restarted": [],
     "collections": {
      "workspaces": [],
-     "pluginStates": [],
+     "features": [],
      "rows": [],
      "cards": [],
      "decks": [],

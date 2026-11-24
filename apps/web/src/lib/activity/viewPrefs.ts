@@ -1,5 +1,5 @@
 // The heatmap's view (scope and hidden activity types), remembered per
-// user across devices in qinqin-core plugin data. Last write wins; a
+// user across devices in a keyed row (docs/contracts/keyed/). Last write wins; a
 // corrupt stored value reads as the default.
 
 import { keyedData } from '../sync/keyed';

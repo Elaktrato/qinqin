@@ -1,8 +1,8 @@
 // The phone navigation (#188, design 2026-11-22-phone-bottom-bar): the
-// user-global plugin data row `qinqin-core` / `nav-layout`. `phone` is the
+// user-global keyed row `nav-layout`. `phone` is the
 // phone frame's navigation (the bottom bar or the side menu), `bar` the
 // sections pinned to the bottom bar, in order. Ids of sections that are not
-// visible right now (switched off, a removed plugin) stay stored, so they
+// visible right now (switched off) stay stored, so they
 // come back when the section does. Unknown keys are never dropped and a
 // newer version is kept on write; a write re-reads the row first, so keys
 // another device wrote meanwhile survive.

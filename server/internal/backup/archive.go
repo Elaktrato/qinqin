@@ -548,7 +548,7 @@ func okText(s string, max int) bool {
 }
 
 func (a *Archive) checkAccount() error {
-	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.PluginStates) > 1000 {
+	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.Features) > 1000 {
 		return invalid("account.json is malformed")
 	}
 	for _, tz := range a.Account.TimeZones {
@@ -562,11 +562,11 @@ func (a *Archive) checkAccount() error {
 		}
 	}
 	seen := map[string]bool{}
-	for _, ps := range a.Account.PluginStates {
-		if ps.PluginID == "" || !okText(ps.PluginID, 128) || seen[ps.PluginID] {
-			return invalid("account.json has a bad plugin state")
+	for _, f := range a.Account.Features {
+		if f.ID == "" || !okText(f.ID, 128) || seen[f.ID] {
+			return invalid("account.json has a bad feature switch")
 		}
-		seen[ps.PluginID] = true
+		seen[f.ID] = true
 	}
 	return nil
 }

@@ -9,10 +9,8 @@ import GoalRing from './GoalRing.svelte';
 const SOURCES: ActivitySource[] = [
 	{
 		type: 'review',
-		plugin: 'qinqin-flashcards',
-		label: 'Flashcard reviews',
-		unit: 'count',
-		describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+		feature: 'flashcards',
+		unit: 'count'
 	}
 ];
 

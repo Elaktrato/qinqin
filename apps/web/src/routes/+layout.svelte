@@ -56,7 +56,7 @@
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): the core features, the
 	// enabled plugin pages in the user's order, Search, Stats.
-	const sections = $derived(frameSections(session?.plugins ?? { list: [], status: 'idle' }));
+	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }));
 	const current = $derived(currentSection(path, sections));
 	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
@@ -154,7 +154,7 @@
 		if (current === loadedSession) return;
 		loadedSession = current;
 		current.outbox.start();
-		void current.plugins.load();
+		void current.features.load();
 		void loadShellWorkspaces();
 	});
 

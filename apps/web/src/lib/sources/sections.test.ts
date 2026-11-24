@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { webPlugins } from '$lib/plugins';
 import { coreFeatures } from '$lib/features';
 import type { SourceCredit } from './credits';
 
@@ -33,10 +32,9 @@ const READER_V030_SOURCES: SourceCredit[] = [
 		]
 	}
 ];
-import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, fontsSection, lemmaSection, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
+import { componentsSection, creditView, fontsSection, lemmaSection, packTable, featureCredits, sentencePackSources, strokesSection, themesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -176,27 +174,23 @@ describe('creditView', () => {
 	});
 });
 
-describe('pluginCredits', () => {
-	it('lists plugins that declare sources, skipping core duplicates and empty plugins', () => {
-		const result = pluginCredits(
-			[
-				fixtureManifest({ id: 'a', name: 'A' }),
-				fixtureManifest({ id: 'b', name: 'B', sources: [{ name: 'Hanzi-Writer ' }] }),
-				fixtureManifest({ id: 'c', name: 'C', sources: [{ name: 'lib' }, { name: 'hanzi-writer' }] })
-			],
-			[{ name: 'hanzi-writer' }]
-		);
-		expect(result.map((plugin) => [plugin.id, plugin.credits.map((credit) => credit.name)])).toEqual([
-			['c', ['lib']]
+describe('featureCredits', () => {
+	it('lists features that declare sources, skipping core duplicates and empty features', () => {
+		const f = (id: string, sources?: SourceCredit[]) => ({ id, title: id.toUpperCase(), def: { sources } });
+		const result = featureCredits([f('a'), f('b', [{ name: 'Hanzi-Writer ' }]), f('c', [{ name: 'lib' }, { name: 'hanzi-writer' }])], [
+			{ name: 'hanzi-writer' }
+		]);
+		expect(result.map((feature) => [feature.id, feature.name, feature.credits.map((credit) => credit.name)])).toEqual([
+			['c', 'C', ['lib']]
 		]);
 	});
 
-	it('credits the reader sources as core credits, not as a plugin', () => {
+	it('credits the reader sources as core credits, not as a feature', () => {
 		// The reader is a core feature (v0.4.0): its sources are "Built into the app".
 		expect(coreCredits.map((credit) => credit.name)).toEqual(
 			expect.arrayContaining(['Aozora Bunko', 'Project Gutenberg', 'opencc-js'])
 		);
-		expect(coreFeatures.flatMap((f) => f.manifest.sources ?? [])).toEqual([]);
+		expect(coreFeatures.flatMap((f) => (f.id === 'reader' ? (f.def.sources ?? []) : []))).toEqual([]);
 		const opencc = coreCredits.find((credit) => credit.name === 'opencc-js')!;
 		expect(opencc.license).toBe('MIT AND Apache-2.0');
 		expect(opencc.licenseTexts).toEqual([
@@ -241,12 +235,9 @@ describe('pluginCredits', () => {
 		expect(house.notice).toMatch(/Day and qinqin Night/);
 	});
 
-	it('credits the plugin sources from the real registry', () => {
-		const result = pluginCredits(
-			webPlugins.map((plugin) => plugin.manifest),
-			coreCredits
-		);
-		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-journal']);
+	it('credits the feature sources from the real features', () => {
+		const result = featureCredits(coreFeatures, coreCredits);
+		expect(result.map((feature) => feature.id)).toEqual(['journal']);
 		expect(result[0].credits.map((credit) => credit.name)).toEqual([
 			'Tesseract OCR',
 			'Leptonica',
@@ -256,7 +247,7 @@ describe('pluginCredits', () => {
 });
 
 describe('declared credits', () => {
-	const all = [...coreCredits, ...[...coreFeatures, ...webPlugins].flatMap((owner) => owner.manifest.sources ?? [])];
+	const all = [...coreCredits, ...coreFeatures.flatMap((feature) => feature.def.sources ?? [])];
 
 	it('use only https upstream links and notices that parse to https links', () => {
 		for (const credit of all) {

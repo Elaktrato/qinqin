@@ -14,7 +14,7 @@ workspace 404 `workspace_not_found`; no route takes an access token):
 | settings | `GET /api/journal/settings` (the defaults when none is stored) | `PUT /api/journal/settings` `{guidance, explanationLanguage}` answers the stored settings | `{guidance, explanationLanguage}` |
 
 Entries ([`entries.json`](entries.json), decoded by `server/internal/journal/entries_contract_test.go` and
-`apps/web/src/lib/plugins/journal/entries.contract.test.ts`): `id` matches `^[0-9A-Za-z_-]{1,64}$` (clients use
+`apps/web/src/lib/features/journal/entries.contract.test.ts`): `id` matches `^[0-9A-Za-z_-]{1,64}$` (clients use
 a ULID), `date` is a calendar date `YYYY-MM-DD` (the learner's day when it was started), `title` at most 200
 and `text` at most 50000 code points of plain text (no control characters but line breaks and tabs),
 `source` is `typed` or `photo`. `updatedAt` is the server's RFC 3339 stamp of the last write; `createdAt` is
@@ -55,7 +55,7 @@ schema asks for `grammar`, `word choice`, `spelling`, `style`, `other`).
   written by another client: absent or unknown = `mistake`. The client does not
   trim (`"suggestion "` is a mistake) because the server already did.
   Fixture: [`review-docs.json`](review-docs.json), decoded by
-  `apps/web/src/lib/plugins/journal/review.test.ts`.
+  `apps/web/src/lib/features/journal/review.test.ts`.
 
 ## Untrusted text
 
@@ -83,8 +83,8 @@ list-only / missing sections rather than dropping it. An annotation whose
 | File | Rule | Decoded by |
 | --- | --- | --- |
 | `kind-resolve.json` | model kind → stored kind (trim, case fold, closed set, default mistake) | `server/internal/journal/resolve_contract_test.go` |
-| `review-docs.json` | stored document → what a client shows (kinds, legacy rows, bogus kinds, malformed fields, extra keys) | `apps/web/src/lib/plugins/journal/review.test.ts` |
-| `entries.json` | what `PUT` of an entry and of the settings accepts, the limits, the settings defaults and lenient reads | `server/internal/journal/entries_contract_test.go`, `apps/web/src/lib/plugins/journal/entries.contract.test.ts` |
+| `review-docs.json` | stored document → what a client shows (kinds, legacy rows, bogus kinds, malformed fields, extra keys) | `apps/web/src/lib/features/journal/review.test.ts` |
+| `entries.json` | what `PUT` of an entry and of the settings accepts, the limits, the settings defaults and lenient reads | `server/internal/journal/entries_contract_test.go`, `apps/web/src/lib/features/journal/entries.contract.test.ts` |
 
 Fixtures win over code. The server is the only writer of `kind`; every client
 reads it with the same fallback.

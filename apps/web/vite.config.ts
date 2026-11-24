@@ -4,8 +4,7 @@ import { defineConfig, searchForWorkspaceRoot } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
-		// The dev server may read the server's built-in manifests ($builtin).
-		fs: { allow: [searchForWorkspaceRoot('.'), '../../server/internal/plugins/builtin'] },
+		fs: { allow: [searchForWorkspaceRoot('.')] },
 		// The Go API on :8080 is the development backend.
 		proxy: {
 			'/api': 'http://127.0.0.1:8080',

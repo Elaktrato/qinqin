@@ -62,14 +62,13 @@ describe('features tab', () => {
 
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'layout', 'appearance', 'study', 'features', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'layout', 'appearance', 'study', 'features', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
 			'layout',
 			'appearance',
 			'study',
 			'features',
-			'plugins',
 			'ai',
 			'account',
 			'data',
@@ -85,7 +84,7 @@ describe('settingsTabHref', () => {
 	it('keeps the default tab out of the URL', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');
 		expect(settingsTabHref('layout')).toBe('/settings?tab=layout');
-		expect(settingsTabHref('plugins')).toBe('/settings?tab=plugins');
+		expect(settingsTabHref('features')).toBe('/settings?tab=features');
 		expect(settingsTabHref('ai')).toBe('/settings?tab=ai');
 		expect(settingsTabHref('data')).toBe('/settings?tab=data');
 	});

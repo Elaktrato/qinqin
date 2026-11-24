@@ -64,7 +64,7 @@ last write wins; `sync/`).
   (or no row) is no layout: the default `defaultLayout` (`activity-heatmap`, `flashcards-summary`,
   `daily-goal`, `weekly-summary`) applies. An empty list stays empty.
 - Show (`resolveLayout`): stored ids in order, each once (first position wins), skipping ids that are
-  unknown, unavailable (plugin off, another language) or not on the surface. Skipped ids **stay stored**.
+  unknown, unavailable (feature off, another language) or not on the surface. Skipped ids **stay stored**.
 - Write (`serializeLayout`): always `version: 1` with the ids as given.
 - Widget ids the web registry knows (`widgets`): `activity-heatmap`, `character-map-summary`, `daily-goal`,
   `summary-numbers`, `reviews-per-day`, `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`.
@@ -112,8 +112,8 @@ write) — cost: none.
 navigation (below 720 px) and the sections pinned to its bottom bar, in order. Design:
 `docs/superpowers/specs/2026-11-22-phone-bottom-bar-design.md` (issue #188). No row = `{phone: "bar", bar: ["home",
 "flashcards", "reader", "search"]}`. Desktop and tablet widths ignore it. Section ids are the frame's
-(`lib/frame/sections.ts`): `home`, `search`, a core feature's slug (`flashcards`, `reader`), a plugin page's slug
-(`journal`, `grammar`, …), `stats`.
+(`lib/frame/sections.ts`): `home`, `search`, a core feature's slug (`flashcards`, `reader`, `journal`,
+`grammar`), `stats`.
 
 - Read (`parseNavLayout`): an object with an integer `version` ≥ 1; a **newer version is read leniently** (its
   `phone` and `bar` count). A non-object row, or a missing, non-integer or below-1 `version`, is the defaults.
@@ -121,7 +121,7 @@ navigation (below 720 px) and the sections pinned to its bottom bar, in order. D
   strings count, each once (the first wins); a missing or non-list `bar` is the default pins; an empty list stays
   empty (every section under More).
 - Show (`barItems`, the `items` cases): pins count when the section is visible; ids not visible (switched off,
-  unknown, a removed plugin) are **skipped and stay stored**, so they return in their place when the section does.
+  unknown) are **skipped and stay stored**, so they return in their place when the section does.
   At most **five items**: when all visible sections fit (five or fewer), all are shown — the pins in their order,
   then the others in frame order — and there is no More. Otherwise the first **four** visible pins, then **More**,
   whose rows are the remaining pins in their order, then the unpinned sections in frame order (Home first). The

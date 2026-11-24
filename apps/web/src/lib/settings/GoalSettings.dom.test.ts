@@ -42,8 +42,8 @@ const day = studyDay([]);
 const today = day.today();
 
 const SOURCES: ActivitySource[] = [
-	{ type: 'read', plugin: 'qinqin-reader', label: 'Reading', unit: 'seconds', describe: { one: '{n} minute of reading', other: '{n} minutes of reading' } },
-	{ type: 'review', plugin: 'qinqin-flashcards', label: 'Flashcard reviews', unit: 'count', describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' } }
+	{ type: 'read', feature: 'reader', unit: 'seconds' },
+	{ type: 'review', feature: 'flashcards', unit: 'count' }
 ];
 
 function select(id: number): void {

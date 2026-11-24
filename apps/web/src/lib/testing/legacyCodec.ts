@@ -58,7 +58,6 @@ function source(raw: unknown): Obj | null {
 	if (!isRecord(raw)) return null;
 	const s = (k: string) => typeof raw[k] === 'string';
 	if (raw.type === 'level' && s('packId') && s('level')) return { type: 'level', packId: raw.packId, level: raw.level };
-	if (raw.type === 'plugin' && s('pluginId') && s('key')) return { type: 'plugin', pluginId: raw.pluginId, key: raw.key };
 	if (raw.type === 'frequency' && s('packId') && entryInt(raw.size) !== null) {
 		return { type: 'frequency', packId: raw.packId, size: raw.size };
 	}
@@ -303,7 +302,7 @@ function typedOf(raw: LegacyRow): { collection: StudyCollection; row: StudyRow }
 
 /**
  * pagedPull: the same body as the single page of a v2 round (docs/contracts/sync/):
- * typedPull's collections, plugin rows filled out to the contract shape, the
+ * typedPull's collections, keyed rows filled out to the contract shape, the
  * study collections the web asks for all present. Test-only.
  */
 export function pagedPull(body: Obj): Obj {
@@ -313,7 +312,7 @@ export function pagedPull(body: Obj): Obj {
 /** pageOf: a body already in the migrated shape (typed collections, keyed rows in rows) as one v2 page. */
 export function pageOf(typed: Obj): Obj {
 	const collections: Obj = {};
-	for (const name of ['pluginStates', 'rows', ...STUDY_COLLECTIONS]) {
+	for (const name of ['rows', ...STUDY_COLLECTIONS]) {
 		const list = Array.isArray(typed[name]) ? (typed[name] as unknown[]) : [];
 		collections[name] =
 			name === 'rows'
@@ -325,9 +324,7 @@ export function pageOf(typed: Obj): Obj {
 						deletedAt: null,
 						...(r as Obj)
 					}))
-				: name === 'pluginStates'
-					? list.map((r) => ({ userId: 1, enabled: true, order: 0, updatedAt: '2026-01-01T00:00:00Z', ...(r as Obj) }))
-					: list;
+				: list;
 	}
 	return {
 		format: 2,

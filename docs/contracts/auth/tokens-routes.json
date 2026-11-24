@@ -77,6 +77,11 @@
 			"workspace": "query"
 		},
 		{
+			"pattern": "GET /api/features",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
 			"pattern": "GET /api/fonts",
 			"scope": "read",
 			"workspace": "any"
@@ -150,11 +155,6 @@
 			"pattern": "GET /api/packages/{id}/{revision}",
 			"scope": "read",
 			"workspace": "any"
-		},
-		{
-			"pattern": "GET /api/plugins",
-			"scope": "read",
-			"workspace": "refused"
 		},
 		{
 			"pattern": "GET /api/rows",
@@ -267,6 +267,11 @@
 			"workspace": "refused"
 		},
 		{
+			"pattern": "PUT /api/features/{id}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
 			"pattern": "PUT /api/library/books/{id}/bookmarks/{bid}",
 			"scope": "write",
 			"workspace": "refused"
@@ -278,11 +283,6 @@
 		},
 		{
 			"pattern": "PUT /api/library/books/{id}/position",
-			"scope": "write",
-			"workspace": "refused"
-		},
-		{
-			"pattern": "PUT /api/plugins/{id}/state",
 			"scope": "write",
 			"workspace": "refused"
 		},

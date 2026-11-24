@@ -1,5 +1,5 @@
-// Options of individual home widgets: the user-global plugin data row
-// `qinqin-core` / `widget-options`, one member per widget id. Today only the
+// Options of individual home widgets: the user-global keyed row
+// `widget-options`, one member per widget id. Today only the
 // activity heatmap has one: its home layout. Unknown keys (top-level and
 // inside a widget's member) are never dropped; a write re-reads the row
 // first so keys another device wrote meanwhile survive.

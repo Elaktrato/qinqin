@@ -19,7 +19,7 @@ import (
 // round order (V2Collections). Every query filters by the caller's user_id
 // (keysetQuery); the fragments below narrow further:
 //   - workspace= keeps a workspace's rows plus user-global ones (rows
-//     without a workspace, pluginStates); bookmarks and highlights follow
+//     without a workspace, features); bookmarks and highlights follow
 //     their book's workspace, library tombstones the logged workspace_id;
 //   - overlays and own sentences ship only for entries of the round's
 //     languages (?8);
@@ -63,8 +63,8 @@ func v2Segments() []segment {
 	segs := []segment{
 		{coll: "workspaces", table: "workspaces", stamp: "updated_at", cols: "id, language, name, settings, updated_at",
 			extra: byWorkspace("id"), encode: encodeWorkspace},
-		{coll: "pluginStates", table: "plugin_states", stamp: "updated_at", cols: "pack_id, user_id, enabled, ord, updated_at",
-			encode: encodePluginState},
+		{coll: "features", table: "feature_switches", stamp: "updated_at", cols: "feature, enabled, updated_at",
+			encode: encodeFeature},
 		{coll: "rows", table: "keyed_rows", stamp: "updated_at", tomb: true,
 			cols: "key, user_id, workspace_id, data, version, updated_at, deleted_at",
 			extra: func(ws int64) string {
@@ -145,20 +145,19 @@ func marshalRow(stamp string, rowid int64, v any) (string, int64, []byte, error)
 	return stamp, rowid, raw, err
 }
 
-func encodePluginState(sc scanner) (string, int64, []byte, error) {
+func encodeFeature(sc scanner) (string, int64, []byte, error) {
 	var rowid int64
-	var s model.PluginState
+	var f struct {
+		ID        string `json:"id"`
+		Enabled   bool   `json:"enabled"`
+		UpdatedAt string `json:"updatedAt"`
+	}
 	var enabled int
-	var updated string
-	if err := sc.Scan(&rowid, &s.PluginID, &s.UserID, &enabled, &s.Order, &updated); err != nil {
+	if err := sc.Scan(&rowid, &f.ID, &enabled, &f.UpdatedAt); err != nil {
 		return "", 0, nil, err
 	}
-	s.Enabled = enabled != 0
-	var err error
-	if s.UpdatedAt, err = parseStamp(updated); err != nil {
-		return "", 0, nil, err
-	}
-	return marshalRow(updated, rowid, s)
+	f.Enabled = enabled != 0
+	return marshalRow(f.UpdatedAt, rowid, f)
 }
 
 func encodeKeyedRow(sc scanner) (string, int64, []byte, error) {

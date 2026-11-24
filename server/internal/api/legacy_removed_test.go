@@ -55,7 +55,6 @@ func backdate(t *testing.T, exec func(string, ...any) (sql.Result, error)) {
 func TestLegacyPullAndViewAreGone(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
 	ws := createWorkspace(t, ts.URL, alice, "zh", "")
 	aliceID := userID(t, sqlDB, "alice")
 	w := itoa(ws)
@@ -70,7 +69,7 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 
 	// the legacy pull: every request without v=2
 	for _, path := range []string{"/api/sync/pull", "/api/sync/pull?cursor=1970-01-01T00:00:00Z",
-		"/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,pluginStates", "/api/sync/pull?v=1"} {
+		"/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,features", "/api/sync/pull?v=1"} {
 		status, h, body := get(t, ts.URL, path, alice)
 		wantCoded404(t, "GET "+path, status, body)
 		if h.Get("Deprecation") != "" {
@@ -267,48 +266,14 @@ func TestKeyedFormBackupRestoresIntoTypedRows(t *testing.T) {
 	wantCoded404(t, "GET card:"+cardID, status, body)
 }
 
-// GET /api/plugins lists registry plugins only: no row per installed data
-// pack (#169), and a data pack's id is no plugin for the state route.
-func TestDataPackPluginRowsAreGone(t *testing.T) {
-	ts, sqlDB := newServer(t)
-	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
-	for _, q := range []string{
-		`INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, levels_json, updated_at) VALUES ('zh-grammar', 'n', '1', 'zh', 'l', 'a', '[]', 't')`,
-		`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at) VALUES ('zh-audio', 'zh', 'n', '1', 'l', 'a', 't', 't')`,
-		`INSERT INTO frequency_packs (id, pack_id, name, version, language, license, attribution, ord, updated_at) VALUES (1, 'zh-freq', 'n', '1', 'zh', 'l', 'a', 1, 't')`,
-	} {
-		if _, err := sqlDB.Exec(q); err != nil {
-			t.Fatal(err)
-		}
-	}
-	status, _, body := get(t, ts.URL, "/api/plugins", alice)
-	var list []struct {
-		ID string `json:"id"`
-	}
-	if status != 200 || json.Unmarshal(body, &list) != nil {
-		t.Fatalf("GET /api/plugins = %d %s", status, body)
-	}
-	for _, p := range list {
-		if strings.HasPrefix(p.ID, "zh-") {
-			t.Errorf("GET /api/plugins lists the data pack %s", p.ID)
-		}
-	}
-	for _, id := range []string{"zh-grammar", "zh-audio", "zh-freq"} {
-		r := doRaw(t, "PUT", ts.URL, "/api/plugins/"+id+"/state", alice, `{"enabled":false,"order":0}`)
-		var b bytes.Buffer
-		b.ReadFrom(r.Body)
-		wantCoded404(t, "PUT state of "+id, r.StatusCode, b.Bytes())
-	}
-}
-
 // The removed identifiers stay out of the server's code: a grep guard
 // next to the behaviour tests above.
 func TestLegacyCompatCodeStaysGone(t *testing.T) {
 	banned := []string{"StreamLegacy", "LegacyGet(", "LegacyList(", "ApplyLegacy(", "legacyView", "mergeLegacyList", "legacyPut(",
 		"legacyRows", "LegacyPluginRow", "sentencePlugins", "warnEntryIDUsers", "dataPlugin(",
-		// #199: the plugin data store and its routes
-		"plugin_data", "PluginData", "/api/plugins/{id}/data"}
+		// #199: the code plugins, their registry, states and data store
+		"plugin_data", "PluginData", "/api/plugins", "plugin_states", "plugin_registry", "PluginState", "PluginInfo",
+		"isHiddenBuiltin", "RegisterBuiltin", "internal/plugins\""}
 	err := filepath.WalkDir("../..", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -322,7 +287,7 @@ func TestLegacyCompatCodeStaysGone(t *testing.T) {
 		}
 		for _, s := range banned {
 			// the frozen migration steps of 038 still read the old table
-			if s == "plugin_data" && strings.Contains(filepath.ToSlash(path), "internal/db/") {
+			if (s == "plugin_data" || s == "plugin_states" || s == "plugin_registry") && strings.Contains(filepath.ToSlash(path), "internal/db/") {
 				continue
 			}
 			if strings.Contains(string(b), s) {

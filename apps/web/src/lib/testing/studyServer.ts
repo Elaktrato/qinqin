@@ -32,7 +32,7 @@ export interface RequestCounts {
 	other: number;
 }
 
-const ROUND_ORDER = ['pluginStates', 'rows', ...STUDY_COLLECTIONS];
+const ROUND_ORDER = ['rows', ...STUDY_COLLECTIONS];
 const ULID = '01JABCDEFGHJKMNPQRSTVWXYZ0';
 
 function sec(iso: string): number {

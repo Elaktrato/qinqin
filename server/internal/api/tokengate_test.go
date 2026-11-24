@@ -347,7 +347,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,
 	"GET /api/me/time-zone":                    tokReadAny,
-	"GET /api/plugins":                         tokReadAny,
+	"GET /api/features":                        tokReadAny, // #199: the feature switches replace the plugin states
 	"GET /api/library/books/{id}":              tokReadAny,
 	"GET /api/library/books/{id}/chapters/{n}": tokReadAny,
 	"GET /api/library/books/{id}/bookmarks":    tokReadAny,
@@ -376,7 +376,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	"POST /api/library/books/{id}/highlights":         tokWriteAny,
 	"PUT /api/library/books/{id}/highlights/{hid}":    tokWriteAny,
 	"DELETE /api/library/books/{id}/highlights/{hid}": tokWriteAny,
-	"PUT /api/plugins/{id}/state":                     tokWriteAny,
+	"PUT /api/features/{id}":                          tokWriteAny,
 
 	"PUT /api/rows/{key}":    tokWriteWS,
 	"DELETE /api/rows/{key}": tokWriteWS,

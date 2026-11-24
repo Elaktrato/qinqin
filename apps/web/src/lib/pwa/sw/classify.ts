@@ -26,12 +26,11 @@ export function normalizeUrl(url: string): string {
 }
 
 /**
- * The pull collections an offline copy may hold: the keyed rows, the switches
- * and the typed study rows (docs/contracts/study/); never the dictionary.
+ * The pull collections an offline copy may hold: the keyed rows and the typed
+ * study rows (docs/contracts/study/); never the dictionary.
  */
 export const CACHEABLE_PULL_COLLECTIONS: readonly string[] = [
 	'rows',
-	'pluginStates',
 	'cards',
 	'decks',
 	'deckSettings',
@@ -44,7 +43,7 @@ const SEGMENT = '[^/]+';
 const API_PATTERNS: RegExp[] = [
 	/^\/api\/auth\/me$/,
 	/^\/api\/workspaces$/,
-	/^\/api\/plugins$/,
+	/^\/api\/features$/,
 	/^\/api\/languages$/,
 	/^\/api\/me\/time-zone$/,
 	/^\/api\/rows$/,

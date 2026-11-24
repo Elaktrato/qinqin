@@ -1,6 +1,6 @@
 <script lang="ts">
 	// The milestone card on home: the current workspace's log families only
-	// (no replay). Loads once the plugin states are ready, again on a study
+	// (no replay). Loads once the feature switches are ready, again on a study
 	// write or a posted event of the workspace; a slower answer for another
 	// workspace is dropped.
 	import { untrack } from 'svelte';
@@ -17,7 +17,7 @@
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const language = $derived(session.workspaces.current?.language ?? '');
-	const ready = $derived(session.plugins.status === 'ready');
+	const ready = $derived(session.features.status === 'ready');
 
 	async function load(id: number | null, lang: string, isReady: boolean): Promise<void> {
 		const mine = ++seq;
@@ -29,7 +29,7 @@
 			return;
 		}
 		try {
-			const loaded = await loadMilestones(session, id, { scope: 'home', language: lang, states: session.plugins });
+			const loaded = await loadMilestones(session, id, { scope: 'home', language: lang, states: session.features });
 			if (mine === seq) view = loaded;
 		} catch {
 			if (mine === seq) view = null;

@@ -54,7 +54,7 @@ carries `workspaceId`, `version`, `updatedAt` (the server write stamp; the pull 
  "skipKinds":[non-vocab kinds, vocab cards only],"deckIds":[string],"createdAt":string,"extra":{},
  "version":3,"updatedAt":"2026-11-12T10:00:00Z","deletedAt":null}
 // decks        {"id","name","createdAt","source": null | {"type":"level","packId","level"}
-//                | {"type":"plugin","pluginId","key"} | {"type":"frequency","packId","size": int > 0}, "extra", meta}
+//                | {"type":"frequency","packId","size": int > 0}, "extra", meta}
 // deckSettings {"deckId","cardTypes":["reverse"|"cloze"],"newOrder": null | {"by":"added"} | {"by":"frequency"}
 //                | {"by":"level","packId"}, "extra", meta}
 // limits       {"deckId": null | "<deckId>", "new": null | {"limit": 0..9999 | null}, "reviews": same, "extra", meta}

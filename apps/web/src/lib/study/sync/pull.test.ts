@@ -8,8 +8,8 @@ const WS = 7;
 const get = (s: StudyServer) => async (path: string) => (await s.fetch(path)).json() as Promise<unknown>;
 
 describe('STUDY_PULL_COLLECTIONS', () => {
-	it('is the switches and plugin rows plus every typed study collection (record 0002)', () => {
-		expect(STUDY_PULL_COLLECTIONS).toEqual(['pluginStates', 'rows', ...STUDY_COLLECTIONS]);
+	it('is the keyed rows plus every typed study collection (record 0002)', () => {
+		expect(STUDY_PULL_COLLECTIONS).toEqual(['rows', ...STUDY_COLLECTIONS]);
 		for (const collection of STUDY_COLLECTIONS) expect(STUDY_PULL_COLLECTIONS).toContain(collection);
 	});
 

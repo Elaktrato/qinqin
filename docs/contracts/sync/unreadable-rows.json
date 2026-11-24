@@ -3,7 +3,6 @@
  "rule": "sync/unreadable-rows",
  "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable keyed row (rows). A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. A tombstone (deletedAt set) that does not decode is protected but not counted: there is nothing to show. A row of another workspace is neither counted nor protected. Keyed rows are protected by key (rows:<key>) when the row shape or the keyed payload (goals/, known marks, vacations) does not decode. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
  "requested": [
-  "pluginStates",
   "rows",
   "cards",
   "decks",
@@ -34,7 +33,6 @@
   "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
  },
  "rows": {
-  "pluginStates": [],
   "rows": [
    {
     "_why": "readable",

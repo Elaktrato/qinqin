@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pluginPageImports, setsTitle } from './routeTitles';
+import { featurePageImports, setsTitle } from './routeTitles';
 
 describe('setsTitle', () => {
 	it('accepts a head title built with pageTitle', () => {
@@ -23,20 +23,20 @@ describe('setsTitle', () => {
 	});
 });
 
-describe('pluginPageImports', () => {
-	const index = `import A from './a/APage.svelte';
-import B from './b/BPage.svelte';
-import W from './a/Widget.svelte';
-export const webPlugins = [
-	{ id: 'a', pages: [{ title: 'A', nav: true, component: A }], widgets: [{ component: W }] },
-	{ id: 'b', pages: [{ title: 'B', nav: true, component: B }] }
+describe('featurePageImports', () => {
+	const index = `import APage from '$lib/features/a/APage.svelte';
+import BPage from '$lib/features/b/BPage.svelte';
+import W from '$lib/features/a/Widget.svelte';
+export const coreFeatures = [
+	feature(A_ID, 'features.a.title', aDef, APage),
+	feature(B_ID, 'features.b.title', bDef, BPage)
 ];`;
 
-	it('resolves the components registered as plugin pages to their import paths', () => {
-		expect(pluginPageImports(index)).toEqual(['./a/APage.svelte', './b/BPage.svelte']);
+	it('resolves the components registered as core feature pages to paths under src/lib', () => {
+		expect(featurePageImports(index)).toEqual(['features/a/APage.svelte', 'features/b/BPage.svelte']);
 	});
 
-	it('fails loudly when a page component has no import', () => {
-		expect(() => pluginPageImports("pages: [{ title: 'X', component: Missing }]")).toThrow(/Missing/);
+	it('fails loudly when a page component has no $lib import', () => {
+		expect(() => featurePageImports("\tfeature(X_ID, 'x', xDef, Missing)")).toThrow(/Missing/);
 	});
 });

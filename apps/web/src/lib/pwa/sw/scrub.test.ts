@@ -8,7 +8,7 @@ describe('scrubForCache (#72)', () => {
 		const page = (rows: unknown[], extra: object = {}) => ({
 			format: 2,
 			until: '2026-11-17T00:00:00Z',
-			collections: { pluginStates: [{ pluginId: 'x' }], rows, cards: [] },
+			collections: { features: [{ id: 'journal' }], rows, cards: [] },
 			more: false,
 			next: null,
 			cursor: 'c2.x',
@@ -17,7 +17,7 @@ describe('scrubForCache (#72)', () => {
 		const body = page([row('lookups'), row('lookupcfg'), row('note:5'), row('goals:workspace')]);
 		const out = JSON.parse(scrubForCache('/api/sync/pull', JSON.stringify(body)) as string);
 		expect(out.collections.rows.map((r: { key: string }) => r.key)).toEqual(['note:5', 'goals:workspace']);
-		expect(out.collections.pluginStates).toEqual([{ pluginId: 'x' }]);
+		expect(out.collections.features).toEqual([{ id: 'journal' }]);
 		expect(out.cursor).toBe('c2.x');
 		expect(out.more).toBe(false);
 		const clean = JSON.stringify(page([row('note:5')]));
@@ -48,7 +48,7 @@ describe('scrubForCache (#72)', () => {
 		expect(scrubForCache('/api/workspaces', '[ 1 ]')).toBe('[ 1 ]');
 		expect(scrubForCache('/api/sync/pull', '{oops')).toBeNull();
 		expect(scrubForCache('/api/events', '{oops')).toBeNull();
-		const pull = '{"pluginStates":[]}';
+		const pull = '{"features":[]}';
 		expect(scrubForCache('/api/sync/pull', pull)).toBe(pull);
 	});
 

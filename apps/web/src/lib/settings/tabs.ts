@@ -8,7 +8,6 @@ export const SETTINGS_TABS = [
 	'appearance',
 	'study',
 	'features',
-	'plugins',
 	'ai',
 	'account',
 	'data',
@@ -31,9 +30,6 @@ export const SETTINGS_TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 	},
 	get features() {
 		return t('settings.tabs.features');
-	},
-	get plugins() {
-		return t('settings.tabs.plugins');
 	},
 	get ai() {
 		return t('settings.tabs.ai');

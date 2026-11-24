@@ -8,11 +8,10 @@
   }
  ],
  "interfaceLanguage": "en",
- "pluginStates": [
+ "features": [
   {
-   "pluginId": "qinqin-flashcards",
-   "enabled": true,
-   "order": 0
+   "id": "flashcards",
+   "enabled": true
   }
  ]
 }

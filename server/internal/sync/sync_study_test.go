@@ -3,7 +3,6 @@ package sync_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	chinsync "qinqin/internal/sync"
 )
 
@@ -143,17 +141,6 @@ func eventItem(id string, ws int64) model.StudyEvent {
 	return model.StudyEvent{ID: id, WorkspaceID: ws, Device: "d", TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}
 }
 
-// registerReserved registers the built-in registry rows, as the server does
-// at startup.
-func registerReserved(t *testing.T, sqlDB *sql.DB) {
-	t.Helper()
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 // A malformed typed item or a foreign workspace refuses the whole push.
 func TestTypedPushIsAllOrNothing(t *testing.T) {
 	ctx := context.Background()
@@ -196,7 +183,6 @@ func TestMixedPush(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
-	registerReserved(t, sqlDB)
 	now := time.Now().UTC()
 	body := chinsync.PushBody{
 		Events: []model.StudyEvent{eventItem("01J00000000000000000000002", ws)},

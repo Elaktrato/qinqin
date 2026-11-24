@@ -30,7 +30,7 @@ describe('the reader and lessons pass the right source', () => {
 	});
 
 	it('LessonView records lesson lookups in the study workspace', async () => {
-		const src = (await import('../plugins/grammar/LessonView.svelte?raw')).default;
+		const src = (await import('../features/grammar/LessonView.svelte?raw')).default;
 		expect(src).toMatch(/onLookup:\s*\(entryId\)\s*=>\s*recordLookup\(session\.lookups\.recorder,\s*studyWorkspaceId,\s*\{\s*entryId,\s*source:\s*'lesson'\s*\}\)/);
 	});
 });

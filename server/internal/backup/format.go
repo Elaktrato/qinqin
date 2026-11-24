@@ -150,18 +150,17 @@ type TimeZone struct {
 	CreatedAt string  `json:"createdAt"`
 }
 
-// PluginState is one plugin's switch and order for the user.
-type PluginState struct {
-	PluginID string `json:"pluginId"`
-	Enabled  bool   `json:"enabled"`
-	Order    int    `json:"order"`
+// FeatureSwitch is the user's switch of one core feature (features/).
+type FeatureSwitch struct {
+	ID      string `json:"id"`
+	Enabled bool   `json:"enabled"`
 }
 
 // Account is account.json: no identity, only the user's own settings.
 type Account struct {
-	Username     string        `json:"username"`
-	TimeZones    []TimeZone    `json:"timeZones"`
-	PluginStates []PluginState `json:"pluginStates"`
+	Username  string          `json:"username"`
+	TimeZones []TimeZone      `json:"timeZones"`
+	Features  []FeatureSwitch `json:"features"`
 	// InterfaceLanguage is the stored interface language ('' = follow the
 	// browser; docs/contracts/i18n/). Optional: an archive without it (every
 	// v1 archive before #73) leaves the setting unchanged on restore, and an

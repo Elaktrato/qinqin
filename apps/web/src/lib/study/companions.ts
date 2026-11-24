@@ -84,7 +84,7 @@ export function planCompanions({
 	skip?: ReadonlySet<string>;
 	/**
 	 * Offline nothing is planned: a companion becomes a card only by a
-	 * plugin-data write on its first grade, and the offline outbox carries
+	 * typed-row write on its first grade, and the offline outbox carries
 	 * review events, not rows.
 	 */
 	offline?: boolean;

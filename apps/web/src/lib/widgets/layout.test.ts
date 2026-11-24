@@ -18,7 +18,6 @@ import {
 } from './layout';
 import type { WidgetDef, WidgetSurface } from './types';
 import { allWidgets } from './registry';
-import { webPlugins } from '$lib/plugins';
 import { coreFeatures } from '$lib/features';
 import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
 import { dataRow } from '../testing/keyed';
@@ -306,9 +305,8 @@ describe('docs/contracts/settings/core-rows.json: home-layout', () => {
 		expect(fixture.rule).toBe('settings/core-rows');
 		expect(LAYOUT_KEY).toBe('home-layout');
 		expect([...DEFAULT_LAYOUT]).toEqual(fixture.defaultLayout);
-		const ids = [...coreFeatures.map((f) => f.id), ...webPlugins.map((p) => p.manifest.id)];
-		const states = ids.map((id) => ({ id, manifest: {}, enabled: true, order: 0 }));
-		expect(allWidgets(webPlugins, states, null).map((w) => w.id)).toEqual(fixture.widgets);
+		const states = coreFeatures.map((f) => ({ id: f.id, enabled: true }));
+		expect(allWidgets(states, null).map((w) => w.id)).toEqual(fixture.widgets);
 	});
 	for (const c of fixture.layout) {
 		it(`parseLayout: ${c.name}`, () => expect(parseLayout(c.value)).toEqual(c.expect));
