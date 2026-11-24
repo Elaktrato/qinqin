@@ -98,6 +98,8 @@ var userTables = []UserTable{
 	{Name: "journal_reviews", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_reviews WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_suggestions", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_suggestions WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_settings", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_settings WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	// Grammar lesson progress (migration 045): exported in its keyed form, replaced on restore.
+	{Name: "grammar_progress", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM grammar_progress WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
 		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},

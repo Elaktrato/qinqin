@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/study"
@@ -451,7 +452,7 @@ var typedLiveCount = func() string {
 	for _, t := range study.Tables() {
 		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1 AND deleted_at IS NULL)`
 	}
-	for _, t := range journal.Tables() {
+	for _, t := range append(journal.Tables(), grammar.ProgressTables()...) {
 		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1)`
 	}
 	return out

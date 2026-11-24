@@ -310,6 +310,10 @@ const FlashcardsPlugin = "qinqin-flashcards"
 // (journal:entry:<id>, ...; journal/keyed.go).
 const JournalPlugin = "qinqin-journal"
 
+// GrammarPlugin carries grammar lesson progress in its keyed form
+// (grammar:progress:<packId>:<lessonId>; grammar/progress.go).
+const GrammarPlugin = "qinqin-grammar"
+
 // CorePlugin is the built-in plugin whose workspace rows hold personal
 // notes on entries (note:<entryId>, docs/contracts/notes/).
 const CorePlugin = "qinqin-core"

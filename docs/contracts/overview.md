@@ -20,7 +20,7 @@ where the rule is implemented today.
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
 | Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan, the session queue shared by deck and level sessions, the session mix of card types), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `lemma/` (rule tables of the lemmatizer: deinflection, ranking keys, token boundaries), `reader/` (display settings, furigana, smart readings, word states, coverage) |
-| Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (the journal's entries, reviews, topic ideas and settings; the mistake/suggestion kind) |
+| Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (the journal's entries, reviews, topic ideas and settings; the mistake/suggestion kind), `grammar/` (lesson progress) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout`, `activity-view` and `widget-options`) |
 | Data safety | `backup/` (archive format v1, id remapping) |
@@ -33,7 +33,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `journal/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `journal/` → `grammar/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -174,6 +174,7 @@ fixture or the contract text that fixes the shape.
 | Overlays (entry edits) | per user and entry (`user_edits`, not plugin data); pulled as `overlays` | `{entryId, written: string\|null, readings: [{type, value}]\|null, updatedAt}`; `null` = untouched; server-stamped, last arrival wins | `server/internal/overlay` | `overlays/overlay.json` |
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |
+| Grammar lesson progress | workspace (`grammar_progress`, not rows); not in the pull: `/api/grammar/progress` | `{packId, lessonId, completedAt, best, total}`; the server keeps the best score of runs with the same `total` | `plugins/grammar/progress.ts`; server `internal/grammar/progress.go` | `grammar/progress.json` |
 | Journal entries, reviews, topic ideas, settings | workspace (`journal_*` tables, not rows); not in the pull: `/api/journal/*` | see `journal/README.md` | `plugins/journal/store.ts`; server `internal/journal/store.go` | `journal/entries.json`, `journal/review-docs.json`, `journal/kind-resolve.json` |
 
 Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/time-zone` (`study-day/`).

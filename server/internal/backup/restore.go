@@ -20,6 +20,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/grammar"
 	"qinqin/internal/i18n"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
@@ -482,6 +483,21 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 				var err error
 				if ok, err = journal.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
 					return fmt.Errorf("backup: journal document: %w", err)
+				}
+			}
+			if !ok {
+				res.DroppedRows++
+				return nil
+			}
+			res.Restored.PluginData++
+			return nil
+		}
+		if nr.PluginID == GrammarPlugin {
+			ok := false
+			if nr.WorkspaceID != nil && grammar.IsKeyed(nr.Key) {
+				var err error
+				if ok, err = grammar.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+					return fmt.Errorf("backup: grammar progress: %w", err)
 				}
 			}
 			if !ok {

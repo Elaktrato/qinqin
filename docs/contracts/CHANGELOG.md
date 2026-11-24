@@ -14,6 +14,10 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `review:`, `suggestions`, `settings`) are gone; a backup carries the documents as `journal:entry:<id>`,
   `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`. The deletion previews count
   `journalEntries`.
+- **Grammar:** lesson progress is typed storage: `GET /api/grammar/progress?workspace=` lists it, `POST
+  /api/grammar/progress?workspace= {packId, lessonId, score, total}` records a run; the server keeps the best
+  score (`grammar/README.md`). New fixture: `grammar/progress.json`. The `qinqin-grammar` plugin rows
+  (`lesson:<packId>:<lessonId>`) are gone; a backup carries the rows as `grammar:progress:<packId>:<lessonId>`.
 
 ## #192 — one pack system on the server
 

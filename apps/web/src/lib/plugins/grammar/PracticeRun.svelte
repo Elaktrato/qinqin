@@ -102,8 +102,7 @@
 		try {
 			saved = await recordRun(ws.id, pack, lessonId, score, exercises.length);
 		} catch {
-			// Nothing was written: a score that could not be compared with the
-			// stored best must never replace it.
+			// The run was not stored (the server keeps the best score when it is).
 			saveError = t('grammar.practice.saveFailed');
 		}
 	}

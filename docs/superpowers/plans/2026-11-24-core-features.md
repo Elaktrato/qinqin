@@ -170,11 +170,14 @@ deinflection) stays language code: a profile says *whether* a language has tones
 - Ruling: grammar's keep-the-best rule moves to the server (`POST /api/grammar/progress` with the run's score)
   — the client's read-then-write could lower a best score when two tabs finish a lesson — cost if wrong: none;
   the web shows what the server answers.
-- Ruling: personal access tokens keep the reach they had: `/api/rows` keeps the plugin-data rules (`tokReadWS`
-  for reads, `tokWriteWS` for writes), `/api/features` the plugin-state rules (`tokReadAny`/`tokWriteAny`), and
-  the journal entry, settings and grammar progress routes take the workspace rules (`tokReadWS`/`tokWriteWS`)
-  their plugin data had; the AI routes stay `noTok`. The pinned token route set is amended for exactly these
-  routes — cost if wrong: a token can read and write the journal text of its workspace, as it could before.
+- Ruling: personal access tokens keep the reach they had where the token design allows it: `/api/rows` keeps
+  the plugin-data rules (`tokReadWS` for reads, `tokWriteWS` for writes) and `/api/features` the plugin-state
+  rules (`tokReadAny`/`tokWriteAny`); the journal document routes take **no** token, because the token design
+  forbids every `/api/journal/` route (`TestTokenRuleConsistency`) and the old reach through plugin data was a
+  side door; grammar progress (`/api/grammar/progress`) takes none either, like the journal (a learning record
+  of a feature page, never needed by a script so far). The pinned token route set changes only by the routes
+  that replace the plugin routes — cost if wrong: a script that read journal entries or lesson progress through
+  a token stops working; a later amendment can open the grammar route.
 - Ruling: backup format 2 refuses version 1 archives — the owner said old backups need not restore, and
   mapping `plugin-data` rows into three stores would keep the plugin ids alive in the restore — cost if wrong:
   a user restores an old archive on an older release first, exports again.

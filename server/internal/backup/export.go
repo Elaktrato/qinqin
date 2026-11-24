@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -500,6 +501,10 @@ func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID i
 	}); err != nil {
 		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
 	}
+	// grammar lesson progress in its keyed form (grammar/progress.go)
+	if err := writeGrammarProgress(ctx, tx, pw, userID); err != nil {
+		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+	}
 	return pw.total, pw.close()
 }
 
@@ -663,4 +668,39 @@ func hiddenDictionaryIDs(settings json.RawMessage) []int64 {
 		}
 	}
 	return out
+}
+
+// writeGrammarProgress writes every lesson's progress of the user as a
+// qinqin-grammar row of its keyed form, workspace by workspace.
+func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userID int64) error {
+	rs, err := tx.QueryContext(ctx, `SELECT DISTINCT workspace_id FROM grammar_progress WHERE user_id = ? ORDER BY workspace_id`, userID)
+	if err != nil {
+		return err
+	}
+	var wss []int64
+	for rs.Next() {
+		var ws int64
+		if err := rs.Scan(&ws); err != nil {
+			rs.Close()
+			return err
+		}
+		wss = append(wss, ws)
+	}
+	if err := closeRows(rs); err != nil {
+		return err
+	}
+	for _, ws := range wss {
+		list, err := grammar.ListProgress(ctx, tx, userID, ws)
+		if err != nil {
+			return err
+		}
+		for _, p := range list {
+			key, data := grammar.KeyedOf(p)
+			w := ws
+			if err := pw.encode(PluginRow{PluginID: GrammarPlugin, WorkspaceID: &w, Key: key, Data: data, Version: 1, UpdatedAt: p.CompletedAt}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

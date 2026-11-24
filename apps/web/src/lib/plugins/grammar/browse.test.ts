@@ -31,8 +31,8 @@ describe('browseSections', () => {
 	});
 	it('attaches progress and drops orphan rows', () => {
 		const progress = new Map([
-			['lesson:p:a', done],
-			['lesson:p:gone', done]
+			['p:a', done],
+			['p:gone', done]
 		]);
 		const [section] = browseSections([pack], [], progress);
 		expect(section.levels[0].lessons[0].progress).toEqual(done);

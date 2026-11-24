@@ -38,6 +38,7 @@ var seedSQL = map[string][]string{
 	"journal_reviews":     {`INSERT INTO journal_reviews (user_id, workspace_id, entry_id, text_hash, annotations, overall, model, dropped, created_at) VALUES (?1, 1, 'e', 'h', '[]', '{}', 'm', '{}', 't')`},
 	"journal_suggestions": {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, 1, '[]', 'm', 't')`},
 	"journal_settings":    {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
+	"grammar_progress":    {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
 	"journal_photos":      {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
 	"ai_keys":             {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},
 	"ai_selection":        {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
@@ -315,7 +316,8 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 		"user_edits": true, "sentences": true, "library_books": true, "library_bookmarks": true,
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
 		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
-		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true}
+		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true,
+		"grammar_progress": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)

@@ -248,6 +248,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/grammar/progress",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/grammar/{pack}/{lesson}",
 		"access": "public"
 	},
@@ -589,6 +593,10 @@
 	},
 	{
 		"pattern": "POST /api/events/batch",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/grammar/progress",
 		"access": "user"
 	},
 	{

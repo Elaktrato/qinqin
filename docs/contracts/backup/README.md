@@ -66,6 +66,10 @@ one that does not decode, that the store refuses, a review whose entry the archi
 a `qinqin-journal` row of any other key (an archive from before #199) is dropped and counted in
 `droppedRows`.
 
+Grammar lesson progress (`grammar/README.md`) travels the same way: a workspace plugin row of `qinqin-grammar`
+per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`; a restore writes it back
+with the archive's `completedAt` (the contract's rules apply; one they refuse is dropped and counted).
+
 ### The keyed-row codec (`study-rows.json`)
 
 `FromLegacy(key, data)` reads a keyed row exactly as the v0.3.0 web parsers did (key/payload agreement,

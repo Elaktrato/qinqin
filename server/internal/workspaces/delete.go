@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/library"
 	"qinqin/internal/study"
@@ -38,7 +39,7 @@ func byWorkspace(table string) rule {
 // rules are the delete rules in the order Delete runs them: the study
 // events, the plugin data rows (user-global rows have no workspace and
 // stay), the typed study rows (migration 038), the journal's documents
-// (migration 044), the access tokens limited
+// (migration 044), the grammar lesson progress (045), the access tokens limited
 // to the workspace, the library books with their bookmarks and highlights,
 // the journal photos.
 func rules() []rule {
@@ -46,7 +47,7 @@ func rules() []rule {
 	for _, table := range study.Tables() {
 		out = append(out, byWorkspace(table))
 	}
-	for _, table := range journal.Tables() {
+	for _, table := range append(journal.Tables(), grammar.ProgressTables()...) {
 		out = append(out, byWorkspace(table))
 	}
 	return append(out,
