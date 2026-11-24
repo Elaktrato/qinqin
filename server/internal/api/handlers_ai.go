@@ -405,24 +405,9 @@ func (s *server) handleDeleteAIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("provider")
-	// Straight on the tables: deleting must work without a usable secret and
-	// for a provider that no longer exists.
-	tx, err := s.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	defer tx.Rollback()
-	for _, q := range []string{
-		`DELETE FROM ai_keys WHERE user_id = ? AND provider = ?`,
-		`DELETE FROM ai_selection WHERE user_id = ? AND provider = ?`,
-	} {
-		if _, err := tx.ExecContext(r.Context(), q, u.ID, id); err != nil {
-			writeInternal(w, r)
-			return
-		}
-	}
-	if err := tx.Commit(); err != nil {
+	// Straight on the tables (ai.DeleteUserKey): deleting must work without
+	// a usable secret and for a provider that no longer exists.
+	if err := ai.DeleteUserKey(r.Context(), s.db, u.ID, id); err != nil {
 		writeInternal(w, r)
 		return
 	}

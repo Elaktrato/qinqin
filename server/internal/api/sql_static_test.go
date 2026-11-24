@@ -41,12 +41,7 @@ var sqlStatement = regexp.MustCompile(`^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|
 // keyed "file.go function" (a method by its name, a package-level
 // declaration as "<package>"), each with its reason. An entry without a
 // finding is stale and fails the test, so the list only shrinks with the code.
-var sqlAllowed = map[string]string{
-	"handlers_ai.go handleDeleteAIKey":                 "debt of #194: moves into internal/ai (plan task 9)",
-	"handlers_ai_custom.go handleDeleteCustomProvider": "debt of #194: moves into internal/ai (plan task 9)",
-	"handlers_levels.go handleUninstallScheme":         "debt of #194: moves into internal/levels (plan task 9)",
-	"handlers_packs.go handleListSentencePacks":        "debt of #194: moves into internal/sentences (plan task 9)",
-}
+var sqlAllowed = map[string]string{}
 
 type sqlFinding struct {
 	file, fn, what string

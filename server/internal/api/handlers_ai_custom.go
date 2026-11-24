@@ -168,28 +168,12 @@ func (s *server) handleDeleteCustomProvider(w http.ResponseWriter, r *http.Reque
 	}
 	id := r.PathValue("id")
 	ctx := context.WithoutCancel(r.Context())
-	tx, err := s.db.BeginTx(ctx, nil)
+	err := ai.DeleteCustomProvider(ctx, s.db, id)
+	if errors.Is(err, ai.ErrUnknownProvider) {
+		writeAIError(w, err)
+		return
+	}
 	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `DELETE FROM ai_custom_providers WHERE id = ?`, id)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		writeAIError(w, ai.ErrUnknownProvider)
-		return
-	}
-	for _, q := range []string{`DELETE FROM ai_keys WHERE provider = ?`, `DELETE FROM ai_selection WHERE provider = ?`} {
-		if _, err := tx.ExecContext(ctx, q, id); err != nil {
-			writeInternal(w, r)
-			return
-		}
-	}
-	if err := tx.Commit(); err != nil {
 		writeInternal(w, r)
 		return
 	}
