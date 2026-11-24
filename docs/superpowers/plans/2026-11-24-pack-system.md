@@ -111,6 +111,11 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   migration they compare their stored rows (clips in id order, slices sorted) with the pack's and pass
   `Force` when those differ, so a data-only change still restamps the row as before — cost if wrong: a
   re-import of an unchanged audio pack reads its clip rows once (a few thousand rows) before writing nothing.
+- Ruling: an unchanged re-import of a components, audio or font pack no longer restamps its registry row, so
+  its `updatedAt` in `GET /api/admin/packs` stays (it changed on every re-seed before; the other eight types
+  already kept it). This is the issue's goal and the only answer that changes for an unchanged pack; it has
+  a line in `docs/contracts/CHANGELOG.md` with the message change above — cost if wrong: an administrator
+  who read `updatedAt` as "last seeded" sees the last change instead.
 - Ruling: the licence texts (`packs.StoreTexts`) write nothing when the stored rows equal the pack's files;
   they were rewritten on every import (2 rows for a pack without licence files) — cost if wrong: none.
 - Ruling: the error texts of a failed registry write are now "register <type> pack <id>: write <table> row
@@ -132,6 +137,11 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   no per-type code for a type like it. Its type has no data package: a type with one also needs its schema
   in `datapkg` (`typeDefs`, `Types()`, the contract), which is the package format, not a table entry — cost
   if wrong: a route-level regression for a new type is caught only by that type's own api tests.
+
+- Ruling: record 0008 is `docs/architecture/0008-pack-types.md`, Accepted, "Touched by: #194, #179, #182"
+  (#194 moves the dictionary and pack handlers' SQL, #179 and #182 may add types); the step list of how to
+  add a type moved there from the packtype comments, and the contracts README and the wiki link it — cost if
+  wrong: none.
 
 ## Execution record
 
@@ -163,3 +173,6 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   `handlers`, restored at cleanup) and nothing else; before the entry the stage refuses the pack (unknown
   type). It checks existing behaviour, so it passed at once; a mutation (List looping over the first 11
   rows only) made it fail.
+- Task 8: record 0008 and its README index row; the README's "records still to write" no longer names #192;
+  the contracts README, the wiki Data-pack-format page and the contract changelog updated.
+  `architectureDocs.test.ts`, `wikiDocs.test.ts`, `readmeDocs.test.ts` green.
