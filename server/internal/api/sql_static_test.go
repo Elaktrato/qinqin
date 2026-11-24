@@ -45,11 +45,6 @@ var sqlAllowed = map[string]string{
 	"entry_view.go dictionaryCredits":                       "debt of #194: moves into internal/dict (plan task 7)",
 	"handlers_admin_audit.go handleAdminAudit":              "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_admin_backup.go handleAdminBackupDownload":    "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_admin_languages.go <package>":                 "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_admin_languages.go handleDeleteLanguage":      "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_admin_languages.go handleLanguageUsage":       "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_admin_languages.go handleRegisterLanguage":    "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_admin_languages.go languageUse":               "debt of #194: moves into internal/lang (plan task 4)",
 	"handlers_ai.go handleDeleteAIKey":                      "debt of #194: moves into internal/ai (plan task 9)",
 	"handlers_ai_custom.go handleDeleteCustomProvider":      "debt of #194: moves into internal/ai (plan task 9)",
 	"handlers_audio.go handleAudioClip":                     "debt of #194: moves into internal/audio (plan task 6)",
@@ -64,9 +59,6 @@ var sqlAllowed = map[string]string{
 	"handlers_dict.go handleUninstallDictionary":            "debt of #194: moves into internal/dict (plan task 7)",
 	"handlers_events.go workspaceOwned":                     "debt of #194: moves into internal/workspaces (plan task 5)",
 	"handlers_journal.go journalTarget":                     "debt of #194: moves into internal/workspaces (plan task 5)",
-	"handlers_languages.go <package>":                       "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_languages.go installedLanguages":              "debt of #194: moves into internal/lang (plan task 4)",
-	"handlers_languages.go knownLanguages":                  "debt of #194: moves into internal/lang (plan task 4)",
 	"handlers_levels.go handleUninstallScheme":              "debt of #194: moves into internal/levels (plan task 9)",
 	"handlers_login_mfa.go handleEmailLoginVerify":          "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_login_mfa.go mfaChallenge":                    "debt of #194: moves into internal/auth (plan task 8)",
@@ -78,7 +70,6 @@ var sqlAllowed = map[string]string{
 	"handlers_workspaces.go handleCreateWorkspace":          "debt of #194: moves into internal/workspaces (plan task 5)",
 	"handlers_workspaces.go handleListWorkspaces":           "debt of #194: moves into internal/workspaces (plan task 5)",
 	"handlers_workspaces.go handleUpdateWorkspace":          "debt of #194: moves into internal/workspaces (plan task 5)",
-	"handlers_workspaces.go languageKnown":                  "debt of #194: moves into internal/workspaces (plan task 5)",
 }
 
 type sqlFinding struct {

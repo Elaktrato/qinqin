@@ -119,7 +119,7 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	// spelling (a legacy pt_br is not split into pt-br); anything else
 	// must be a well-formed code.
 	language := rawLanguage
-	exact, err := languageKnown(r.Context(), s.db, rawLanguage)
+	exact, err := lang.Exists(r.Context(), s.db, rawLanguage)
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -133,7 +133,7 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		}
 		language = code
 		if !lang.Registered(code) {
-			if known, err = languageKnown(r.Context(), s.db, code); err != nil {
+			if known, err = lang.Exists(r.Context(), s.db, code); err != nil {
 				writeInternal(w, r)
 				return
 			}
@@ -169,37 +169,6 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, ws)
-}
-
-// languageKnown reports whether code (compared exactly) is known: a
-// languages row, installed dictionary data, or any live level, frequency,
-// sentence, grammar or audio pack of that language.
-func languageKnown(ctx context.Context, db interface {
-	queryer
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}, code string) (bool, error) {
-	var known bool
-	err := db.QueryRowContext(ctx, `
-		SELECT EXISTS (SELECT 1 FROM languages WHERE code = ?1)
-			OR EXISTS (SELECT 1 FROM dictionaries WHERE language = ?1 AND deleted_at IS NULL)
-			OR EXISTS (SELECT 1 FROM schemes WHERE language = ?1 AND deleted_at IS NULL)
-			OR EXISTS (SELECT 1 FROM frequency_packs WHERE language = ?1 AND deleted_at IS NULL)
-			OR EXISTS (SELECT 1 FROM sentence_packs WHERE language = ?1 AND deleted_at IS NULL)
-			OR EXISTS (SELECT 1 FROM grammar_packs WHERE language = ?1 AND deleted_at IS NULL)
-			OR EXISTS (SELECT 1 FROM audio_packs WHERE language = ?1 AND deleted_at IS NULL)`, code).Scan(&known)
-	if err != nil || known {
-		return known, err
-	}
-	installed, err := installedLanguages(ctx, db)
-	if err != nil {
-		return false, err
-	}
-	for _, li := range installed {
-		if li.Code == code {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // handleListWorkspaces serves GET /api/workspaces with the caller's
@@ -255,7 +224,7 @@ func (s *server) ensureDefaultWorkspaces(ctx context.Context, userID int64) erro
 	if has {
 		return nil
 	}
-	langs, err := installedLanguages(ctx, s.db)
+	langs, err := lang.Installed(ctx, s.db)
 	if err != nil || len(langs) == 0 {
 		return err
 	}

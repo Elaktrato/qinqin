@@ -2,13 +2,9 @@ package api
 
 import (
 	"bytes"
-	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"qinqin/internal/lang"
 )
@@ -16,8 +12,8 @@ import (
 const maxLanguageBody = 4 << 10 // POST /api/admin/languages: one code
 
 // handleRegisterLanguage serves POST /api/admin/languages {code}: an
-// admin adds a data-only language on purpose. Code-pack languages are
-// 409, an existing row 200, a new row 201 (name = code).
+// admin adds a data-only language on purpose (lang.AddData). Code-pack
+// languages are 409, an existing row 200, a new row 201 (name = code).
 func (s *server) handleRegisterLanguage(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
@@ -33,219 +29,49 @@ func (s *server) handleRegisterLanguage(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
-	code, valid := lang.ValidCode(req.Code)
-	if !valid {
+	li, created, err := lang.AddData(r.Context(), s.db, req.Code)
+	var builtIn *lang.BuiltInError
+	switch {
+	case errors.Is(err, lang.ErrInvalidCode):
 		writeError(w, http.StatusUnprocessableEntity, "invalid_language", "language must be a code like es or pt-br.")
-		return
-	}
-	if lang.Registered(code) {
-		writeError(w, http.StatusConflict, "language_built_in", code+" is built in.")
-		return
-	}
-	res, err := s.db.ExecContext(r.Context(), `
-		INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
-		ON CONFLICT (code) DO NOTHING`, code, code, now())
-	if err != nil {
+	case errors.As(err, &builtIn):
+		writeError(w, http.StatusConflict, "language_built_in", builtIn.Error())
+	case err != nil:
 		writeInternal(w, r)
-		return
+	case created:
+		writeJSON(w, http.StatusCreated, toLanguageInfo(li))
+	default:
+		writeJSON(w, http.StatusOK, toLanguageInfo(li))
 	}
-	created, _ := res.RowsAffected()
-	list, err := knownLanguages(r.Context(), s.db)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	status := http.StatusOK
-	if created > 0 {
-		status = http.StatusCreated
-	}
-	for _, li := range list {
-		if li.Code == code {
-			writeJSON(w, status, li)
-			return
-		}
-	}
-	writeInternal(w, r)
-}
-
-// usageCountsSQL counts what depends on language ?1 (compared exactly),
-// one column each, in the order scanned by languageUse. Entries orphaned
-// by an uninstall do not count.
-const usageCountsSQL = `
-	SELECT
-		(SELECT COUNT(*) FROM workspaces WHERE language = ?1) AS workspaces,
-		EXISTS (
-			SELECT 1 FROM entries e
-			JOIN senses s ON s.entry_id = e.id AND s.deleted_at IS NULL
-			JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
-			WHERE e.language = ?1 AND e.deleted_at IS NULL) AS installed,
-		(SELECT COUNT(*) FROM schemes WHERE language = ?1 AND deleted_at IS NULL) AS levels,
-		(SELECT COUNT(*) FROM frequency_packs WHERE language = ?1 AND deleted_at IS NULL) AS freq,
-		(SELECT COUNT(*) FROM sentence_packs WHERE language = ?1 AND deleted_at IS NULL) AS sentences,
-		(SELECT COUNT(*) FROM grammar_packs WHERE language = ?1 AND deleted_at IS NULL) AS grammar,
-		(SELECT COUNT(*) FROM audio_packs WHERE language = ?1 AND deleted_at IS NULL) AS audio,
-		EXISTS (
-			SELECT 1 FROM sentences st JOIN entries e ON e.id = st.entry_id
-			WHERE e.language = ?1 AND st.deleted_at IS NULL AND st.source_pack != ''
-			AND st.source_pack NOT IN (SELECT pack_id FROM sentence_packs)) AS legacy`
-
-// olderPacksSQL names the source packs of legacy (usageCountsSQL): shared
-// sentences without a registry row, imported before v0.2.0. GET
-// /api/admin/packs does not list them (#198), so the 409 names them with
-// their removal route, DELETE /api/admin/sentences/{pack}.
-const olderPacksSQL = `
-	SELECT DISTINCT st.source_pack FROM sentences st JOIN entries e ON e.id = st.entry_id
-	WHERE e.language = ?1 AND st.deleted_at IS NULL AND st.source_pack != ''
-	AND st.source_pack NOT IN (SELECT pack_id FROM sentence_packs)
-	ORDER BY 1 LIMIT 10`
-
-type languageUse struct {
-	workspaces, levels, freq, sentences, grammar, audio int
-	installed, legacy                                   bool
-	olderPacks                                          []string // the packs of legacy, at most 10
-}
-
-func plural(n int, one, many string) string {
-	if n == 1 {
-		return "a " + one
-	}
-	return strconv.Itoa(n) + " " + many
-}
-
-// counts is the use as the extra member usage of a 409 language_in_use
-// (errors.json): numbers only, never who uses it.
-func (u languageUse) counts() map[string]int {
-	b := func(v bool) int {
-		if v {
-			return 1
-		}
-		return 0
-	}
-	return map[string]int{"workspaces": u.workspaces, "dictionaries": b(u.installed), "levelLists": u.levels,
-		"frequencyPacks": u.freq, "sentencePacks": u.sentences, "grammarPacks": u.grammar, "audioPacks": u.audio,
-		"legacySentences": b(u.legacy)}
-}
-
-// blockers names what keeps a language in use, never who uses it.
-func (u languageUse) blockers() string {
-	var parts []string
-	if u.workspaces > 0 {
-		if u.workspaces == 1 {
-			parts = append(parts, "1 workspace")
-		} else {
-			parts = append(parts, strconv.Itoa(u.workspaces)+" workspaces")
-		}
-	}
-	if u.installed {
-		parts = append(parts, "installed dictionary data")
-	}
-	for _, c := range []struct {
-		n         int
-		one, many string
-	}{
-		{u.levels, "level list", "level lists"},
-		{u.freq, "frequency pack", "frequency packs"},
-		{u.sentences, "sentence pack", "sentence packs"},
-		{u.grammar, "grammar pack", "grammar packs"},
-		{u.audio, "audio pack", "audio packs"},
-	} {
-		if c.n > 0 {
-			parts = append(parts, plural(c.n, c.one, c.many))
-		}
-	}
-	if u.legacy {
-		older := "sentences from an older pack without a registry row"
-		if len(u.olderPacks) > 0 {
-			var routes []string
-			for _, p := range u.olderPacks {
-				routes = append(routes, "DELETE /api/admin/sentences/"+p)
-			}
-			older += " (remove with " + strings.Join(routes, ", ") + ")"
-		}
-		parts = append(parts, older)
-	}
-	return strings.Join(parts, ", ")
-}
-
-func (s *server) languageUse(ctx context.Context, code string) (languageUse, error) {
-	var u languageUse
-	err := s.db.QueryRowContext(ctx, usageCountsSQL, code).Scan(
-		&u.workspaces, &u.installed, &u.levels, &u.freq, &u.sentences, &u.grammar, &u.audio, &u.legacy)
-	if err != nil || !u.legacy {
-		return u, err
-	}
-	rs, err := s.db.QueryContext(ctx, olderPacksSQL, code)
-	if err != nil {
-		return u, err
-	}
-	defer rs.Close()
-	for rs.Next() {
-		var p string
-		if err := rs.Scan(&p); err != nil {
-			return u, err
-		}
-		u.olderPacks = append(u.olderPacks, p)
-	}
-	return u, rs.Err()
 }
 
 // handleDeleteLanguage serves DELETE /api/admin/languages/{code}: it
-// removes an unused data-only language. The stored code is matched by
-// the exact path value first, then lowercased, with no "_" rewriting, so
-// legacy odd codes stay removable. The row is deleted by one statement
-// that re-checks every dependency, so a concurrent pack install or
-// workspace creation cannot slip in between check and delete.
+// removes an unused data-only language (lang.Remove: the stored code is
+// matched exactly, then lowercased; the delete re-checks every
+// dependency). A language in use is a 409 naming what uses it, with the
+// counts beside the code, never who uses it.
 func (s *server) handleDeleteLanguage(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
 	}
 	s.langMu.Lock()
 	defer s.langMu.Unlock()
-	code := r.PathValue("code")
-	var stored string
-	err := s.db.QueryRowContext(r.Context(), `
-		SELECT code FROM languages WHERE code = ?1
-		UNION ALL SELECT code FROM languages WHERE code = lower(?1)
-		LIMIT 1`, code).Scan(&stored)
-	if errors.Is(err, sql.ErrNoRows) {
-		if lang.Registered(code) {
-			writeError(w, http.StatusConflict, "language_built_in", strings.ToLower(code)+" is built in.")
-			return
-		}
+	err := lang.Remove(r.Context(), s.db, r.PathValue("code"))
+	var builtIn *lang.BuiltInError
+	var inUse *lang.InUseError
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, lang.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "No such language.")
-		return
-	}
-	if err != nil {
+	case errors.As(err, &builtIn):
+		writeError(w, http.StatusConflict, "language_built_in", builtIn.Error())
+	case errors.As(err, &inUse):
+		writeError(w, http.StatusConflict, "language_in_use", inUse.Error(),
+			map[string]any{"usage": inUse.Use.Counts()})
+	default:
 		writeInternal(w, r)
-		return
 	}
-	if lang.Registered(stored) {
-		writeError(w, http.StatusConflict, "language_built_in", stored+" is built in.")
-		return
-	}
-	res, err := s.db.ExecContext(r.Context(), `
-		DELETE FROM languages WHERE code = ?1 AND (
-			SELECT workspaces + installed + levels + freq + sentences + grammar + audio + legacy
-			FROM (`+usageCountsSQL+`)) = 0`, stored)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		use, err := s.languageUse(r.Context(), stored)
-		if err != nil {
-			writeInternal(w, r)
-			return
-		}
-		if msg := use.blockers(); msg != "" {
-			writeError(w, http.StatusConflict, "language_in_use", "The language is still used by: "+msg+".",
-				map[string]any{"usage": use.counts()})
-			return
-		}
-		writeError(w, http.StatusNotFound, "not_found", "No such language.")
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // handleLanguageUsage serves GET /api/admin/languages/usage: the number
@@ -254,31 +80,18 @@ func (s *server) handleLanguageUsage(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
 	}
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT language, COUNT(*) FROM workspaces GROUP BY language ORDER BY language`)
+	counts, err := lang.WorkspaceCounts(r.Context(), s.db)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	defer rows.Close()
-	list := make([]struct {
+	type usageJSON struct {
 		Code       string `json:"code"`
 		Workspaces int    `json:"workspaces"`
-	}, 0)
-	for rows.Next() {
-		var u struct {
-			Code       string `json:"code"`
-			Workspaces int    `json:"workspaces"`
-		}
-		if err := rows.Scan(&u.Code, &u.Workspaces); err != nil {
-			writeInternal(w, r)
-			return
-		}
-		list = append(list, u)
 	}
-	if rows.Err() != nil {
-		writeInternal(w, r)
-		return
+	list := make([]usageJSON, 0, len(counts))
+	for _, c := range counts {
+		list = append(list, usageJSON{c.Code, c.Workspaces})
 	}
 	writeJSON(w, http.StatusOK, list)
 }
