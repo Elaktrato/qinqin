@@ -442,6 +442,8 @@
 	"apiError.codeInvalid": "That code is not right.",
 	"apiError.confirmMismatch": "Type your username exactly to confirm.",
 	"apiError.conflict": "That could not be done because something changed. Reload and try again.",
+	"apiError.conversationFull": "This conversation is as long as it can get. Save it or start a new one.",
+	"apiError.conversationLimit": "You have 20 open conversations. Save or discard one first.",
 	"apiError.credentialsNeedTls": "A user name and password may only be sent over an encrypted connection.",
 	"apiError.currentPasswordRequired": "Enter your current password to continue.",
 	"apiError.downloadBusy": "Two package downloads are already running for this account. Try again when one has finished.",

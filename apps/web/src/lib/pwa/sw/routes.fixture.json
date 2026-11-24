@@ -76,6 +76,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/journal/conversations/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/journal/entries/{id}",
 		"access": "user"
 	},
@@ -261,6 +265,14 @@
 	},
 	{
 		"pattern": "GET /api/journal/capabilities",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/conversations",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/conversations/{id}",
 		"access": "user"
 	},
 	{
@@ -593,6 +605,18 @@
 	},
 	{
 		"pattern": "POST /api/grammar/progress",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations/{id}/save",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations/{id}/turn",
 		"access": "user"
 	},
 	{

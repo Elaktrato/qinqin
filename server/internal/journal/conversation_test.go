@@ -237,3 +237,16 @@ func TestConversationKeyedRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+func TestWordSample(t *testing.T) {
+	var words []string
+	for i := 0; i < 60; i++ {
+		words = append(words, fmt.Sprint(i))
+	}
+	if got := WordSample(words); len(got) != ai.MaxConverseWords || got[0] != "0" {
+		t.Errorf("sample = %v", got)
+	}
+	if got := WordSample(words[:3]); len(got) != 3 {
+		t.Errorf("short sample = %v", got)
+	}
+}

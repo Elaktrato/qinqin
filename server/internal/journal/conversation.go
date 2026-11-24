@@ -126,6 +126,16 @@ func TurnTextCode(err error) string {
 	return "internal"
 }
 
+// WordSample is what a turn may send of the studied words: the first
+// ai.MaxConverseWords of the most recently reviewed ones (SuggestionInput),
+// never the whole deck.
+func WordSample(studied []string) []string {
+	if len(studied) > ai.MaxConverseWords {
+		return studied[:ai.MaxConverseWords]
+	}
+	return studied
+}
+
 // ConversationFull reports whether a learner turn (two messages) no longer fits.
 func ConversationFull(c Conversation) bool { return len(c.Messages)+2 > MaxMessages }
 
