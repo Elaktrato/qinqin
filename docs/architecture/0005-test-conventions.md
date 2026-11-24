@@ -47,6 +47,9 @@ Touched by: #195. A merge from one of these issues that changes what this record
   support lives in `apps/web/src/lib/testing/`, including the test-only legacy codec mirror
   (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the study command tests to describe study
   state as old rows) and the spaceOut reference; `lib/study/testing/` is gone.
+- **Repository tests** (record [0004](0004-web-folder-rules.md)): the checks of the docs, the README, the wiki,
+  the shipped licence texts, the bundle size and the folder rules live in `apps/web/tests/repo/`, not beside
+  the modules in `src/`; the vitest `unit` project runs them, and `noWallClock.test.ts` scans them too.
 - **Web state in tests** (record [0009](0009-web-state-model.md)): a test builds a fresh app context and
   session from fakes with `apps/web/src/lib/testing/context.ts` (`testContext`, `studyContext`, `fakeDeps`,
   `fakeApi`, `memoryStorage`, `manualTimers`, `fakeWindow`, `fakeDocument`); a component test renders with

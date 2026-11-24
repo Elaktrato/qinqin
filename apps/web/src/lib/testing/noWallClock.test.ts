@@ -58,7 +58,7 @@ describe('wallClockFindings', () => {
 
 describe('no wall-clock assertions in tests', () => {
 	it('no test file measures elapsed time', () => {
-		const roots = [join(web, 'src'), join(web, 'scripts'), join(web, '..', '..', 'scripts')];
+		const roots = [join(web, 'src'), join(web, 'tests'), join(web, 'scripts'), join(web, '..', '..', 'scripts')];
 		const found: string[] = [];
 		for (const root of roots) {
 			let files: string[];

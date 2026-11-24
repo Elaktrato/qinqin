@@ -64,7 +64,7 @@ repository path it names in backticks exists.
 | [0001](0001-error-handling.md) | Error handling: one coded error answer, shown by code | Accepted |
 | [0002](0002-sync-unreadable-rows.md) | Sync: an unreadable row is skipped, never the page | Accepted |
 | [0003](0003-domain-packages-own-their-sql.md) | Server: domain packages own their SQL | Accepted |
-| [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted, being implemented by #195 |
+| [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted |
 | [0005](0005-test-conventions.md) | Test conventions | Accepted |
 | [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted |
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |

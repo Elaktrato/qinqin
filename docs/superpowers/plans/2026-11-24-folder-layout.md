@@ -138,4 +138,37 @@ Left in `lib/components`: `AiTag`, `Flag`, `PlayButton`, `ReadingText`, `clozeKe
 
 ## Execution record
 
-(filled in while building)
+- **Baseline** (c9a61718, Node 26, no build present): 612 test files, 12872 passed and 8 skipped (12880).
+- **Guard first.** `folderRules.ts` and `folderRules.test.ts` were written before any move and run against the
+  tree as it was: the real-tree checks failed with 19 single-feature files in `lib/components`, 3 components in
+  logic folders, the `EntryEditor.svelte` pair and 49 loose files at the top of `lib/`; the `lib/ui` check
+  passed from the start (its one domain import is the gallery harness, exempt by Ruling). The planted-tree
+  cases passed. The guard was kept out of the tree until the moves were done, so every commit stays green. On
+  the finished tree each of the six real-tree checks was made to fail once by a planted violation (a `lib/ui`
+  import of `$lib/api/client`, a component used by one feature, a component in `lib/study`, a second
+  `Flag.svelte`, a loose `lib/planted.ts`, a route folder `routes/quiz`), then the plants were removed.
+- **Codemod.** The moves ran through a script (outside the repository) that `git mv`s each file and rewrites
+  every static import, dynamic import, side-effect import, `vi.mock`/`vi.doMock`/`vi.importActual` and
+  `?raw` import whose target or importer moved; a second pass rewrote path mentions in strings and docs
+  (`lib/<old>` → `lib/<new>`, exact file names) outside `docs/superpowers/` (past plans keep the paths of
+  their day). A check of all 384 `vi.mock`-family paths after the moves found none stale.
+- **Found by the tests, fixed by hand:** `routing/routeTitles.test.ts` resolved `src/routes` from `__dirname`
+  one level too shallow after its move; the UTC guard's allow-list key `/src/lib/events.ts` (not caught by the
+  path pass because of its leading slash); the UI lint's `pending.json` lists must stay sorted, and two moved
+  paths sorted differently.
+- **Extra changes:** the doc checks (`architectureDocs`, `contractsDocs`) and `noWallClock.test.ts` now scan
+  `apps/web/tests/` too, since the repository tests left `src/`; the `noWallClock` root was added in the last
+  commit, not with the move of the tests (no test there measures time, so nothing was missed in between).
+  `svelte.config.js` did not need a change: the generated tsconfig already includes `../tests/**`.
+  One Go comment (`server/internal/lang/profile.go`) named the moved profile table; `go vet` and the
+  `internal/lang` tests ran.
+- **Counts after** (Node 26, build present): 612 files, 12888 passed and 2 skipped (12890). The difference:
+  the 6 tests of the deleted `listbox.test.ts` (one file) go, the 13 tests of `folderRules.test.ts` (one file)
+  come, record 0004 being `Accepted` adds 3 doc-check cases, and the bundle-size check that skips without a
+  build ran (8 skipped before, 2 after). After the moves alone (bd6e4588, 003c60af): 611 files, 12872 passed and
+  2 skipped (12874 = 12880 − 6).
+- **Node 22** (the local default) fails 5 tests of `AccountSettings.dom.test.ts` and `BookView.dom.test.ts` on
+  the untouched develop too; the gates used Node 26, as CI does.
+- **Other gates** on the last commit: `npm run check` 0 errors (1753 files), build passes, `node --test
+  scripts/*.test.mjs` 156 passed and 1 skipped, `gen-api-docs --check` clean, e2e (`npm run e2e -- --trace off`)
+  17 passed in each of 3 runs with no spec changed. Not verified: the app in a browser by hand, and CI itself.

@@ -134,6 +134,12 @@ A feature is core code with a switch: its id in `server/internal/features/featur
 its data gets typed storage in its own package with a contract. Content is a data pack
 ([Data pack format](Data-pack-format)).
 
+Web code goes in the folder of its owner ([record 0004](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0004-web-folder-rules.md),
+[Project layout](Project-layout)): a feature's components and logic in its feature folder, generic building
+blocks in `apps/web/src/lib/ui/`, a widget in `apps/web/src/lib/components/` only once a second feature uses
+it, no component in a logic folder and nothing loose at the top of `lib/`. A new route folder names its
+feature in `ROUTE_FEATURES` (`apps/web/tests/repo/folderRules.ts`); `folderRules.test.ts` checks the rest.
+
 A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
 `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`, then its data packs, and reading
 code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").

@@ -51,7 +51,8 @@ is refused whole (`ErrStoredUnreadable` in `server/internal/sync/sync.go`) and t
 
 - One bad row never blocks studying; the learner sees how many items this version could not read.
 - A row a newer client wrote survives on the server unchanged, so that client still reads it.
-- The notice component sits in the logic folder `lib/study/`; #195 moves it ([0004](0004-web-folder-rules.md)).
+- The notice component is the flashcards feature's (`apps/web/src/lib/features/flashcards/UnreadableRowsNotice.svelte`);
+  the detection stays in the logic folder `lib/study/` ([0004](0004-web-folder-rules.md)).
 - A change to the rule changes the contract first: the "Reading rows" section and its fixture, with an entry in
   the contract changelog ([`docs/contracts/CHANGELOG.md`](../contracts/CHANGELOG.md)); this record then follows
   the code.
