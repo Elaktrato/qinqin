@@ -137,23 +137,16 @@ func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	return ts, sqlDB
 }
 
-// registerFirstUser creates the first user — the instance admin —
-// through the API and returns its id and bearer token.
-func registerFirstUser(t *testing.T, tsURL, username string) (int64, string) {
+// registerFirstUser creates the first user — the instance admin — in the
+// database, as `qinqin adduser --admin` and the serve bootstrap do (no
+// registration makes an admin, #211), and returns its id and bearer token.
+func registerFirstUser(t *testing.T, sqlDB *sql.DB, tsURL, username string) (int64, string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
-	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(body))
+	u, err := auth.CreateUser(context.Background(), sqlDB, username, "secret-pass-"+username, true)
 	if err != nil {
-		t.Fatalf("register %s: %v", username, err)
+		t.Fatalf("create admin %s: %v", username, err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register %s: status = %d, want %d", username, resp.StatusCode, http.StatusCreated)
-	}
-	var u model.User
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		t.Fatalf("decode register response: %v", err)
-	}
+	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 
 	login, err := http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(body))
 	if err != nil {
@@ -290,7 +283,7 @@ func TestUserSentenceAdded(t *testing.T) {
 	ctx := context.Background()
 	nihao, _ := seedWords(t, sqlDB)
 
-	uid, token := registerFirstUser(t, ts.URL, "alice")
+	uid, token := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	resp := postJSON(t, ts.URL, "/api/entries/"+strconv.FormatInt(nihao, 10)+"/sentences", token, map[string]string{
 		"hanzi": "大家好。", "pinyin": "dà jiā hǎo.", "translation": "Hello, everyone.",
 	})

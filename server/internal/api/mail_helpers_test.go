@@ -95,7 +95,7 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 		pol = *o.authPolicy
 	}
 	opts = append(opts, api.WithAuthPolicy(pol))
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	e := &mailEnv{ts: ts, db: sqlDB, smtp: fake, svc: svc, clk: clk}
 	e.owner = registerUser(t, ts.URL, "owner", "")

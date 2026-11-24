@@ -205,7 +205,7 @@ func TestTypedCollectionsOverHTTP(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
-	token := registerAndLogin(t, ts.URL)
+	token := registerAndLogin(t, sqlDB, ts.URL)
 	call := func(method, path, body string) *http.Response {
 		req, _ := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+token)

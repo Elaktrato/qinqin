@@ -15,7 +15,7 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `me.json` | `GET /api/auth/me`: the user plus the session's `restriction`, the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) and `avatarUrl` (`avatar.json`) |
 | `avatar.json` | Profile pictures (#189): upload, remove, the picture files (sizes, headers), an administrator's removal and every refusal (decoded by Go and web tests) |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
-| `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
+| `options.json` | `GET /api/auth/options` in the three modes (closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |
 | `admin-users.json` | `AdminUser` (with `avatarUrl`), create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
 | `admin-settings.json` | Re-authentication of the Security and Email settings routes (PATCH settings/auth, PUT and DELETE settings/smtp) |
@@ -101,14 +101,16 @@ first, never a token or hash. `DELETE /api/account/sessions/{id}` (204; another 
 too, so clear local state afterwards.
 
 ## Registration (`POST /api/auth/register`)
-Read `GET /api/auth/options` first (public, uncached): `bootstrap`, `registration` (`closed` | `invite` |
+Read `GET /api/auth/options` first (public, uncached): `registration` (`closed` | `invite` |
 `open`), `emailPolicy` (`off` | `optional` | `required`), `passwordReset`, `emailCodeLogin` (the last two
 are false while the server has no mail), `passwordMinLength`. Body `{username, password, email?, invite?}`
 answers `201` with the user; then sign in as usual. `403 registration_closed` (mode closed),
 `403 invite_invalid` (one code and one body for an unknown, expired, used up or revoked invite, and for a
 missing one in invite mode), `422 email_required | email_disabled | invalid_email`, `409 email_taken |
 username_taken`, `422 weak_password | invalid_username`. An invite supplied in `open` mode is spent too and
-must be valid. The first user on an empty instance registers in every mode and becomes administrator.
+must be valid. Registering never makes an administrator: the server creates the first one before it listens
+(`QINQIN_BOOTSTRAP_ADMIN`, default `admin`), or the operator does with `qinqin adduser --admin`; an empty
+instance has the default mode, `closed`.
 An invite arrives as a link `https://host/register#invite=<token>`: the web app (in the Android shell too) opens
 it, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
 the token. The token is in the fragment so it never reaches a server log.

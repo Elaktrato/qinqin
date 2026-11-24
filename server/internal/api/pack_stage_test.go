@@ -50,7 +50,7 @@ func newPackEnvWith(t *testing.T, done chan string, opts ...api.Option) *packEnv
 	e.db = sqlDB
 	clock := func() time.Time { e.mu.Lock(); defer e.mu.Unlock(); return e.now }
 	opts = append([]api.Option{api.WithClock(clock), api.WithImportDone(e.done), api.WithPackLock(&e.lock, &e.unlock)}, opts...)
-	e.ts = httptest.NewServer(api.New(sqlDB, e.dataDir, nil, opts...))
+	e.ts = newTestServer(sqlDB, api.New(sqlDB, e.dataDir, nil, opts...))
 	t.Cleanup(e.ts.Close)
 	e.admin = registerUser(t, e.ts.URL, "admin", "")
 	return e

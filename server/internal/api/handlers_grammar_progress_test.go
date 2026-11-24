@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 // keeps the best score.
 func TestGrammarProgressRoutes(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)

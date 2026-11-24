@@ -32,7 +32,7 @@ func newCustomEnv(t *testing.T, private bool, enabled map[string]bool) customEnv
 	svc.Fake = true
 	svc.Registry.Custom.Policy = ai.GuardPolicy{AllowPrivate: private}
 	svc.Registry.Enabled = enabled
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	admin := registerUser(t, ts.URL, "root", "")
 	return customEnv{ts: ts, db: sqlDB, admin: admin, bob: registerUser(t, ts.URL, "bob", admin), svc: svc}

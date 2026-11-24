@@ -35,7 +35,7 @@ func aiServer(t *testing.T, secret ai.SecretState) (*httptest.Server, *sql.DB, s
 	}
 	svc := testAIService(sqlDB, ai.Fake{}, secret, seed)
 	svc.Fake = true
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	admin := registerUser(t, ts.URL, "root", "")
 	return ts, sqlDB, admin
@@ -494,7 +494,7 @@ func TestAIKeyUndecryptable(t *testing.T) {
 	// The server restarts with another secret.
 	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretOK, 9)
 	svc.Fake = true
-	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	st := statusOf(t, ts2, tok)
 	if st.Reason != "key_undecryptable" || st.Key == nil || st.Key.State != ai.KeyUndecryptable {
@@ -530,7 +530,7 @@ func TestAIKeyDeleteWithoutSecret(t *testing.T) {
 	for _, secret := range []ai.SecretState{ai.SecretMissing, ai.SecretInvalid} {
 		svc := testAIService(sqlDB, ai.Fake{}, secret, 0)
 		svc.Fake = true
-		ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+		ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 		t.Cleanup(ts2.Close)
 		if st := statusOf(t, ts2, tok); st.Reason == "" {
 			t.Fatalf("%s: status = %+v", secret, st)
@@ -538,7 +538,7 @@ func TestAIKeyDeleteWithoutSecret(t *testing.T) {
 	}
 	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretMissing, 0)
 	svc.Fake = true
-	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	if resp := doJSON(t, http.MethodDelete, ts2.URL, "/api/ai/keys/anthropic", tok, nil); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("DELETE: %d", resp.StatusCode)
@@ -723,7 +723,7 @@ func (c counting) ValidateCounted(context.Context, ai.Credentials) (int, error) 
 func TestValidateFallbackRecordsEveryCall(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	svc := testAIService(sqlDB, counting{calls: 2}, ai.SecretOK, 7)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
 	if r := putKey(t, ts, tok, "openai", map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {

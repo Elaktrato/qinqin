@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ func TestAdminPackChangesKickPackageBuilds(t *testing.T) {
 	rctx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 	go b.Run(rctx)
-	e.ts = httptest.NewServer(api.New(sqlDB, e.dataDir, nil, api.WithImportDone(e.done), api.WithPackages(b)))
+	e.ts = newTestServer(sqlDB, api.New(sqlDB, e.dataDir, nil, api.WithImportDone(e.done), api.WithPackages(b)))
 	t.Cleanup(e.ts.Close)
 	e.admin = registerUser(t, e.ts.URL, "admin", "")
 

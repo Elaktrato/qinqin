@@ -74,17 +74,29 @@ func mkInvite(t *testing.T, sqlDB *sql.DB, maxUses int) string {
 	return tok
 }
 
-func TestBootstrapWorksInEveryMode(t *testing.T) {
-	for _, mode := range []string{"closed", "invite", "open"} {
+// An empty instance has no registration path of its own any more (#211):
+// serve bootstraps the admin before the port opens, and with the bootstrap
+// off the mode decides as anywhere, so the default (closed) refuses and
+// nobody ever becomes administrator by registering.
+func TestEmptyInstanceGrantsNoAdminByRegistration(t *testing.T) {
+	for mode, want := range map[string]struct {
+		status int
+		code   string
+	}{
+		"closed": {403, "registration_closed"},
+		"invite": {403, "invite_invalid"},
+		"open":   {201, ""},
+	} {
 		ts, sqlDB := newLooseServer(t)
 		setAuthSetting(t, sqlDB, "registration", mode)
-		if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"}); st != 201 {
-			t.Errorf("%s: bootstrap = %d %s", mode, st, code)
+		st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"})
+		if st != want.status || code != want.code {
+			t.Errorf("%s: first registration = %d %q, want %d %q", mode, st, code, want.status, want.code)
 		}
-		var admin bool
-		sqlDB.QueryRow(`SELECT admin FROM users WHERE username = 'firstone'`).Scan(&admin)
-		if !admin {
-			t.Errorf("%s: first user is not admin", mode)
+		var admins int
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM users WHERE admin = 1`).Scan(&admins)
+		if admins != 0 {
+			t.Errorf("%s: %d administrators after a registration on an empty instance, want 0", mode, admins)
 		}
 	}
 }
@@ -291,21 +303,5 @@ func TestLegacyAdminRegisterIsAudited(t *testing.T) {
 	sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'user_created' AND actor_name = 'owner'`).Scan(&n)
 	if n != 2 {
 		t.Errorf("user_created rows = %d, want 2 (both legacy branches)", n)
-	}
-}
-
-func TestBootstrapStoresTheValidatedEmail(t *testing.T) {
-	ts, sqlDB := newLooseServer(t)
-	setAuthSetting(t, sqlDB, "email_policy", "required")
-	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"}); st != 422 || code != "email_required" {
-		t.Fatalf("bootstrap without the required email = %d %s", st, code)
-	}
-	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw", "email": "First@Example.org"}); st != 201 {
-		t.Fatalf("bootstrap = %d %s", st, code)
-	}
-	var email, norm string
-	sqlDB.QueryRow(`SELECT email, email_norm FROM users WHERE username = 'firstone'`).Scan(&email, &norm)
-	if email != "First@example.org" || norm != "first@example.org" {
-		t.Errorf("stored %q / %q", email, norm)
 	}
 }

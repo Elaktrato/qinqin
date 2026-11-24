@@ -59,7 +59,7 @@ func newLimitServer(t *testing.T, opts ...api.Option) (*httptest.Server, *sql.DB
 	sqlDB := dbtest.Open(t)
 	clk := &limitClock{t: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)}
 	opts = append([]api.Option{api.WithClock(clk.now)}, opts...)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, clk
 }
@@ -407,18 +407,22 @@ func registerAs(t *testing.T, ts *httptest.Server, xff, bearer, user string) aut
 	return authRaw(t, ts, "/api/auth/register", xff, bearer, bytes.NewReader(b))
 }
 
-func TestAuthLimitRegisterBootstrapGated(t *testing.T) {
-	var firsts atomic.Int64
-	hook := func(ctx context.Context, d *sql.DB, user, pass string) (model.User, error) {
-		firsts.Add(1)
-		return auth.CreateFirstUser(ctx, d, user, pass)
+// An empty instance has no registration of its own (#211): an anonymous
+// register is refused before any hash runs and creates nothing.
+func TestAuthLimitRegisterEmptyInstanceNeverHashes(t *testing.T) {
+	var hashes atomic.Int64
+	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{
+		Hash: func(p string) string { hashes.Add(1); return auth.Hash(p) },
+		CreateUser: func(ctx context.Context, d *sql.DB, user, pass string, admin bool) (model.User, error) {
+			hashes.Add(1)
+			return auth.CreateUser(ctx, d, user, pass, admin)
+		},
+	}))
+	if r := registerAs(t, ts, "198.51.100.1", "", "owner"); r.Status != 403 || r.Err != "registration_closed" {
+		t.Fatalf("register on an empty instance = %+v, want 403 registration_closed", r)
 	}
-	ts, _, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{CreateFirstUser: hook}))
-	if r := registerAs(t, ts, "198.51.100.1", "", "owner"); r.Status != 201 {
-		t.Fatalf("bootstrap = %+v", r)
-	}
-	if firsts.Load() != 1 {
-		t.Fatalf("bootstrap hash ran %d times", firsts.Load())
+	if n, _ := auth.CountUsers(context.Background(), sqlDB); n != 0 || hashes.Load() != 0 {
+		t.Fatalf("users = %d, hashes = %d; want none", n, hashes.Load())
 	}
 }
 
@@ -429,7 +433,7 @@ func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
 		return auth.CreateUser(ctx, d, user, pass, admin)
 	}
 	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{CreateUser: hook}))
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 10; i++ {
@@ -451,7 +455,7 @@ func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
 
 func TestAuthLimitRegisterAdminBulkNotThrottled(t *testing.T) {
 	ts, sqlDB, _ := newLimitServer(t)
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
 		t.Fatal(err)
 	}
 	token, err := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")
@@ -473,16 +477,22 @@ func TestAuthLimitRegisterAdminBulkNotThrottled(t *testing.T) {
 
 func TestAuthLimitRegisterGateBusy(t *testing.T) {
 	entered, release := make(chan struct{}), make(chan struct{})
-	hook := func(ctx context.Context, d *sql.DB, user, pass string) (model.User, error) {
+	hook := func(pass string) string {
 		entered <- struct{}{}
 		<-release
-		return auth.CreateFirstUser(ctx, d, user, pass)
+		return auth.Hash(pass)
 	}
 	p := api.DefaultAuthPolicy()
 	p.Hashes, p.HashWait = 1, 50*time.Millisecond
-	ts, _, _ := newLimitServer(t, api.WithAuthPolicy(p), api.WithAuthHooks(api.AuthHooks{CreateFirstUser: hook}))
+	ts, sqlDB, _ := newLimitServer(t, api.WithAuthPolicy(p), api.WithAuthHooks(api.AuthHooks{Hash: hook}))
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE auth_settings SET registration = 'open'`); err != nil {
+		t.Fatal(err)
+	}
 	done := make(chan authResp)
-	go func() { done <- registerAs(t, ts, "198.51.100.1", "", "owner") }()
+	go func() { done <- registerAs(t, ts, "198.51.100.1", "", "first") }()
 	<-entered
 	if r := registerAs(t, ts, "198.51.100.2", "", "other"); r.Status != 503 || r.Err != "busy" {
 		t.Fatalf("second register = %+v, want 503", r)
@@ -515,7 +525,7 @@ func TestAuthLimitContractFixtures(t *testing.T) {
 	}
 	h := &fastLogin{}
 	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
 		t.Fatal(err)
 	}
 	token, _ := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")
@@ -579,7 +589,7 @@ func TestAuthLimitForwardedLoggedOnce(t *testing.T) {
 
 func TestAuthLimitRegisterWording(t *testing.T) {
 	ts, sqlDB, _ := newLimitServer(t)
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
 		t.Fatal(err)
 	}
 	var last authResp
@@ -608,7 +618,7 @@ func TestAuthLimitAdminParallelCreates(t *testing.T) {
 	pol := api.DefaultAuthPolicy()
 	pol.HashWait = 60 * time.Second
 	ts, sqlDB, _ := newLimitServer(t, api.WithAuthPolicy(pol))
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
 		t.Fatal(err)
 	}
 	token, _ := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")

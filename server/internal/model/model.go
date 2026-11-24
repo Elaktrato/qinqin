@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// User is an authenticated account. The first user registered on a fresh
-// database becomes the instance admin.
+// User is an authenticated account. A fresh database gets its first admin
+// from the serve bootstrap or `qinqin adduser --admin`, never by registering.
 type User struct {
 	ID                 int64   `json:"id"`
 	Username           string  `json:"username"`

@@ -232,8 +232,9 @@ func (s *server) handleAccountDeletionPreview(w http.ResponseWriter, r *http.Req
 // handleDeleteAccount serves DELETE /api/account {password, confirm}: the
 // caller deletes themselves after typing their username and re-entering
 // the password (403 wrong_password, counted by the reauth limiter). The
-// last active administrator is refused (409 last_admin): zero users would
-// reopen the first-user bootstrap to anyone who reaches the URL. A user with
+// last active administrator is refused (409 last_admin): the instance would
+// be left without an administrator (and with zero users, the next start
+// would bootstrap a new one). A user with
 // an authenticator must also send a current code (403 code_invalid).
 func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)

@@ -89,7 +89,7 @@ func newSourcesServerWith(t *testing.T, srcs []sources.Source, opts ...api.Optio
 	t.Helper()
 	dataDir = t.TempDir()
 	sqlDB = dbtest.Open(t)
-	ts = httptest.NewServer(api.New(sqlDB, dataDir, srcs, opts...))
+	ts = newTestServer(sqlDB, api.New(sqlDB, dataDir, srcs, opts...))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }

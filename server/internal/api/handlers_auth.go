@@ -24,11 +24,13 @@ type credentials struct {
 
 // handleRegister creates a user (registration spec section 2). Order: the
 // admin bearer check (an equality lookup, no hash), the client bucket for
-// everyone else, the zero-users bootstrap (always allowed, becomes admin),
-// the legacy admin path (a valid unrestricted admin creates a non-admin
-// with the given password), then the instance mode: closed refuses,
+// everyone else, the legacy admin path (a valid unrestricted admin creates
+// a non-admin with the given password), then the instance mode: closed refuses,
 // invite needs a valid invite, open takes anyone (an invite supplied in
-// either mode is spent and must be valid). Every password hash runs behind
+// either mode is spent and must be valid). Registering never makes an
+// administrator: serve bootstraps the first one before the port opens, or
+// the operator creates it with `qinqin adduser --admin` (#211); an empty
+// instance has the default mode, closed. Every password hash runs behind
 // the gate and before any transaction opens.
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	body, ok := readAuthBody(w, r)
@@ -62,11 +64,6 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
 	}
-	count, err := auth.CountUsers(r.Context(), s.db)
-	if err != nil {
-		internal()
-		return
-	}
 	set, err := auth.LoadSettings(r.Context(), s.db)
 	if err != nil {
 		internal()
@@ -76,7 +73,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// outsider learns nothing about usernames or emails.
 	useInvite := false
 	switch {
-	case count == 0 || isAdmin:
+	case isAdmin:
 	case req.Invite != "":
 		if set.Registration == "closed" {
 			writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
@@ -120,25 +117,6 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	var u model.User
 	switch {
-	case count == 0:
-		// The bootstrap insert re-checks emptiness atomically; losing a
-		// race to another first registration is a closed instance now.
-		err = s.withHashGate(r.Context(), func() error {
-			var e error
-			u, e = s.hash.createFirstUser(r.Context(), s.db, req.Username, req.Password)
-			return e
-		})
-		if errors.Is(err, auth.ErrNotFirst) {
-			writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
-			return
-		}
-		if err == nil && nu.Email != nil {
-			// The validated address of the first account (policy required or
-			// optional): stored unverified like any self-entered one.
-			if err = auth.SetOwnEmail(r.Context(), s.db, u.ID, nu.Email, nu.EmailNorm); err == nil {
-				u.Email = nu.Email
-			}
-		}
 	case isAdmin && req.Email == nil:
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
@@ -172,7 +150,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		internal()
 	default:
-		if isAdmin && count != 0 {
+		if isAdmin {
 			// The legacy administrator path creates users too: it is audited
 			// like the admin route (the row follows the insert).
 			if aerr := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "user_created", ActorID: caller.User.ID,
@@ -347,10 +325,6 @@ func (s *server) hideEmailWhenOff(r *http.Request, u *model.User) {
 // before anyone is signed in. Public, never cached.
 func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	set, err := auth.LoadSettings(r.Context(), s.db)
-	var count int
-	if err == nil {
-		count, err = auth.CountUsers(r.Context(), s.db)
-	}
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -358,7 +332,6 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	mail := s.mailConfigured(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, map[string]any{
-		"bootstrap":         count == 0,
 		"registration":      set.Registration,
 		"emailPolicy":       set.EmailPolicy,
 		"passwordReset":     mail,

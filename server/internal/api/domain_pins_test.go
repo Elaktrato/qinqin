@@ -307,6 +307,7 @@ func pinRest(t *testing.T) []string {
 	p := &pinScript{t: t, url: ts.URL}
 	p.section("auth options and registration")
 	p.do("options before any user", "GET", "/api/auth/options", "", "")
+	p.do("register before any user", "POST", "/api/auth/register", "", `{"username":"first","password":"secret-pass-first"}`)
 	admin := registerUser(t, ts.URL, "admin", "")
 	p.do("options", "GET", "/api/auth/options", "", "")
 	p.do("register while closed", "POST", "/api/auth/register", "", `{"username":"zed","password":"secret-pass-zed"}`)

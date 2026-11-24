@@ -83,7 +83,7 @@ type senseGroupBody struct {
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }
