@@ -1,3 +1,4 @@
+import type { EventLog } from '$lib/events';
 // Journal documents as workspace-scoped plugin data (qinqin-journal):
 // entry:<id>, review:<id>, suggestions and settings. Reads of the list go
 // through the prefix route, so the journal never pulls every plugin row.
@@ -129,6 +130,6 @@ export async function saveJournalSettings(workspaceId: number, s: JournalSetting
 }
 
 /** Records the once-per-day `journal` study event for an entry; rejects on failure. */
-export function recordJournalEvent(workspaceId: number, entryId: string, now: Date): Promise<void> {
-	return sdk.events.record('journal', workspaceId, journalPayload(entryId), now);
+export function recordJournalEvent(events: Pick<EventLog, 'post'>, workspaceId: number, entryId: string, now: Date): Promise<void> {
+	return sdk.events.record((batch) => events.post(batch), 'journal', workspaceId, journalPayload(entryId), now);
 }

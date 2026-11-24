@@ -16,7 +16,6 @@
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
 	import { listedPlugins, pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
-	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';
 	import AdminSettings from '$lib/settings/AdminSettings.svelte';
@@ -42,6 +41,7 @@
 	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 	const app = useApp();
 
@@ -219,7 +219,7 @@
 			});
 			row.saved = true;
 			// The shell nav and /p/<plugin> read the shared store.
-			void loadPluginStates();
+			void session.plugins.load();
 		} catch (err) {
 			row.error = errorText(err, t('settings.plugins.saveFailed'));
 		} finally {

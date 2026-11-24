@@ -4,12 +4,10 @@
 	// days and time studied this month. Every number is computed by
 	// lib/stats/summary.ts from the shared study history; the widget only
 	// formats and lays them out (design §9, §5).
-	import { onEventLogChange } from '$lib/events';
 	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { RETENTION_MIN_REVIEWS } from '$lib/features/flashcards/decks/deckStats';
 	import { t } from '$lib/i18n';
 	import { formatNumber, formatPercent } from '$lib/i18n/format';
-	import { pluginStates } from '$lib/plugins/states';
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration } from '$lib/stats/readingTime';
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
@@ -20,6 +18,8 @@
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
+
+
 	const session = useSession();
 
 	let summary = $state.raw<SummaryNumbers | null>(null);
@@ -33,8 +33,8 @@
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
-		$pluginStates.status === 'ready'
-			? featureEnabled(FLASHCARDS_ID, $pluginStates.list)
+		session.plugins.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, session.plugins.list)
 			: true
 	);
 
@@ -112,7 +112,7 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
-		const offLog = onEventLogChange(again);
+		const offLog = session.events.onChange(again);
 		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();

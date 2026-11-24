@@ -6,7 +6,9 @@
 // of objects, so nothing of one account is reachable from the next.
 
 import type { Auth } from '../auth.svelte';
-import { postEvents } from '../events';
+import { EventLog } from '../events';
+import { PluginStates } from '../plugins/states.svelte';
+import { currentStudyDay, whenStudyDaySettled } from '../time/zone';
 import { Notices } from '../notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
@@ -37,6 +39,10 @@ export class Session {
 
 	/** The one-line notice of the shell. */
 	readonly notices = new Notices();
+	/** The caller's plugin and feature states. */
+	readonly plugins: PluginStates;
+	/** Event posting and the short-lived log cache of the widgets. */
+	readonly events: EventLog;
 	/** The user's workspaces and the one in use. */
 	readonly workspaces: Workspaces;
 	/** The reload after a workspace was deleted elsewhere. */
@@ -50,11 +56,22 @@ export class Session {
 		this.deps = deps;
 		this.#user = user;
 		const { api, local, session, now } = deps;
+		this.plugins = new PluginStates({ api, alive: () => this.alive });
+		this.events = new EventLog({
+			api,
+			now,
+			timers: deps.timers,
+			local,
+			manifests: () => this.plugins.manifests,
+			studyDay: () => currentStudyDay(),
+			whenStudyDaySettled: () => whenStudyDaySettled()
+		});
+		this.onDispose(() => this.events.dispose());
 		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive });
 		this.onDispose((reason) => this.workspaces.dispose(reason));
 		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session });
 		this.outbox = new ReviewOutbox({
-			post: (events) => postEvents(events),
+			post: (events) => this.events.post(events),
 			local,
 			now,
 			timers: deps.timers,
@@ -75,7 +92,8 @@ export class Session {
 			local,
 			user: () => this.#user,
 			alive: () => this.alive,
-			outbox: this.outbox
+			outbox: this.outbox,
+			events: this.events
 		});
 		this.onDispose((reason) => {
 			this.study.dispose();

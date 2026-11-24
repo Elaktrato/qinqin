@@ -1,11 +1,16 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PluginInfo } from '$lib/api/types';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { DEFAULT_BAR, type NavLayout, type NavLayoutChange } from '$lib/frame/navLayout';
 import { createNavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
-import { pluginStates } from '$lib/plugins/states';
 import NavLayoutSettings from './NavLayoutSettings.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const state = (id: string, order: number, enabled = true): PluginInfo => ({ id, manifest: {}, enabled, order });
 // Home, Search, Decks, Reader, Journal, Grammar, Stats: seven sections.
@@ -25,7 +30,7 @@ function setup(initial: NavLayout = { phone: 'bar', bar: [...DEFAULT_BAR] }, sav
 				return { phone: change.phone ?? 'bar', bar: [...(change.bar ?? DEFAULT_BAR)] };
 			})
 	);
-	const view = render(NavLayoutSettings, { store, load: async () => initial, save });
+	const view = render(NavLayoutSettings, { props: { store, load: async () => initial, save }, context: ctx.context });
 	return { store, save, ...view };
 }
 
@@ -38,11 +43,11 @@ const previewNames = () =>
 
 beforeEach(() => {
 	saved = [];
-	pluginStates.set({ list: seven, status: 'ready' });
+	ctx.session.plugins.set({ list: seven, status: 'ready' });
 });
 afterEach(() => {
 	cleanup();
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 describe('Settings → Layout: phone navigation', () => {
@@ -76,7 +81,7 @@ describe('Settings → Layout: the bottom bar', () => {
 		setup();
 		expect(screen.getByText('Up to four sections, then More with the rest.')).toBeTruthy();
 		cleanup();
-		pluginStates.set({ list: five, status: 'ready' });
+		ctx.session.plugins.set({ list: five, status: 'ready' });
 		setup();
 		expect(screen.getByText('All your sections fit, so the bar shows them all.')).toBeTruthy();
 		expect(previewNames()).toEqual(['Home', 'Decks', 'Reader', 'Search', 'Stats']);
@@ -184,11 +189,11 @@ describe('Settings → Layout: the bottom bar', () => {
 	it('the mount read never overwrites a change made before it lands', async () => {
 		let answer: (v: NavLayout) => void = () => {};
 		const store = createNavLayoutStore({ load: async () => ({ phone: 'bar', bar: [...DEFAULT_BAR] }), storage: () => null });
-		render(NavLayoutSettings, {
+		render(NavLayoutSettings, { props: {
 			store,
 			load: () => new Promise<NavLayout>((resolve) => (answer = resolve)),
 			save: async (c: NavLayoutChange) => ({ phone: c.phone ?? 'bar', bar: [...DEFAULT_BAR] })
-		});
+		}, context: ctx.context });
 		await fireEvent.click(screen.getByRole('radio', { name: 'Side menu' }));
 		answer({ phone: 'bar', bar: [...DEFAULT_BAR] });
 		await new Promise((r) => setTimeout(r));

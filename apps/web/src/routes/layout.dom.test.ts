@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { cleanup, render, waitFor, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { get } from 'svelte/store';
@@ -9,15 +11,9 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/api/client')>()),
 	api: vi.fn(() => Promise.resolve([]))
 }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	recordSessionWhenSettled: vi.fn(),
-	record: vi.fn()
-}));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
-import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
 import { api } from '$lib/api/client';
 import { createAppContext, type AppContext } from '$lib/context/app.svelte';
 import { contextOf } from '$lib/context/context';
@@ -26,6 +22,13 @@ import { setUrl } from '$lib/testing/appState.svelte';
 import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
 import { dataRow } from '../lib/testing/keyed';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let recordSessionOnce!: MockInstance<EventLog['recordSessionWhenSettled']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+	recordSessionOnce = vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation((async () => {}) as never);
+});
 
 /** The app context the layout mounts with (a fresh one per mount, as a page load). */
 let app: AppContext;

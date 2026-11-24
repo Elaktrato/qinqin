@@ -4,7 +4,6 @@
 	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { record as recordEvent } from '$lib/events';
 	import { readPayload } from '$lib/eventPayloads';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
@@ -94,6 +93,7 @@
 	import { lookupRecorder } from '$lib/lookups/store';
 	import { prepareVariant, type Variant } from './variants';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	let { id, chapter }: { id: number; chapter: number } = $props();
@@ -1083,7 +1083,7 @@
 		const send = (): void => {
 			const seconds = timer.flush(Date.now());
 			if (seconds > 0 && workspaceId !== null) {
-				void recordEvent('read', workspaceId, readPayload(bookId, seconds));
+				void session.events.record('read', workspaceId, readPayload(bookId, seconds));
 			}
 		};
 		// The book's workspace now, and again whenever the selection changes

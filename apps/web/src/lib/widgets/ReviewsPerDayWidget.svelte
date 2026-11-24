@@ -3,11 +3,9 @@
 	// one bar for each of the last 30 learner days, today emphasised. The
 	// bars are decorative; the visible summary and a visually hidden list
 	// carry every number (design §9, "never colour alone").
-	import { onEventLogChange } from '$lib/events';
 	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
-	import { pluginStates } from '$lib/plugins/states';
 	import { errorText } from '$lib/api/apiErrors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
@@ -15,6 +13,8 @@
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
+
+
 	const session = useSession();
 
 	let series = $state.raw<ReviewDay[] | null>(null);
@@ -27,8 +27,8 @@
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
-		$pluginStates.status === 'ready'
-			? featureEnabled(FLASHCARDS_ID, $pluginStates.list)
+		session.plugins.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, session.plugins.list)
 			: true
 	);
 	const total = $derived(series?.reduce((sum, day) => sum + day.count, 0) ?? 0);
@@ -115,7 +115,7 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
-		const offLog = onEventLogChange(again);
+		const offLog = session.events.onChange(again);
 		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();

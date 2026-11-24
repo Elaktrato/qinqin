@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { pagedPull } from '$lib/testing/legacyCodec';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
@@ -5,7 +7,6 @@ import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/events', () => ({ record: vi.fn(), loadWorkspaceEvents: vi.fn(), onEventLogChange: vi.fn(() => () => {}) }));
 vi.mock('$lib/api/library', () => ({
 	getBook: vi.fn(),
 	getChapter: vi.fn(),
@@ -42,6 +43,13 @@ import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHigh
 import { loadStudyHistory } from '$lib/study/data';
 import { segmentWithReadings } from '$lib/api/segment';
 import BookView from './BookView.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

@@ -6,8 +6,8 @@
 	import { goto } from '$app/navigation';
 	import { legacyRedirect } from '$lib/legacyRoutes';
 	import { findPlugin, webPlugins } from '$lib/plugins';
-	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	// Flashcards and the reader moved to /flashcards and /reader (v0.4.0):
 	// old links land there, and the redirect replaces this history entry.
 	const moved = $derived(legacyRedirect(page.url));
@@ -16,14 +16,14 @@
 	});
 
 	const view = $derived(
-		$pluginStates.status === 'ready' && moved === null
-			? findPlugin(page.params.plugin ?? '', webPlugins, $pluginStates.list)?.pages?.[0]
+		session.plugins.status === 'ready' && moved === null
+			? findPlugin(page.params.plugin ?? '', webPlugins, session.plugins.list)?.pages?.[0]
 			: undefined
 	);
 
 	// A direct page load can mount before the shell has loaded states.
 	onMount(() => {
-		if ($pluginStates.status === 'idle') void loadPluginStates();
+		if (session.plugins.status === 'idle') void session.plugins.load();
 	});
 </script>
 
@@ -31,9 +31,9 @@
 	<title>{pageTitle(view ? '' : t('app.plugin.title'))}</title>
 </svelte:head>
 
-{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
+{#if session.plugins.status === 'idle' || session.plugins.status === 'loading'}
 	<div class="page-body"><p class="notice">{t('app.plugin.loading')}</p></div>
-{:else if $pluginStates.status === 'error'}
+{:else if session.plugins.status === 'error'}
 	<div class="page-body"><p class="notice" role="alert">{t('app.plugin.loadFailed')}</p></div>
 {:else if view}
 	{@const Page = view.component}

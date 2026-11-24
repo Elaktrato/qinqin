@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,8 +11,12 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 import { api } from '$lib/api/client';
 import type { PluginInfo } from '$lib/api/types';
 import { primaryActions } from '$lib/ui/testing/primary';
-import { pluginStates } from '$lib/plugins/states';
 import FeatureSettings from './FeatureSettings.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 let server: PluginInfo[];
 
@@ -21,7 +26,7 @@ beforeEach(() => {
 		{ id: 'qinqin-reader', manifest: {}, enabled: false, order: 0 },
 		{ id: 'qinqin-journal', manifest: {}, enabled: true, order: 1 }
 	];
-	pluginStates.set({ list: structuredClone(server), status: 'ready' });
+	ctx.session.plugins.set({ list: structuredClone(server), status: 'ready' });
 	vi.mocked(api).mockImplementation((async (url: string, init?: { method?: string; body?: { enabled: boolean } }) => {
 		if (url === '/api/plugins') return structuredClone(server);
 		const m = /^\/api\/plugins\/([^/]+)\/state$/.exec(url);
@@ -36,12 +41,12 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 describe('Settings -> Features', () => {
 	it('lists Decks and Reader with the user state, and no plugin', () => {
-		render(FeatureSettings);
+		render(FeatureSettings, { context: ctx.context });
 		const decks = screen.getByRole('checkbox', { name: /Decks/ }) as HTMLInputElement;
 		const reader = screen.getByRole('checkbox', { name: /Reader/ }) as HTMLInputElement;
 		expect(decks.checked).toBe(true);
@@ -50,7 +55,7 @@ describe('Settings -> Features', () => {
 	});
 
 	it('a switch PUTs {enabled, order: 0} for the feature and refreshes the shared states', async () => {
-		render(FeatureSettings);
+		render(FeatureSettings, { context: ctx.context });
 		await fireEvent.click(screen.getByRole('checkbox', { name: /Reader/ }));
 		await waitFor(() => expect($state()).toEqual(true));
 		expect(vi.mocked(api)).toHaveBeenCalledWith('/api/plugins/qinqin-reader/state', {
@@ -61,19 +66,19 @@ describe('Settings -> Features', () => {
 	});
 
 	it('says what switching off does: hidden for you, nothing deleted', () => {
-		render(FeatureSettings);
+		render(FeatureSettings, { context: ctx.context });
 		expect(screen.getByText(/nothing is deleted/i)).toBeTruthy();
 	});
 
 	it('the switches are hairline rows and the view has no primary action (#106)', () => {
-		render(FeatureSettings);
+		render(FeatureSettings, { context: ctx.context });
 		expect(document.querySelectorAll('.features li').length).toBe(2);
 		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 
 	it('a failed save puts the switch back and says so', async () => {
 		vi.mocked(api).mockRejectedValueOnce(new Error('offline'));
-		render(FeatureSettings);
+		render(FeatureSettings, { context: ctx.context });
 		const decks = screen.getByRole('checkbox', { name: /Decks/ }) as HTMLInputElement;
 		await fireEvent.click(decks);
 		// The thrown text is never shown (#168): the screen's own sentence is.
@@ -83,7 +88,5 @@ describe('Settings -> Features', () => {
 });
 
 function $state(): boolean | undefined {
-	let value: boolean | undefined;
-	pluginStates.subscribe((s) => (value = s.list.find((p) => p.id === 'qinqin-reader')?.enabled))();
-	return value;
+	return ctx.session.plugins.list.find((p) => p.id === 'qinqin-reader')?.enabled;
 }

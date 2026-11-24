@@ -141,6 +141,7 @@
 				// The store checks the row again 30 s later (another device's stale
 				// write-back); reload when it had to clear again and the page is open.
 				const out = await clearHistory(id, new Date(), {
+					invalidateEvents: (w) => session.events.invalidate(w),
 					onRepaired: (w) => {
 						if (mounted && w === wsId) void load(w);
 					}

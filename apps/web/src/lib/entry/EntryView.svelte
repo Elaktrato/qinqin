@@ -19,7 +19,6 @@
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
-	import { record } from '$lib/events';
 	import { viewPayload } from '$lib/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
@@ -39,6 +38,7 @@
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 	const app = useApp();
 
@@ -255,7 +255,7 @@
 		const workspace = session.workspaces.current?.id ?? null;
 		if (viewed === null || workspace === null || viewedEntry === viewed) return;
 		viewedEntry = viewed;
-		void record('view', workspace, viewPayload(viewed));
+		void session.events.record('view', workspace, viewPayload(viewed));
 	});
 
 	function variantText(variant: EntryBase): string {

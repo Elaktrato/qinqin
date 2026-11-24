@@ -14,7 +14,6 @@ vi.mock('$lib/widgets/options', async (importOriginal) => ({
 	saveHeatmapLayout: vi.fn()
 }));
 
-import { pluginStates } from '$lib/plugins/states';
 import { loadLayout } from '$lib/widgets/layout';
 import { loadWidgetOptions, saveHeatmapLayout } from '$lib/widgets/options';
 import { primaryActions } from '$lib/ui/testing/primary';
@@ -26,7 +25,7 @@ beforeEach(() => {
 });
 
 beforeEach(() => {
-	pluginStates.set({ list: [], status: 'ready' });
+	ctx.session.plugins.set({ list: [], status: 'ready' });
 	vi.mocked(loadLayout).mockResolvedValue(null);
 	vi.mocked(loadWidgetOptions).mockResolvedValue({ row: null, heatmapLayout: 'garden' });
 	vi.mocked(saveHeatmapLayout).mockResolvedValue(undefined);
@@ -34,7 +33,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 const fieldset = () => screen.findByRole('group', { name: 'Heatmap layout' });
@@ -133,12 +132,12 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 describe('Settings -> Home with a feature switched off', () => {
 	it("lists the flashcards widgets while Flashcards is on and leaves them out when it is off", async () => {
-		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
 		const { unmount } = render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		expect(screen.getAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(1);
 		unmount();
-		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
 		render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		// No row; the parked note says it stays in the layout for when the feature is back.

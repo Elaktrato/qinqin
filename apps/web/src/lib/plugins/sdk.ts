@@ -5,7 +5,7 @@
 // the user what a plugin does; all plugin code runs in one trusted bundle, so
 // this is not a security boundary.
 
-import { postEvents } from '../events';
+import type { StudyEventBody } from '../api/types';
 import { keyedData, type KeyedScope } from '../sync/keyed';
 import { newUlid } from '../ulid';
 import type { ContractManifest, Permission } from './contract';
@@ -25,7 +25,8 @@ export interface PluginSdk {
 	readonly id: string;
 	data: { user(): DataScope; workspace(id: number): DataScope };
 	events: {
-		record(type: string, workspace: number, payload?: unknown, at?: Date): Promise<void>;
+		/** record posts one event through `post` (the session's EventLog.post). */
+		record(post: (events: StudyEventBody[]) => Promise<void>, type: string, workspace: number, payload?: unknown, at?: Date): Promise<void>;
 	};
 }
 
@@ -52,12 +53,12 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 			}
 		},
 		events: {
-			record(type, workspace, payload = null, at = new Date()) {
+			record(post, type, workspace, payload = null, at = new Date()) {
 				need('write:study-events');
 				if (!manifest.events.some((e) => e.type === type)) {
 					throw new PermissionError(`plugin ${id} does not declare the event type "${type}"`);
 				}
-				return postEvents([
+				return post([
 					{
 						id: newUlid(at.getTime()),
 						workspaceId: workspace,

@@ -99,6 +99,8 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
   pure module wants a function — cost if wrong: one more argument at every call.
 - Ruling: the study commands' "selected workspace" fixture (`selectWorkspace`) went: the study layer cannot reach
   the session's selection at all, so #174's guarantee holds by construction — cost if wrong: none.
+- Ruling: the plugin SDK's `events.record` takes the poster first (the session's `EventLog.post`) instead of
+  reaching a module function — the SDK stays a module per plugin until #199 removes it — cost if wrong: none.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
   choice and the lookup buffer go with the session that held them — cost if wrong: none found; two tests now sign
   in before signing out.
@@ -133,4 +135,15 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    on runes (`pwa/register.svelte.ts`, created by the app context and registered by `start()`), the sign-out
    prompt as `app.logoutPrompt`. Pure moves; the existing tests are the guard (rewritten onto instances), plus two
    new cases for what moved into the class (the session-end reset, the watched window). Full vitest under Node 26:
-   599 files, 12,663 passed (+ the lint's stale entries removed); e2e 13 passed.
+   599 files, 12,663 passed (+ the lint's stale entries removed); e2e 13 passed. (The two new cases were written
+   with the class, not before it.)
+7. Plugin states and the event log into the session (task 5 of the list, with the event log because the plugin
+   manifests decide which posted events drop the cached log): `PluginStates` (`plugins/states.svelte.ts`) replaces
+   the store and `setRegisteredManifests` (`logChangingTypes(manifests)` takes them); `EventLog` (`events.ts`)
+   replaces `postEvents`, `record`, `loadWorkspaceEvents`, `onEventLogChange`, `recordSessionOnce/WhenSettled`
+   and the module log cache; the plugin SDK records through the poster it is given. Pure moves: `events.test.ts`,
+   `states.test.ts`, `contract.test.ts` rewritten onto instances (one new case: a plugin-states answer after the
+   session ended sets nothing, which the lateAnswers test also covers); tests that mocked the event functions spy
+   on `EventLog.prototype`. Full vitest under Node 26: 599 files, 12,664 passed; e2e 13 passed.
+   Environment: the root file system has about 35 MB available to this machine's processes; from here on vitest
+   and e2e run with `TMPDIR` (and the e2e Go build with `GOCACHE`) on `/dev/shm`.

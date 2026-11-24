@@ -161,7 +161,7 @@ describe('/lookups page', () => {
 		expect(clearHistory).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-		await waitFor(() => expect(clearHistory).toHaveBeenCalledWith(3, expect.any(Date), { onRepaired: expect.any(Function) }));
+		await waitFor(() => expect(clearHistory).toHaveBeenCalledWith(3, expect.any(Date), { invalidateEvents: expect.any(Function), onRepaired: expect.any(Function) }));
 		expect(await screen.findByText('No lookups yet. Hover or select a word in the reader, or open a search result.')).toBeTruthy();
 	});
 

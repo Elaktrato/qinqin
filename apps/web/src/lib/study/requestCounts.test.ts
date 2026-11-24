@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-import { invalidateWorkspaceEvents } from '../events';
 import { StudyServer } from '../testing/studyServer';
 import * as build from '../testing/study';
 import { cardRow, deckRow } from './rows';
@@ -27,7 +26,6 @@ let server: StudyServer;
 
 beforeEach(() => {
 	newSession(ctx);
-	invalidateWorkspaceEvents();
 	server = new StudyServer({ pageSize: 100 });
 	const at = '2026-01-01T00:00:00Z';
 	const meta = { workspaceId: WS, version: 1, updatedAt: at, deletedAt: null };

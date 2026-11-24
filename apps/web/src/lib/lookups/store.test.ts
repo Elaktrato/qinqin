@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 const { invalidate } = vi.hoisted(() => ({ invalidate: vi.fn() }));
-vi.mock('../events', async (orig) => ({ ...(await orig<typeof import('../events')>()), invalidateWorkspaceEvents: invalidate }));
 
 import { FakeCacheStorage } from '../testing/fakeCaches';
 import { ownPartition } from '../pwa/partitions';
@@ -66,7 +65,7 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)], x: 1 }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 4 }));
-		const out = await clearHistory(3, new Date('2026-11-16T12:00:00.000Z'));
+		const out = await clearHistory(3, new Date('2026-11-16T12:00:00.000Z'), { invalidateEvents: invalidate });
 		expect(out.eventsDeleted).toBe(4);
 		expect(out.history).toEqual({ clearedAt: '2026-11-16T12:00:00.000Z', items: [], extra: { x: 1 } });
 		const c = calls();

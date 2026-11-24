@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { listAllBooks } from '$lib/api/library';
 	import { t } from '$lib/i18n';
-	import { loadWorkspaceEvents } from '$lib/events';
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
@@ -9,6 +8,7 @@
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	// Reading time (reader plugin): tracked time in the active workspace,
@@ -70,7 +70,7 @@
 			// grow large enough to make it slow, a server-side summary endpoint
 			// is the planned follow-up.
 			const [events, names] = await Promise.all([
-				loadWorkspaceEvents(workspace, { force }),
+				session.events.load(workspace, { force }),
 				loadTitles()
 			]);
 			if (seq !== requestSeq) return;

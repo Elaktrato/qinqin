@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -14,10 +16,6 @@ vi.mock('$lib/api/account', async (importOriginal) => ({
 	getAuthOptions: vi.fn(() => Promise.reject(new Error('offline')))
 }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	onEventLogChange: vi.fn(() => () => {})
-}));
 vi.mock('$lib/time/zone', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/time/zone')>();
 	return { ...actual, currentStudyDay: vi.fn(actual.currentStudyDay) };
@@ -32,10 +30,14 @@ import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { onEventLogChange } from '$lib/events';
-import { pluginStates } from '$lib/plugins/states';
 import { onStudyChange } from '$lib/study/data';
 import Page from './+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let onEventLogChange!: MockInstance<EventLog['onChange']>;
+beforeEach(() => {
+	onEventLogChange = vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -66,7 +68,7 @@ function select(id: number | null, language = 'zh'): void {
 
 beforeEach(() => {
 	select(1);
-	pluginStates.set({ list: [], status: 'ready' });
+	ctx.session.plugins.set({ list: [], status: 'ready' });
 	vi.mocked(loadMilestones).mockResolvedValue(milestones());
 	vi.mocked(markSeen).mockResolvedValue(undefined);
 });
@@ -74,7 +76,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	select(null);
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 const cardHeading = () => screen.queryByRole('heading', { level: 2, name: 'Milestone reached' });
@@ -83,7 +85,7 @@ describe('home milestones', () => {
 	it('shows the card for the log families above the widgets', async () => {
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
-		expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, { scope: 'home', language: 'zh' });
+		expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, { scope: 'home', language: 'zh', states: expect.anything() });
 		expect(screen.getByText(/^100 reviews, reached/)).toBeTruthy();
 	});
 
@@ -112,11 +114,11 @@ describe('home milestones', () => {
 	});
 
 	it('nothing before the plugin states are ready, and nothing without a workspace', async () => {
-		pluginStates.set({ list: [], status: 'loading' });
+		ctx.session.plugins.set({ list: [], status: 'loading' });
 		render(Page, { context: ctx.context });
 		await tick();
 		expect(loadMilestones).not.toHaveBeenCalled();
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		select(null);
 		await waitFor(() => expect(cardHeading()).toBeNull());
@@ -141,7 +143,7 @@ describe('home milestones', () => {
 		await tick();
 		select(2);
 		await waitFor(() => expect(screen.getByText(/^from workspace 2, reached/)).toBeTruthy());
-		expect(loadMilestones).toHaveBeenLastCalledWith(expect.anything(), 2, { scope: 'home', language: 'zh' });
+		expect(loadMilestones).toHaveBeenLastCalledWith(expect.anything(), 2, { scope: 'home', language: 'zh', states: expect.anything() });
 		first.resolve(milestones('from workspace 1'));
 		await tick();
 		await Promise.resolve();
@@ -204,11 +206,11 @@ describe('home with a feature switched off', () => {
 		vi.mocked(allWidgets).mockImplementation((plugins, states, language) =>
 			actual.allWidgets(plugins, states, language, [])
 		);
-		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
 		const { unmount } = render(Page, { context: ctx.context });
 		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
 		unmount();
-		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		ctx.session.plugins.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
 		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();

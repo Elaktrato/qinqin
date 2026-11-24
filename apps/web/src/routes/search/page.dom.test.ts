@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext, workspacesState } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -13,11 +15,6 @@ vi.mock('$lib/api/entries', () => ({
 	getCharsUnderRadical: vi.fn(async () => []),
 	getSharedEntry: vi.fn()
 }));
-vi.mock('$lib/events', () => ({
-	record: vi.fn(),
-	loadWorkspaceEvents: vi.fn(async () => []),
-	onEventLogChange: vi.fn(() => () => {})
-}));
 vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
@@ -32,13 +29,20 @@ vi.mock('$lib/api/frequency', () => ({
 
 import { goto } from '$app/navigation';
 import { getEntry } from '$lib/api/entries';
-import { record } from '$lib/events';
 import { recordLookup } from '$lib/lookups/sink';
 import { search } from '$lib/api/search';
 import { getSchemes } from '$lib/api/schemes';
 import { PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 import { setUrl } from '$lib/testing/appState.svelte';
 import Page from './+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let record!: MockInstance<EventLog['record']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

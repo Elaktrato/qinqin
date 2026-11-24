@@ -4,12 +4,12 @@
 	// write or a posted event of the workspace; a slower answer for another
 	// workspace is dropped.
 	import { untrack } from 'svelte';
-	import { onEventLogChange } from '$lib/events';
-	import { pluginStates } from '$lib/plugins/states';
 	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
 	import MilestoneCard from './MilestoneCard.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from './loadMilestones';
 	import { useSession } from '$lib/context/context';
+
+
 	const session = useSession();
 
 	let view = $state.raw<MilestonesView | null>(null);
@@ -17,7 +17,7 @@
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const language = $derived(session.workspaces.current?.language ?? '');
-	const ready = $derived($pluginStates.status === 'ready');
+	const ready = $derived(session.plugins.status === 'ready');
 
 	async function load(id: number | null, lang: string, isReady: boolean): Promise<void> {
 		const mine = ++seq;
@@ -29,7 +29,7 @@
 			return;
 		}
 		try {
-			const loaded = await loadMilestones(session.study, id, { scope: 'home', language: lang });
+			const loaded = await loadMilestones(session.study, id, { scope: 'home', language: lang, states: session.plugins });
 			if (mine === seq) view = loaded;
 		} catch {
 			if (mine === seq) view = null;
@@ -46,7 +46,7 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, isReady);
 		};
-		const offLog = onEventLogChange(again);
+		const offLog = session.events.onChange(again);
 		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();

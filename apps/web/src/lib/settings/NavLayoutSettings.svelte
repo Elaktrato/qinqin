@@ -24,10 +24,11 @@
 	} from '$lib/frame/navLayout';
 	import { navLayoutStore, type NavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import { frameSections, homeSection, type FrameSection } from '$lib/frame/sections';
-	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 	import type { MessageKey } from '$lib/i18n';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { Button, Panel, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		store = navLayoutStore,
@@ -44,8 +45,8 @@
 		drawer: { label: 'settings.navLayout.mode.drawer', description: 'settings.navLayout.mode.drawerDescription' }
 	};
 
-	const ready = $derived($pluginStates.status === 'ready');
-	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections($pluginStates)]);
+	const ready = $derived(session.plugins.status === 'ready');
+	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.plugins)]);
 	const visibleIds = $derived(sections.map((s) => s.id));
 	const phone = $derived(store.phone);
 	const bar = $derived(store.bar);
@@ -63,7 +64,7 @@
 	let touched = false;
 
 	onMount(() => {
-		if ($pluginStates.status === 'idle') void loadPluginStates();
+		if (session.plugins.status === 'idle') void session.plugins.load();
 		// Fresh from the server: another device may have changed it.
 		load().then(
 			(fresh) => {

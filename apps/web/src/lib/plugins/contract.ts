@@ -78,18 +78,6 @@ export function builtinManifests(): ContractManifest[] {
 	return BUILTINS;
 }
 
-let registered: unknown[] | null = null;
-
-/**
- * setRegisteredManifests remembers the manifests of every plugin the
- * server lists (admin-registered ones too; enabled or not, since a
- * disabled plugin's history still counts), so their event types refresh
- * the caches like a built-in's. null forgets them.
- */
-export function setRegisteredManifests(manifests: unknown[] | null): void {
-	registered = manifests;
-}
-
 function activityTypes(manifest: unknown): string[] {
 	if (typeof manifest !== 'object' || manifest === null) return [];
 	const m = manifest as { events?: unknown };
@@ -105,12 +93,14 @@ function activityTypes(manifest: unknown): string[] {
 
 /**
  * logChangingTypes is every event type with an activity rule declared by a
- * built-in or a registered plugin (today review and read from the core,
+ * built-in or a registered plugin (`registered`: the manifests the session's
+ * plugin states listed, enabled or not, since a disabled plugin's history
+ * still counts) (today review and read from the core,
  * journal from the journal): only those change what the readers of the
  * full event log show. The core's `session`, `view` and `lookup` events
  * have no rule; `session` is posted on every home load, and dropping the
  * cached log for it would defeat the cache.
  */
-export function logChangingTypes(): ReadonlySet<string> {
+export function logChangingTypes(registered: readonly unknown[] | null = null): ReadonlySet<string> {
 	return new Set([...BUILTINS, ...(registered ?? [])].flatMap(activityTypes));
 }

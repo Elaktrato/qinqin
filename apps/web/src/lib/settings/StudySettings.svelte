@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { loadWorkspaceEvents } from '$lib/events';
 	import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
 	import { saveWorkspaceLimits } from '$lib/study/commands/settings';
 	import GoalSettings from './GoalSettings.svelte';
@@ -31,6 +30,7 @@
 	} from './vacationForm';
 	import { Button, Field, Section } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
@@ -118,7 +118,7 @@
 		const out = new Map<number, number[]>();
 		await Promise.all(
 			ids.map(async (id) => {
-				const events = await loadWorkspaceEvents(id);
+				const events = await session.events.load(id);
 				out.set(
 					id,
 					events.filter((e) => e.type === 'review').map((e) => Date.parse(e.ts))

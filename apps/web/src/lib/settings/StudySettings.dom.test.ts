@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import type { WorkspacesState } from '$lib/workspaces.svelte';
 import { testContext, type TestContext, updateWorkspaces } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
@@ -21,7 +23,6 @@ vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
 	saveWorkspaceLimits: vi.fn(() => Promise.resolve())
 }));
-vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/stats', () => ({
 	fetchActivity: vi.fn(() => Promise.resolve({ from: '', to: '', timeZone: 'UTC', sources: [], cells: [] }))
 }));
@@ -31,7 +32,6 @@ vi.mock('$lib/notes/store', () => ({
 	saveNoteCfg: vi.fn(() => Promise.resolve())
 }));
 
-import { loadWorkspaceEvents } from '$lib/events';
 import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
 import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
 import { saveWorkspaceLimits } from '$lib/study/commands/settings';
@@ -41,6 +41,12 @@ import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StudySettings from './StudySettings.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let loadWorkspaceEvents!: MockInstance<EventLog['load']>;
+beforeEach(() => {
+	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

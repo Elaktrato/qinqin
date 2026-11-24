@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,11 +11,6 @@ vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(async () => []),
 	getSharedEntry: vi.fn()
-}));
-vi.mock('$lib/events', () => ({
-	record: vi.fn(),
-	loadWorkspaceEvents: vi.fn(async () => []),
-	onEventLogChange: vi.fn(() => () => {})
 }));
 vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
 vi.mock('$lib/api/frequency', () => ({
@@ -40,11 +37,18 @@ import { ApiError } from '$lib/api/client';
 import { getEntry } from '$lib/api/entries';
 import { getEntryRanks } from '$lib/api/frequency';
 import { getStudyData } from '$lib/study/data';
-import { record } from '$lib/events';
 import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';
 import EntryView from './EntryView.svelte';
 import ActionsHarness from './testing/ActionsHarness.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let record!: MockInstance<EventLog['record']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

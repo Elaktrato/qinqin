@@ -4,18 +4,25 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import {
-	WORKSPACE_EVENTS_TTL_MS,
-	invalidateWorkspaceEvents,
-	loadWorkspaceEvents,
-	onEventLogChange,
-	postEvents,
-	record,
-	recordSessionOnce,
-	recordSessionWhenSettled,
-	sinceDaysAgo
-} from './events';
+import { api } from './api/client';
+import { browserTimers, webStorage } from './context/deps';
+import { EventLog, WORKSPACE_EVENTS_TTL_MS, sinceDaysAgo } from './events';
 import { studyDay } from './time/studyDay';
+import { currentStudyDay, whenStudyDaySettled } from './time/zone';
+
+// A fresh event log per test (record 0009: the session's).
+let eventLog: EventLog;
+beforeEach(() => {
+	eventLog = new EventLog({
+		api,
+		now: () => Date.now(),
+		timers: browserTimers,
+		local: () => webStorage('localStorage'),
+		manifests: () => null,
+		studyDay: () => currentStudyDay(),
+		whenStudyDaySettled: () => whenStudyDaySettled()
+	});
+});
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -61,7 +68,7 @@ describe('record', () => {
 	});
 
 	it('posts one event in the batch envelope', async () => {
-		await record('view', 7, { entryId: 42 });
+		await eventLog.record('view', 7, { entryId: 42 });
 
 		const [call] = vi.mocked(fetch).mock.calls;
 		expect(String(call[0])).toBe('/api/events/batch');
@@ -81,7 +88,7 @@ describe('record', () => {
 		vi.useFakeTimers({ toFake: ['Date'] });
 		vi.setSystemTime(new Date('2026-03-15T08:30:00Z'));
 
-		await record('session', 3);
+		await eventLog.record('session', 3);
 
 		const event = lastBatch().events[0];
 		expect(event.id).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
@@ -90,7 +97,7 @@ describe('record', () => {
 	});
 
 	it('normalizes an omitted payload to JSON null', async () => {
-		await record('session', 3);
+		await eventLog.record('session', 3);
 
 		expect(lastBatch().events[0].payload).toBeNull();
 	});
@@ -99,7 +106,7 @@ describe('record', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
 
-		await expect(record('lookup', 1, { query: '漢' })).resolves.toBeUndefined();
+		await expect(eventLog.record('lookup', 1, { query: '漢' })).resolves.toBeUndefined();
 		expect(warn).toHaveBeenCalled();
 
 		warn.mockRestore();
@@ -109,7 +116,7 @@ describe('record', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		sentEvents(new Response('server exploded', { status: 500 }));
 
-		await expect(record('lookup', 1, { query: '漢' })).resolves.toBeUndefined();
+		await expect(eventLog.record('lookup', 1, { query: '漢' })).resolves.toBeUndefined();
 		expect(warn).toHaveBeenCalled();
 
 		warn.mockRestore();
@@ -134,8 +141,8 @@ describe('recordSessionOnce', () => {
 	});
 
 	it('records at most one session per workspace per UTC day', () => {
-		recordSessionOnce(5);
-		recordSessionOnce(5);
+		eventLog.recordSessionOnce(5);
+		eventLog.recordSessionOnce(5);
 
 		expect(fetch).toHaveBeenCalledTimes(1);
 		expect(lastBatch().events[0]).toMatchObject({ type: 'session', workspaceId: 5 });
@@ -145,19 +152,19 @@ describe('recordSessionOnce', () => {
 	it('keys the receipt by the learner day: 15:30Z is already the next day in Tokyo', () => {
 		const tokyo = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
 		vi.setSystemTime(new Date('2026-03-15T14:00:00Z')); // 23:00 on the 15th in Tokyo
-		recordSessionOnce(5, tokyo);
+		eventLog.recordSessionOnce(5, tokyo);
 		vi.setSystemTime(new Date('2026-03-15T15:30:00Z')); // 00:30 on the 16th
-		recordSessionOnce(5, tokyo);
+		eventLog.recordSessionOnce(5, tokyo);
 		expect(fetch).toHaveBeenCalledTimes(2);
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBe('1');
 		expect(localStorage.getItem('qinqin.session.5.2026-03-16')).toBe('1');
-		recordSessionOnce(5, tokyo); // same learner day: no third event
+		eventLog.recordSessionOnce(5, tokyo); // same learner day: no third event
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
 	it('treats workspaces independently', () => {
-		recordSessionOnce(5);
-		recordSessionOnce(6);
+		eventLog.recordSessionOnce(5);
+		eventLog.recordSessionOnce(6);
 
 		expect(fetch).toHaveBeenCalledTimes(2);
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBe('1');
@@ -165,9 +172,9 @@ describe('recordSessionOnce', () => {
 	});
 
 	it('records again on the next UTC day', () => {
-		recordSessionOnce(5);
+		eventLog.recordSessionOnce(5);
 		vi.setSystemTime(DAY_TWO);
-		recordSessionOnce(5);
+		eventLog.recordSessionOnce(5);
 
 		expect(fetch).toHaveBeenCalledTimes(2);
 		expect(localStorage.getItem('qinqin.session.5.2026-03-16')).toBe('1');
@@ -183,7 +190,7 @@ describe('recordSessionOnce', () => {
 			}
 		});
 
-		recordSessionOnce(5);
+		eventLog.recordSessionOnce(5);
 
 		expect(fetch).toHaveBeenCalledTimes(1);
 	});
@@ -208,7 +215,7 @@ describe('recordSessionWhenSettled', () => {
 		const { syncStudyDayUser, clearStudyDay } = await import('./time/zone');
 		clearStudyDay();
 		void syncStudyDayUser(9);
-		const done = recordSessionWhenSettled(5);
+		const done = eventLog.recordSessionWhenSettled(5);
 		await Promise.resolve();
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBeNull();
 		release(new Response(JSON.stringify({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] })));
@@ -255,7 +262,7 @@ describe('loadWorkspaceEvents', () => {
 					: jsonResponse({ accepted: 1, duplicates: 0 })
 			)
 		);
-		invalidateWorkspaceEvents();
+		eventLog.invalidate();
 	});
 
 	afterEach(() => {
@@ -264,8 +271,8 @@ describe('loadWorkspaceEvents', () => {
 	});
 
 	it('reads the full log of the workspace once for concurrent and repeated callers', async () => {
-		const [a, b] = await Promise.all([loadWorkspaceEvents(7), loadWorkspaceEvents(7)]);
-		await loadWorkspaceEvents(7);
+		const [a, b] = await Promise.all([eventLog.load(7), eventLog.load(7)]);
+		await eventLog.load(7);
 
 		expect(a).toBe(b);
 		expect(a).toEqual(log);
@@ -280,7 +287,7 @@ describe('loadWorkspaceEvents', () => {
 			if (url === '/api/events?page=e1.x&workspace=7') return jsonResponse({ events: [item('b')], more: false, next: null });
 			return jsonResponse({ error: 'unexpected' }, 500);
 		});
-		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a', 'b']);
+		expect((await eventLog.load(7)).map((e) => e.id)).toEqual(['a', 'b']);
 		expect(logReads()).toEqual(['/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7', '/api/events?page=e1.x&workspace=7']);
 	});
 
@@ -296,32 +303,32 @@ describe('loadWorkspaceEvents', () => {
 			}
 			return jsonResponse({ error: 'unexpected' }, 500);
 		});
-		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a']);
+		expect((await eventLog.load(7)).map((e) => e.id)).toEqual(['a']);
 		cut = false;
 		await new Promise((r) => setTimeout(r, 0));
-		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a', 'b']);
+		expect((await eventLog.load(7)).map((e) => e.id)).toEqual(['a', 'b']);
 	});
 
 	it('reads again after the TTL', async () => {
 		vi.useFakeTimers({ now: new Date('2026-05-01T00:00:00Z'), toFake: ['Date'] });
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
 		vi.setSystemTime(Date.now() + WORKSPACE_EVENTS_TTL_MS);
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
 
 		expect(logReads()).toHaveLength(2);
 	});
 
 	it('force reads again', async () => {
-		await loadWorkspaceEvents(7);
-		await loadWorkspaceEvents(7, { force: true });
+		await eventLog.load(7);
+		await eventLog.load(7, { force: true });
 
 		expect(logReads()).toHaveLength(2);
 	});
 
 	it('keeps workspaces apart', async () => {
-		await loadWorkspaceEvents(7);
-		await loadWorkspaceEvents(8);
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
+		await eventLog.load(8);
+		await eventLog.load(7);
 
 		expect(logReads()).toEqual([
 			'/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7',
@@ -331,19 +338,19 @@ describe('loadWorkspaceEvents', () => {
 
 	it('does not cache a failed read', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: 'down' }, 500));
-		await expect(loadWorkspaceEvents(7)).rejects.toThrow();
-		expect(await loadWorkspaceEvents(7)).toEqual(log);
+		await expect(eventLog.load(7)).rejects.toThrow();
+		expect(await eventLog.load(7)).toEqual(log);
 		expect(logReads()).toHaveLength(2);
 	});
 
 	it.each(['review', 'read'])('a posted %s event drops the cached log of its workspace', async (type) => {
 		const changed = vi.fn();
-		const off = onEventLogChange(changed);
-		await loadWorkspaceEvents(7);
-		await loadWorkspaceEvents(8);
-		await postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
-		await loadWorkspaceEvents(7);
-		await loadWorkspaceEvents(8);
+		const off = eventLog.onChange(changed);
+		await eventLog.load(7);
+		await eventLog.load(8);
+		await eventLog.post([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
+		await eventLog.load(7);
+		await eventLog.load(8);
 		off();
 
 		expect(logReads()).toHaveLength(3);
@@ -352,20 +359,20 @@ describe('loadWorkspaceEvents', () => {
 	});
 
 	it.each(['session', 'view', 'lookup'])('a posted %s event keeps the cached log', async (type) => {
-		await loadWorkspaceEvents(7);
-		await postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
+		await eventLog.post([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
+		await eventLog.load(7);
 
 		expect(logReads()).toHaveLength(1);
 	});
 
 	it('a failed post of a review still drops the cached log (it may have landed)', async () => {
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
 		vi.mocked(fetch).mockRejectedValueOnce(new TypeError('network'));
 		await expect(
-			postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }])
+			eventLog.post([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }])
 		).rejects.toThrow();
-		await loadWorkspaceEvents(7);
+		await eventLog.load(7);
 
 		expect(logReads()).toHaveLength(2);
 	});

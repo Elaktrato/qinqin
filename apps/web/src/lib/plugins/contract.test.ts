@@ -4,7 +4,6 @@ import {
 	PERMISSION_LABELS,
 	builtinManifests,
 	logChangingTypes,
-	setRegisteredManifests,
 	sdkSupported
 } from './contract';
 
@@ -29,22 +28,18 @@ describe('logChangingTypes', () => {
 });
 
 describe('logChangingTypes with registered plugins', () => {
-	afterEach(() => setRegisteredManifests(null));
-
 	it('adds the event types with an activity rule of admin-registered plugins', () => {
-		setRegisteredManifests([
+		const registered = [
 			{ id: 'zz-grammar', sdk: 1, events: [{ type: 'drill', activity: { label: 'Drill', describe: { one: '{n}', other: '{n}' } } }, { type: 'review' }, { type: 'quiet' }] },
 			{ id: 'qinqin-core', sdk: 1, events: [{ type: 'session' }] },
 			{ id: 'junk', events: 'nope' },
 			null
-		]);
-		expect([...logChangingTypes()].sort()).toEqual(['drill', 'journal', 'read', 'review']);
+		];
+		expect([...logChangingTypes(registered)].sort()).toEqual(['drill', 'journal', 'read', 'review']);
 	});
 
-	it('falls back to the built-ins when the states are cleared', () => {
-		setRegisteredManifests([{ id: 'x', sdk: 1, events: [{ type: 'drill' }] }]);
-		setRegisteredManifests(null);
-		expect([...logChangingTypes()].sort()).toEqual(['journal', 'read', 'review']);
+	it('falls back to the built-ins without registered manifests', () => {
+		expect([...logChangingTypes(null)].sort()).toEqual(['journal', 'read', 'review']);
 	});
 });
 

@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -8,10 +10,6 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
 vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	onEventLogChange: vi.fn(() => () => {})
-}));
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	onStudyChange: vi.fn(() => () => {})
@@ -21,7 +19,6 @@ import { goto } from '$app/navigation';
 import { fireEvent, within } from '@testing-library/svelte';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { givenTimelines } from '$lib/weekly/replay';
-import { onEventLogChange } from '$lib/events';
 import { onContextStale } from '$lib/study/currentContext';
 import { onStudyChange } from '$lib/study/data';
 import { setUrl } from '$lib/testing/appState.svelte';
@@ -29,6 +26,12 @@ import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWee
 import type { WeekSummary } from '$lib/weekly/summary';
 import { oldestWeek } from '$lib/weekly/week';
 import Page from './+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let onEventLogChange!: MockInstance<EventLog['onChange']>;
+beforeEach(() => {
+	onEventLogChange = vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -271,6 +274,7 @@ describe('Stats week page', () => {
 			// Inside the week's section (h2), below its heading; the history keeps its own h2.
 			expect(screen.getByRole('heading', { level: 3, name: 'Milestone reached' }).closest('section.week')).not.toBeNull();
 			expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, {
+				states: expect.anything(),
 				scope: 'week',
 				language: 'zh',
 				week: { timelines, chars: universe.chars, cards: universe.cards }
@@ -313,7 +317,7 @@ describe('Stats week page', () => {
 			vi.mocked(loadWeek).mockImplementation(async (_study, _ws, monday) => ({ ...view(monday), timelines }));
 			render(Page, { context: ctx.context });
 			await waitFor(() => expect(loadMilestones).toHaveBeenCalled());
-			expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, { scope: 'week', language: 'es', week: { timelines, chars: null } });
+			expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, { scope: 'week', language: 'es', states: expect.anything(), week: { timelines, chars: null } });
 		});
 
 		it('Dismiss hides the card and marks the covered milestones', async () => {

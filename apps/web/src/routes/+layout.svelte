@@ -15,8 +15,6 @@
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
-	import { recordSessionWhenSettled } from '$lib/events';
 	import { syncStudyDayUser } from '$lib/time/zone';
 	import {
 		allowed as routeAllowed,
@@ -62,7 +60,7 @@
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): the core features, the
 	// enabled plugin pages in the user's order, Search, Stats.
-	const sections = $derived(frameSections($pluginStates));
+	const sections = $derived(frameSections(session?.plugins ?? { list: [], status: 'idle' }));
 	const current = $derived(currentSection(path, sections));
 	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
@@ -152,7 +150,6 @@
 		const current = session;
 		if (current === null) {
 			loadedSession = null;
-			resetPluginStates();
 			return;
 		}
 		// Nothing of the app loads for a restricted session; the effect runs
@@ -161,7 +158,7 @@
 		if (current === loadedSession) return;
 		loadedSession = current;
 		current.outbox.start();
-		void loadPluginStates();
+		void current.plugins.load();
 		void loadShellWorkspaces();
 	});
 
@@ -230,7 +227,7 @@
 	$effect(() => {
 		const id = session?.workspaces.loaded ? (session.workspaces.current?.id ?? null) : null;
 		// The receipt is keyed by the learner day, so wait for the zone to settle.
-		if (id !== null) void recordSessionWhenSettled(id);
+		if (id !== null) void session?.events.recordSessionWhenSettled(id);
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so

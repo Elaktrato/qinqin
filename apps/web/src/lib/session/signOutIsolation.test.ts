@@ -19,7 +19,6 @@ import { fetchSchemeCharacters } from '../api/schemes';
 import { fetchCharacters } from '../api/characters';
 import { loadProviderNames } from '../plugins/journal/providerNames';
 import { journalEntriesFor } from '../plugins/journal/journalEntries.svelte';
-import { loadWorkspaceEvents } from '../events';
 import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
 import type { StudyCard } from '../study/types';
 
@@ -134,7 +133,7 @@ const readers: Record<string, () => Promise<unknown>> = {
 	providerNames: () => loadProviderNames().then((m) => [...m.values()]),
 	studyHistory: () => loadStudyHistory(study(), WS),
 	studyData: () => getStudyData(study(), WS),
-	eventLog: () => loadWorkspaceEvents(WS)
+	eventLog: () => app.session!.events.load(WS)
 };
 
 async function readAll(): Promise<Record<string, string>> {
@@ -176,7 +175,7 @@ describe('sign-out isolation (#173)', () => {
 			getEntryAudio(1),
 			loadStudyHistory(study(), WS),
 			getStudyData(study(), WS),
-			loadWorkspaceEvents(WS)
+			app.session!.events.load(WS)
 		];
 		// The history and the raw data share one study round (#193): six requests held.
 		await vi.waitFor(() => expect(held.length).toBe(6));

@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -5,7 +7,6 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	loadStudyHistory: vi.fn()
 }));
-vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
 vi.mock('$lib/time/zone', async () => {
 	const { studyDay } = await import('$lib/time/studyDay');
@@ -16,8 +17,6 @@ vi.mock('$lib/time/zone', async () => {
 
 import type { CharRow } from '$lib/api/types';
 import type { StudyEvent } from '$lib/events';
-import { loadWorkspaceEvents } from '$lib/events';
-import { pluginStates } from '$lib/plugins/states';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { loadStudyHistory } from '$lib/study/data';
 import { GENERAL_DECK_ID } from '$lib/study/types';
@@ -29,6 +28,12 @@ import { enabledFamilies } from './catalogue';
 import { loadMilestones } from './loadMilestones';
 import { reachedFromLog, reachedStats } from './reached';
 import { reachedFromReplay } from './replayReached';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let loadWorkspaceEvents!: MockInstance<EventLog['load']>;
+beforeEach(() => {
+	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+});
 
 let ctx: TestContext = studyContext();
 beforeEach(() => {
@@ -123,18 +128,18 @@ describe('milestones performance', () => {
 		// The loader on the Week tab: given the timelines, nothing is replayed again.
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews, merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events);
-		pluginStates.set({ list: [], status: 'ready' });
-		await loadMilestones(ctx.session.study, 1, { scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
+		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
 		expect(replayStats.timelines).toBe(built);
 		// Home: no replay at all.
-		await loadMilestones(ctx.session.study, 1, { scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
 		expect(replayStats.timelines).toBe(built);
 		// A reload (new, equal history and event log arrays after the caches' TTL) walks the log no more.
 		const passes = reachedStats.passes;
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews.map((r) => ({ ...r })), merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events.map((e) => ({ ...e })));
-		await loadMilestones(ctx.session.study, 1, { scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
 		expect(reachedStats.passes).toBe(passes);
-		pluginStates.set({ list: [], status: 'idle' });
+		ctx.session.plugins.set({ list: [], status: 'idle' });
 	}, 60_000);
 });

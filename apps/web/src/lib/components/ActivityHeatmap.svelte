@@ -46,13 +46,13 @@
 		saveActivityView,
 		type StoredActivityView
 	} from '$lib/activity/viewPrefs';
-	import { onEventLogChange } from '$lib/events';
 	import type { VacationPeriod } from '$lib/study/vacation';
 	import { workspaceDisplay } from '$lib/languages';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 	// The core home heatmap: the server-aggregated activity (one request
 	// for every workspace and type), folded here per scope and filter, one
@@ -333,7 +333,7 @@
 
 	onMount(() => {
 		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
-		const offEvents = onEventLogChange(() => void load());
+		const offEvents = session.events.onChange(() => void load());
 		const offZone = onStudyDayChange((next) => {
 			studyDay = next;
 			void load();

@@ -194,7 +194,8 @@ describe('hidden plugins', () => {
 			return (base as (...a: unknown[]) => unknown)(url, ...rest);
 		}) as never);
 		render(Page, { context: ctx.context });
-		await screen.findByText('Journal');
+		// "Journal" is also a section row of Settings → Layout (hidden panel).
+		expect((await screen.findAllByText('Journal')).length).toBeGreaterThan(0);
 		expect(screen.queryByText('Internal thing')).toBeNull();
 	});
 });

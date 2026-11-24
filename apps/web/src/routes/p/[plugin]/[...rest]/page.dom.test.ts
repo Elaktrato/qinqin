@@ -12,7 +12,6 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 }));
 
 import { page, setUrl } from '$lib/testing/appState.svelte';
-import { pluginStates } from '$lib/plugins/states';
 import Page from './+page.svelte';
 import source from './+page.svelte?raw';
 
@@ -25,7 +24,7 @@ afterEach(() => {
 	cleanup();
 	vi.mocked(goto).mockClear();
 	document.title = '';
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 	ctx.session.workspaces.set({ list: [], current: null });
 });
 
@@ -46,21 +45,21 @@ describe('plugin page titles', () => {
 	it('ends with the plugin view title once the plugins are known', async () => {
 		const ws = { id: 1, language: 'zh', name: 'zh' } as never;
 		ctx.session.workspaces.set({ list: [ws], current: ws });
-		pluginStates.set({ list: [], status: 'loading' });
+		ctx.session.plugins.set({ list: [], status: 'loading' });
 		at('journal', '');
 		render(Page, { context: ctx.context });
 		expect(document.title).toBe('Plugin · qinqin');
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		await waitFor(() => expect(document.title).not.toBe('Plugin · qinqin'));
 		const title = document.title;
 		// A later refresh of the states must not put the dispatcher's title back.
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(document.title).toBe(title);
 	});
 
 	it('sends the old core feature URLs to their core routes, keeping query and fragment', async () => {
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		setUrl('/p/flashcards/deck/general/settings?x=1#cards');
 		(page as unknown as { params: Record<string, string> }).params = { plugin: 'flashcards', rest: 'deck/general/settings' };
 		render(Page, { context: ctx.context });
@@ -78,7 +77,7 @@ describe('plugin page titles', () => {
 	it('still renders a plugin at /p/<slug>', async () => {
 		const ws = { id: 1, language: 'zh', name: 'zh' } as never;
 		ctx.session.workspaces.set({ list: [ws], current: ws });
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		at('grammar', '');
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(document.title).not.toBe('Plugin · qinqin'));
@@ -86,7 +85,7 @@ describe('plugin page titles', () => {
 	});
 
 	it('says Plugin for an unknown plugin', async () => {
-		pluginStates.set({ list: [], status: 'ready' });
+		ctx.session.plugins.set({ list: [], status: 'ready' });
 		at('nope', '');
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(document.title).toBe('Plugin · qinqin'));

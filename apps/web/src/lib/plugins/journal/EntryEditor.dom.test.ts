@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry, Review } from './types';
@@ -30,6 +31,11 @@ import EntryEditor from './EntryEditor.svelte';
 import { getEntry, getReview, saveEntry, deleteEntry } from './store';
 import { requestReview } from './api';
 import { goto } from '$app/navigation';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const text = '我昨天去学校。';
 const entry: JournalEntry = {
@@ -74,7 +80,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 async function renderEditor(over: Record<string, unknown> = {}) {
-	render(EntryEditor, {
+	render(EntryEditor, { props: {
 		workspaceId: 1,
 		entryId: 'e1',
 		initialTitle: '',
@@ -82,7 +88,7 @@ async function renderEditor(over: Record<string, unknown> = {}) {
 		aiBanner: null,
 		language: 'zh',
 		...over
-	});
+	}, context: ctx.context });
 	await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeTruthy());
 }
 

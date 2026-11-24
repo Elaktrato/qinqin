@@ -6,7 +6,6 @@
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onEventLogChange } from '$lib/events';
 	import { usesHan } from '$lib/languages';
 	import { errorText } from '$lib/api/apiErrors';
 	import { onContextStale } from '$lib/study/currentContext';
@@ -32,6 +31,7 @@
 	import type { CharRow } from '$lib/api/types';
 	import type { StudyCard } from '$lib/study/types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	let now = $state(Date.now());
@@ -118,7 +118,7 @@
 					? { timelines, chars: null }
 					: { timelines, chars: universe.chars, cards: universe.cards };
 		try {
-			const loaded = await loadMilestones(session.study, id, { scope: 'week', language: lang, ...(week === undefined ? {} : { week }) });
+			const loaded = await loadMilestones(session.study, id, { scope: 'week', language: lang, states: session.plugins, ...(week === undefined ? {} : { week }) });
 			if (seq === requestSeq) milestones = loaded;
 		} catch {
 			// The milestones are extra: the week stays without them.
@@ -155,7 +155,7 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, week);
 		};
-		const offLog = onEventLogChange(again);
+		const offLog = session.events.onChange(again);
 		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();

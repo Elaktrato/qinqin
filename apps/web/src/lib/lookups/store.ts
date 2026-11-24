@@ -7,7 +7,6 @@
 import { onSessionEnd } from '../session/sessionEnd';
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
-import { invalidateWorkspaceEvents } from '../events';
 import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
 import { ownPartition } from '../pwa/partitions';
 import { clearReceipts } from '../pwa/prepareOffline';
@@ -119,7 +118,7 @@ async function writeCleared(ws: number, h: LookupHistory): Promise<string | null
 export async function clearHistory(
 	ws: number,
 	now: Date = new Date(),
-	opts: { onRepaired?: (ws: number) => void } = {}
+	opts: { onRepaired?: (ws: number) => void; invalidateEvents?: (ws: number) => void } = {}
 ): Promise<{ eventsDeleted: number; history: LookupHistory }> {
 	const recorder = lookupRecorder();
 	// In the recorder's chain: a flush of this tab that read the row before
@@ -154,7 +153,7 @@ export async function clearHistory(
 	} catch {
 		throw new LookupEventsNotDeletedError();
 	} finally {
-		invalidateWorkspaceEvents(ws);
+		opts.invalidateEvents?.(ws);
 		await scrubOfflineLookups();
 	}
 	return { eventsDeleted: deleted, history: next };

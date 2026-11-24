@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -16,16 +18,16 @@ vi.mock('$lib/study/currentContext', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	onEventLogChange: vi.fn(() => () => {})
-}));
 
-import { onEventLogChange } from '$lib/events';
 import { loadStudyHistory } from '$lib/study/data';
 import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
-import { pluginStates } from '$lib/plugins/states';
 import ReviewsPerDayWidget from './ReviewsPerDayWidget.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let onEventLogChange!: MockInstance<EventLog['onChange']>;
+beforeEach(() => {
+	onEventLogChange = vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -50,7 +52,7 @@ function select(id: number | null): void {
 }
 
 function flashcards(enabled: boolean): void {
-	pluginStates.set({
+	ctx.session.plugins.set({
 		list: [{ id: 'qinqin-flashcards', manifest: {}, enabled, order: 0 }],
 		status: 'ready'
 	});
@@ -72,7 +74,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	select(null);
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 describe('ReviewsPerDayWidget', () => {

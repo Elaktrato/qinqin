@@ -4,8 +4,11 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
+import { api } from '../api/client';
 import { browserTimers } from '../context/deps';
-import { postEvents } from '../events';
+import { studyDay } from '../time/studyDay';
+import { EventLog } from '../events';
+import { webStorage } from '../context/deps';
 import { Notices } from '../notices.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { PENDING_REVIEWS_KEY, ReviewOutbox } from './events';
@@ -20,9 +23,19 @@ let notices = new Notices();
 const offline = new Connectivity({ now: () => Date.now(), timers: browserTimers, browserOnline: () => true });
 let outbox: ReviewOutbox;
 
+const eventLog = new EventLog({
+	api,
+	now: () => Date.now(),
+	timers: browserTimers,
+	local: () => webStorage('localStorage'),
+	manifests: () => null,
+	studyDay: () => studyDay([]),
+	whenStudyDaySettled: async () => undefined
+});
+
 function newOutbox(): ReviewOutbox {
 	return new ReviewOutbox({
-		post: postEvents,
+		post: (events) => eventLog.post(events),
 		local: () => (typeof localStorage === 'undefined' ? null : localStorage),
 		now: () => Date.now(),
 		timers: browserTimers,

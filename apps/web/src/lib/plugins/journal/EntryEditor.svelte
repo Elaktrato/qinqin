@@ -55,6 +55,8 @@
 		saveEntry
 	} from './store';
 	import type { JournalEntry, Review } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		workspaceId,
@@ -185,7 +187,7 @@
 		const now = new Date();
 		if (!journalEventDue(id, true, now, sentEvents, currentStudyDay().dayOf)) return;
 		try {
-			await recordJournalEvent(ws, id, now);
+			await recordJournalEvent(session.events, ws, id, now);
 		} catch {
 			// Telemetry only; allow another try on the next save.
 			sentEvents.delete(id);

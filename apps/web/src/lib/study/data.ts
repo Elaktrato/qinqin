@@ -18,7 +18,7 @@
 // function here takes the session's study state first.
 
 import type { Api, Timers } from '../context/deps';
-import { fetchFullLog, invalidateWorkspaceEvents, loadWorkspaceEvents, type StudyEvent } from '../events';
+import { fetchFullLog, type EventLog, type StudyEvent } from '../events';
 import { createStudyCache, type StudyCache } from './cache';
 import type { ReviewOutbox } from './events';
 import { recentSentReviews } from './recentSent';
@@ -44,6 +44,8 @@ export interface StudyDeps {
 	alive(): boolean;
 	/** The session's outbox: queued reviews count as reviewed. */
 	outbox: Pick<ReviewOutbox, 'pendingReviews'>;
+	/** The session's event log cache (the widgets' history reads the log through it). */
+	events: Pick<EventLog, 'load' | 'invalidate'>;
 }
 
 /**
@@ -187,10 +189,10 @@ export async function loadStudyHistory(
 	opts: { force?: boolean; full?: boolean } = {}
 ): Promise<StudyHistory> {
 	requireWorkspaceArg(workspaceId, 'loadStudyHistory');
-	if (opts.force === true) invalidateWorkspaceEvents(workspaceId);
+	if (opts.force === true) study.deps.events.invalidate(workspaceId);
 	const [view, events] = await Promise.all([
 		study.cache.view(workspaceId, { force: opts.force, full: opts.full }),
-		loadWorkspaceEvents(workspaceId)
+		study.deps.events.load(workspaceId)
 	]);
 	const historyMemo = study.historyMemo;
 	const waiting = queued(study, workspaceId);

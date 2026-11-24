@@ -1,14 +1,12 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/search', () => ({ search: vi.fn(() => Promise.resolve([])) }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(() => Promise.resolve([])) }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	record: vi.fn()
-}));
 
 import { setUrl } from '$lib/testing/appState.svelte';
 import { testContext } from '$lib/testing/context';
@@ -18,6 +16,11 @@ import Search from '../routes/search/+page.svelte';
 import Sources from '../routes/sources/+page.svelte';
 import Settings from '../routes/settings/+page.svelte';
 import Home from '../routes/+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+});
 
 afterEach(() => {
 	cleanup();

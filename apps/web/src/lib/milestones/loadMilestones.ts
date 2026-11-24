@@ -6,15 +6,14 @@
 
 import type { StudyState } from '$lib/study/data';
 import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
-import { get } from 'svelte/store';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
-import { loadWorkspaceEvents } from '$lib/events';
+
 import { FLASHCARDS_ID, READER_ID, featureEnabled } from '$lib/features';
 import { levelDecks, levelItems, ownedLevelDeckId } from '$lib/features/flashcards/decks/systemDecks';
 import { usesHan } from '$lib/languages';
 import { pluginEnabled } from '$lib/plugins';
-import { pluginStates } from '$lib/plugins/states';
+import type { PluginStatesValue } from '$lib/plugins/states.svelte';
 import { buildSections } from '$lib/study/charGroups';
 import { loadStudyHistory } from '$lib/study/data';
 import { outboxUser } from '$lib/study/outboxUser';
@@ -190,14 +189,14 @@ async function loadLevels(
 export async function loadMilestones(
 	study: StudyState,
 	workspaceId: number,
-	opts: { scope: 'home' | 'week'; language: string; now?: number; week?: WeekInputs }
+	opts: { scope: 'home' | 'week'; language: string; states: PluginStatesValue; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
 	hookOnline();
 	const now = opts.now ?? Date.now();
 	const day = currentStudyDay();
 	const today = day.today(now);
 	const epoch = sessionEpoch();
-	const [data, log] = await Promise.all([loadStudyHistory(study, workspaceId), loadWorkspaceEvents(workspaceId)]);
+	const [data, log] = await Promise.all([loadStudyHistory(study, workspaceId), study.deps.events.load(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
@@ -210,7 +209,7 @@ export async function loadMilestones(
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
-	const states = get(pluginStates);
+	const states = opts.states;
 	let reached: Reached[] = [];
 	let names = new Map<string, string>();
 	if (states.status === 'ready') {

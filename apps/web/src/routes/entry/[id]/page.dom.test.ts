@@ -1,3 +1,5 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -10,11 +12,6 @@ vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(),
 	getSharedEntry: vi.fn()
-}));
-vi.mock('$lib/events', () => ({
-	record: vi.fn(),
-	loadWorkspaceEvents: vi.fn(async () => []),
-	onEventLogChange: vi.fn(() => () => {})
 }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
@@ -32,6 +29,13 @@ import { page, setUrl } from '$lib/testing/appState.svelte';
 import { loadNote } from '$lib/notes/store';
 import type { Workspace } from '$lib/api/types';
 import Page from './+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

@@ -14,6 +14,7 @@ import { contextOf } from '../context/context';
 import { browserTimers, webStorage, type Api, type AppDeps, type EventSource, type Timers, type VisibilitySource } from '../context/deps';
 import type { Session } from '../context/session.svelte';
 import type { Workspaces, WorkspacesState } from '../workspaces.svelte';
+import type { PluginStates, PluginStatesValue } from '../plugins/states.svelte';
 
 /** An answer for `METHOD /path` (the query string included when the route names one). */
 export type Route = (body: unknown, path: string, options: ApiOptions) => unknown;
@@ -174,6 +175,11 @@ export function studyContext(options: TestContextOptions = {}): TestContext {
 /** workspacesState: the plain `{ list, current }` of a Workspaces (for toEqual). */
 export function workspacesState(workspaces: Workspaces): WorkspacesState {
 	return { list: workspaces.list, current: workspaces.current };
+}
+
+/** pluginStatesValue: the plain `{ list, status }` of a PluginStates (for toEqual). */
+export function pluginStatesValue(plugins: PluginStates): PluginStatesValue {
+	return { list: plugins.list, status: plugins.status };
 }
 
 /** updateWorkspaces: replaces the list and selection with `fn` of the current ones. */

@@ -1,12 +1,10 @@
 // #173: an answer requested for the session that ended never sets
 // per-user state afterwards: the workspace list and the plugin states. And ending the session empties the content-keyed memos.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 import { endSession } from './sessionEnd';
 import { WORKSPACE_KEY } from '../workspaces.svelte';
 import { testContext, workspacesState } from '../testing/context';
-import { loadPluginStates, pluginStates } from '../plugins/states';
 
 function storage(): Storage {
 	const data = new Map<string, string>();
@@ -37,7 +35,6 @@ beforeEach(() => {
 			return new Response('{}', { status: 404 });
 		})
 	);
-	pluginStates.set({ list: [], status: 'idle' });
 });
 
 afterEach(() => {
@@ -58,12 +55,14 @@ describe('late answers after the session ended (#173)', () => {
 	});
 
 	it('plugin states in flight set nothing', async () => {
-		const late = loadPluginStates();
-		endSession('expired');
+		const ctx = testContext();
+		const session = ctx.session;
+		const late = session.plugins.load();
+		ctx.app.auth.expire();
 		release();
 		await late;
-		expect(get(pluginStates).list).toEqual([]);
-		expect(get(pluginStates).status).not.toBe('ready');
+		expect(session.plugins.list).toEqual([]);
+		expect(session.plugins.status).not.toBe('ready');
 	});
 });
 

@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-import { invalidateWorkspaceEvents } from '../events';
 import { StudyServer } from '../testing/studyServer';
 import * as build from '../testing/study';
 import { cardRow, deckRow } from './rows';
@@ -25,7 +24,6 @@ let server: StudyServer;
 
 beforeEach(() => {
 	newSession(ctx);
-	invalidateWorkspaceEvents();
 	server = new StudyServer({ pageSize: 2 });
 	server.putTyped('decks', { ...deckRow({ id: 'd1', name: 'One', createdAt: AT }), ...meta });
 	server.putTyped('cards', { ...cardRow(build.card({ id: 'c-vocab-1', entryId: 1, deckIds: ['d1'] })), ...meta });

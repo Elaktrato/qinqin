@@ -7,7 +7,6 @@ import type { WidgetDef } from '$lib/widgets/types';
 vi.mock('$lib/widgets/registry', () => ({ allWidgets: vi.fn(() => []) }));
 
 import { allWidgets } from '$lib/widgets/registry';
-import { pluginStates } from '$lib/plugins/states';
 import StubWidget from './StubWidget.svelte';
 import Page from './+page.svelte';
 
@@ -46,14 +45,14 @@ const ids = () => [...document.querySelectorAll<HTMLElement>('[data-widget]')].m
 
 beforeEach(() => {
 	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'Chinese' } as never });
-	pluginStates.set({ list: [], status: 'ready' });
+	ctx.session.plugins.set({ list: [], status: 'ready' });
 	vi.mocked(allWidgets).mockReturnValue(registry);
 });
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	ctx.session.workspaces.set({ list: [], current: null });
-	pluginStates.set({ list: [], status: 'idle' });
+	ctx.session.plugins.set({ list: [], status: 'idle' });
 });
 
 describe('Stats → Overview', () => {
