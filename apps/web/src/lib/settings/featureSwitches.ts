@@ -6,7 +6,7 @@
 import { api } from '$lib/api/client';
 import type { PluginInfo } from '$lib/api/types';
 import { coreFeatures, featureEnabled } from '$lib/features';
-import { loadPluginStates } from '$lib/plugins/states';
+import type { PluginStates } from '$lib/plugins/states.svelte';
 
 export interface FeatureSwitch {
 	id: string;
@@ -20,7 +20,7 @@ export function featureSwitches(states: readonly PluginInfo[]): FeatureSwitch[] 
 }
 
 /** saveFeatureSwitch stores one switch and refreshes the shared states (nav, widgets, pages). */
-export async function saveFeatureSwitch(id: string, enabled: boolean): Promise<void> {
+export async function saveFeatureSwitch(plugins: Pick<PluginStates, 'load'>, id: string, enabled: boolean): Promise<void> {
 	await api(`/api/plugins/${encodeURIComponent(id)}/state`, { method: 'PUT', body: { enabled, order: 0 } });
-	await loadPluginStates();
+	await plugins.load();
 }

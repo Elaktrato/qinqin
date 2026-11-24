@@ -4,8 +4,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { get } from 'svelte/store';
-import { offline, reportNetworkFailure, resetOffline } from '../pwa/offlineState';
 import {
 	ApiError,
 	api,
@@ -13,9 +11,8 @@ import {
 	apiErrorBody,
 	clearToken,
 	getToken,
-	setRestrictedHandler,
-	setToken,
-	setUnauthorizedHandler
+	setApiObserver,
+	setToken
 } from './client';
 
 function fakeStorage(): Storage {
@@ -150,7 +147,7 @@ describe('restricted sessions', () => {
 		vi.stubGlobal('fetch', vi.fn());
 	});
 	afterEach(() => {
-		setRestrictedHandler(null);
+		setApiObserver(null);
 		vi.unstubAllGlobals();
 	});
 
@@ -159,7 +156,7 @@ describe('restricted sessions', () => {
 		async (code) => {
 			localStorage.setItem('qinqin.token', 'tok');
 			const handler = vi.fn();
-			setRestrictedHandler(handler);
+			setApiObserver({ restricted: handler });
 			vi.mocked(fetch).mockResolvedValue(
 				new Response(JSON.stringify({ error: code, message: 'm' }), { status: 403 })
 			);
@@ -175,7 +172,7 @@ describe('restricted sessions', () => {
 		['password_change_required', 409]
 	])('a %s (%i) is not a restriction', async (code, status) => {
 		const handler = vi.fn();
-		setRestrictedHandler(handler);
+		setApiObserver({ restricted: handler });
 		vi.mocked(fetch).mockResolvedValue(
 			new Response(JSON.stringify({ error: code, message: 'm' }), { status })
 		);
@@ -187,7 +184,7 @@ describe('restricted sessions', () => {
 
 	it('a plain-text 403 is not a restriction', async () => {
 		const handler = vi.fn();
-		setRestrictedHandler(handler);
+		setApiObserver({ restricted: handler });
 		vi.mocked(fetch).mockResolvedValue(new Response('admin token required', { status: 403 }));
 		await expect(api('/api/admin/packs')).rejects.toBeInstanceOf(ApiError);
 		expect(handler).not.toHaveBeenCalled();
@@ -285,7 +282,7 @@ describe('apiBlob and apiErrorBody', () => {
 	});
 
 	afterEach(() => {
-		setUnauthorizedHandler(null);
+		setApiObserver(null);
 		vi.unstubAllGlobals();
 	});
 
@@ -303,7 +300,7 @@ describe('apiBlob and apiErrorBody', () => {
 
 	it('apiBlob runs the unauthorized handler on 401', async () => {
 		const handler = vi.fn();
-		setUnauthorizedHandler(handler);
+		setApiObserver({ unauthorized: handler });
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 401 }));
 
 		await expect(apiBlob('/x')).rejects.toMatchObject({ status: 401 });
@@ -327,34 +324,44 @@ describe('apiBlob and apiErrorBody', () => {
 });
 
 describe('api client reports connectivity', () => {
+	const seen: { answered: Array<string | null>; unreachable: number } = { answered: [], unreachable: 0 };
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
 		vi.stubGlobal('fetch', vi.fn());
-		resetOffline();
+		seen.answered = [];
+		seen.unreachable = 0;
+		setApiObserver({
+			answered: (headers) => seen.answered.push(headers.get('x-qinqin-saved-at')),
+			unreachable: () => seen.unreachable++
+		});
 	});
-	afterEach(() => vi.unstubAllGlobals());
+	afterEach(() => {
+		setApiObserver(null);
+		vi.unstubAllGlobals();
+	});
 
-	it('a response from the worker\'s saved copy is reported with its time', async () => {
+	it('a response from the worker\'s saved copy is reported with its headers', async () => {
 		vi.mocked(fetch).mockResolvedValue(
 			new Response('[]', {
 				headers: { 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }
 			})
 		);
 		await api('/api/workspaces');
-		expect(get(offline).servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
+		expect(seen.answered).toEqual(['2026-11-16T14:02:00.000Z']);
 	});
 
 	it('an error response still counts as the server answering', async () => {
-		reportNetworkFailure();
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
 		await expect(api('/api/x')).rejects.toBeInstanceOf(ApiError);
-		expect(get(offline).online).toBe(true);
+		expect(seen.answered).toEqual([null]);
+		expect(seen.unreachable).toBe(0);
 	});
 
-	it('a network failure marks the app offline and still throws', async () => {
+	it('a network failure is reported as unreachable and still throws', async () => {
 		vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
 		await expect(api('/api/x')).rejects.toThrow('Failed to fetch');
-		expect(get(offline).online).toBe(false);
+		expect(seen.unreachable).toBe(1);
+		expect(seen.answered).toEqual([]);
 	});
 });
 
@@ -393,5 +400,24 @@ describe('ApiError parses its body once (#168)', () => {
 			attemptsLeft: 2
 		});
 		expect(apiErrorBody(new ApiError(404, 'not found'))).toBeNull();
+	});
+});
+
+describe('setApiObserver', () => {
+	afterEach(() => setApiObserver(null));
+
+	it('its remover clears only its own observer, never a newer one', async () => {
+		const { notifyUnauthorized } = await import('./client');
+		const first = vi.fn();
+		const second = vi.fn();
+		const removeFirst = setApiObserver({ unauthorized: first });
+		const removeSecond = setApiObserver({ unauthorized: second });
+		removeFirst();
+		notifyUnauthorized();
+		expect(second).toHaveBeenCalledTimes(1);
+		expect(first).not.toHaveBeenCalled();
+		removeSecond();
+		notifyUnauthorized();
+		expect(second).toHaveBeenCalledTimes(1);
 	});
 });

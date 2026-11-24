@@ -1,10 +1,14 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { auth } from '$lib/auth';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { workspaces } from '$lib/workspaces';
 import { currentSection, frameSections } from './sections';
 import TopBar from './TopBar.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const sections = frameSections({
 	list: [
@@ -17,19 +21,19 @@ const sections = frameSections({
 });
 
 function mount(path: string) {
-	return render(TopBar, { sections, current: currentSection(path, sections) });
+	return render(TopBar, { props: { sections, current: currentSection(path, sections) }, context: ctx.context });
 }
 
 beforeEach(() => {
-	auth.set({
+	ctx.app.auth.set({
 		token: 'tok',
 		user: { id: 1, username: 'mei', admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
-	workspaces.set({ list: [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }], current: null });
+	ctx.session.workspaces.set({ list: [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }], current: null });
 });
 afterEach(() => {
 	cleanup();
-	auth.set({ token: null, user: null });
+	ctx.app.auth.set({ token: null, user: null });
 });
 
 describe('TopBar', () => {

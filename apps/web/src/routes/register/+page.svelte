@@ -6,9 +6,10 @@
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { checkInvite, getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { readFragment } from '$lib/account/fragment';
-	import { register } from '$lib/auth';
 	import { passwordHint } from '$lib/account/passwordRules';
 	import { Button, Field } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let username = $state('');
 	let password = $state('');
@@ -60,7 +61,7 @@
 		error = '';
 		busy = true;
 		try {
-			await register(username.trim(), password, { email: email.trim(), invite });
+			await app.auth.register(username.trim(), password, { email: email.trim(), invite });
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
 			error = authErrorMessage(err, t('auth.register.failed'), 'register');

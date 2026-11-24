@@ -1,11 +1,14 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { EventLog } from '$lib/events';
+import type { WorkspacesState } from '$lib/workspaces.svelte';
+import { testContext, type TestContext, updateWorkspaces } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: vi.fn(),
-	currentStudyHistory: vi.fn(() => []),
-	onStudyDayChange: vi.fn(() => () => {})
-}));
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn()
@@ -19,7 +22,6 @@ vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
 	saveWorkspaceLimits: vi.fn(() => Promise.resolve())
 }));
-vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/stats', () => ({
 	fetchActivity: vi.fn(() => Promise.resolve({ from: '', to: '', timeZone: 'UTC', sources: [], cells: [] }))
 }));
@@ -29,17 +31,33 @@ vi.mock('$lib/notes/store', () => ({
 	saveNoteCfg: vi.fn(() => Promise.resolve())
 }));
 
-import { loadWorkspaceEvents } from '$lib/events';
 import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
 import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
 import { saveWorkspaceLimits } from '$lib/study/commands/settings';
 import { getStudyData } from '$lib/study/data';
 import type { VacationPeriod } from '$lib/study/vacation';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StudySettings from './StudySettings.svelte';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
+// The session's event log (record 0009): its methods, faked on the class.
+let loadWorkspaceEvents!: MockInstance<EventLog['load']>;
+beforeEach(() => {
+	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const day = studyDay([]);
 const today = day.today();
@@ -51,7 +69,7 @@ function period(over: Partial<VacationPeriod>): VacationPeriod {
 
 function setup(vacations: VacationPeriod[] = [], reviewTs: string[] = []) {
 	vi.mocked(currentStudyDay).mockReturnValue(day);
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [
 			{ id: 1, language: 'zh', name: 'zh' } as never,
 			{ id: 2, language: 'ja', name: 'ja' } as never
@@ -62,7 +80,7 @@ function setup(vacations: VacationPeriod[] = [], reviewTs: string[] = []) {
 	vi.mocked(loadWorkspaceEvents).mockResolvedValue(
 		reviewTs.map((ts, i) => ({ id: `e${i}`, workspaceId: 1, device: 'w', ts, type: 'review', payload: {} })) as never
 	);
-	return render(StudySettings);
+	return render(StudySettings, { context: ctx.context });
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -86,7 +104,7 @@ describe('StudySettings vacation', () => {
 		await screen.findByRole('heading', { name: 'Vacation' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalledTimes(1));
-		const saved = vi.mocked(saveVacation).mock.calls[0][0];
+		const saved = vi.mocked(saveVacation).mock.calls[0][1];
 		expect(saved).toMatchObject({ start: today, end: null, scope: 'all', createdDay: today });
 	});
 
@@ -95,7 +113,7 @@ describe('StudySettings vacation', () => {
 		await screen.findByRole('heading', { name: 'Vacation' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0].start).toBe(later(1));
+		expect(vi.mocked(saveVacation).mock.calls[0][1].start).toBe(later(1));
 		expect(await screen.findByText('Starts tomorrow — you already studied today')).toBeTruthy();
 	});
 
@@ -110,7 +128,7 @@ describe('StudySettings vacation', () => {
 		await fireEvent.input(screen.getByLabelText('End date'), { target: { value: later(9) } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Schedule vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ start: later(5), end: later(9) });
+		expect(vi.mocked(saveVacation).mock.calls[0][1]).toMatchObject({ start: later(5), end: later(9) });
 	});
 
 	it('limits a vacation to the chosen workspaces and refuses an empty choice', async () => {
@@ -123,7 +141,7 @@ describe('StudySettings vacation', () => {
 		await fireEvent.click(screen.getByLabelText('zh'));
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0].scope).toEqual({ workspaces: [1] });
+		expect(vi.mocked(saveVacation).mock.calls[0][1].scope).toEqual({ workspaces: [1] });
 	});
 
 	it('lists a scheduled period with Cancel and an active one with End now only', async () => {
@@ -135,7 +153,7 @@ describe('StudySettings vacation', () => {
 		expect(cancel[0].getAttribute('aria-label')).toMatch(/^Cancel vacation /);
 		expect(screen.getByRole('button', { name: /^End now/ }).getAttribute('aria-label')).toMatch(/^End now: /);
 		await fireEvent.click(cancel[0]);
-		await waitFor(() => expect(deleteVacation).toHaveBeenCalledWith('S'));
+		await waitFor(() => expect(deleteVacation).toHaveBeenCalledWith(expect.anything(), 'S'));
 	});
 
 	it('ends an active period early by writing the day before today', async () => {
@@ -143,7 +161,7 @@ describe('StudySettings vacation', () => {
 		setup([period({ id: 'A', start, end: later(5), createdDay: start })]);
 		await fireEvent.click(await screen.findByRole('button', { name: /^End now/ }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ id: 'A', end: later(-1) });
+		expect(vi.mocked(saveVacation).mock.calls[0][1]).toMatchObject({ id: 'A', end: later(-1) });
 	});
 });
 
@@ -187,31 +205,31 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		await fireEvent.click(screen.getAllByLabelText('Unlimited')[1]);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(1, { new: 12, reviews: null }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(expect.anything(), 1, { new: 12, reviews: null }));
 	});
 
 	it('a workspace switch: a late answer of the old workspace never fills the form, and saving goes to the shown one (#174)', async () => {
 		const lateOnes: ((v: unknown) => void)[] = [];
 		vi.mocked(currentStudyDay).mockReturnValue(day);
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue([]);
-		vi.mocked(getStudyData).mockImplementation(async (id: number) => {
+		vi.mocked(getStudyData).mockImplementation(async (_study, id: number) => {
 			if (id === 1) return new Promise((r) => lateOnes.push(r)) as never;
 			return { decks: [], cards: [], limits: { workspace: { new: 7 }, decks: {} } } as never;
 		});
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 1, language: 'zh', name: 'zh' } as never, { id: 2, language: 'ja', name: 'ja' } as never],
 			current: { id: 1, language: 'zh', name: 'zh' } as never
 		});
-		render(StudySettings);
+		render(StudySettings, { context: ctx.context });
 		await waitFor(() => expect(lateOnes.length).toBeGreaterThan(0));
-		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		updateWorkspaces(ctx.session.workspaces, (w: WorkspacesState) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
 		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
 		await waitFor(() => expect(newValue.value).toBe('7'));
 		for (const r of lateOnes) r({ decks: [], cards: [], limits: { workspace: { new: 3 }, decks: {} } });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(newValue.value).toBe('7');
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(2, { new: 7, reviews: 200 }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(expect.anything(), 2, { new: 7, reviews: 200 }));
 	});
 
 	it('saves to the workspace whose limits the form shows, not one selected since (#174)', async () => {
@@ -220,10 +238,10 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		// Selected since, still loading: the form shows workspace 1.
 		vi.mocked(getStudyData).mockImplementation(() => new Promise(() => undefined));
-		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		updateWorkspaces(ctx.session.workspaces, (w: WorkspacesState) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
 		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalled());
-		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][1]).toBe(1);
 	});
 
 	it('refuses a bad value', async () => {

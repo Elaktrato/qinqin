@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { withStudy } from '$lib/study/data';
 	import { onDestroy, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { studyLang } from '$lib/i18n/lang';
-	import { workspaces } from '$lib/workspaces';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import {
 		deleteCards,
@@ -15,6 +15,8 @@
 	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
 	import type { Deck, StudyCard } from '$lib/study/types';
 	import { Button, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Lists the words (vocab cards) of the workspace so they can be moved
 	// between decks or deleted, one or many at once. Every change can be
@@ -44,12 +46,12 @@
 	let anchor = $state<string | null>(null);
 
 	const actions = createCardActions({
-		deleteCards,
-		moveCards,
-		restoreCards,
-		dropSiblingCards,
-		skipKind,
-		unskipKind,
+		deleteCards: withStudy(session.study, deleteCards),
+		moveCards: withStudy(session.study, moveCards),
+		restoreCards: withStudy(session.study, restoreCards),
+		dropSiblingCards: withStudy(session.study, dropSiblingCards),
+		skipKind: withStudy(session.study, skipKind),
+		unskipKind: withStudy(session.study, unskipKind),
 		onchanged: () => onchanged?.()
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });
@@ -232,7 +234,7 @@
 							onclick={(event) => pick(card, event)}
 							onkeydown={(event) => rowKey(event, card)}
 						/>
-						<span class="word" lang={studyLang($workspaces.current?.language)}>{label(card)}</span>
+						<span class="word" lang={studyLang(session.workspaces.current?.language)}>{label(card)}</span>
 						<span class="decks">{decksOf(card)}</span>
 					</label>
 					<Button

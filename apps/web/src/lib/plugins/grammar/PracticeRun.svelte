@@ -3,7 +3,6 @@
 	import { tick } from 'svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import { loadTokens } from '$lib/study/wordSalad';
-	import { workspaces } from '$lib/workspaces';
 	import WordSaladBoard from '$lib/features/flashcards/cards/WordSaladBoard.svelte';
 	import ClozeChoice from '$lib/components/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
@@ -12,6 +11,8 @@
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	// (attempt 0 keeps the plain lesson seed; a retry shuffles anew)
 
 	let { pack, lessonId }: { pack: string; lessonId: string } = $props();
@@ -96,7 +97,7 @@
 	async function saveResult(): Promise<void> {
 		saved = null;
 		saveError = '';
-		const ws = $workspaces.current;
+		const ws = session.workspaces.current;
 		if (ws === null || data === null) return;
 		try {
 			saved = await recordRun(ws.id, pack, lessonId, score, exercises.length);

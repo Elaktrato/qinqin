@@ -1,8 +1,8 @@
 // Signing out with reviews that were never sent: ask instead of silently
 // keeping or dropping them. Pure decision plus the wording; the dialog and
-// the auth store call it.
+// signOut.ts call it (the open dialog's count is the app context's
+// `logoutPrompt`).
 
-import { writable } from 'svelte/store';
 import { t } from '$lib/i18n';
 
 export interface LogoutDecision {
@@ -42,6 +42,3 @@ export async function decideLogout(deps: {
 export function unsentText(count: number): string {
 	return t('account.logout.unsent', { count });
 }
-
-/** The number of unsent reviews the sign-out dialog is asking about; null = no dialog. */
-export const logoutPrompt = writable<number | null>(null);

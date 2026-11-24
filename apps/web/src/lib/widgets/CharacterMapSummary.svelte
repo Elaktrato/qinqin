@@ -10,9 +10,10 @@
 	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
 	import Button from '$lib/ui/Button.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The character map's summary tile (core, Han languages only): how
 	// many of the language's characters are learned, the stage bar and a
@@ -28,7 +29,7 @@
 
 	let requestSeq = 0;
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
 
@@ -68,7 +69,7 @@
 		}
 
 		try {
-			const data = await loadCharacterMapData(id, lang, { force });
+			const data = await loadCharacterMapData(session, id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
 			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);
@@ -78,7 +79,7 @@
 			// Legacy cards without a written snapshot: resolve them like the
 			// map does, then count once more.
 			if (data.cards.some((card) => card.written === undefined)) {
-				const filled = await withLegacyWritten(data.cards);
+				const filled = await withLegacyWritten(session, data.cards);
 				if (seq !== requestSeq) return;
 				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock);
 				unresolved = filled.unresolved;
@@ -95,7 +96,7 @@
 	$effect(() => {
 		void load(workspaceId, language);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId, language)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId, language)));
 </script>
 
 <div class="tile">

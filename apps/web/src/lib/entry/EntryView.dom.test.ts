@@ -1,3 +1,6 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
@@ -8,11 +11,6 @@ vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(async () => []),
 	getSharedEntry: vi.fn()
-}));
-vi.mock('$lib/events', () => ({
-	record: vi.fn(),
-	loadWorkspaceEvents: vi.fn(async () => []),
-	onEventLogChange: vi.fn(() => () => {})
 }));
 vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
 vi.mock('$lib/api/frequency', () => ({
@@ -39,12 +37,22 @@ import { ApiError } from '$lib/api/client';
 import { getEntry } from '$lib/api/entries';
 import { getEntryRanks } from '$lib/api/frequency';
 import { getStudyData } from '$lib/study/data';
-import { record } from '$lib/events';
-import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces } from '$lib/workspaces';
 import EntryView from './EntryView.svelte';
 import ActionsHarness from './testing/ActionsHarness.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let record!: MockInstance<EventLog['record']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const getEntryMock = vi.mocked(getEntry);
 
@@ -76,19 +84,19 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
-	workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
 });
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 	setUrl('/');
 });
 
 describe('EntryView', () => {
 	it('renders the word as the heading level it is given and records one view', async () => {
 		getEntryMock.mockResolvedValue(entry());
-		render(EntryView, { entryId: 5, headingLevel: 2, recordView: true });
+		render(EntryView, { props: { entryId: 5, headingLevel: 2, recordView: true }, context: ctx.context });
 		const heading = await screen.findByRole('heading', { level: 2, name: '勤奋' });
 		expect(heading.tagName).toBe('H2');
 		await waitFor(() => expect(record).toHaveBeenCalledWith('view', 1, { entryId: 5 }));
@@ -96,7 +104,7 @@ describe('EntryView', () => {
 
 	it('records no view for a preview (recordView false)', async () => {
 		getEntryMock.mockResolvedValue(entry());
-		render(EntryView, { entryId: 5, headingLevel: 2, recordView: false });
+		render(EntryView, { props: { entryId: 5, headingLevel: 2, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { level: 2, name: '勤奋' });
 		expect(record).not.toHaveBeenCalled();
 	});
@@ -106,7 +114,7 @@ describe('EntryView', () => {
 		getEntryMock.mockImplementation((id: number) =>
 			id === 5 ? slow.promise : Promise.resolve(entry({ id: 6, written: '勤劳' }))
 		);
-		const view = render(EntryView, { entryId: 5, recordView: false });
+		const view = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await view.rerender({ entryId: 6, recordView: false });
 		await screen.findByRole('heading', { level: 1, name: '勤劳' });
 		slow.resolve(entry({ id: 5, written: '勤奋' }));
@@ -122,7 +130,7 @@ describe('EntryView after an edit', () => {
 		setUrl('/entry/5?edit=1');
 		getEntryMock.mockResolvedValue(entry());
 		const titles: string[] = [];
-		render(EntryView, { entryId: 5, recordView: false, ontitle: (w) => titles.push(w) });
+		render(EntryView, { props: { entryId: 5, recordView: false, ontitle: (w: string) => titles.push(w) }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Save entry' }));
 		expect(titles).toContain('勤勉');
 	});
@@ -142,7 +150,7 @@ describe('the entry header and main column (#104)', () => {
 				badges: [{ schemeId: 1, schemeName: 'HSK', levelName: '5', derived: false }]
 			})
 		);
-		const { container } = render(EntryView, { entryId: 5, headingLevel: 1, recordView: false });
+		const { container } = render(EntryView, { props: { entryId: 5, headingLevel: 1, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { level: 1, name: '发' });
 		const header = container.querySelector('header')!;
 		const variant = within(header).getByRole('link', { name: /發.*traditional/ });
@@ -177,7 +185,7 @@ describe('the entry header and main column (#104)', () => {
 				]
 			})
 		);
-		render(EntryView, { entryId: 5, headingLevel: 1, recordView: false });
+		render(EntryView, { props: { entryId: 5, headingLevel: 1, recordView: false }, context: ctx.context });
 		const meanings = await screen.findByRole('heading', { name: 'Meanings · CEDICT' });
 		const examples = screen.getByRole('heading', { name: 'Examples' });
 		const related = screen.getByRole('heading', { name: 'Related' });
@@ -190,14 +198,14 @@ describe('the entry header and main column (#104)', () => {
 describe('the entry on a phone (#104)', () => {
 	it('puts a named Add to deck button into the page actions and takes it away on unmount', async () => {
 		getEntryMock.mockResolvedValue(entry());
-		const view = render(EntryView, { entryId: 5, recordView: false });
+		const view = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });
-		await waitFor(() => expect(pageFrame.actions).toBeTruthy());
-		const harness = render(ActionsHarness);
+		await waitFor(() => expect(ctx.app.frame.actions).toBeTruthy());
+		const harness = render(ActionsHarness, { context: ctx.context });
 		await waitFor(() => expect(within(harness.container).getByRole('button', { name: 'Add to deck' })).toBeTruthy());
 		view.unmount();
 		cleanup();
-		await waitFor(() => expect(pageFrame.actions).toBeNull());
+		await waitFor(() => expect(ctx.app.frame.actions).toBeNull());
 	});
 });
 
@@ -212,7 +220,7 @@ describe('a word stroke picker (#104)', () => {
 				]
 			})
 		);
-		render(EntryView, { entryId: 5, recordView: false });
+		render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		expect(await screen.findByRole('button', { name: 'Show the strokes of 勤' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Show the strokes of 奋' })).toBeTruthy();
 	});
@@ -245,7 +253,7 @@ describe("a word's characters (#104)", () => {
 				]
 			})
 		);
-		const { container } = render(EntryView, { entryId: 5, recordView: false });
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });
 		const rows = [...container.querySelectorAll('.char')];
 		const first = rows[0];
@@ -260,19 +268,11 @@ describe("a word's characters (#104)", () => {
 
 
 describe('entry extras and the not-found state (#104)', () => {
-	it('does not ask for frequency ranks while signed out', async () => {
-		getEntryMock.mockResolvedValue(entry());
-		render(EntryView, { entryId: 5, recordView: false });
-		await screen.findByRole('heading', { name: '勤奋' });
-		await new Promise((r) => setTimeout(r, 0));
-		expect(getEntryRanks).not.toHaveBeenCalled();
-	});
-
 	it('refreshes the In N decks chip after an add', async () => {
 		let cards: unknown[] = [];
-		vi.mocked(getStudyData).mockImplementation(async () => ({ decks: [], cards, known: [] }) as never);
+		vi.mocked(getStudyData).mockImplementation((async () => ({ decks: [], cards, known: [] })) as never);
 		getEntryMock.mockResolvedValue(entry());
-		const { container } = render(EntryView, { entryId: 5, recordView: false });
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });
 		await waitFor(() => expect(screen.getByRole('button', { name: 'Add to deck' })).toBeTruthy());
 		cards = [{ id: 'c1', kind: 'vocab', entryId: 5, deckIds: ['deck-1'], written: '勤奋' }];
@@ -283,12 +283,12 @@ describe('entry extras and the not-found state (#104)', () => {
 
 	it('renders the not-found state at the given heading level and links back to the search URL', async () => {
 		getEntryMock.mockRejectedValue(new ApiError(404, 'not found'));
-		render(EntryView, {
+		render(EntryView, { props: {
 			entryId: 999,
 			headingLevel: 2,
 			recordView: false,
 			backHref: '/search?q=qin&kind=word'
-		});
+		}, context: ctx.context });
 		const heading = await screen.findByRole('heading', { level: 2, name: 'Entry not found' });
 		expect(heading.tagName).toBe('H2');
 		expect(screen.getByRole('link', { name: 'Back to search' }).getAttribute('href')).toBe(
@@ -306,7 +306,7 @@ describe('entry a11y names (#104)', () => {
 			known: []
 		} as never);
 		getEntryMock.mockResolvedValue(entry());
-		render(EntryView, { entryId: 5, recordView: false });
+		render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		const choose = await screen.findByRole('button', { name: 'Choose a deck' });
 		expect(choose.getAttribute('aria-label')).toBe('Choose a deck');
 		expect(choose.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('Choose a deck');

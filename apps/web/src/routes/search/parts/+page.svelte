@@ -6,7 +6,6 @@
 	import { fetchCharacters } from '$lib/api/characters';
 	import { fetchComponents, type ComponentIndex } from '$lib/api/components';
 	import type { CharRow } from '$lib/api/types';
-	import { user } from '$lib/auth';
 	import { dictionaryHint } from '$lib/coverage';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { pageTitle } from '$lib/pageTitle';
@@ -23,10 +22,13 @@
 		type TypedOption
 	} from '$lib/radicals/selection';
 	import { partsHref, selectionFromParams } from '$lib/radicals/url';
-	import { currentLanguage, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
+	const app = useApp();
 
-	const lang = $derived($currentLanguage);
+	const lang = $derived(session.workspaces.language);
 	const supported = $derived(lang !== null && usesHan(lang));
 
 	let chars = $state.raw<CharRow[] | null>(null);
@@ -47,8 +49,8 @@
 		try {
 			// Components are optional: a failed request leaves the radical
 			// table and strokes working, with the "no components" note.
-			const parts = fetchComponents(language).catch(() => EMPTY_COMPONENTS);
-			const [list, index] = await Promise.all([fetchCharacters(language), parts]);
+			const parts = fetchComponents(session.caches.components, language).catch(() => EMPTY_COMPONENTS);
+			const [list, index] = await Promise.all([fetchCharacters(session.caches.characters, language), parts]);
 			if (mine !== seq) return;
 			chars = list.chars;
 			comps = index;
@@ -103,7 +105,7 @@
 	<p><a href="/search">{t('search.parts.back')}</a></p>
 
 	{#if lang === null}
-		{#if $workspacesLoaded}
+		{#if session.workspaces.loaded}
 			<p class="hint">{t('search.parts.noWorkspace')}</p>
 		{/if}
 	{:else if !supported}
@@ -114,7 +116,7 @@
 	{:else if chars === null}
 		<p class="hint" aria-live="polite">{t('common.loading')}</p>
 	{:else if chars.length === 0}
-		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
+		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), app.auth.user?.admin === true)}</p>
 	{:else}
 		<form class="typed" onsubmit={submitTyped}>
 			<div class="typed-field">

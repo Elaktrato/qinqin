@@ -1,9 +1,15 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PopupFrameView from './PopupFrameView.svelte';
 import source from './PopupFrameView.svelte?raw';
 import type { PopupFrame } from './popupStackCore';
 import type { LookupController, StackInfo } from './useLookup.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -29,7 +35,7 @@ function mount(depth = 1) {
 	} as unknown as LookupController;
 	const frame: PopupFrame = { id: 3, depth, anchor: { x: 10, y: 10, w: 20, h: 20 }, text: '你好', offset: 0, results: [] };
 	const info = { mode: 'hover', lang: 'zh', textLang: 'zh-Hans', note: '', paragraph: '' } as unknown as StackInfo;
-	render(PopupFrameView, { frame, info, lookup, studyWorkspaceId: null });
+	render(PopupFrameView, { props: { frame, info, lookup, studyWorkspaceId: null }, context: ctx.context });
 	return { closeFrame };
 }
 

@@ -2,13 +2,13 @@
 // leave one load of A in flight, sign out, sign in as B: every answer is B's,
 // nothing of A is reachable from any cache, and A's late answer does not land.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 
 import { setToken } from '../api/client';
-import { auth, logout } from '../auth';
+import { createAppContext, type AppContext } from '../context/app.svelte';
+import { fakeDeps, manualTimers, type ManualTimers } from '../testing/context';
 import { fillMissingWritten } from '../study/entriesCache';
 import { loadStarterEntries } from '../features/flashcards/decks/starterDecks';
 import { loadLevelItems } from '../features/flashcards/decks/systemDeckItems';
@@ -19,9 +19,7 @@ import { fetchSchemeCharacters } from '../api/schemes';
 import { fetchCharacters } from '../api/characters';
 import { loadProviderNames } from '../plugins/journal/providerNames';
 import { journalEntriesFor } from '../plugins/journal/journalEntries.svelte';
-import { loadWorkspaceEvents } from '../events';
 import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
-import { unreadableRows } from '../study/unreadable';
 import type { StudyCard } from '../study/types';
 
 const WS = 7;
@@ -83,8 +81,13 @@ function answer(path: string, method: string, tag: string): unknown {
 	throw new Error(`unexpected ${method} ${path}`);
 }
 
+let app: AppContext;
+let timers: ManualTimers;
+
 beforeEach(() => {
 	vi.stubGlobal('localStorage', storage());
+	timers = manualTimers();
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window: null, timers }));
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: unknown, init?: RequestInit) => {
@@ -102,7 +105,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	logout();
+	app.auth.logout();
+	app.dispose();
 	holdForA = [];
 	held.length = 0;
 	vi.unstubAllGlobals();
@@ -110,25 +114,30 @@ afterEach(() => {
 
 function signIn(token: Token): void {
 	setToken(token);
-	auth.set({ token, user: { id: USERS[token].id, username: token, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: '2026-01-01T00:00:00Z' } });
+	app.auth.set({ token, user: { id: USERS[token].id, username: token, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: '2026-01-01T00:00:00Z' } });
 }
 
 const legacyCard = (entryId: number): StudyCard => ({ id: `c-vocab-${entryId}`, kind: 'vocab', entryId, deckIds: ['general'], createdAt: '2026-11-10T08:00:00Z' });
 const level: LevelDeck = { kind: 'level', schemeId: 1, packId: 'p', schemeName: 's', unit: 'word', level: 'L1', ord: 1 };
 
+/** The current session's study state (read at each call: a new session is a new one). */
+const study = () => app.session!.study;
+/** The current session's caches of server answers. */
+const caches = () => app.session!.caches;
+
 /** Every cache, read through its public reader; the answer as JSON. */
 const readers: Record<string, () => Promise<unknown>> = {
-	entriesCache: () => fillMissingWritten([legacyCard(1)]),
-	starterDecks: () => loadStarterEntries(1, 10),
-	systemDeckItems: () => loadLevelItems(level),
-	entryBases: () => loadEntryBases([1]).then((m) => [...m.values()]),
-	audio: () => getEntryAudio(1),
-	schemes: () => fetchSchemeCharacters(1).then((levels) => levels.map((l) => l.name)),
-	characters: () => fetchCharacters('zh'),
-	providerNames: () => loadProviderNames().then((m) => [...m.values()]),
-	studyHistory: () => loadStudyHistory(WS),
-	studyData: () => getStudyData(WS),
-	eventLog: () => loadWorkspaceEvents(WS)
+	entriesCache: () => fillMissingWritten(caches().written, [legacyCard(1)]),
+	starterDecks: () => loadStarterEntries(caches().starters, 1, 10),
+	systemDeckItems: () => loadLevelItems(caches().levelItems, level),
+	entryBases: () => loadEntryBases(caches().entryBases, [1]).then((m) => [...m.values()]),
+	audio: () => getEntryAudio(caches().audio, 1),
+	schemes: () => fetchSchemeCharacters(caches().schemes, 1).then((levels) => levels.map((l) => l.name)),
+	characters: () => fetchCharacters(caches().characters, 'zh'),
+	providerNames: () => loadProviderNames(caches().providerNames).then((m) => [...m.values()]),
+	studyHistory: () => loadStudyHistory(study(), WS),
+	studyData: () => getStudyData(study(), WS),
+	eventLog: () => app.session!.events.load(WS)
 };
 
 async function readAll(): Promise<Record<string, string>> {
@@ -142,13 +151,14 @@ describe('sign-out isolation (#173)', () => {
 		signIn('tok-A');
 		const asA = await readAll();
 		for (const [name, json] of Object.entries(asA)) expect(json, name).toContain('AAA');
-		const journalA = journalEntriesFor(WS);
-		expect(studyPullPages(WS)).toBeGreaterThan(0);
-		unreadableRows.set({ workspaceId: WS, counts: { cards: 1 }, total: 1 });
+		const journalA = journalEntriesFor(caches().journalEntries, WS);
+		const studyA = study();
+		expect(studyPullPages(studyA, WS)).toBeGreaterThan(0);
+		studyA.unreadable.record(WS, { cards: 1 }, []);
 
-		logout();
-		expect(studyPullPages(WS)).toBe(0);
-		expect(get(unreadableRows)).toBeNull();
+		app.auth.logout();
+		expect(studyPullPages(studyA, WS)).toBe(0);
+		expect(studyA.unreadable.report).toBeNull();
 		signIn('tok-B');
 
 		const asB = await readAll();
@@ -156,34 +166,56 @@ describe('sign-out isolation (#173)', () => {
 			expect(json, name).toContain('BBB');
 			expect(json, name).not.toContain('AAA');
 		}
-		expect(journalEntriesFor(WS)).not.toBe(journalA);
+		expect(journalEntriesFor(caches().journalEntries, WS)).not.toBe(journalA);
 	});
 
 	it('a load of A still in flight at sign-out never lands in a cache B reads', async () => {
 		signIn('tok-A');
 		holdForA = ['/api/entries/2', '/api/schemes/1/entries', '/api/entries/bases', '/api/audio/entries/', '/api/sync/pull', '/api/events'];
 		const lateA = [
-			fillMissingWritten([legacyCard(2)]),
-			loadLevelItems(level),
-			loadEntryBases([1]),
-			getEntryAudio(1),
-			loadStudyHistory(WS),
-			getStudyData(WS),
-			loadWorkspaceEvents(WS)
+			fillMissingWritten(caches().written, [legacyCard(2)]),
+			loadLevelItems(caches().levelItems, level),
+			loadEntryBases(caches().entryBases, [1]),
+			getEntryAudio(caches().audio, 1),
+			loadStudyHistory(study(), WS),
+			getStudyData(study(), WS),
+			app.session!.events.load(WS)
 		];
 		// The history and the raw data share one study round (#193): six requests held.
 		await vi.waitFor(() => expect(held.length).toBe(6));
 
-		logout();
+		app.auth.logout();
 		signIn('tok-B');
 		// A's answers arrive only now, after B signed in.
 		for (const release of held) release();
 		await Promise.allSettled(lateA);
 
 		const asB = {
-			entries: JSON.stringify(await fillMissingWritten([legacyCard(2)])),
+			entries: JSON.stringify(await fillMissingWritten(caches().written, [legacyCard(2)])),
 			...(await readAll())
 		};
 		for (const [name, json] of Object.entries(asB)) expect(json, name).not.toContain('AAA');
+	});
+
+	it("A's session leaves no timer running: after sign-out nothing of A fires, nothing asks for A", async () => {
+		signIn('tok-A');
+		await readAll();
+		// The server refuses A's reviews for now: the review waits in the outbox, which polls to send it.
+		const answering = vi.mocked(fetch).getMockImplementation()!;
+		vi.mocked(fetch).mockImplementation(async (input, init) =>
+			String(input) === '/api/events/batch' ? new Response('{}', { status: 503 }) : answering(input, init)
+		);
+		const outbox = app.session!.outbox;
+		outbox.start();
+		await outbox.recordReview(WS, 'c-vocab-1', 3);
+		expect(outbox.pendingCount(USERS['tok-A'].id)).toBe(1);
+		expect(timers.pending()).toBeGreaterThan(0);
+
+		app.auth.logout();
+		expect(timers.pending()).toBe(0);
+		const fetched = vi.mocked(fetch).mock.calls.length;
+		timers.advance(60 * 60 * 1000);
+		await Promise.resolve();
+		expect(vi.mocked(fetch).mock.calls.length).toBe(fetched);
 	});
 });

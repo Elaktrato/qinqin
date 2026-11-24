@@ -1,11 +1,18 @@
+import { LevelItemsCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemeEntries: vi.fn() }));
 
 import { getSchemeEntries } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
-import { clearLevelItemsCache } from '$lib/features/flashcards/decks/systemDeckItems';
+
 import { loadLevelKeys } from './levelKeys';
+
+// A fresh LevelItemsCache per test (record 0009: the session owns one).
+let cache = new LevelItemsCache();
+beforeEach(() => {
+	cache = new LevelItemsCache();
+});
 
 function word(id: number): EntryBase {
 	return {
@@ -32,7 +39,7 @@ const scheme: Scheme = {
 } as Scheme;
 
 beforeEach(() => {
-	clearLevelItemsCache();
+	cache.clear();
 	vi.mocked(getSchemeEntries).mockImplementation(async (_id, level) =>
 		level === 'HSK 1' ? [word(1), word(2)] : [word(2), word(3)]
 	);
@@ -41,7 +48,7 @@ afterEach(() => vi.clearAllMocks());
 
 describe('loadLevelKeys', () => {
 	it('keys an entry by the ord of its first level', async () => {
-		const keyOf = await loadLevelKeys(scheme);
+		const keyOf = await loadLevelKeys(cache, scheme);
 		expect(keyOf(1)).toBe(1);
 		expect(keyOf(2)).toBe(1); // in HSK 1 and HSK 2: the first level wins
 		expect(keyOf(3)).toBe(2);
@@ -49,9 +56,9 @@ describe('loadLevelKeys', () => {
 	});
 
 	it('uses the cached level items', async () => {
-		await loadLevelKeys(scheme);
+		await loadLevelKeys(cache, scheme);
 		const before = vi.mocked(getSchemeEntries).mock.calls.length;
-		await loadLevelKeys(scheme);
+		await loadLevelKeys(cache, scheme);
 		expect(vi.mocked(getSchemeEntries).mock.calls.length).toBe(before);
 	});
 });

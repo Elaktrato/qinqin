@@ -41,6 +41,10 @@ Under `apps/web/src/lib/`:
 - The moves touch many imports, so #195 runs when no other web branch is open.
 - `lib/study/UnreadableRowsNotice.svelte` (from #167, record [0002](0002-sync-unreadable-rows.md)) is also a UI
   component in a logic folder; #195 moves it with the others.
+- #196 (record [0009](0009-web-state-model.md)) added `lib/context/` (the app and session contexts, their
+  dependencies and the session's caches) and turned the loose `auth.ts`, `workspaces.ts` and `notices.ts` into
+  runes classes (`auth.svelte.ts`, `workspaces.svelte.ts`, `notices.svelte.ts`); #195 moves those with the other
+  loose modules.
 - The repository tests move to `apps/web/tests/repo/`, among them this folder's own check
   (`architectureDocs.test.ts`); #195 updates the path named in this folder's README.
 

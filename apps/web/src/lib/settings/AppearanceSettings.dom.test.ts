@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListedTheme } from '$lib/api/themes';
@@ -6,6 +7,11 @@ import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/the
 import { installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
 import { primaryActions } from '$lib/ui/testing/primary';
 import AppearanceSettings from './AppearanceSettings.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
 const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
@@ -41,7 +47,7 @@ async function setup(
 	store = createThemeStore(deps);
 	await store.start();
 	await store.setUser(1);
-	render(AppearanceSettings, { store, installed });
+	render(AppearanceSettings, { props: { store, installed }, context: ctx.context });
 }
 
 beforeEach(() => root.removeAttribute('style'));

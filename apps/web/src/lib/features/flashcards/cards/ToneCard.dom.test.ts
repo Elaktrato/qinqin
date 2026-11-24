@@ -1,5 +1,6 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
 
@@ -8,6 +9,11 @@ vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 import ToneCard from './ToneCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';
 import source from './ToneCard.svelte?raw';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const entry = {
 	id: 1,
@@ -26,7 +32,7 @@ afterEach(cleanup);
 
 function setup(over: Record<string, unknown> = {}) {
 	const onDone = vi.fn();
-	const view = render(CardHarness, { card: ToneCard, cardProps: { item, entry, done: false, onDone, ...over }, kindLabel: 'Tones' });
+	const view = render(CardHarness, { props: { card: ToneCard, cardProps: { item, entry, done: false, onDone, ...over }, kindLabel: 'Tones' }, context: ctx.context });
 	return { onDone, ...view };
 }
 

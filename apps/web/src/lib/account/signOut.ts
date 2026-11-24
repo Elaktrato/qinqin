@@ -1,35 +1,45 @@
 // The user's own "Sign out": one flush of unsent reviews first, and a dialog
-// (LogoutDialog) when some remain. The plain logout() in auth.ts stays the
+// (LogoutDialog) when some remain. The plain `auth.logout()` stays the
 // non-interactive path (expired or revoked session, delete account).
 
-import { get } from 'svelte/store';
-import { auth, logout } from '../auth';
-import { clearPending, flushPendingReviews, pendingCount } from '../study/events';
-import { decideLogout, logoutPrompt } from './logoutFlow';
+import type { AppContext } from '../context/app.svelte';
+import { decideLogout } from './logoutFlow';
 
-export async function requestSignOut(): Promise<void> {
-	const id = get(auth).user?.id;
-	if (id === undefined) {
-		logout();
+/**
+ * requestSignOut flushes, then signs out or asks. The flush can take seconds;
+ * what follows acts only on the session it started for: after a switch to
+ * another user (another tab) it does nothing.
+ */
+export async function requestSignOut(app: AppContext): Promise<void> {
+	const session = app.session;
+	const id = session?.user ?? null;
+	if (session === null || id === null) {
+		app.auth.logout();
 		return;
 	}
 	const { decision, count } = await decideLogout({
-		pending: () => pendingCount(id),
-		flush: flushPendingReviews
+		pending: () => session.outbox.pendingCount(id),
+		flush: () => session.outbox.flush()
 	});
-	if (decision === 'signout') logout();
-	else logoutPrompt.set(count);
+	if (app.session !== session || !session.alive) return;
+	if (decision === 'signout') app.auth.logout();
+	else app.logoutPrompt = count;
 }
 
-/** The dialog's "Sign out and delete them". */
-export function signOutAndDelete(): void {
-	const id = get(auth).user?.id;
-	if (id !== undefined) clearPending(id);
-	logoutPrompt.set(null);
-	logout();
+/**
+ * The dialog's "Sign out and delete them": the session's own user's reviews
+ * only, and only while the prompt is open (a session switch closes it: it asked
+ * the previous user).
+ */
+export function signOutAndDelete(app: AppContext): void {
+	const session = app.session;
+	const id = session?.alive && app.logoutPrompt !== null ? session.user : null;
+	if (session !== null && id !== null) session.outbox.clearPending(id);
+	app.logoutPrompt = null;
+	app.auth.logout();
 }
 
 /** The dialog's "Stay signed in" (also Escape). */
-export function staySignedIn(): void {
-	logoutPrompt.set(null);
+export function staySignedIn(app: AppContext): void {
+	app.logoutPrompt = null;
 }

@@ -11,7 +11,6 @@
 	import { loadRawStudyData } from '$lib/study/data';
 	import { pushStudy } from '$lib/study/commands/write';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -20,14 +19,16 @@
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
 	import { levelSessionConfig } from './studyStart';
 	import { Button, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// A read-only level deck: its items with the learner's state, a level
 	// session, and "Add to my decks" (idempotent, see addToDeck.ts). Plugin
 	// decks (providers.ts) are wired here when a plugin ships one.
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
 
-	const store = createDecksData();
-	const workspace = $derived($workspaces.current);
+	const store = createDecksData(session);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
@@ -52,7 +53,7 @@
 				const found =
 					levelDecks(schemes, language).find((d) => d.packId === wanted.packId && d.level === wanted.level) ?? null;
 				deck = found;
-				if (found !== null) items = await loadLevelItems(found);
+				if (found !== null) items = await loadLevelItems(session.caches.levelItems, found);
 			})
 			.catch((err) => {
 				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));
@@ -114,7 +115,7 @@
 		let deckRows = 0;
 		try {
 			// Planned from the stored rows right now, so a retry adds only the rest.
-			const raw = await loadRawStudyData(workspaceId);
+			const raw = await loadRawStudyData(session.study, workspaceId);
 			const id = ownedLevelDeckId(deck.packId, deck.level);
 			let target: { id: string; name: string; source?: { type: 'level'; packId: string; level: string } };
 			if (targetChoice === 'new') {
@@ -157,7 +158,7 @@
 			deckRows = plan.deck === null ? 0 : 1;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudy(workspaceId, rows, {
+			await pushStudy(session.study, workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
 			result = t('flashcards.system.added', { items: words(plan.created + plan.joined), name: target.name });

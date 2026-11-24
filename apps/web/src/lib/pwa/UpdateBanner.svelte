@@ -1,12 +1,14 @@
 <script lang="ts">
+	import { useApp } from '$lib/context/context';
 	import { t } from '$lib/i18n';
-	import { applyUpdate, updateAvailable } from './register';
+
+	const app = useApp();
 </script>
 
-{#if $updateAvailable}
+{#if app.worker.updateAvailable}
 	<div class="update" role="status">
 		<span>{t('pwa.update.available')}</span>
-		<button type="button" onclick={applyUpdate}>{t('pwa.update.reload')}</button>
+		<button type="button" onclick={() => app.worker.apply()}>{t('pwa.update.reload')}</button>
 	</div>
 {/if}
 

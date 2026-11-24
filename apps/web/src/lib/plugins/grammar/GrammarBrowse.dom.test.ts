@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,14 +9,18 @@ vi.mock('./progress', () => ({ loadProgress: vi.fn(async () => new Map()) }));
 vi.mock('./browse', () => ({ browseSections: vi.fn() }));
 
 import { browseSections } from './browse';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import GrammarBrowse from './GrammarBrowse.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const ws = { id: 1, language: 'ja', name: '', settings: {}, updatedAt: '' } as never;
 
 beforeEach(() => {
-	workspaces.set({ list: [ws], current: ws });
+	ctx.session.workspaces.set({ list: [ws], current: ws });
 	vi.mocked(browseSections).mockReturnValue([
 		{
 			packId: 'basics',
@@ -42,12 +47,12 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 describe('grammar browse in the lighter look (#106)', () => {
 	it('packs are Sections, levels carry Chips, points are rows, and there is no primary action', async () => {
-		render(GrammarBrowse);
+		render(GrammarBrowse, { context: ctx.context });
 		expect(await screen.findByRole('heading', { name: 'Basic grammar' })).toBeTruthy();
 		expect(screen.getByText('HSK 2')).toBeTruthy();
 		expect(screen.getByRole('link', { name: /The は particle/ })).toBeTruthy();

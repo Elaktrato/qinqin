@@ -1,18 +1,29 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The real study history (sync pull, event log, canonical merge); only the
 // network, the zone and navigation are faked.
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('../time/zone', async () => {
-	const { studyDay } = await import('../time/studyDay');
-	return { currentStudyDay: () => studyDay([]) };
-});
 
-import { endSession } from '../session/sessionEnd';
 import { loadGoalStatus } from './loadGoal';
 import { pagedPull } from '$lib/testing/legacyCodec';
 import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+});
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
@@ -39,11 +50,11 @@ beforeEach(() => {
 		key: () => null,
 		length: 0
 	});
-	endSession('signOut');
+	newSession(ctx);
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
-	endSession('signOut');
+	newSession(ctx);
 });
 
 describe('loadGoalStatus through the canonical merge', () => {
@@ -75,7 +86,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 				throw new Error(`unexpected ${url}`);
 			})
 		);
-		const view = await loadGoalStatus(3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(view.today.status).toBe('open');
 		expect(view.today.amount).toBe(1);
 	});

@@ -46,14 +46,14 @@
 		saveActivityView,
 		type StoredActivityView
 	} from '$lib/activity/viewPrefs';
-	import { onEventLogChange } from '$lib/events';
 	import type { VacationPeriod } from '$lib/study/vacation';
 	import { workspaceDisplay } from '$lib/languages';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
-	import { workspaces } from '$lib/workspaces';
+	import { useSession } from '$lib/context/context';
 
+
+	const session = useSession();
 	// The core home heatmap: the server-aggregated activity (one request
 	// for every workspace and type), folded here per scope and filter, one
 	// cell per learner day (the user's time zone, lib/time/studyDay.ts) over the last 52 weeks. The view (scope, hidden
@@ -77,7 +77,7 @@
 	// The window `response` covers (learner days, inclusive).
 	let range = $state({ from: '', to: '' });
 	// The month calendar's page (the one requested; `range` says which is on screen).
-	let month = $state(monthOf(currentStudyDay().today(Date.now())));
+	let month = $state(monthOf(session.zone.day().today(Date.now())));
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
@@ -86,7 +86,7 @@
 	let monthError = $state('');
 	let failedMonth: Month | null = null;
 	// The learner's day rule; a zone change re-folds and re-requests the window.
-	let studyDay = $state.raw(currentStudyDay());
+	let studyDay = $state.raw(session.zone.day());
 	// The user's vacation periods (user-global rows): their dates are hatched.
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	// The current workspace's goal row and reviews (cached study history), for the
@@ -102,16 +102,16 @@
 
 	const stored = $derived(prefs.stored);
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const scope = $derived(effectiveScope(stored.scope, workspaceId !== null));
 	const view = $derived(activityViewFor(stored, workspaceId));
 	const sources = $derived(response?.sources ?? []);
 
 	// A workspace no longer in the store still counts, under a fallback name.
 	function workspaceName(id: number): string {
-		const ws = $workspaces.list.find((w) => w.id === id);
+		const ws = session.workspaces.list.find((w) => w.id === id);
 		if (!ws) return t('stats.activity.workspaceN', { id });
-		const display = workspaceDisplay($workspaces.list, ws);
+		const display = workspaceDisplay(session.workspaces.list, ws);
 		return display.showName ? display.name : display.label;
 	}
 
@@ -133,7 +133,7 @@
 	const loaded = $derived(response !== null && range.from !== '');
 	const marks = $derived(
 		loaded
-			? vacationMarksRange(vacations, $workspaces.list.map((w) => w.id), view.workspace, range.from, range.to, today)
+			? vacationMarksRange(vacations, session.workspaces.list.map((w) => w.id), view.workspace, range.from, range.to, today)
 			: new Map()
 	);
 	const byDay = $derived(loaded ? foldRange(response ?? empty, view, range.from, range.to, marks) : new Map<string, DayActivity>());
@@ -284,7 +284,7 @@
 		}
 		const id = workspaceId;
 		try {
-			const got = (await getStudyData(id)).vacations ?? [];
+			const got = (await getStudyData(session.study, id)).vacations ?? [];
 			if (id === workspaceId) vacations = got;
 		} catch {
 			// The marks are decoration: the heatmap works without them.
@@ -298,7 +298,7 @@
 			return;
 		}
 		try {
-			const history = await loadStudyHistory(id);
+			const history = await loadStudyHistory(session.study, id);
 			// A slower load for the workspace switched away from never wins.
 			if (id !== workspaceId) return;
 			const row = history.goals === undefined || history.goals === 'newer' ? null : history.goals;
@@ -333,8 +333,8 @@
 
 	onMount(() => {
 		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
-		const offEvents = onEventLogChange(() => void load());
-		const offZone = onStudyDayChange((next) => {
+		const offEvents = session.events.onChange(() => void load());
+		const offZone = session.zone.onChange((next) => {
 			studyDay = next;
 			void load();
 		});

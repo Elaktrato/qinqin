@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,8 +8,12 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 }));
 
 import { ApiError, api } from '$lib/api/client';
-import { workspaces } from '$lib/workspaces';
 import AccessTokens from './AccessTokens.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 // A fake token of the right shape, made at run time (never a real one).
 const FAKE = 'qq_pat_' + 'ab'.repeat(32);
@@ -31,7 +36,7 @@ let createError: ApiError | null = null;
 beforeEach(() => {
 	list = [row(2, { scope: 'write', workspaceId: 7 }), row(1)];
 	createError = null;
-	workspaces.set({ list: [{ id: 7, name: 'Chinese', language: 'zh' } as never], current: null });
+	ctx.session.workspaces.set({ list: [{ id: 7, name: 'Chinese', language: 'zh' } as never], current: null });
 	vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string; body?: Record<string, unknown> }) => {
 		if (url === '/api/account/tokens' && !opts?.method) return { accessTokens: list };
 		if (url === '/api/account/tokens' && opts?.method === 'POST') {
@@ -73,7 +78,7 @@ async function openAndFill(name = 'cron sync') {
 
 describe('Settings → Account: access tokens', () => {
 	it('lists the tokens with their hint, scope, workspace, expiry and last use', async () => {
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		const table = await screen.findByRole('table', { name: 'Access tokens' });
 		const rows = within(table).getAllByRole('row').slice(1);
 		expect(rows).toHaveLength(2);
@@ -89,7 +94,7 @@ describe('Settings → Account: access tokens', () => {
 	it('creates a token and shows it exactly once, with Copy, the warning and an example', async () => {
 		const writeText = vi.fn().mockResolvedValue(undefined);
 		Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		const dialog = await openAndFill();
 		await fireEvent.click(within(dialog).getByLabelText('Read and write'));
@@ -119,7 +124,7 @@ describe('Settings → Account: access tokens', () => {
 	});
 
 	it('limits a token to a workspace and picks the expiry', async () => {
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		const dialog = await openAndFill();
 		await fireEvent.change(within(dialog).getByLabelText('Workspace'), { target: { value: '7' } });
@@ -136,7 +141,7 @@ describe('Settings → Account: access tokens', () => {
 		[apiError(422, 'invalid_token_request', 'The name must be 1 to 64 characters.'), 'This access token request is not valid.']
 	])('shows the server refusal %#', async (err, text) => {
 		createError = err;
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		const dialog = await openAndFill();
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Create token' }));
@@ -145,7 +150,7 @@ describe('Settings → Account: access tokens', () => {
 	});
 
 	it('checks the form before sending', async () => {
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		const dialog = await openAndFill('   ');
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Create token' }));
@@ -154,7 +159,7 @@ describe('Settings → Account: access tokens', () => {
 	});
 
 	it('revokes one token after a confirmation', async () => {
-		render(AccessTokens);
+		render(AccessTokens, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Revoke token 1' }));
 		expect(vi.mocked(api).mock.calls.some(([, o]) => (o as { method?: string })?.method === 'DELETE')).toBe(false);
@@ -166,7 +171,7 @@ describe('Settings → Account: access tokens', () => {
 
 	it('revokes all after a confirmation', async () => {
 		const counts: number[] = [];
-		render(AccessTokens, { oncount: (n: number) => counts.push(n) });
+		render(AccessTokens, { props: { oncount: (n: number) => counts.push(n) }, context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Revoke all' }));
 		const confirm = screen.getByRole('group', { name: 'Confirm revoking all access tokens' });

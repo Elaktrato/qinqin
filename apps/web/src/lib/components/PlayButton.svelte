@@ -3,8 +3,9 @@
 	import type { AudioClip } from '$lib/api/audio';
 	import { activate, buttonState, playLabel } from '$lib/audio/button';
 	import { clipObjectUrl } from '$lib/audio/source';
-	import { getPlayer } from '$lib/audio/shared';
 	import { deviceVoiceFor } from '$lib/audio/player';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		clips,
@@ -33,7 +34,7 @@
 	// the same tick (iOS Safari only plays inside the user's tap); until it has
 	// arrived the tap takes the slower path and plays when the clip is ready.
 	$effect(() => {
-		for (const clip of clips) void clipObjectUrl(clip.url).catch(() => {});
+		for (const clip of clips) void clipObjectUrl(session.caches.clips, clip.url).catch(() => {});
 	});
 
 	onMount(() => {
@@ -46,11 +47,11 @@
 
 	// Leaving the page must not leave sound behind.
 	onDestroy(() => {
-		if (mine) getPlayer().stop();
+		if (mine) session.player.stop();
 	});
 
 	async function toggle() {
-		const player = getPlayer();
+		const player = session.player;
 		if (playing) {
 			player.stop();
 			playing = false;

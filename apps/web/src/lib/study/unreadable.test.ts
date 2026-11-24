@@ -1,10 +1,15 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
-import { clearUnreadableReport, rawIdentity, reportUnreadable, unreadableNotice, unreadableRows } from './unreadable';
+import { rawIdentity, unreadableNotice } from './unreadable';
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 afterEach(() => {
-	clearUnreadableReport();
+	ctx.session.study.unreadable.clear();
 	vi.restoreAllMocks();
 });
 
@@ -23,15 +28,15 @@ describe('rawIdentity', () => {
 describe('reportUnreadable', () => {
 	it('keeps the last report, warns once per distinct report, and clears on a clean load', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-		reportUnreadable(7, { cards: 2 }, ['cards:c-vocab-1']);
-		reportUnreadable(7, { cards: 2 }, ['cards:c-vocab-1']);
+		ctx.session.study.unreadable.record(7, { cards: 2 }, ['cards:c-vocab-1']);
+		ctx.session.study.unreadable.record(7, { cards: 2 }, ['cards:c-vocab-1']);
 		expect(warn).toHaveBeenCalledTimes(1);
-		expect(get(unreadableRows)).toEqual({ workspaceId: 7, counts: { cards: 2 }, total: 2 });
+		expect(ctx.session.study.unreadable.report).toEqual({ workspaceId: 7, counts: { cards: 2 }, total: 2 });
 		// A clean load of another workspace leaves this workspace's report alone.
-		reportUnreadable(9, {}, []);
-		expect(get(unreadableRows)?.workspaceId).toBe(7);
-		reportUnreadable(7, {}, []);
-		expect(get(unreadableRows)).toBeNull();
+		ctx.session.study.unreadable.record(9, {}, []);
+		expect(ctx.session.study.unreadable.report?.workspaceId).toBe(7);
+		ctx.session.study.unreadable.record(7, {}, []);
+		expect(ctx.session.study.unreadable.report).toBeNull();
 	});
 });
 

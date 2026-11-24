@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
+import { afterEach, beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
@@ -7,9 +6,15 @@ vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError, api } from './api/client';
 import type { Workspace } from './api/types';
-import { dismissNotice, notice } from './notices';
-import { isWorkspaceGone, recoverFromDeletedWorkspace, watchDeletedWorkspaces } from './workspaceGone';
-import { workspaces } from './workspaces';
+import { isWorkspaceGone } from './workspaceGone';
+import { testContext, workspacesState, type TestContext } from './testing/context';
+
+let ctx: TestContext;
+
+/** A running app context routes workspace_not_found answers to the session's recovery. */
+function watchDeletedWorkspaces(): void {
+	onTestFinished(ctx.app.start());
+}
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -41,7 +46,7 @@ const ja = workspace(2, 'ja', 'Novels');
 
 function selectIn(list: Workspace[], current: Workspace): void {
 	localStorage.setItem('qinqin.workspace', String(current.id));
-	workspaces.set({ list, current });
+	ctx.session.workspaces.set({ list, current });
 }
 
 function workspaceCalls(): number {
@@ -75,8 +80,7 @@ describe('recoverFromDeletedWorkspace', () => {
 		vi.stubGlobal('fetch', vi.fn());
 		vi.useFakeTimers({ toFake: ['Date'] });
 		vi.setSystemTime(now);
-		workspaces.set({ list: [], current: null });
-		dismissNotice();
+		ctx = testContext({ deps: { local: () => localStorage, session: () => sessionStorage, window: null } });
 	});
 
 	afterEach(() => {
@@ -89,11 +93,11 @@ describe('recoverFromDeletedWorkspace', () => {
 		localStorage.setItem('qinqin.session.1.2026-11-14', '1');
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([ja]));
 
-		await recoverFromDeletedWorkspace();
+		await ctx.session.recovery.recover();
 
-		expect(get(workspaces)).toEqual({ list: [ja], current: ja });
+		expect(workspacesState(ctx.session.workspaces)).toEqual({ list: [ja], current: ja });
 		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
-		expect(get(notice)).toBe('This workspace was deleted — switched to Novels.');
+		expect(ctx.session.notices.text).toBe('This workspace was deleted — switched to Novels.');
 		// What this browser kept for the deleted workspace is forgotten.
 		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBeNull();
 	});
@@ -102,27 +106,27 @@ describe('recoverFromDeletedWorkspace', () => {
 		selectIn([zh], zh);
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([]));
 
-		await recoverFromDeletedWorkspace();
+		await ctx.session.recovery.recover();
 
-		expect(get(workspaces)).toEqual({ list: [], current: null });
-		expect(get(notice)).toBe('This workspace was deleted.');
+		expect(workspacesState(ctx.session.workspaces)).toEqual({ list: [], current: null });
+		expect(ctx.session.notices.text).toBe('This workspace was deleted.');
 	});
 
 	it('stays quiet when the selected workspace still exists', async () => {
 		selectIn([zh, ja], zh);
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([zh]));
 
-		await recoverFromDeletedWorkspace();
+		await ctx.session.recovery.recover();
 
-		expect(get(workspaces).current).toEqual(zh);
-		expect(get(notice)).toBeNull();
+		expect(workspacesState(ctx.session.workspaces).current).toEqual(zh);
+		expect(ctx.session.notices.text).toBeNull();
 	});
 
 	it('shares one reload between concurrent callers', async () => {
 		selectIn([zh, ja], zh);
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([ja]));
 
-		await Promise.all([recoverFromDeletedWorkspace(), recoverFromDeletedWorkspace()]);
+		await Promise.all([ctx.session.recovery.recover(), ctx.session.recovery.recover()]);
 
 		expect(workspaceCalls()).toBe(1);
 	});
@@ -131,12 +135,12 @@ describe('recoverFromDeletedWorkspace', () => {
 		selectIn([zh, ja], zh);
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([zh, ja]));
 
-		await recoverFromDeletedWorkspace();
-		await recoverFromDeletedWorkspace();
+		await ctx.session.recovery.recover();
+		await ctx.session.recovery.recover();
 		expect(workspaceCalls()).toBe(1);
 
 		vi.setSystemTime(now + 30_000);
-		await recoverFromDeletedWorkspace();
+		await ctx.session.recovery.recover();
 		expect(workspaceCalls()).toBe(2);
 	});
 
@@ -144,8 +148,8 @@ describe('recoverFromDeletedWorkspace', () => {
 		selectIn([zh, ja], zh);
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
 
-		await expect(recoverFromDeletedWorkspace()).resolves.toBeUndefined();
-		expect(get(workspaces).current).toEqual(zh);
+		await expect(ctx.session.recovery.recover()).resolves.toBeUndefined();
+		expect(workspacesState(ctx.session.workspaces).current).toEqual(zh);
 	});
 
 	it('is triggered by any API call answered workspace_not_found once watching', async () => {
@@ -158,8 +162,8 @@ describe('recoverFromDeletedWorkspace', () => {
 		);
 
 		await expect(api('/api/events?workspace=1')).rejects.toBeInstanceOf(ApiError);
-		await vi.waitFor(() => expect(get(workspaces).current).toEqual(ja));
-		expect(get(notice)).toBe('This workspace was deleted — switched to Novels.');
+		await vi.waitFor(() => expect(workspacesState(ctx.session.workspaces).current).toEqual(ja));
+		expect(ctx.session.notices.text).toBe('This workspace was deleted — switched to Novels.');
 	});
 
 	it('ignores other 404s', async () => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { loadStrokeData } from '$lib/study/strokeData';
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/pageTitle';
@@ -8,11 +9,9 @@
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
 	import { segmentBatch } from '$lib/api/segment';
-	import { token } from '$lib/auth';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { withShownWritten } from '$lib/study/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
-	import { getPlayer } from '$lib/audio/shared';
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
@@ -39,7 +38,6 @@
 		type CardResult,
 		type FlowItem
 	} from '$lib/study/cardFlow';
-	import { flushPendingReviews, recordReplacement, recordReview } from '$lib/study/events';
 	import {
 		backFrom,
 		pushStep,
@@ -63,7 +61,6 @@ import { contextForData } from '$lib/study/currentContext';
 import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 import type { Run } from '$lib/study/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -71,9 +68,8 @@ import type { Run } from '$lib/study/vacation';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
-	import { offline } from '$lib/pwa/offlineState';
 	import { addCard } from '$lib/study/commands/cards';
-	import { loadStudyData } from '$lib/study/data';
+	import { loadStudyData, withStudy } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { loadRanks } from '$lib/study/frequencyRanks';
@@ -93,7 +89,6 @@ import type { Run } from '$lib/study/vacation';
 	import { usableChars } from '$lib/study/writing';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
-	import { workspaces } from '$lib/workspaces';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';
@@ -107,6 +102,11 @@ import type { Run } from '$lib/study/vacation';
 	import Chip from '$lib/ui/Chip.svelte';
 	import Section from '$lib/ui/Section.svelte';
 	import Stat from '$lib/ui/Stat.svelte';
+	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
+	const app = useApp();
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_NAMES: Record<ReviewGrade, string> = {
@@ -377,8 +377,8 @@ import type { Run } from '$lib/study/vacation';
 	// XP is the difference the session made to the whole log, so the
 	// daily bonus is only counted when this session earned it.
 	// The learner's day rule; a zone change recomputes XP and the streak.
-	let studyDay = $state.raw(currentStudyDay());
-	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+	let studyDay = $state.raw(session.zone.day());
+	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
 	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
@@ -458,7 +458,7 @@ import type { Run } from '$lib/study/vacation';
 			loading = false;
 			return;
 		}
-		if ($offline.online) void loadSessionNotes(workspaceId, seq);
+		if (app.offline.online) void loadSessionNotes(workspaceId, seq);
 
 		try {
 			// Queued reviews must land before the history is read: the
@@ -467,23 +467,23 @@ import type { Run } from '$lib/study/vacation';
 			// retry leaves the queue for the next boot and never blocks
 			// the session.
 			try {
-				await flushPendingReviews();
+				await session.outbox.flush();
 			} catch {
 				// The outbox retries on the next boot or reconnect.
 			}
 			// Duplicate cards arrive merged, their reviews re-pointed.
 			const [data, levelRequest] = await Promise.all([
-				loadStudyData(workspaceId),
+				loadStudyData(session.study, workspaceId),
 				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
 
 			// Offline (or answered from the saved copy): real cards only, see planCompanions.
-			offlineSession = !$offline.online || $offline.servedFromCacheAt !== null;
+			offlineSession = !app.offline.online || app.offline.servedFromCacheAt !== null;
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
-			const loaded = contextForData(data, workspaceId);
+			const loaded = contextForData(session.zone, data, workspaceId);
 			sessionClock = loaded.clock;
 			sessionVacation = loaded.vacation;
 			const w = weights;
@@ -511,7 +511,7 @@ import type { Run } from '$lib/study/vacation';
 					online: !offlineSession,
 					seed: sessionSeed
 				},
-				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: loadRanks, levelKeys: loadLevelKeys }
+				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: (language, ids) => loadRanks(session.caches.ranks, language, ids), levelKeys: (scheme) => loadLevelKeys(session.caches.levelItems, scheme) }
 			);
 			if (seq !== requestSeq) return;
 			orderNote = order.note ?? '';
@@ -522,7 +522,7 @@ import type { Run } from '$lib/study/vacation';
 				// data) is replaced from the reserve, as in a deck session.
 				// A word answered today through reverse or cloze is buried: left out
 				// before the limits, so the next word takes its slot.
-				const ctx = contextForData(data, workspaceId);
+				const ctx = contextForData(session.zone, data, workspaceId);
 				const day = ctx.day;
 				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
 				const plan = buildLevelPlan({
@@ -556,7 +556,7 @@ import type { Run } from '$lib/study/vacation';
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
-					ctx: contextForData(data, workspaceId),
+					ctx: contextForData(session.zone, data, workspaceId),
 					deckSettings: data.deckSettings,
 					offline: offlineSession,
 					language: language ?? '',
@@ -579,7 +579,7 @@ import type { Run } from '$lib/study/vacation';
 				workspaceMismatch = errorText(err, t('study.session.schemeMissing'));
 			} else {
 				loadError = sessionStartError({
-					offline: !$offline.online || err instanceof TypeError,
+					offline: !app.offline.online || err instanceof TypeError,
 					mode: config.mode,
 					fallback: errorText(err, t('study.session.startFailed'))
 				});
@@ -632,7 +632,7 @@ import type { Run } from '$lib/study/vacation';
 				};
 			}
 			case 'writing': {
-				const chars = await usableChars(item.written ?? entry.written);
+				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch));
 				if (!isEligible('writing', entry, { language, hasSentence: false, usableChars: chars })) {
 					return null;
 				}
@@ -763,11 +763,11 @@ import type { Run } from '$lib/study/vacation';
 	 */
 	function prefetchAudio(seq: number): void {
 		const ids = [...queue, ...reserve].filter(hasWordAudio).map((i) => i.entryId);
-		if (!$token || ids.length === 0) {
+		if (!app.auth.token || ids.length === 0) {
 			audioSettled = true;
 			return;
 		}
-		void resolveAudio(ids).then((found) => {
+		void resolveAudio(session.caches.audio, ids).then((found) => {
 			if (seq !== requestSeq) return;
 			audioMap = found;
 			audioSettled = true;
@@ -779,7 +779,7 @@ import type { Run } from '$lib/study/vacation';
 		return item.kind === 'vocab' || item.kind === 'tone' || item.kind === 'reverse';
 	}
 
-	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const audioSettings = $derived(readAudioSettings(session.workspaces.current?.settings));
 	const currentAudio = $derived(
 		shownCard !== null && hasWordAudio(shownCard.item)
 			? cardAudio(shownCard.entry, audioMap[String(shownCard.item.entryId)], audioSettings)
@@ -789,7 +789,7 @@ import type { Run } from '$lib/study/vacation';
 
 	function playCurrent(): void {
 		if (!canSound(currentAudio) || currentAudio === null) return;
-		void activate(getPlayer(), currentAudio, currentAudio.lang).catch(() => {});
+		void activate(session.player, currentAudio, currentAudio.lang).catch(() => {});
 	}
 
 	// Autoplay: once per card, right after the reveal, only when the workspace
@@ -814,7 +814,7 @@ import type { Run } from '$lib/study/vacation';
 		const next = queue[index + 1];
 		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
 		if (res !== undefined && next !== undefined && hasWordAudio(next)) {
-			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
+			preloadClips(session.caches.clips, { clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
 		}
 	});
 
@@ -851,7 +851,7 @@ import type { Run } from '$lib/study/vacation';
 	});
 
 	function retryLoad(): void {
-		void load($workspaces.current?.id ?? null, $workspaces.current?.language ?? null);
+		void load(session.workspaces.current?.id ?? null, session.workspaces.current?.language ?? null);
 	}
 
 	function retryEntry(): void {
@@ -934,7 +934,7 @@ import type { Run } from '$lib/study/vacation';
 		try {
 			let review = step.review;
 			if (action === 'replace' && review !== null) {
-				const next = await recordReplacement(review, value);
+				const next = await session.outbox.recordReplacement(review, value);
 				if (sessionWorkspaceId !== workspaceId) return;
 				// Not kept (its workspace was deleted): the notice said so.
 				if (next === null) return;
@@ -1059,10 +1059,10 @@ import type { Run } from '$lib/study/vacation';
 						workspaceId,
 						mode: item.kind,
 						meta,
-						currentWorkspaceId: $workspaces.current?.id ?? null,
+						currentWorkspaceId: session.workspaces.current?.id ?? null,
 						entry: current.entry,
-						addCard,
-						recordReview
+						addCard: withStudy(session.study, addCard),
+						recordReview: (...args) => session.outbox.recordReview(...args)
 					})
 			});
 			if (!step.ok) {
@@ -1225,7 +1225,7 @@ import type { Run } from '$lib/study/vacation';
 	// read there reloaded the session for ever in a real browser.
 	$effect(() => {
 		if (missingConfig) return;
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		untrack(() => void load(workspace?.id ?? null, workspace?.language ?? null));
 	});
 </script>

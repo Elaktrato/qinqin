@@ -1,3 +1,4 @@
+import type { StudyState } from '../data';
 // Keyed-row commands (#193): the study namespace's keyed rows — vacations
 // (user-global), the daily goal, known marks and seen milestones — through
 // commands/write.ts (lib/sync/keyed.ts underneath).
@@ -11,13 +12,13 @@ import { VACATION_PREFIX, type VacationPeriod } from '../vacation';
 import { deleteData, pushKeyedRows, putData, replanned, requireWorkspaceArg } from './write';
 
 /** saveVacation stores one vacation period (user-global: no workspace). */
-export async function saveVacation(period: VacationPeriod): Promise<void> {
-	await putData(null, `${VACATION_PREFIX}${period.id}`, period);
+export async function saveVacation(study: StudyState, period: VacationPeriod): Promise<void> {
+	await putData(study, null, `${VACATION_PREFIX}${period.id}`, period);
 }
 
 /** deleteVacation tombstones one vacation period. */
-export async function deleteVacation(id: string): Promise<void> {
-	await deleteData(null, `${VACATION_PREFIX}${id}`);
+export async function deleteVacation(study: StudyState, id: string): Promise<void> {
+	await deleteData(study, null, `${VACATION_PREFIX}${id}`);
 }
 
 /**
@@ -26,9 +27,9 @@ export async function deleteVacation(id: string): Promise<void> {
  * passes the workspace the row was read from, never "whatever is current
  * now", so a workspace switch mid-save cannot write another workspace.
  */
-export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
+export async function saveGoals(study: StudyState, workspaceId: number, row: GoalsRow): Promise<void> {
 	requireWorkspaceArg(workspaceId, 'saveGoals');
-	await putData(workspaceId, GOALS_KEY, row);
+	await putData(study, workspaceId, GOALS_KEY, row);
 }
 
 /**
@@ -36,15 +37,15 @@ export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<voi
  * known in the given workspace (the book's, never 'whatever is current').
  * Unmarking a mark the server does not hold is not an error.
  */
-export async function setKnownMark(workspaceId: number, entryId: number, on: boolean): Promise<void> {
+export async function setKnownMark(study: StudyState, workspaceId: number, entryId: number, on: boolean): Promise<void> {
 	requireWorkspaceArg(workspaceId, 'setKnownMark');
 	if (on) {
 		const row = knownMarkRow(entryId, new Date());
-		await putData(workspaceId, row.key, row.data);
+		await putData(study, workspaceId, row.key, row.data);
 		return;
 	}
 	try {
-		await deleteData(workspaceId, knownMarkKey(entryId));
+		await deleteData(study, workspaceId, knownMarkKey(entryId));
 	} catch (err) {
 		if (!(err instanceof ApiError && err.status === 404)) throw err;
 	}
@@ -56,6 +57,7 @@ export async function setKnownMark(workspaceId: number, entryId: number, on: boo
  * entries whose mark is live (a tombstone for a missing row is skipped).
  */
 export async function setKnownMarks(
+	study: StudyState,
 	workspaceId: number,
 	entryIds: readonly number[],
 	on: boolean,
@@ -64,7 +66,7 @@ export async function setKnownMarks(
 	requireWorkspaceArg(workspaceId, 'setKnownMarks');
 	// Each row is stamped after the time the server holds for its key (a
 	// client clock behind the server's would otherwise lose every write).
-	return replanned(workspaceId, async ({ snapshot: { knownAt } }) => {
+	return replanned(study, workspaceId, async ({ snapshot: { knownAt } }) => {
 		const now = new Date();
 		const rows = [...new Set(entryIds)].map((id) => {
 			const row = knownMarkRow(id, now);
@@ -72,7 +74,7 @@ export async function setKnownMarks(
 			const stamp = at === undefined ? {} : { knownAt: at };
 			return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
 		});
-		await pushKeyedRows(workspaceId, rows, opts);
+		await pushKeyedRows(study, workspaceId, rows, opts);
 	});
 }
 
@@ -87,6 +89,7 @@ export async function setKnownMarks(
  * request rejects (also pending). Listeners are notified either way.
  */
 export async function saveSeenMilestones(
+	study: StudyState,
 	workspaceId: number,
 	rows: readonly { key: string; data: unknown; knownAt?: string }[],
 ): Promise<'done' | 'pending'> {
@@ -96,7 +99,7 @@ export async function saveSeenMilestones(
 	}
 	if (rows.length === 0) return 'done';
 	try {
-		await pushKeyedRows(
+		await pushKeyedRows(study, 
 			workspaceId,
 			rows.map((row) => ({ key: row.key, data: row.data, ...(row.knownAt === undefined ? {} : { knownAt: row.knownAt }) })),
 			{ chunk: rows.length },

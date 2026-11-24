@@ -1,5 +1,6 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('./commands/decks', async (importOriginal) => ({
 	...(await importOriginal<typeof import('./commands/decks')>()),
@@ -8,6 +9,11 @@ vi.mock('./commands/decks', async (importOriginal) => ({
 
 import { saveDeckCardTypes } from './commands/decks';
 import DeckCardTypes from './DeckCardTypes.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 afterEach(() => {
 	cleanup();
@@ -22,13 +28,13 @@ describe('DeckCardTypes', () => {
 			extra: {}
 		});
 		const onSaved = vi.fn();
-		render(DeckCardTypes, {
+		render(DeckCardTypes, { props: {
 			workspaceId: 7,
 			deckId: 'general',
 			deckName: 'General',
 			cardTypes: ['reverse'],
 			onSaved
-		});
+		}, context: ctx.context });
 		const reverse = screen.getByLabelText(/Reverse/) as HTMLInputElement;
 		const cloze = screen.getByLabelText(/Cloze/) as HTMLInputElement;
 		expect(reverse.checked).toBe(true);
@@ -36,20 +42,20 @@ describe('DeckCardTypes', () => {
 
 		await fireEvent.click(cloze);
 
-		expect(saveDeckCardTypes).toHaveBeenCalledWith(7, 'general', ['reverse', 'cloze']);
+		expect(saveDeckCardTypes).toHaveBeenCalledWith(expect.anything(), 7, 'general', ['reverse', 'cloze']);
 		await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
 	});
 
 	it('switching one off writes the rest', async () => {
 		vi.mocked(saveDeckCardTypes).mockResolvedValue({ deckId: 'd1', cardTypes: [], extra: {} });
-		render(DeckCardTypes, { workspaceId: 7, deckId: 'd1', deckName: 'HSK', cardTypes: ['reverse'] });
+		render(DeckCardTypes, { props: { workspaceId: 7, deckId: 'd1', deckName: 'HSK', cardTypes: ['reverse'] }, context: ctx.context });
 		await fireEvent.click(screen.getByLabelText(/Reverse/));
-		expect(saveDeckCardTypes).toHaveBeenCalledWith(7, 'd1', []);
+		expect(saveDeckCardTypes).toHaveBeenCalledWith(expect.anything(), 7, 'd1', []);
 	});
 
 	it('shows an inline error when the write fails and keeps the old state', async () => {
 		vi.mocked(saveDeckCardTypes).mockRejectedValue(new Error('offline'));
-		render(DeckCardTypes, { workspaceId: 7, deckId: 'd1', deckName: 'HSK', cardTypes: [] });
+		render(DeckCardTypes, { props: { workspaceId: 7, deckId: 'd1', deckName: 'HSK', cardTypes: [] }, context: ctx.context });
 		const reverse = screen.getByLabelText(/Reverse/) as HTMLInputElement;
 		await fireEvent.click(reverse);
 		const alert = await screen.findByRole('alert');

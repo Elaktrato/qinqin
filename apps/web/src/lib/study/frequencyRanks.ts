@@ -6,8 +6,9 @@
 // failure rejects and is not cached; chunks that succeeded stay.
 
 import { UserError } from '$lib/api/userError';
-import { onSessionEnd } from '../session/sessionEnd';
 import { getEntryRanks } from '$lib/api/frequency';
+import type { RanksCache } from '../context/caches';
+
 
 export const RANKS_CHUNK = 500;
 const CONCURRENCY = 2;
@@ -17,24 +18,17 @@ export interface RanksResult {
 	rankOf: (entryId: number) => number | null;
 }
 
-interface LanguageRanks {
+export interface LanguageRanks {
 	pack: { id: number; packId: string; name: string } | null | undefined; // undefined = not asked yet
 	ranks: Map<number, number | null>;
 }
 
-const byLanguage = new Map<string, LanguageRanks>();
-onSessionEnd(() => clearFrequencyCaches());
 
-/** clearFrequencyCaches forgets every loaded rank (tests). */
-export function clearFrequencyCaches(): void {
-	byLanguage.clear();
-}
-
-function stateOf(language: string): LanguageRanks {
-	let state = byLanguage.get(language);
+function stateOf(cache: RanksCache, language: string): LanguageRanks {
+	let state = cache.byLanguage.get(language);
 	if (state === undefined) {
 		state = { pack: undefined, ranks: new Map() };
-		byLanguage.set(language, state);
+		cache.byLanguage.set(language, state);
 	}
 	return state;
 }
@@ -49,22 +43,23 @@ function result(state: LanguageRanks): RanksResult {
  * there (null = no data). Only ids not yet known are requested.
  */
 export async function loadRanks(
+	cache: RanksCache,
 	language: string,
 	entryIds: readonly number[]
 ): Promise<RanksResult> {
 	// A ranking pack re-installed in the middle of a load drops what the older
 	// pack answered; the dropped ids are asked again, a few times at most.
 	for (let attempt = 0; attempt < 3; attempt++) {
-		const switched = await loadOnce(language, entryIds);
-		const state = stateOf(language);
+		const switched = await loadOnce(cache, language, entryIds);
+		const state = stateOf(cache, language);
 		if (!switched || entryIds.every((id) => state.ranks.has(id))) return result(state);
 	}
 	throw new UserError('study.freq.listChanged');
 }
 
 /** loadOnce asks for the ids not known yet; true when the ranking pack changed meanwhile. */
-async function loadOnce(language: string, entryIds: readonly number[]): Promise<boolean> {
-	const state = stateOf(language);
+async function loadOnce(cache: RanksCache, language: string, entryIds: readonly number[]): Promise<boolean> {
+	const state = stateOf(cache, language);
 	const missing = [...new Set(entryIds)].filter((id) => !state.ranks.has(id));
 	const parts: number[][] = [];
 	for (let i = 0; i < missing.length; i += RANKS_CHUNK)

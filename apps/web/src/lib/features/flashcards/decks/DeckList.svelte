@@ -5,7 +5,6 @@
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { createDeck } from '$lib/study/commands/decks';
 	import { knownEntries } from '$lib/study/known';
-	import { workspaces } from '$lib/workspaces';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
@@ -18,15 +17,17 @@
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const store = createDecksData(session);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	$effect(() => {
 		void store.load(workspaceId);
 	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void store.load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
 	const summary = $derived.by(() => {
 		const data = store.data;
@@ -75,7 +76,7 @@
 		creating = true;
 		formError = '';
 		try {
-			await createDeck(ws, name);
+			await createDeck(session.study, ws, name);
 			newName = '';
 			// Reload the workspace written; after a switch the view already loads the new one.
 			if (workspaceId === ws) await store.load(ws, true);
@@ -168,7 +169,7 @@
 	</Section>
 
 	<StarterDecks
-		language={$workspaces.current?.language ?? ''}
+		language={session.workspaces.current?.language ?? ''}
 		{ownedEntryIds}
 		{workspaceId}
 		{deckIds}
@@ -176,7 +177,7 @@
 		onchanged={reload}
 	/>
 	<SystemDecks
-		language={$workspaces.current?.language ?? ''}
+		language={session.workspaces.current?.language ?? ''}
 		{ownedEntryIds}
 		{workspaceId}
 		{deckIds}

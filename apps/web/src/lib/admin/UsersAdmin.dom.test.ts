@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { ApiError } from '$lib/api/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,9 +18,13 @@ vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn() }));
 
 import * as adminUsers from '$lib/api/adminUsers';
 import { getAuthOptions } from '$lib/api/account';
-import { auth } from '$lib/auth';
 import { primaryActions } from '$lib/ui/testing/primary';
 import UsersAdmin from './UsersAdmin.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const dto = (id: number, o: object = {}) => ({
 	id,
@@ -35,7 +40,7 @@ const dto = (id: number, o: object = {}) => ({
 });
 
 beforeEach(() => {
-	auth.set({
+	ctx.app.auth.set({
 		token: 't',
 		user: { id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
@@ -49,7 +54,7 @@ afterEach(() => {
 
 describe('UsersAdmin', () => {
 	it('the users table is a .ui-table; create has the section primary and Field underlines', async () => {
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		const table = await screen.findByRole('table', { name: 'Users' });
 		expect(table.className).toContain('ui-table');
 		const form = screen.getByRole('button', { name: 'Create user' }).closest('form')!;
@@ -60,7 +65,7 @@ describe('UsersAdmin', () => {
 
 	it('revokes a pending reset link without asking for a password', async () => {
 		vi.mocked(adminUsers.revokeResetLink).mockResolvedValue(undefined as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -70,7 +75,7 @@ describe('UsersAdmin', () => {
 
 	it('asks for the password before making someone admin', async () => {
 		vi.mocked(adminUsers.patchUser).mockResolvedValue(dto(2) as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -87,7 +92,7 @@ describe('UsersAdmin', () => {
 			return b;
 		}) as never);
 		vi.mocked(adminUsers.createUser).mockResolvedValue(dto(3, { username: 'carla', mustChangePassword: true }) as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'carla' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
@@ -108,7 +113,7 @@ describe('UsersAdmin', () => {
 		vi.mocked(adminUsers.issueResetLink).mockResolvedValue({ path: '/reset#t=abc123', expiresAt: '2030-01-01T00:00:00Z' });
 		const writeText = vi.fn().mockResolvedValue(undefined);
 		Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -127,7 +132,7 @@ describe('UsersAdmin', () => {
 	});
 
 	it('disables the last administrator\'s dangerous actions with the reason as text', async () => {
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		expect(screen.getAllByText('The last administrator cannot be removed.').length).toBeGreaterThan(0);
 		const row = screen.getByRole('row', { name: /user1/ });
@@ -140,7 +145,7 @@ describe('UsersAdmin', () => {
 			workspaces: 2, studyEvents: 30, pluginData: 0, books: 1, journalPhotos: 0, aiKeys: 1, sessions: 1, overlays: 0, sentences: 0
 		});
 		vi.mocked(adminUsers.deleteUser).mockResolvedValue(undefined as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -162,7 +167,7 @@ describe('UsersAdmin', () => {
 
 describe('UsersAdmin: reset two-step sign-in', () => {
 	const signInAsAdmin = (totp: boolean) =>
-		auth.set({
+		ctx.app.auth.set({
 			token: 't',
 			user: {
 				id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't',
@@ -178,7 +183,7 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 	});
 
 	async function open(): Promise<HTMLElement> {
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -188,7 +193,7 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 
 	it('is offered only for another user who has a second step', async () => {
 		signInAsAdmin(false);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		expect(within(screen.getByRole('row', { name: /user1/ })).queryByRole('button', { name: 'Reset two-step sign-in', hidden: true })).toBeNull();
 		expect(within(screen.getByRole('row', { name: /user3/ })).queryByRole('button', { name: 'Reset two-step sign-in', hidden: true })).toBeNull();
@@ -280,7 +285,7 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 
 describe('UsersAdmin: the code of an administrator with an authenticator', () => {
 	beforeEach(() => {
-		auth.set({
+		ctx.app.auth.set({
 			token: 't',
 			user: {
 				id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't',
@@ -289,7 +294,7 @@ describe('UsersAdmin: the code of an administrator with an authenticator', () =>
 		});
 	});
 	async function rowAction(name: string): Promise<void> {
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -353,7 +358,7 @@ describe('UsersAdmin: the code of an administrator with an authenticator', () =>
 
 	it('asks for it when creating an administrator, and not for a plain user', async () => {
 		vi.mocked(adminUsers.createUser).mockResolvedValue(dto(3, { username: 'carla' }) as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		expect(screen.queryByLabelText('Your own password, to create an administrator')).toBeNull();
 		await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'carla' } });
@@ -376,12 +381,12 @@ describe('UsersAdmin: the code of an administrator with an authenticator', () =>
 
 describe('UsersAdmin: a stale copy of the signed-in administrator', () => {
 	it('shows the code field once the server asks for a code', async () => {
-		auth.set({
+		ctx.app.auth.set({
 			token: 't',
 			user: { id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't', mfa: { totp: false, email: false, recoveryCodesLeft: 0 } }
 		});
 		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { mfa: { totp: true, email: false } })] as never);
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
@@ -402,7 +407,7 @@ describe('UsersAdmin: a stale copy of the signed-in administrator', () => {
 
 describe('UsersAdmin: taking another administrator out of the way', () => {
 	beforeEach(() => {
-		auth.set({
+		ctx.app.auth.set({
 			token: 't',
 			user: { id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't', mfa: { totp: false, email: false, recoveryCodesLeft: 0 } }
 		});
@@ -410,7 +415,7 @@ describe('UsersAdmin: taking another administrator out of the way', () => {
 		vi.mocked(adminUsers.patchUser).mockResolvedValue(dto(2) as never);
 	});
 	async function act(user: string, name: string): Promise<void> {
-		render(UsersAdmin);
+		render(UsersAdmin, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Users' });
 		const row = screen.getByRole('row', { name: new RegExp(user) });
 		await fireEvent.click(within(row).getByText(`Actions for ${user}`));

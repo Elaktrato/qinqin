@@ -4,9 +4,10 @@
 	import { RUBY_SCALES, THRESHOLD_MAX, THRESHOLD_MIN } from './displaySettings';
 	import type { ReaderFont } from './displaySettings';
 	import type { Variant } from './variants';
-	import { themeStore } from '$lib/theme/store.svelte';
 	import type { HanziFont } from '$lib/theme/appearance';
 	import Select from '$lib/ui/Select.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// `default` follows the app-wide hanzi font (#97); its label names the current one.
 	const APP_FONT_LABELS: Record<HanziFont, MessageKey> = {
@@ -56,7 +57,7 @@
 		t('reader.display.extraLarge')
 	];
 	const FONTS: { value: ReaderFont; label: string }[] = $derived([
-		{ value: 'default', label: t('reader.display.fontApp', { font: t(APP_FONT_LABELS[themeStore.appearance.hanziFont]) }) },
+		{ value: 'default', label: t('reader.display.fontApp', { font: t(APP_FONT_LABELS[app.theme.appearance.hanziFont]) }) },
 		{ value: 'sans', label: t('reader.display.fontSans') },
 		{ value: 'serif', label: t('reader.display.fontSerif') },
 		{ value: 'kai', label: t('reader.display.fontKai') }

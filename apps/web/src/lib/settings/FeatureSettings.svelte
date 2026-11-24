@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	// Settings -> Features: switch Decks or the Reader off for yourself.
-	import { pluginStates } from '$lib/plugins/states';
 	import { t } from '$lib/i18n';
 	import { featureSwitches, saveFeatureSwitch } from './featureSwitches';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	const switches = $derived(featureSwitches($pluginStates.list));
+	const switches = $derived(featureSwitches(session.plugins.list));
 	let saving = $state<string | null>(null);
 	let saved = $state<string | null>(null);
 	let error = $state('');
@@ -17,7 +18,7 @@
 		saved = null;
 		error = '';
 		try {
-			await saveFeatureSwitch(id, enabled);
+			await saveFeatureSwitch(session.plugins, id, enabled);
 			saved = id;
 		} catch (err) {
 			box.checked = !enabled;
@@ -31,9 +32,9 @@
 <h2>{t('settings.features.title')}</h2>
 <p class="hint">{t('settings.features.hint')}</p>
 
-{#if $pluginStates.status === 'loading' || $pluginStates.status === 'idle'}
+{#if session.plugins.status === 'loading' || session.plugins.status === 'idle'}
 	<p>{t('common.loading')}</p>
-{:else if $pluginStates.status === 'error'}
+{:else if session.plugins.status === 'error'}
 	<p class="error" role="alert">{t('settings.features.loadFailed')}</p>
 {:else}
 	<ul class="features">

@@ -2,17 +2,16 @@
 // study event that must never be lost: if the POST fails it stays
 // queued (same ULID, so the server counts it once when it finally
 // arrives) and is retried on boot and when the browser goes online.
+// ReviewOutbox is owned by the session (record 0009): its timers and
+// listeners stop when the session ends, and it only ever sends the
+// session's own user's items with the session's token.
 
 import type { StudyEventBody } from '../api/types';
 import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } from '../api/client';
+import type { EventSource, Timers, VisibilitySource } from '../context/deps';
 import { t } from '../i18n';
-import { showNotice } from '../notices';
-import { postEvents } from '../events';
 import { newUlid, ulidTime } from '../ulid';
-import { notifyAllSent, setQueued } from '../pwa/offlineState';
 import { flushable, settle, type OutboxItem } from './outbox';
-import { onOutboxUser, outboxToken, outboxUser, resetOutboxUserForTests } from './outboxUser';
-import { rememberSent } from './recentSent';
 import type {
 	ReviewEvent,
 	ReviewGrade,
@@ -25,14 +24,6 @@ import type {
 export const PENDING_REVIEWS_KEY = 'qinqin.study.pending.v2';
 
 const DEVICE = 'web';
-
-function storage(): Storage | null {
-	try {
-		return typeof localStorage === 'undefined' ? null : localStorage;
-	} catch {
-		return null;
-	}
-}
 
 function isEventBody(value: unknown): value is StudyEventBody {
 	if (typeof value !== 'object' || value === null) return false;
@@ -55,8 +46,7 @@ function isItem(value: unknown): value is OutboxItem {
 	);
 }
 
-function readArray(key: string): unknown[] {
-	const store = storage();
+function readArray(store: Storage | null, key: string): unknown[] {
 	if (store === null) return [];
 	try {
 		const raw = store.getItem(key);
@@ -69,8 +59,7 @@ function readArray(key: string): unknown[] {
 	}
 }
 
-function writeState(items: readonly OutboxItem[]): void {
-	const store = storage();
+function writeState(store: Storage | null, items: readonly OutboxItem[]): void {
 	if (store === null) return;
 	try {
 		if (items.length === 0) store.removeItem(PENDING_REVIEWS_KEY);
@@ -80,244 +69,13 @@ function writeState(items: readonly OutboxItem[]): void {
 	}
 }
 
-/**
- * load reads the queue. With a known user it first settles it (unowned items
- * adopted, other users' expired items removed) and saves the result.
- */
-function load(): OutboxItem[] {
-	const items = readArray(PENDING_REVIEWS_KEY).filter(isItem);
-	const user = outboxUser();
-	if (user === null) return items;
-	const next = settle(items, user, Date.now());
-	if (JSON.stringify(next) !== JSON.stringify(items)) writeState(next);
-	return next;
-}
-
-function save(items: OutboxItem[]): void {
-	writeState(items);
-	refreshQueued(items);
-}
-
-/** Tells the offline banner how many of the signed-in user's reviews wait, and re-evaluates the retry timer. */
-function refreshQueued(items: readonly OutboxItem[]): void {
-	const user = outboxUser();
-	setQueued(user === null ? 0 : flushable(items, user).length);
-	syncPolling(user !== null && flushable(items, user).length > 0);
-}
-
-const POLL_MS = 60_000;
-let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-function pageVisible(): boolean {
-	return typeof document === 'undefined' || document.visibilityState !== 'hidden';
-}
-
-/**
- * While reviews are queued and the page is visible, try again every minute
- * (a reconnect the browser did not announce, a server that came back). No
- * Background Sync: Safari and Firefox lack it and a worker cannot read this
- * queue.
- */
-function syncPolling(queued: boolean): void {
-	const want = outboxStarted && queued && pageVisible();
-	if (want && pollTimer === null) {
-		pollTimer = setInterval(() => {
-			if (Date.now() >= backoffUntil) void flushPendingReviews();
-		}, POLL_MS);
-	} else if (!want && pollTimer !== null) {
-		clearInterval(pollTimer);
-		pollTimer = null;
-	}
-}
-
-function enqueue(event: StudyEventBody): void {
-	save([...load(), { userId: outboxUser(), queuedAt: new Date().toISOString(), event }]);
-}
-
-/** pendingReviews: the not yet sent events of `userId` in one workspace. */
-export function pendingReviews(userId: number, workspaceId: number): StudyEventBody[] {
-	return flushable(load(), userId)
-		.map((item) => item.event)
-		.filter((event) => event.workspaceId === workspaceId);
-}
-
-/** pendingCount: how many reviews of `userId` wait to be sent. */
-export function pendingCount(userId: number): number {
-	return flushable(load(), userId).length;
-}
-
-/** clearPending deletes `userId`'s unsent reviews (an explicit "sign out and delete them"). */
-export function clearPending(userId: number): void {
-	save(load().filter((item) => item.userId !== userId));
-}
-
-/**
- * recordReview appends one review event and resolves with it, posted or
- * queued for retry (the session's Back names it, #131); null when it was
- * not kept (its workspace was deleted). It never rejects.
- */
-export async function recordReview(
-	workspaceId: number,
-	cardId: string,
-	grade: ReviewGrade,
-	mode: StudyCardKind = 'vocab',
-	meta?: ReviewMeta
-): Promise<ReviewEvent | null> {
-	const payload: ReviewPayload = { cardId, mode, grade };
-	if (meta !== undefined) payload.meta = meta;
-	return recordEvent({
-		id: newUlid(),
-		workspaceId,
-		device: DEVICE,
-		ts: new Date().toISOString(),
-		type: 'review',
-		payload
-	});
-}
-
-/**
- * recordReplacement records a changed grade (#131,
- * docs/contracts/events/review-replace.json): a new review with a fresh id
- * that copies the target's card, mode, meta, workspace and ts and names
- * it in `replaces`. Recorded like any review (outbox on failure); the
- * outbox item of the target is never touched.
- */
-export async function recordReplacement(target: ReviewEvent, grade: ReviewGrade): Promise<ReviewEvent | null> {
-	const payload: ReviewPayload = { cardId: target.payload.cardId, mode: target.payload.mode, grade };
-	if (target.payload.meta !== undefined) payload.meta = target.payload.meta;
-	payload.replaces = target.id;
-	// The id must sort above the id it names (the family's greatest id
-	// survives): never earlier than the target's time + 1 ms, whatever this
-	// device's clock says.
-	const after = ulidTime(target.id);
-	return recordEvent({
-		id: newUlid(after === null ? Date.now() : Math.max(Date.now(), after + 1)),
-		workspaceId: target.workspaceId,
-		device: DEVICE,
-		ts: target.ts,
-		type: 'review',
-		payload
-	});
-}
-
-async function recordEvent(event: ReviewEvent): Promise<ReviewEvent | null> {
-	try {
-		await postEvents([event]);
-		const owner = outboxUser();
-		if (owner !== null) rememberSent(owner, [event]);
-	} catch (err) {
-		// The workspace was deleted elsewhere: a retry can never succeed.
-		// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
-		if (isWorkspaceGone(err)) {
-			console.warn('review not recorded; its workspace was deleted', err);
-			showNotice(t('study.outbox.notSaved'));
-			return null;
-		}
-		enqueue(event);
-		console.warn('review not recorded; queued for retry', err);
-	}
-	return event;
-}
-
 function isWorkspaceGone(err: unknown): boolean {
 	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.code);
-}
-
-// One flush at a time: boot, reconnect, and a session load can all ask
-// for a retry, and sharing the promise keeps them from sending the same
-// queued event twice.
-let flushing: Promise<void> | null = null;
-// After a transient failure the one-minute poll waits (2, 4, 8... up to 10 minutes);
-// explicit triggers (online, back to the app, sign-in) still try at once.
-let backoffUntil = 0;
-let failureRun = 0;
-function backoffMs(run: number): number {
-	return Math.min(POLL_MS * 2 ** run, 10 * 60_000);
-}
-let outboxStarted = false;
-
-/**
- * flushPendingReviews retries every queued review one event at a time.
- * A single bad row cannot wedge the outbox: a permanent 4xx (other than
- * 401/408/429, which are worth retrying) drops just that event, while
- * network errors and transient statuses keep it queued. Events keep
- * their original ULIDs, so an ambiguous retry is deduplicated by the
- * server. Signed out it sends nothing and keeps the queue. The function
- * never throws.
- */
-export function flushPendingReviews(): Promise<void> {
-	if (flushing !== null) return flushing;
-	flushing = flushOnce().finally(() => {
-		flushing = null;
-	});
-	return flushing;
-}
-
-async function flushOnce(): Promise<void> {
-	// Signed out (an open page such as /sources, or a reconnect after
-	// logout): every POST would be a 401, so the queue waits for the next
-	// session instead. The same holds until `me` has told who is signed in:
-	// only that user's items may be sent.
-	const user = outboxUser();
-	const token = getToken();
-	// The pair (user, token) is captured once. The user was loaded with
-	// `outboxToken()`; if the stored token is another one (a second tab signed
-	// in as someone else) this tab's idea of the user is stale: send nothing.
-	if (token === null || user === null || token !== outboxToken()) return;
-	const all = load();
-	refreshQueued(all);
-	const queued = flushable(all, user);
-	if (queued.length === 0) return;
-
-	let gone = 0;
-	let sent = 0;
-	let failures = 0;
-	for (const { event } of queued) {
-		// Re-checked before every event: a sign-in elsewhere replaced the token.
-		if (getToken() !== token || outboxUser() !== user) break;
-		try {
-			await postEvents([event]);
-			rememberSent(user, [event]);
-			sent++;
-			removePending(event.id);
-		} catch (err) {
-			// The session is gone or restricted: every further POST would fail
-			// the same way. Everything stays queued for this user's next full
-			// session; another user never sends it.
-			if (isSessionProblem(err)) {
-				console.warn('review outbox paused: the session cannot send right now', err);
-				break;
-			}
-			// A refusal only counts for this user while the request was theirs.
-			if (getToken() !== token || outboxUser() !== user) break;
-			if (isPermanentFailure(err)) {
-				if (isWorkspaceGone(err)) gone++;
-				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
-				removePending(event.id);
-			} else {
-				// Transient (network, 5xx, 429): the next events would fail the same
-				// way. Stop and back off; the next trigger tries again.
-				console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
-				failures++;
-				break;
-			}
-		}
-	}
-	backoffUntil = failures > 0 ? Date.now() + backoffMs(++failureRun) : ((failureRun = 0), 0);
-	if (sent > 0 && pendingCount(user) === 0) notifyAllSent();
-	// Reviews of a workspace deleted elsewhere are lost for good: say so.
-	if (gone > 0) {
-		showNotice(t('study.outbox.queuedNotSaved', { count: gone }));
-	}
 }
 
 /** A 401 (revoked or expired session) or a 403 restriction (password change, MFA enrolment). */
 function isSessionProblem(err: unknown): boolean {
 	return err instanceof ApiError && (err.status === 401 || isRestrictionResponse(err.status, err.code));
-}
-
-function removePending(id: string): void {
-	save(load().filter((item) => item.event.id !== id));
 }
 
 /**
@@ -330,43 +88,311 @@ function isPermanentFailure(err: unknown): boolean {
 	return err.status !== 401 && err.status !== 408 && err.status !== 429;
 }
 
-/**
- * startReviewOutbox wires the retry queue to the app shell: it flushes
- * once now and again whenever the browser comes back online. The root
- * layout calls it on mount, so a user who reopens the app on any route
- * — not just the session page — drains queued reviews. Idempotent: the
- * listener is installed once and repeated calls only trigger a flush,
- * which shares one in-flight promise.
- */
-export function startReviewOutbox(): void {
-	if (typeof window === 'undefined') return;
-	if (!outboxStarted) {
-		outboxStarted = true;
-		window.addEventListener('online', () => {
-			void flushPendingReviews();
-		});
-		// A user who becomes known after boot (me answered) drains their queue.
-		onOutboxUser(() => void flushPendingReviews());
-		// Coming back to the app (a phone woken from its pocket) is the best
-		// moment to send what waited; hiding it stops the retry timer.
-		if (typeof document !== 'undefined') {
-			document.addEventListener('visibilitychange', () => {
-				if (pageVisible()) void flushPendingReviews();
-				refreshQueued(load());
-			});
-		}
-	}
-	void flushPendingReviews();
+export const OUTBOX_POLL_MS = 60_000;
+
+function backoffMs(run: number): number {
+	return Math.min(OUTBOX_POLL_MS * 2 ** run, 10 * 60_000);
 }
 
+export interface OutboxDeps {
+	/** POST /api/events/batch (lib/events.ts postEvents). */
+	post(events: StudyEventBody[]): Promise<void>;
+	local(): Storage | null;
+	now(): number;
+	timers: Timers;
+	/** online events; null outside a browser. */
+	window: EventSource | null;
+	/** visibilitychange events; null outside a browser. */
+	document: VisibilitySource | null;
+	/** The session's user, null until `me` answered. */
+	user(): number | null;
+	/** The token the session holds (the app's auth). */
+	token(): string | null;
+	/** A one-line notice for the shell (the session's Notices). */
+	notify(text: string): void;
+	/** How many of the user's reviews wait (the offline banner). */
+	setQueued(count: number): void;
+	/** A flush emptied the queue ("All reviews sent."). */
+	allSent(): void;
+	/** Reviews just sent, kept for the history until the log has them (recentSent.ts). */
+	rememberSent(userId: number, events: readonly StudyEventBody[]): void;
+}
 
-/** Test hook: forget the module's timers and flags so each test starts clean. */
-export function resetOutboxForTests(): void {
-	resetOutboxUserForTests();
-	flushing = null;
-	outboxStarted = false;
-	backoffUntil = 0;
-	failureRun = 0;
-	if (pollTimer !== null) clearInterval(pollTimer);
-	pollTimer = null;
+export class ReviewOutbox {
+	readonly #deps: OutboxDeps;
+	// One flush at a time: boot, reconnect, and a session load can all ask
+	// for a retry, and sharing the promise keeps them from sending the same
+	// queued event twice.
+	#flushing: Promise<void> | null = null;
+	// After a transient failure the one-minute poll waits (2, 4, 8... up to 10
+	// minutes); explicit triggers (online, back to the app, sign-in) still try at once.
+	#backoffUntil = 0;
+	#failureRun = 0;
+	#started = false;
+	#disposed = false;
+	#poll: unknown = null;
+	readonly #stops: Array<() => void> = [];
+
+	constructor(deps: OutboxDeps) {
+		this.#deps = deps;
+	}
+
+	/** pendingReviews: the not yet sent events of `userId` in one workspace. */
+	pendingReviews(userId: number, workspaceId: number): StudyEventBody[] {
+		return flushable(this.#load(), userId)
+			.map((item) => item.event)
+			.filter((event) => event.workspaceId === workspaceId);
+	}
+
+	/** pendingCount: how many reviews of `userId` wait to be sent. */
+	pendingCount(userId: number): number {
+		return flushable(this.#load(), userId).length;
+	}
+
+	/** clearPending deletes `userId`'s unsent reviews (an explicit "sign out and delete them"). */
+	clearPending(userId: number): void {
+		this.#save(this.#load().filter((item) => item.userId !== userId));
+	}
+
+	/**
+	 * recordReview appends one review event and resolves with it, posted or
+	 * queued for retry (the session's Back names it, #131); null when it was
+	 * not kept (its workspace was deleted). It never rejects.
+	 */
+	async recordReview(
+		workspaceId: number,
+		cardId: string,
+		grade: ReviewGrade,
+		mode: StudyCardKind = 'vocab',
+		meta?: ReviewMeta
+	): Promise<ReviewEvent | null> {
+		const payload: ReviewPayload = { cardId, mode, grade };
+		if (meta !== undefined) payload.meta = meta;
+		return this.#record({
+			id: newUlid(),
+			workspaceId,
+			device: DEVICE,
+			ts: new Date(this.#deps.now()).toISOString(),
+			type: 'review',
+			payload
+		});
+	}
+
+	/**
+	 * recordReplacement records a changed grade (#131,
+	 * docs/contracts/events/review-replace.json): a new review with a fresh id
+	 * that copies the target's card, mode, meta, workspace and ts and names it
+	 * in `replaces`. Recorded like any review (outbox on failure); the outbox
+	 * item of the target is never touched.
+	 */
+	async recordReplacement(target: ReviewEvent, grade: ReviewGrade): Promise<ReviewEvent | null> {
+		const payload: ReviewPayload = { cardId: target.payload.cardId, mode: target.payload.mode, grade };
+		if (target.payload.meta !== undefined) payload.meta = target.payload.meta;
+		payload.replaces = target.id;
+		// The id must sort above the id it names (the family's greatest id
+		// survives): never earlier than the target's time + 1 ms, whatever this
+		// device's clock says.
+		const after = ulidTime(target.id);
+		const now = this.#deps.now();
+		return this.#record({
+			id: newUlid(after === null ? now : Math.max(now, after + 1)),
+			workspaceId: target.workspaceId,
+			device: DEVICE,
+			ts: target.ts,
+			type: 'review',
+			payload
+		});
+	}
+
+	/**
+	 * flush retries every queued review one event at a time. A single bad row
+	 * cannot wedge the outbox: a permanent 4xx (other than 401/408/429, which
+	 * are worth retrying) drops just that event, while network errors and
+	 * transient statuses keep it queued. Events keep their original ULIDs, so
+	 * an ambiguous retry is deduplicated by the server. Without a user, with
+	 * another tab's token, or after the session ended it sends nothing and
+	 * keeps the queue. Never throws.
+	 */
+	flush(): Promise<void> {
+		if (this.#flushing !== null) return this.#flushing;
+		this.#flushing = this.#flushOnce().finally(() => {
+			this.#flushing = null;
+		});
+		return this.#flushing;
+	}
+
+	/**
+	 * start wires the queue to the tab: it flushes now and again whenever the
+	 * browser comes back online or the app comes back to the front, and polls
+	 * while reviews wait. The root layout calls it once the session may load
+	 * the app. Idempotent: repeated calls only trigger a flush.
+	 */
+	start(): void {
+		if (this.#disposed) return;
+		if (!this.#started) {
+			this.#started = true;
+			const { window, document } = this.#deps;
+			if (window !== null) {
+				const online = (): void => void this.flush();
+				window.addEventListener('online', online);
+				this.#stops.push(() => window.removeEventListener('online', online));
+			}
+			if (document !== null) {
+				// Coming back to the app (a phone woken from its pocket) is the best
+				// moment to send what waited; hiding it stops the retry timer.
+				const visible = (): void => {
+					if (this.#visible()) void this.flush();
+					this.#refreshQueued(this.#load());
+				};
+				document.addEventListener('visibilitychange', visible);
+				this.#stops.push(() => document.removeEventListener('visibilitychange', visible));
+			}
+		}
+		void this.flush();
+	}
+
+	/** userKnown: `me` named the session's user after boot: drain their queue. */
+	userKnown(): void {
+		if (this.#started) void this.flush();
+	}
+
+	/** dispose: the session ended; listeners and the poll stop, nothing more is sent. */
+	dispose(): void {
+		this.#disposed = true;
+		for (const stop of this.#stops.splice(0)) stop();
+		this.#syncPolling(false);
+	}
+
+	#visible(): boolean {
+		return this.#deps.document === null || this.#deps.document.visibilityState !== 'hidden';
+	}
+
+	/**
+	 * #load reads the queue. With a known user it first settles it (unowned
+	 * items adopted, other users' expired items removed) and saves the result.
+	 */
+	#load(): OutboxItem[] {
+		const store = this.#deps.local();
+		const items = readArray(store, PENDING_REVIEWS_KEY).filter(isItem);
+		const user = this.#deps.user();
+		if (user === null) return items;
+		const next = settle(items, user, this.#deps.now());
+		if (JSON.stringify(next) !== JSON.stringify(items)) writeState(store, next);
+		return next;
+	}
+
+	#save(items: OutboxItem[]): void {
+		writeState(this.#deps.local(), items);
+		this.#refreshQueued(items);
+	}
+
+	/** Tells the offline banner how many of the user's reviews wait, and re-evaluates the retry timer. */
+	#refreshQueued(items: readonly OutboxItem[]): void {
+		if (this.#disposed) return;
+		const user = this.#deps.user();
+		const waiting = user === null ? 0 : flushable(items, user).length;
+		this.#deps.setQueued(waiting);
+		this.#syncPolling(waiting > 0);
+	}
+
+	/**
+	 * While reviews are queued and the page is visible, try again every minute
+	 * (a reconnect the browser did not announce, a server that came back). No
+	 * Background Sync: Safari and Firefox lack it and a worker cannot read this
+	 * queue.
+	 */
+	#syncPolling(queued: boolean): void {
+		const want = !this.#disposed && this.#started && queued && this.#visible();
+		if (want && this.#poll === null) {
+			this.#poll = this.#deps.timers.every(() => {
+				if (this.#deps.now() >= this.#backoffUntil) void this.flush();
+			}, OUTBOX_POLL_MS);
+		} else if (!want && this.#poll !== null) {
+			this.#deps.timers.stop(this.#poll);
+			this.#poll = null;
+		}
+	}
+
+	async #record(event: ReviewEvent): Promise<ReviewEvent | null> {
+		try {
+			await this.#deps.post([event]);
+			const owner = this.#deps.user();
+			if (owner !== null) this.#deps.rememberSent(owner, [event]);
+		} catch (err) {
+			// The workspace was deleted elsewhere: a retry can never succeed.
+			// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
+			if (isWorkspaceGone(err)) {
+				console.warn('review not recorded; its workspace was deleted', err);
+				this.#deps.notify(t('study.outbox.notSaved'));
+				return null;
+			}
+			this.#save([...this.#load(), { userId: this.#deps.user(), queuedAt: new Date(this.#deps.now()).toISOString(), event }]);
+			console.warn('review not recorded; queued for retry', err);
+		}
+		return event;
+	}
+
+	async #flushOnce(): Promise<void> {
+		// Signed out, ended, or `me` not answered yet: every POST would be a 401
+		// or another user's, so the queue waits. The pair (user, token) is
+		// captured once; if the stored token is another one than the session's
+		// (a second tab signed in as someone else) this tab is stale: send nothing.
+		const user = this.#deps.user();
+		const token = getToken();
+		const mine = (): boolean => !this.#disposed && getToken() === token && this.#deps.user() === user;
+		if (this.#disposed || token === null || user === null || token !== this.#deps.token()) return;
+		const all = this.#load();
+		this.#refreshQueued(all);
+		const queued = flushable(all, user);
+		if (queued.length === 0) return;
+
+		let gone = 0;
+		let sent = 0;
+		let failures = 0;
+		for (const { event } of queued) {
+			// Re-checked before every event: a sign-in elsewhere replaced the token.
+			if (!mine()) break;
+			try {
+				await this.#deps.post([event]);
+				this.#deps.rememberSent(user, [event]);
+				sent++;
+				this.#remove(event.id);
+			} catch (err) {
+				// The session is gone or restricted: every further POST would fail
+				// the same way. Everything stays queued for this user's next full
+				// session; another user never sends it.
+				if (isSessionProblem(err)) {
+					console.warn('review outbox paused: the session cannot send right now', err);
+					break;
+				}
+				// A refusal only counts for this user while the request was theirs.
+				if (!mine()) break;
+				if (isPermanentFailure(err)) {
+					if (isWorkspaceGone(err)) gone++;
+					console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
+					this.#remove(event.id);
+				} else {
+					// Transient (network, 5xx, 429): the next events would fail the same
+					// way. Stop and back off; the next trigger tries again.
+					console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
+					failures++;
+					break;
+				}
+			}
+		}
+		if (failures > 0) this.#backoffUntil = this.#deps.now() + backoffMs(++this.#failureRun);
+		else {
+			this.#failureRun = 0;
+			this.#backoffUntil = 0;
+		}
+		// The session ended during the flush: the tab's banner and notices belong to the next one.
+		if (this.#disposed) return;
+		if (sent > 0 && this.pendingCount(user) === 0) this.#deps.allSent();
+		// Reviews of a workspace deleted elsewhere are lost for good: say so.
+		if (gone > 0) this.#deps.notify(t('study.outbox.queuedNotSaved', { count: gone }));
+	}
+
+	#remove(id: string): void {
+		this.#save(this.#load().filter((item) => item.event.id !== id));
+	}
 }

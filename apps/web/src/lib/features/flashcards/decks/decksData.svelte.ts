@@ -3,6 +3,7 @@
 // every number on the page agrees. Shared by the list, the detail and the
 // settings view; each calls `load` for the selected workspace.
 
+import type { Session } from '$lib/context/session.svelte';
 import { untrack } from 'svelte';
 import { errorText } from '$lib/api/apiErrors';
 import { t } from '$lib/i18n';
@@ -14,7 +15,6 @@ import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 import { addDays } from '$lib/time/studyDay';
 import { contextForData } from '$lib/study/currentContext';
 import type { StudyContext } from '$lib/study/studyContext';
-import { currentStudyDay } from '$lib/time/zone';
 import { scheduleIndex, type ScheduleIndex } from './deckStats';
 
 export interface DecksSnapshot {
@@ -34,7 +34,7 @@ export interface DecksSnapshot {
 
 export type DecksStatus = 'loading' | 'ready' | 'error' | 'no-workspace';
 
-export function createDecksData() {
+export function createDecksData(session: Session) {
 	let status = $state<DecksStatus>('loading');
 	let error = $state('');
 	let snapshot = $state.raw<DecksSnapshot | null>(null);
@@ -54,10 +54,10 @@ export function createDecksData() {
 		if (current === null || current.workspaceId !== workspaceId) status = 'loading';
 		error = '';
 		try {
-			const data = await loadStudyHistory(workspaceId, { force });
+			const data = await loadStudyHistory(session.study, workspaceId, { force });
 			if (mine !== seq) return;
 			const weights = activeWeights(data) ?? DEFAULT_W;
-			const ctx = contextForData(data, workspaceId);
+			const ctx = contextForData(session.zone, data, workspaceId);
 			snapshot = {
 				workspaceId,
 				decks: data.decks,

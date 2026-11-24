@@ -1,8 +1,6 @@
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
-import { reportNetworkFailure, reportResponse } from '../pwa/offlineState';
-
 export const TOKEN_KEY = 'qinqin.token';
 
 // ApiError carries the HTTP status of a 4xx/5xx answer and its body, parsed once here: every API error is
@@ -53,9 +51,35 @@ export interface ApiOptions {
 	keepalive?: boolean;
 }
 
-let unauthorizedHandler: (() => void) | null = null;
-let workspaceGoneHandler: (() => void) | null = null;
-let restrictedHandler: (() => void) | null = null;
+/**
+ * What the app context (lib/context/app.svelte.ts) hears from every request:
+ * a 401, a 403 restriction, a 404 workspace_not_found, the headers of every
+ * answer (the worker marks a saved copy) and a request that reached nobody.
+ * The client imports no state module; the app context installs this while it
+ * runs (record 0009).
+ */
+export interface ApiObserver {
+	unauthorized?(): void;
+	restricted?(): void;
+	workspaceGone?(): void;
+	answered?(headers: { get(name: string): string | null }): void;
+	unreachable?(): void;
+}
+
+// The tab's one transport has one observer slot, set by the running app context.
+let observer: ApiObserver | null = null;
+
+/**
+ * setApiObserver installs the observer (null: none) and returns its remover,
+ * which clears the slot only while it still holds this observer: a stale app
+ * context stopping late never removes a newer one's.
+ */
+export function setApiObserver(next: ApiObserver | null): () => void {
+	observer = next;
+	return () => {
+		if (observer === next) observer = null;
+	};
+}
 
 /** The API's 404 code for a workspace that does not exist (any more). */
 export const WORKSPACE_GONE_CODE = 'workspace_not_found';
@@ -65,43 +89,18 @@ export function isWorkspaceGoneResponse(status: number, code: string | undefined
 	return status === 404 && code === WORKSPACE_GONE_CODE;
 }
 
-/**
- * Registers a callback fired when a request comes back 401, so the auth
- * store can drop its in-memory state. The client itself stays free of
- * store imports to avoid an import cycle.
- */
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
-	unauthorizedHandler = handler;
-}
 
 /** True for the 403 body of a restricted session (`password_change_required`, `mfa_enrollment_required`). */
 export function isRestrictionResponse(status: number, code: string | undefined): boolean {
 	return status === 403 && code !== undefined && RESTRICTION_CODES.has(code);
 }
 
-/**
- * Registers a callback fired when a request is refused with 403
- * `password_change_required` or `mfa_enrollment_required`: the session is
- * restricted, so the auth store reloads `me` and the layout guard moves it
- * to the page it may use. The token stays; this is not a 401.
- */
-export function setRestrictedHandler(handler: (() => void) | null): void {
-	restrictedHandler = handler;
-}
 
 const RESTRICTION_CODES: ReadonlySet<string> = new Set([
 	'password_change_required',
 	'mfa_enrollment_required'
 ]);
 
-/**
- * Registers a callback fired when a request comes back 404
- * `workspace_not_found`: the workspace was deleted in another tab or on another device,
- * so the workspace store reloads its list (lib/workspaceGone.ts).
- */
-export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
-	workspaceGoneHandler = handler;
-}
 
 // Only used when storage refuses the write (blocked or private mode): the
 // session then lasts until the tab is closed instead of failing at once.
@@ -156,7 +155,7 @@ export function isOwnApiPath(path: string): boolean {
  */
 export function notifyUnauthorized(): void {
 	clearToken();
-	unauthorizedHandler?.();
+	observer?.unauthorized?.();
 }
 
 /**
@@ -192,11 +191,11 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		});
 	} catch (err) {
 		// An abort is the caller's choice, not a lost connection.
-		if (!(err instanceof DOMException && err.name === 'AbortError')) reportNetworkFailure();
+		if (!(err instanceof DOMException && err.name === 'AbortError')) observer?.unreachable?.();
 		throw err;
 	}
 	// The worker marks answers it served from its saved copy (offlineState.ts).
-	reportResponse(response.headers);
+	observer?.answered?.(response.headers);
 
 	if (!response.ok) {
 		const text = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
@@ -214,8 +213,8 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
  */
 export function notifyErrorAnswer(err: ApiError): void {
 	if (err.status === 401) notifyUnauthorized();
-	if (isWorkspaceGoneResponse(err.status, err.code)) workspaceGoneHandler?.();
-	if (isRestrictionResponse(err.status, err.code)) restrictedHandler?.();
+	if (isWorkspaceGoneResponse(err.status, err.code)) observer?.workspaceGone?.();
+	if (isRestrictionResponse(err.status, err.code)) observer?.restricted?.();
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {

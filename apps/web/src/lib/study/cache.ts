@@ -43,7 +43,7 @@ export interface StudyCacheDeps {
 	/** One round of a workspace: from scratch, or a delta from `since`. */
 	pull: (workspaceId: number, since?: string) => Promise<StudyRound>;
 	now: () => number;
-	/** The session epoch (sessionEnd.ts): an answer that arrives after it moved is not stored. */
+	/** The session's epoch: it moves when the session ends, and an answer that arrives after it moved is not stored. */
 	epoch: () => number;
 	setTimer?: (fn: () => void, ms: number) => unknown;
 	clearTimer?: (timer: unknown) => void;

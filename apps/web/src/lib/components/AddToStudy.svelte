@@ -6,12 +6,13 @@
 	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getStudyData, hasCard } from '$lib/study/data';
 	import type { Deck } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import Button from '$lib/ui/Button.svelte';
 	import Chip from '$lib/ui/Chip.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';
 	import MenuItem from '$lib/ui/MenuItem.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// `written` is snapshotted onto the card; `sentenceId` is the example
 	// sentence shown on the review front.
@@ -60,7 +61,7 @@
 
 	$effect(() => {
 		const id = entryId;
-		const workspaceId = $workspaces.current?.id ?? null;
+		const workspaceId = session.workspaces.current?.id ?? null;
 		checkedWorkspace = workspaceId;
 		let stale = false;
 		inDeck = null;
@@ -75,7 +76,7 @@
 				return;
 			}
 			try {
-				const data = await getStudyData(workspaceId);
+				const data = await getStudyData(session.study, workspaceId);
 				if (stale) return;
 				decks = [...data.decks].sort(
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
@@ -114,7 +115,7 @@
 			// snapshot, the same row a level session creates.
 			const isCharacter = kind === 'character';
 			if (ws === null) throw new UserError('entry.study.noWorkspace');
-			await addCard(ws, entryId, {
+			await addCard(session.study, ws, entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId]

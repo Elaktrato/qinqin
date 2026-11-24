@@ -6,14 +6,15 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, type WeekView } from '$lib/weekly/loadWeek';
 	import Button from '$lib/ui/Button.svelte';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import { weekOf } from '$lib/weekly/week';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	let view = $state.raw<WeekView | null>(null);
 	let loading = $state(true);
@@ -21,7 +22,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const status = $derived<WidgetStatus>(
 		workspaceId === null ? 'no-workspace' : loading && view === null ? 'loading' : error ? 'error' : 'ready'
 	);
@@ -36,8 +37,8 @@
 		}
 		loading = true;
 		try {
-			const monday = weekOf(currentStudyDay().today());
-			const next = await loadWeek(workspace, monday, { force });
+			const monday = weekOf(session.zone.day().today());
+			const next = await loadWeek(session, workspace, monday, { force });
 			if (seq !== requestSeq) return;
 			view = next;
 		} catch (err) {
@@ -53,7 +54,7 @@
 		void load(workspaceId);
 	});
 	// Midnight and zone changes: on Monday 00:00 this becomes a new week.
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 </script>
 
 <WidgetCard

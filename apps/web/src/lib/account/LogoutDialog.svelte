@@ -3,9 +3,12 @@
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
 	import { signOutAndDelete, staySignedIn } from './signOut';
-	import { logoutPrompt, unsentText } from './logoutFlow';
+	import { unsentText } from './logoutFlow';
+	import { useApp } from '$lib/context/context';
 
-	// Shown by the root layout while $logoutPrompt holds a count: sign-out
+	const app = useApp();
+
+	// Shown by the root layout while app.logoutPrompt holds a count: sign-out
 	// found reviews that could not be sent. Stay signed in is the default
 	// (focused first); Escape stays too.
 </script>
@@ -13,11 +16,11 @@
 <Dialog
 	open
 	title={t('account.logout.title')}
-	description={unsentText($logoutPrompt ?? 0)}
-	onclose={staySignedIn}
+	description={unsentText(app.logoutPrompt ?? 0)}
+	onclose={() => staySignedIn(app)}
 >
 	{#snippet actions()}
-		<Button onclick={staySignedIn}>{t('account.logout.stay')}</Button>
-		<Button variant="primary" tone="danger" onclick={signOutAndDelete}>{t('account.logout.delete')}</Button>
+		<Button onclick={() => staySignedIn(app)}>{t('account.logout.stay')}</Button>
+		<Button variant="primary" tone="danger" onclick={() => signOutAndDelete(app)}>{t('account.logout.delete')}</Button>
 	{/snippet}
 </Dialog>

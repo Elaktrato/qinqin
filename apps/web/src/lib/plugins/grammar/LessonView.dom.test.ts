@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,14 +20,18 @@ vi.mock('$lib/features/reader/PopupStackView.svelte', async () => ({
 }));
 
 import { loadDisplayLesson } from './lessonData';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import LessonView from './LessonView.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const ws = { id: 1, language: 'ja', name: '', settings: {}, updatedAt: '' } as never;
 
 beforeEach(() => {
-	workspaces.set({ list: [ws], current: ws });
+	ctx.session.workspaces.set({ list: [ws], current: ws });
 	vi.mocked(loadDisplayLesson).mockResolvedValue({
 		textLang: 'ja',
 		view: {
@@ -56,12 +61,12 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 describe('a grammar lesson in the lighter look (#106)', () => {
 	it('shows the target in the reading accent and Practice as the one primary', async () => {
-		render(LessonView, { pack: 'basics', lessonId: 'l1' });
+		render(LessonView, { props: { pack: 'basics', lessonId: 'l1' }, context: ctx.context });
 		expect(await screen.findByRole('heading', { name: 'The は particle' })).toBeTruthy();
 		expect(document.querySelector('.target')?.textContent).toBe('学生');
 		const practice = screen.getByRole('link', { name: 'Practice' });

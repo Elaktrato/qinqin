@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { loadWorkspaceEvents } from '$lib/events';
 	import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
 	import { saveWorkspaceLimits } from '$lib/study/commands/settings';
 	import GoalSettings from './GoalSettings.svelte';
@@ -20,9 +19,7 @@
 		type VacationWrite
 	} from '$lib/study/vacation';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaceDisplay } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
 	import {
 		describePeriod,
 		errorText,
@@ -31,13 +28,17 @@
 		startNowNote
 	} from './vacationForm';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+
+
+	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
 
-	let day = $state.raw(currentStudyDay());
+	let day = $state.raw(session.zone.day());
 	// A new learner day (or a zone change) moves "today": min dates and plan rules follow.
-	$effect(() => onContextStale(() => (day = currentStudyDay())));
+	$effect(() => onContextStale(session.zone, () => (day = session.zone.day())));
 	const today = $derived(day.today());
 
 	let periods = $state.raw<VacationPeriod[]>([]);
@@ -57,8 +58,8 @@
 	let scopeMode = $state<'all' | 'chosen'>('all');
 	let chosen = $state<number[]>([]);
 
-	const list = $derived($workspaces.list);
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const list = $derived(session.workspaces.list);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const named = $derived(
 		list.map((w) => {
 			const display = workspaceDisplay(list, w);
@@ -83,7 +84,7 @@
 			return;
 		}
 		try {
-			const data = await getStudyData(ws, { force });
+			const data = await getStudyData(session.study, ws, { force });
 			// A late answer for a workspace no longer selected is dropped.
 			if (ws !== workspaceId) return;
 			loadedWorkspace = ws;
@@ -107,8 +108,8 @@
 
 	async function apply(writes: VacationWrite[]): Promise<void> {
 		for (const write of writes) {
-			if ('put' in write) await saveVacation(write.put);
-			else await deleteVacation(write.delete);
+			if ('put' in write) await saveVacation(session.study, write.put);
+			else await deleteVacation(session.study, write.delete);
 		}
 		await load(true);
 	}
@@ -117,7 +118,7 @@
 		const out = new Map<number, number[]>();
 		await Promise.all(
 			ids.map(async (id) => {
-				const events = await loadWorkspaceEvents(id);
+				const events = await session.events.load(id);
 				out.set(
 					id,
 					events.filter((e) => e.type === 'review').map((e) => Date.parse(e.ts))
@@ -190,7 +191,7 @@
 		}
 		busy = true;
 		try {
-			await saveWorkspaceLimits(ws, plan.row);
+			await saveWorkspaceLimits(session.study, ws, plan.row);
 			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {

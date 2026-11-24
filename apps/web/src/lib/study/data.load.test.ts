@@ -1,3 +1,4 @@
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 // Loading the study state (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,8 +9,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock("$app/navigation", () => ({ goto }));
 
-import { workspaces } from "$lib/workspaces";
-import { setOutboxUser } from "$lib/study/outboxUser";
 import { rememberSent } from "$lib/study/recentSent";
 import { gradeItem } from "$lib/study/grade";
 import type { StudyEvent } from "$lib/events";
@@ -51,10 +50,9 @@ import { DEFAULT_W, type ParamSet } from "$lib/study/fsrs/params";
 import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';
 import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "$lib/study/rows";
 import * as build from '$lib/testing/study';
-import { endSession } from "$lib/session/sessionEnd";
 
 // Every test starts a session of its own: the study cache holds nothing.
-beforeEach(() => endSession("signOut"));
+beforeEach(() => newSession(ctx));
 import {
   PLUGIN_ID,
   WORKSPACE_ID,
@@ -66,7 +64,6 @@ import {
   pluginRow,
   deck,
   card,
-  selectWorkspace,
   calls,
   putBodies,
   pushBodies,
@@ -83,6 +80,11 @@ import {
   expectOneStorage,
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 
 describe("loading the study state", () => {
@@ -102,14 +104,14 @@ describe("loading the study state", () => {
         if (url.startsWith("/api/events")) return jsonResponse([]);
         return rawResponse(url.includes("page=") ? page2 : page1);
       });
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.cards.map((c) => c.id)).toEqual(["card-1", "card-2"]);
       expect(urls.filter((u) => u.startsWith("/api/sync/pull"))[1]).toBe("/api/sync/pull?page=p2.abc&v=2");
     });
 
     it("refuses a page that does not match the contract", async () => {
       vi.mocked(fetch).mockImplementation(async () => rawResponse({ pluginData: [] }));
-      await expect(loadStudyData(WORKSPACE_ID)).rejects.toThrow(/contract/);
+      await expect(loadStudyData(ctx.session.study, WORKSPACE_ID)).rejects.toThrow(/contract/);
     });
 
     it("keeps the pre-v2 pull path out of the sources", () => {
@@ -188,7 +190,7 @@ describe("loading the study state", () => {
         ],
       });
 
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
       expect(data.decks).toEqual([general, custom]);
       expect(data.cards).toEqual([
@@ -217,7 +219,7 @@ describe("loading the study state", () => {
         ],
       });
 
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
       expect(data.cards).toEqual(good);
     });
@@ -237,7 +239,7 @@ describe("loading the study state", () => {
         ],
       });
 
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
       expect(data.cards[0]!.skipKinds).toEqual(["reverse"]);
       expect("skipKinds" in data.cards[1]!).toBe(false);
@@ -247,7 +249,7 @@ describe("loading the study state", () => {
     it("returns empty arrays when the pull has no plugin data", async () => {
       respondPull({ cursor: "2026-01-01T00:00:00Z" });
 
-      await expect(loadStudyData(WORKSPACE_ID)).resolves.toEqual({
+      await expect(loadStudyData(ctx.session.study, WORKSPACE_ID)).resolves.toEqual({
         decks: [],
         cards: [],
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
@@ -261,7 +263,7 @@ describe("loading the study state", () => {
         pluginData: [pluginRow("settings:study", { newLimit: 20 })],
       });
 
-      await expect(loadStudyData(WORKSPACE_ID)).resolves.toEqual({
+      await expect(loadStudyData(ctx.session.study, WORKSPACE_ID)).resolves.toEqual({
         decks: [],
         cards: [],
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
@@ -271,9 +273,8 @@ describe("loading the study state", () => {
     });
 
     it("fails without a workspace id (the selected one is never read, #174)", async () => {
-      selectWorkspace(null);
 
-      await expect(loadStudyData(0)).rejects.toThrow(/workspace/i);
+      await expect(loadStudyData(ctx.session.study, 0)).rejects.toThrow(/workspace/i);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -289,7 +290,7 @@ describe("loading the study state", () => {
         [reviewEvent("r1", "card-1", 9), reviewEvent("r2", "card-1", 7)],
       );
 
-      const data = await loadStudyData(9);
+      const data = await loadStudyData(ctx.session.study, 9);
 
       expect(data.cards.map((c) => c.id)).toEqual(["card-1"]);
       expect(data.reviews.map((r) => r.id)).toEqual(["r1"]);
@@ -314,7 +315,7 @@ describe("loading the study state", () => {
         return rawResponse(pagedPull({ pluginData: [] }));
       });
 
-      const data = await loadStudyData(9);
+      const data = await loadStudyData(ctx.session.study, 9);
 
       expect(data.reviews.map((r) => r.id)).toEqual(["r1", "r2"]);
     });
@@ -329,7 +330,7 @@ describe("loading the study state", () => {
         },
       ]);
 
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
       expect(data.reviews.map((r) => r.id)).toEqual(["r1"]);
     });
@@ -360,7 +361,7 @@ describe("loading the study state", () => {
         [reviewEvent("r1", early.id), reviewEvent("r2", late.id)],
       );
 
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
       expect(data.merged).toBe(1);
       expect(data.cards).toEqual([
@@ -398,7 +399,6 @@ describe("typed study collections", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
   });
 
   afterEach(() => {
@@ -488,7 +488,7 @@ describe("typed study collections", () => {
       fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }],
     });
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.cards).toEqual([
       card("c-vocab-1", 1, ["general"]),
@@ -513,7 +513,7 @@ describe("typed study collections", () => {
         { ...cardBody("c-vocab-6", 6), ...meta() },
       ],
     });
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
     expect(data.cards.map((c) => c.id)).toEqual(["c-vocab-6"]);
   });
 
@@ -531,7 +531,7 @@ describe("typed study collections", () => {
       ],
     });
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.cards).toEqual([]);
     expect(data.decks).toEqual([]);
@@ -556,8 +556,8 @@ describe("typed study collections", () => {
         decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: { pinned: true }, ...meta() }],
       }));
     });
-    await moveCards(WORKSPACE_ID, ["c-vocab-1"], "d2");
-    await renameDeck(WORKSPACE_ID, "d2", "Zwei");
+    await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-1"], "d2");
+    await renameDeck(ctx.session.study, WORKSPACE_ID, "d2", "Zwei");
     expect(writes().map((w) => [w.collection, w.item.extra])).toEqual([
       ["cards", { color: "red" }],
       ["decks", { pinned: true }],
@@ -577,7 +577,7 @@ describe("typed study collections", () => {
           decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: {}, ...meta({ updatedAt: "2026-02-01T00:00:09Z" }) }],
         }));
       });
-      await renameDeck(WORKSPACE_ID, "d2", "Zwei");
+      await renameDeck(ctx.session.study, WORKSPACE_ID, "d2", "Zwei");
       expect(writes()[0]!.updatedAt).toBe("2026-02-01T00:00:09.001Z");
     } finally {
       vi.useRealTimers();
@@ -586,17 +586,17 @@ describe("typed study collections", () => {
 
   it("setActiveSet writes nothing when that set is already active (no new changedAt)", async () => {
     serve({ fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }] });
-    await setActiveSet(WORKSPACE_ID, "S1");
+    await setActiveSet(ctx.session.study, WORKSPACE_ID, "S1");
     expect(writes()).toEqual([]);
-    await setActiveSet(WORKSPACE_ID, "S2");
+    await setActiveSet(ctx.session.study, WORKSPACE_ID, "S2");
     expect(writes().map((w) => w.item.setId)).toEqual(["S2"]);
   });
 
   it("setActiveSet(null) writes nothing while the defaults are in use (no row, or setId null)", async () => {
     serve({});
-    await setActiveSet(WORKSPACE_ID, null);
+    await setActiveSet(ctx.session.study, WORKSPACE_ID, null);
     serve({ fsrsActive: [{ setId: null, changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }] });
-    await setActiveSet(WORKSPACE_ID, null);
+    await setActiveSet(ctx.session.study, WORKSPACE_ID, null);
     expect(writes()).toEqual([]);
   });
 
@@ -608,8 +608,8 @@ describe("typed study collections", () => {
       limits: [{ deckId: "d1", new: { limit: 1 }, reviews: null, extra: {}, ...gone }],
       fsrsSets: [{ ...set("S9"), ...gone }],
     });
-    await deleteParamSet(WORKSPACE_ID, "S9");
-    await deleteDeck(WORKSPACE_ID, "d1");
+    await deleteParamSet(ctx.session.study, WORKSPACE_ID, "S9");
+    await deleteDeck(ctx.session.study, WORKSPACE_ID, "d1");
     expect(writes()).toEqual([]);
     expect(pushBodies()).toEqual([]);
   });
@@ -620,10 +620,10 @@ describe("typed study collections", () => {
       limits: [{ deckId: null, new: { limit: 5 }, reviews: null, extra: {}, ...meta() }],
       fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }],
     });
-    await saveDeckCardTypes(WORKSPACE_ID, "d1", ["cloze"]);
-    await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "frequency" });
-    await saveWorkspaceLimits(WORKSPACE_ID, { new: 5 });
-    await renameDeck(WORKSPACE_ID, "d1", "x").catch(() => undefined);
+    await saveDeckCardTypes(ctx.session.study, WORKSPACE_ID, "d1", ["cloze"]);
+    await saveDeckNewOrder(ctx.session.study, WORKSPACE_ID, "d1", { by: "frequency" });
+    await saveWorkspaceLimits(ctx.session.study, WORKSPACE_ID, { new: 5 });
+    await renameDeck(ctx.session.study, WORKSPACE_ID, "d1", "x").catch(() => undefined);
     expect(writes()).toEqual([]);
   });
 
@@ -631,7 +631,7 @@ describe("typed study collections", () => {
     vi.mocked(fetch).mockImplementation(async (input) =>
       String(input).startsWith("/api/events") ? rawResponse([]) : rawResponse(pagedPull({ cursor: "x" })),
     );
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
     expect(data.cards).toEqual([]);
     expect(data.fsrs).toEqual({ sets: [], active: null, w: DEFAULT_W, pointer: null });
   });
@@ -641,11 +641,8 @@ describe("queued reviews count in the loaded history", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
-    setOutboxUser(1, 't');
   });
   afterEach(() => {
-    setOutboxUser(null, null);
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
@@ -664,7 +661,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q1", "card-1"));
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
   });
@@ -673,7 +670,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("Q1", "card-1")]);
     queue(1, reviewEvent("Q1", "card-1"));
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
   });
@@ -682,7 +679,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(2, reviewEvent("Q2", "card-1"));
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });
@@ -691,7 +688,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q3", "card-1", WORKSPACE_ID + 1));
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });
@@ -700,7 +697,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     rememberSent(1, [reviewEvent("S1", "card-1")]);
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
@@ -709,7 +706,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("S1", "card-1")]);
     rememberSent(1, [reviewEvent("S1", "card-1")]);
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
@@ -724,7 +721,7 @@ describe("queued reviews count in the loaded history", () => {
     const misclick = { ...reviewEvent("R1", "card-1"), payload: { cardId: "card-1", mode: "vocab", grade: 1 } };
     respondPull(pull, [misclick, replacing("R2", "R1")]);
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
     expect(data.reviews[0].payload.replaces).toBe("R1");
@@ -734,17 +731,19 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("R1", "card-1")]);
     queue(1, replacing("R2", "R1"));
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
   });
 
   it("nothing is merged while no user is known", async () => {
     respondPull(pull, []);
+    // A session whose `me` has not answered yet (an offline boot): a new one, signed in without a user.
+    ctx.app.auth.set({ token: null, user: null }, "signOut");
+    ctx.app.auth.set({ token: "boot", user: null });
     queue(1, reviewEvent("Q1", "card-1"));
-    setOutboxUser(null, null);
 
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });

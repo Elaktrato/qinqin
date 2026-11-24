@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,11 +26,15 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, StudyCard } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
-import { clearStarterCache } from './starterDecks';
+
 import { primaryActions } from '$lib/ui/testing/primary';
 import StarterDeckDetail from './StarterDeckDetail.svelte';
 import * as build from '$lib/testing/study';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const jiten = {
 	id: 3,
@@ -59,8 +64,7 @@ let pushed: { key: string; data: unknown }[];
 let settings: Record<string, { deckId: string; cardTypes: []; extra: Record<string, unknown> }>;
 
 beforeEach(() => {
-	clearStarterCache();
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'ja', name: 'ja' } as never],
 		current: { id: 1, language: 'ja', name: 'ja' } as never
 	});
@@ -97,7 +101,7 @@ beforeEach(() => {
 		unreadable: new Set<string>(),
 		deckSettings: structuredClone(settings)
 	}));
-	vi.mocked(pushStudy).mockImplementation(async (_ws, writes) => {
+	vi.mocked(pushStudy).mockImplementation(async (_study, _ws, writes) => {
 		for (const row of keyed(writes)) {
 			pushed.push(row);
 			if (row.key.startsWith('deck:')) decks.push(row.data as Deck);
@@ -118,14 +122,14 @@ const route = { view: 'system-frequency' as const, packId: 'jiten-frequency', si
 
 describe('StarterDeckDetail', () => {
 	it('has one primary Add to my decks', async () => {
-		render(StarterDeckDetail, { route: { view: 'system-frequency', packId: 'jiten-frequency', size: 500 } });
+		render(StarterDeckDetail, { props: { route: { view: 'system-frequency', packId: 'jiten-frequency', size: 500 } }, context: ctx.context });
 		await screen.findByRole('heading', { level: 1 });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Add to my decks' }).className).toContain('primary');
 	});
 
 	it('lists the words with their state, skips the known ones, names the licence', async () => {
-		render(StarterDeckDetail, { route });
+		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		await screen.findByRole('heading', { name: 'Jiten frequency list · Top 500' });
 		await screen.findByText('1 known word skipped');
 		expect(screen.getByText('w1')).toBeTruthy();
@@ -139,7 +143,7 @@ describe('StarterDeckDetail', () => {
 	});
 
 	it('adds the unknown words with the frequency order, then a second add adds nothing', async () => {
-		render(StarterDeckDetail, { route });
+		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		await screen.findByText('1 known word skipped');
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words; 1 you know was skipped');
@@ -162,8 +166,8 @@ describe('StarterDeckDetail', () => {
 
 	it('skips a word the learner marked known, card or not', async () => {
 		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
-		vi.mocked(loadStudyHistory).mockImplementation(async (ws) => ({ ...(await history(ws)), known: [2] }));
-		render(StarterDeckDetail, { route });
+		vi.mocked(loadStudyHistory).mockImplementation(async (_study, ws) => ({ ...(await history(_study, ws)), known: [2] }));
+		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		await screen.findByText('2 known words skipped');
 		expect(screen.queryByText('w2')).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
@@ -174,7 +178,7 @@ describe('StarterDeckDetail', () => {
 	it('never adds known words when the study data was not loaded yet', async () => {
 		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
-		render(StarterDeckDetail, { route });
+		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		const button = await screen.findByRole('button', { name: 'Add to my decks' });
 		vi.mocked(loadStudyHistory).mockImplementation(history);
 		await fireEvent.click(button);
@@ -184,14 +188,14 @@ describe('StarterDeckDetail', () => {
 
 	it('does not add when the study data cannot be loaded', async () => {
 		vi.mocked(loadStudyHistory).mockRejectedValue(new Error('offline'));
-		render(StarterDeckDetail, { route });
+		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		await screen.findByRole('alert');
 		expect(pushed).toEqual([]);
 	});
 
 	it('an unknown pack is not found', async () => {
-		render(StarterDeckDetail, { route: { ...route, packId: 'nope' } });
+		render(StarterDeckDetail, { props: { route: { ...route, packId: 'nope' } }, context: ctx.context });
 		await screen.findByText('Deck not found.');
 	});
 });

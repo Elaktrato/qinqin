@@ -1,23 +1,26 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { testContext, type TestContext } from '$lib/testing/context';
 import UnreadableRowsNotice from './UnreadableRowsNotice.svelte';
-import { clearUnreadableReport, unreadableRows } from './unreadable';
 
+let ctx: TestContext;
+beforeEach(() => {
+	ctx = testContext();
+});
 afterEach(() => {
 	cleanup();
-	clearUnreadableReport();
 });
 
 describe('UnreadableRowsNotice', () => {
 	it('shows the report of the shown workspace as a status', async () => {
-		unreadableRows.set({ workspaceId: 7, counts: { cards: 3 }, total: 3 });
-		render(UnreadableRowsNotice, { workspaceId: 7 });
+		ctx.session.study.unreadable.record(7, { cards: 3 }, []);
+		render(UnreadableRowsNotice, { props: { workspaceId: 7 }, context: ctx.context });
 		expect(screen.getByRole('status').textContent).toMatch(/3 saved study items could not be read/);
 	});
 	it('shows nothing for another workspace or without a report', () => {
-		unreadableRows.set({ workspaceId: 9, counts: { cards: 3 }, total: 3 });
-		render(UnreadableRowsNotice, { workspaceId: 7 });
+		ctx.session.study.unreadable.record(9, { cards: 3 }, []);
+		render(UnreadableRowsNotice, { props: { workspaceId: 7 }, context: ctx.context });
 		expect(screen.queryByRole('status')).toBeNull();
 	});
 });

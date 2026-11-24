@@ -1,11 +1,9 @@
 // #173: an answer requested for the session that ended never sets
 // per-user state afterwards: the workspace list and the plugin states. And ending the session empties the content-keyed memos.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
-import { endSession } from './sessionEnd';
-import { load, workspaces, workspacesLoaded, WORKSPACE_KEY } from '../workspaces';
-import { loadPluginStates, pluginStates } from '../plugins/states';
+import { WORKSPACE_KEY } from '../workspaces.svelte';
+import { newSession, testContext, workspacesState } from '../testing/context';
 
 function storage(): Storage {
 	const data = new Map<string, string>();
@@ -36,9 +34,6 @@ beforeEach(() => {
 			return new Response('{}', { status: 404 });
 		})
 	);
-	workspaces.set({ list: [], current: null });
-	workspacesLoaded.set(false);
-	pluginStates.set({ list: [], status: 'idle' });
 });
 
 afterEach(() => {
@@ -47,35 +42,38 @@ afterEach(() => {
 
 describe('late answers after the session ended (#173)', () => {
 	it('a workspace list in flight sets nothing', async () => {
-		const late = load();
-		endSession('signOut');
+		const ctx = testContext({ deps: { local: () => localStorage } });
+		const session = ctx.session;
+		const late = session.workspaces.load();
+		ctx.app.auth.logout();
 		release();
 		await late;
-		expect(get(workspaces)).toEqual({ list: [], current: null });
-		expect(get(workspacesLoaded)).toBe(false);
+		expect(workspacesState(session.workspaces)).toEqual({ list: [], current: null });
+		expect(session.workspaces.loaded).toBe(false);
 		expect(localStorage.getItem(WORKSPACE_KEY)).toBeNull();
 	});
 
 	it('plugin states in flight set nothing', async () => {
-		const late = loadPluginStates();
-		endSession('expired');
+		const ctx = testContext();
+		const session = ctx.session;
+		const late = session.plugins.load();
+		ctx.app.auth.expire();
 		release();
 		await late;
-		expect(get(pluginStates).list).toEqual([]);
-		expect(get(pluginStates).status).not.toBe('ready');
+		expect(session.plugins.list).toEqual([]);
+		expect(session.plugins.status).not.toBe('ready');
 	});
 });
 
-describe('ending the session empties the content-keyed memos (#173)', () => {
-	it('replay timelines, week log passes, reached milestones, schedulers and day counts are computed again', async () => {
+describe('a new session starts with empty content-keyed memos (#173, record 0009)', () => {
+	it('replay timelines, week log passes and reached milestones are computed again', async () => {
 		const { timelinesFor } = await import('../weekly/replay');
 		const { summaryStats, weekSummary } = await import('../weekly/summary');
 		const { reachedFromLog, reachedStats } = await import('../milestones/reached');
-		const { schedulerCacheSize } = await import('../study/scheduler');
-		const { dayCountsCached } = await import('../study/limits');
 		const { studyDay } = await import('../time/studyDay');
 		const { IDENTITY_CLOCK } = await import('../study/studyClock');
 		const { DEFAULT_W } = await import('../study/fsrs/params');
+		const ctx = testContext();
 		const day = studyDay([]);
 		const now = Date.parse('2026-11-17T12:00:00Z');
 		const reviews = [
@@ -83,34 +81,28 @@ describe('ending the session empties the content-keyed memos (#173)', () => {
 		] as never[];
 		const cards = [{ id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['general'], createdAt: 't' }] as never[];
 		const week = () =>
-			weekSummary({ monday: '2026-11-16', now, day, workspaceId: 1, reviews, vacation: [], activity: { sources: [], cells: [] }, goals: null, mature: () => 0 } as never);
+			weekSummary(ctx.session.caches.weekPasses, { monday: '2026-11-16', now, day, workspaceId: 1, reviews, vacation: [], activity: { sources: [], cells: [] }, goals: null, mature: () => 0 } as never);
 		const reached = () =>
-			reachedFromLog({ reviews, events: [], cards, deckIds: new Set(['general']), day, vacation: [], now, families: new Set(['reviews'] as never[]), workspaceId: 1 } as never);
+			reachedFromLog(ctx.session.caches.reached, { reviews, events: [], cards, deckIds: new Set(['general']), day, vacation: [], now, families: new Set(['reviews'] as never[]), workspaceId: 1 } as never);
+		const timelines = () => timelinesFor(ctx.session.caches.timelines, reviews, DEFAULT_W, IDENTITY_CLOCK);
 
-		const t1 = timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK);
-		t1.of('c1'); // builds a scheduler
+		const t1 = timelines();
 		week();
 		const passes = summaryStats.logPasses;
 		const r1 = reached();
 		const reachedPasses = reachedStats.passes;
-		const ctx = { day } as never;
-		const counts = dayCountsCached(cards, reviews, ctx, new Date(now));
-		// Memo hits before the end.
-		expect(timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK)).toBe(t1);
+		// Memo hits within the session.
+		expect(timelines()).toBe(t1);
 		week();
 		expect(summaryStats.logPasses).toBe(passes);
 		expect(reached()).toBe(r1);
-		expect(dayCountsCached(cards, reviews, ctx, new Date(now))).toBe(counts);
-		expect(schedulerCacheSize()).toBeGreaterThan(0);
 
-		endSession('signOut');
-		expect(schedulerCacheSize()).toBe(0);
+		newSession(ctx);
 
-		expect(timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK)).not.toBe(t1);
+		expect(timelines()).not.toBe(t1);
 		week();
 		expect(summaryStats.logPasses).toBe(passes + 1);
 		expect(reached()).not.toBe(r1);
 		expect(reachedStats.passes).toBeGreaterThan(reachedPasses);
-		expect(dayCountsCached(cards, reviews, ctx, new Date(now))).not.toBe(counts);
 	});
 });

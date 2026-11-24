@@ -13,7 +13,6 @@
 	import { languageLabel } from '$lib/languages';
 	import { coreFeatures } from '$lib/features';
 	import { pluginState, webPlugins } from '$lib/plugins';
-	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 	import {
 		displayItems,
 		editableLayout,
@@ -34,8 +33,10 @@
 	} from '$lib/widgets/options';
 	import type { MessageKey } from '$lib/i18n';
 	import { allWidgets } from '$lib/widgets/registry';
-	import { currentLanguage } from '$lib/workspaces';
 	import { Button, Chip, Panel, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	// The layout as the editor shows it (null = nothing stored, so the
 	// default) and the last one the server confirmed, for Discard.
@@ -115,19 +116,19 @@
 
 	// Every widget owner this build knows: the core features, then the plugins.
 	const owners = [...coreFeatures, ...webPlugins];
-	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
+	const states = $derived(session.plugins.status === 'ready' ? session.plugins.list : []);
 	// Every enabled plugin's widgets, whatever the language: the layout
 	// is global, so a Chinese-only widget can be placed from a Spanish
 	// workspace too.
 	const all = $derived(allWidgets(webPlugins, states, null));
 	const listed = $derived(all.filter((widget) => widget.surfaces.includes('home')).map((w) => w.id));
-	const items = $derived(displayItems(stored, all, $currentLanguage));
+	const items = $derived(displayItems(stored, all, session.workspaces.language));
 	const onItems = $derived(items.filter((item) => item.on));
 	const offItems = $derived(items.filter((item) => !item.on));
-	const language = $derived($currentLanguage ? languageLabel($currentLanguage) : '');
+	const language = $derived(session.workspaces.language ? languageLabel(session.workspaces.language) : '');
 	const preview = $derived(
 		placeWidgets(
-			resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home')
+			resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home')
 		)
 	);
 	const isDefault = $derived(
@@ -137,7 +138,7 @@
 	// Stored ids of widgets this build knows but whose plugin is disabled
 	// (or not installed): they stay in the layout and come back with it.
 	const parked = $derived.by(() => {
-		if ($pluginStates.status !== 'ready') return [];
+		if (session.plugins.status !== 'ready') return [];
 		const shown = new Set(listed);
 		return editableLayout(stored).flatMap((id) => {
 			if (shown.has(id)) return [];
@@ -179,7 +180,7 @@
 	}
 
 	onMount(() => {
-		if ($pluginStates.status === 'idle') void loadPluginStates();
+		if (session.plugins.status === 'idle') void session.plugins.load();
 		void load();
 		void loadOptions();
 	});
@@ -377,12 +378,12 @@
 		</div>
 	{/if}
 
-	{#if $pluginStates.status === 'loading' || $pluginStates.status === 'idle'}
+	{#if session.plugins.status === 'loading' || session.plugins.status === 'idle'}
 		<p class="hint">{t('settings.home.loadingPlugins')}</p>
-	{:else if $pluginStates.status === 'error'}
+	{:else if session.plugins.status === 'error'}
 		<p class="error">
 			{t('settings.home.pluginsFailed')}
-			<Button variant="plain" onclick={loadPluginStates}>{t('settings.home.retry')}</Button>
+			<Button variant="plain" onclick={() => session.plugins.load()}>{t('settings.home.retry')}</Button>
 		</p>
 	{/if}
 

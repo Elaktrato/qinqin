@@ -1,11 +1,12 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: vi.fn(),
-	currentStudyHistory: vi.fn(() => []),
-	onStudyDayChange: vi.fn(() => () => {})
-}));
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn()
@@ -21,10 +22,21 @@ import { saveGoals } from '$lib/study/commands/keyed';
 import { getStudyData } from '$lib/study/data';
 import type { StudyData } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import GoalSettings from './GoalSettings.svelte';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const day = studyDay([]);
 const today = day.today();
@@ -35,7 +47,7 @@ const SOURCES: ActivitySource[] = [
 ];
 
 function select(id: number): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never, { id: 2, language: 'ja', name: 'ja' } as never],
 		current: { id, language: 'zh', name: 'zh' } as never
 	});
@@ -46,7 +58,7 @@ function setup(data: Partial<StudyData> = {}) {
 	select(1);
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], ...data });
 	vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: SOURCES, cells: [] });
-	return render(GoalSettings);
+	return render(GoalSettings, { context: ctx.context });
 }
 
 const goal = (metric: string, target: number, showStreak = true) => ({
@@ -104,12 +116,12 @@ describe('GoalSettings', () => {
 		await fireEvent.input(f.target, { target: { value: '50' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual({
+		expect(vi.mocked(saveGoals).mock.calls[0][2]).toEqual({
 			version: 1,
 			showStreak: true,
 			history: [{ from: today, metric: 'activity:review', target: 50 }]
 		});
-		expect(vi.mocked(saveGoals).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(saveGoals).mock.calls[0][1]).toBe(1);
 		expect(await screen.findByText('Saved.')).toBeTruthy();
 	});
 
@@ -139,7 +151,7 @@ describe('GoalSettings', () => {
 		await form();
 		await fireEvent.click(screen.getByRole('button', { name: 'Remove goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1].history).toEqual([
+		expect(vi.mocked(saveGoals).mock.calls[0][2].history).toEqual([
 			{ from: '2026-01-01', metric: 'activity:review', target: 50 },
 			{ from: today, metric: null, target: null }
 		]);
@@ -152,7 +164,7 @@ describe('GoalSettings', () => {
 		await fireEvent.click(streak);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual(goal('activity:review', 50, false));
+		expect(vi.mocked(saveGoals).mock.calls[0][2]).toEqual(goal('activity:review', 50, false));
 	});
 
 	it('hints at the new-card limit', async () => {
@@ -177,7 +189,7 @@ describe('GoalSettings', () => {
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], goals: goal('flashcards:new', 7) });
 		select(2);
 		await waitFor(() => expect((screen.getByLabelText('Target') as HTMLInputElement).value).toBe('7'));
-		expect(vi.mocked(getStudyData).mock.calls.map((c) => c[0])).toContain(2);
+		expect(vi.mocked(getStudyData).mock.calls.map((c) => c[1])).toContain(2);
 		expect((screen.getByLabelText('Count') as HTMLSelectElement).value).toBe('flashcards:new');
 	});
 
@@ -198,7 +210,7 @@ describe('GoalSettings', () => {
 		setup({ goals: goal('flashcards:new', 5) });
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
 		cleanup();
-		render(GoalSettings);
+		render(GoalSettings, { context: ctx.context });
 		const { metric, target } = await form();
 		expect(target.value).toBe('5');
 		expect([...metric.options].map((o) => o.textContent?.trim())).toEqual([
@@ -220,7 +232,7 @@ describe('GoalSettings', () => {
 		setup();
 		vi.mocked(getStudyData).mockRejectedValueOnce(new Error('offline'));
 		cleanup();
-		render(GoalSettings);
+		render(GoalSettings, { context: ctx.context });
 		expect((await screen.findByRole('alert')).textContent).toContain('Could not load your daily goal.');
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], goals: goal('activity:review', 9) });
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));

@@ -2,7 +2,6 @@
 // workspace with per-deck overrides, counted from the review log by the
 // learner's day. Pure. Rule and fixtures: docs/contracts/scheduler/.
 
-import { onSessionEnd } from '../session/sessionEnd';
 import { isValidReview, sortedReviews } from './reviewOrder';
 import type { StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
@@ -206,9 +205,11 @@ export function admit(
 }
 
 // Many queues of one workspace (the decks view builds one per deck) share one
-// count: remembered for the last cards/reviews arrays and learner day.
-let memo: { cards: readonly StudyCard[]; reviews: readonly ReviewEvent[]; today: string; counts: DayCounts } | null = null;
-onSessionEnd(() => (memo = null));
+// count: remembered per cards array (with its reviews array and learner day).
+// A WeakMap keyed by the arrays the caller holds (the session's study data or
+// a page's copy): it keeps nothing once they are dropped, so no count outlives
+// the session that loaded the arrays (record 0009).
+const memo = new WeakMap<readonly StudyCard[], { reviews: readonly ReviewEvent[]; today: string; counts: DayCounts }>();
 
 /** dayCountsCached is dayCounts, reused while the same arrays and learner day are asked again. */
 export function dayCountsCached(
@@ -218,10 +219,9 @@ export function dayCountsCached(
 	now: Date
 ): DayCounts {
 	const today = ctx.day.dayOf(now.getTime());
-	if (memo !== null && memo.cards === cards && memo.reviews === reviews && memo.today === today) {
-		return memo.counts;
-	}
+	const hit = memo.get(cards);
+	if (hit !== undefined && hit.reviews === reviews && hit.today === today) return hit.counts;
 	const counts = dayCounts(cards, reviews, ctx, now);
-	memo = { cards, reviews, today, counts };
+	memo.set(cards, { reviews, today, counts });
 	return counts;
 }

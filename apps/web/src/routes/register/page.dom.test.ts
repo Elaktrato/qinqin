@@ -1,14 +1,21 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-vi.mock('$lib/auth', () => ({ register: vi.fn() }));
+const fakes = vi.hoisted(() => ({ register: vi.fn() }));
 vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn(), checkInvite: vi.fn() }));
 
-import { register } from '$lib/auth';
+const { register } = fakes;
 import { checkInvite, getAuthOptions } from '$lib/api/account';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
+
+let ctx: TestContext = testContext({ user: null });
+beforeEach(() => {
+	ctx = testContext({ user: null });
+	Object.assign(ctx.app.auth, fakes);
+});
 
 const opts = (o: object) => ({
 	bootstrap: false,
@@ -35,14 +42,14 @@ afterEach(() => {
 describe('register page', () => {
 	it('shows the closed sentence and no form when registration is closed', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({}) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/Registration is closed/)).toBeTruthy();
 		expect(screen.queryByLabelText('Username')).toBeNull();
 	});
 
 	it('shows the form with the bootstrap notice on a fresh instance', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ bootstrap: true }) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Username')).toBeTruthy();
 		expect(screen.getByText(/first account becomes the administrator/)).toBeTruthy();
 	});
@@ -52,7 +59,7 @@ describe('register page', () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ registration: 'invite', emailPolicy: 'optional' }) as never);
 		vi.mocked(checkInvite).mockResolvedValue({ expiresAt: null, emailPolicy: 'required' });
 		vi.mocked(register).mockResolvedValue({} as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Username');
 		expect(checkInvite).toHaveBeenCalledWith('tok-123');
 		expect(replaceState).toHaveBeenCalledWith(null, '', expect.not.stringContaining('#'));
@@ -78,14 +85,14 @@ describe('register page', () => {
 		vi.mocked(checkInvite).mockRejectedValue(
 			new ApiError(403, JSON.stringify({ error: 'invite_invalid', message: 'x' }))
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect((await screen.findByRole('alert')).textContent).toBe('This invite link is no longer valid.');
 		expect(screen.queryByLabelText('Username')).toBeNull();
 	});
 
 	it('asks for an invite link in invite mode without one', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ registration: 'invite' }) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/You need an invite link/)).toBeTruthy();
 	});
 });

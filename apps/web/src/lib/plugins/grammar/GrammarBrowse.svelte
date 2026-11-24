@@ -3,7 +3,6 @@
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { getSchemes } from '$lib/api/schemes';
 	import { languageLabel } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
 	import { listGrammar } from './api';
 	import { browseSections } from './browse';
 	import { loadProgress } from './progress';
@@ -11,8 +10,10 @@
 	import type { PackInfo, Progress } from './types';
 	import type { Scheme } from '$lib/api/types';
 	import { Chip, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 
 	let packs = $state<PackInfo[] | null>(null);
 	let schemes = $state<Scheme[]>([]);

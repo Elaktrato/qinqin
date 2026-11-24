@@ -1,9 +1,15 @@
+import { api } from '$lib/api/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import { fixtureManifest } from './fixtures';
 import { PermissionError, createPluginSdk } from './sdk';
+
+/** The poster the SDK records through (the session's EventLog.post in the app). */
+const post = async (events: unknown[]): Promise<void> => {
+	await api('/api/events/batch', { method: 'POST', body: { events } });
+};
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status });
@@ -32,14 +38,14 @@ describe('plugin sdk permissions', () => {
 	});
 
 	it('events.record needs write:study-events', () => {
-		expect(() => createPluginSdk(bare).events.record('journal', 1)).toThrow(
+		expect(() => createPluginSdk(bare).events.record(post, 'journal', 1)).toThrow(
 			/qinqin-bare.*write:study-events/
 		);
 	});
 
 	it('record rejects a type the manifest does not declare', () => {
-		expect(() => createPluginSdk(full).events.record('other', 3)).toThrow(/other/);
-		expect(() => createPluginSdk(full).events.record('other', 3)).toThrow(PermissionError);
+		expect(() => createPluginSdk(full).events.record(post, 'other', 3)).toThrow(/other/);
+		expect(() => createPluginSdk(full).events.record(post, 'other', 3)).toThrow(PermissionError);
 	});
 });
 
@@ -71,7 +77,7 @@ describe('plugin sdk events', () => {
 	it('record posts one ULID event with device web and the given time', async () => {
 		vi.mocked(fetch).mockResolvedValue(json({}));
 		const at = new Date('2026-11-15T10:00:00Z');
-		await createPluginSdk(full).events.record('journal', 3, { entryId: 'E' }, at);
+		await createPluginSdk(full).events.record(post, 'journal', 3, { entryId: 'E' }, at);
 		const { url, init } = lastCall();
 		expect(url).toBe('/api/events/batch');
 		const [event] = JSON.parse(String(init.body)).events;
@@ -87,6 +93,6 @@ describe('plugin sdk events', () => {
 
 	it('record rejects when the POST fails', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
-		await expect(createPluginSdk(full).events.record('journal', 3)).rejects.toThrow();
+		await expect(createPluginSdk(full).events.record(post, 'journal', 3)).rejects.toThrow();
 	});
 });

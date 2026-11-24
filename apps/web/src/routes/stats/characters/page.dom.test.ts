@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,12 +20,16 @@ import { fetchCharacters } from '$lib/api/characters';
 import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 import { masteryForChars, type CharMastery } from '$lib/study/mastery';
 import { loadStudyData } from '$lib/study/data';
-import { workspaces } from '$lib/workspaces';
 import CharactersPage from './+page.svelte';
 import charGrid from '$lib/components/map/CharGrid.svelte?raw';
 import cellTip from '$lib/components/map/CellTip.svelte?raw';
 import stageBar from '$lib/components/map/StageBar.svelte?raw';
 import pageSource from './+page.svelte?raw';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const CHARS = [
 	{ i: 1, c: '一', t: 1, r: 'yī', m: 'one' },
@@ -46,7 +51,7 @@ function mastery(): Map<string, CharMastery> {
 }
 
 function select(id: number | null, language = 'zh'): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: id === null ? null : ({ id, language, name: `w${id}` } as never)
 	});
@@ -69,7 +74,7 @@ afterEach(() => {
 });
 
 async function ready(): Promise<HTMLElement> {
-	const { container } = render(CharactersPage);
+	const { container } = render(CharactersPage, { context: ctx.context });
 	await screen.findByRole('heading', { name: 'Mastery map' });
 	await waitFor(() => expect(container.querySelectorAll('.cell').length).toBeGreaterThan(0));
 	return container;
@@ -221,7 +226,7 @@ describe('Stats → Characters', () => {
 		const firstSeven = new Promise<typeof seven>((resolve) => (releaseSeven = resolve));
 		let calls = 0;
 		vi.mocked(getSchemes).mockResolvedValue(schemes);
-		vi.mocked(fetchSchemeCharacters).mockImplementation((id) => {
+		vi.mocked(fetchSchemeCharacters).mockImplementation((_study, id) => {
 			if (id === 8) return Promise.resolve(eight);
 			calls += 1;
 			return calls === 1 ? firstSeven : Promise.resolve(seven);
@@ -327,7 +332,7 @@ describe('Stats → Characters', () => {
 
 	it('a direct visit outside Han languages keeps the not-Han note and the Overview link', async () => {
 		select(1, 'es');
-		render(CharactersPage);
+		render(CharactersPage, { context: ctx.context });
 
 		const status = await screen.findByRole('status');
 		expect(status.textContent).toContain('The character map is for Chinese and Japanese workspaces.');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withStudy } from '$lib/study/data';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { t, type MessageKey } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -19,7 +20,6 @@
 		unskipKind
 	} from '$lib/study/commands/cards';
 	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
@@ -38,16 +38,18 @@
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { deckId }: { deckId: string } = $props();
 
-	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const store = createDecksData(session);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void store.load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
 	const KIND_KEYS: Record<StudyCardKind, MessageKey> = {
 		vocab: 'study.cardType.vocab',
@@ -88,8 +90,8 @@
 		};
 		try {
 			const first = ids.slice(0, PAGE_SIZE);
-			merge(await loadEntryBases(first));
-			if (ids.length > first.length) merge(await loadEntryBases(ids, { priority: first }));
+			merge(await loadEntryBases(session.caches.entryBases, first));
+			if (ids.length > first.length) merge(await loadEntryBases(session.caches.entryBases, ids, { priority: first }));
 		} catch {
 			if (mine === basesSeq) basesFailed = true;
 		}
@@ -164,12 +166,12 @@
 	});
 
 	const actions = createCardActions({
-		deleteCards,
-		moveCards,
-		restoreCards,
-		dropSiblingCards,
-		skipKind,
-		unskipKind,
+		deleteCards: withStudy(session.study, deleteCards),
+		moveCards: withStudy(session.study, moveCards),
+		restoreCards: withStudy(session.study, restoreCards),
+		dropSiblingCards: withStudy(session.study, dropSiblingCards),
+		skipKind: withStudy(session.study, skipKind),
+		unskipKind: withStudy(session.study, unskipKind),
 		onchanged: () => store.load(untrack(() => workspaceId), true)
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });
@@ -454,8 +456,8 @@
 								checked={chosen.includes(row.entryId)}
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang($workspaces.current?.language)}>{row.written}</a>
-							<span class="reading" lang={wordReadingLang($workspaces.current?.language)}
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(session.workspaces.current?.language)}>{row.written}</a>
+							<span class="reading" lang={wordReadingLang(session.workspaces.current?.language)}
 								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
 							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>

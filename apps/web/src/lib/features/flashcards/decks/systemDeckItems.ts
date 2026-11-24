@@ -3,65 +3,50 @@
 // members change only when its pack is re-installed.
 
 import { getSchemeEntries } from '$lib/api/schemes';
-import { onSessionEnd, sessionEpoch } from '$lib/session/sessionEnd';
 import type { EntryBase } from '$lib/api/types';
 import { levelItems, type LevelDeck } from './systemDecks';
+import type { LevelItemsCache } from '../../../context/caches';
 
 const CONCURRENCY = 2;
 
-const cache = new Map<string, EntryBase[]>();
-const inflight = new Map<string, Promise<EntryBase[]>>();
-onSessionEnd(() => {
-	cache.clear();
-	inflight.clear();
-});
-const waiting: (() => void)[] = [];
-let running = 0;
 
 function keyOf(deck: LevelDeck): string {
 	return `${deck.schemeId}\u0000${deck.level}\u0000${deck.unit === 'character' ? 'c' : 'w'}`;
 }
 
-/** clearLevelItemsCache forgets every loaded level (tests, sign-out). */
-export function clearLevelItemsCache(): void {
-	cache.clear();
-}
-
-function slot(): Promise<void> {
-	if (running < CONCURRENCY) {
-		running += 1;
+function slot(cache: LevelItemsCache): Promise<void> {
+	if (cache.running < CONCURRENCY) {
+		cache.running += 1;
 		return Promise.resolve();
 	}
-	return new Promise((resolve) => waiting.push(resolve));
+	return new Promise((resolve) => cache.waiting.push(resolve));
 }
 
-function release(): void {
-	const next = waiting.shift();
-	if (next === undefined) running -= 1;
+function release(cache: LevelItemsCache): void {
+	const next = cache.waiting.shift();
+	if (next === undefined) cache.running -= 1;
 	else next();
 }
 
 /** loadLevelItems: the deck's items (unit filter applied); failures are not cached. */
-export function loadLevelItems(deck: LevelDeck): Promise<EntryBase[]> {
+export function loadLevelItems(cache: LevelItemsCache, deck: LevelDeck): Promise<EntryBase[]> {
 	const key = keyOf(deck);
-	const cached = cache.get(key);
+	const cached = cache.loaded.get(key);
 	if (cached !== undefined) return Promise.resolve(cached);
-	const pending = inflight.get(key);
+	const pending = cache.inflight.get(key);
 	if (pending !== undefined) return pending;
-	const epoch = sessionEpoch();
 	let promise: Promise<EntryBase[]> | undefined;
 	promise = (async () => {
-		await slot();
+		await slot(cache);
 		try {
 			const items = levelItems(deck, await getSchemeEntries(deck.schemeId, deck.level));
-			// An answer for a session that has ended is not kept (#173).
-			if (epoch === sessionEpoch()) cache.set(key, items);
+			cache.loaded.set(key, items);
 			return items;
 		} finally {
-			release();
-			if (inflight.get(key) === promise) inflight.delete(key);
+			release(cache);
+			if (cache.inflight.get(key) === promise) cache.inflight.delete(key);
 		}
 	})();
-	inflight.set(key, promise);
+	cache.inflight.set(key, promise);
 	return promise;
 }

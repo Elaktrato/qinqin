@@ -4,18 +4,18 @@
 	import { goto } from '$app/navigation';
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
-	import { currentStudyDay } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { webPlugins } from '$lib/plugins';
-	import { pluginStates } from '$lib/plugins/states';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
-	import { currentLanguage } from '$lib/workspaces';
+	import { useSession } from '$lib/context/context';
 
+
+	const session = useSession();
 	let query = $state('');
 
 	// The greeting follows the device's hour; the date line is the learner's
@@ -24,7 +24,7 @@
 	const hour = now.getHours();
 	const greeting =
 		hour < 12 ? t('app.home.greeting.morning') : hour < 18 ? t('app.home.greeting.afternoon') : t('app.home.greeting.evening');
-	const dateLine = formatDay(currentStudyDay().today(now.getTime()), { weekday: 'long', day: 'numeric', month: 'long' });
+	const dateLine = formatDay(session.zone.day().today(now.getTime()), { weekday: 'long', day: 'numeric', month: 'long' });
 
 	// The user's home layout (null = none stored, so the default). Nothing
 	// renders until it is known, so a custom order never flashes as the
@@ -34,12 +34,12 @@
 
 	// Plugin widgets join once the shared plugin states are loaded; until
 	// then, or when they failed, only the core widgets can be shown.
-	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
+	const states = $derived(session.plugins.status === 'ready' ? session.plugins.list : []);
 	const placed = $derived(
-		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home'))
+		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home'))
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
-	const hasPlugins = $derived($pluginStates.status === 'ready' || $pluginStates.status === 'error');
+	const hasPlugins = $derived(session.plugins.status === 'ready' || session.plugins.status === 'error');
 
 	onMount(async () => {
 		try {

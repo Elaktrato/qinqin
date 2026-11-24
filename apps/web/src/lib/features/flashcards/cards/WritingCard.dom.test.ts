@@ -1,5 +1,6 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
 
@@ -15,6 +16,11 @@ import WritingCard from './WritingCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';
 import padSource from './WritingPad.svelte?raw';
 import { loadStrokeData } from '$lib/study/strokeData';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const entry = {
 	id: 3,
@@ -34,7 +40,7 @@ afterEach(cleanup);
 async function setup(over: Record<string, unknown> = {}) {
 	const onDone = vi.fn();
 	const props = { item, entry, chars: ['你', '好'], done: false, onDone, ...over };
-	const view = render(CardHarness, { card: WritingCard, cardProps: props, kindLabel: 'Write' });
+	const view = render(CardHarness, { props: { card: WritingCard, cardProps: props, kindLabel: 'Write' }, context: ctx.context });
 	await waitFor(() => expect(screen.getByRole('img')).toBeTruthy());
 	return { onDone, props, ...view };
 }
@@ -110,7 +116,7 @@ describe('WritingCard without stroke data (#101, prep-run item 2)', () => {
 	it('keeps the fail path with its words and offers no Show strokes', async () => {
 		vi.mocked(loadStrokeData).mockResolvedValueOnce(null);
 		const onDone = vi.fn();
-		render(CardHarness, { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone } });
+		render(CardHarness, { props: { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone } }, context: ctx.context });
 		const alert = await screen.findByRole('alert');
 		expect(alert.textContent).toBe('The writing pad could not load this character. Continue and grade this card yourself.');
 		expect(screen.queryByRole('button', { name: 'Show strokes' })).toBeNull();
@@ -120,7 +126,7 @@ describe('WritingCard without stroke data (#101, prep-run item 2)', () => {
 
 	it('offers no Show strokes while the data is loading', () => {
 		vi.mocked(loadStrokeData).mockReturnValueOnce(new Promise(() => {}));
-		render(CardHarness, { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone: vi.fn() } });
+		render(CardHarness, { props: { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone: vi.fn() } }, context: ctx.context });
 		expect(screen.queryByRole('button', { name: 'Show strokes' })).toBeNull();
 	});
 });

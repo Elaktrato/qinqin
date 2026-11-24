@@ -1,6 +1,7 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
 import { cleanup, render, waitFor, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
-import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
@@ -9,24 +10,30 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/api/client')>()),
 	api: vi.fn(() => Promise.resolve([]))
 }));
-vi.mock('$lib/events', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/events')>()),
-	recordSessionWhenSettled: vi.fn(),
-	record: vi.fn()
-}));
-vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
-import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
-import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
-import { auth } from '$lib/auth';
+import { createAppContext, type AppContext } from '$lib/context/app.svelte';
+import { contextOf } from '$lib/context/context';
+import { fakeDeps } from '$lib/testing/context';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
 import { dataRow } from '../lib/testing/keyed';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let recordSessionOnce!: MockInstance<EventLog['recordSessionWhenSettled']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
+	recordSessionOnce = vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation(((async () => {})) as never);
+});
+
+/** The app context the layout mounts with (a fresh one per mount, as a page load). */
+let app: AppContext;
+function freshApp(): Map<unknown, unknown> {
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window }));
+	return contextOf(app);
+}
 
 /** The desktop bar (both bars are in the DOM; CSS shows one, and jsdom has no CSS). */
 function desktop(container: HTMLElement): HTMLElement {
@@ -44,14 +51,9 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 		if (navLayout !== null && url.includes('prefix=nav-layout')) return [dataRow({ key: 'nav-layout', workspaceId: null, data: navLayout })];
 		return [];
 	}) as never);
-	return render(Layout, { children });
+	return render(Layout, { props: { children }, context: freshApp() });
 }
 
-beforeEach(() => {
-	void navLayoutStore.setUser(null);
-	auth.set({ token: null, user: null });
-	workspaces.set({ list: [], current: null });
-});
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -124,7 +126,7 @@ describe('layout auth guard', () => {
 	it('the phone bar in side-menu mode: the menu button, the title and the flag; no nav until the drawer opens', async () => {
 		const { findByText, container } = mountAt('/stats/week', 'tok', { version: 1, phone: 'drawer' });
 		await findByText('page body');
-		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
+		await waitFor(() => expect(app.navLayout.phone).toBe('drawer'));
 		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
 		expect(phone.closest('header')).toBe(desktop(container).closest('header'));
 		expect(within(phone).getByRole('button', { name: 'Open menu' })).toBeTruthy();
@@ -171,10 +173,9 @@ describe('layout auth guard', () => {
 		const markup = (el: HTMLElement) => el.innerHTML.replace(/ (id|for|aria-controls|aria-describedby|aria-labelledby)="[^"]*"/g, '');
 		const withBar = markup(desktop(bar.container));
 		cleanup();
-		void navLayoutStore.setUser(null);
 		const drawer = mountAt('/reader', 'tok', { version: 1, phone: 'drawer' });
 		await drawer.findByText('page body');
-		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
+		await waitFor(() => expect(app.navLayout.phone).toBe('drawer'));
 		expect(markup(desktop(drawer.container))).toBe(withBar);
 	});
 
@@ -197,7 +198,7 @@ describe('layout auth guard', () => {
 	it('guards again when the token disappears (logout or expiry)', async () => {
 		const { findByText, queryByText } = mountAt('/search', 'tok');
 		await findByText('page body');
-		auth.set({ token: null, user: null });
+		app.auth.set({ token: null, user: null });
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/login', { replaceState: true }));
 		await waitFor(() => expect(queryByText('page body')).toBeNull());
 	});
@@ -219,12 +220,12 @@ describe('layout workspaces', () => {
 			}
 			return [];
 		}) as never);
-		const view = render(Layout, { children });
+		const view = render(Layout, { props: { children }, context: freshApp() });
 		await view.findByText('Could not load workspaces.');
 		fail = false;
 		await fireEvent.click(view.getByRole('button', { name: 'Try again' }));
 		await waitFor(() => expect(view.queryByText('Could not load workspaces.')).toBeNull());
-		await waitFor(() => expect(get(workspaces).current?.id).toBe(1));
+		await waitFor(() => expect(app.session?.workspaces.current?.id).toBe(1));
 	});
 
 	it('records a session for a workspace selected mid-session', async () => {
@@ -236,9 +237,9 @@ describe('layout workspaces', () => {
 			if (url === '/api/workspaces') return [ws(1), ws(2)];
 			return [];
 		}) as never);
-		render(Layout, { children });
+		render(Layout, { props: { children }, context: freshApp() });
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(1));
-		select(2);
+		app.session?.workspaces.select(2);
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(2));
 	});
 });
@@ -263,7 +264,7 @@ describe('layout restricted sessions', () => {
 			if (url === '/api/auth/me') return me(restriction);
 			return [];
 		}) as never);
-		return render(Layout, { children });
+		return render(Layout, { props: { children }, context: freshApp() });
 	}
 
 	it('sends a password-change session from a private page to /account/password', async () => {

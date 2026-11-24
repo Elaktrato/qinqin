@@ -15,7 +15,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, journal photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
 | `server/internal/plugins` | The plugin manifest contract and the built-in manifests (`plugins/builtin/*.json`) |
 | `server/internal/webdist` | The embedded web app |
-| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features in `src/lib/features/` |
+| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features in `src/lib/features/`, the app and session contexts that hold the app's state in `src/lib/context/` |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the level lists, the KanjiVG component index, the demos) with their licences and attribution notices; `plugins/data/README.md` documents the formats |
 | `plugins/data-local/` | Gitignored: local-only packs with unclear or restrictive licences |
 | `plugins/data-strokes/`, `plugins/data-audio/`, `plugins/data-fonts/` | Gitignored: the built stroke pack, fetched audio packs and built font packs |

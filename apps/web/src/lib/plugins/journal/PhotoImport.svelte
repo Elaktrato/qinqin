@@ -24,9 +24,11 @@
 		type PhotoState
 	} from './photoFlow';
 	import { journalHref } from './route';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { newEntry, recordJournalEvent, saveEntry } from './store';
 	import type { Capabilities } from './types';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	let {
 		workspaceId,
@@ -230,11 +232,11 @@
 		saveError = '';
 		const id = flow.photoId;
 		try {
-			const entry = newEntry('photo', currentStudyDay());
+			const entry = newEntry('photo', session.zone.day());
 			entry.text = flow.text;
 			const saved = await saveEntry(ws, entry);
 			const now = new Date();
-			await recordJournalEvent(ws, saved.id, now).catch(() => undefined);
+			await recordJournalEvent(session.events, ws, saved.id, now).catch(() => undefined);
 			dispatch({ type: 'saved' });
 			if (destroyed) return;
 			await goto(journalHref({ view: 'entry', id: saved.id }), { replaceState: true });

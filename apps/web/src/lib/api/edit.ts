@@ -1,3 +1,4 @@
+import type { EntryBasesCache } from '../context/caches';
 import { forgetEntryBases } from './entryBases';
 import { api } from './client';
 import type { Entry, EntryDetail } from './types';
@@ -66,7 +67,7 @@ export function buildPatch(original: Entry, draft: EntryDraft): EntryPatch {
  * response is the caller's patched entry view, the same shape as
  * getEntry, so callers can render it without another request.
  */
-export async function updateEntry(id: number, patch: EntryPatch): Promise<EntryDetail> {
+export async function updateEntry(bases: EntryBasesCache, id: number, patch: EntryPatch): Promise<EntryDetail> {
 	try {
 		return await api<EntryDetail>(`/api/entries/${id}`, {
 			method: 'PUT',
@@ -74,6 +75,6 @@ export async function updateEntry(id: number, patch: EntryPatch): Promise<EntryD
 		});
 	} finally {
 		// The decks view caches bases with the overlay applied; an edit changes them.
-		forgetEntryBases([id]);
+		forgetEntryBases(bases, [id]);
 	}
 }

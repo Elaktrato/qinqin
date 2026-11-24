@@ -12,6 +12,8 @@
 	import { pollForReview } from './reviewPoll';
 	import { getSuggestions } from './store';
 	import type { Suggestions } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		workspaceId,
@@ -44,7 +46,7 @@
 	);
 
 	onMount(() => {
-		void loadProviderNames().then((m) => (names = m));
+		void loadProviderNames(session.caches.providerNames).then((m) => (names = m));
 		getSuggestions(ws).then(
 			(s) => (suggestions = s),
 			() => {}

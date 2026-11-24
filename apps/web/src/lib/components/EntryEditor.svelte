@@ -5,6 +5,8 @@
 	import { getSharedEntry } from '$lib/api/entries';
 	import { buildPatch, updateEntry, type EntryPatchReading } from '$lib/api/edit';
 	import type { EntryDetail } from '$lib/api/types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface ReadingRow extends EntryPatchReading {
 		key: number;
@@ -136,7 +138,7 @@
 		saved = '';
 		error = '';
 		try {
-			const updated = await updateEntry(entry.id, patch);
+			const updated = await updateEntry(session.caches.entryBases, entry.id, patch);
 			// The PUT response is the caller's refreshed view; keeping the
 			// draft in sync with it also picks up any server-side ordering.
 			written = updated.written;

@@ -16,7 +16,6 @@
 		type AdminUserDto
 	} from '$lib/api/adminUsers';
 	import { passwordHint } from '$lib/account/passwordRules';
-	import { user as me } from '$lib/auth';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
 	import ResetMfaDialog from './ResetMfaDialog.svelte';
 	import { resetNotice, type MfaFactors } from './mfaResetView';
@@ -24,6 +23,8 @@
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
 	import { actionNeedsReauth, generateTempPassword, userRows, type UserActionId } from './usersView';
 	import { Button, Chip, Field, IconButton, Panel, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let users = $state<AdminUserDto[]>([]);
 	let loaded = $state(false);
@@ -52,11 +53,11 @@
 	let createCode = $state('');
 	// The server asked for a code although "me" says no authenticator (a stale copy).
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	let askFields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let createFields = $state<ReturnType<typeof ReauthFields> | null>(null);
 
-	const rows = $derived(userRows(users, $me?.id ?? 0, new Date()));
+	const rows = $derived(userRows(users, app.auth.user?.id ?? 0, new Date()));
 
 	const message = errorText;
 	const emailRequired = $derived(emailPolicy === 'required');
@@ -140,7 +141,7 @@
 			return;
 		}
 		const target = users.find((u) => u.id === row.id);
-		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === $me?.id }) && !reauth) {
+		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === app.auth.user?.id }) && !reauth) {
 			askPassword = { id: row.id, username: row.username, action: id };
 			ownPassword = ownCode = '';
 			error = '';

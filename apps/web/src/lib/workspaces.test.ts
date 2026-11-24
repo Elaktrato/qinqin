@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
 import type { Workspace } from './api/types';
-import { clearSelection, create, currentLanguage, deleteWorkspace, load, rename, select, setSettings, workspaces } from './workspaces';
+import { api } from './api/client';
+import { workspacesState } from './testing/context';
+import { Workspaces } from './workspaces.svelte';
+
+let workspaces: Workspaces;
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -43,7 +46,7 @@ describe('workspace store', () => {
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
 		vi.stubGlobal('fetch', vi.fn());
-		workspaces.set({ list: [], current: null });
+		workspaces = new Workspaces({ api, local: () => localStorage, session: () => null, alive: () => true });
 	});
 
 	afterEach(() => {
@@ -56,10 +59,10 @@ describe('workspace store', () => {
 		const ja = workspace(2, 'ja');
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([zh, ja]));
 
-		await load();
+		await workspaces.load();
 
-		expect(get(workspaces)).toEqual({ list: [zh, ja], current: ja });
-		expect(get(currentLanguage)).toBe('ja');
+		expect(workspacesState(workspaces)).toEqual({ list: [zh, ja], current: ja });
+		expect(workspaces.language).toBe('ja');
 		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
 		expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual(['/api/workspaces']);
 	});
@@ -70,9 +73,9 @@ describe('workspace store', () => {
 		const ja = workspace(2, 'ja');
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([zh, ja]));
 
-		await load();
+		await workspaces.load();
 
-		expect(get(workspaces).current).toEqual(zh);
+		expect(workspacesState(workspaces).current).toEqual(zh);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
 	});
 
@@ -80,10 +83,10 @@ describe('workspace store', () => {
 		localStorage.setItem('qinqin.workspace', '1');
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([]));
 
-		await load();
+		await workspaces.load();
 
-		expect(get(workspaces)).toEqual({ list: [], current: null });
-		expect(get(currentLanguage)).toBeNull();
+		expect(workspacesState(workspaces)).toEqual({ list: [], current: null });
+		expect(workspaces.language).toBeNull();
 		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
 	});
 
@@ -96,20 +99,20 @@ describe('workspace store', () => {
 			return jsonResponse([zh, es]);
 		});
 
-		const created = await create('es');
+		const created = await workspaces.create('es');
 
 		expect(created).toEqual(es);
 		const calls = vi.mocked(fetch).mock.calls;
 		expect(calls.map(([url]) => String(url))).toEqual(['/api/workspaces', '/api/workspaces']);
 		expect(calls[0][1]?.method).toBe('POST');
 		expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ language: 'es' });
-		expect(get(workspaces).current).toEqual(es);
+		expect(workspacesState(workspaces).current).toEqual(es);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('3');
 	});
 
-	it('clearSelection forgets the persisted workspace (a later user must not inherit it)', () => {
+	it('signing out forgets the persisted workspace (a later user must not inherit it)', () => {
 		localStorage.setItem('qinqin.workspace', '2');
-		clearSelection();
+		workspaces.dispose('signOut');
 		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
 	});
 
@@ -121,14 +124,14 @@ describe('workspace store', () => {
 			.mockImplementationOnce(() => new Promise<Response>((res) => (releaseFirst = res)))
 			.mockResolvedValueOnce(jsonResponse([zh, ja]));
 
-		const first = load();
-		await load();
-		select(2);
+		const first = workspaces.load();
+		await workspaces.load();
+		workspaces.select(2);
 		releaseFirst(jsonResponse([zh]));
 		await first;
 
-		expect(get(workspaces).current?.id).toBe(2);
-		expect(get(workspaces).list).toHaveLength(2);
+		expect(workspacesState(workspaces).current?.id).toBe(2);
+		expect(workspacesState(workspaces).list).toHaveLength(2);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
 	});
 
@@ -137,10 +140,10 @@ describe('workspace store', () => {
 		const ja = workspace(2, 'ja');
 		workspaces.set({ list: [zh, ja], current: zh });
 
-		select(2);
+		workspaces.select(2);
 
-		expect(get(workspaces).current).toEqual(ja);
-		expect(get(currentLanguage)).toBe('ja');
+		expect(workspacesState(workspaces).current).toEqual(ja);
+		expect(workspaces.language).toBe('ja');
 		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
 	});
 	it('creates a named workspace and sends the trimmed name', async () => {
@@ -151,11 +154,11 @@ describe('workspace store', () => {
 			return jsonResponse([zh, novels]);
 		});
 
-		await create('zh', '  Novels ');
+		await workspaces.create('zh', '  Novels ');
 
 		const calls = vi.mocked(fetch).mock.calls;
 		expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ language: 'zh', name: 'Novels' });
-		expect(get(workspaces).current).toEqual(novels);
+		expect(workspacesState(workspaces).current).toEqual(novels);
 	});
 
 	it('omits a blank name when creating', async () => {
@@ -165,7 +168,7 @@ describe('workspace store', () => {
 			return jsonResponse([es]);
 		});
 
-		await create('es', '   ');
+		await workspaces.create('es', '   ');
 
 		expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toEqual({ language: 'es' });
 	});
@@ -177,14 +180,14 @@ describe('workspace store', () => {
 		const renamed = { ...ja, name: 'Manga' };
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(renamed));
 
-		const result = await rename(2, ' Manga ');
+		const result = await workspaces.rename(2, ' Manga ');
 
 		expect(result).toEqual(renamed);
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
 		expect(String(url)).toBe('/api/workspaces/2');
 		expect(init?.method).toBe('PUT');
 		expect(JSON.parse(String(init?.body))).toEqual({ name: 'Manga' });
-		expect(get(workspaces)).toEqual({ list: [zh, renamed], current: renamed });
+		expect(workspacesState(workspaces)).toEqual({ list: [zh, renamed], current: renamed });
 	});
 
 	it('renaming another workspace keeps the current one', async () => {
@@ -193,10 +196,10 @@ describe('workspace store', () => {
 		workspaces.set({ list: [zh, ja], current: zh });
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...ja, name: '' }));
 
-		await rename(2, '');
+		await workspaces.rename(2, '');
 
 		expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toEqual({ name: '' });
-		expect(get(workspaces).current).toEqual(zh);
+		expect(workspacesState(workspaces).current).toEqual(zh);
 	});
 
 	it('keeps the persisted selection among repeated languages', async () => {
@@ -205,13 +208,13 @@ describe('workspace store', () => {
 		const second = workspace(5, 'zh', 'HSK');
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([first, second]));
 
-		await load();
+		await workspaces.load();
 
-		expect(get(workspaces).current).toEqual(second);
+		expect(workspacesState(workspaces).current).toEqual(second);
 
-		select(1);
+		workspaces.select(1);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
-		expect(get(workspaces).current).toEqual(first);
+		expect(workspacesState(workspaces).current).toEqual(first);
 	});
 
 	it('deletes the current workspace, falls back to the first left, and forgets its keys', async () => {
@@ -224,12 +227,12 @@ describe('workspace store', () => {
 		localStorage.setItem('qinqin.session.1.2026-11-14', '1');
 		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
 
-		await deleteWorkspace(2);
+		await workspaces.delete(2);
 
 		const calls = vi.mocked(fetch).mock.calls;
 		expect(calls.map(([url]) => String(url))).toEqual(['/api/workspaces/2']);
 		expect(calls[0][1]?.method).toBe('DELETE');
-		expect(get(workspaces)).toEqual({ list: [zh, es], current: zh });
+		expect(workspacesState(workspaces)).toEqual({ list: [zh, es], current: zh });
 		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
 		expect(localStorage.getItem('qinqin.session.2.2026-11-14')).toBeNull();
 		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
@@ -242,9 +245,9 @@ describe('workspace store', () => {
 		localStorage.setItem('qinqin.workspace', '1');
 		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
 
-		await deleteWorkspace(2);
+		await workspaces.delete(2);
 
-		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+		expect(workspacesState(workspaces)).toEqual({ list: [zh], current: zh });
 		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
 	});
 
@@ -257,9 +260,9 @@ describe('workspace store', () => {
 			return jsonResponse([zh]);
 		});
 
-		await deleteWorkspace(2);
+		await workspaces.delete(2);
 
-		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+		expect(workspacesState(workspaces)).toEqual({ list: [zh], current: zh });
 	});
 
 	it('keeps everything when the server refuses (last workspace)', async () => {
@@ -268,9 +271,9 @@ describe('workspace store', () => {
 		localStorage.setItem('qinqin.session.1.2026-11-14', '1');
 		vi.mocked(fetch).mockResolvedValue(new Response('keep at least one workspace', { status: 409 }));
 
-		await expect(deleteWorkspace(1)).rejects.toMatchObject({ status: 409 });
+		await expect(workspaces.delete(1)).rejects.toMatchObject({ status: 409 });
 
-		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+		expect(workspacesState(workspaces)).toEqual({ list: [zh], current: zh });
 		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
 	});
 
@@ -280,15 +283,15 @@ describe('workspace store', () => {
 		workspaces.set({ list: [zh, ja], current: ja });
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...ja, settings: { audioAutoplay: true } }));
 
-		const updated = await setSettings(2, { audioAutoplay: true });
+		const updated = await workspaces.setSettings(2, { audioAutoplay: true });
 
 		const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
 		expect(url).toBe('/api/workspaces/2');
 		expect(init.method).toBe('PUT');
 		expect(JSON.parse(String(init.body))).toEqual({ settings: { audioAutoplay: true } });
 		expect(updated.settings).toEqual({ audioAutoplay: true });
-		expect(get(workspaces).current?.settings).toEqual({ audioAutoplay: true });
-		expect(get(workspaces).list[1].settings).toEqual({ audioAutoplay: true });
-		expect(get(workspaces).list[0]).toBe(zh);
+		expect(workspacesState(workspaces).current?.settings).toEqual({ audioAutoplay: true });
+		expect(workspacesState(workspaces).list[1].settings).toEqual({ audioAutoplay: true });
+		expect(workspacesState(workspaces).list[0]).toBe(zh);
 	});
 });

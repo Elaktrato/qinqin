@@ -4,12 +4,13 @@
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { createServerBackup } from '$lib/api/backup';
-	import { user } from '$lib/auth';
 	import { PARTS, backupError, canCreate, includeBody, restoreSteps, securityNote } from './serverBackupView';
 	import { tick } from 'svelte';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthFocus, reauthNeedsCode } from './reauth';
 	import { Button, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let { assign = (u: string) => location.assign(u) }: { assign?: (url: string) => void } = $props();
 
@@ -17,7 +18,7 @@
 	let password = $state('');
 	let code = $state('');
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($user?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let busy = $state(false);
 	let error = $state('');

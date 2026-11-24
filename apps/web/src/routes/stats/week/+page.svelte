@@ -6,13 +6,11 @@
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onEventLogChange } from '$lib/events';
 	import { usesHan } from '$lib/languages';
 	import { errorText } from '$lib/api/apiErrors';
 	import { onContextStale } from '$lib/study/currentContext';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import {
@@ -24,7 +22,6 @@
 		weekRedirect
 	} from '$lib/weekly/week';
 	import { weekHeading, type CharactersState } from '$lib/weekly/weekText';
-	import { workspaces } from '$lib/workspaces';
 	import MilestoneCard from '$lib/milestones/MilestoneCard.svelte';
 	import MilestoneHistory from '$lib/milestones/MilestoneHistory.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
@@ -32,6 +29,10 @@
 	import type { Timelines } from '$lib/weekly/replay';
 	import type { CharRow } from '$lib/api/types';
 	import type { StudyCard } from '$lib/study/types';
+	import { useSession } from '$lib/context/context';
+
+
+	const session = useSession();
 
 	let now = $state(Date.now());
 	let view = $state.raw<WeekView | null>(null);
@@ -42,10 +43,10 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
-	const today = $derived(currentStudyDay().today(now));
+	const today = $derived(session.zone.day().today(now));
 	const param = $derived(page.url.searchParams.get('week'));
 	const monday = $derived(normalizeWeekParam(param, today));
 	const next = $derived(nextWeek(monday, today));
@@ -71,7 +72,7 @@
 		loading = true;
 		let timelines: Timelines | undefined;
 		try {
-			const loaded = await loadWeek(id, week, { detail: true, force });
+			const loaded = await loadWeek(session, id, week, { detail: true, force });
 			if (seq !== requestSeq) return;
 			view = loaded;
 			timelines = loaded.timelines;
@@ -88,7 +89,7 @@
 			// Characters need the language's ~13k-row universe: shown after the rest.
 			characters = 'pending';
 			try {
-				const counted = await loadWeekCharacters(id, lang, week, { force });
+				const counted = await loadWeekCharacters(session, id, lang, week, { force });
 				if (seq !== requestSeq) return;
 				characters = counted;
 				universe = counted?.universe ?? null;
@@ -117,7 +118,7 @@
 					? { timelines, chars: null }
 					: { timelines, chars: universe.chars, cards: universe.cards };
 		try {
-			const loaded = await loadMilestones(id, { scope: 'week', language: lang, ...(week === undefined ? {} : { week }) });
+			const loaded = await loadMilestones(session, id, { scope: 'week', language: lang, states: session.plugins, ...(week === undefined ? {} : { week }) });
 			if (seq === requestSeq) milestones = loaded;
 		} catch {
 			// The milestones are extra: the week stays without them.
@@ -129,7 +130,7 @@
 		const shown = milestones;
 		if (shown === null || shown.workspaceId !== workspaceId) return;
 		milestones = { ...shown, plan: { kind: 'none' } };
-		void markSeen(shown);
+		void markSeen(session, shown);
 	}
 
 	function go(target: string): void {
@@ -154,17 +155,17 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, week);
 		};
-		const offLog = onEventLogChange(again);
-		const offWrite = onStudyChange(again);
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();
 		};
 	});
 	$effect(() =>
-		onContextStale(() => {
+		onContextStale(session.zone, () => {
 			now = Date.now();
-			void load(workspaceId, language, normalizeWeekParam(param, currentStudyDay().today(now)));
+			void load(workspaceId, language, normalizeWeekParam(param, session.zone.day().today(now)));
 		})
 	);
 </script>

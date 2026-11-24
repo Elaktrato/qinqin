@@ -2,7 +2,6 @@
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { hiddenFor } from '$lib/dictionaryVisibility';
-	import { workspaces } from '$lib/workspaces';
 	import EntryCard from './EntryCard.svelte';
 	import { IconButton } from '$lib/ui';
 	import HighlightBar from './HighlightBar.svelte';
@@ -12,6 +11,8 @@
 	import { MAX_DEPTH, type PopupFrame } from './popupStackCore';
 	import { ENTRIES_VISIBLE, visibleCount } from './showMore';
 	import type { LookupController, StackInfo } from './useLookup.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// One popup of the stack: a non-modal dialog placed at its frame's
 	// anchor, listing the first entries with "show more". Its pointer
@@ -54,7 +55,7 @@
 	const hidden = $derived(results.length - visible);
 	// The book's workspace decides which dictionaries are hidden, which may
 	// differ from the header's current workspace.
-	const hiddenIds = $derived(hiddenFor($workspaces.list, studyWorkspaceId, $workspaces.current));
+	const hiddenIds = $derived(hiddenFor(session.workspaces.list, studyWorkspaceId, session.workspaces.current));
 	const isRoot = $derived(frame.depth === 1);
 	const hold = (on: boolean) => lookup.hold(on);
 	// Result offsets of the root popup are in the paragraph; nested popups

@@ -1,26 +1,19 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/app';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
-	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
 	import { barHiddenOn } from '$lib/frame/barItems';
 	import BottomBar from '$lib/frame/BottomBar.svelte';
-	import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import PhoneBar from '$lib/frame/PhoneBar.svelte';
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
-	import { recordSessionWhenSettled } from '$lib/events';
-	import { syncStudyDayUser } from '$lib/time/zone';
-	import { dismissNotice, notice } from '$lib/notices';
 	import {
 		allowed as routeAllowed,
 		normalizePath,
@@ -28,42 +21,44 @@
 		restrictedTarget,
 		routeAccess
 	} from '$lib/routeAccess';
-	import { startReviewOutbox } from '$lib/study/events';
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
-	import { registerWorker } from '$lib/pwa/register';
-	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
+	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
-	import { logoutPrompt } from '$lib/account/logoutFlow';
-	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
-	import { themeStore } from '$lib/theme/store.svelte';
-	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
-	import {
-		load as loadWorkspaces,
-		workspaces,
-		workspacesLoadError,
-		workspacesLoaded
-	} from '$lib/workspaces';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
+	import { existingApp, provideApp } from '$lib/context/context';
+	import { createAppContext } from '$lib/context/app.svelte';
+	import { browserDeps } from '$lib/context/deps';
+
+	// The tab's app context (record 0009): a test may provide one; otherwise
+	// the root layout creates it and disposes it when it unmounts.
+	const given = existingApp();
+	const app = provideApp(given ?? createAppContext(browserDeps()));
+	onMount(() => app.start());
+	onDestroy(() => {
+		if (given === null) app.dispose();
+	});
 
 	let { children } = $props();
 
 	let booted = $state(false);
-	// The token whose workspaces are loaded; guards the effect below
-	// against refetching on unrelated re-runs.
-	let loadedToken = $state<string | null>(null);
-	const workspaceError = $derived($workspacesLoadError);
+	// The session (record 0009): the per-user state the shell shows.
+	const session = $derived(app.session);
+	// The session whose app is loaded; guards the effect below against
+	// loading again on unrelated re-runs.
+	let loadedSession: object | null = null;
+	const workspaceError = $derived(session?.workspaces.loadError ?? '');
 
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): the core features, the
 	// enabled plugin pages in the user's order, Search, Stats.
-	const sections = $derived(frameSections($pluginStates));
+	const sections = $derived(frameSections(session?.plugins ?? { list: [], status: 'idle' }));
 	const current = $derived(currentSection(path, sections));
-	const signedIn = $derived($auth.token !== null);
+	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
 	// bar: the logo (to sign in) and a sign-in link, nothing private.
 	const openSignedOut = $derived(!signedIn && routeAccess(path) === 'open');
@@ -72,9 +67,9 @@
 	// once signed in, and open pages show either way (lib/routeAccess.ts).
 	// A restricted session (forced password change, MFA enrolment) sees only
 	// its own page and the open Sources page, and loads nothing of the app.
-	const restricted = $derived(signedIn && $restriction !== null);
+	const restricted = $derived(signedIn && app.auth.restriction !== null);
 	const allowed = $derived(
-		routeAllowed(path, signedIn, booted) && restrictedTarget(path, $restriction) === null
+		routeAllowed(path, signedIn, booted) && restrictedTarget(path, app.auth.restriction) === null
 	);
 	// The frame (window frame, bar, raised panel) shows with a bar: signed
 	// in, or signed out on an open page. Sign-in pages stay plain.
@@ -82,7 +77,7 @@
 	// The phone navigation (#188, the person's nav-layout row): the bottom bar
 	// (default) or the side menu. Desktop and tablet widths ignore it: the
 	// bar is in the phone-only wrapper and every rule for it is phone-only.
-	const phoneMode = $derived(navLayoutStore.phone);
+	const phoneMode = $derived(app.navLayout.phone);
 	const barSections = $derived([homeSection(), ...sections]);
 	const bottomBar = $derived(signedIn && !restricted && phoneMode === 'bar' && !barHiddenOn(path));
 	$effect(() => {
@@ -92,7 +87,7 @@
 		return () => document.documentElement.removeAttribute('data-bottom-bar');
 	});
 	const noWorkspaces = $derived(
-		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
+		session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length === 0
 	);
 
 	// A guard redirect replaces the history entry it leaves: Back from
@@ -118,57 +113,48 @@
 	// Loads the workspace list; a failure shows a message with "Try again"
 	// (the session's token stays, so a transient error is recoverable).
 	async function loadShellWorkspaces(): Promise<void> {
-		workspacesLoadError.set('');
+		const workspaces = app.session?.workspaces;
+		if (workspaces === undefined) return;
+		workspaces.loadError = '';
 		try {
-			await loadWorkspaces();
+			await workspaces.load();
 		} catch (err) {
-			workspacesLoadError.set(errorText(err, t('app.workspaces.loadFailed')));
+			workspaces.loadError = errorText(err, t('app.workspaces.loadFailed'));
 		}
 	}
 
 	onMount(async () => {
-		// A workspace deleted in another tab or on another device: the
-		// first workspace_not_found reloads the list and falls back.
-		watchDeletedWorkspaces();
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
-		void registerWorker();
-		captureInstallPrompt(window); // the root layout lives as long as the page
 		void persistOnceNow();
 		// The theme list and the device's light/dark switch, signed in or out.
-		void themeStore.start();
+		void app.theme.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
-			await loadMe();
+			await app.auth.loadMe();
 		} catch {
 			// api() has already cleared the token and redirected on 401.
 		}
 		booted = true;
 	});
 
-	// Load the user's workspaces once per session, and drop them on
-	// logout so another account never sees the previous user's list.
+	// Load the app once per session: the workspaces, the plugin states, and
+	// the review outbox (reviews queued while offline drain on whichever route
+	// the user opens). A new session is a new set of objects (record 0009), so
+	// nothing of the previous user is left to drop here.
 	$effect(() => {
 		if (!booted) return;
-		const token = $auth.token;
-		if (token === null) {
-			loadedToken = null;
-			workspacesLoaded.set(false);
-			workspacesLoadError.set('');
-			resetPluginStates();
-			dismissNotice();
-			workspaces.set({ list: [], current: null });
+		const current = session;
+		if (current === null) {
+			loadedSession = null;
 			return;
 		}
 		// Nothing of the app loads for a restricted session; the effect runs
 		// again when the restriction clears.
-		if ($restriction !== null) return;
-		if (token === loadedToken) return;
-		loadedToken = token;
-		workspacesLoaded.set(false);
-		// Drain reviews queued while offline as soon as a session exists,
-		// on whichever route the user opens. Never blocks the boot.
-		startReviewOutbox();
-		void loadPluginStates();
+		if (app.auth.restriction !== null) return;
+		if (current === loadedSession) return;
+		loadedSession = current;
+		current.outbox.start();
+		void current.plugins.load();
 		void loadShellWorkspaces();
 	});
 
@@ -176,9 +162,9 @@
 	// active workspace is up, and again whenever the app comes back to the
 	// front (throttled inside; a no-op without a controlling worker).
 	$effect(() => {
-		const id = $workspacesLoaded && $restriction === null ? ($workspaces.current?.id ?? null) : null;
+		const id = session?.workspaces.loaded && app.auth.restriction === null ? (session.workspaces.current?.id ?? null) : null;
 		if (id === null) return;
-		const run = () => void prepareActiveWorkspace();
+		const run = () => void prepareActiveWorkspace(app);
 		const timer = setTimeout(run, 4000);
 		const onVisible = () => {
 			if (document.visibilityState === 'visible') run();
@@ -194,20 +180,20 @@
 	// restricted session); signing out forgets it and keeps what is painted.
 	let themeUser: number | null | undefined = undefined;
 	$effect(() => {
-		const id = booted && signedIn && $restriction === null ? ($user?.id ?? null) : null;
+		const id = booted && signedIn && app.auth.restriction === null ? (app.auth.user?.id ?? null) : null;
 		if (id === themeUser) return;
 		themeUser = id;
-		void themeStore.setUser(id);
-		void navLayoutStore.setUser(id);
+		void app.theme.setUser(id);
+		void app.navLayout.setUser(id);
 		// The installed font pack faces (#97): the list needs a session.
-		if (id === null) packFaces.clear();
-		else void packFaces.load();
+		if (id === null) app.fonts.clear();
+		else void app.fonts.load();
 	});
 
 	// Back to the front: another device may have changed the phone navigation.
 	$effect(() => {
 		const onVisible = () => {
-			if (document.visibilityState === 'visible') void navLayoutStore.resume();
+			if (document.visibilityState === 'visible') void app.navLayout.resume();
 		};
 		document.addEventListener('visibilitychange', onVisible);
 		return () => document.removeEventListener('visibilitychange', onVisible);
@@ -216,10 +202,10 @@
 	// The app-wide hanzi font (#97): the saved choice (or the Appearance
 	// preview) sets one stack per script on :root, an installed pack face
 	// first; only that face's slices are registered.
-	const hanziFont = $derived((themeStore.preview ?? themeStore.appearance).hanziFont);
+	const hanziFont = $derived((app.theme.preview ?? app.theme.appearance).hanziFont);
 	$effect(() => {
-		applyHanziVars(hanziVars(hanziFont, packFaces.installed), document.documentElement);
-		packFaces.need('app', [hanziFont]);
+		applyHanziVars(hanziVars(hanziFont, app.fonts.installed), document.documentElement);
+		app.fonts.need('app', [hanziFont]);
 	});
 
 	// The learner's time zone history (and, once per account, the browser
@@ -228,16 +214,16 @@
 	// loads it again instead of falling back to the browser zone.
 	// Not for a restricted session: the zone call would 403 and loop.
 	$effect(() => {
-		void syncStudyDayUser($restriction === null ? ($user?.id ?? null) : null);
+		void session?.zone.follow(app.auth.restriction === null ? (app.auth.user?.id ?? null) : null);
 	});
 
 	// One session event per workspace per learner day, recorded for whichever
 	// workspace is active once the list is in: the first one at load and any
 	// the user switches to or creates later (receipts keep it once a day).
 	$effect(() => {
-		const id = $workspacesLoaded ? ($workspaces.current?.id ?? null) : null;
+		const id = session?.workspaces.loaded ? (session.workspaces.current?.id ?? null) : null;
 		// The receipt is keyed by the learner day, so wait for the zone to settle.
-		if (id !== null) void recordSessionWhenSettled(id);
+		if (id !== null) void session?.events.recordSessionWhenSettled(id);
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so
@@ -245,7 +231,7 @@
 	// Open pages never redirect.
 	$effect(() => {
 		if (!booted) return;
-		const restrictedTo = restrictedTarget(path, $restriction);
+		const restrictedTo = restrictedTarget(path, app.auth.restriction);
 		if (restrictedTo !== null) {
 			void navigate(restrictedTo);
 			return;
@@ -255,6 +241,9 @@
 	});
 </script>
 
+<!-- A new session mounts a new page tree: nothing a page held of the
+     previous user survives a switch (record 0009). -->
+{#key app.session}
 {#if allowed}
 	<!-- First focusable element on every page: jumps past the bar. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>{t('nav.skipToContent')}</a>
@@ -311,15 +300,15 @@
 
 			<!-- Always in the DOM, so screen readers announce what arrives. -->
 			<div class="notice-region" role="status">
-				{#if signedIn && $notice}
+				{#if signedIn && session?.notices.text}
 					<p class="notice">
-						<span>{$notice}</span>
-						<button type="button" class="notice-dismiss" onclick={dismissNotice}>{t('app.notice.dismiss')}</button>
+						<span>{session.notices.text}</span>
+						<button type="button" class="notice-dismiss" onclick={() => session?.notices.dismiss()}>{t('app.notice.dismiss')}</button>
 					</p>
 				{/if}
 			</div>
 
-			{#if $logoutPrompt !== null}<LogoutDialog />{/if}
+			{#if app.logoutPrompt !== null}<LogoutDialog />{/if}
 
 			<!-- The one main landmark of every page (the skip link's target):
 			     pages bring plain containers, never their own <main>. -->
@@ -341,13 +330,14 @@
 			     (a nav landmark of its own). Phone only: the wrapper is display:
 			     none at 720px and wider. -->
 			<div class="phone" data-frame="phone-nav">
-				<BottomBar sections={barSections} bar={navLayoutStore.bar} {current} />
+				<BottomBar sections={barSections} bar={app.navLayout.bar} {current} />
 			</div>
 		{/if}
 	</div>
 {:else}
 	<p class="booting">{t('app.loading')}</p>
 {/if}
+{/key}
 
 <style>
 	/* The frame (#99, design §9 frame A): the window frame in --chrome holds

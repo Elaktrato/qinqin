@@ -10,7 +10,7 @@ import type { SourceCredit } from '$lib/sources/credits';
 import type { WidgetDef } from '$lib/widgets/types';
 import type { ContractManifest } from './contract';
 import { CORE_PLUGIN_ID } from './core/manifest';
-import type { PluginStatesValue } from './states';
+import type { PluginStatesValue } from './states.svelte';
 import GrammarPage from './grammar/GrammarPage.svelte';
 import { grammarManifest } from './grammar/manifest';
 import JournalPage from './journal/JournalPage.svelte';

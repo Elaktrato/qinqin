@@ -2,11 +2,12 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
-	import { logout } from '$lib/auth';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import TwoFactorSetup from '$lib/account/TwoFactorSetup.svelte';
 	import { Button } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Where a session that must enrol a second factor lands (the layout guard
 	// sends it here). Finishing makes the session a full one.
@@ -32,5 +33,5 @@
 	<h1>{t('auth.forced.mfaTitle')}</h1>
 	<p>{t('auth.forced.mfaIntro')}</p>
 	<TwoFactorSetup {options} forced onfinished={finished} />
-	<p class="hint"><Button variant="plain" onclick={() => logout()}>{t('auth.forced.signOutInstead')}</Button></p>
+	<p class="hint"><Button variant="plain" onclick={() => app.auth.logout()}>{t('auth.forced.signOutInstead')}</Button></p>
 </div>

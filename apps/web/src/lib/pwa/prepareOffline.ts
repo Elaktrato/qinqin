@@ -12,7 +12,7 @@ import { type StudyCardKind, type StudyHistory } from '../study/types';
 import { effectiveCardTypes, effectiveKinds, type ExtraChoices } from '../study/cardTypesMemory';
 import { enabledKinds } from '../study/deckSettings';
 import type { StudySessionConfig } from '../study/session';
-import type { OfflineState } from './offlineState';
+import type { OfflineState } from './offlineState.svelte';
 
 /** The API reads every page of the app shell needs, besides the study data. */
 export const OFFLINE_API_PATHS: readonly string[] = [

@@ -4,8 +4,6 @@
 	import {
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
-	import { user } from '$lib/auth';
-	import { outboxUser } from '$lib/study/outboxUser';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import {
@@ -13,6 +11,8 @@
 		restoreSentence, stageProblem, unresolvedLines, type StageView
 	} from './backupView';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Settings -> Account -> Your data: download everything you own, or
 	// replace it all from such a download. The restore is staged (uploaded
@@ -36,8 +36,8 @@
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let polls = 0;
 
-	const username = $derived($user?.username ?? '');
-	const hasTotp = $derived(!!$user?.mfa?.totp);
+	const username = $derived(app.auth.user?.username ?? '');
+	const hasTotp = $derived(!!app.auth.user?.mfa?.totp);
 	const ok = $derived(
 		canApply({ status: view?.status ?? 'invalid', report: view?.report ?? null, ackDrop, password, hasTotp, code, typed, username, busy })
 	);
@@ -79,7 +79,7 @@
 			return;
 		}
 		if (view.status === 'done') {
-			droppedReviews = storage ? clearLocalAfterRestore(storage, outboxUser()) : 0;
+			droppedReviews = storage ? clearLocalAfterRestore(storage, app.session?.user ?? null) : 0;
 			try {
 				if (typeof caches !== 'undefined') for (const k of await caches.keys()) await caches.delete(k);
 			} catch {

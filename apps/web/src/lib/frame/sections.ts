@@ -10,7 +10,7 @@
 import { t } from '$lib/i18n';
 import { coreFeatures, featureEnabled } from '$lib/features';
 import { visibleNavPages, webPlugins, type WebPlugin } from '$lib/plugins';
-import type { PluginStatesValue } from '$lib/plugins/states';
+import type { PluginStatesValue } from '$lib/plugins/states.svelte';
 import { ICONS, type IconName } from '$lib/ui/icons/lucide';
 
 export interface FrameSection {

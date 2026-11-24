@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
-import { createWorkerRegistration, type RegistrationEnv } from './register';
+import { createWorkerRegistration, type RegistrationEnv } from './register.svelte';
 
 class FakeWorker extends EventTarget {
 	state = 'installing';
@@ -39,7 +38,7 @@ describe('registration', () => {
 		const r = createWorkerRegistration(env(c, false));
 		await r.register();
 		expect(c.register).not.toHaveBeenCalled();
-		expect(get(r.updateAvailable)).toBe(false);
+		expect(r.updateAvailable).toBe(false);
 	});
 
 	it('does nothing without service worker support', async () => {
@@ -62,7 +61,7 @@ describe('registration', () => {
 		c.registration.dispatchEvent(new Event('updatefound'));
 		worker.state = 'installed';
 		worker.dispatchEvent(new Event('statechange'));
-		expect(get(r.updateAvailable)).toBe(false);
+		expect(r.updateAvailable).toBe(false);
 	});
 
 	it('an update installed behind a running worker offers a reload', async () => {
@@ -73,10 +72,10 @@ describe('registration', () => {
 		const worker = new FakeWorker();
 		c.registration.installing = worker;
 		c.registration.dispatchEvent(new Event('updatefound'));
-		expect(get(r.updateAvailable)).toBe(false);
+		expect(r.updateAvailable).toBe(false);
 		worker.state = 'installed';
 		worker.dispatchEvent(new Event('statechange'));
-		expect(get(r.updateAvailable)).toBe(true);
+		expect(r.updateAvailable).toBe(true);
 	});
 
 	it('an update already waiting at load offers a reload', async () => {
@@ -85,7 +84,7 @@ describe('registration', () => {
 		c.registration.waiting = new FakeWorker();
 		const r = createWorkerRegistration(env(c));
 		await r.register();
-		expect(get(r.updateAvailable)).toBe(true);
+		expect(r.updateAvailable).toBe(true);
 	});
 
 	it('apply posts skip-waiting and reloads exactly once, however many controllerchange events', async () => {
@@ -120,7 +119,7 @@ describe('registration', () => {
 		await r.register();
 		c.dispatchEvent(new Event('controllerchange')); // another tab sent skip-waiting
 		expect(e.reload).not.toHaveBeenCalled(); // never swaps code under an open page by itself
-		expect(get(r.updateAvailable)).toBe(true);
+		expect(r.updateAvailable).toBe(true);
 		r.apply(); // nothing is waiting any more: Reload just reloads
 		expect(e.reload).toHaveBeenCalledTimes(1);
 	});
@@ -139,6 +138,6 @@ describe('registration', () => {
 		c.register.mockRejectedValue(new Error('SecurityError'));
 		const r = createWorkerRegistration(env(c));
 		await expect(r.register()).resolves.toBeUndefined();
-		expect(get(r.updateAvailable)).toBe(false);
+		expect(r.updateAvailable).toBe(false);
 	});
 });

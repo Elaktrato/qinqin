@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry, Review } from './types';
@@ -8,9 +9,14 @@ vi.mock('./photoDraftStore', () => ({ loadDraft: vi.fn(() => null), clearDraft: 
 vi.mock('./api', () => ({ photoObjectUrl: vi.fn(async () => 'blob:x') }));
 
 import EntriesColumn from './EntriesColumn.svelte';
-import { clearJournalEntriesCache } from './journalEntries.svelte';
+
 import { listEntries, getReview } from './store';
 import { loadDraft } from './photoDraftStore';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function entry(id: string, date: string, title: string): JournalEntry {
 	return { id, date, title, text: '', source: 'typed', createdAt: `${date}T10:00:00Z`, updatedAt: `${date}T10:00:00Z` };
@@ -19,7 +25,6 @@ function entry(id: string, date: string, title: string): JournalEntry {
 const gate = { enabled: true, hint: null, settingsLink: false };
 
 beforeEach(() => {
-	clearJournalEntriesCache();
 	vi.mocked(listEntries).mockResolvedValue([entry('b', '2026-11-16', '週末'), entry('a', '2026-11-10', 'Dinner')]);
 	vi.mocked(getReview).mockImplementation(async (_ws, id) => (id === 'b' ? ({ entryId: 'b' } as Review) : null));
 	vi.mocked(loadDraft).mockReturnValue(null);
@@ -27,7 +32,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 function renderColumn(over: Record<string, unknown> = {}) {
-	return render(EntriesColumn, {
+	return render(EntriesColumn, { props: {
 		workspaceId: 1,
 		workspaceName: 'Chinese',
 		language: 'zh',
@@ -35,7 +40,7 @@ function renderColumn(over: Record<string, unknown> = {}) {
 		primaryNew: true,
 		onideas: vi.fn(),
 		...over
-	});
+	}, context: ctx.context });
 }
 
 describe('EntriesColumn (#103)', () => {
@@ -73,7 +78,6 @@ describe('EntriesColumn (#103)', () => {
 		renderColumn();
 		expect(await screen.findByRole('button', { name: 'Retry' })).toBeTruthy();
 		vi.mocked(listEntries).mockResolvedValueOnce([]);
-		clearJournalEntriesCache();
 		cleanup();
 		renderColumn();
 		expect(await screen.findByText(/No entries yet/)).toBeTruthy();

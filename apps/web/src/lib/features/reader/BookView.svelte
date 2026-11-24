@@ -4,12 +4,10 @@
 	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { record as recordEvent } from '$lib/events';
 	import { readPayload } from '$lib/eventPayloads';
-	import { setSettings, workspaces } from '$lib/workspaces';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
-	import { onStudyChange, loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+	import { onStudyChange, loadRawStudyData, loadStudyHistory, withStudy } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { contextForData } from '$lib/study/currentContext';
 	import { createReadingTimer } from './readingTimer';
@@ -92,8 +90,10 @@
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
 	import { LookupController } from './useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
-	import { lookupRecorder } from '$lib/lookups/store';
 	import { prepareVariant, type Variant } from './variants';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	let { id, chapter }: { id: number; chapter: number } = $props();
 
@@ -135,7 +135,7 @@
 	const sourceUrl = $derived(safeHttpUrl(book?.sourceUrl ?? ''));
 	// Words looked up in the book are added to study in the book's workspace.
 	const studyWorkspaceId = $derived(
-		book ? workspaceForBook(book, $workspaces.list, $workspaces.current) : null
+		book ? workspaceForBook(book, session.workspaces.list, session.workspaces.current) : null
 	);
 
 	// --- side rail ---
@@ -184,7 +184,7 @@
 	let display = $state(DEFAULT_DISPLAY);
 	let displayNotice = $state('');
 	let displayController: DisplayController | null = null;
-	const settingsOf = (wsId: number) => $workspaces.list.find((w) => w.id === wsId)?.settings ?? null;
+	const settingsOf = (wsId: number) => session.workspaces.list.find((w) => w.id === wsId)?.settings ?? null;
 
 	$effect(() => {
 		const wsId = studyWorkspaceId;
@@ -199,7 +199,7 @@
 			displayController = createDisplayController({
 				settings: () => settingsOf(wsId),
 				localFurigana: () => prefs.furigana,
-				save: (patch) => setSettings(wsId, patch),
+				save: (patch) => session.workspaces.setSettings(wsId, patch),
 				onError: (err) => (displayNotice = apiErrorMessage(err, 'display')),
 				onChange: (next) => (display = next)
 			});
@@ -208,7 +208,8 @@
 	});
 	// Settings changed elsewhere (another tab, the server's copy of our own save).
 	$effect(() => {
-		void $workspaces;
+		void session.workspaces.list;
+		void session.workspaces.current;
 		untrack(() => displayController?.adopt());
 	});
 	onDestroy(() => {
@@ -259,8 +260,8 @@
 		});
 		const loader = createLatestLoad(
 			async () => {
-				const data = await loadStudyHistory(wsId);
-				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
+				const data = await loadStudyHistory(session.study, wsId);
+				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(session.zone, data, wsId).clock);
 				return { index: knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known), decks: data.decks };
 			},
 			(v) => {
@@ -276,7 +277,7 @@
 		);
 		indexLoad = loader;
 		void loader.reload();
-		const off = onStudyChange((changed) => {
+		const off = onStudyChange(session.study, (changed) => {
 			if (changed === wsId) void loader.reload();
 		});
 		return () => {
@@ -340,13 +341,13 @@
 		textLang: () => textLang,
 		runsOf: (p) => paragraphs[p],
 		// The lookup history (#72), in the book's workspace like "+".
-		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
 	});
 	$effect(() => lookup.attach());
 	// One read of the history for the popup's "looked up N times" hint.
 	$effect(() => {
 		const ws = studyWorkspaceId;
-		if (ws !== null) void lookupRecorder().load(ws).catch(() => undefined);
+		if (ws !== null) void session.lookups.recorder.load(ws).catch(() => undefined);
 	});
 	// The text under a popup is re-rendered (chapter, script or furigana
 	// change): drop the popup rather than leave it pointing at nothing.
@@ -1038,15 +1039,15 @@
 			entryIds: ids,
 			target,
 			now: new Date(),
-			bases: (x) => loadEntryBases(x),
-			raw: () => loadRawStudyData(wsId),
-			push: pushStudy
+			bases: (x) => loadEntryBases(session.caches.entryBases, x),
+			raw: () => loadRawStudyData(session.study, wsId),
+			push: withStudy(session.study, pushStudy)
 		}));
 	}
 	function markFromPanel(ids: number[]) {
 		const wsId = bookWorkspace();
 		return batched(async () => {
-			const res = await markWords({ workspaceId: wsId, entryIds: ids, marked: index.marks, on: true, set: setKnownMarks });
+			const res = await markWords({ workspaceId: wsId, entryIds: ids, marked: index.marks, on: true, set: withStudy(session.study, setKnownMarks) });
 			return { written: res.written, undo: () => batched(res.undo) };
 		});
 	}
@@ -1081,17 +1082,24 @@
 		const send = (): void => {
 			const seconds = timer.flush(Date.now());
 			if (seconds > 0 && workspaceId !== null) {
-				void recordEvent('read', workspaceId, readPayload(bookId, seconds));
+				void session.events.record('read', workspaceId, readPayload(bookId, seconds));
 			}
 		};
-		// subscribe() calls back at once with the current selection.
-		const unsubscribe = workspaces.subscribe((state) => {
-			const next = workspaceForBook(ref, state.list, state.current);
-			if (next === workspaceId) return;
-			send();
-			workspaceId = next;
-			timer = createReadingTimer();
-			if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+		// The book's workspace now, and again whenever the selection changes
+		// (a root of its own, so this effect does not re-run on a change).
+		const pick = (): number | null => workspaceForBook(ref, session.workspaces.list, session.workspaces.current);
+		workspaceId = untrack(pick);
+		const unsubscribe = $effect.root(() => {
+			$effect(() => {
+				const next = pick();
+				untrack(() => {
+					if (next === workspaceId) return;
+					send();
+					workspaceId = next;
+					timer = createReadingTimer();
+					if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+				});
+			});
 		});
 		const feed = (): void => {
 			if (workspaceId === null) return;

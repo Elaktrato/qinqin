@@ -1,20 +1,17 @@
 // The real dependencies of offline preparation, and the one call the app
 // shell makes. Kept out of prepareOffline.ts so that module stays pure.
 
-import { get } from 'svelte/store';
 import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
-import { user } from '../auth';
+import type { AppContext } from '../context/app.svelte';
 import { contextForData } from '../study/currentContext';
 import { loadConfig } from '../study/session';
 import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/cardTypesMemory';
 import { studyPullPages, loadStudyHistory } from '../study/data';
 import { activeWeights } from '../study/readModel';
 import { fetchStrokeData } from '../study/strokeData';
-import { workspaces } from '../workspaces';
 import { ownPartition } from './partitions';
 import { normalizeUrl } from './sw/classify';
-import { setPrepared } from './offlineState';
 import { prepareOffline } from './prepareOffline';
 
 function controlled(): boolean {
@@ -43,30 +40,34 @@ async function cachedInPartition(path: string): Promise<boolean> {
 }
 
 /** prepareActiveWorkspace: best effort, never throws, never blocks the page. */
-export async function prepareActiveWorkspace(): Promise<void> {
-	const me = get(user);
-	const ws = get(workspaces).current;
-	if (me === null || ws === null || ws === undefined) return;
+export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
+	const me = app.auth.user;
+	const session = app.session;
+	const ws = session?.workspaces.current ?? null;
+	if (me === null || session === null || ws === null) return;
 	await prepareOffline(ws.id, {
 		userId: me.id,
 		// A full round: the worker saves full rounds for offline study, never a delta (#193).
-		loadHistory: (id) => loadStudyHistory(id, { full: true }),
+		loadHistory: (id) => loadStudyHistory(session.study, id, { full: true }),
 		config: loadConfig,
 		tabTypes: () => (hasTabSetup() ? loadConfig().cardTypes : null),
 		remembered: () => loadRememberedTypes(ws.id),
 		choices: () => loadExtraChoices(ws.id),
 		language: ws.language,
-		contextFor: (data, id, now) => contextForData(data, id, now),
+		contextFor: (data, id, now) => contextForData(session.zone, data, id, now),
 		weights: (data) => activeWeights(data),
 		fetchEntry: (id) => getEntry(id),
-		fetchStroke: (ch) => fetchStrokeData(ch),
-		fetchApi: (path) => api(path),
-		pullPages: studyPullPages,
+		fetchStroke: (ch) => fetchStrokeData(session.caches.strokes, ch),
+		fetchApi: (path) => (session.alive ? api(path) : Promise.reject(new Error('the session ended'))),
+		pullPages: (id) => studyPullPages(session.study, id),
 		storage: typeof localStorage === 'undefined' ? null : localStorage,
 		now: () => Date.now(),
-		canPrepare: controlled,
+		canPrepare: () => session.alive && controlled(),
 		partition: currentPartition,
 		isCached: cachedInPartition,
-		onPrepared: setPrepared
+		// The prepared count belongs to this session's banner, not the next one's.
+		onPrepared: (prepared) => {
+			if (app.session === session && session.alive) app.offline.setPrepared(prepared);
+		}
 	});
 }

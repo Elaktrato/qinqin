@@ -16,9 +16,11 @@
 	import NavDrawer from './NavDrawer.svelte';
 	import AccountMenu from './AccountMenu.svelte';
 	import type { PhoneMode } from './navLayout';
-	import { pageFrame, phoneTitle } from './pageFrame.svelte';
+	import { phoneTitle } from './pageFrame.svelte';
 	import type { FrameSection } from './sections';
 	import WorkspaceMenu from './WorkspaceMenu.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
 		sections,
@@ -30,7 +32,7 @@
 	const drawerId = `${uid}-drawer`;
 	let open = $state(false);
 
-	const title = $derived(phoneTitle(pageFrame.title, current, sections, page.url?.pathname ?? '/'));
+	const title = $derived(phoneTitle(app.frame.title, current, sections, page.url?.pathname ?? '/'));
 
 	// A navigation (a link, Back, a redirect) closes the drawer.
 	let lastPath: string | undefined;
@@ -73,7 +75,7 @@
 		/>
 	{/if}
 	<span class="title">{title}</span>
-	{#if pageFrame.actions}<span class="actions">{@render pageFrame.actions()}</span>{/if}
+	{#if app.frame.actions}<span class="actions">{@render app.frame.actions()}</span>{/if}
 	<WorkspaceMenu />
 	{#if mode === 'bar'}<AccountMenu />{/if}
 </div>

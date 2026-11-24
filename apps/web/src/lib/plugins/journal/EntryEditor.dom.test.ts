@@ -1,3 +1,9 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry, Review } from './types';
@@ -5,10 +11,10 @@ import { textHash } from './textHash';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), beforeNavigate: vi.fn() }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/p/journal/e/e1') } }));
-vi.mock('$lib/frame/pageFrame.svelte', () => ({ setFrameTitle: vi.fn(), setPageActions: vi.fn() }));
-vi.mock('$lib/time/zone', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/time/zone')>()),
-	currentStudyDay: () => ({ dayOf: () => '2026-11-16', today: () => '2026-11-16' })
+vi.mock('$lib/frame/pageFrame.svelte', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/frame/pageFrame.svelte')>()),
+	setFrameTitle: vi.fn(),
+	setPageActions: vi.fn()
 }));
 vi.mock('./store', () => ({
 	getEntry: vi.fn(),
@@ -30,6 +36,16 @@ import EntryEditor from './EntryEditor.svelte';
 import { getEntry, getReview, saveEntry, deleteEntry } from './store';
 import { requestReview } from './api';
 import { goto } from '$app/navigation';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const text = '我昨天去学校。';
 const entry: JournalEntry = {
@@ -74,7 +90,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 async function renderEditor(over: Record<string, unknown> = {}) {
-	render(EntryEditor, {
+	render(EntryEditor, { props: {
 		workspaceId: 1,
 		entryId: 'e1',
 		initialTitle: '',
@@ -82,7 +98,7 @@ async function renderEditor(over: Record<string, unknown> = {}) {
 		aiBanner: null,
 		language: 'zh',
 		...over
-	});
+	}, context: ctx.context });
 	await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeTruthy());
 }
 

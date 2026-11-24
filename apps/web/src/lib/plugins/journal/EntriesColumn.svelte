@@ -14,6 +14,8 @@
 	import { journalEntriesFor } from './journalEntries.svelte';
 	import { clearDraft, loadDraft } from './photoDraftStore';
 	import { journalHref } from './route';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		workspaceId,
@@ -31,7 +33,7 @@
 		onideas: () => void;
 	} = $props();
 
-	const store = $derived(journalEntriesFor(workspaceId));
+	const store = $derived(journalEntriesFor(session.caches.journalEntries, workspaceId));
 	let resumable = $state(false);
 
 	$effect(() => {

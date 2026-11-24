@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,9 +10,12 @@ import { onContextStale } from '$lib/study/currentContext';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
 import { weekOf } from '$lib/weekly/week';
-import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import WeeklySummaryWidget from './WeeklySummaryWidget.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function view(reviews: number | null = 12, activityError: string | null = null): WeekView {
 	const summary: WeekSummary = {
@@ -51,7 +55,7 @@ function deferred<T>() {
 }
 
 function select(id: number | null): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: id === null ? null : ({ id, language: 'zh', name: `w${id}` } as never)
 	});
@@ -70,10 +74,10 @@ afterEach(() => {
 
 describe('WeeklySummaryWidget', () => {
 	it('shows the compact current week and links to the Week tab', async () => {
-		const { container } = render(WeeklySummaryWidget);
+		const { container } = render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
-		const monday = weekOf(currentStudyDay().today());
-		expect(loadWeek).toHaveBeenCalledWith(1, monday, { force: false });
+		const monday = weekOf(ctx.session.zone.day().today());
+		expect(loadWeek).toHaveBeenCalledWith(expect.anything(), 1, monday, { force: false });
 		expect([...container.querySelectorAll('dt')].map((t) => t.textContent)).toEqual([
 			'Reviews',
 			'New cards',
@@ -89,35 +93,35 @@ describe('WeeklySummaryWidget', () => {
 
 	it('asks for a workspace without one', async () => {
 		select(null);
-		render(WeeklySummaryWidget);
+		render(WeeklySummaryWidget, { context: ctx.context });
 		expect(await screen.findByText('Choose a workspace in the header to see your week.')).toBeTruthy();
 		expect(loadWeek).not.toHaveBeenCalled();
 	});
 
 	it('shows the error with Try again, which forces a reload', async () => {
 		vi.mocked(loadWeek).mockRejectedValueOnce(new Error('broken'));
-		render(WeeklySummaryWidget);
+		render(WeeklySummaryWidget, { context: ctx.context });
 		const retry = await screen.findByRole('button', { name: 'Try again' });
 		retry.click();
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
-		expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[2]).toEqual({ force: true });
+		expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[3]).toEqual({ force: true });
 	});
 
 	it('offline: the local rows and a Retry', async () => {
 		vi.mocked(loadWeek).mockResolvedValue(view(null, 'You are offline.'));
-		render(WeeklySummaryWidget);
+		render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('Not available offline'));
 		expect(screen.getByText('1')).toBeTruthy();
 		expect(screen.getByText('10 min (flashcards only)')).toBeTruthy();
 		screen.getByRole('button', { name: 'Retry' }).click();
-		await waitFor(() => expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[2]).toEqual({ force: true }));
+		await waitFor(() => expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[3]).toEqual({ force: true }));
 	});
 
 	it('drops a stale answer after a workspace switch', async () => {
 		const first = deferred<WeekView>();
 		const second = deferred<WeekView>();
 		vi.mocked(loadWeek).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
-		render(WeeklySummaryWidget);
+		render(WeeklySummaryWidget, { context: ctx.context });
 		await tick();
 		select(2);
 		await tick();
@@ -130,10 +134,10 @@ describe('WeeklySummaryWidget', () => {
 	});
 
 	it('reloads when the learner day changes', async () => {
-		render(WeeklySummaryWidget);
+		render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
 		vi.mocked(loadWeek).mockResolvedValueOnce(view(30));
-		vi.mocked(onContextStale).mock.calls[0][0]();
+		vi.mocked(onContextStale).mock.calls[0][1]();
 		await waitFor(() => expect(reviewsValue()).toBe('30'));
 	});
 });

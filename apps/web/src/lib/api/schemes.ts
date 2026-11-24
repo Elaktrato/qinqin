@@ -1,7 +1,8 @@
-import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
 import type { SchemeLevelMembers } from '$lib/study/charGroups';
 import type { EntryBase, Scheme } from './types';
+import type { SchemeCache } from '../context/caches';
+
 
 /**
  * getSchemes queries GET /api/schemes: every installed level scheme with
@@ -34,15 +35,6 @@ interface SchemeCharactersBody {
 // loaded scheme stays in memory for the session; revalidation across
 // visits is the browser cache's job (the server sends a weak ETag with
 // `max-age=0, must-revalidate`). Concurrent callers share one request.
-const loadedSchemes = new Map<number, SchemeLevelMembers[]>();
-const pendingSchemes = new Map<number, Promise<SchemeLevelMembers[]>>();
-onSessionEnd(() => clearSchemeCharactersCache());
-
-/** clearSchemeCharactersCache forgets every loaded scheme (tests, sign-out). */
-export function clearSchemeCharactersCache(): void {
-	loadedSchemes.clear();
-	pendingSchemes.clear();
-}
 
 function toLevels(body: SchemeCharactersBody | null): SchemeLevelMembers[] {
 	const raw = Array.isArray(body?.levels) ? body.levels : [];
@@ -72,25 +64,25 @@ function toLevels(body: SchemeCharactersBody | null): SchemeLevelMembers[] {
  * memory; concurrent callers share one request; errors are not cached
  * (HTTP errors arrive as ApiError).
  */
-export function fetchSchemeCharacters(schemeId: number): Promise<SchemeLevelMembers[]> {
-	const cached = loadedSchemes.get(schemeId);
+export function fetchSchemeCharacters(cache: SchemeCache, schemeId: number): Promise<SchemeLevelMembers[]> {
+	const cached = cache.loadedSchemes.get(schemeId);
 	if (cached !== undefined) return Promise.resolve(cached);
-	const inFlight = pendingSchemes.get(schemeId);
+	const inFlight = cache.pendingSchemes.get(schemeId);
 	if (inFlight !== undefined) return inFlight;
 	const promise = api<SchemeCharactersBody | null>(`/api/schemes/${schemeId}/characters`).then(
 		(body) => {
 			const levels = toLevels(body);
-			if (pendingSchemes.get(schemeId) === promise) {
-				pendingSchemes.delete(schemeId);
-				loadedSchemes.set(schemeId, levels);
+			if (cache.pendingSchemes.get(schemeId) === promise) {
+				cache.pendingSchemes.delete(schemeId);
+				cache.loadedSchemes.set(schemeId, levels);
 			}
 			return levels;
 		},
 		(error: unknown) => {
-			if (pendingSchemes.get(schemeId) === promise) pendingSchemes.delete(schemeId);
+			if (cache.pendingSchemes.get(schemeId) === promise) cache.pendingSchemes.delete(schemeId);
 			throw error;
 		}
 	);
-	pendingSchemes.set(schemeId, promise);
+	cache.pendingSchemes.set(schemeId, promise);
 	return promise;
 }

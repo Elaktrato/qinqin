@@ -8,6 +8,8 @@
 	import { addDeckFromOverview } from './addDeckFromOverview';
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Level decks of the installed level packs, grouped by scheme and
 	// collapsed. Nothing here is stored or editable: a level's items are
@@ -70,7 +72,7 @@
 		const key = keyOf(deck);
 		const current = items[key];
 		if (Array.isArray(current)) return;
-		loadLevelItems(deck).then(
+		loadLevelItems(session.caches.levelItems, deck).then(
 			(list) => (items = { ...items, [key]: list }),
 			() => (items = { ...items, [key]: 'error' })
 		);
@@ -105,7 +107,7 @@
 		notes = { ...notes, [key]: '' };
 		errors = { ...errors, [key]: '' };
 		try {
-			const plan = await addDeckFromOverview({
+			const plan = await addDeckFromOverview(session.study, {
 				workspaceId,
 				items: list.map((entry) => ({
 					entryId: entry.id,

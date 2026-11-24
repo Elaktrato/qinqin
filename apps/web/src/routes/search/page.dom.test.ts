@@ -1,3 +1,6 @@
+import { EventLog } from '$lib/events';
+import type { MockInstance } from 'vitest';
+import { testContext, type TestContext, workspacesState } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,11 +14,6 @@ vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(async () => []),
 	getSharedEntry: vi.fn()
-}));
-vi.mock('$lib/events', () => ({
-	record: vi.fn(),
-	loadWorkspaceEvents: vi.fn(async () => []),
-	onEventLogChange: vi.fn(() => () => {})
 }));
 vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
@@ -31,14 +29,25 @@ vi.mock('$lib/api/frequency', () => ({
 
 import { goto } from '$app/navigation';
 import { getEntry } from '$lib/api/entries';
-import { record } from '$lib/events';
 import { recordLookup } from '$lib/lookups/sink';
 import { search } from '$lib/api/search';
 import { getSchemes } from '$lib/api/schemes';
 import { PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
+
+// The session's event log (record 0009): its methods, faked on the class.
+let record!: MockInstance<EventLog['record']>;
+beforeEach(() => {
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
+	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const searchMock = vi.mocked(search);
 const getEntryMock = vi.mocked(getEntry);
@@ -99,7 +108,7 @@ beforeEach(() => {
 	setUrl('/search');
 	setViewport(true);
 	getEntryMock.mockRejectedValue(new Error('no entry stubbed'));
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -115,7 +124,7 @@ describe('search page', () => {
 	it('mirrors the URL query into the input and searches it', async () => {
 		searchMock.mockResolvedValue([hit(1, '你好')]);
 		setUrl('/search?q=nihao');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = screen.getByLabelText('Search entries') as HTMLInputElement;
 		await waitFor(() => expect(input.value).toBe('nihao'));
 		expect(searchMock).toHaveBeenCalledWith('zh', 'nihao', expect.anything());
@@ -123,7 +132,7 @@ describe('search page', () => {
 	});
 
 	it('submitting navigates to the trimmed query', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = screen.getByLabelText('Search entries');
 		await fireEvent.input(input, { target: { value: '  ni  ' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -133,7 +142,7 @@ describe('search page', () => {
 	it('with e the split marks the selection and links back to the list', async () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		setUrl('/search?q=qin&e=7');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('勤奋');
 		expect(document.querySelector('.split')?.classList.contains('has-selection')).toBe(true);
 		const back = screen.getByRole('link', { name: 'Back to results' });
@@ -146,7 +155,7 @@ describe('search page', () => {
 			id === 9 ? entry(9, '覆') : entry(7, '勤奋')
 		);
 		setUrl('/search?q=cover&e=9');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const heading = await screen.findByRole('heading', { level: 2, name: '覆' });
 		expect(heading.textContent).toBe('覆');
 		await waitFor(() => expect(record).toHaveBeenCalledWith('view', 1, { entryId: 9 }));
@@ -157,7 +166,7 @@ describe('search page', () => {
 	it('with e and no q shows the entry, its Back link and no search', async () => {
 		getEntryMock.mockResolvedValue(entry(9, '覆'));
 		setUrl('/search?e=9');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
 		expect(searchMock).not.toHaveBeenCalled();
 		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe('/search');
@@ -168,7 +177,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([]);
 		getEntryMock.mockResolvedValue(entry(9, '覆'));
 		setUrl('/search?q=cover&kind=character&e=9');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
 		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe(
 			'/search?q=cover&kind=character'
@@ -179,7 +188,7 @@ describe('search page', () => {
 		searchMock.mockRejectedValue(new Error('search down'));
 		getEntryMock.mockResolvedValue(entry(9, '覆'));
 		setUrl('/search?q=cover&e=9');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
 		expect(screen.getByRole('alert')).toBeTruthy();
 		expect(screen.getByRole('link', { name: 'Back to results' })).toBeTruthy();
@@ -190,7 +199,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
 		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { level: 2, name: '勤奋' })).toBeTruthy();
 		expect(screen.queryByRole('link', { name: 'Back to results' })).toBeNull();
 		expect(document.querySelector('[aria-current="true"]')).toBeNull();
@@ -201,7 +210,7 @@ describe('search page', () => {
 	it('clicking a result selects it in the URL and records one lookup', async () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: '勤奋' });
 		await fireEvent.click(link);
 		expect(vi.mocked(goto).mock.calls[0][0]).toBe('/search?q=qin&e=7');
@@ -212,7 +221,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: '勤奋' });
 		await fireEvent.click(link);
 		expect(vi.mocked(goto).mock.calls[0][1]).toEqual({
@@ -231,7 +240,7 @@ describe('search page', () => {
 		setViewport(false);
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: '勤奋' });
 		link.focus();
 		await fireEvent.click(link);
@@ -246,7 +255,7 @@ describe('search page', () => {
 	it('Arrow keys, Home and End move between rows; one row is the tab stop', async () => {
 		searchMock.mockResolvedValue([hit(1, 'a'), hit(2, 'b'), hit(3, 'c')]);
 		setUrl('/search?q=x');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const rows = await screen.findAllByRole('link', { name: /^[abc]$/ });
 		expect(rows.map((r) => r.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
 		rows[0].focus();
@@ -266,7 +275,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
 		getEntryMock.mockResolvedValue(entry(8, '勤劳'));
 		setUrl('/search?q=qin&e=8');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { level: 2, name: '勤劳' });
 		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe('/search?q=qin');
 		// Follow the link as the browser would.
@@ -280,7 +289,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
 		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const status = await screen.findByRole('status');
 		await waitFor(() => expect(status.textContent).toBe('2 results for “qin”.'));
 		await fireEvent.click(await screen.findByRole('link', { name: '勤奋' }));
@@ -292,7 +301,7 @@ describe('search page', () => {
 		const second = deferred<SearchHit[]>();
 		searchMock.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 		setUrl('/search?q=a');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await tick();
 		setUrl('/search?q=b');
 		await tick();
@@ -308,7 +317,7 @@ describe('search page', () => {
 	it('announces the result count in a polite live region', async () => {
 		searchMock.mockResolvedValue([hit(1, 'a'), hit(2, 'b')]);
 		setUrl('/search?q=x');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const status = await screen.findByRole('status');
 		await waitFor(() => expect(status.textContent).toBe('2 results for “x”.'));
 		expect(status.getAttribute('aria-live')).toBe('polite');
@@ -317,7 +326,7 @@ describe('search page', () => {
 	it('announces an empty result and a single result', async () => {
 		searchMock.mockResolvedValueOnce([hit(1, 'a')]);
 		setUrl('/search?q=x');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const status = await screen.findByRole('status');
 		await waitFor(() => expect(status.textContent).toBe('1 result for “x”.'));
 		searchMock.mockResolvedValueOnce([]);
@@ -328,7 +337,7 @@ describe('search page', () => {
 	it('submitting the same query again searches again (a refresh)', async () => {
 		searchMock.mockResolvedValue([hit(1, 'a')]);
 		setUrl('/search?q=ni');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('a');
 		expect(searchMock).toHaveBeenCalledTimes(1);
 		const input = screen.getByLabelText('Search entries');
@@ -341,7 +350,7 @@ describe('search page', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
 		setUrl('/search?q=qin&e=7');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { level: 2, name: '勤奋' });
 		const input = screen.getByLabelText('Search entries');
 		await fireEvent.submit(input.closest('form')!);
@@ -351,7 +360,7 @@ describe('search page', () => {
 	it('puts the trimmed query back into the input on submit', async () => {
 		searchMock.mockResolvedValue([]);
 		setUrl('/search?q=ni');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = screen.getByLabelText('Search entries') as HTMLInputElement;
 		await waitFor(() => expect(input.value).toBe('ni'));
 		await fireEvent.input(input, { target: { value: '  ni  ' } });
@@ -363,7 +372,7 @@ describe('search page', () => {
 		const rejected = Promise.reject(new Error('superseded'));
 		const handled = vi.spyOn(rejected, 'catch');
 		vi.mocked(goto).mockReturnValueOnce(rejected as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const input = screen.getByLabelText('Search entries');
 		await fireEvent.input(input, { target: { value: 'ni' } });
 		await fireEvent.submit(input.closest('form')!);
@@ -373,23 +382,23 @@ describe('search page', () => {
 	it('says when the result list is capped at 50', async () => {
 		searchMock.mockResolvedValue(Array.from({ length: 50 }, (_, i) => hit(i + 1, `w${i}`)));
 		setUrl('/search?q=x');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/Showing the first 50 results/)).toBeTruthy();
 	});
 
 	it('says workspaces are loading, not that none is selected, while they load', async () => {
-		workspaces.set({ list: [], current: null });
-		workspacesLoaded.set(false);
-		render(Page);
+		ctx.session.workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), false);
+		render(Page, { context: ctx.context });
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
 			'Loading workspaces…'
 		);
 	});
 
 	it('disables the search input and says why when there is no workspace', async () => {
-		workspaces.set({ list: [], current: null });
-		workspacesLoaded.set(true);
-		render(Page);
+		ctx.session.workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), true);
+		render(Page, { context: ctx.context });
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
 			'Select a workspace to search'
 		);
@@ -398,12 +407,12 @@ describe('search page', () => {
 	});
 
 	it('links the radical and part lookup in ja and zh workspaces only', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: 'By parts' });
 		expect(link.getAttribute('href')).toBe('/search/parts');
 		cleanup();
-		workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
-		render(Page);
+		ctx.session.workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
+		render(Page, { context: ctx.context });
 		await tick();
 		expect(screen.queryByRole('link', { name: 'By parts' })).toBeNull();
 	});
@@ -411,7 +420,7 @@ describe('search page', () => {
 	it('records no lookup event for a query (#72)', async () => {
 		searchMock.mockResolvedValue([hit(1, '你好')]);
 		setUrl('/search?q=nihao');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('你好');
 		expect(record).not.toHaveBeenCalled();
 		expect(recordLookup).not.toHaveBeenCalled();
@@ -420,15 +429,15 @@ describe('search page', () => {
 	it('opening a result records it once in the lookup history, source search', async () => {
 		searchMock.mockResolvedValue([hit(7, '你好'), hit(8, '世界')]);
 		setUrl('/search?q=ni');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByText('你好');
 		link.addEventListener('click', (e) => e.preventDefault());
 		await fireEvent.click(link);
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 	});
 
 	it('links the lookup history', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
 		const source = (await import('./+page.svelte?raw')).default as string;
 		expect(source).toMatch(/\.parts-link a\s*\{[^}]*color:\s*var\(--reading-accent\)/);
@@ -438,22 +447,22 @@ describe('search page', () => {
 	it('a middle-click open records too; a right-button auxclick does not', async () => {
 		searchMock.mockResolvedValue([hit(7, '你好')]);
 		setUrl('/search?q=ni');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByText('你好');
 		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 2 }));
 		expect(recordLookup).not.toHaveBeenCalled();
 		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 	});
 
 	it('a middle-click records the lookup and leaves the browser to open its tab', async () => {
 		searchMock.mockResolvedValue([hit(7, '你好')]);
 		setUrl('/search?q=ni');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const link = await screen.findByText('你好');
 		const event = new MouseEvent('auxclick', { bubbles: true, cancelable: true, button: 1 });
 		expect(link.dispatchEvent(event)).toBe(true);
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 		expect(goto).not.toHaveBeenCalled();
 	});
 });
@@ -475,7 +484,7 @@ describe('the search field and filters (#104)', () => {
 	];
 
 	it('is an underline field with a named submit IconButton and a By parts IconButton', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const form = screen.getByRole('search');
 		const input = screen.getByLabelText('Search entries');
 		expect(form.contains(input)).toBe(true);
@@ -489,7 +498,7 @@ describe('the search field and filters (#104)', () => {
 	it('All, Words and Characters are text buttons with aria-pressed; All clears the kind', async () => {
 		searchMock.mockResolvedValue([]);
 		setUrl('/search?q=x&kind=word');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const all = await screen.findByRole('button', { name: 'All' });
 		expect(all.getAttribute('aria-pressed')).toBe('false');
 		expect(screen.getByRole('button', { name: 'Words' }).getAttribute('aria-pressed')).toBe('true');
@@ -502,7 +511,7 @@ describe('the search field and filters (#104)', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
 		setUrl('/search?q=x&e=7');
-		render(Page);
+		render(Page, { context: ctx.context });
 		const trigger = await screen.findByRole('button', { name: /Level: any/ });
 		await fireEvent.click(trigger);
 		expect(screen.getByRole('menuitemradio', { name: 'Any level' })).toBeTruthy();
@@ -512,7 +521,7 @@ describe('the search field and filters (#104)', () => {
 
 	it('Escape in the level Menu returns focus to its button', async () => {
 		vi.mocked(getSchemes).mockResolvedValue(schemes as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const trigger = await screen.findByRole('button', { name: /Level: any/ });
 		await fireEvent.click(trigger);
 		await fireEvent.keyDown(await screen.findByRole('menu'), { key: 'Escape' });
@@ -520,11 +529,11 @@ describe('the search field and filters (#104)', () => {
 	});
 
 	it('shows Clear filters only when a filter is set', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
 		cleanup();
 		setUrl('/search?q=x&kind=word');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('button', { name: 'Clear filters' })).toBeTruthy();
 	});
 
@@ -548,7 +557,7 @@ describe('the search layout switch (#104)', () => {
 	it('does not fetch the preview that the phone hides', async () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		setUrl('/search?q=qin');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('link', { name: '勤奋' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(getEntryMock).not.toHaveBeenCalled();
@@ -559,7 +568,7 @@ describe('the search layout switch (#104)', () => {
 		searchMock.mockResolvedValue([hit(7, '勤奋')]);
 		getEntryMock.mockRejectedValue(new (await import('$lib/api/client')).ApiError(404, 'not found'));
 		setUrl('/search?q=qin&kind=word&e=999');
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('heading', { level: 2, name: 'Entry not found' })).toBeTruthy();
 		expect(screen.getByRole('link', { name: 'Back to search' }).getAttribute('href')).toBe(
 			'/search?q=qin&kind=word'
@@ -569,7 +578,7 @@ describe('the search layout switch (#104)', () => {
 
 describe('search page a11y names (#104)', () => {
 	it('names every icon-only button and gives it a tooltip', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		const iconButtons = screen
 			.getAllByRole('button')
 			.filter((b) => (b.textContent ?? '').trim() === '');

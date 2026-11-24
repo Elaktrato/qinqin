@@ -12,7 +12,6 @@
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
@@ -41,7 +40,6 @@ import type { VacationPeriod } from '$lib/study/vacation';
 import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -75,6 +73,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudyCardKind,
 		GENERAL_DECK_ID
 	} from '$lib/study/types';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
 		const active = data.fsrs?.active;
@@ -106,7 +107,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// Vacation days and the study clock of the active workspace.
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
@@ -219,14 +220,14 @@ import { limitsOf } from '$lib/study/scheduler';
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(workspaceId);
+			const data = await loadStudyData(session.study, workspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, workspaceId);
+			ctx = contextForData(session.zone, data, workspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
@@ -250,14 +251,14 @@ import { limitsOf } from '$lib/study/scheduler';
 		if (activeWorkspaceId === null) return;
 		const seq = requestSeq;
 		try {
-			const data = await loadStudyData(activeWorkspaceId);
+			const data = await loadStudyData(session.study, activeWorkspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, activeWorkspaceId);
+			ctx = contextForData(session.zone, data, activeWorkspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
@@ -266,13 +267,13 @@ import { limitsOf } from '$lib/study/scheduler';
 	}
 
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void refreshData()));
+	$effect(() => onContextStale(session.zone, () => void refreshData()));
 
 	// A change of the workspace's study rows (a write elsewhere on the page, or a
 	// row another device wrote in the second of the load, which the cache's
 	// follow-up round brings, #193) reloads the counts without a new visit.
 	$effect(() =>
-		onStudyChange((changed) => {
+		onStudyChange(session.study, (changed) => {
 			if (touches(changed, activeWorkspaceId)) void refreshData();
 		})
 	);
@@ -302,7 +303,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
 	$effect(() => {
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 
@@ -405,7 +406,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			schemeCharacters = [];
 			return;
 		}
-		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+		Promise.all([fetchSchemeCharacters(session.caches.schemes, scheme.id), fetchCharacters(session.caches.characters, scheme.language)]).then(
 			([levels, list]) => {
 				if (seq !== schemeCharactersSeq) return;
 				schemeCharacters = levels;
@@ -703,7 +704,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			rememberExtraChoice(ws, kind, next);
 			typeSaving = id;
 			try {
-				const saved = await saveDeckCardTypesForDecks(
+				const saved = await saveDeckCardTypesForDecks(session.study, 
 					ws,
 					allDecks.map((deck) => deck.id),
 					kind,
@@ -758,7 +759,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		creating = true;
 		deckError = '';
 		try {
-			const deck = await createDeck(ws, name);
+			const deck = await createDeck(session.study, ws, name);
 			if (activeWorkspaceId !== ws) return;
 			decks = [...decks, deck];
 			// A deck the user just made is almost certainly one they want
@@ -795,7 +796,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		if (ws === null) return;
 		deckError = '';
 		try {
-			const renamed = await renameDeck(ws, id, name);
+			const renamed = await renameDeck(session.study, ws, id, name);
 			if (activeWorkspaceId !== ws) return;
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
@@ -816,7 +817,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		deletingId = deck.id;
 		deckError = '';
 		try {
-			await deleteDeck(ws, deck.id);
+			await deleteDeck(session.study, ws, deck.id);
 			if (activeWorkspaceId !== ws) return;
 			decks = decks.filter((item) => item.id !== deck.id);
 			// Mirror the store's reassignment locally so the counts do not
@@ -910,7 +911,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
 	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
-	{#if $workspaces.current && usesHan($workspaces.current.language)}
+	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 

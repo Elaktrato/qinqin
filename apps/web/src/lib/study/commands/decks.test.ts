@@ -1,3 +1,4 @@
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 // Deck commands (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,8 +9,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock("$app/navigation", () => ({ goto }));
 
-import { workspaces } from "$lib/workspaces";
-import { setOutboxUser } from "$lib/study/outboxUser";
 import { rememberSent } from "$lib/study/recentSent";
 import { gradeItem } from "$lib/study/grade";
 import type { StudyEvent } from "$lib/events";
@@ -51,10 +50,9 @@ import { DEFAULT_W, type ParamSet } from "$lib/study/fsrs/params";
 import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';
 import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "$lib/study/rows";
 import * as build from '$lib/testing/study';
-import { endSession } from "$lib/session/sessionEnd";
 
 // Every test starts a session of its own: the study cache holds nothing.
-beforeEach(() => endSession("signOut"));
+beforeEach(() => newSession(ctx));
 import {
   PLUGIN_ID,
   WORKSPACE_ID,
@@ -66,7 +64,6 @@ import {
   pluginRow,
   deck,
   card,
-  selectWorkspace,
   calls,
   putBodies,
   pushBodies,
@@ -84,6 +81,11 @@ import {
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
 
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
+
 
 describe("deck commands", () => {
   useStudyStoreMocks();
@@ -92,7 +94,7 @@ describe("deck commands", () => {
     it("writes a ULID-keyed deck scoped to the current workspace", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
 
-      const created = await createDeck(WORKSPACE_ID, "  HSK 3  ");
+      const created = await createDeck(ctx.session.study, WORKSPACE_ID, "  HSK 3  ");
 
       expect(created.id).toMatch(ULID);
       expect(created.name).toBe("  HSK 3  ");
@@ -114,9 +116,8 @@ describe("deck commands", () => {
     });
 
     it("fails without writing when no workspace id is given (#174)", async () => {
-      selectWorkspace(null);
 
-      await expect(createDeck(0, "HSK 3")).rejects.toThrow(/workspace/i);
+      await expect(createDeck(ctx.session.study, 0, "HSK 3")).rejects.toThrow(/workspace/i);
       expect(fetch).not.toHaveBeenCalled();
     });
   });
@@ -131,7 +132,7 @@ describe("deck commands", () => {
         });
       });
 
-      const renamed = await renameDeck(WORKSPACE_ID, "deck-1", "New name");
+      const renamed = await renameDeck(ctx.session.study, WORKSPACE_ID, "deck-1", "New name");
 
       expect(renamed).toEqual(
         deck("deck-1", "New name", "2026-01-01T00:00:00Z"),
@@ -147,7 +148,7 @@ describe("deck commands", () => {
     it("refuses to rename a deck that does not exist", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ pluginData: [] }));
 
-      await expect(renameDeck(WORKSPACE_ID, "missing", "New name")).rejects.toThrow(/deck/i);
+      await expect(renameDeck(ctx.session.study, WORKSPACE_ID, "missing", "New name")).rejects.toThrow(/deck/i);
       expect(writtenRows()).toEqual([]);
     });
   });
@@ -165,7 +166,7 @@ describe("deck commands", () => {
           pluginRow("deckcfg:bad", { deckId: "other", cardTypes: ["cloze"] }),
         ],
       });
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(Object.keys(data.deckSettings ?? {})).toEqual(["general"]);
       expect(data.deckSettings?.general?.cardTypes).toEqual(["reverse"]);
     });
@@ -184,7 +185,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      const saved = await saveDeckCardTypes(WORKSPACE_ID, "general", ["cloze", "reverse"]);
+      const saved = await saveDeckCardTypes(ctx.session.study, WORKSPACE_ID, "general", ["cloze", "reverse"]);
       expect(saved.cardTypes).toEqual(["reverse", "cloze"]);
       expect(writtenRows()).toHaveLength(1);
       expect(writtenRows()[0]!.key).toBe("deckcfg:general");
@@ -211,7 +212,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await saveDeckCardTypes(WORKSPACE_ID, "d1", ["reverse"]);
+      await saveDeckCardTypes(ctx.session.study, WORKSPACE_ID, "d1", ["reverse"]);
       expect(writtenRows()[0]!.body).toMatchObject({
         deckId: "d1",
         cardTypes: ["reverse"],
@@ -233,7 +234,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      const saved = await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "level", packId: "hsk-words" });
+      const saved = await saveDeckNewOrder(ctx.session.study, WORKSPACE_ID, "d1", { by: "level", packId: "hsk-words" });
       expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
       expect(writtenRows()[0]!.key).toBe("deckcfg:d1");
       expect(writtenRows()[0]!.body).toMatchObject({
@@ -258,7 +259,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "added" });
+      await saveDeckNewOrder(ctx.session.study, WORKSPACE_ID, "d1", { by: "added" });
       expect(writtenRows()[0]!.body).not.toHaveProperty("newOrder");
     });
 
@@ -271,7 +272,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "added" });
+      await saveDeckNewOrder(ctx.session.study, WORKSPACE_ID, "d1", { by: "added" });
       expect(writtenRows()[0]!.body).not.toHaveProperty("newOrder");
     });
 
@@ -280,7 +281,7 @@ describe("deck commands", () => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });
         return jsonResponse({ pluginData: [] });
       });
-      await saveDeckCardTypes(WORKSPACE_ID, "d9", ["reverse"]);
+      await saveDeckCardTypes(ctx.session.study, WORKSPACE_ID, "d9", ["reverse"]);
       expect(writtenRows()[0]!.body).toMatchObject({ deckId: "d9", cardTypes: ["reverse"] });
     });
 
@@ -295,7 +296,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await deleteDeck(WORKSPACE_ID, "d1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "d1");
       expect(deletedKeys()).toEqual(["deck:d1", "deckcfg:d1"]);
       // Each tombstone is its own push, the deck's first.
       expect(pushBodies().map((b) => Object.keys(b).filter((k) => (b[k] as unknown[]).length > 0))).toEqual([
@@ -330,7 +331,7 @@ describe("deck commands", () => {
         });
       });
 
-      await deleteDeck(WORKSPACE_ID, "deck-1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1");
 
       expect(deletedKeys()).toEqual(["deck:deck-1"]);
       // The cards go out as one batch, before the tombstone.
@@ -358,13 +359,13 @@ describe("deck commands", () => {
         });
       });
 
-      await deleteDeck(WORKSPACE_ID, "deck-1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1");
 
       expect(writes().filter((w) => !w.deleted).map((row) => row.key)).toEqual(["card:card-early", "card:card-late"]);
     });
 
     it("refuses to delete the implicit general deck without touching the server", async () => {
-      await expect(deleteDeck(WORKSPACE_ID, GENERAL_DECK_ID)).rejects.toThrow(/general/i);
+      await expect(deleteDeck(ctx.session.study, WORKSPACE_ID, GENERAL_DECK_ID)).rejects.toThrow(/general/i);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -383,7 +384,7 @@ describe("deck commands", () => {
         });
       });
 
-      await deleteDeck(WORKSPACE_ID, "deck-1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1");
 
       expect(writtenRows().map(({ key, body }) => ({ key, data: body }))).toEqual([
         { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
@@ -416,8 +417,8 @@ describe("deck commands", () => {
         });
       });
 
-      await deleteDeck(WORKSPACE_ID, "deck-1");
-      await deleteDeck(WORKSPACE_ID, "deck-2");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-2");
 
       expect(cards.get("card:card-1")?.deckIds).toEqual([GENERAL_DECK_ID]);
       expect(writtenRows().map((row) => (row.body as StudyCard).deckIds)).toEqual([
@@ -439,7 +440,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await deleteDeck(WORKSPACE_ID, "deck-1");
+      await deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1");
       const pushes = pushBodies().map((b) => itemsOf(b));
       expect(pushes.map((items) => items.length)).toEqual([200, 200, 50, 1]);
       expect(pushes.slice(0, 3).flat().every((w) => w.collection === "cards" && !w.deleted)).toBe(true);
@@ -456,7 +457,7 @@ describe("deck commands", () => {
           ],
         });
       });
-      await expect(deleteDeck(WORKSPACE_ID, "deck-1")).rejects.toThrow();
+      await expect(deleteDeck(ctx.session.study, WORKSPACE_ID, "deck-1")).rejects.toThrow();
       expect(deletedKeys()).toEqual([]);
     });
 
@@ -465,7 +466,7 @@ describe("deck commands", () => {
       vi.setSystemTime(new Date("2026-03-10T12:00:00.000Z"));
       try {
         vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 2, dataSkipped: 0, dataRefused: 0 }));
-        await pushStudy(WORKSPACE_ID, [
+        await pushStudy(ctx.session.study, WORKSPACE_ID, [
           { collection: "cards", row: cardRow(card("a", 1, ["general"])), knownAt: "2026-03-10T12:00:05.250Z" }, // server tombstone is ahead
           { collection: "cards", row: cardRow(card("b", 2, ["general"])), knownAt: "2026-03-09T00:00:00.000Z" }, // known time is older: now wins
           { collection: "cards", row: cardRow(card("c", 3, ["general"])) },
@@ -489,7 +490,7 @@ describe("deck commands", () => {
           pluginRow("card:gone", { id: "gone", kind: "vocab", entryId: 2, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
         ],
       });
-      const raw = await loadRawStudyData(WORKSPACE_ID);
+      const raw = await loadRawStudyData(ctx.session.study, WORKSPACE_ID);
       // Keyed `<collection>:<identity>` (studyRowKey).
       expect(raw.knownAt.get("cards:live")).toBe("2026-02-01T00:00:00Z");
       expect(raw.knownAt.get("cards:gone")).toBe("2026-02-03T00:00:00Z");
@@ -511,7 +512,7 @@ describe("deck commands", () => {
           pluginRow("deck:plain", { id: "plain", name: "Plain", createdAt: "2026-01-01T00:00:00Z", source: { type: 7 } }),
         ],
       });
-      const { decks } = await loadStudyData(WORKSPACE_ID);
+      const { decks } = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(decks.find((d) => d.id === "d-lvl-hsk-words-b06fd2ac")?.source).toEqual({
         type: "level",
         packId: "hsk-words",
@@ -538,7 +539,7 @@ describe("deck commands", () => {
           }),
         ],
       });
-      const { decks } = await loadStudyData(WORKSPACE_ID);
+      const { decks } = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(decks.find((d) => d.id === "d-frq-jiten-frequency-d4514a31")?.source).toEqual({
         type: "frequency",
         packId: "jiten-frequency",
@@ -553,7 +554,7 @@ describe("deck commands", () => {
           pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
         ],
       });
-      const raw = await loadRawStudyData(WORKSPACE_ID);
+      const raw = await loadRawStudyData(ctx.session.study, WORKSPACE_ID);
       expect(raw.deckSettings?.d1?.newOrder).toEqual({ by: "frequency" });
     });
 
@@ -564,7 +565,7 @@ describe("deck commands", () => {
           pluginRow("card:01JDUP", { id: "01JDUP", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" }),
         ],
       });
-      const raw = await loadRawStudyData(WORKSPACE_ID);
+      const raw = await loadRawStudyData(ctx.session.study, WORKSPACE_ID);
       expect(raw.cards.map((c) => c.id).sort()).toEqual(["01JDUP", "c-vocab-1"]);
     });
 
@@ -579,8 +580,8 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_url, init) => pushAnswer(init));
       const progress: Array<[number, number]> = [];
       const written: number[] = [];
-      const off = onStudyChange((id) => written.push(id));
-      await pushStudy(WORKSPACE_ID, pushRows(450), { onProgress: (d, t) => progress.push([d, t]) });
+      const off = onStudyChange(ctx.session.study, (id) => written.push(id));
+      await pushStudy(ctx.session.study, WORKSPACE_ID, pushRows(450), { onProgress: (d, t) => progress.push([d, t]) });
       off();
       const bodies = pushBodies();
       expect(bodies.map((b) => (b.cards as unknown[]).length)).toEqual([200, 200, 50]);
@@ -597,14 +598,14 @@ describe("deck commands", () => {
 
     it("a tombstone carries deletedAt = updatedAt", async () => {
       vi.mocked(fetch).mockImplementation(async (_url, init) => pushAnswer(init));
-      await pushStudy(WORKSPACE_ID, [{ ...pushRows(1)[0]!, deleted: true }]);
+      await pushStudy(ctx.session.study, WORKSPACE_ID, [{ ...pushRows(1)[0]!, deleted: true }]);
       const [item] = writes();
       expect(item!.deleted).toBe(true);
       expect(item!.item.deletedAt).toBe(item!.item.updatedAt);
     });
 
     it("pushes nothing for no rows", async () => {
-      await pushStudy(WORKSPACE_ID, []);
+      await pushStudy(ctx.session.study, WORKSPACE_ID, []);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -615,7 +616,7 @@ describe("deck commands", () => {
           ? rawResponse({ dataAccepted: 200, dataSkipped: 0, dataRefused: 0 })
           : new Response("boom", { status: 500 }),
       );
-      const error = await pushStudy(WORKSPACE_ID, pushRows(450)).catch((e: unknown) => e);
+      const error = await pushStudy(ctx.session.study, WORKSPACE_ID, pushRows(450)).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(PartialPushError);
       expect((error as PartialPushError).done).toBe(200);
       expect((error as PartialPushError).skipped).toBe(0);
@@ -625,7 +626,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async () =>
         rawResponse({ dataAccepted: 198, dataSkipped: 1, dataRefused: 1 }),
       );
-      const error = await pushStudy(WORKSPACE_ID, pushRows(200)).catch((e: unknown) => e);
+      const error = await pushStudy(ctx.session.study, WORKSPACE_ID, pushRows(200)).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(PartialPushError);
       expect((error as PartialPushError).done).toBe(198);
       expect((error as PartialPushError).skipped).toBe(2);

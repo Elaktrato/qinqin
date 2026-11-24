@@ -1,3 +1,4 @@
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 // #174: every study write names its workspace. Start a write while its pull
 // is held back, switch the selected workspace, let the pull answer: the pull
 // asked for the original workspace and every pushed row carries it.
@@ -5,7 +6,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { workspaces } from '../workspaces';
 import {
 	addCard,
 	deleteCards,
@@ -27,10 +27,14 @@ import { loadStudyData } from './data';
 import { saveDeckLimits, saveWorkspaceLimits } from './commands/settings';
 import { STUDY_COLLECTIONS } from './rows';
 import type { StudyCard } from './types';
-import { endSession } from '../session/sessionEnd';
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 // Every test starts a session of its own: the study cache holds nothing.
-beforeEach(() => endSession('signOut'));
+beforeEach(() => newSession(ctx));
 
 const A = 7;
 const B = 9;
@@ -66,7 +70,7 @@ const pulled: string[] = [];
 const pushed: Record<string, Record<string, unknown>[]>[] = [];
 
 function select(id: number): void {
-	workspaces.set({ list: [], current: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' } });
+	ctx.session.workspaces.set({ list: [], current: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' } });
 }
 
 beforeEach(() => {
@@ -98,7 +102,7 @@ beforeEach(() => {
 afterEach(() => {
 	release = null;
 	vi.unstubAllGlobals();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 /** Runs `write`, switches to B while its first pull waits, and checks where everything went. */
@@ -122,39 +126,39 @@ const removed: StudyCard = { id: 'c-writing-5', kind: 'writing', entryId: 5, dec
 
 describe('a workspace switch during a study write (#174)', () => {
 	describe('decks', () => {
-		it('createDeck', () => survivesSwitch(() => createDeck(A, 'New'), { pulls: false }));
-		it('renameDeck', () => survivesSwitch(() => renameDeck(A, D1, 'Renamed')));
-		it('deleteDeck', () => survivesSwitch(() => deleteDeck(A, D1)));
+		it('createDeck', () => survivesSwitch(() => createDeck(ctx.session.study, A, 'New'), { pulls: false }));
+		it('renameDeck', () => survivesSwitch(() => renameDeck(ctx.session.study, A, D1, 'Renamed')));
+		it('deleteDeck', () => survivesSwitch(() => deleteDeck(ctx.session.study, A, D1)));
 	});
 	describe('cards', () => {
-		it('deleteCards', () => survivesSwitch(() => deleteCards(A, ['c-sentence-5'])));
-		it('restoreCards', () => survivesSwitch(() => restoreCards(A, [removed])));
-		it('moveCards', () => survivesSwitch(() => moveCards(A, ['c-vocab-5'], D2)));
+		it('deleteCards', () => survivesSwitch(() => deleteCards(ctx.session.study, A, ['c-sentence-5'])));
+		it('restoreCards', () => survivesSwitch(() => restoreCards(ctx.session.study, A, [removed])));
+		it('moveCards', () => survivesSwitch(() => moveCards(ctx.session.study, A, ['c-vocab-5'], D2)));
 	});
 	describe('word switches', () => {
-		it('skipKind', () => survivesSwitch(() => skipKind(A, 5, 'writing')));
-		it('unskipKind', () => survivesSwitch(() => unskipKind(A, 5, 'tone')));
-		it('dropSiblingCards', () => survivesSwitch(() => dropSiblingCards(A, ['c-sentence-5'])));
+		it('skipKind', () => survivesSwitch(() => skipKind(ctx.session.study, A, 5, 'writing')));
+		it('unskipKind', () => survivesSwitch(() => unskipKind(ctx.session.study, A, 5, 'tone')));
+		it('dropSiblingCards', () => survivesSwitch(() => dropSiblingCards(ctx.session.study, A, ['c-sentence-5'])));
 	});
 	describe('deck settings', () => {
-		it('saveDeckCardTypes', () => survivesSwitch(() => saveDeckCardTypes(A, D1, ['reverse'])));
-		it('saveDeckCardTypesForDecks', () => survivesSwitch(() => saveDeckCardTypesForDecks(A, [D1, D2], 'cloze', true)));
-		it('saveDeckNewOrder', () => survivesSwitch(() => saveDeckNewOrder(A, D1, { by: 'frequency' })));
+		it('saveDeckCardTypes', () => survivesSwitch(() => saveDeckCardTypes(ctx.session.study, A, D1, ['reverse'])));
+		it('saveDeckCardTypesForDecks', () => survivesSwitch(() => saveDeckCardTypesForDecks(ctx.session.study, A, [D1, D2], 'cloze', true)));
+		it('saveDeckNewOrder', () => survivesSwitch(() => saveDeckNewOrder(ctx.session.study, A, D1, { by: 'frequency' })));
 	});
 	describe('limits', () => {
-		it('saveWorkspaceLimits', () => survivesSwitch(() => saveWorkspaceLimits(A, { new: 4 })));
-		it('saveDeckLimits', () => survivesSwitch(() => saveDeckLimits(A, D1, { new: 6 })));
+		it('saveWorkspaceLimits', () => survivesSwitch(() => saveWorkspaceLimits(ctx.session.study, A, { new: 4 })));
+		it('saveDeckLimits', () => survivesSwitch(() => saveDeckLimits(ctx.session.study, A, D1, { new: 6 })));
 	});
 	describe('cards added', () => {
-		it('addCard', () => survivesSwitch(() => addCard(A, 6)));
+		it('addCard', () => survivesSwitch(() => addCard(ctx.session.study, A, 6)));
 	});
 
 	it('a write refuses a missing or invalid workspace before any request', async () => {
 		for (const bad of [0, -1, 1.5, Number.NaN]) {
-			await expect(createDeck(bad, 'x')).rejects.toThrow(/workspace/);
-			await expect(addCard(bad, 6)).rejects.toThrow(/workspace/);
+			await expect(createDeck(ctx.session.study, bad, 'x')).rejects.toThrow(/workspace/);
+			await expect(addCard(ctx.session.study, bad, 6)).rejects.toThrow(/workspace/);
 		}
-		await expect(loadStudyData(0)).rejects.toThrow(/workspace/);
+		await expect(loadStudyData(ctx.session.study, 0)).rejects.toThrow(/workspace/);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 

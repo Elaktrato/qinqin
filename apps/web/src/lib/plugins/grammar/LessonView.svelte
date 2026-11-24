@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { workspaces } from '$lib/workspaces';
 	import PopupStackView from '$lib/features/reader/PopupStackView.svelte';
 	import { LookupController } from '$lib/features/reader/useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
@@ -8,6 +7,8 @@
 	import { browserReadingsStorage, loadReadings, saveReadings } from './readings';
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { pack, lessonId }: { pack: string; lessonId: string } = $props();
 
@@ -49,7 +50,7 @@
 
 	// Words are added to study in the current workspace only when it is the lesson's language.
 	const studyWorkspaceId = $derived(
-		$workspaces.current && $workspaces.current.language === language ? $workspaces.current.id : null
+		session.workspaces.current && session.workspaces.current.language === language ? session.workspaces.current.id : null
 	);
 
 	const lookup = new LookupController({
@@ -57,7 +58,7 @@
 		lang: () => language,
 		textLang: () => textLang,
 		runsOf: (p) => [{ text: texts[p] ?? '' }],
-		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'lesson' })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'lesson' })
 	});
 	$effect(() => lookup.attach());
 	$effect(() => {
