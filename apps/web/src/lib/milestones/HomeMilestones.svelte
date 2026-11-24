@@ -29,7 +29,7 @@
 			return;
 		}
 		try {
-			const loaded = await loadMilestones(session.study, id, { scope: 'home', language: lang, states: session.plugins });
+			const loaded = await loadMilestones(session, id, { scope: 'home', language: lang, states: session.plugins });
 			if (mine === seq) view = loaded;
 		} catch {
 			if (mine === seq) view = null;
@@ -58,7 +58,7 @@
 		const shown = view;
 		if (shown === null || shown.workspaceId !== workspaceId) return;
 		view = { ...shown, plan: { kind: 'none' } };
-		void markSeen(session.study, shown);
+		void markSeen(session, shown);
 	}
 </script>
 

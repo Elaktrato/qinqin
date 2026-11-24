@@ -4,29 +4,20 @@
 // own overlay, so the cache is dropped on sign-out and per entry after an
 // edit. Failures are never cached; successes of the same call stay.
 
-import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { api } from './client';
 import type { EntryBase } from './types';
+import type { EntryBasesCache } from '../context/caches';
+
 
 export const BASES_CHUNK = 500;
 const CONCURRENCY = 2;
 
-const cache = new Map<number, EntryBase>();
-// Ids a request is (or is about to be) busy with, so concurrent callers share it.
-const inflight = new Map<number, Promise<void>>();
-onSessionEnd(() => {
-	cache.clear();
-	inflight.clear();
-});
-
-/** clearEntryBasesCache forgets everything (sign-out, tests). */
-export function clearEntryBasesCache(): void {
-	cache.clear();
-}
+// Ids a request is (or is about to be) busy with, so concurrent callers share it
+// (EntryBasesCache.inflight).
 
 /** forgetEntryBases drops single ids, e.g. after the user edited those entries. */
-export function forgetEntryBases(ids: readonly number[]): void {
-	for (const id of ids) cache.delete(id);
+export function forgetEntryBases(cache: EntryBasesCache, ids: readonly number[]): void {
+	for (const id of ids) cache.cache.delete(id);
 }
 
 function chunks<T>(list: readonly T[], size: number): T[][] {
@@ -42,6 +33,7 @@ function chunks<T>(list: readonly T[], size: number): T[][] {
  * cached, so a retry asks only for the rest.
  */
 export async function loadEntryBases(
+	cache: EntryBasesCache,
 	ids: readonly number[],
 	opts: { priority?: readonly number[] } = {}
 ): Promise<Map<number, EntryBase>> {
@@ -49,11 +41,11 @@ export async function loadEntryBases(
 	const wantedSet = new Set(wanted);
 	const first = (opts.priority ?? []).filter((id) => wantedSet.has(id));
 	const ordered = [...new Set([...first, ...wanted])];
-	const missing = ordered.filter((id) => !cache.has(id) && !inflight.has(id));
+	const missing = ordered.filter((id) => !cache.cache.has(id) && !cache.inflight.has(id));
 	const shared = new Set<Promise<void>>();
 	for (const id of ordered) {
-		const pending = inflight.get(id);
-		if (pending !== undefined && !cache.has(id)) shared.add(pending);
+		const pending = cache.inflight.get(id);
+		if (pending !== undefined && !cache.cache.has(id)) shared.add(pending);
 	}
 
 	type Job = { ids: number[]; resolve: () => void; reject: (e: unknown) => void };
@@ -65,7 +57,7 @@ export async function loadEntryBases(
 			reject = rej;
 		});
 		promise.catch(() => undefined); // waiters handle it; never an unhandled rejection
-		for (const id of part) inflight.set(id, promise);
+		for (const id of part) cache.inflight.set(id, promise);
 		return { ids: part, resolve, reject };
 	});
 
@@ -77,24 +69,22 @@ export async function loadEntryBases(
 			const job = jobs[next++];
 			if (job === undefined) return;
 			if (failed) {
-				for (const id of job.ids) inflight.delete(id);
+				for (const id of job.ids) cache.inflight.delete(id);
 				job.reject(failure);
 				continue;
 			}
 			try {
-				const epoch = sessionEpoch();
 				const rows = await api<EntryBase[]>('/api/entries/bases', {
 					method: 'POST',
 					body: { ids: job.ids }
 				});
-				// An answer for a session that has ended is not kept (#173).
-				if (epoch === sessionEpoch()) for (const row of Array.isArray(rows) ? rows : []) cache.set(row.id, row);
-				for (const id of job.ids) inflight.delete(id);
+				for (const row of Array.isArray(rows) ? rows : []) cache.cache.set(row.id, row);
+				for (const id of job.ids) cache.inflight.delete(id);
 				job.resolve();
 			} catch (err) {
 				failed = true;
 				failure = err;
-				for (const id of job.ids) inflight.delete(id);
+				for (const id of job.ids) cache.inflight.delete(id);
 				job.reject(err);
 			}
 		}
@@ -105,7 +95,7 @@ export async function loadEntryBases(
 
 	const out = new Map<number, EntryBase>();
 	for (const id of wanted) {
-		const row = cache.get(id);
+		const row = cache.cache.get(id);
 		if (row !== undefined) out.set(id, row);
 	}
 	return out;

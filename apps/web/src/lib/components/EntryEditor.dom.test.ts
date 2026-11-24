@@ -1,5 +1,6 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { EntryDetail } from '$lib/api/types';
 
 vi.mock('$lib/api/entries', () => ({ getSharedEntry: vi.fn() }));
@@ -11,6 +12,11 @@ vi.mock('$lib/api/edit', async (importOriginal) => ({
 import { updateEntry } from '$lib/api/edit';
 import { getSharedEntry } from '$lib/api/entries';
 import EntryEditor from './EntryEditor.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function entry(over: Partial<EntryDetail> = {}): EntryDetail {
 	return {
@@ -36,7 +42,7 @@ describe('EntryEditor baseline and overlay', () => {
 	it('keeps Save disabled until the shared baseline has loaded', async () => {
 		let release!: (e: EntryDetail) => void;
 		vi.mocked(getSharedEntry).mockReturnValue(new Promise((res) => (release = res)));
-		render(EntryEditor, { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() });
+		render(EntryEditor, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
 		expect(screen.getByText('Preparing editor…')).toBeTruthy();
 		const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
 		expect(save.disabled).toBe(true);
@@ -49,13 +55,13 @@ describe('EntryEditor baseline and overlay', () => {
 		vi.mocked(getSharedEntry).mockResolvedValue(entry({ written: '發' }));
 		vi.mocked(updateEntry).mockResolvedValue(entry({ written: '发', readings: [{ type: 'pinyin', value: 'fa1', plain: 'fa', ord: 0 }] }));
 		const onSaved = vi.fn();
-		render(EntryEditor, { entry: entry(), onSaved, onCancel: vi.fn() });
+		render(EntryEditor, { props: { entry: entry(), onSaved, onCancel: vi.fn() }, context: ctx.context });
 		const reading = screen.getByLabelText('Reading 1 value');
 		await fireEvent.input(reading, { target: { value: 'fa1' } });
 		await waitFor(() => expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.submit(screen.getByRole('form', { name: 'Edit entry' }));
 		await waitFor(() => expect(updateEntry).toHaveBeenCalled());
-		const [id, patch] = vi.mocked(updateEntry).mock.calls[0];
+		const [, id, patch] = vi.mocked(updateEntry).mock.calls[0];
 		expect(id).toBe(7);
 		expect(patch.written).toBe('发');
 		expect(patch.readings).toEqual([{ type: 'pinyin', value: 'fa1' }]);
@@ -65,7 +71,7 @@ describe('EntryEditor baseline and overlay', () => {
 	async function ready(shared: EntryDetail, mine: EntryDetail) {
 		vi.mocked(getSharedEntry).mockResolvedValue(shared);
 		const onSaved = vi.fn();
-		render(EntryEditor, { entry: mine, onSaved, onCancel: vi.fn() });
+		render(EntryEditor, { props: { entry: mine, onSaved, onCancel: vi.fn() }, context: ctx.context });
 		await waitFor(() => expect(screen.queryByText('Preparing editor…')).toBeNull());
 		return onSaved;
 	}
@@ -74,7 +80,7 @@ describe('EntryEditor baseline and overlay', () => {
 	it('offers Try again when the baseline cannot be fetched, and recovers', async () => {
 		vi.mocked(getSharedEntry).mockRejectedValueOnce(new Error('boom'));
 		vi.mocked(getSharedEntry).mockResolvedValueOnce(entry());
-		render(EntryEditor, { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() });
+		render(EntryEditor, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
 		await screen.findByText('Could not prepare the editor.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await waitFor(() => expect(screen.queryByText('Could not prepare the editor.')).toBeNull());
@@ -103,7 +109,7 @@ describe('EntryEditor baseline and overlay', () => {
 		await fireEvent.submit(screen.getByRole('form', { name: 'Edit entry' }));
 		await waitFor(() => expect(updateEntry).toHaveBeenCalled());
 		// No field differs from shared: the patch is empty, which removes the overlay.
-		expect(vi.mocked(updateEntry).mock.calls[0][1]).toEqual({});
+		expect(vi.mocked(updateEntry).mock.calls[0][2]).toEqual({});
 	});
 
 	it('has a Revert to shared button that restores every field', async () => {
@@ -150,7 +156,7 @@ describe('EntryEditor baseline and overlay', () => {
 		await fireEvent.input(screen.getByLabelText('Written form'), { target: { value: ' 发 ' } });
 		await fireEvent.submit(screen.getByRole('form', { name: 'Edit entry' }));
 		await waitFor(() => expect(updateEntry).toHaveBeenCalled());
-		expect(vi.mocked(updateEntry).mock.calls[0][1].written).toBe('发');
+		expect(vi.mocked(updateEntry).mock.calls[0][2].written).toBe('发');
 	});
 
 	it('Revert to shared restores the readings too', async () => {

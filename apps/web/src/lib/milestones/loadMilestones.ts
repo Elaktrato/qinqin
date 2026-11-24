@@ -4,6 +4,7 @@
 // only (no replay); the Week tab passes the timelines and the character
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
+import type { Session } from '$lib/context/session.svelte';
 import type { StudyState } from '$lib/study/data';
 import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -141,6 +142,7 @@ async function flushPending(
 
 /** The levels of the language's installed schemes with their members; [] when they cannot be read. */
 async function loadLevels(
+	session: Session,
 	language: string,
 	chars: readonly CharRow[] | null
 ): Promise<{ levels: LevelInput[]; names: Map<string, string> }> {
@@ -159,7 +161,7 @@ async function loadLevels(
 				if (chars === null) continue;
 				let members = membersOf.get(deck.schemeId);
 				if (members === undefined) {
-					members = await fetchSchemeCharacters(deck.schemeId);
+					members = await fetchSchemeCharacters(session.caches.schemes, deck.schemeId);
 					membersOf.set(deck.schemeId, members);
 				}
 				const level = members.find((m) => m.name === deck.level);
@@ -187,7 +189,7 @@ async function loadLevels(
  * Callers guard against a stale answer (workspace switch) themselves.
  */
 export async function loadMilestones(
-	study: StudyState,
+	session: Session,
 	workspaceId: number,
 	opts: { scope: 'home' | 'week'; language: string; states: PluginStatesValue; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
@@ -196,16 +198,16 @@ export async function loadMilestones(
 	const day = currentStudyDay();
 	const today = day.today(now);
 	const epoch = sessionEpoch();
-	const [data, log] = await Promise.all([loadStudyHistory(study, workspaceId), study.deps.events.load(workspaceId)]);
+	const [data, log] = await Promise.all([loadStudyHistory(session.study, workspaceId), session.events.load(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
 	const user = outboxUser();
 	// A load for a session that has ended leaves no place to flush into (#173).
 	if (user !== null && epoch === sessionEpoch()) {
-		lastPlace = { study, user, workspaceId, live, tombstones };
+		lastPlace = { study: session.study, user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
-		await flushPending(study, user, workspaceId, live, tombstones, now);
+		await flushPending(session.study, user, workspaceId, live, tombstones, now);
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
@@ -226,7 +228,7 @@ export async function loadMilestones(
 		reached = reachedFromLog({ reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
 		if (opts.scope === 'week' && opts.week !== undefined && families.has('words-mature')) {
 			const chars = families.has('characters-learned') ? opts.week.chars : null;
-			const loaded = families.has('level-complete') ? await loadLevels(opts.language, opts.week.chars) : null;
+			const loaded = families.has('level-complete') ? await loadLevels(session, opts.language, opts.week.chars) : null;
 			names = loaded?.names ?? names;
 			const replayed = reachedFromReplay({
 				cards: opts.week.cards ?? data.cards,
@@ -263,7 +265,8 @@ export async function loadMilestones(
  * pending list first, then the rows of the ids without a live row are
  * pushed; on success they leave the pending list. Never throws.
  */
-export async function markSeen(study: StudyState, view: MilestonesView): Promise<void> {
+export async function markSeen(session: Session, view: MilestonesView): Promise<void> {
+	const study = session.study;
 	if (view.plan.kind === 'none') return;
 	const { workspaceId } = view;
 	const covered = new Set(view.plan.ids);

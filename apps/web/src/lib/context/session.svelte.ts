@@ -16,6 +16,9 @@ import { ReviewOutbox } from '../study/events';
 import { clearRecentSent, rememberSent } from '../study/recentSent';
 import { WorkspaceRecovery } from '../workspaceGone';
 import { Workspaces } from '../workspaces.svelte';
+import { createPlayer, type Player } from '../audio/player';
+import { clipObjectUrl, readyClipUrl } from '../audio/source';
+import { SessionCaches } from './caches';
 import type { AppDeps } from './deps';
 
 /** Why the session ended: only `signOut` also forgets the device's workspace choice. */
@@ -51,6 +54,9 @@ export class Session {
 	readonly outbox: ReviewOutbox;
 	/** The study data: the study cache of #193 and what derives from it. */
 	readonly study: StudyState;
+	/** The caches of server answers (audio, characters, entry bases, schemes, clips, ...). */
+	readonly caches = new SessionCaches();
+	#player: Player | null = null;
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
@@ -96,10 +102,27 @@ export class Session {
 			events: this.events
 		});
 		this.onDispose((reason) => {
+			this.#player?.stop();
 			this.study.dispose();
+			this.caches.clear();
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
 			if (reason === 'signOut') clearRecentSent(local());
 		});
+	}
+
+	/**
+	 * The one audio player of the session, created on first use (browser
+	 * only): it plays clips through the session's clip cache, and the end of
+	 * the session stops it.
+	 */
+	get player(): Player {
+		this.#player ??= createPlayer(
+			undefined,
+			undefined,
+			(url) => clipObjectUrl(this.caches.clips, url),
+			(url) => readyClipUrl(this.caches.clips, url)
+		);
+		return this.#player;
 	}
 
 	/** The signed-in user's id; null until `me` answered (a boot offline). */

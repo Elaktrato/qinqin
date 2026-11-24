@@ -49,8 +49,8 @@
 		try {
 			// Components are optional: a failed request leaves the radical
 			// table and strokes working, with the "no components" note.
-			const parts = fetchComponents(language).catch(() => EMPTY_COMPONENTS);
-			const [list, index] = await Promise.all([fetchCharacters(language), parts]);
+			const parts = fetchComponents(session.caches.components, language).catch(() => EMPTY_COMPONENTS);
+			const [list, index] = await Promise.all([fetchCharacters(session.caches.characters, language), parts]);
 			if (mine !== seq) return;
 			chars = list.chars;
 			comps = index;

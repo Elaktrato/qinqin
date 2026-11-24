@@ -8,8 +8,9 @@
 // cards stayed unresolved.
 
 import { getEntry } from '../api/entries';
-import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import type { StudyCard } from './types';
+import type { WrittenCache } from '../context/caches';
+
 
 // One page load resolves a modest number of legacy cards at a time; the
 // map must stay responsive while an old deck is backfilled.
@@ -17,8 +18,6 @@ const FETCH_CONCURRENCY = 4;
 
 // Values are successful resolutions only: a null means the entry exists
 // but has no written form. Fetch failures never get a row.
-const writtenByEntry = new Map<number, string | null>();
-onSessionEnd(() => writtenByEntry.clear());
 
 interface WrittenResult {
 	ok: boolean;
@@ -56,20 +55,17 @@ export function withWritten(
 	});
 }
 
-async function fetchWritten(entryId: number): Promise<WrittenResult> {
-	if (writtenByEntry.has(entryId)) {
-		return { ok: true, written: writtenByEntry.get(entryId) ?? null };
+async function fetchWritten(cache: WrittenCache, entryId: number): Promise<WrittenResult> {
+	if (cache.writtenByEntry.has(entryId)) {
+		return { ok: true, written: cache.writtenByEntry.get(entryId) ?? null };
 	}
-
-	const epoch = sessionEpoch();
 	try {
 		const entry = await getEntry(entryId);
 		const written =
 			typeof entry.written === 'string' && entry.written !== '' ? entry.written : null;
 		// A successful lookup is stable: retrying cannot teach the API a
 		// written form it does not have.
-		// An answer for a session that has ended is not kept (#173).
-		if (epoch === sessionEpoch()) writtenByEntry.set(entryId, written);
+		cache.writtenByEntry.set(entryId, written);
 		return { ok: true, written };
 	} catch {
 		// A missing or forbidden entry, or a transient network failure:
@@ -110,6 +106,7 @@ const PUBLISH_INTERVAL_MS = 250;
  * their count is returned for the caller to surface.
  */
 export async function fillMissingWrittenProgressively(
+	cache: WrittenCache,
 	cards: readonly StudyCard[],
 	onProgress: (cards: StudyCard[]) => void,
 	options: BackfillOptions = {}
@@ -121,7 +118,7 @@ export async function fillMissingWrittenProgressively(
 	const resolved = new Map<number, string | null>();
 	const toFetch: number[] = [];
 	for (const id of ids) {
-		if (writtenByEntry.has(id)) resolved.set(id, writtenByEntry.get(id) ?? null);
+		if (cache.writtenByEntry.has(id)) resolved.set(id, cache.writtenByEntry.get(id) ?? null);
 		else toFetch.push(id);
 	}
 	// A cached "no written form" changes no card, so it needs no publish.
@@ -155,7 +152,7 @@ export async function fillMissingWrittenProgressively(
 		while (next < toFetch.length) {
 			const entryId = toFetch[next];
 			next += 1;
-			const result = await fetchWritten(entryId);
+			const result = await fetchWritten(cache, entryId);
 			if (!result.ok) continue;
 			resolved.set(entryId, result.written);
 			if (result.written !== null) markDirty();
@@ -183,15 +180,11 @@ export async function fillMissingWrittenProgressively(
  * It is the await-everything form of the progressive resolver, kept for
  * callers that do not paint intermediate state.
  */
-export async function fillMissingWritten(cards: readonly StudyCard[]): Promise<StudyCard[]> {
+export async function fillMissingWritten(cache: WrittenCache, cards: readonly StudyCard[]): Promise<StudyCard[]> {
 	let result = [...cards];
-	await fillMissingWrittenProgressively(cards, (nextCards) => {
+	await fillMissingWrittenProgressively(cache, cards, (nextCards) => {
 		result = nextCards;
 	});
 	return result;
 }
 
-/** Clears the entry cache; tests use it to isolate runs. */
-export function clearEntriesCache(): void {
-	writtenByEntry.clear();
-}

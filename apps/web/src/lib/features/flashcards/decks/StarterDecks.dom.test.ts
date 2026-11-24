@@ -7,7 +7,7 @@ vi.mock('./addDeckFromOverview', () => ({ addDeckFromOverview: vi.fn() }));
 
 import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
 import { addDeckFromOverview } from './addDeckFromOverview';
-import { clearStarterCache, starterTarget, starterDecks } from './starterDecks';
+import { starterTarget, starterDecks } from './starterDecks';
 import StarterDecks from './StarterDecks.svelte';
 
 let ctx: TestContext = testContext();
@@ -36,7 +36,6 @@ const entry = (id: number) => ({
 });
 
 beforeEach(() => {
-	clearStarterCache();
 	vi.mocked(getFrequencyPacks).mockResolvedValue([jiten]);
 	vi.mocked(getStarterEntries).mockResolvedValue({
 		packId: 'jiten-frequency',

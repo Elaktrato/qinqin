@@ -118,7 +118,7 @@ afterEach(() => {
 describe('loadMilestones', () => {
 	it('home: the log families, a summary card for a long history, no replay', async () => {
 		const built = replayStats.timelines;
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(view.plan.kind).toBe('summary');
 		expect(view.plan.kind !== 'none' && [...view.plan.ids].sort()).toEqual(
 			['days-active:10', 'journal-entries:1', 'reading-hours:1', 'reviews:100', 'streak:3', 'streak:7', 'words-studied:10'].sort()
@@ -130,7 +130,7 @@ describe('loadMilestones', () => {
 	});
 
 	it('an event of another workspace is never counted', async () => {
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(ids(view.reached)).not.toContain('journal-entries:10');
 		expect(ids(view.reached).filter((id) => id.startsWith('journal'))).toEqual(['journal-entries:1']);
 	});
@@ -141,7 +141,7 @@ describe('loadMilestones', () => {
 		);
 		for (const status of ['idle', 'loading', 'error'] as const) {
 			states([], status);
-			const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh' });
+			const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh' });
 			expect(view.plan).toEqual({ kind: 'none' });
 			expect(view.history).toEqual([{ id: 'reviews:100', day: '2026-11-08', isNew: false }]);
 		}
@@ -149,7 +149,7 @@ describe('loadMilestones', () => {
 
 	it('the journal plugin off drops journal-entries; the reader off drops reading-hours', async () => {
 		states([{ id: 'qinqin-journal', enabled: false }, { id: 'qinqin-reader', enabled: false }]);
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(ids(view.reached)).not.toContain('journal-entries:1');
 		expect(ids(view.reached)).not.toContain('reading-hours:1');
 		expect(ids(view.reached)).toContain('days-active:10');
@@ -157,7 +157,7 @@ describe('loadMilestones', () => {
 
 	it('flashcards off drops the review families; days-active stays', async () => {
 		states([{ id: 'qinqin-flashcards', enabled: false }]);
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(ids(view.reached).sort()).toEqual(['days-active:10', 'journal-entries:1', 'reading-hours:1']);
 	});
 
@@ -171,15 +171,15 @@ describe('loadMilestones', () => {
 		);
 		addPending(1, WS, ['words-studied:10', 'reading-hours:1', 'journal-entries:1'].map((id) => ({ id, seenAt: null, reachedDay: '2026-11-10' })));
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(view.plan).toEqual({ kind: 'none' });
 	});
 
 	it('flushes the pending list once; a rejected push keeps it', async () => {
 		addPending(1, WS, [{ id: 'streak:3', seenAt: '2026-11-16T08:00:00.000Z', reachedDay: '2026-11-09' }]);
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
-		await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
-		await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(saveSeenMilestones).toHaveBeenCalledTimes(1);
 		expect(vi.mocked(saveSeenMilestones).mock.calls[0]).toEqual([
 			ctx.session.study,
@@ -191,14 +191,14 @@ describe('loadMilestones', () => {
 
 	it('a successful flush empties the pending list; a pending id already live is pruned without a push', async () => {
 		addPending(1, WS, [{ id: 'streak:3', seenAt: null, reachedDay: '2026-11-09' }]);
-		await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(readPending(1, WS)).toEqual([]);
 		vi.clearAllMocks();
 		resetMilestonesForTests();
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ seenMilestones: new Map([['streak:7', { id: 'streak:7', seenAt: null, reachedDay: null }]]) }));
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue([]);
 		addPending(1, WS, [{ id: 'streak:7', seenAt: null, reachedDay: null }]);
-		await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 		expect(readPending(1, WS)).toEqual([]);
 	});
@@ -207,7 +207,7 @@ describe('loadMilestones', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ seenMilestones: new Map([['reviews:100', { id: 'reviews:100', seenAt: null, reachedDay: '2026-11-08' }]]) })
 		);
-		await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		vi.mocked(saveSeenMilestones).mockClear();
 		addPending(1, WS, ['reviews:100', 'streak:3'].map((id) => ({ id, seenAt: null, reachedDay: '2026-11-10' })));
 		await flushOnOnline();
@@ -218,7 +218,7 @@ describe('loadMilestones', () => {
 	it('a load still in flight at the session end leaves no place to flush into (#173)', async () => {
 		let release: (h: StudyHistory) => void = () => undefined;
 		vi.mocked(loadStudyHistory).mockReturnValue(new Promise((r) => (release = r)));
-		const late = loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const late = loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		newSession(ctx);
 		release(history());
 		await late;
@@ -237,7 +237,7 @@ describe('loadMilestones', () => {
 	it('each call reads only its workspace pending list', async () => {
 		addPending(1, 4, [{ id: 'reviews:100', seenAt: null, reachedDay: null }]);
 		addPending(2, WS, [{ id: 'reviews:100', seenAt: null, reachedDay: null }]);
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(view.plan.kind !== 'none' && view.plan.ids).toContain('reviews:100');
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
@@ -255,28 +255,28 @@ describe('loadMilestones', () => {
 		vi.mocked(getSchemes).mockResolvedValue(schemes);
 		vi.mocked(getSchemeEntries).mockResolvedValue([1, 2, 3].map((id) => ({ id, kind: 'word' }) as never));
 		vi.mocked(fetchSchemeCharacters).mockResolvedValue([{ levelId: 21, name: 'Level 1', chars: new Set(['一', '二']) }]);
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh', week: { timelines, chars, cards: history().cards } });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh', week: { timelines, chars, cards: history().cards } });
 		const hsk1 = levelMilestoneId('hsk-words', 'HSK 1');
 		const level1 = levelMilestoneId('tgh-chars', 'Level 1');
 		expect(ids(view.reached)).toEqual(expect.arrayContaining(['words-mature:10', 'characters-learned:10', hsk1, level1]));
 		expect(view.titles.get(hsk1)).toBe('HSK Words · HSK 1 complete');
 		expect(view.titles.get(level1)).toBe('TGH · Level 1 complete');
 		expect(getSchemeEntries).toHaveBeenCalledWith(1, 'HSK 1');
-		expect(fetchSchemeCharacters).toHaveBeenCalledWith(2);
+		expect(fetchSchemeCharacters).toHaveBeenCalledWith(expect.anything(), 2);
 		expect(view.history.filter((i) => i.isNew).length).toBe(view.reached.length);
 	});
 
 	it('week: levels that fail to load are left out, the rest still counts', async () => {
 		vi.mocked(getSchemes).mockRejectedValue(new Error('offline'));
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh', week: { timelines: givenTimelines({}), chars: null, cards: history().cards } });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'week', now: NOW, language: 'zh', week: { timelines: givenTimelines({}), chars: null, cards: history().cards } });
 		expect(ids(view.reached)).toContain('reviews:100');
 	});
 });
 
 describe('markSeen', () => {
 	it('pushes the rows of every covered id, then drops them from the pending list', async () => {
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
-		await markSeen(ctx.session.study, view);
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await markSeen(ctx.session, view);
 		const [, ws, rows] = vi.mocked(saveSeenMilestones).mock.calls[0];
 		expect(ws).toBe(WS);
 		expect(rows.map((r) => r.key).sort()).toEqual(view.plan.kind === 'none' ? [] : view.plan.ids.map((id) => `milestone:${id}`).sort());
@@ -284,51 +284,51 @@ describe('markSeen', () => {
 	});
 
 	it('offline: the ids stay pending and the next load shows no card', async () => {
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
-		await expect(markSeen(ctx.session.study, view)).resolves.toBeUndefined();
+		await expect(markSeen(ctx.session, view)).resolves.toBeUndefined();
 		expect(ids(readPending(1, WS)).sort()).toEqual(view.plan.kind === 'none' ? [] : [...view.plan.ids].sort());
 		resetMilestonesForTests();
-		const next = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const next = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(next.plan).toEqual({ kind: 'none' });
 	});
 
 	it('writes only ids whose row is not live', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ seenMilestones: new Map([['reviews:100', { id: 'reviews:100', seenAt: null, reachedDay: null }]]) }));
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
-		await markSeen(ctx.session.study, view);
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await markSeen(ctx.session, view);
 		const rows = vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[2] ?? [];
 		expect(rows.map((r) => r.key)).not.toContain('milestone:reviews:100');
 	});
 
 	it('writes into the workspace the view was loaded for', async () => {
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(view.workspaceId).toBe(WS);
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
-		await markSeen(ctx.session.study, { ...view, workspaceId: 9 });
+		await markSeen(ctx.session, { ...view, workspaceId: 9 });
 		expect(vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[1]).toBe(9);
 		expect(readPending(1, 9).length).toBeGreaterThan(0);
 		expect(readPending(1, WS)).toEqual([]);
 	});
 
 	it('a skipped row keeps its id pending (seen here) until it is live in a pull', async () => {
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		vi.mocked(saveSeenMilestones).mockResolvedValue('pending');
-		await markSeen(ctx.session.study, view);
+		await markSeen(ctx.session, view);
 		expect(ids(readPending(1, WS)).sort()).toEqual(view.plan.kind === 'none' ? [] : [...view.plan.ids].sort());
 	});
 
 	it('a tombstoned key is written with its tombstone stamp', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ milestoneTombstones: new Map([['reviews:100', '2026-11-17T11:00:00Z']]) }));
-		const view = await loadMilestones(ctx.session.study, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
-		await markSeen(ctx.session.study, view);
+		const view = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
+		await markSeen(ctx.session, view);
 		const rows = vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[2] ?? [];
 		expect(rows.find((r) => r.key === 'milestone:reviews:100')).toMatchObject({ knownAt: '2026-11-17T11:00:00Z' });
 		expect(rows.find((r) => r.key === 'milestone:streak:3')).not.toHaveProperty('knownAt');
 	});
 
 	it('nothing to mark for no card', async () => {
-		await markSeen(ctx.session.study, { workspaceId: WS, plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() });
+		await markSeen(ctx.session, { workspaceId: WS, plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() });
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 });

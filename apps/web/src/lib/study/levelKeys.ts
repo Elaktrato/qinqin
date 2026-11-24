@@ -4,12 +4,13 @@
 // session). Entries outside the scheme have no key.
 
 import type { Scheme } from '$lib/api/types';
+import type { LevelItemsCache } from '$lib/context/caches';
 import { loadLevelItems } from '$lib/features/flashcards/decks/systemDeckItems';
 import { levelDecks } from '$lib/features/flashcards/decks/systemDecks';
 
-export async function loadLevelKeys(scheme: Scheme): Promise<(entryId: number) => number | null> {
+export async function loadLevelKeys(cache: LevelItemsCache, scheme: Scheme): Promise<(entryId: number) => number | null> {
 	const decks = levelDecks([scheme], scheme.language);
-	const levels = await Promise.all(decks.map((deck) => loadLevelItems(deck)));
+	const levels = await Promise.all(decks.map((deck) => loadLevelItems(cache, deck)));
 	const keys = new Map<number, number>();
 	decks.forEach((deck, i) => {
 		for (const entry of levels[i]) if (!keys.has(entry.id)) keys.set(entry.id, deck.ord);

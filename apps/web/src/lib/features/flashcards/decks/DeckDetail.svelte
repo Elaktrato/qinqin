@@ -90,8 +90,8 @@
 		};
 		try {
 			const first = ids.slice(0, PAGE_SIZE);
-			merge(await loadEntryBases(first));
-			if (ids.length > first.length) merge(await loadEntryBases(ids, { priority: first }));
+			merge(await loadEntryBases(session.caches.entryBases, first));
+			if (ids.length > first.length) merge(await loadEntryBases(session.caches.entryBases, ids, { priority: first }));
 		} catch {
 			if (mine === basesSeq) basesFailed = true;
 		}

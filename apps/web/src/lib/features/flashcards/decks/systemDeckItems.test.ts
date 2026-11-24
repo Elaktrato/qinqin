@@ -1,11 +1,18 @@
+import { LevelItemsCache } from '$lib/context/caches';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemeEntries: vi.fn(), getSchemes: vi.fn() }));
 
 import { getSchemeEntries } from '$lib/api/schemes';
 import type { EntryBase } from '$lib/api/types';
-import { clearLevelItemsCache, loadLevelItems } from './systemDeckItems';
+import { loadLevelItems } from './systemDeckItems';
 import type { LevelDeck } from './systemDecks';
+
+// A fresh LevelItemsCache per test (record 0009: the session owns one).
+let cache = new LevelItemsCache();
+beforeEach(() => {
+	cache = new LevelItemsCache();
+});
 
 function deck(level: string, unit = 'word'): LevelDeck {
 	return { kind: 'level', schemeId: 1, packId: 'p', schemeName: 'S', unit, level, ord: 1 };
@@ -16,7 +23,7 @@ function entry(id: number, kind = 'word'): EntryBase {
 
 let pending: { level: string | undefined; resolve: (rows: EntryBase[]) => void; reject: (e: Error) => void }[];
 beforeEach(() => {
-	clearLevelItemsCache();
+	cache.clear();
 	pending = [];
 	vi.mocked(getSchemeEntries).mockReset();
 	vi.mocked(getSchemeEntries).mockImplementation(
@@ -29,7 +36,7 @@ beforeEach(() => {
 
 describe('loadLevelItems', () => {
 	it('runs at most two requests at once and applies the unit filter', async () => {
-		const results = ['A', 'B', 'C', 'D'].map((l) => loadLevelItems(deck(l)));
+		const results = ['A', 'B', 'C', 'D'].map((l) => loadLevelItems(cache, deck(l)));
 		await Promise.resolve();
 		expect(pending.map((p) => p.level)).toEqual(['A', 'B']);
 		pending[0].resolve([entry(1), entry(2, 'character')]);
@@ -43,22 +50,22 @@ describe('loadLevelItems', () => {
 	});
 
 	it('caches a loaded level and shares an in-flight request', async () => {
-		const first = loadLevelItems(deck('A'));
-		const second = loadLevelItems(deck('A'));
+		const first = loadLevelItems(cache, deck('A'));
+		const second = loadLevelItems(cache, deck('A'));
 		await Promise.resolve();
 		expect(pending).toHaveLength(1);
 		pending[0].resolve([entry(1)]);
 		await Promise.all([first, second]);
-		await loadLevelItems(deck('A'));
+		await loadLevelItems(cache, deck('A'));
 		expect(getSchemeEntries).toHaveBeenCalledTimes(1);
 	});
 
 	it('never caches a failure', async () => {
-		const failing = loadLevelItems(deck('A'));
+		const failing = loadLevelItems(cache, deck('A'));
 		await Promise.resolve();
 		pending[0].reject(new Error('offline'));
 		await expect(failing).rejects.toThrow('offline');
-		const retry = loadLevelItems(deck('A'));
+		const retry = loadLevelItems(cache, deck('A'));
 		await Promise.resolve();
 		expect(pending).toHaveLength(2);
 		pending[1].resolve([entry(5)]);

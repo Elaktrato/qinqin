@@ -9,7 +9,7 @@ import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
 import { addDeckFromOverview } from './addDeckFromOverview';
 import { ownedLevelDeckId } from './systemDecks';
-import { clearLevelItemsCache } from './systemDeckItems';
+
 import SystemDecks from './SystemDecks.svelte';
 
 let ctx: TestContext = testContext();
@@ -41,7 +41,6 @@ let active = 0;
 let maxActive = 0;
 
 beforeEach(() => {
-	clearLevelItemsCache();
 	active = 0;
 	maxActive = 0;
 	vi.mocked(getSchemes).mockResolvedValue(SCHEMES);

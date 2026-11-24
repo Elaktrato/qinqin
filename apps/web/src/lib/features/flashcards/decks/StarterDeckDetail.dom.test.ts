@@ -26,7 +26,7 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, StudyCard } from '$lib/study/types';
-import { clearStarterCache } from './starterDecks';
+
 import { primaryActions } from '$lib/ui/testing/primary';
 import StarterDeckDetail from './StarterDeckDetail.svelte';
 import * as build from '$lib/testing/study';
@@ -64,7 +64,6 @@ let pushed: { key: string; data: unknown }[];
 let settings: Record<string, { deckId: string; cardTypes: []; extra: Record<string, unknown> }>;
 
 beforeEach(() => {
-	clearStarterCache();
 	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'ja', name: 'ja' } as never],
 		current: { id: 1, language: 'ja', name: 'ja' } as never

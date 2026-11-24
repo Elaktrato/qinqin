@@ -91,7 +91,7 @@ describe('radical and part lookup page', () => {
 		expect(await screen.findByRole('group', { name: 'Parts' })).toBeTruthy();
 		expect(cells()).toEqual([]);
 		expect(screen.getByRole('status').textContent).toBe('');
-		expect(fetchCharacters).toHaveBeenCalledWith('ja');
+		expect(fetchCharacters).toHaveBeenCalledWith(expect.anything(), 'ja');
 		expect(document.title).toBe('Radicals and parts · qinqin');
 	});
 
@@ -206,7 +206,7 @@ describe('radical and part lookup page', () => {
 		vi.mocked(fetchComponents).mockResolvedValue({ packs: [], parts: [], chars: {} });
 		render(Page, { context: ctx.context });
 		await screen.findByRole('group', { name: 'Radicals' });
-		expect(fetchCharacters).toHaveBeenCalledWith('zh-TW');
+		expect(fetchCharacters).toHaveBeenCalledWith(expect.anything(), 'zh-TW');
 		expect(screen.queryByRole('group', { name: 'Parts' })).toBeNull();
 		expect(screen.getByText(/No character components are installed/)).toBeTruthy();
 		// zh shows the simplified forms on the tiles.

@@ -4,6 +4,7 @@
 // The map page itself keeps its own loading, because it also needs the
 // level schemes and paints progressively.
 
+import type { Session } from '$lib/context/session.svelte';
 import type { StudyState } from '$lib/study/data';
 import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 import type { CharRow } from '$lib/api/types';
@@ -47,14 +48,14 @@ export interface CharacterMapData {
  * `force` reads it again).
  */
 export async function loadCharacterMapData(
-	study: StudyState,
+	session: Session,
 	workspaceId: number,
 	language: string,
 	opts?: { force?: boolean }
 ): Promise<CharacterMapData> {
 	const [list, data] = await Promise.all([
-		fetchCharacters(language),
-		loadStudyHistory(study, workspaceId, opts)
+		fetchCharacters(session.caches.characters, language),
+		loadStudyHistory(session.study, workspaceId, opts)
 	]);
 	return {
 		list,
@@ -71,8 +72,9 @@ export async function loadCharacterMapData(
  * as the map does. Cards that stay unresolved are counted.
  */
 export async function withLegacyWritten(
+	session: Session,
 	cards: readonly StudyCard[]
 ): Promise<{ cards: StudyCard[]; unresolved: number }> {
-	const filled = await fillMissingWritten(cards);
+	const filled = await fillMissingWritten(session.caches.written, cards);
 	return { cards: filled, unresolved: filled.filter((card) => card.written === undefined).length };
 }

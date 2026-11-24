@@ -1,3 +1,4 @@
+import { EntryBasesCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
@@ -5,7 +6,14 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { buildPatch, updateEntry } from './edit';
+
 import type { Entry } from './types';
+
+// A fresh EntryBasesCache per test (record 0009: the session owns one).
+let cache = new EntryBasesCache();
+beforeEach(() => {
+	cache = new EntryBasesCache();
+});
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -153,7 +161,7 @@ describe('updateEntry', () => {
 		const patched = entry({ written: '發' });
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(patched));
 
-		const result = await updateEntry(1, { written: '發' });
+		const result = await updateEntry(cache, 1, { written: '發' });
 
 		expect(result).toEqual(patched);
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
@@ -166,7 +174,7 @@ describe('updateEntry', () => {
 	it('sends an empty readings list through as a clear', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(entry({ readings: [] })));
 
-		await updateEntry(7, { readings: [] });
+		await updateEntry(cache, 7, { readings: [] });
 
 		const [, init] = vi.mocked(fetch).mock.calls[0];
 		expect(init?.body).toBe(JSON.stringify({ readings: [] }));

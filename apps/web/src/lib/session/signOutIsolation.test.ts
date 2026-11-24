@@ -120,17 +120,19 @@ const level: LevelDeck = { kind: 'level', schemeId: 1, packId: 'p', schemeName: 
 
 /** The current session's study state (read at each call: a new session is a new one). */
 const study = () => app.session!.study;
+/** The current session's caches of server answers. */
+const caches = () => app.session!.caches;
 
 /** Every cache, read through its public reader; the answer as JSON. */
 const readers: Record<string, () => Promise<unknown>> = {
-	entriesCache: () => fillMissingWritten([legacyCard(1)]),
-	starterDecks: () => loadStarterEntries(1, 10),
-	systemDeckItems: () => loadLevelItems(level),
-	entryBases: () => loadEntryBases([1]).then((m) => [...m.values()]),
-	audio: () => getEntryAudio(1),
-	schemes: () => fetchSchemeCharacters(1).then((levels) => levels.map((l) => l.name)),
-	characters: () => fetchCharacters('zh'),
-	providerNames: () => loadProviderNames().then((m) => [...m.values()]),
+	entriesCache: () => fillMissingWritten(caches().written, [legacyCard(1)]),
+	starterDecks: () => loadStarterEntries(caches().starters, 1, 10),
+	systemDeckItems: () => loadLevelItems(caches().levelItems, level),
+	entryBases: () => loadEntryBases(caches().entryBases, [1]).then((m) => [...m.values()]),
+	audio: () => getEntryAudio(caches().audio, 1),
+	schemes: () => fetchSchemeCharacters(caches().schemes, 1).then((levels) => levels.map((l) => l.name)),
+	characters: () => fetchCharacters(caches().characters, 'zh'),
+	providerNames: () => loadProviderNames(caches().providerNames).then((m) => [...m.values()]),
 	studyHistory: () => loadStudyHistory(study(), WS),
 	studyData: () => getStudyData(study(), WS),
 	eventLog: () => app.session!.events.load(WS)
@@ -147,7 +149,7 @@ describe('sign-out isolation (#173)', () => {
 		signIn('tok-A');
 		const asA = await readAll();
 		for (const [name, json] of Object.entries(asA)) expect(json, name).toContain('AAA');
-		const journalA = journalEntriesFor(WS);
+		const journalA = journalEntriesFor(caches().journalEntries, WS);
 		const studyA = study();
 		expect(studyPullPages(studyA, WS)).toBeGreaterThan(0);
 		studyA.unreadable.record(WS, { cards: 1 }, []);
@@ -162,17 +164,17 @@ describe('sign-out isolation (#173)', () => {
 			expect(json, name).toContain('BBB');
 			expect(json, name).not.toContain('AAA');
 		}
-		expect(journalEntriesFor(WS)).not.toBe(journalA);
+		expect(journalEntriesFor(caches().journalEntries, WS)).not.toBe(journalA);
 	});
 
 	it('a load of A still in flight at sign-out never lands in a cache B reads', async () => {
 		signIn('tok-A');
 		holdForA = ['/api/entries/2', '/api/schemes/1/entries', '/api/entries/bases', '/api/audio/entries/', '/api/sync/pull', '/api/events'];
 		const lateA = [
-			fillMissingWritten([legacyCard(2)]),
-			loadLevelItems(level),
-			loadEntryBases([1]),
-			getEntryAudio(1),
+			fillMissingWritten(caches().written, [legacyCard(2)]),
+			loadLevelItems(caches().levelItems, level),
+			loadEntryBases(caches().entryBases, [1]),
+			getEntryAudio(caches().audio, 1),
 			loadStudyHistory(study(), WS),
 			getStudyData(study(), WS),
 			app.session!.events.load(WS)
@@ -187,7 +189,7 @@ describe('sign-out isolation (#173)', () => {
 		await Promise.allSettled(lateA);
 
 		const asB = {
-			entries: JSON.stringify(await fillMissingWritten([legacyCard(2)])),
+			entries: JSON.stringify(await fillMissingWritten(caches().written, [legacyCard(2)])),
 			...(await readAll())
 		};
 		for (const [name, json] of Object.entries(asB)) expect(json, name).not.toContain('AAA');

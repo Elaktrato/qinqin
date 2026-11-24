@@ -2,10 +2,10 @@
 // in step with saves, deletes and reviews without reloading. Reviews are
 // read only for the reviewed dot, at most 40 newest entries, four at a time.
 
-import { onSessionEnd } from '$lib/session/sessionEnd';
 import { t } from '$lib/i18n';
 import { getReview, listEntries } from './store';
 import type { JournalEntry, Review } from './types';
+import type { JournalEntriesCache } from '../../context/caches';
 
 export interface JournalEntriesApi {
 	list(workspaceId: number): Promise<JournalEntry[]>;
@@ -98,20 +98,13 @@ export class JournalEntries {
 	}
 }
 
-const cache = new Map<number, JournalEntries>();
-onSessionEnd(() => clearJournalEntriesCache());
 
 /** journalEntriesFor: one store per workspace for the app's column. */
-export function journalEntriesFor(workspaceId: number): JournalEntries {
-	let store = cache.get(workspaceId);
+export function journalEntriesFor(cache: JournalEntriesCache, workspaceId: number): JournalEntries {
+	let store = cache.stores.get(workspaceId);
 	if (store === undefined) {
 		store = new JournalEntries({ list: listEntries, review: getReview }, workspaceId);
-		cache.set(workspaceId, store);
+		cache.stores.set(workspaceId, store);
 	}
 	return store;
-}
-
-/** clearJournalEntriesCache: sign-out and tests. */
-export function clearJournalEntriesCache(): void {
-	cache.clear();
 }

@@ -87,7 +87,7 @@ function install(): void {
 		merged: 0,
 		deckSettings: settings as never
 	}));
-	vi.mocked(loadEntryBases).mockImplementation(async (ids) => new Map(ids.filter((id) => BASES.has(id)).map((id) => [id, BASES.get(id)!])));
+	vi.mocked(loadEntryBases).mockImplementation(async (_study, ids) => new Map(ids.filter((id) => BASES.has(id)).map((id) => [id, BASES.get(id)!])));
 	vi.mocked(deleteCards).mockImplementation(async (_study, _ws, ids) => {
 		const entries = new Set(cards.filter((c) => ids.includes(c.id)).map((c) => c.entryId));
 		const removed = cards.filter((c) => entries.has(c.entryId));

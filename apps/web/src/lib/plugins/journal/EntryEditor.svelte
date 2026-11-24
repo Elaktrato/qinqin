@@ -155,7 +155,7 @@
 		const textChanged = snapshot.text !== savedText;
 		try {
 			const saved = await saveEntry(ws, snapshot, opts);
-			journalEntriesFor(ws).upsert(saved);
+			journalEntriesFor(session.caches.journalEntries, ws).upsert(saved);
 			entry = saved;
 			savedText = saved.text;
 			const firstSave = !persisted;
@@ -270,7 +270,7 @@
 		review = r;
 		openCorrectionId = null;
 		correctionSheet = false;
-		if (entry) journalEntriesFor(ws).markReviewed(entry.id);
+		if (entry) journalEntriesFor(session.caches.journalEntries, ws).markReviewed(entry.id);
 		mode = 'review';
 		originals = isOutdated(text, r) ? {} : originalCounts(text, r.annotations);
 		const a = anchorAnnotations(text, r.annotations, originals);
@@ -370,7 +370,7 @@
 			// A save that is already on its way must land before the delete, not after.
 			await saveChain.catch(() => false);
 			if (persisted) await deleteEntry(ws, entry.id);
-			journalEntriesFor(ws).remove(entry.id);
+			journalEntriesFor(session.caches.journalEntries, ws).remove(entry.id);
 			await goto(journalHref({ view: 'list' }));
 		} catch {
 			gone = false;

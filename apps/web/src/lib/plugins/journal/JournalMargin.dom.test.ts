@@ -1,9 +1,15 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Correction } from './corrections';
 import type { AiGate } from './editorLogic';
 
 import JournalMargin from './JournalMargin.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function correction(id: string, kind: 'mistake' | 'suggestion', state: Correction['state'], index: number): Correction {
 	return {
@@ -37,7 +43,7 @@ afterEach(cleanup);
 
 describe('JournalMargin (#103)', () => {
 	it('corrections: heading, counts and one note per correction in order', () => {
-		render(JournalMargin, { mode: 'corrections', corrections: list, openId: null, onopen: vi.fn(), ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: list, openId: null, onopen: vi.fn(), ...ideas }, context: ctx.context });
 		expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('3 corrections');
 		expect(document.querySelector('.counts')?.textContent).toBe('2 mistakes · 1 suggestion');
 		const notes = [...document.querySelectorAll('button.note')];
@@ -46,14 +52,14 @@ describe('JournalMargin (#103)', () => {
 	});
 
 	it('expands only the open note', () => {
-		render(JournalMargin, { mode: 'corrections', corrections: list, openId: 'b', onopen: vi.fn(), ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: list, openId: 'b', onopen: vi.fn(), ...ideas }, context: ctx.context });
 		const notes = [...document.querySelectorAll('button.note')];
 		expect(notes.map((n) => n.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false']);
 	});
 
 	it('opening a note calls onopen and scrolls it into view', async () => {
 		const onopen = vi.fn();
-		render(JournalMargin, { mode: 'corrections', corrections: list, openId: null, onopen, ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: list, openId: null, onopen, ...ideas }, context: ctx.context });
 		const note = document.getElementById('correction-a')!;
 		const scroll = vi.fn();
 		note.scrollIntoView = scroll;
@@ -64,7 +70,7 @@ describe('JournalMargin (#103)', () => {
 	});
 
 	it('separates list-only and missing corrections with the existing words', () => {
-		render(JournalMargin, { mode: 'corrections', corrections: list, openId: null, onopen: vi.fn(), ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: list, openId: null, onopen: vi.fn(), ...ideas }, context: ctx.context });
 		const text = document.querySelector('aside')!.textContent!;
 		expect(text).toContain('Not placed in the text');
 		expect(text).toContain('No longer in the text');
@@ -76,19 +82,19 @@ describe('JournalMargin (#103)', () => {
 		mark.id = 'mark-a';
 		document.body.append(mark);
 		const onopen = vi.fn();
-		render(JournalMargin, { mode: 'corrections', corrections: list, openId: 'a', onopen, ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: list, openId: 'a', onopen, ...ideas }, context: ctx.context });
 		await fireEvent.keyDown(screen.getByRole('complementary'), { key: 'Escape' });
 		expect(onopen).toHaveBeenCalledWith(null);
 		expect(document.activeElement).toBe(mark);
 	});
 
 	it('says when there are no corrections', () => {
-		render(JournalMargin, { mode: 'corrections', corrections: [], openId: null, onopen: vi.fn(), ...ideas });
+		render(JournalMargin, { props: { mode: 'corrections', corrections: [], openId: null, onopen: vi.fn(), ...ideas }, context: ctx.context });
 		expect(screen.getByText('No corrections in the current text.')).toBeTruthy();
 	});
 
 	it('ideas mode renders IdeasPanel and the margin is a landmark', () => {
-		render(JournalMargin, { mode: 'ideas', corrections: [], openId: null, onopen: vi.fn(), ...ideas });
+		render(JournalMargin, { props: { mode: 'ideas', corrections: [], openId: null, onopen: vi.fn(), ...ideas }, context: ctx.context });
 		expect(screen.getByRole('complementary', { name: 'Margin' })).toBeTruthy();
 		expect(screen.getByRole('heading', { name: 'Ideas for today' })).toBeTruthy();
 	});

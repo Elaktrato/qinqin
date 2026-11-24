@@ -1,9 +1,10 @@
 // The radical and part lookup's data (#71): GET /api/components (the
 // component index of a language) and GET /api/component-packs (credits).
 // Contract: docs/contracts/radicals/README.md.
-import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
 import type { ComponentPack, ComponentPart, ComponentsResponse, LemmaPack } from './types';
+import type { ComponentsCache } from '../context/caches';
+
 
 export interface ComponentIndex {
 	packs: ComponentsResponse['packs'];
@@ -14,15 +15,6 @@ export interface ComponentIndex {
 // Like the character universe, the index changes only when packs change:
 // it stays in memory for the session, concurrent callers share one
 // request, and errors are not cached. The browser revalidates by ETag.
-const loaded = new Map<string, ComponentIndex>();
-const inFlight = new Map<string, Promise<ComponentIndex>>();
-onSessionEnd(() => clearComponentsCache());
-
-/** clearComponentsCache forgets every loaded index (tests, sign-out). */
-export function clearComponentsCache(): void {
-	loaded.clear();
-	inFlight.clear();
-}
 
 function decode(body: Partial<ComponentsResponse> | null): ComponentIndex {
 	const packs = Array.isArray(body?.packs) ? body.packs : [];
@@ -35,28 +27,28 @@ function decode(body: Partial<ComponentsResponse> | null): ComponentIndex {
  * fetchComponents loads GET /api/components for a language's primary
  * subtag (`zh-TW` asks for `zh`). Public, no credentials sent.
  */
-export function fetchComponents(code: string): Promise<ComponentIndex> {
+export function fetchComponents(cache: ComponentsCache, code: string): Promise<ComponentIndex> {
 	const language = code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
-	const cached = loaded.get(language);
+	const cached = cache.loaded.get(language);
 	if (cached !== undefined) return Promise.resolve(cached);
-	const pending = inFlight.get(language);
+	const pending = cache.inFlight.get(language);
 	if (pending !== undefined) return pending;
 	const params = new URLSearchParams({ language });
 	const promise = api<Partial<ComponentsResponse> | null>(`/api/components?${params}`, { auth: false }).then(
 		(body) => {
 			const index = decode(body);
-			if (inFlight.get(language) === promise) {
-				inFlight.delete(language);
-				loaded.set(language, index);
+			if (cache.inFlight.get(language) === promise) {
+				cache.inFlight.delete(language);
+				cache.loaded.set(language, index);
 			}
 			return index;
 		},
 		(error: unknown) => {
-			if (inFlight.get(language) === promise) inFlight.delete(language);
+			if (cache.inFlight.get(language) === promise) cache.inFlight.delete(language);
 			throw error;
 		}
 	);
-	inFlight.set(language, promise);
+	cache.inFlight.set(language, promise);
 	return promise;
 }
 

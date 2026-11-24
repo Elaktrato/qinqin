@@ -17,7 +17,7 @@ vi.mock('./store', () => ({
 vi.mock('./photoDraftStore', () => ({ loadDraft: vi.fn(() => null), clearDraft: vi.fn() }));
 
 import JournalPage from './JournalPage.svelte';
-import { clearJournalEntriesCache } from './journalEntries.svelte';
+
 import { listEntries } from './store';
 import source from './JournalPage.svelte?raw';
 
@@ -37,7 +37,6 @@ const entry: JournalEntry = {
 };
 
 beforeEach(() => {
-	clearJournalEntriesCache();
 	vi.mocked(listEntries).mockResolvedValue([entry]);
 	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'Chinese' } as never],

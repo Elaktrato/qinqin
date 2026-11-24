@@ -129,16 +129,16 @@ describe('milestones performance', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews, merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events);
 		ctx.session.plugins.set({ list: [], status: 'ready' });
-		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
+		await loadMilestones(ctx.session, 1, { states: ctx.session.plugins, scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
 		expect(replayStats.timelines).toBe(built);
 		// Home: no replay at all.
-		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
 		expect(replayStats.timelines).toBe(built);
 		// A reload (new, equal history and event log arrays after the caches' TTL) walks the log no more.
 		const passes = reachedStats.passes;
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews.map((r) => ({ ...r })), merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events.map((e) => ({ ...e })));
-		await loadMilestones(ctx.session.study, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session, 1, { states: ctx.session.plugins, scope: 'home', language: 'zh', now: NOW });
 		expect(reachedStats.passes).toBe(passes);
 		ctx.session.plugins.set({ list: [], status: 'idle' });
 	}, 60_000);

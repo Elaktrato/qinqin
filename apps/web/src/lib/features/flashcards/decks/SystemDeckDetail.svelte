@@ -53,7 +53,7 @@
 				const found =
 					levelDecks(schemes, language).find((d) => d.packId === wanted.packId && d.level === wanted.level) ?? null;
 				deck = found;
-				if (found !== null) items = await loadLevelItems(found);
+				if (found !== null) items = await loadLevelItems(session.caches.levelItems, found);
 			})
 			.catch((err) => {
 				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));

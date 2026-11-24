@@ -201,7 +201,7 @@
 		const id = entry?.id ?? null;
 		audio = null;
 		if (id === null || !app.auth.token) return;
-		void getEntryAudio(id).then(
+		void getEntryAudio(session.caches.audio, id).then(
 			(r) => {
 				if (entry?.id === id) audio = r;
 			},

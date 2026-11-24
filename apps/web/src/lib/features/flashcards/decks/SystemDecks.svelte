@@ -72,7 +72,7 @@
 		const key = keyOf(deck);
 		const current = items[key];
 		if (Array.isArray(current)) return;
-		loadLevelItems(deck).then(
+		loadLevelItems(session.caches.levelItems, deck).then(
 			(list) => (items = { ...items, [key]: list }),
 			() => (items = { ...items, [key]: 'error' })
 		);

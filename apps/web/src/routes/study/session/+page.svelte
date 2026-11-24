@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { loadStrokeData } from '$lib/study/strokeData';
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/pageTitle';
@@ -11,7 +12,6 @@
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { withShownWritten } from '$lib/study/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
-	import { getPlayer } from '$lib/audio/shared';
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
@@ -511,7 +511,7 @@ import type { Run } from '$lib/study/vacation';
 					online: !offlineSession,
 					seed: sessionSeed
 				},
-				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: loadRanks, levelKeys: loadLevelKeys }
+				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: (language, ids) => loadRanks(session.caches.ranks, language, ids), levelKeys: (scheme) => loadLevelKeys(session.caches.levelItems, scheme) }
 			);
 			if (seq !== requestSeq) return;
 			orderNote = order.note ?? '';
@@ -632,7 +632,7 @@ import type { Run } from '$lib/study/vacation';
 				};
 			}
 			case 'writing': {
-				const chars = await usableChars(item.written ?? entry.written);
+				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch));
 				if (!isEligible('writing', entry, { language, hasSentence: false, usableChars: chars })) {
 					return null;
 				}
@@ -767,7 +767,7 @@ import type { Run } from '$lib/study/vacation';
 			audioSettled = true;
 			return;
 		}
-		void resolveAudio(ids).then((found) => {
+		void resolveAudio(session.caches.audio, ids).then((found) => {
 			if (seq !== requestSeq) return;
 			audioMap = found;
 			audioSettled = true;
@@ -789,7 +789,7 @@ import type { Run } from '$lib/study/vacation';
 
 	function playCurrent(): void {
 		if (!canSound(currentAudio) || currentAudio === null) return;
-		void activate(getPlayer(), currentAudio, currentAudio.lang).catch(() => {});
+		void activate(session.player, currentAudio, currentAudio.lang).catch(() => {});
 	}
 
 	// Autoplay: once per card, right after the reveal, only when the workspace
@@ -814,7 +814,7 @@ import type { Run } from '$lib/study/vacation';
 		const next = queue[index + 1];
 		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
 		if (res !== undefined && next !== undefined && hasWordAudio(next)) {
-			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
+			preloadClips(session.caches.clips, { clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
 		}
 	});
 

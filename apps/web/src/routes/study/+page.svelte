@@ -406,7 +406,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			schemeCharacters = [];
 			return;
 		}
-		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+		Promise.all([fetchSchemeCharacters(session.caches.schemes, scheme.id), fetchCharacters(session.caches.characters, scheme.language)]).then(
 			([levels, list]) => {
 				if (seq !== schemeCharactersSeq) return;
 				schemeCharacters = levels;

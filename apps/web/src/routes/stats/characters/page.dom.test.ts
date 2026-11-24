@@ -226,7 +226,7 @@ describe('Stats → Characters', () => {
 		const firstSeven = new Promise<typeof seven>((resolve) => (releaseSeven = resolve));
 		let calls = 0;
 		vi.mocked(getSchemes).mockResolvedValue(schemes);
-		vi.mocked(fetchSchemeCharacters).mockImplementation((id) => {
+		vi.mocked(fetchSchemeCharacters).mockImplementation((_study, id) => {
 			if (id === 8) return Promise.resolve(eight);
 			calls += 1;
 			return calls === 1 ? firstSeven : Promise.resolve(seven);

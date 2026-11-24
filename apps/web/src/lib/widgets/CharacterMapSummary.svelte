@@ -69,7 +69,7 @@
 		}
 
 		try {
-			const data = await loadCharacterMapData(session.study, id, lang, { force });
+			const data = await loadCharacterMapData(session, id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
 			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);
@@ -79,7 +79,7 @@
 			// Legacy cards without a written snapshot: resolve them like the
 			// map does, then count once more.
 			if (data.cards.some((card) => card.written === undefined)) {
-				const filled = await withLegacyWritten(data.cards);
+				const filled = await withLegacyWritten(session, data.cards);
 				if (seq !== requestSeq) return;
 				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock);
 				unresolved = filled.unresolved;

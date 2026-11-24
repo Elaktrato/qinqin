@@ -57,7 +57,7 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		contextFor: (data, id, now) => contextForData(data, id, now),
 		weights: (data) => activeWeights(data),
 		fetchEntry: (id) => getEntry(id),
-		fetchStroke: (ch) => fetchStrokeData(ch),
+		fetchStroke: (ch) => fetchStrokeData(session.caches.strokes, ch),
 		fetchApi: (path) => api(path),
 		pullPages: (id) => studyPullPages(session.study, id),
 		storage: typeof localStorage === 'undefined' ? null : localStorage,

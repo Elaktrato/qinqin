@@ -99,6 +99,11 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
   pure module wants a function — cost if wrong: one more argument at every call.
 - Ruling: the study commands' "selected workspace" fixture (`selectWorkspace`) went: the study layer cannot reach
   the session's selection at all, so #174's guarantee holds by construction — cost if wrong: none.
+- Ruling: a session's caches of server answers are data classes in one module (`context/caches.ts`) and the
+  functions keep living with their API modules, taking the cache first — the session can then be built even where a
+  test mocks an API module, and the call sites name the cache they use — cost if wrong: one more argument per call.
+- Ruling: the audio player belongs to the session (`session.player`), not the tab — it plays through the session's
+  clip cache, and a sign-out stops it — cost if wrong: none; there is never a player signed out.
 - Ruling: the plugin SDK's `events.record` takes the poster first (the session's `EventLog.post`) instead of
   reaching a module function — the SDK stays a module per plugin until #199 removes it — cost if wrong: none.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
@@ -147,3 +152,11 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    on `EventLog.prototype`. Full vitest under Node 26: 599 files, 12,664 passed; e2e 13 passed.
    Environment: the root file system has about 35 MB available to this machine's processes; from here on vitest
    and e2e run with `TMPDIR` (and the e2e Go build with `GOCACHE`) on `/dev/shm`.
+8a. The caches of server answers into the session (`context/caches.ts` `SessionCaches`: audio, characters,
+   components, entry bases, schemes, clips, starter decks, level items, journal entries, provider names, written
+   forms, frequency ranks, stroke data). Each cache is a data class in `context/caches.ts`; the functions that fill
+   and read it stay in their module and take it first (`getEntryAudio(cache, id)`), so a test that mocks the module
+   still builds a session. The shared audio player became `session.player` (its clips are the session's; the end
+   stops it). The `sessionEpoch` checks of these caches went: a late answer lands in the old session's cache. Pure
+   moves: each cache's tests now build a fresh cache per test instead of calling its `clear…` export. Full vitest
+   under Node 26: 599 files, 12,664 passed. (No e2e run for this commit alone; the next commit's run covers it.)

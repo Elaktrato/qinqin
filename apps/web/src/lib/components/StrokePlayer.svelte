@@ -4,6 +4,8 @@
 	import { fetchStrokeData } from '$lib/study/strokeData';
 	import { t } from '$lib/i18n';
 	import Button from '$lib/ui/Button.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Props {
 		char: string;
@@ -58,7 +60,7 @@
 					unavailableFor = symbol;
 					return;
 				}
-				const [module, result] = await Promise.all([import('hanzi-writer'), fetchStrokeData(symbol)]);
+				const [module, result] = await Promise.all([import('hanzi-writer'), fetchStrokeData(session.caches.strokes, symbol)]);
 				if (cancelled) return;
 				if (result.kind === 'missing') {
 					unavailableFor = symbol;

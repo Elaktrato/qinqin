@@ -62,7 +62,7 @@
 						(d) => d.packId === wanted.packId && d.size === wanted.size
 					) ?? null;
 				deck = found;
-				if (found !== null) entries = await loadStarterEntries(found.packNumId, found.size);
+				if (found !== null) entries = await loadStarterEntries(session.caches.starters, found.packNumId, found.size);
 			})
 			.catch((err) => {
 				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));

@@ -82,7 +82,7 @@
 		}
 		expanded = [...expanded, group.packNumId];
 		if (Array.isArray(items[group.packNumId])) return;
-		loadStarterEntries(group.packNumId, 2000).then(
+		loadStarterEntries(session.caches.starters, group.packNumId, 2000).then(
 			(list) => (items = { ...items, [group.packNumId]: list }),
 			() => (items = { ...items, [group.packNumId]: 'error' })
 		);

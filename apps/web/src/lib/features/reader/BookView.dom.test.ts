@@ -32,7 +32,7 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 	invalidateStudyHistory: vi.fn()
 }));
 vi.mock('$lib/api/entryBases', () => ({
-	loadEntryBases: vi.fn(async (ids: number[]) => new Map(ids.map((id) => [id, { id, language: 'zh', kind: 'word', written: `w${id}`, readings: [], attrs: {}, radicalId: null }])))
+	loadEntryBases: vi.fn(async (_cache: unknown, ids: number[]) => new Map(ids.map((id) => [id, { id, language: 'zh', kind: 'word', written: `w${id}`, readings: [], attrs: {}, radicalId: null }])))
 }));
 vi.mock('$lib/study/currentContext', () => ({ contextForData: () => ({ clock: {} }) }));
 vi.mock('../flashcards/decks/deckStats', () => ({

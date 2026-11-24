@@ -50,7 +50,7 @@
 		const mine = ++seq;
 		loadError = '';
 		try {
-			const next = await loadPage(session.study, id);
+			const next = await loadPage(session, id);
 			if (mine !== seq) return;
 			data = next;
 			record = next.record;
@@ -116,7 +116,7 @@
 		return act(async () => {
 			const id = wsId as number;
 			const target = deck;
-			const result = await addEntries(session.study, id, ids, target);
+			const result = await addEntries(session, id, ids, target);
 			status = addResultText(result, target.name);
 			selected = [];
 			await load(id);

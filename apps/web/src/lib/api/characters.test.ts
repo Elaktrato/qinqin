@@ -1,3 +1,4 @@
+import { CharacterCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
@@ -5,7 +6,13 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError } from './client';
-import { clearCharacterCache, fetchCharacters } from './characters';
+import { fetchCharacters } from './characters';
+
+// A fresh CharacterCache per test (record 0009: the session owns one).
+let cache = new CharacterCache();
+beforeEach(() => {
+	cache = new CharacterCache();
+});
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -20,7 +27,7 @@ function requestedURL(call = 0): URL {
 
 describe('fetchCharacters', () => {
 	beforeEach(() => {
-		clearCharacterCache();
+		cache.clear();
 		vi.stubGlobal('fetch', vi.fn());
 		goto.mockReset();
 	});
@@ -39,7 +46,7 @@ describe('fetchCharacters', () => {
 				]
 			})
 		);
-		const result = await fetchCharacters('ja');
+		const result = await fetchCharacters(cache, 'ja');
 		const url = requestedURL();
 		expect(url.pathname).toBe('/api/characters');
 		expect(url.searchParams.get('language')).toBe('ja');
@@ -51,10 +58,10 @@ describe('fetchCharacters', () => {
 
 	it('sends and caches the primary language subtag', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'zh', count: 0, chars: [] }));
-		const tw = await fetchCharacters('zh-TW');
+		const tw = await fetchCharacters(cache, 'zh-TW');
 		expect(requestedURL().searchParams.get('language')).toBe('zh');
-		const plain = await fetchCharacters('zh');
-		const underscore = await fetchCharacters('ZH_hant');
+		const plain = await fetchCharacters(cache, 'zh');
+		const underscore = await fetchCharacters(cache, 'ZH_hant');
 		expect(plain).toBe(tw);
 		expect(underscore).toBe(tw);
 		expect(fetch).toHaveBeenCalledTimes(1);
@@ -62,7 +69,7 @@ describe('fetchCharacters', () => {
 
 	it('encodes the language parameter', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'a&b', count: 0, chars: [] }));
-		await fetchCharacters('a&b');
+		await fetchCharacters(cache, 'a&b');
 		expect(requestedURL().searchParams.get('language')).toBe('a&b');
 	});
 
@@ -71,26 +78,26 @@ describe('fetchCharacters', () => {
 			const lang = new URL(String(input), 'http://localhost').searchParams.get('language');
 			return jsonResponse({ language: lang, count: 1, chars: [{ i: lang === 'ja' ? 1 : 2, c: '人' }] });
 		});
-		const first = await fetchCharacters('ja');
-		const second = await fetchCharacters('ja');
+		const first = await fetchCharacters(cache, 'ja');
+		const second = await fetchCharacters(cache, 'ja');
 		expect(second).toBe(first);
 		expect(fetch).toHaveBeenCalledTimes(1);
 
-		const zh = await fetchCharacters('zh');
+		const zh = await fetchCharacters(cache, 'zh');
 		expect(zh.chars[0].i).toBe(2);
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
 	it('shares one in-flight request between concurrent callers', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'ja', count: 0, chars: [] }));
-		const [a, b] = await Promise.all([fetchCharacters('ja'), fetchCharacters('ja')]);
+		const [a, b] = await Promise.all([fetchCharacters(cache, 'ja'), fetchCharacters(cache, 'ja')]);
 		expect(a).toBe(b);
 		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it('normalises a missing chars array to [] and count to its length', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'es' }));
-		const result = await fetchCharacters('es');
+		const result = await fetchCharacters(cache, 'es');
 		expect(result).toEqual({ chars: [], count: 0 });
 	});
 
@@ -98,34 +105,34 @@ describe('fetchCharacters', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			jsonResponse({ language: 'ja', count: 1, stale: true, chars: [{ i: 1, c: '一', s: 1 }] })
 		);
-		const stale = await fetchCharacters('ja');
+		const stale = await fetchCharacters(cache, 'ja');
 		expect(stale.stale).toBe(true);
 
 		vi.mocked(fetch).mockResolvedValueOnce(
 			jsonResponse({ language: 'zh', count: 0, stale: 'yes', chars: [] })
 		);
-		const odd = await fetchCharacters('zh');
+		const odd = await fetchCharacters(cache, 'zh');
 		expect(odd.stale).toBeUndefined();
 		expect(odd).toEqual({ chars: [], count: 0 });
 	});
 
 	it('maps HTTP errors to ApiError and does not cache them', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('unsupported language', { status: 400 }));
-		const error = await fetchCharacters('xx').catch((e: unknown) => e);
+		const error = await fetchCharacters(cache, 'xx').catch((e: unknown) => e);
 		expect(error).toBeInstanceOf(ApiError);
 		expect((error as ApiError).status).toBe(400);
 		expect((error as ApiError).message).toBe('unsupported language');
 
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ language: 'xx', count: 0, chars: [] }));
-		await expect(fetchCharacters('xx')).resolves.toEqual({ chars: [], count: 0 });
+		await expect(fetchCharacters(cache, 'xx')).resolves.toEqual({ chars: [], count: 0 });
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
 	it('does not cache a network failure', async () => {
 		vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
-		await expect(fetchCharacters('ja')).rejects.toThrow('Failed to fetch');
+		await expect(fetchCharacters(cache, 'ja')).rejects.toThrow('Failed to fetch');
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ language: 'ja', count: 0, chars: [] }));
-		await expect(fetchCharacters('ja')).resolves.toEqual({ chars: [], count: 0 });
+		await expect(fetchCharacters(cache, 'ja')).resolves.toEqual({ chars: [], count: 0 });
 	});
 
 	it('aborts the request when its only caller aborts and does not cache it', async () => {
@@ -137,12 +144,12 @@ describe('fetchCharacters', () => {
 			});
 		});
 		const controller = new AbortController();
-		const pending = fetchCharacters('ja', controller.signal);
+		const pending = fetchCharacters(cache, 'ja', controller.signal);
 		controller.abort();
 		await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
 
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ language: 'ja', count: 1, chars: [{ i: 1, c: '一' }] }));
-		const result = await fetchCharacters('ja');
+		const result = await fetchCharacters(cache, 'ja');
 		expect(result.count).toBe(1);
 	});
 
@@ -152,8 +159,8 @@ describe('fetchCharacters', () => {
 			() => new Promise<Response>((resolve) => (resolveFetch = resolve))
 		);
 		const controller = new AbortController();
-		const aborted = fetchCharacters('ja', controller.signal);
-		const kept = fetchCharacters('ja');
+		const aborted = fetchCharacters(cache, 'ja', controller.signal);
+		const kept = fetchCharacters(cache, 'ja');
 		controller.abort();
 		await expect(aborted).rejects.toMatchObject({ name: 'AbortError' });
 		resolveFetch(jsonResponse({ language: 'ja', count: 1, chars: [{ i: 1, c: '一' }] }));

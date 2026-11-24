@@ -4,6 +4,8 @@
 	import { answeredBy } from './answeredBy';
 	import { loadProviderNames } from './providerNames';
 	import type { Review } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let {
 		review,
@@ -13,7 +15,7 @@
 	// null while the names load: the line then names the model alone.
 	let names = $state<Map<string, string> | null>(null);
 	onMount(() => {
-		void loadProviderNames().then((m) => (names = m));
+		void loadProviderNames(session.caches.providerNames).then((m) => (names = m));
 	});
 	const providerName = $derived(
 		review.provider && names ? (names.get(review.provider) ?? review.provider) : undefined

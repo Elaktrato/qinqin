@@ -131,7 +131,7 @@ describe('EntryView after an edit', () => {
 		setUrl('/entry/5?edit=1');
 		getEntryMock.mockResolvedValue(entry());
 		const titles: string[] = [];
-		render(EntryView, { props: { entryId: 5, recordView: false, ontitle: (w) => titles.push(w) }, context: ctx.context });
+		render(EntryView, { props: { entryId: 5, recordView: false, ontitle: (w: string) => titles.push(w) }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Save entry' }));
 		expect(titles).toContain('勤勉');
 	});

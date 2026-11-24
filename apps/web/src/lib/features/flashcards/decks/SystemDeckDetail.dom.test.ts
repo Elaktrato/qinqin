@@ -30,7 +30,7 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
-import { clearLevelItemsCache } from './systemDeckItems';
+
 import { primaryActions } from '$lib/ui/testing/primary';
 import SystemDeckDetail from './SystemDeckDetail.svelte';
 
@@ -74,7 +74,6 @@ function apply(rows: readonly { key: string; data: unknown }[]): void {
 }
 
 beforeEach(() => {
-	clearLevelItemsCache();
 	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never

@@ -1,4 +1,3 @@
-import { loadStrokeData } from './strokeData';
 import type { ReviewGrade } from './types';
 
 // Script=Han also admits 々 〆 〇; usableChars drops them (no stroke files).
@@ -36,7 +35,7 @@ export function suggestWritingGrade(outcomes: CharOutcome[]): ReviewGrade {
 /** Writable characters for which stroke data is available. */
 export async function usableChars(
 	written: string,
-	load: (ch: string) => Promise<unknown | null> = (ch) => loadStrokeData(ch)
+	load: (ch: string) => Promise<unknown | null>
 ): Promise<string[]> {
 	const chars = writableChars(written);
 	const data = await Promise.all(chars.map((ch) => load(ch)));

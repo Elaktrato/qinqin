@@ -1,3 +1,4 @@
+import { RanksCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/client', async (importOriginal) => ({
@@ -6,7 +7,13 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 }));
 
 import { api } from '$lib/api/client';
-import { clearFrequencyCaches, loadRanks } from './frequencyRanks';
+import { loadRanks } from './frequencyRanks';
+
+// A fresh RanksCache per test (record 0009: the session owns one).
+let cache = new RanksCache();
+beforeEach(() => {
+	cache = new RanksCache();
+});
 
 type Call = {
 	language: string;
@@ -34,7 +41,7 @@ function answer(call: Call, rankOf: (id: number) => number | null = (id) => id *
 }
 
 beforeEach(() => {
-	clearFrequencyCaches();
+	cache.clear();
 	calls = [];
 	inFlight = 0;
 	maxInFlight = 0;
@@ -66,7 +73,7 @@ const range = (from: number, to: number) =>
 
 describe('loadRanks', () => {
 	it('asks in chunks of 500 with at most two in flight', async () => {
-		const done = loadRanks('ja', range(1, 1100));
+		const done = loadRanks(cache, 'ja', range(1, 1100));
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		expect(calls.map((c) => c.ids.length)).toEqual([500, 500]);
 		expect(calls[0].language).toBe('ja');
@@ -83,14 +90,14 @@ describe('loadRanks', () => {
 	});
 
 	it('an entry without a rank is null, and only unknown ids are asked again', async () => {
-		const first = loadRanks('ja', [1, 2, 3]);
+		const first = loadRanks(cache, 'ja', [1, 2, 3]);
 		await vi.waitFor(() => expect(calls).toHaveLength(1));
 		answer(calls[0], (id) => (id === 2 ? null : id));
 		const a = await first;
 		expect([a.rankOf(1), a.rankOf(2), a.rankOf(3)]).toEqual([1, null, 3]);
 		expect(a.rankOf(99)).toBeNull();
 
-		const second = loadRanks('ja', [3, 2, 4]);
+		const second = loadRanks(cache, 'ja', [3, 2, 4]);
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		expect(calls[1].ids).toEqual([4]);
 		answer(calls[1]);
@@ -98,18 +105,18 @@ describe('loadRanks', () => {
 		expect([b.rankOf(2), b.rankOf(3), b.rankOf(4)]).toEqual([null, 3, 40]);
 
 		// Everything cached: no request.
-		const c = await loadRanks('ja', [1, 4]);
+		const c = await loadRanks(cache, 'ja', [1, 4]);
 		expect(calls).toHaveLength(2);
 		expect(c.rankOf(4)).toBe(40);
 		expect(c.pack?.packId).toBe('jiten-frequency');
 	});
 
 	it('caches per language', async () => {
-		const ja = loadRanks('ja', [1]);
+		const ja = loadRanks(cache, 'ja', [1]);
 		await vi.waitFor(() => expect(calls).toHaveLength(1));
 		answer(calls[0]);
 		await ja;
-		const zh = loadRanks('zh', [1]);
+		const zh = loadRanks(cache, 'zh', [1]);
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		expect(calls[1].language).toBe('zh');
 		calls[1].resolve({ pack: null, ranks: [] });
@@ -119,11 +126,11 @@ describe('loadRanks', () => {
 	});
 
 	it('a failure rejects and is not cached', async () => {
-		const first = loadRanks('ja', [1, 2]);
+		const first = loadRanks(cache, 'ja', [1, 2]);
 		await vi.waitFor(() => expect(calls).toHaveLength(1));
 		calls[0].reject(new Error('offline'));
 		await expect(first).rejects.toThrow('offline');
-		const again = loadRanks('ja', [1, 2]);
+		const again = loadRanks(cache, 'ja', [1, 2]);
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		expect(calls[1].ids).toEqual([1, 2]);
 		answer(calls[1]);
@@ -131,11 +138,11 @@ describe('loadRanks', () => {
 	});
 
 	it('a different ranking pack (re-install) drops the older ranks', async () => {
-		const first = loadRanks('ja', [1]);
+		const first = loadRanks(cache, 'ja', [1]);
 		await vi.waitFor(() => expect(calls).toHaveLength(1));
 		answer(calls[0]);
 		await first;
-		const second = loadRanks('ja', [2]);
+		const second = loadRanks(cache, 'ja', [2]);
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		calls[1].resolve({ pack: { ...PACK, id: 9 }, ranks: [{ id: 2, rank: 5 }] });
 		const b = await second;
@@ -145,7 +152,7 @@ describe('loadRanks', () => {
 	});
 
 	it('a pack switch in the middle of a load reloads what the older pack answered', async () => {
-		const done = loadRanks('ja', range(1, 1000));
+		const done = loadRanks(cache, 'ja', range(1, 1000));
 		await vi.waitFor(() => expect(calls).toHaveLength(2));
 		answer(calls[0]); // ids 1..500 from pack 3
 		calls[1].resolve({ pack: { ...PACK, id: 9 }, ranks: calls[1].ids.map((id) => ({ id, rank: id })) });
@@ -166,11 +173,11 @@ describe('loadRanks', () => {
 			const ids = (opts?.body as { ids: number[] }).ids;
 			return { pack: { ...PACK, id: n }, ranks: ids.map((id) => ({ id, rank: id })) };
 		}) as never);
-		await expect(loadRanks('ja', range(1, 1000))).rejects.toThrow('The frequency list changed while loading');
+		await expect(loadRanks(cache, 'ja', range(1, 1000))).rejects.toThrow('The frequency list changed while loading');
 	});
 
 	it('no ids: no request', async () => {
-		const r = await loadRanks('ja', []);
+		const r = await loadRanks(cache, 'ja', []);
 		expect(calls).toHaveLength(0);
 		expect(r.rankOf(1)).toBeNull();
 	});

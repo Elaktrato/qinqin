@@ -1,16 +1,17 @@
+import { WrittenCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEntry } from '../api/entries';
 import type { Entry } from '../api/types';
-import {
-	clearEntriesCache,
-	fillMissingWritten,
-	fillMissingWrittenProgressively,
-	missingWrittenEntryIds,
-	withWritten
-} from './entriesCache';
+import { fillMissingWritten, fillMissingWrittenProgressively, missingWrittenEntryIds, withWritten } from './entriesCache';
 import type { StudyCard } from './types';
 import * as build from '$lib/testing/study';
+
+// A fresh WrittenCache per test (record 0009: the session owns one).
+let cache = new WrittenCache();
+beforeEach(() => {
+	cache = new WrittenCache();
+});
 
 vi.mock('../api/entries', () => ({ getEntry: vi.fn() }));
 
@@ -21,7 +22,7 @@ function entry(written: string): Entry {
 }
 
 beforeEach(() => {
-	clearEntriesCache();
+	cache.clear();
 	getEntryMock.mockReset();
 });
 
@@ -88,7 +89,7 @@ describe('fillMissingWrittenProgressively', () => {
 
 		const cards = [card('first', 10), card('second', 11)];
 		const snapshots: string[] = [];
-		const run = fillMissingWrittenProgressively(cards, (next) => {
+		const run = fillMissingWrittenProgressively(cache, cards, (next) => {
 			snapshots.push(next.map((item) => item.written ?? '?').join(','));
 		});
 
@@ -105,7 +106,7 @@ describe('fillMissingWrittenProgressively', () => {
 	it('counts cards that could not be resolved', async () => {
 		getEntryMock.mockRejectedValue(new Error('offline'));
 
-		const result = await fillMissingWrittenProgressively(
+		const result = await fillMissingWrittenProgressively(cache, 
 			[card('first', 10), card('second', 11)],
 			() => {}
 		);
@@ -118,8 +119,8 @@ describe('fillMissingWrittenProgressively', () => {
 			.mockRejectedValueOnce(new Error('offline'))
 			.mockResolvedValueOnce(entry('猫'));
 
-		const first = await fillMissingWritten([card('legacy', 10)]);
-		const second = await fillMissingWritten([card('legacy', 10)]);
+		const first = await fillMissingWritten(cache, [card('legacy', 10)]);
+		const second = await fillMissingWritten(cache, [card('legacy', 10)]);
 
 		expect(first[0].written).toBeUndefined();
 		expect(second[0].written).toBe('猫');
@@ -129,8 +130,8 @@ describe('fillMissingWrittenProgressively', () => {
 	it('caches a successful resolution across loads', async () => {
 		getEntryMock.mockResolvedValue(entry('猫'));
 
-		await fillMissingWritten([card('legacy', 10)]);
-		await fillMissingWritten([card('legacy', 10)]);
+		await fillMissingWritten(cache, [card('legacy', 10)]);
+		await fillMissingWritten(cache, [card('legacy', 10)]);
 
 		expect(getEntryMock).toHaveBeenCalledTimes(1);
 	});
@@ -154,7 +155,7 @@ describe('backfill coalescing', () => {
 		);
 		let publishes = 0;
 		let last: StudyCard[] = [];
-		const run = fillMissingWrittenProgressively(legacyDeck(500), (next) => {
+		const run = fillMissingWrittenProgressively(cache, legacyDeck(500), (next) => {
 			publishes += 1;
 			last = next;
 		});
@@ -176,7 +177,7 @@ describe('backfill coalescing', () => {
 			(id) => new Promise<Entry>((resolve) => setTimeout(() => resolve(entry(`字${id}`)), 10 * id))
 		);
 		const snapshots: number[] = [];
-		const run = fillMissingWrittenProgressively(
+		const run = fillMissingWrittenProgressively(cache, 
 			legacyDeck(4),
 			(next) => snapshots.push(next.filter((c) => c.written !== undefined).length)
 		);
@@ -191,7 +192,7 @@ describe('backfill coalescing', () => {
 		vi.useFakeTimers();
 		getEntryMock.mockResolvedValue(entry('猫'));
 		let publishes = 0;
-		await fillMissingWrittenProgressively(
+		await fillMissingWrittenProgressively(cache, 
 			[card('a', 1), card('b', 2)],
 			() => (publishes += 1)
 		);
@@ -203,11 +204,11 @@ describe('backfill coalescing', () => {
 
 	it('publishes cached resolutions once and does not refetch them', async () => {
 		getEntryMock.mockImplementation(async (id) => entry(`字${id}`));
-		await fillMissingWritten(legacyDeck(50));
+		await fillMissingWritten(cache, legacyDeck(50));
 		getEntryMock.mockClear();
 
 		let publishes = 0;
-		await fillMissingWrittenProgressively(legacyDeck(50), () => (publishes += 1));
+		await fillMissingWrittenProgressively(cache, legacyDeck(50), () => (publishes += 1));
 
 		expect(publishes).toBe(1);
 		expect(getEntryMock).not.toHaveBeenCalled();
@@ -215,9 +216,9 @@ describe('backfill coalescing', () => {
 
 	it('does not publish when every cached resolution has no written form', async () => {
 		getEntryMock.mockResolvedValue(entry(''));
-		await fillMissingWritten([card('a', 1)]);
+		await fillMissingWritten(cache, [card('a', 1)]);
 		let publishes = 0;
-		await fillMissingWrittenProgressively([card('a', 1)], () => (publishes += 1));
+		await fillMissingWrittenProgressively(cache, [card('a', 1)], () => (publishes += 1));
 		expect(publishes).toBe(0);
 	});
 });

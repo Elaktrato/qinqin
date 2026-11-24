@@ -135,7 +135,7 @@
 	 * each entry resolves. Whatever remains unresolved is reported.
 	 */
 	async function backfillWritten(initial: readonly StudyCard[], seq: number): Promise<void> {
-		const result = await fillMissingWrittenProgressively(initial, (nextCards) => {
+		const result = await fillMissingWrittenProgressively(session.caches.written, initial, (nextCards) => {
 			if (seq !== requestSeq) return;
 			cards = nextCards;
 		});
@@ -188,7 +188,7 @@
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed.
 			const [list, schemeList, data] = await Promise.all([
-				fetchCharacters(lang),
+				fetchCharacters(session.caches.characters, lang),
 				loadSchemeList(),
 				loadStudyData(session.study, id)
 			]);
@@ -308,7 +308,7 @@
 		try {
 			// One request for every level: the server sends each level's
 			// characters as one string, lowest level first.
-			const levels = await fetchSchemeCharacters(id);
+			const levels = await fetchSchemeCharacters(session.caches.schemes, id);
 			if (seq !== membersSeq) return;
 			members = { schemeId: id, levels };
 		} catch (err) {
@@ -324,7 +324,7 @@
 		levelLoading = true;
 		levelError = '';
 		try {
-			const levels = await fetchSchemeCharacters(id);
+			const levels = await fetchSchemeCharacters(session.caches.schemes, id);
 			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
 			levelMembers = { schemeId: id, levels };
 		} catch (err) {

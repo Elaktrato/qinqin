@@ -1040,7 +1040,7 @@
 			entryIds: ids,
 			target,
 			now: new Date(),
-			bases: (x) => loadEntryBases(x),
+			bases: (x) => loadEntryBases(session.caches.entryBases, x),
 			raw: () => loadRawStudyData(session.study, wsId),
 			push: withStudy(session.study, pushStudy)
 		}));
