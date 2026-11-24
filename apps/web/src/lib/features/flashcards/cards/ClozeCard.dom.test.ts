@@ -37,6 +37,16 @@ function setup(over: Record<string, unknown> = {}) {
 	return { onDone, props, ...view };
 }
 
+describe('ClozeCard and an AI example (#186)', () => {
+	it('marks a sentence an AI wrote, and no other', () => {
+		setup({ sentence: { ...sentence, ai: { provider: 'anthropic', model: 'm' } } });
+		expect(screen.getByText('AI-written')).toBeTruthy();
+		cleanup();
+		setup();
+		expect(screen.queryByText('AI-written')).toBeNull();
+	});
+});
+
 describe('ClozeCard (type)', () => {
 	it('shows the sentence with gaps and the translation, hides the reading', () => {
 		const { container } = setup();

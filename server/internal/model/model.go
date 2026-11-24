@@ -172,4 +172,14 @@ type Sentence struct {
 	Translation string     `json:"translation"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `json:"deletedAt"`
+	// AI marks a sentence an AI wrote (#186, docs/contracts/examples/): the
+	// learner's own kept example, with the provider and model; nil for every
+	// other sentence.
+	AI *SentenceAI `json:"ai"`
+}
+
+// SentenceAI is who wrote an AI example: the provider id and the model.
+type SentenceAI struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
 }

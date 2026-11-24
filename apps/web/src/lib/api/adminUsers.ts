@@ -31,6 +31,8 @@ export interface DeletionPreview {
 	sessions: number;
 	overlays: number;
 	sentences: number;
+	/** Reports of AI example sentences (#186). */
+	exampleReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
 }

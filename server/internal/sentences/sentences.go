@@ -127,19 +127,21 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error
 
 // sentenceColumns is the column list every sentence read selects, in the
 // order scanSentence expects.
-const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at`
+const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model`
 
 // scanSentence reads one row of sentenceColumns.
 func scanSentence(row interface{ Scan(...any) error }) (model.Sentence, error) {
 	var (
-		s         model.Sentence
-		userID    sql.NullInt64
-		updatedAt string
+		s                   model.Sentence
+		userID              sql.NullInt64
+		updatedAt           string
+		aiProvider, aiModel string
 	)
 	if err := row.Scan(&s.ID, &s.EntryID, &s.SourcePack, &userID,
-		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt); err != nil {
+		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt, &aiProvider, &aiModel); err != nil {
 		return s, err
 	}
+	s.AI = AIMark(aiProvider, aiModel)
 	updated, err := time.Parse(time.RFC3339, updatedAt)
 	if err != nil {
 		return s, fmt.Errorf("parse updated_at %q of sentence %d: %w", updatedAt, s.ID, err)

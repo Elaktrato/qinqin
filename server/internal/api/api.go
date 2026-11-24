@@ -29,7 +29,11 @@ type server struct {
 	// segmentHook runs inside POST /api/segment once its slot is taken
 	// (tests); segments counts each user's segmentations in flight.
 	segmentHook func()
-	segments    inFlight
+	// aiSlotHook runs inside runAI when the user's AI slot is taken
+	// ("acquired", before the provider call) and just before it is released
+	// ("releasing") (tests).
+	aiSlotHook func(kind, phase string)
+	segments   inFlight
 
 	db        *sql.DB
 	dataDir   string
@@ -324,6 +328,12 @@ func (s *server) routes() []route {
 		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil, noTok},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil, tokWriteAny},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil, tokWriteAny},
+		// AI example sentences (#186): the caller's own AI key; no access tokens.
+		{"GET /api/entries/{id}/examples", s.handleGetExamples, accUser, nil, noTok},
+		{"POST /api/entries/{id}/examples", s.handleGenerateExamples, accUser, nil, noTok},
+		{"POST /api/entries/{id}/examples/{draftId}/keep", s.handleKeepExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/examples/{draftId}", s.handleDiscardExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteAIExample, accUser, nil, noTok},
 		{"GET /api/search", s.handleSearch, accPublic, nil, tokReadGlobal},
 		{"GET /api/segment/at", s.handleSegmentAt, accPublic, nil, tokReadGlobal},
 		{"POST /api/segment", s.handleSegment, accUser, nil, tokReadGlobal},

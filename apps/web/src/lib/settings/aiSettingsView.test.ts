@@ -160,7 +160,7 @@ describe('lines and helpers', () => {
 
 	it('words the privacy note with the provider name', () => {
 		expect(privacyNote('DeepSeek')).toBe(
-			"Your journal text, conversation messages, guidance and the photos you choose to read with AI are sent to DeepSeek when you press a button. DeepSeek's terms apply."
+			"Your journal text, conversation messages, guidance, the photos you choose to read with AI and the words you ask examples for, with their examples (your own saved sentences among them), are sent to DeepSeek when you press a button. DeepSeek's terms apply."
 		);
 	});
 

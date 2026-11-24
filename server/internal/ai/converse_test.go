@@ -82,7 +82,7 @@ func TestConverseCapsTheSampleAndTheHistory(t *testing.T) {
 }
 
 func TestConverseLevelsAreClosed(t *testing.T) {
-	for _, l := range ConverseLevels {
+	for _, l := range Levels {
 		if levelDescription(l) == "" {
 			t.Errorf("level %q has no description", l)
 		}

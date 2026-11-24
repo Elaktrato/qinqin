@@ -23,6 +23,9 @@ var seedSQL = map[string][]string{
 	"keyed_rows":            {`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?1, NULL, 'home-layout', '{}', 1, 't', 't')`},
 	"user_edits":            {`INSERT INTO user_edits (user_id, entry_id, updated_at) VALUES (?1, 1, 't')`},
 	"sentences":             {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
+	"example_drafts":        {`INSERT INTO example_drafts (user_id, entry_id, request_id, hanzi, pinyin, translation, level, provider, model, created_at) VALUES (?1, 1, 'r', 'h', '', 't', 'beginner', 'p', 'm', 't')`},
+	"example_generations":   {`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at) VALUES (?1, 1, 'r', 'beginner', 0, 'p', 'm', 't')`},
+	"example_reports":       {`INSERT INTO example_reports (user_id, entry_id, language, hanzi, pinyin, translation, reason, level, provider, model, created_at) VALUES (?1, 1, 'zh', 'h', '', 't', 'other', 'beginner', 'p', 'm', 't')`},
 	"library_books":         {`INSERT INTO library_books (user_id, workspace_id, language, title, created_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'zh', 'B', 't')`},
 	"library_bookmarks":     {`INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), '0:0', 't')`},
 	"library_highlights":    {`INSERT INTO library_highlights (user_id, book_id, chapter, paragraph, start_cp, end_cp, text, created_at, updated_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), 0, 0, 0, 1, 'x', 't', 't')`},
@@ -170,7 +173,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, AccessTokens: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
@@ -336,6 +339,10 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 		case tb.Name == "journal_photos":
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
 				t.Errorf("journal_photos: skip export, drop on restore")
+			}
+		case tb.Name == "example_drafts" || tb.Name == "example_generations":
+			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
+				t.Errorf("%s: skip export (undecided AI output, retry bookkeeping), drop on restore", tb.Name)
 			}
 		default:
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreKeep {

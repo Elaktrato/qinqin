@@ -4,6 +4,7 @@
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';
+	import AiTag from '$lib/components/AiTag.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
@@ -85,6 +86,7 @@
 			>{#snippet strong(text: string)}<strong lang={language}>{text}</strong>{/snippet}</Msg
 		>
 	</p>
+	<AiTag ai={sentence.ai} />
 </FacePrompt>
 
 <FaceWork>

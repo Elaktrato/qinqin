@@ -266,11 +266,15 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	}
 	// own sentences (pack sentences are content, not user data)
 	if counts["sentences"], err = writeParts(ctx, tx, a, NameSentences,
-		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
+		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var s OwnSentence
-			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt); err != nil {
+			var aiProvider, aiModel, aiLevel string
+			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt, &aiProvider, &aiModel, &aiLevel); err != nil {
 				return nil, err
+			}
+			if aiProvider != "" || aiModel != "" { // a kept AI example (#186)
+				s.AI = &SentenceAI{Provider: aiProvider, Model: aiModel, Level: aiLevel}
 			}
 			refs.entries[s.EntryID] = struct{}{}
 			return s, nil

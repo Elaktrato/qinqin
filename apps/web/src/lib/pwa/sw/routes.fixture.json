@@ -72,6 +72,14 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/entries/{id}/examples/{draftId}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/entries/{id}/sentences/{sentenceId}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/events/lookups",
 		"access": "user"
 	},
@@ -230,6 +238,10 @@
 	{
 		"pattern": "GET /api/entries/{id}/chars",
 		"access": "public"
+	},
+	{
+		"pattern": "GET /api/entries/{id}/examples",
+		"access": "user"
 	},
 	{
 		"pattern": "GET /api/events",
@@ -593,6 +605,14 @@
 	},
 	{
 		"pattern": "POST /api/entries/frequency-ranks",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/{id}/examples",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/{id}/examples/{draftId}/keep",
 		"access": "user"
 	},
 	{

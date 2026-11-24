@@ -21,10 +21,11 @@ const (
 	MaxConverseHistory = 12
 )
 
-// ConverseLevels is the closed set of levels, easiest first.
-var ConverseLevels = []string{"beginner", "elementary", "intermediate", "advanced"}
+// Levels is the closed set of learner levels, easiest first, shared by the
+// conversation partner (#185) and the AI examples (#186).
+var Levels = []string{"beginner", "elementary", "intermediate", "advanced"}
 
-// ValidLevel reports whether level is one of ConverseLevels.
+// ValidLevel reports whether level is one of Levels.
 func ValidLevel(level string) bool { return levelDescription(level) != "" }
 
 func levelDescription(level string) string {

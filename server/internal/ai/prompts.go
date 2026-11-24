@@ -106,7 +106,7 @@ func transcribeUserMessage(r TranscribeRequest) string {
 }
 
 // systemPrompt returns the system prompt of a task ("review", "suggest",
-// "transcribe" or "converse"). The base constants are byte-identical for every adapter; the
+// "transcribe", "converse" or "examples"). The base constants are byte-identical for every adapter; the
 // modes without a schema parameter append the schema as a constant suffix.
 func systemPrompt(task string, mode Structured) string {
 	base, schema := "", ""
@@ -119,6 +119,8 @@ func systemPrompt(task string, mode Structured) string {
 		base, schema = transcribeSystemPrompt, transcribeSchema
 	case "converse":
 		base, schema = converseSystemPrompt, converseSchema
+	case "examples":
+		base, schema = examplesSystemPrompt, examplesSchema
 	default:
 		panic("ai: unknown task " + task)
 	}
@@ -136,6 +138,8 @@ func taskSchema(task string) string {
 		return suggestSchema
 	case "converse":
 		return converseSchema
+	case "examples":
+		return examplesSchema
 	}
 	return transcribeSchema
 }

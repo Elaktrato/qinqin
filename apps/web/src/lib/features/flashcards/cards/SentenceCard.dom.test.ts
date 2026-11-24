@@ -36,6 +36,16 @@ async function placeInOrder(): Promise<void> {
 	for (const word of ['我', '喜欢']) await fireEvent.click(screen.getByRole('button', { name: `Place ${word}` }));
 }
 
+describe('SentenceCard and an AI example (#186)', () => {
+	it('marks a sentence an AI wrote, and no other', async () => {
+		await setup({ sentence: { ...sentence, ai: { provider: 'anthropic', model: 'm' } } });
+		expect(screen.getByText('AI-written')).toBeTruthy();
+		cleanup();
+		await setup();
+		expect(screen.queryByText('AI-written')).toBeNull();
+	});
+});
+
 describe('SentenceCard on the open page (#101)', () => {
 	it('prompt is the translation and "Uses <word>"', async () => {
 		await setup();

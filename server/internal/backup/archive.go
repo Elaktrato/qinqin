@@ -16,7 +16,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/events"
+	"qinqin/internal/sentences"
 )
 
 // Error codes of an invalid archive (docs/contracts/auth/errors.json).
@@ -351,16 +353,21 @@ func (a *Archive) validate() error {
 		return err
 	}
 	seenSent := map[int64]struct{}{}
+	aiPerEntry := map[int64]int{}
 	if counts["sentences"], err = a.countLines(read, NameSentences, func(b []byte) error {
 		var s OwnSentence
-		if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
-			len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		if !ownSentenceLineOK(b) || decodeStrict(b, &s) != nil {
 			return invalid("%s holds a malformed line", NameSentences)
 		}
 		if _, dup := seenSent[s.ID]; dup {
 			return invalid("%s names a sentence twice", NameSentences)
 		}
 		seenSent[s.ID] = struct{}{}
+		if s.AI != nil {
+			if aiPerEntry[s.EntryID]++; aiPerEntry[s.EntryID] > sentences.MaxKeptPerEntry {
+				return invalid("%s holds more than %d AI examples of one entry", NameSentences, sentences.MaxKeptPerEntry)
+			}
+		}
 		return nil
 	}); err != nil {
 		return err
@@ -717,6 +724,26 @@ func (a *Archive) Rows(fn func(Row) error) error {
 
 // Overlays streams overlays.jsonl.
 func (a *Archive) Overlays(fn func(Overlay) error) error { return eachFamily(a, NameOverlays, fn) }
+
+// ownSentenceLineOK is the live rule of an own sentences line: an id, an
+// entry and a text within the caps, and a well-formed AI mark when there is
+// one (#186).
+func ownSentenceLineOK(b []byte) bool {
+	var s OwnSentence
+	if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
+		len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		return false
+	}
+	if s.AI == nil {
+		return true
+	}
+	// A kept AI example: the live rules of the examples (#186, docs/contracts/examples/).
+	return s.AI.Provider != "" && s.AI.Model != "" && len(s.AI.Provider) <= 64 && len(s.AI.Model) <= 200 && ai.ValidLevel(s.AI.Level) &&
+		strings.TrimSpace(s.Translation) != "" &&
+		utf8.RuneCountInString(s.Hanzi) <= sentences.MaxExampleTextRunes &&
+		utf8.RuneCountInString(s.Translation) <= sentences.MaxExampleTranslationRunes &&
+		utf8.RuneCountInString(s.Pinyin) <= sentences.MaxExampleReadingRunes
+}
 
 // OwnSentences streams sentences.jsonl.
 func (a *Archive) OwnSentences(fn func(OwnSentence) error) error {

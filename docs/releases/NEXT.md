@@ -35,6 +35,12 @@ https://github.com/Elaktrato/qinqin/wiki
   Talk with the AI). Your messages get the journal's corrections, the partner's replies have the reader's lookup
   popup with +, and a conversation is saved as a journal entry or discarded (#185).
 
+**Dictionary**
+- **AI examples:** a word with few example sentences offers **Generate examples**: your own AI provider writes
+  some at your level, with a reading and a translation. The server keeps only sentences that contain the word (a
+  conjugated Japanese verb counts) in the right script; you keep, delete or report each one. Kept ones are marked
+  AI-written on the entry and on every card, feed your Word Salad and cloze cards, and are yours alone (#186).
+
 **Reading**
 - Lemmatizer rule tables are a data pack type, `lemma-rules`; the Japanese table ships as the `ja-lemma` pack.
   An installed table replaces the built-in one for its language. Tables are bounded, and the segment and lookup

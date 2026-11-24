@@ -1,19 +1,28 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
-	import type { Sentence } from '$lib/api/types';
+	import type { Snippet } from 'svelte';
+	import type { Sentence, SentenceAi } from '$lib/api/types';
+	import { aiMark } from '$lib/api/examples';
 	import { markTerm } from '$lib/entry/markTerm';
+	import AiTag from './AiTag.svelte';
 
 	let {
 		sentences,
 		language = '',
-		term = ''
+		term = '',
+		aiLabelOf,
+		actions
 	}: {
 		sentences: Sentence[];
 		/** The entry's language. */
 		language?: string;
 		/** The entry's word, set in the reading accent inside each example. */
 		term?: string;
+		/** The label of an AI-written sentence (#186: model and provider); "AI-written" without it. */
+		aiLabelOf?: (mark: SentenceAi) => string;
+		/** Controls after an AI-written sentence (delete, report); `id` is its text's element id. */
+		actions?: Snippet<[Sentence, string]>;
 	} = $props();
 
 	const parts = (hanzi: string) => markTerm(hanzi, term);
@@ -32,17 +41,23 @@
 
 {#if sentences.length > 0}
 	<section class="sentences" aria-labelledby="sentences-heading">
-		<h2 id="sentences-heading">{t('entry.page.examples')}</h2>
+		<h2 id="sentences-heading" tabindex="-1">{t('entry.page.examples')}</h2>
 		<ul>
 			{#each sentences as sentence (sentence.id)}
+				{@const mark = aiMark(sentence.ai)}
 				<li class="sentence">
-					<p class="hanzi" lang={studyLang(language)}
+					<p class="hanzi" id={`sentence-${sentence.id}`} lang={studyLang(language)}
 						>{#each parts(sentence.hanzi) as part, index (index)}{#if part.match}<b class="term">{part.text}</b
 								>{:else}{part.text}{/if}{/each}</p
 					>
 					{#if sentence.pinyin}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
 					{#if sentence.translation}<p class="translation" lang={glossLang(undefined)}>{sentence.translation}</p>{/if}
-					<span class="origin">{origin(sentence)}</span>
+					{#if mark !== null}
+						<AiTag ai={sentence.ai} label={aiLabelOf?.(mark)} />
+						{@render actions?.(sentence, `sentence-${sentence.id}`)}
+					{:else}
+						<span class="origin">{origin(sentence)}</span>
+					{/if}
 				</li>
 			{/each}
 		</ul>

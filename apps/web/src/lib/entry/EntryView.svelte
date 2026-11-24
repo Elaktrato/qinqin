@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { profileOf } from '$lib/languageProfiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -39,6 +40,12 @@
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+	import AiExamples from './examples/AiExamples.svelte';
+	import ExampleActions from './examples/ExampleActions.svelte';
+	import { aiLabel, generateErrorText } from './examples/examples';
+	import { aiMark, deleteAiSentence, type ReportReason } from '$lib/api/examples';
+	import type { Sentence } from '$lib/api/types';
+	import { loadProviderNames } from '$lib/features/journal/providerNames';
 
 	const session = useSession();
 	const app = useApp();
@@ -88,6 +95,50 @@
 
 	// The entry's recordings (signed-in users only; the device voice needs none).
 	let audio = $state<AudioResolution | null>(null);
+
+	// AI examples (#186): provider names for the "AI-written" label, and the
+	// last delete or report failure of a kept one.
+	let providerNames = $state<ReadonlyMap<string, string>>(new Map());
+	let exampleError = $state('');
+	$effect(() => {
+		if (entry?.sentences.some((s) => aiMark(s.ai) !== null)) {
+			void loadProviderNames(session.caches.providerNames).then((m) => (providerNames = m));
+		}
+	});
+
+	// After a kept or deleted AI example the entry is fetched again in the
+	// background: the service worker's offline copy of the answer follows.
+	function refreshOfflineCopy(id: number): void {
+		void getEntry(id).catch(() => {});
+	}
+
+	function addSentence(sentence: Sentence): void {
+		if (entry && sentence.entryId === entry.id) {
+			entry = { ...entry, sentences: [...entry.sentences, sentence] };
+			refreshOfflineCopy(entry.id);
+		}
+	}
+
+	async function removeAiSentence(sentence: Sentence, reason?: ReportReason): Promise<void> {
+		if (!entry) return;
+		exampleError = '';
+		try {
+			await deleteAiSentence(entry.id, sentence.id, reason);
+			const aiIds = entry.sentences.filter((s) => aiMark(s.ai) !== null).map((s) => s.id);
+			const index = aiIds.indexOf(sentence.id);
+			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
+			refreshOfflineCopy(entry.id);
+			// The focus stays in the examples: the next AI example's first button,
+			// else the AI examples heading, the examples heading or the word.
+			await tick();
+			const left = aiIds.filter((id) => id !== sentence.id);
+			const next = left[Math.min(Math.max(index, 0), left.length - 1)];
+			const button = next === undefined ? null : document.querySelector<HTMLElement>(`[aria-describedby="sentence-${next}"]`);
+			(button ?? document.getElementById('ai-examples-heading') ?? document.getElementById('sentences-heading') ?? headingEl)?.focus();
+		} catch (err) {
+			exampleError = generateErrorText(err);
+		}
+	}
 
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
@@ -356,7 +407,13 @@
 		<div class="columns">
 			<div class="main">
 				{#key entry.id}<Senses senses={entry.senses} senseGroups={entry.senseGroups} />{/key}
-				<Sentences sentences={entry.sentences} language={entry.language} term={entry.written} />
+				<Sentences sentences={entry.sentences} language={entry.language} term={entry.written} aiLabelOf={(mark) => aiLabel(mark, providerNames)}>
+					{#snippet actions(sentence: Sentence, id: string)}
+						<ExampleActions describedBy={id} onremove={(reason) => removeAiSentence(sentence, reason)} />
+					{/snippet}
+				</Sentences>
+				{#if exampleError}<p class="example-error" role="alert">{exampleError}</p>{/if}
+				{#key entry.id}<AiExamples entry={entry} onkept={addSentence} />{/key}
 				{#if related.length > 0}
 					<section class="section related" aria-labelledby="related-heading">
 						<h2 id="related-heading">{t('entry.page.related')}</h2>
@@ -555,6 +612,11 @@
 		gap: var(--space-5);
 		align-items: start;
 		margin-top: var(--space-4);
+	}
+
+	.example-error {
+		margin: 0;
+		color: var(--readable-bad);
 	}
 
 	.main,

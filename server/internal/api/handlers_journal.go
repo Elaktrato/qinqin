@@ -73,6 +73,10 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 		return aiRun{}, err
 	}
 	defer release()
+	if s.aiSlotHook != nil {
+		s.aiSlotHook(kind, "acquired")
+		defer s.aiSlotHook(kind, "releasing")
+	}
 	// Only a call that may run decrypts the key and stamps last_used_at.
 	provider, spec, creds, err := s.ai.For(r.Context(), userID)
 	if err != nil {

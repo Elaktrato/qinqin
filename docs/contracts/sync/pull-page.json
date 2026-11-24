@@ -115,7 +115,8 @@
    "pinyin",
    "translation",
    "updatedAt",
-   "deletedAt"
+   "deletedAt",
+   "ai"
   ],
   "events": [
    "id",
@@ -477,7 +478,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -1211,7 +1213,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -1354,7 +1357,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -1607,7 +1611,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -2936,7 +2941,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -3081,7 +3087,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -3225,7 +3232,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -3369,7 +3377,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -3514,7 +3523,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [
@@ -3658,7 +3668,8 @@
        "pinyin": "nǐ hǎo, shìjiè.",
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
-       "deletedAt": null
+       "deletedAt": null,
+       "ai": null
       }
      ],
      "events": [

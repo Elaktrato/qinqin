@@ -50,6 +50,8 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, a curri
 
 ### Companion cards
 
+An example sentence an AI wrote for you ([AI examples](Searching-and-entries#ai-examples), the ones you kept) is marked **AI-written** on every card that shows it: Word Salad, cloze and the vocab answer. Kept AI examples come after the dictionary's own examples, so a word with enough curated examples uses those first.
+
 Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session); the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
 
 ### Reverse and cloze cards

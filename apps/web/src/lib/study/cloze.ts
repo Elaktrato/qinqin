@@ -62,8 +62,12 @@ function literalSpans(chars: readonly string[], candidates: readonly string[]): 
 	return found.sort((a, b) => a.start - b.start);
 }
 
+const HAN = /\p{Script=Han}/u;
+
 /**
- * blankSpans: the segmenter matches that resolve to the entry; without
+ * blankSpans: the segmenter matches that resolve to the entry (for a word
+ * written with Han, a kana-only match only when the entry is its first
+ * candidate); without
  * any, the literal occurrences of its written form and form texts.
  */
 export function blankSpans(
@@ -72,10 +76,13 @@ export function blankSpans(
 	matches: readonly SegmentLike[]
 ): Span[] {
 	const chars = [...text];
+	const hanWord = HAN.test(entry.written);
+	// A kana-only surface of a word written with Han (はし for 橋) is a homophone
+	// unless the segmenter ranks the entry first for it (#186).
+	const resolves = (m: SegmentLike) =>
+		hanWord && !HAN.test(chars.slice(m.start, m.end).join('')) ? m.entries[0]?.id === entry.id : m.entries.some((e) => e.id === entry.id);
 	const matched = clean(
-		matches
-			.filter((m) => m.entries.some((e) => e.id === entry.id))
-			.map((m) => ({ start: m.start, end: m.end })),
+		matches.filter(resolves).map((m) => ({ start: m.start, end: m.end })),
 		chars.length
 	);
 	if (matched.length > 0) return matched;

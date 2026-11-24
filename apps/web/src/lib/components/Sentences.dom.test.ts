@@ -40,3 +40,25 @@ describe('Sentences as Examples (#104)', () => {
 		expect(style).toMatch(/\.term\s*\{[^}]*color:\s*var\(--reading-accent\)/);
 	});
 });
+
+const base = { entryId: 1, pinyin: '', translation: 't', userId: 1 };
+const list: Sentence[] = [
+	{ ...base, id: 1, sourcePack: 'tatoeba', userId: null, hanzi: '我喜欢茶。', ai: null },
+	{ ...base, id: 2, sourcePack: '', hanzi: '我喜欢学习。', ai: { provider: 'anthropic', model: 'claude-opus-5-5' } },
+	{ ...base, id: 3, sourcePack: '', hanzi: '书上的句子。' }
+];
+
+describe('Sentences (#186)', () => {
+	it('marks an AI example with its label and leaves the others as they were', () => {
+		render(Sentences, { props: { sentences: list, language: 'zh', term: '喜欢', aiLabelOf: (m) => `AI-written · ${m.model}` } });
+		expect(screen.getByText('AI-written · claude-opus-5-5')).toBeTruthy();
+		expect(screen.getByText('tatoeba')).toBeTruthy();
+		expect(screen.getByText('user #1')).toBeTruthy();
+		expect(screen.getAllByText(/AI-written/)).toHaveLength(1);
+	});
+
+	it('says "AI-written" without a label', () => {
+		render(Sentences, { props: { sentences: list } });
+		expect(screen.getByText('AI-written')).toBeTruthy();
+	});
+});

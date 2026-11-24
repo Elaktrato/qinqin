@@ -9,10 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/lang"
 )
 
 // The conversation partner (#185, docs/contracts/journal/conversations.json):
@@ -91,7 +91,7 @@ func NewConversationID() string {
 func ValidateStart(topic, level string) error {
 	switch {
 	case !ai.ValidLevel(level):
-		return invalid("level must be one of %s.", strings.Join(ai.ConverseLevels, ", "))
+		return invalid("level must be one of %s.", strings.Join(ai.Levels, ", "))
 	case !utf8.ValidString(topic) || utf8.RuneCountInString(topic) > MaxTopicRunes || !plainText(topic):
 		return invalid("topic must be plain text of at most %d characters.", MaxTopicRunes)
 	}
@@ -149,38 +149,16 @@ func ConversationFull(c Conversation) bool { return len(c.Messages)+2 > MaxMessa
 // PartnerReply is the model's reply as stored: plain text, trimmed, cut to
 // MaxReplyRunes. ErrReplyEmpty for an empty reply, ErrReplyLanguage for one
 // that is not mostly written in the workspace language's script
-// (ReplyFitsLanguage).
+// (lang.MostlyInScript).
 func PartnerReply(language, reply string) (string, error) {
 	r := strings.TrimSpace(cutRunes(plainOnly(reply), MaxReplyRunes))
 	switch {
 	case r == "":
 		return "", ErrReplyEmpty
-	case !ReplyFitsLanguage(language, r):
+	case !lang.MostlyInScript(language, r):
 		return "", ErrReplyLanguage
 	}
 	return r, nil
-}
-
-// ReplyFitsLanguage is the journal's script check (CorrectionFitsLanguage,
-// the language profile) plus a majority: at least half of the reply's
-// letters must be in the language's script, so a reply in English with one
-// word of the language is refused. A language whose script the check does
-// not know passes, as in CorrectionFitsLanguage.
-func ReplyFitsLanguage(language, reply string) bool {
-	if !CorrectionFitsLanguage(language, reply) {
-		return false
-	}
-	inScript, letters := 0, 0
-	for _, r := range reply {
-		if !unicode.IsLetter(r) {
-			continue
-		}
-		letters++
-		if CorrectionFitsLanguage(language, string(r)) {
-			inScript++
-		}
-	}
-	return letters == 0 || 2*inScript >= letters
 }
 
 // TurnAnnotations validates the model's corrections of the learner's text

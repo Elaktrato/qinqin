@@ -9,7 +9,8 @@ database and the SvelteKit web app embedded in the binary.
 
 - **Dictionaries with their sources**: CC-CEDICT, JMdict, KANJIDIC2 and Unihan bundled; every meaning keeps
   its dictionary's name and licence. Search by written form, reading or meaning, plus radical and part
-  lookup, lookup history, personal notes and your own corrections.
+  lookup, lookup history, personal notes, your own corrections and, with your own AI key, example sentences
+  written at your level (marked as AI-written).
 - **Flashcards with FSRS**: decks, starter decks from a frequency list, HSK and JLPT level decks, vocab,
   Word Salad, writing, tone, reverse and cloze cards, daily limits, vacation mode and an optimizer.
 - **Reader**: import epubs or public-domain works from Aozora Bunko and Project Gutenberg, a Yomitan-style

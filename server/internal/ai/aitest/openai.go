@@ -74,6 +74,7 @@ func canned(w http.ResponseWriter, auth, body string) bool {
 var (
 	entryRe   = regexp.MustCompile(`(?s)<entry_[0-9a-f]+>\n(.*?)\n</entry_[0-9a-f]+>`)
 	messageRe = regexp.MustCompile(`(?s)<message_[0-9a-f]+>\n(.*?)\n</message_[0-9a-f]+>`)
+	wordRe    = regexp.MustCompile(`<word_[0-9a-f]+>\n([^\n]*)\n`)
 )
 
 // firstRunes is the first two runes of the trimmed match, or "".
@@ -93,6 +94,17 @@ func firstRunes(re *regexp.Regexp, user string) string {
 // request's system and user text.
 func CannedText(system, user string) string {
 	switch {
+	case strings.Contains(system, "You write example sentences for a word"):
+		// Two sentences with the word (Chinese), one reading each.
+		word := "你好"
+		if m := wordRe.FindStringSubmatch(user); m != nil {
+			word = m[1]
+		}
+		b, _ := json.Marshal(map[string]any{"sentences": []any{
+			map[string]any{"text": "我每天" + word + "。", "reading": "wǒ měitiān …", "translation": "Every day (fake)."},
+			map[string]any{"text": word + "很好。", "reading": "… hěn hǎo", "translation": "It is good (fake)."},
+		}})
+		return string(b)
 	case strings.Contains(system, "conversation partner for a language learner"):
 		// The reply is Chinese; the learner's new message (if any) gets one correction.
 		anns := []any{}
