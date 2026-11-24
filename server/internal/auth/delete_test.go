@@ -44,6 +44,7 @@ var seedSQL = map[string][]string{
 	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, 1, 'c', '', 'beginner', 't', 't')`},
 	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't1', 't')`},
 	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
+	"user_avatars":          {`INSERT INTO user_avatars (user_id, hash, updated_at) VALUES (?1, printf('%032d', ?1), 't')`},
 	"journal_photos":        {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
 	"ai_keys":               {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},
 	"ai_selection":          {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
@@ -173,7 +174,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, AccessTokens: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, AccessTokens: 1, Avatar: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
@@ -322,7 +323,7 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
 		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
 		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true,
-		"journal_conversations": true, "journal_messages": true, "grammar_progress": true}
+		"journal_conversations": true, "journal_messages": true, "grammar_progress": true, "user_avatars": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)
@@ -352,6 +353,9 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 	}
 	if !slices.Contains(auth.UserDirs, "backups/pre-restore") {
 		t.Errorf("UserDirs %v lacks the safety export directory", auth.UserDirs)
+	}
+	if !slices.Contains(auth.UserDirs, "avatars") {
+		t.Errorf("UserDirs %v lacks the profile pictures (#189)", auth.UserDirs)
 	}
 }
 

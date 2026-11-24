@@ -3,12 +3,12 @@
   "list": {
     "request": {"method": "GET", "path": "/api/admin/users"},
     "status": 200,
-    "body": {"users": [{"id": 1, "username": "alice", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": "2026-11-15T12:30:00Z", "mfa": {"totp": false, "email": false}}]}
+    "body": {"users": [{"id": 1, "username": "alice", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": "2026-11-15T12:30:00Z", "mfa": {"totp": false, "email": false}, "avatarUrl": null}]}
   },
   "create": {
     "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "carla", "password": "<temporary password>", "email": "optional", "admin": false}},
     "status": 201,
-    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}, "avatarUrl": null}
   },
   "create_admin_reauth": {
     "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "mallory", "password": "<temporary password>", "admin": true}},
@@ -18,7 +18,7 @@
   "patch": {
     "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 200,
-    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}, "avatarUrl": null}
   },
   "demote_admin_reauth": {
     "request": {"method": "PATCH", "path": "/api/admin/users/{id of another administrator}", "body": {"admin": false}},
@@ -48,7 +48,7 @@
   "deletion_preview": {
     "request": {"method": "GET", "path": "/api/admin/users/{id}/deletion-preview"},
     "status": 200,
-    "body": {"workspaces": 1, "studyEvents": 120, "keyedRows": 8, "cards": 0, "books": 0, "journalEntries": 0, "journalConversations": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0, "exampleReports": 0, "accessTokens": 0}
+    "body": {"workspaces": 1, "studyEvents": 120, "keyedRows": 8, "cards": 0, "books": 0, "journalEntries": 0, "journalConversations": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0, "exampleReports": 0, "accessTokens": 0, "avatar": 0}
   },
   "mfa_reset": {
     "request": {"method": "POST", "path": "/api/admin/users/{id}/mfa/reset", "body": {"currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
