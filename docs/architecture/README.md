@@ -69,6 +69,7 @@ repository path it names in backticks exists.
 | [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted, being implemented by #199 |
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
 | [0008](0008-pack-types.md) | Server: one pack system and how to add a pack type | Accepted |
+| [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted, being implemented by #196 |
 
 ## Adding or changing a record
 
@@ -76,7 +77,6 @@ repository path it names in backticks exists.
   `cd apps/web && npx vitest run src/lib/architectureDocs.test.ts`.
 - The issue that implements a record updates it when it lands (status, names, enforcement), and so does
   every merge from an issue on a record's "Touched by" line that changes the code, paths or names the record
-  describes. A new issue that will change such code is added to the line. Records still to
-  write, by the issues that make the decision: the web state model (#196).
+  describes. A new issue that will change such code is added to the line.
 - A decision that replaces a record is a new record; the old one's status becomes
   `Superseded by [NNNN](NNNN-short-name.md)`.
