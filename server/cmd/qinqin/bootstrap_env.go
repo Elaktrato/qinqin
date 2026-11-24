@@ -19,6 +19,17 @@ const (
 	bootstrapOff          = "off"
 )
 
+// offLookalikes are values an operator may mean as "off": refused rather
+// than taken as a username, so serve never creates an admin named "false".
+var offLookalikes = map[string]bool{
+	"false": true, "none": true, "disabled": true, "disable": true, "no": true,
+	"0": true, "n": true, "nobody": true, "null": true,
+}
+
+// noActiveAdminHint is logged at every start while users exist but none of
+// them is an active administrator.
+const noActiveAdminHint = "bootstrap: users exist but no active administrator: make one with `qinqin recover --username <name> --admin` (an existing account) or `qinqin adduser --admin --username <name>` (a new one)"
+
 // bootstrapAdmin is auth.BootstrapAdmin; a test replaces it to lose the
 // race deterministically.
 var bootstrapAdmin = auth.BootstrapAdmin
@@ -30,8 +41,9 @@ var bootstrapAdmin = auth.BootstrapAdmin
 // password that is logged once; the admin must change it at the first
 // sign-in. QINQIN_BOOTSTRAP_ADMIN=off (any case) creates nothing: the
 // operator creates the admin with `qinqin adduser --admin`, and until then
-// registration stays closed. Once users exist the variables are ignored and
-// nothing is logged. An invalid name or password is an error, so serve does
+// registration stays closed. Values that look like off (false, none, no,
+// 0, ...) are refused. Once users exist the variables are ignored; a start
+// logs only when none of them is an active administrator, naming the fix. An invalid name or password is an error, so serve does
 // not start. A supplied password is never logged.
 func bootstrapAdminFromEnv(ctx context.Context, sqlDB *sql.DB, getenv func(string) string, logf func(string, ...any)) error {
 	users, err := auth.CountUsers(ctx, sqlDB)
@@ -39,9 +51,20 @@ func bootstrapAdminFromEnv(ctx context.Context, sqlDB *sql.DB, getenv func(strin
 		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: count users: %w", err)
 	}
 	if users > 0 {
+		var admins int
+		if err := sqlDB.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM users WHERE admin = 1 AND disabled_at IS NULL`).Scan(&admins); err != nil {
+			return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: count administrators: %w", err)
+		}
+		if admins == 0 {
+			logf("%s", noActiveAdminHint)
+		}
 		return nil
 	}
 	name := auth.NormalizeUsername(getenv("QINQIN_BOOTSTRAP_ADMIN"))
+	if offLookalikes[strings.ToLower(name)] {
+		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN=%q: use \"off\" to switch the bootstrap off", name)
+	}
 	password := getenv("QINQIN_BOOTSTRAP_PASSWORD")
 	if strings.EqualFold(name, bootstrapOff) {
 		logf("bootstrap: off (QINQIN_BOOTSTRAP_ADMIN=off) and no user exists: create the administrator with `qinqin adduser --admin --username <name>`; registration stays closed until then")

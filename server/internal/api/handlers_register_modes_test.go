@@ -74,29 +74,26 @@ func mkInvite(t *testing.T, sqlDB *sql.DB, maxUses int) string {
 	return tok
 }
 
-// An empty instance has no registration path of its own any more (#211):
-// serve bootstraps the admin before the port opens, and with the bootstrap
-// off the mode decides as anywhere, so the default (closed) refuses and
-// nobody ever becomes administrator by registering.
+// An empty instance is closed to registration whatever its stored mode
+// (#211): serve bootstraps the admin before the port opens, and with the
+// bootstrap off nobody may register until `adduser --admin` has run, not
+// even on a restored database whose mode is open or invite.
 func TestEmptyInstanceGrantsNoAdminByRegistration(t *testing.T) {
-	for mode, want := range map[string]struct {
-		status int
-		code   string
-	}{
-		"closed": {403, "registration_closed"},
-		"invite": {403, "invite_invalid"},
-		"open":   {201, ""},
-	} {
+	for _, mode := range []string{"closed", "invite", "open"} {
 		ts, sqlDB := newLooseServer(t)
 		setAuthSetting(t, sqlDB, "registration", mode)
-		st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"})
-		if st != want.status || code != want.code {
-			t.Errorf("%s: first registration = %d %q, want %d %q", mode, st, code, want.status, want.code)
+		for _, body := range []map[string]any{
+			{"username": "firstone", "password": "long-enough-pw"},
+			{"username": "firstone", "password": "long-enough-pw", "invite": "some-token"},
+		} {
+			if st, code := regCode(t, ts, "", body); st != 403 || code != "registration_closed" {
+				t.Errorf("%s %v: first registration = %d %q, want 403 registration_closed", mode, body, st, code)
+			}
 		}
-		var admins int
-		sqlDB.QueryRow(`SELECT COUNT(*) FROM users WHERE admin = 1`).Scan(&admins)
-		if admins != 0 {
-			t.Errorf("%s: %d administrators after a registration on an empty instance, want 0", mode, admins)
+		var users int
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&users)
+		if users != 0 {
+			t.Errorf("%s: %d users after registrations on an empty instance, want 0", mode, users)
 		}
 	}
 }

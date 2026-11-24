@@ -80,7 +80,11 @@ func register(t *testing.T, ts *httptest.Server, bearer, username, password stri
 // registration never makes an admin (#211).
 func mustRegister(t *testing.T, ts *httptest.Server, bearer, username, password string) {
 	t.Helper()
-	if v, ok := testDBs.Load(ts.URL); ok && bearer == "" {
+	if bearer == "" {
+		v, ok := testDBs.Load(ts.URL)
+		if !ok {
+			t.Fatalf("register %q: %s was not started with newServer", username, ts.URL)
+		}
 		sqlDB := v.(*sql.DB)
 		if n, err := auth.CountUsers(context.Background(), sqlDB); err != nil {
 			t.Fatal(err)
@@ -337,6 +341,7 @@ func TestLoginUnknownUserStillVerifies(t *testing.T) {
 
 func TestRegisterAppliesPolicy(t *testing.T) {
 	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "owner", "owner-pass-123") // an empty instance refuses every registration
 	if _, err := sqlDB.Exec(`UPDATE auth_settings SET registration = 'open'`); err != nil {
 		t.Fatal(err)
 	}
@@ -364,8 +369,8 @@ func TestRegisterAppliesPolicy(t *testing.T) {
 	}
 	var n int
 	sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&n)
-	if n != 0 {
-		t.Errorf("users = %d after rejected registrations", n)
+	if n != 1 {
+		t.Errorf("users = %d after rejected registrations, want only the owner", n)
 	}
 	if resp := register(t, ts, "", "alice", "long-enough-pw"); resp.StatusCode != 201 {
 		t.Fatalf("valid register: %d", resp.StatusCode)

@@ -30,7 +30,7 @@ type credentials struct {
 // either mode is spent and must be valid). Registering never makes an
 // administrator: serve bootstraps the first one before the port opens, or
 // the operator creates it with `qinqin adduser --admin` (#211); an empty
-// instance has the default mode, closed. Every password hash runs behind
+// instance is closed whatever its stored mode. Every password hash runs behind
 // the gate and before any transaction opens.
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	body, ok := readAuthBody(w, r)
@@ -69,11 +69,20 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		internal()
 		return
 	}
+	users, err := auth.CountUsers(r.Context(), s.db)
+	if err != nil {
+		internal()
+		return
+	}
 	// Who may register decides before any policy or taken check, so an
 	// outsider learns nothing about usernames or emails.
 	useInvite := false
 	switch {
 	case isAdmin:
+	case users == 0:
+		// No administrator yet: closed whatever the stored mode (#211).
+		writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+		return
 	case req.Invite != "":
 		if set.Registration == "closed" {
 			writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)

@@ -235,7 +235,7 @@ func TestBootstrapAdminPolicyViolationsFail(t *testing.T) {
 // A non-empty database: nothing happens, and invalid values are not even read.
 func TestBootstrapAdminIgnoresConfigOnceUsersExist(t *testing.T) {
 	e := newBootstrapEnv(t)
-	if _, err := auth.CreateUser(context.Background(), e.db, "owner", "owner-pass-123", false); err != nil {
+	if _, err := auth.CreateUser(context.Background(), e.db, "owner", "owner-pass-123", true); err != nil {
 		t.Fatal(err)
 	}
 	for _, env := range []map[string]string{
@@ -323,5 +323,106 @@ func TestBootstrapAdminLosingTheRaceIsSilent(t *testing.T) {
 	}
 	if len(e.log.logs) != 0 {
 		t.Errorf("logs = %q; want none from the loser", e.log.logs)
+	}
+}
+
+// Users but no active administrator (an adduser without --admin after
+// off, a non-admin registered on a restored database, the only admin
+// disabled): every start says how to make one, and creates nothing.
+func TestBootstrapWarnsWhenNoActiveAdmin(t *testing.T) {
+	for name, setup := range map[string]func(*testing.T, *sql.DB){
+		"only a non-admin": func(t *testing.T, d *sql.DB) {
+			if _, err := auth.CreateUser(context.Background(), d, "learner", "learner-pass-1", false); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"admin disabled": func(t *testing.T, d *sql.DB) {
+			if _, err := auth.CreateUser(context.Background(), d, "boss", "boss-pass-123", true); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := d.Exec(`UPDATE users SET disabled_at = '2026-01-01T00:00:00Z'`); err != nil {
+				t.Fatal(err)
+			}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			for _, env := range []map[string]string{nil, {"QINQIN_BOOTSTRAP_ADMIN": "off", "QINQIN_BOOTSTRAP_PASSWORD": "placeholder-pass-77"}} {
+				e := newBootstrapEnv(t)
+				setup(t, e.db)
+				if err := e.run(env); err != nil {
+					t.Fatal(err)
+				}
+				all := e.log.all()
+				if len(e.log.logs) != 1 || !strings.Contains(all, "qinqin recover --username <name> --admin") ||
+					!strings.Contains(all, "adduser --admin") {
+					t.Errorf("env %v: logs = %q; want one line naming recover --admin and adduser --admin", env, e.log.logs)
+				}
+				if strings.Contains(all, "placeholder-pass-77") || len(e.log.passwords()) != 0 || e.count(t) != 1 {
+					t.Errorf("env %v: logs = %q, users = %d; want no password and nothing created", env, e.log.logs, e.count(t))
+				}
+			}
+		})
+	}
+}
+
+// Values that look like "off" but are not it are refused, so serve does
+// not start with an admin named "false" or a length error (#211).
+func TestBootstrapAdminRefusesOffLookalikes(t *testing.T) {
+	for _, v := range []string{"false", "none", "disabled", "disable", "no", "0", "n", "nobody", "null", "FALSE", " None ", "\tNo\n"} {
+		t.Run(v, func(t *testing.T) {
+			e := newBootstrapEnv(t)
+			err := e.run(map[string]string{"QINQIN_BOOTSTRAP_ADMIN": v})
+			if err == nil || !strings.Contains(err.Error(), `use "off" to switch the bootstrap off`) {
+				t.Errorf("err = %v, want the off hint", err)
+			}
+			if e.count(t) != 0 || len(e.log.logs) != 0 {
+				t.Errorf("users = %d, logs = %q; want none", e.count(t), e.log.logs)
+			}
+		})
+	}
+	// Blank and whitespace-wrapped off keep their meaning.
+	for v, want := range map[string]int{"   ": 1, "\toff\n": 0} {
+		e := newBootstrapEnv(t)
+		if err := e.run(map[string]string{"QINQIN_BOOTSTRAP_ADMIN": v}); err != nil || e.count(t) != want {
+			t.Errorf("%q: err = %v, users = %d; want nil and %d", v, err, e.count(t), want)
+		}
+	}
+}
+
+// Two processes that both counted zero users insert in lockstep (from the
+// review's probe): one admin, one password line, both starts nil.
+func TestBootstrapAdminLockstepRace(t *testing.T) {
+	real := bootstrapAdmin
+	t.Cleanup(func() { bootstrapAdmin = real })
+	for i := 0; i < 10; i++ {
+		first, path := dbtest.OpenPath(t)
+		second, err := db.Open(path) // reopen: OpenPath wrote it
+		if err != nil {
+			t.Fatal(err)
+		}
+		var bar sync.WaitGroup
+		bar.Add(2)
+		bootstrapAdmin = func(ctx context.Context, h *sql.DB, n, p string) (model.User, error) {
+			bar.Done()
+			bar.Wait()
+			return real(ctx, h, n, p)
+		}
+		b := &bootstrapLog{}
+		var wg sync.WaitGroup
+		errs := make([]error, 2)
+		for j, h := range []*sql.DB{first, second} {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				errs[j] = bootstrapAdminFromEnv(context.Background(), h, func(string) string { return "" }, b.logf)
+			}()
+		}
+		wg.Wait()
+		var n int
+		first.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&n)
+		if errs[0] != nil || errs[1] != nil || n != 1 || len(b.passwords()) != 1 {
+			t.Errorf("iteration %d: errs = %v, users = %d, logs = %q", i, errs, n, b.all())
+		}
+		second.Close()
 	}
 }
