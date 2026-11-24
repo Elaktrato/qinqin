@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const sampleDir = "../../../docs/contracts/backup/sample-v1"
+const sampleDir = "../../../docs/contracts/backup/sample-v2"
 
 func strictDecode(t *testing.T, raw []byte, v any) {
 	t.Helper()
@@ -63,8 +63,8 @@ func TestSampleArchiveDecodesIntoTheRowTypes(t *testing.T) {
 		t.Errorf("counts: %d %d %d %d %d", len(ws), len(books), len(ents), len(dicts), len(sref))
 	}
 	evs := decodeLines[Event](t, EventsName(1))
-	rows := decodeLines[PluginRow](t, PartName(NamePluginData, 1))
-	if len(evs) != m.Counts["events"] || len(rows) != m.Counts["pluginData"] {
+	rows := decodeLines[Row](t, PartName(NameRows, 1))
+	if len(evs) != m.Counts["events"] || len(rows) != m.Counts["rows"] {
 		t.Errorf("events %d rows %d vs manifest %v", len(evs), len(rows), m.Counts)
 	}
 	global := 0
@@ -88,7 +88,7 @@ func TestSampleArchiveDecodesIntoTheRowTypes(t *testing.T) {
 func TestKnownName(t *testing.T) {
 	good := map[string]string{
 		"manifest.json": KindFixed, "events/000001.jsonl": KindPart, "events/123456.jsonl": KindPart,
-		"library/books/7.json": KindBook, "plugin-data/000002.jsonl": KindPart, "library/highlights/000001.jsonl": KindPart, "library/books/0.json": KindBook, "refs/entries.json": KindFixed,
+		"library/books/7.json": KindBook, "rows/000002.jsonl": KindPart, "library/highlights/000001.jsonl": KindPart, "library/books/0.json": KindBook, "refs/entries.json": KindFixed,
 	}
 	for n, kind := range good {
 		if k, _, ok := KnownName(n); !ok || k != kind {
@@ -100,7 +100,7 @@ func TestKnownName(t *testing.T) {
 	}
 	for _, n := range []string{"", "../x", "/abs", "library/books/1a.json", "library/books/-1.json", "library/books/01.json",
 		"events/1.jsonl", "events/0000001.jsonl", "library/books/../x.json", "refs/", "refs/../manifest.json",
-		"a/manifest.json", "manifest.json/", "library/books/99999999999999999999.json", `events\000001.jsonl`, "EVENTS/000001.jsonl", "plugin-data.jsonl", "overlays.jsonl", "plugin-data/1.jsonl", "plugin-data/0000001.jsonl", "sentences/000001.json", "manifest.json\x00"} {
+		"a/manifest.json", "manifest.json/", "library/books/99999999999999999999.json", `events\000001.jsonl`, "EVENTS/000001.jsonl", "plugin-data/000001.jsonl", "rows.jsonl", "overlays.jsonl", "rows/1.jsonl", "rows/0000001.jsonl", "sentences/000001.json", "manifest.json\x00"} {
 		if _, _, ok := KnownName(n); ok {
 			t.Errorf("KnownName(%q) accepted", n)
 		}

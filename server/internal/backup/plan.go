@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ type Counts struct {
 	Workspaces int `json:"workspaces"`
 	Events     int `json:"events"`
 	Cards      int `json:"cards"`
-	PluginData int `json:"pluginData"`
+	Rows       int `json:"rows"`
 	Overlays   int `json:"overlays"`
 	Sentences  int `json:"sentences"`
 	Books      int `json:"books"`
@@ -57,15 +56,14 @@ type ReportBackup struct {
 // Report is the dry run of a restore: what it replaces, what it brings back
 // and what it cannot. Blocking problems make the stage invalid.
 type Report struct {
-	Backup              ReportBackup `json:"backup"`
-	Replaces            Counts       `json:"replaces"`
-	Restores            Counts       `json:"restores"`
-	Unresolved          Unresolved   `json:"unresolved"`
-	PluginsNotInstalled []string     `json:"pluginsNotInstalled"`
-	ReidentifiedEvents  int          `json:"reidentifiedEvents"`
-	Blocking            []string     `json:"blocking"` // problems that forbid the restore
-	Warnings            []string     `json:"warnings"`
-	Bytes               int64        `json:"bytes"`
+	Backup             ReportBackup `json:"backup"`
+	Replaces           Counts       `json:"replaces"`
+	Restores           Counts       `json:"restores"`
+	Unresolved         Unresolved   `json:"unresolved"`
+	ReidentifiedEvents int          `json:"reidentifiedEvents"`
+	Blocking           []string     `json:"blocking"` // problems that forbid the restore
+	Warnings           []string     `json:"warnings"`
+	Bytes              int64        `json:"bytes"`
 }
 
 const maxListed = 100
@@ -149,7 +147,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	var rep Report
 	rep.Backup = ReportBackup{Username: a.Manifest.User.Username, CreatedAt: a.Manifest.CreatedAt, AppVersion: a.Manifest.AppVersion}
 	rep.Bytes = a.Total
-	rep.PluginsNotInstalled, rep.Blocking, rep.Warnings = []string{}, []string{}, []string{}
+	rep.Blocking, rep.Warnings = []string{}, []string{}
 	rep.Unresolved.Entries = []UnresolvedEntry{}
 	m := NewMaps()
 
@@ -268,40 +266,16 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 		}
 	}
 
-	// plugin rows: cards decide the card id map first, then everything is counted
-	installed := map[string]bool{}
-	rs, err := db.QueryContext(ctx, `SELECT pack_id FROM plugin_registry`)
-	if err != nil {
-		return rep, nil, err
-	}
-	for rs.Next() {
-		var id string
-		rs.Scan(&id)
-		installed[id] = true
-	}
-	rs.Close()
-	notInstalled := map[string]bool{}
-	if err := a.PluginRows(func(r PluginRow) error {
-		if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix) {
+	// rows: cards decide the card id map first, then everything is counted
+	if err := a.Rows(func(r Row) error {
+		if strings.HasPrefix(r.Key, cardKeyPrefix) {
 			m.RegisterCard(r.Key, r.Data)
 		}
 		m.RegisterNote(r)
-		if !installed[r.PluginID] {
-			notInstalled[r.PluginID] = true
-		}
 		return nil
 	}); err != nil {
 		return rep, nil, err
 	}
-	for _, ps := range a.Account.PluginStates {
-		if !installed[ps.PluginID] {
-			notInstalled[ps.PluginID] = true
-		}
-	}
-	for id := range notInstalled {
-		rep.PluginsNotInstalled = append(rep.PluginsNotInstalled, id)
-	}
-	sort.Strings(rep.PluginsNotInstalled)
 
 	// what comes back, and what does not
 	unres := map[int64]*UnresolvedEntry{}
@@ -330,11 +304,13 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	rep.Restores.Books = len(a.Books)
 	taken := map[string]bool{}
 	collisions := 0
-	if err := a.PluginRows(func(r PluginRow) error {
-		nr, drop := m.PluginRow(r)
+	if err := a.Rows(func(r Row) error {
+		nr, drop := m.Row(r)
 		if !drop {
-			// a typed study row the codec cannot read is dropped (restore does the same)
-			if _, typed, ok := typedRow(nr); typed && !ok {
+			// a row no store takes, and a typed study row the codec cannot
+			// read, is dropped (restore does the same)
+			kind := kindOf(nr)
+			if _, typed, ok := typedRow(nr); kind == kindDrop || (typed && !ok) {
 				drop = true
 			}
 		}
@@ -346,13 +322,13 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 			if nr.WorkspaceID != nil {
 				ws = *nr.WorkspaceID
 			}
-			k := nr.PluginID + "\x00" + strconv.FormatInt(ws, 10) + "\x00" + nr.Key
+			k := strconv.FormatInt(ws, 10) + "\x00" + nr.Key
 			if taken[k] {
 				collisions++
 			}
 			taken[k] = true
 		}
-		isCard := r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix)
+		isCard := strings.HasPrefix(r.Key, cardKeyPrefix)
 		if drop {
 			rep.Unresolved.DroppedRows++
 			if isCard {
@@ -369,7 +345,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 			}
 			return nil
 		}
-		rep.Restores.PluginData++
+		rep.Restores.Rows++
 		if isCard {
 			rep.Restores.Cards++
 		}
@@ -441,7 +417,6 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	if err != nil {
 		return rep, nil, err
 	}
-	slices.Sort(rep.PluginsNotInstalled)
 	return rep, m, nil
 }
 
@@ -470,8 +445,7 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 		// cards and the other typed study rows live in their tables; typed-family
 		// plugin rows (leftovers) are never exported, so never counted
 		{&c.Cards, `SELECT COUNT(*) FROM study_cards WHERE user_id = ? AND deleted_at IS NULL`},
-		{&c.PluginData, `SELECT (SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL
-			AND NOT (pack_id = '` + FlashcardsPlugin + `' AND ` + study.LegacyKeySQL + `))` + typedLiveCount},
+		{&c.Rows, `SELECT (SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?1 AND deleted_at IS NULL)` + typedLiveCount},
 		{&c.Overlays, `SELECT COUNT(*) FROM user_edits WHERE user_id = ?`},
 		{&c.Sentences, `SELECT COUNT(*) FROM sentences WHERE user_id = ? AND deleted_at IS NULL`},
 		{&c.Books, `SELECT COUNT(*) FROM library_books WHERE user_id = ?`},

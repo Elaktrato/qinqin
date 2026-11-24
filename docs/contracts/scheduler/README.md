@@ -5,7 +5,7 @@ Issues #88 (vacation mode) and #89 (daily limits). Rule source:
 `docs/contracts/study-day/`. Every client (web, Android) implements these rules and runs the fixtures in
 this folder. Fixtures win over code. Fixture format: see `docs/contracts/README.md`.
 
-## Storage rows (study namespace `qinqin-flashcards` plugin data, and the typed `limits` collection)
+## Storage rows (keyed rows, `keyed/`, and the typed `limits` collection)
 
 - `vacation:<ULID>` is **user-global** (no `workspace` on write, `workspaceId: null` in the sync pull):
   `{version:1, id, start, end|null, scope:"all"|{workspaces:[int,...]}, createdDay, createdAt}`. Dates are
@@ -167,7 +167,7 @@ fixture fixes the bucket and the value, not the string. Fixtures win over code.
 
 ## Android and other clients
 
-Read the user-global `vacation:*` plugin rows (they arrive with `workspaceId: null`) and the typed `limits`
+Read the user-global `vacation:*` keyed rows (they arrive with `workspaceId: null`) and the typed `limits`
 and `fsrsSets`/`fsrsActive` rows from one pull that names those collections. Use the learner's day for every date here, port
 `v` and `inverse` with whole-day shifts (`n * 86 400 000 ms`, never the run's real length), feed ts-fsrs
 `f_i = max(v(ts_i), f_{i-1})`, map the due back with `inverse`, keep the instant due rule

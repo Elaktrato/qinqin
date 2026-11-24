@@ -20,7 +20,7 @@ func TestRestoredModifiedIsClampedToTheRestoreTime(t *testing.T) {
 		{"no edit time: the updatedAt, clamped too", nil, future, now},
 		{"unreadable stamps: the restore time", &bad, "never", now},
 	} {
-		if got := restoredModified(PluginRow{ModifiedAt: c.modified, UpdatedAt: c.updated}, now); got != c.want {
+		if got := restoredModified(Row{ModifiedAt: c.modified, UpdatedAt: c.updated}, now); got != c.want {
 			t.Errorf("%s: %s, want %s", c.name, got, c.want)
 		}
 	}

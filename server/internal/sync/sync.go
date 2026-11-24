@@ -1,8 +1,8 @@
 // Package sync is the delta sync between the server and its clients: a
 // pull that ships every row changed since a cursor — tombstones included,
 // so deletions reach clients — and a push that applies a client's
-// offline work: study events (idempotent by ULID) and plugin data
-// (last-write-wins on updated_at).
+// offline work: study events (idempotent by ULID), keyed rows and typed
+// study rows (last-write-wins on the edit time).
 //
 // Timestamps are second-truncated server clock, so pulls are inclusive
 // of the cursor second: a row written in the same second as the cursor
@@ -16,20 +16,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"qinqin/internal/events"
+	"qinqin/internal/keyed"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
 
 var (
 	// ErrNotFound reports a push referencing a workspace the caller does
-	// not own or a plugin that does not exist. Unknown and foreign
-	// workspaces are indistinguishable by design.
+	// not own. Unknown and foreign workspaces are indistinguishable by design.
 	ErrNotFound = errors.New("sync: not found")
 	// ErrInvalid reports a malformed push item.
 	ErrInvalid = errors.New("sync: invalid")
@@ -58,13 +56,13 @@ type Overlay struct {
 // harmless: clients upsert by key.
 const cursorMargin = 30 * time.Second
 
-// PushBody is a client's offline work: study events, plugin data rows and
-// typed study rows. Event users are forced to the caller; plugin data and
-// typed rows carry the client's updatedAt (and deletedAt for a deletion)
-// for last-write-wins. Typed rows are decoded strictly (rows.Decode).
+// PushBody is a client's offline work: study events, keyed rows and typed
+// study rows. Event users are forced to the caller; keyed and typed rows
+// carry the client's updatedAt (and deletedAt for a deletion) for
+// last-write-wins. Typed rows are decoded strictly (rows.Decode).
 type PushBody struct {
-	Events     []model.StudyEvent `json:"events"`
-	PluginData []model.PluginData `json:"pluginData"`
+	Events []model.StudyEvent `json:"events"`
+	Rows   []model.KeyedRow   `json:"rows"`
 
 	Cards        []json.RawMessage `json:"cards"`
 	Decks        []json.RawMessage `json:"decks"`
@@ -92,9 +90,9 @@ type PushResult struct {
 	EventDuplicates int `json:"eventDuplicates"`
 	DataAccepted    int `json:"dataAccepted"`
 	DataSkipped     int `json:"dataSkipped"`
-	// DataRefused counts rows of plugins that do not declare owns-data
-	// and study-namespace rows of a typed family; they are not applied,
-	// the rest of the push is.
+	// DataRefused counts keyed rows of a key no family accepts, or in the
+	// wrong scope (keyed.Check); they are not applied, the rest of the push
+	// is.
 	DataRefused int `json:"dataRefused"`
 }
 
@@ -106,21 +104,15 @@ type typedItem struct {
 }
 
 // Push applies body for userID. It validates the whole body first —
-// event ids and timestamps, workspace ownership, plugin existence — and
-// applies nothing if any item fails (ErrInvalid or ErrNotFound).
+// event ids and timestamps, workspace ownership, typed rows — and applies
+// nothing if any item fails (ErrInvalid or ErrNotFound).
 //
-// Events append idempotently through events.Append. A plugin data row is
-// accepted when the server's row for the same (plugin, workspace, key)
-// is absent or no newer than the incoming updated_at, and is then
-// written through the plugin store — so the server stamps its own
-// updated_at and bumps the version — or tombstoned when the incoming row
-// is a deletion. A newer server row, and a deletion of a row that is
-// absent or already deleted, count as skipped. A row of a plugin that
-// does not declare owns-data is refused alone (DataRefused): the events
-// and every other row still apply.
-//
-// A qinqin-flashcards row of a typed study family (card:, deck:, ...) is
-// refused alone: those rows travel as typed collections only (#198).
+// Events append idempotently through events.Append. A keyed row applies
+// under last write wins (keyed.Apply): accepted when the server's row is
+// absent or no newer, skipped otherwise, and a deletion of an absent or
+// deleted row is skipped. A keyed row of a key no family accepts, or in the
+// wrong scope, is refused alone (DataRefused): the events and every other
+// row still apply.
 func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (PushResult, error) {
 	owned := map[int64]bool{}
 	checkWorkspace := func(id int64) error {
@@ -156,29 +148,17 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 		ev.UserID = userID
 	}
-	// knownPlugin caches the per-plugin answer: whether it may be written.
-	knownPlugin := map[string]bool{}
-	for i, row := range body.PluginData {
-		if row.PluginID == "" || row.Key == "" {
-			return PushResult{}, fmt.Errorf("%w: plugin data %d needs pluginId and key", ErrInvalid, i)
+	for i, row := range body.Rows {
+		if row.Key == "" {
+			return PushResult{}, fmt.Errorf("%w: row %d needs a key", ErrInvalid, i)
 		}
-		if editTime(row).IsZero() {
-			return PushResult{}, fmt.Errorf("%w: plugin data %d needs updatedAt or deletedAt to order it", ErrInvalid, i)
+		if keyed.EditTime(row).IsZero() {
+			return PushResult{}, fmt.Errorf("%w: row %d needs updatedAt or deletedAt to order it", ErrInvalid, i)
 		}
 		if row.WorkspaceID != nil {
 			if err := checkWorkspace(*row.WorkspaceID); err != nil {
 				return PushResult{}, err
 			}
-		}
-		if _, seen := knownPlugin[row.PluginID]; !seen {
-			exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, row.PluginID)
-			if err != nil {
-				return PushResult{}, fmt.Errorf("sync push: %w", err)
-			}
-			if !exists {
-				return PushResult{}, fmt.Errorf("%w: plugin %q", ErrNotFound, row.PluginID)
-			}
-			knownPlugin[row.PluginID] = allowed
 		}
 	}
 
@@ -216,20 +196,14 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 		res.EventsAccepted, res.EventDuplicates = accepted, dups
 	}
-	for _, row := range body.PluginData {
-		if !knownPlugin[row.PluginID] {
+	for _, row := range body.Rows {
+		if keyed.Check(row.Key, row.WorkspaceID) != nil {
 			res.DataRefused++
 			continue
 		}
-		if row.PluginID == rows.Namespace {
-			if _, typed := rows.FamilyOf(row.Key); typed {
-				res.DataRefused++ // a typed study row as plugin data: never stored
-				continue
-			}
-		}
-		applied, err := applyData(ctx, sqlDB, userID, row)
+		applied, err := keyed.Apply(ctx, sqlDB, userID, row)
 		if err != nil {
-			return res, err
+			return res, fmt.Errorf("sync push: %w", err)
 		}
 		if applied {
 			res.DataAccepted++
@@ -249,66 +223,4 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 	}
 	return res, nil
-}
-
-// editTime is when the client made the edit a plugin data row carries:
-// its updatedAt, or its deletedAt when that is later (a tombstone that
-// sets only deletedAt). Zero when the row has neither.
-func editTime(row model.PluginData) time.Time {
-	t := row.UpdatedAt
-	if row.DeletedAt != nil && row.DeletedAt.After(t) {
-		t = *row.DeletedAt
-	}
-	return t.UTC()
-}
-
-// applyData applies one incoming plugin data row under last-write-wins
-// on edit time — the client's clock, clamped to the server's so a clock
-// running ahead cannot pin a row — and reports whether it changed the
-// server. The comparison is against the stored edit time (modified_at),
-// not the server's arrival stamp, so an edit made later on another
-// device wins even when it syncs after an earlier one.
-func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.PluginData) (bool, error) {
-	edited := editTime(row)
-	if nowT := time.Now().UTC(); edited.After(nowT) {
-		edited = nowT
-	}
-	var workspace any
-	if row.WorkspaceID != nil {
-		workspace = *row.WorkspaceID
-	}
-	var serverUpdated string
-	var serverDeleted sql.NullString
-	err := sqlDB.QueryRowContext(ctx, `
-		SELECT COALESCE(modified_at, updated_at), deleted_at FROM plugin_data
-		WHERE pack_id = ? AND user_id = ? AND `+plugins.UniqueKeyWorkspace+` = IFNULL(?, `+strconv.Itoa(plugins.NoWorkspace)+`) AND key = ?`,
-		row.PluginID, userID, workspace, row.Key).Scan(&serverUpdated, &serverDeleted)
-	exists := !errors.Is(err, sql.ErrNoRows)
-	if err != nil && exists {
-		return false, fmt.Errorf("sync push: read data %s/%s: %w", row.PluginID, row.Key, err)
-	}
-	if exists {
-		server, err := time.Parse(time.RFC3339, serverUpdated)
-		if err != nil {
-			return false, fmt.Errorf("sync push: parse updated_at %q of %s/%s: %w", serverUpdated, row.PluginID, row.Key, err)
-		}
-		// Stored edit times are second-truncated, so compare at that
-		// precision: a same-second write by the client wins.
-		if server.After(edited.Truncate(time.Second)) {
-			return false, nil
-		}
-	}
-	if row.DeletedAt != nil {
-		if !exists || serverDeleted.Valid {
-			return false, nil
-		}
-		if err := plugins.DeleteDataAt(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key, edited); err != nil {
-			return false, fmt.Errorf("sync push: %w", err)
-		}
-		return true, nil
-	}
-	if _, err := plugins.PutDataAt(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key, row.Data, edited); err != nil {
-		return false, fmt.Errorf("sync push: %w", err)
-	}
-	return true, nil
 }

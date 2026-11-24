@@ -9,7 +9,7 @@ import { firstPageUrl, pullAll } from '../../sync/pager';
 import { STUDY_COLLECTIONS } from '../rows';
 
 /** What the study pull asks for: the switches and plugin rows plus every typed study collection (record 0002). */
-export const STUDY_PULL_COLLECTIONS: readonly string[] = ['pluginStates', 'pluginData', ...STUDY_COLLECTIONS];
+export const STUDY_PULL_COLLECTIONS: readonly string[] = ['pluginStates', 'rows', ...STUDY_COLLECTIONS];
 
 export interface StudyRound {
 	collections: Record<string, unknown[]>;

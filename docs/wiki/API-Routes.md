@@ -71,7 +71,7 @@ A full session (`Authorization: Bearer <token>`).
 | `DELETE` | `/api/library/books/{id}` | write (all) |
 | `DELETE` | `/api/library/books/{id}/bookmarks/{bid}` | write (all) |
 | `DELETE` | `/api/library/books/{id}/highlights/{hid}` | write (all) |
-| `DELETE` | `/api/plugins/{id}/data/{key}` | write (workspace) |
+| `DELETE` | `/api/rows/{key}` | write (workspace) |
 | `DELETE` | `/api/workspaces/{id}` | — |
 | `GET` | `/api/account/deletion-preview` | — |
 | `GET` | `/api/account/restore/{token}` | — |
@@ -104,8 +104,8 @@ A full session (`Authorization: Bearer <token>`).
 | `GET` | `/api/packages` | read |
 | `GET` | `/api/packages/{id}/{revision}` | read |
 | `GET` | `/api/plugins` | read (all) |
-| `GET` | `/api/plugins/{id}/data` | read (workspace) |
-| `GET` | `/api/plugins/{id}/data/{key}` | read (workspace) |
+| `GET` | `/api/rows` | read (workspace) |
+| `GET` | `/api/rows/{key}` | read (workspace) |
 | `GET` | `/api/stats/activity` | read (workspace) |
 | `GET` | `/api/sync/pull` | read (all) |
 | `GET` | `/api/workspaces` | read (all) |
@@ -145,8 +145,8 @@ A full session (`Authorization: Bearer <token>`).
 | `PUT` | `/api/library/books/{id}/position` | write (all) |
 | `PUT` | `/api/me/interface-language` | — |
 | `PUT` | `/api/me/time-zone` | — |
-| `PUT` | `/api/plugins/{id}/data/{key}` | write (workspace) |
 | `PUT` | `/api/plugins/{id}/state` | write (all) |
+| `PUT` | `/api/rows/{key}` | write (workspace) |
 | `PUT` | `/api/workspaces/{id}` | — |
 
 ## Any session (10)

@@ -1,8 +1,7 @@
 {
  "version": 1,
  "rule": "themes/appearance",
- "_doc": "The user-global row qinqin-core / appearance (docs/contracts/themes/README.md, The appearance row). parse: the stored value (null = no row) to the settings the client applies; resolve: which slot, theme and accent are painted (themes: the installed themes with their accentChoices from derive); write: the value a client PUTs for a change.",
- "pluginId": "qinqin-core",
+ "_doc": "The user-global keyed row appearance (docs/contracts/themes/README.md, The appearance row). parse: the stored value (null = no row) to the settings the client applies; resolve: which slot, theme and accent are painted (themes: the installed themes with their accentChoices from derive); write: the value a client PUTs for a change.",
  "key": "appearance",
  "scope": "user-global",
  "defaults": {

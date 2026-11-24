@@ -63,7 +63,7 @@ beforeEach(() => {
 				return Response.json({ eventsAccepted: 0, eventDuplicates: 0, dataAccepted: n, dataSkipped: 0, dataRefused: 0 });
 			}
 			if (url.startsWith('/api/sync/pull')) return Response.json(page);
-			if (url.startsWith('/api/plugins/') && (init?.method === 'PUT' || init?.method === 'DELETE')) return Response.json({ version: 2 });
+			if (url.startsWith('/api/rows/') && (init?.method === 'PUT' || init?.method === 'DELETE')) return Response.json({ version: 2 });
 			return new Response('unexpected', { status: 500 });
 		})
 	);

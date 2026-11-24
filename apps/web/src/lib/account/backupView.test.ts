@@ -4,11 +4,11 @@ import {
 	restoreSentence, stageProblem, unresolvedLines, type ApplyForm, type Report
 } from './backupView';
 
-const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
+const zero = { workspaces: 0, events: 0, cards: 0, rows: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
 const report = (o: Partial<Report> = {}): Report => ({
 	backup: { username: 'alice', createdAt: '2026-11-15T12:00:00Z', appVersion: '0.3.0' },
 	replaces: { ...zero, workspaces: 3, events: 9876, cards: 1 }, restores: { ...zero, workspaces: 2, books: 1 },
-	unresolved: { entries: [], entryCount: 0, sentences: 0, droppedRows: 0 }, pluginsNotInstalled: [], reidentifiedEvents: 0,
+	unresolved: { entries: [], entryCount: 0, sentences: 0, droppedRows: 0 }, reidentifiedEvents: 0,
 	blocking: [], warnings: [], bytes: 10, ...o
 });
 const form = (o: Partial<ApplyForm> = {}): ApplyForm => ({

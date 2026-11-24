@@ -6,7 +6,7 @@ Fixture format: see `docs/contracts/README.md`.
 
 Milestones ("1,000 reviews", "a 7-day streak", "HSK 1 complete") are **derived** from the event log and the
 schedule replay of one workspace, every time they are shown. Nothing about them is computed on the server or
-stored as a statistic. The only stored state is the fact "the learner has seen milestone X": one plugin row per
+stored as a statistic. The only stored state is the fact "the learner has seen milestone X": one keyed row per
 seen milestone. **The summary card stores nothing; the seen rows are the only state.**
 
 Builds on: the learner's day (`study-day/`), review validity and order (`events/review-parse.json`), the `read`
@@ -16,7 +16,7 @@ the level deck ids (`decks/system-deck-ids.json`), the weekly summary's replay t
 
 Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, `replayReached.ts`, `seen.ts`,
 `plan.ts`, `milestoneText.ts`, `loadMilestones.ts`), `apps/web/src/lib/study/readModel.ts` and `apps/web/src/lib/study/commands/keyed.ts` (row parse,
-`saveSeenMilestones`). No server code: the rows are ordinary plugin data.
+`saveSeenMilestones`). No server code: the rows are ordinary keyed rows (`keyed/`).
 
 ## Fixtures
 
@@ -150,7 +150,7 @@ Every member, at the same instant.
 
 ## The seen rows
 
-Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
+Row: keyed row (`keyed/`), workspace `w`, key `milestone:<id>`, data
 `{version: 1, id: "<id>", seenAt: RFC 3339, reachedDay: "YYYY-MM-DD", ...unknown kept}`.
 
 - **Seen is decided by the key alone**: a live row `milestone:<id>` means seen, whatever its data (another
@@ -166,7 +166,7 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
   under the existing LWW (overview "Sync model"), so the union is the storage itself; writing the same key twice
   only changes `seenAt`; no read-merge-write, no server merge rule, nothing new for Android's sync engine — cost:
   up to ~80 small rows per workspace instead of one (negligible for pull pages and backups).
-- Ruling: a keyed row under `qinqin-flashcards`, not a typed core table — the study namespace keeps the rows that
+- Ruling: a keyed row, not a typed core table — the study keeps the rows that
   have a contract and a fixture (`goals:workspace`, `known:*`, `vacation:*`) keyed; a typed table would need a
   migration, a pull collection, a push array and a round-order change for a write-once flag — cost: the server
   does not validate the shape (as for goals).
@@ -185,7 +185,7 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
 
 ## Sync, offline and "never unsee"
 
-- Rows travel as ordinary plugin data: push `pluginData` items (`POST /api/sync/push`), pull v2 `pluginData`
+- Rows travel as ordinary keyed rows: push `rows` items (`POST /api/sync/push`), pull v2 `rows`
   pages (`tombstones=1`: a tombstone arrives and reads as "not seen"). Last write wins per key by `updatedAt`:
   a second device pushing the same key later is accepted (the later writer wins, only `seenAt` changes); the
   server skips a push (`dataSkipped`) only when it holds a newer row for the key — a tombstone the client had not
@@ -202,7 +202,7 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
   until a pull shows the row live — a skip means the server holds a newer row for the key (a tombstone this
   client had not pulled), which the next flush overwrites with the tombstone's stamp — cost: a refused row is
   retried at every flush (at most every 30 s while the page is open).
-- Ruling: a local pending list instead of an outbox — plugin rows have no outbox, the seen flag is idempotent and
+- Ruling: a local pending list instead of an outbox — keyed rows have no outbox, the seen flag is idempotent and
   harmless to lose (the worst case is the card shown once more on that device) — cost: in a private window that
   blocks storage an offline dismiss is forgotten on reload.
 - Ruling: "shown once" is per account eventually, not instantly — a second device that loads before the first
@@ -240,15 +240,15 @@ ties in catalogue order: family order, then the higher threshold first, level id
 
 ## Backup and restore
 
-Plugin rows are exported generically (`plugin-data/NNNNNN.jsonl`, one `{pluginId, workspaceId|null, key, data,
+Keyed rows are exported generically (`rows/NNNNNN.jsonl`, one `{workspaceId|null, key, data,
 version, updatedAt, modifiedAt|null}` per line) and restored with their workspace remapped; a milestone id holds
 no entry, card or workspace id, so key and data are restored unchanged. Tombstones are not exported.
 
 ## Android
 
-Reads and writes `milestone:*` rows in `pluginData` of `qinqin-flashcards` (never through a typed collection),
+Reads and writes `milestone:*` keyed rows (`rows`; never through a typed collection),
 implements the catalogue, the reached rule (fixtures give timelines as schedules), the seen rule (key alone, never
 delete, write only absent keys, stamp a write over a tombstone after it, keep an id pending until its row is live)
 and the card plan. Its local database replaces the
 pending list. It reads the level members from the `levels.<packId>` data packages (`packages/README.md`); the
-`packId` there is the one `ownedLevelDeckId` hashes. It reads `pluginData` from pull v2, never the legacy view.
+`packId` there is the one `ownedLevelDeckId` hashes. It reads `rows` from pull v2.

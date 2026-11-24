@@ -112,7 +112,7 @@ export function assertReadableKeyed(study: StudyState, workspaceId: number, key:
 		workspaceId === ALL_WORKSPACES
 			? studyCache.loadedViews().some((view) => view.keyedUnreadable.has(keyedSlot(key, true)))
 			: studyCache.peek(workspaceId)?.keyedUnreadable.has(keyedSlot(key, false)) === true;
-	if (hit) throw new UnreadableRowError(`pluginData:${key}`);
+	if (hit) throw new UnreadableRowError(`rows:${key}`);
 }
 
 /** How many pages the last full study round of a workspace took (the offline receipt counts them). */

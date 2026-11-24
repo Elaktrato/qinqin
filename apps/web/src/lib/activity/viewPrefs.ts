@@ -2,7 +2,7 @@
 // user across devices in qinqin-core plugin data. Last write wins; a
 // corrupt stored value reads as the default.
 
-import { CORE_NAMESPACE, keyedData } from '../sync/keyed';
+import { keyedData } from '../sync/keyed';
 
 export const ACTIVITY_VIEW_KEY = 'activity-view';
 
@@ -34,7 +34,7 @@ export function parseActivityView(value: unknown): StoredActivityView {
 export async function loadActivityView(): Promise<StoredActivityView> {
 	try {
 		return parseActivityView(
-			await keyedData(CORE_NAMESPACE, null).find(ACTIVITY_VIEW_KEY)
+			await keyedData(null).find(ACTIVITY_VIEW_KEY)
 		);
 	} catch {
 		return { ...DEFAULT_ACTIVITY_VIEW, hidden: [] };
@@ -43,5 +43,5 @@ export async function loadActivityView(): Promise<StoredActivityView> {
 
 /** saveActivityView stores the view for every device. */
 export async function saveActivityView(view: StoredActivityView): Promise<void> {
-	await keyedData(CORE_NAMESPACE, null).put(ACTIVITY_VIEW_KEY, { version: 1, scope: view.scope, hidden: view.hidden });
+	await keyedData(null).put(ACTIVITY_VIEW_KEY, { version: 1, scope: view.scope, hidden: view.hidden });
 }

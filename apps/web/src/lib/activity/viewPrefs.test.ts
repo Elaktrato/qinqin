@@ -64,7 +64,7 @@ describe('view store', () => {
 		);
 		expect(await loadActivityView()).toEqual({ scope: 'all', hidden: ['journal'] });
 		expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
-			'/api/plugins/qinqin-core/data?prefix=activity-view'
+			'/api/rows?prefix=activity-view'
 		);
 	});
 
@@ -84,7 +84,7 @@ describe('view store', () => {
 		vi.mocked(fetch).mockResolvedValue(new Response('{}', { headers: { 'content-type': 'application/json' } }));
 		await saveActivityView({ scope: 'all', hidden: ['read'] });
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
-		expect(String(url)).toBe('/api/plugins/qinqin-core/data/activity-view');
+		expect(String(url)).toBe('/api/rows/activity-view');
 		expect((init as RequestInit).method).toBe('PUT');
 		expect(JSON.parse(String((init as RequestInit).body))).toEqual({
 			version: 1,

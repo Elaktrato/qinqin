@@ -136,7 +136,7 @@ func TestMigration039UpgradesAn038Database(t *testing.T) {
 var keysetTables = []struct{ table, stamp, extra string }{
 	{"workspaces", "updated_at", ""},
 	{"plugin_states", "updated_at", ""},
-	{"plugin_data", "updated_at", " AND (workspace_id IS NULL OR workspace_id = 7)"},
+	{"keyed_rows", "updated_at", " AND (workspace_id IS NULL OR workspace_id = 7)"},
 	{"study_cards", "updated_at", " AND workspace_id = 7"},
 	{"study_decks", "updated_at", ""},
 	{"study_deck_settings", "updated_at", ""},

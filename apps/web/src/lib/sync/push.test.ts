@@ -31,7 +31,7 @@ describe('pushChunks', () => {
 		const bodies: [number, number][] = [];
 		await pushChunks(3, { chunk: 2, onProgress: (done) => progress.push(done), now: () => 0 }, (from, to) => {
 			bodies.push([from, to]);
-			return { pluginData: [] };
+			return { rows: [] };
 		});
 		expect(bodies).toEqual([[0, 2], [2, 3]]);
 		expect(progress).toEqual([1, 2]);

@@ -1,5 +1,5 @@
 {
- "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data} (qinqin-core lookups rows: items follow entries and books, merged per target entry, sorted and capped, a row that is not a version 1 object or has no workspace is dropped, docs/contracts/lookups/README.md; qinqin-core note:<entryId> rows follow their entry, every other qinqin-core note: row (key not canonical, entryId missing or different, data not an object) is dropped; qinqin-flashcards known:<entryId> rows follow the same rule (invalid ones dropped, the newest of two marks on one target wins); each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
+ "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); row -> {drop,workspaceId,key,data} (lookups rows: items follow entries and books, merged per target entry, sorted and capped, a row that is not a version 1 object or has no workspace is dropped, docs/contracts/lookups/README.md; note:<entryId> rows follow their entry, every other note: row (key not canonical, entryId missing or different, data not an object) is dropped; known:<entryId> rows follow the same rule (invalid ones dropped, the newest of two marks on one target wins); each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
  "version": 1,
  "rule": "backup/remap",
  "cases": [
@@ -592,7 +592,7 @@
   },
   {
    "name": "vacation: workspace ids remapped, user-global row stays global",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70,
@@ -600,7 +600,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": null,
     "key": "vacation:V1",
     "data": {
@@ -639,14 +638,13 @@
   },
   {
    "name": "vacation: ids not in the backup are dropped from the list",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": null,
     "key": "vacation:V1",
     "data": {
@@ -676,14 +674,13 @@
   },
   {
    "name": "vacation: an emptied checklist drops the period (never widens to all)",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": null,
     "key": "vacation:V1",
     "data": {
@@ -702,14 +699,13 @@
   },
   {
    "name": "vacation: scope all is untouched",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": null,
     "key": "vacation:V2",
     "data": {
@@ -730,14 +726,13 @@
   },
   {
    "name": "workspace row: workspaceId remapped, limits row data verbatim",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "limits:general",
     "data": {
@@ -756,14 +751,13 @@
   },
   {
    "name": "row of a workspace missing from the archive is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "other",
     "workspaceId": 9,
     "key": "k",
     "data": {}
@@ -774,13 +768,12 @@
    "note": ""
   },
   {
-   "name": "another plugin's user-global row is restored verbatim",
-   "op": "pluginRow",
+   "name": "a user-global row the remap does not know passes verbatim (the restore then drops a key no store takes)",
+   "op": "row",
    "maps": {
     "workspaces": {}
    },
    "input": {
-    "pluginId": "other",
     "workspaceId": null,
     "key": "settings",
     "data": {
@@ -838,7 +831,7 @@
   },
   {
    "name": "note: identity map keeps the row",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -848,7 +841,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1201",
     "data": {
@@ -871,7 +863,7 @@
   },
   {
    "name": "note: shifted entry id rewrites key and entryId, other members kept",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -881,7 +873,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1201",
     "data": {
@@ -914,7 +905,7 @@
   },
   {
    "name": "note: unresolved entry drops the note",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -922,7 +913,6 @@
     "entries": {}
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1201",
     "data": {
@@ -938,7 +928,7 @@
   },
   {
    "name": "note: key and entryId disagree, dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -949,7 +939,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1201",
     "data": {
@@ -964,41 +953,8 @@
    "note": "an invalid note: kept verbatim it would stick to whatever entry the key names on the target, or collide with a remapped note"
   },
   {
-   "name": "note: a qinqin-flashcards row keyed note: is untouched",
-   "op": "pluginRow",
-   "maps": {
-    "workspaces": {
-     "7": 70
-    },
-    "entries": {
-     "5": 50
-    }
-   },
-   "input": {
-    "pluginId": "qinqin-flashcards",
-    "workspaceId": 7,
-    "key": "note:5",
-    "data": {
-     "version": 1,
-     "entryId": 5,
-     "text": "x"
-    }
-   },
-   "expect": {
-    "drop": false,
-    "workspaceId": 70,
-    "key": "note:5",
-    "data": {
-     "version": 1,
-     "entryId": 5,
-     "text": "x"
-    }
-   },
-   "note": ""
-  },
-  {
    "name": "core: home-layout is restored as it is",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1008,7 +964,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": null,
     "key": "home-layout",
     "data": {
@@ -1029,7 +984,7 @@
   },
   {
    "name": "note: missing entryId is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1040,7 +995,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1201",
     "data": {
@@ -1055,7 +1009,7 @@
   },
   {
    "name": "note: leading zero in the key is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1066,7 +1020,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:01201",
     "data": {
@@ -1082,7 +1035,7 @@
   },
   {
    "name": "note: data not an object is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1093,7 +1046,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "note:1",
     "data": "note"
@@ -1105,7 +1057,7 @@
   },
   {
    "name": "core: notecfg is restored as it is",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1116,7 +1068,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "notecfg",
     "data": {
@@ -1137,7 +1088,7 @@
   },
   {
    "name": "core: a key that only starts with note but not note: is restored as it is",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1148,7 +1099,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "notebook:1",
     "data": {
@@ -1167,7 +1117,7 @@
   },
   {
    "name": "known: identity map keeps the mark",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1177,7 +1127,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": {
@@ -1200,7 +1149,7 @@
   },
   {
    "name": "known: shifted entry id rewrites key and entryId, other members kept",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1210,7 +1159,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": {
@@ -1235,7 +1183,7 @@
   },
   {
    "name": "known: unresolved entry drops the mark",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1243,7 +1191,6 @@
     "entries": {}
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": {
@@ -1259,7 +1206,7 @@
   },
   {
    "name": "known: key and entryId disagree, dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1270,7 +1217,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": {
@@ -1286,7 +1232,7 @@
   },
   {
    "name": "known: leading zero in the key is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1296,7 +1242,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:041",
     "data": {
@@ -1312,7 +1257,7 @@
   },
   {
    "name": "known: entryId as a string is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1322,7 +1267,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": {
@@ -1337,7 +1281,7 @@
   },
   {
    "name": "known: data not an object is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1347,7 +1291,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "known:41",
     "data": "known"
@@ -1358,8 +1301,8 @@
    "note": ""
   },
   {
-   "name": "known: a qinqin-core row keyed known: is untouched",
-   "op": "pluginRow",
+   "name": "known: a key that only starts with known is untouched",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1369,40 +1312,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
-    "workspaceId": 7,
-    "key": "known:41",
-    "data": {
-     "version": 1,
-     "entryId": 41,
-     "createdAt": "2026-11-16T00:00:00.000Z"
-    }
-   },
-   "expect": {
-    "drop": false,
-    "workspaceId": 70,
-    "key": "known:41",
-    "data": {
-     "version": 1,
-     "entryId": 41,
-     "createdAt": "2026-11-16T00:00:00.000Z"
-    }
-   },
-   "note": ""
-  },
-  {
-   "name": "known: a flashcards key that only starts with known is untouched",
-   "op": "pluginRow",
-   "maps": {
-    "workspaces": {
-     "7": 70
-    },
-    "entries": {
-     "41": 1041
-    }
-   },
-   "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "knownfilter",
     "data": {
@@ -1421,7 +1330,7 @@
   },
   {
    "name": "known: a user-global mark (no workspace) is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1431,7 +1340,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": null,
     "key": "known:41",
     "data": {
@@ -1447,7 +1355,7 @@
   },
   {
    "name": "lookups: shifted entries and books follow",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1462,7 +1370,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1535,7 +1442,7 @@
   },
   {
    "name": "lookups: unresolved entry drops the item",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1549,7 +1456,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1612,7 +1518,7 @@
   },
   {
    "name": "lookups: unresolved book ids are removed from books",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1626,7 +1532,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1698,7 +1603,7 @@
   },
   {
    "name": "lookups: two items mapping to one entry merge (sum, earliest firstAt, latest lastAt, books newest first)",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1715,7 +1620,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1783,7 +1687,7 @@
   },
   {
    "name": "lookups: the merged list is sorted newest first again",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1795,7 +1699,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1871,7 +1774,7 @@
   },
   {
    "name": "lookups: clearedAt and unknown top-level members are kept",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1881,7 +1784,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -1928,7 +1830,7 @@
   },
   {
    "name": "lookups: invalid items are dropped by the parse rules",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -1939,7 +1841,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -2010,7 +1911,7 @@
   },
   {
    "name": "lookups: data that is JSON text of a row is decoded and remapped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -2020,7 +1921,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": "{\"version\": 1, \"clearedAt\": null, \"items\": [{\"entryId\": 88, \"count\": 1, \"firstAt\": \"2026-11-12T18:30:00Z\", \"lastAt\": \"2026-11-12T18:30:00Z\", \"sources\": {\"lesson\": 1}, \"books\": []}]}"
@@ -2050,7 +1950,7 @@
   },
   {
    "name": "lookups: version 2 drops the row",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
@@ -2060,7 +1960,6 @@
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": {
@@ -2091,14 +1990,13 @@
   },
   {
    "name": "lookups: data not an object drops the row",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": 7,
     "key": "lookups",
     "data": [
@@ -2113,14 +2011,13 @@
   },
   {
    "name": "lookups: a row without a workspace is dropped",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "entries": {
      "1201": 1201
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": null,
     "key": "lookups",
     "data": {
@@ -2150,45 +2047,14 @@
    "note": ""
   },
   {
-   "name": "lookups: a qinqin-flashcards row keyed lookups is untouched",
-   "op": "pluginRow",
-   "maps": {
-    "workspaces": {
-     "7": 70
-    }
-   },
-   "input": {
-    "pluginId": "qinqin-flashcards",
-    "workspaceId": 7,
-    "key": "lookups",
-    "data": {
-     "anything": [
-      1
-     ]
-    }
-   },
-   "expect": {
-    "drop": false,
-    "workspaceId": 70,
-    "key": "lookups",
-    "data": {
-     "anything": [
-      1
-     ]
-    }
-   },
-   "note": ""
-  },
-  {
    "name": "core: lookupcfg is restored as it is",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": null,
     "key": "lookupcfg",
     "data": {
@@ -2211,14 +2077,13 @@
   },
   {
    "name": "milestone: a seen row follows its workspace, key and data unchanged",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 12
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "milestone:reviews:1000",
     "data": {
@@ -2243,14 +2108,13 @@
   },
   {
    "name": "milestone: a level row keeps its level deck id",
-   "op": "pluginRow",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 12
     }
    },
    "input": {
-    "pluginId": "qinqin-flashcards",
     "workspaceId": 7,
     "key": "milestone:level-complete:d-lvl-hsk-words-b06fd2ac",
     "data": {
@@ -2280,15 +2144,14 @@
    "note": "the level deck id is derived from packId and level name, not from a server id; unknown members kept"
   },
   {
-   "name": "qinqin-core appearance: user-global, restored unchanged",
-   "op": "pluginRow",
+   "name": "appearance: user-global, restored unchanged",
+   "op": "row",
    "maps": {
     "workspaces": {
      "7": 70
     }
    },
    "input": {
-    "pluginId": "qinqin-core",
     "workspaceId": null,
     "key": "appearance",
     "data": {

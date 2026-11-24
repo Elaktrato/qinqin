@@ -2,7 +2,7 @@
 // through the plugin SDK (docs/contracts/notes/README.md). Rules live in
 // notes.ts.
 
-import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
+import { keyedData, type KeyedScope } from '../sync/keyed';
 import {
 	NOTE_CFG_KEY,
 	NOTE_MAX_CHARS,
@@ -27,7 +27,7 @@ export class NoteTooLongError extends Error {
 }
 
 function data(ws: number): KeyedScope {
-	return keyedData(CORE_NAMESPACE, ws);
+	return keyedData(ws);
 }
 
 /** loadNote reads an entry's note with the single-row route; 404 (none or deleted) is no note. */

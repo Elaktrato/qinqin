@@ -9,7 +9,7 @@ const get = (s: StudyServer) => async (path: string) => (await s.fetch(path)).js
 
 describe('STUDY_PULL_COLLECTIONS', () => {
 	it('is the switches and plugin rows plus every typed study collection (record 0002)', () => {
-		expect(STUDY_PULL_COLLECTIONS).toEqual(['pluginStates', 'pluginData', ...STUDY_COLLECTIONS]);
+		expect(STUDY_PULL_COLLECTIONS).toEqual(['pluginStates', 'rows', ...STUDY_COLLECTIONS]);
 		for (const collection of STUDY_COLLECTIONS) expect(STUDY_PULL_COLLECTIONS).toContain(collection);
 	});
 

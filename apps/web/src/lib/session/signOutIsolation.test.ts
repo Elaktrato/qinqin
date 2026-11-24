@@ -74,7 +74,7 @@ function answer(path: string, method: string, tag: string): unknown {
 		return {
 			format: 2, instanceId: '01JD8Z3Q4M5N6P7R8S9T0V1W2X', until: '2026-11-12T10:00:00Z',
 			scope: { workspaces: [{ id: WS, language: 'zh' }], languages: ['zh'], catalogue: '"k"' }, restarted: [],
-			collections: { pluginStates: [], pluginData: [], cards: [typedCard(tag)], decks: [], deckSettings: [], limits: [], fsrsSets: [], fsrsActive: [] },
+			collections: { pluginStates: [], rows: [], cards: [typedCard(tag)], decks: [], deckSettings: [], limits: [], fsrsSets: [], fsrsActive: [] },
 			more: false, next: null, cursor: 'c2.x'
 		};
 	}

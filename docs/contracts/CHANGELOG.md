@@ -18,6 +18,20 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   /api/grammar/progress?workspace= {packId, lessonId, score, total}` records a run; the server keeps the best
   score (`grammar/README.md`). New fixture: `grammar/progress.json`. The `qinqin-grammar` plugin rows
   (`lesson:<packId>:<lessonId>`) are gone; a backup carries the rows as `grammar:progress:<packId>:<lessonId>`.
+- **Keyed rows replace plugin data:** the core's remaining rows (notes, lookups, known marks, milestones, goals,
+  vacations, the home layout, the activity view, the widget options, the navigation layout, the appearance)
+  live in one store without a namespace (`keyed/README.md`, new fixture `keyed/families.json`) that accepts
+  only the listed key families, each in its scope. Routes: `GET /api/rows`, `GET/PUT/DELETE /api/rows/{key}`
+  replace `/api/plugins/{id}/data[/{key}]` (removed). Pull collection `rows` replaces `pluginData`; the push
+  member `rows` replaces `pluginData`; the row shape drops `pluginId`. A pushed row of an unknown family or in
+  the wrong scope is refused alone (`dataRefused`); on the key routes an unknown key is 404 `not_found`, the
+  wrong scope 400. Fixtures changed: `sync/pull-page.json`, `sync/pull-rounds.json`, `sync/push-result.json`,
+  `sync/unreadable-rows.json`, `backup/remap.json` (op `row`), `settings/*.json` and `themes/appearance.json`
+  (no `pluginId`), `auth/admin-users.json` (deletion preview `keyedRows`).
+- **Backup format 2:** the family `plugin-data` becomes `rows` (no `pluginId`); typed study rows, journal
+  documents and grammar progress travel there in their keyed form. A format 1 archive is refused
+  (`backup_version_unsupported`; `backup/reject.json`). The dry-run report drops `pluginsNotInstalled`; its
+  counts say `rows` for `pluginData`. The sample archive is `backup/sample-v2/`.
 
 ## #192 — one pack system on the server
 

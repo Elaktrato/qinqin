@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ApiError } from '../api/client';
-import { STUDY_NAMESPACE } from '../sync/keyed';
 import { StudyServer } from '../testing/studyServer';
 import * as build from '../testing/study';
 import { cardRow, deckRow, type StudyRow } from './rows';
@@ -212,7 +211,7 @@ describe('StudyCache: writes in place', () => {
 		const changed: number[] = [];
 		s.cache.onChange((ws) => changed.push(ws));
 		s.cache.applyKeyed(null, [
-			{ pluginId: STUDY_NAMESPACE, key: 'vacation:v1', workspaceId: null, data: { version: 1, id: 'v1', start: '2026-02-01', end: '2026-02-03', scope: 'all', createdDay: '2026-02-01', createdAt: '2026-02-01T10:00:00Z' }, version: 1, updatedAt: '2026-02-01T10:00:00Z', deletedAt: null }
+			{ key: 'vacation:v1', workspaceId: null, data: { version: 1, id: 'v1', start: '2026-02-01', end: '2026-02-03', scope: 'all', createdDay: '2026-02-01', createdAt: '2026-02-01T10:00:00Z' }, version: 1, updatedAt: '2026-02-01T10:00:00Z', deletedAt: null }
 		]);
 		expect(changed).toEqual([0]);
 		expect((await s.cache.view(WS)).data.vacations).toHaveLength(1);

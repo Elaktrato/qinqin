@@ -19,7 +19,6 @@ function lastCall() {
 /** A row of the list route or the pull, as the server sends it. */
 function wire(over: Record<string, unknown> = {}): Record<string, unknown> {
 	return {
-		pluginId: 'ns',
 		key: 'k',
 		userId: 1,
 		workspaceId: 3,
@@ -31,7 +30,7 @@ function wire(over: Record<string, unknown> = {}): Record<string, unknown> {
 	};
 }
 
-describe('decodeKeyedData: one rule for every namespace', () => {
+describe('decodeKeyedData: one rule for every row', () => {
 	it('decodes JSON text, keeps any other string and every non-string', () => {
 		expect(decodeKeyedData('{"a":1}')).toEqual({ a: 1 });
 		expect(decodeKeyedData('hello')).toBe('hello');
@@ -44,7 +43,6 @@ describe('decodeKeyedData: one rule for every namespace', () => {
 describe('keyedRowOf: a row of the list route or of the pull', () => {
 	it('decodes a row of the contract shape, data decoded', () => {
 		expect(keyedRowOf(wire({ data: '{"a":1}' }))).toEqual({
-			pluginId: 'ns',
 			key: 'k',
 			workspaceId: 3,
 			data: { a: 1 },
@@ -66,16 +64,16 @@ describe('keyedRowOf: a row of the list route or of the pull', () => {
 
 describe('keyedPath', () => {
 	it('escapes the key but keeps a colon readable, and scopes by workspace', () => {
-		expect(keyedPath('qinqin-core', 'entry:a b/c', 3)).toBe('/api/plugins/qinqin-core/data/entry:a%20b%2Fc?workspace=3');
-		expect(keyedPath('qinqin-core', 'layout', null)).toBe('/api/plugins/qinqin-core/data/layout');
+		expect(keyedPath('entry:a b/c', 3)).toBe('/api/rows/entry:a%20b%2Fc?workspace=3');
+		expect(keyedPath('layout', null)).toBe('/api/rows/layout');
 	});
 
 	it('refuses empty, dot and dot-dot keys', () => {
-		for (const key of ['', '.', '..']) expect(() => keyedPath('ns', key, null)).toThrow(/key/);
+		for (const key of ['', '.', '..']) expect(() => keyedPath(key, null)).toThrow(/key/);
 	});
 });
 
-describe('keyedData: the key routes of one namespace and scope', () => {
+describe('keyedData: the key routes of one scope', () => {
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', { getItem: () => 'tok' });
 		vi.stubGlobal('fetch', vi.fn());
@@ -83,18 +81,18 @@ describe('keyedData: the key routes of one namespace and scope', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('get: 404 is null, the data is decoded', async () => {
-		const scope = keyedData('ns', 3);
+		const scope = keyedData(3);
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
 		expect(await scope.get('k')).toBeNull();
 		vi.mocked(fetch).mockResolvedValue(json(wire({ data: '{"a":1}' })));
 		expect(await scope.get('k')).toEqual({ a: 1 });
-		expect(lastCall().url).toBe('/api/plugins/ns/data/k?workspace=3');
+		expect(lastCall().url).toBe('/api/rows/k?workspace=3');
 		vi.mocked(fetch).mockResolvedValue(json(wire({ data: 'hello' })));
 		expect(await scope.get('k')).toBe('hello');
 	});
 
 	it('rejects bad keys before any request', async () => {
-		const scope = keyedData('ns', 3);
+		const scope = keyedData(3);
 		for (const key of ['', '.', '..']) {
 			await expect(scope.get(key)).rejects.toThrow(/key/);
 			await expect(scope.put(key, 1)).rejects.toThrow(/key/);
@@ -105,41 +103,41 @@ describe('keyedData: the key routes of one namespace and scope', () => {
 
 	it('put sends the JSON body, passes keepalive and answers the stored row', async () => {
 		vi.mocked(fetch).mockResolvedValue(json(wire({ data: { v: 1 } })));
-		const row = await keyedData('ns', null).put('k', { v: 1 }, { keepalive: true });
-		expect(lastCall().url).toBe('/api/plugins/ns/data/k');
+		const row = await keyedData(null).put('k', { v: 1 }, { keepalive: true });
+		expect(lastCall().url).toBe('/api/rows/k');
 		expect(lastCall().init.method).toBe('PUT');
 		expect(lastCall().init.keepalive).toBe(true);
 		expect(JSON.parse(String(lastCall().init.body))).toEqual({ v: 1 });
 		expect(row).toMatchObject({ key: 'k', data: { v: 1 }, updatedAt: '2026-01-01T00:00:00Z' });
 		vi.mocked(fetch).mockResolvedValue(json({}));
-		expect(await keyedData('ns', null).put('k', 1)).toBeNull();
+		expect(await keyedData(null).put('k', 1)).toBeNull();
 	});
 
 	it('list uses the prefix route and skips a row it cannot read', async () => {
 		vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		vi.mocked(fetch).mockResolvedValue(json([wire({ key: 'entry:a' }), { key: 'entry:b', data: 1 }]));
-		const rows = await keyedData('ns', 3).list('entry:');
-		expect(lastCall().url).toBe('/api/plugins/ns/data?workspace=3&prefix=entry%3A');
+		const rows = await keyedData(3).list('entry:');
+		expect(lastCall().url).toBe('/api/rows?workspace=3&prefix=entry%3A');
 		expect(rows.map((r) => r.key)).toEqual(['entry:a']);
 	});
 
 	it('find picks the exact key from the prefix route', async () => {
 		vi.mocked(fetch).mockResolvedValue(json([wire({ key: 'ab', data: 2 }), wire({ key: 'a', data: 1 })]));
-		expect(await keyedData('ns', null).find('a')).toBe(1);
+		expect(await keyedData(null).find('a')).toBe(1);
 		vi.mocked(fetch).mockResolvedValue(json([]));
-		expect(await keyedData('ns', null).find('a')).toBeNull();
+		expect(await keyedData(null).find('a')).toBeNull();
 	});
 
 	it('delete resolves when the row is missing, and rethrows every other failure', async () => {
 		vi.mocked(fetch).mockResolvedValue(json({ error: 'not_found', message: 'Plugin data not found.' }, 404));
-		await expect(keyedData('ns', 3).delete('k')).resolves.toBeUndefined();
+		await expect(keyedData(3).delete('k')).resolves.toBeUndefined();
 		vi.mocked(fetch).mockResolvedValue(json({ error: 'workspace_not_found', message: 'No such workspace.' }, 404));
-		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
+		await expect(keyedData(3).delete('k')).rejects.toThrow();
 		vi.mocked(fetch).mockResolvedValue(new Response('', { status: 404 }));
-		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
+		await expect(keyedData(3).delete('k')).rejects.toThrow();
 		expect(lastCall().init.method).toBe('DELETE');
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
-		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
+		await expect(keyedData(3).delete('k')).rejects.toThrow();
 	});
 });
 
@@ -153,23 +151,23 @@ describe('pushKeyed: last-write-wins batch push of keyed rows', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('stamps each row after the time the server holds and tells the stamps', async () => {
-		server.putData({ pluginId: 'ns', key: 'b', workspaceId: 3, data: 1, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null });
-		const sent = await pushKeyed('ns', 3, [
+		server.putData({ key: 'b', workspaceId: 3, data: 1, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null });
+		const sent = await pushKeyed(3, [
 			{ key: 'a', data: { x: 1 } },
 			{ key: 'b', data: {}, knownAt: '2026-03-01T00:00:00Z', deleted: true }
 		], { now: () => Date.parse('2026-02-01T10:00:00Z') });
 		expect(sent).toEqual(['2026-02-01T10:00:00.000Z', '2026-03-01T00:00:00.001Z']);
-		const body = JSON.parse(String(lastCall().init.body)) as { pluginData: Record<string, unknown>[] };
-		expect(body.pluginData).toEqual([
-			{ pluginId: 'ns', key: 'a', workspaceId: 3, data: { x: 1 }, updatedAt: '2026-02-01T10:00:00.000Z' },
-			{ pluginId: 'ns', key: 'b', workspaceId: 3, data: {}, updatedAt: '2026-03-01T00:00:00.001Z', deletedAt: '2026-03-01T00:00:00.001Z' }
+		const body = JSON.parse(String(lastCall().init.body)) as { rows: Record<string, unknown>[] };
+		expect(body.rows).toEqual([
+			{ key: 'a', workspaceId: 3, data: { x: 1 }, updatedAt: '2026-02-01T10:00:00.000Z' },
+			{ key: 'b', workspaceId: 3, data: {}, updatedAt: '2026-03-01T00:00:00.001Z', deletedAt: '2026-03-01T00:00:00.001Z' }
 		]);
 	});
 
 	it('sends chunks in order and reports a skipped row as a PartialPushError', async () => {
-		server.putData({ pluginId: 'ns', key: 'b', workspaceId: 3, data: 1, updatedAt: '2026-05-01T00:00:00Z', deletedAt: null });
+		server.putData({ key: 'b', workspaceId: 3, data: 1, updatedAt: '2026-05-01T00:00:00Z', deletedAt: null });
 		const progress: number[] = [];
-		const err = await pushKeyed('ns', 3, [{ key: 'a', data: 1 }, { key: 'b', data: 2 }, { key: 'c', data: 3 }], {
+		const err = await pushKeyed(3, [{ key: 'a', data: 1 }, { key: 'b', data: 2 }, { key: 'c', data: 3 }], {
 			chunk: 1,
 			now: () => Date.parse('2026-02-01T10:00:00Z'),
 			onProgress: (done) => progress.push(done)

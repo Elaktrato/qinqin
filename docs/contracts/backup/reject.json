@@ -10,8 +10,14 @@
    "note": "unknown version"
   },
   {
-   "name": "formatVersion 2",
-   "builder": "version_2",
+   "name": "formatVersion 1",
+   "builder": "version_1",
+   "code": "backup_version_unsupported",
+   "note": "an archive from before #199 (plugin-data, pluginStates) is refused: old formats need not restore (owner direction 2026-11-24)"
+  },
+  {
+   "name": "formatVersion 3",
+   "builder": "version_3",
    "code": "backup_version_unsupported",
    "note": "a newer format is refused, never guessed"
   },

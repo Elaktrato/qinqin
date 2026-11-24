@@ -71,7 +71,7 @@ export function putEmail(email: string | null, currentPassword?: string, code?: 
 export interface SelfDeletionPreview {
 	workspaces: number;
 	studyEvents: number;
-	pluginData: number;
+	keyedRows: number;
 	/** Live flashcards (typed study rows; absent from servers before v0.4.0). */
 	cards?: number;
 	books: number;

@@ -23,7 +23,7 @@ func exportFiles(t *testing.T, w *baseWorld, uid int64) map[string][]byte {
 // worldCounts sets the manifest counts of newWorld's alice, with overrides.
 func worldCounts(over map[string]int) func(m map[string]any) {
 	return func(m map[string]any) {
-		c := map[string]any{"workspaces": 2, "events": 4, "pluginData": 5, "overlays": 1, "sentences": 1, "books": 1, "bookmarks": 1, "highlights": 1}
+		c := map[string]any{"workspaces": 2, "events": 4, "rows": 5, "overlays": 1, "sentences": 1, "books": 1, "bookmarks": 1, "highlights": 1}
 		for k, v := range over {
 			c[k] = v
 		}
@@ -159,12 +159,12 @@ func TestPlanBlocksTwoCardsThatWouldGetTheSameId(t *testing.T) {
 	tg := newTarget(t, nil)
 	files := exportFiles(t, src, src.AliceUID)
 	row := func(key string, entry int64) string {
-		return `{"pluginId":"qinqin-flashcards","workspaceId":` + itoa64(src.Alice.WS1) + `,"key":"card:` + key + `","data":{"id":"` + key + `","kind":"vocab","entryId":` + itoa64(entry) + `,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"},"version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
+		return `{"workspaceId":` + itoa64(src.Alice.WS1) + `,"key":"card:` + key + `","data":{"id":"` + key + `","kind":"vocab","entryId":` + itoa64(entry) + `,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"},"version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
 	}
 	// card 1 is derived (c-vocab-<E1> of entry E1) and moves to c-vocab-<target E1>; card 2 is NOT derived
 	// (its number is not its own entry) and keeps the id c-vocab-<target E1>.
-	files[PartName(NamePluginData, 1)] = []byte(row("c-vocab-"+itoa64(src.E1), src.E1) + row("c-vocab-"+itoa64(tg.E1), src.E2))
-	a, err := Open(writeZip(t, files, zopts{manifest: worldCounts(map[string]int{"pluginData": 2})}))
+	files[PartName(NameRows, 1)] = []byte(row("c-vocab-"+itoa64(src.E1), src.E1) + row("c-vocab-"+itoa64(tg.E1), src.E2))
+	a, err := Open(writeZip(t, files, zopts{manifest: worldCounts(map[string]int{"rows": 2})}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,15 +4,15 @@
 // workspace. The end of the session drops the buffer, the copies and the
 // pending checks.
 
-import { CORE_NAMESPACE, keyedData } from '../sync/keyed';
+import { keyedData } from '../sync/keyed';
 import { LOOKUPS_KEY, LOOKUP_CFG_KEY } from './lookups';
 import { LookupRecorder, type RecorderIO } from './recorder';
 
 /** recorderIO: the recorder's reads and writes of the qinqin-core rows. */
 export const recorderIO: RecorderIO = {
-	readRow: (ws) => keyedData(CORE_NAMESPACE, ws).find(LOOKUPS_KEY),
-	writeRow: async (ws, data) => void (await keyedData(CORE_NAMESPACE, ws).put(LOOKUPS_KEY, data)),
-	readCfg: () => keyedData(CORE_NAMESPACE, null).find(LOOKUP_CFG_KEY)
+	readRow: (ws) => keyedData(ws).find(LOOKUPS_KEY),
+	writeRow: async (ws, data) => void (await keyedData(ws).put(LOOKUPS_KEY, data)),
+	readCfg: () => keyedData(null).find(LOOKUP_CFG_KEY)
 };
 
 export class LookupsState {

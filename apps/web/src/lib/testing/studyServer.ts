@@ -2,17 +2,16 @@
 // `fetch` replacement: the paged pull v2 (docs/contracts/sync/: rounds,
 // `until` truncated to the second, cursors 30 s before it, tombstones with a
 // `since`), the push with last-write-wins on the edit time (second
-// precision, docs/contracts/study/lww.json) and the plugin-data key routes.
+// precision, docs/contracts/study/lww.json) and the keyed row routes.
 // It counts every request by kind, so tests can pin how many requests a read
 // or a write costs. It is not the server: shapes are the contract's, the
-// edge cases (limits, 413, foreign plugins) are not modelled.
+// edge cases (limits, 413, refused keys) are not modelled.
 
 import { STUDY_COLLECTIONS, identityOf, parseRow, type StudyCollection, type StudyRow } from '../study/rows';
 
 type Obj = Record<string, unknown>;
 
 export interface ServerDataRow {
-	pluginId: string;
 	key: string;
 	userId: number;
 	workspaceId: number | null;
@@ -33,7 +32,7 @@ export interface RequestCounts {
 	other: number;
 }
 
-const ROUND_ORDER = ['pluginStates', 'pluginData', ...STUDY_COLLECTIONS];
+const ROUND_ORDER = ['pluginStates', 'rows', ...STUDY_COLLECTIONS];
 const ULID = '01JABCDEFGHJKMNPQRSTVWXYZ0';
 
 function sec(iso: string): number {
@@ -81,9 +80,9 @@ export class StudyServer {
 		this.typed.set(`${collection}:${row.workspaceId}:${identityOf(collection, row)}`, { ...row, collection });
 	}
 
-	/** putData stores a plugin-data row; the edit time defaults to its updatedAt. */
+	/** putData stores a keyed row; the edit time defaults to its updatedAt. */
 	putData(row: Omit<ServerDataRow, 'editedAt' | 'userId' | 'version'> & Partial<ServerDataRow>): void {
-		this.data.set(this.dataKey(row.pluginId, row.workspaceId, row.key), {
+		this.data.set(this.dataKey(row.workspaceId, row.key), {
 			userId: 1,
 			version: 1,
 			editedAt: row.updatedAt,
@@ -91,8 +90,8 @@ export class StudyServer {
 		});
 	}
 
-	private dataKey(pluginId: string, workspaceId: number | null, key: string): string {
-		return `${pluginId}:${workspaceId ?? 'user'}:${key}`;
+	private dataKey(workspaceId: number | null, key: string): string {
+		return `${workspaceId ?? 'user'}:${key}`;
 	}
 
 	/** typedRows: the stored rows of one collection and workspace, tombstones included. */
@@ -123,21 +122,20 @@ export class StudyServer {
 			this.counts.events++;
 			return json([]);
 		}
-		const m = /^\/api\/plugins\/([^/]+)\/data(?:\/(.+))?$/.exec(url.pathname);
+		const m = /^\/api\/rows(?:\/(.+))?$/.exec(url.pathname);
 		if (m !== null) {
 			const ws = url.searchParams.get('workspace');
 			const workspaceId = ws === null ? null : Number(ws);
-			const pluginId = decodeURIComponent(m[1]);
-			if (m[2] === undefined) {
+			if (m[1] === undefined) {
 				this.counts.dataReads++;
 				const prefix = url.searchParams.get('prefix') ?? '';
 				const rows = [...this.data.values()]
-					.filter((r) => r.pluginId === pluginId && r.workspaceId === workspaceId && r.deletedAt === null && r.key.startsWith(prefix))
+					.filter((r) => r.workspaceId === workspaceId && r.deletedAt === null && r.key.startsWith(prefix))
 					.sort((a, b) => (a.key < b.key ? -1 : 1))
 					.map((r) => this.wire(r));
 				return json(rows);
 			}
-			return this.dataRoute(method, pluginId, workspaceId, decodeURIComponent(m[2]), init);
+			return this.dataRoute(method, workspaceId, decodeURIComponent(m[1]), init);
 		}
 		this.counts.other++;
 		return json({ error: 'not_found', message: 'no such route' }, 404);
@@ -149,8 +147,8 @@ export class StudyServer {
 		return rest;
 	}
 
-	private dataRoute(method: string, pluginId: string, workspaceId: number | null, key: string, init?: RequestInit): Response {
-		const id = this.dataKey(pluginId, workspaceId, key);
+	private dataRoute(method: string, workspaceId: number | null, key: string, init?: RequestInit): Response {
+		const id = this.dataKey(workspaceId, key);
 		const stored = this.data.get(id);
 		if (method === 'GET') {
 			this.counts.dataReads++;
@@ -161,7 +159,6 @@ export class StudyServer {
 		const now = this.stamp();
 		if (method === 'PUT') {
 			const row: ServerDataRow = {
-				pluginId,
 				key,
 				userId: 1,
 				workspaceId,
@@ -193,7 +190,7 @@ export class StudyServer {
 		for (const collection of ROUND_ORDER) {
 			if (!collections.includes(collection)) continue;
 			const rows: { row: Obj; at: number }[] = [];
-			if (collection === 'pluginData') {
+			if (collection === 'rows') {
 				for (const r of this.data.values()) {
 					if (r.workspaceId !== null && r.workspaceId !== workspace) continue;
 					if (!inWindow(r.updatedAt, r.deletedAt !== null)) continue;
@@ -285,9 +282,9 @@ export class StudyServer {
 				accepted++;
 			}
 		}
-		for (const raw of (body.pluginData as Obj[] | undefined) ?? []) {
+		for (const raw of (body.rows as Obj[] | undefined) ?? []) {
 			const workspaceId = (raw.workspaceId as number | null | undefined) ?? null;
-			const id = this.dataKey(raw.pluginId as string, workspaceId, raw.key as string);
+			const id = this.dataKey(workspaceId, raw.key as string);
 			const stored = this.data.get(id);
 			const deleted = typeof raw.deletedAt === 'string';
 			const edited = Math.min(nowMs, Date.parse((deleted ? raw.deletedAt : raw.updatedAt) as string));
@@ -301,7 +298,6 @@ export class StudyServer {
 			}
 			const now = this.stamp();
 			this.data.set(id, {
-				pluginId: raw.pluginId as string,
 				key: raw.key as string,
 				userId: 1,
 				workspaceId,

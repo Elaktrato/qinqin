@@ -52,8 +52,9 @@ func TestMigration018KeepsWorkspaceData(t *testing.T) {
 		}
 	}
 
-	if err := migrate(sqlDB); err != nil {
-		t.Fatalf("migrate to latest: %v", err)
+	// Through 043: migration 046 (#199) replaces plugin_data.
+	if err := migrateThrough(sqlDB, "043_lemma_rules"); err != nil {
+		t.Fatalf("migrate: %v", err)
 	}
 
 	// Workspaces keep every column, gain the empty name.

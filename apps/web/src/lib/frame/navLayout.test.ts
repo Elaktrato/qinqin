@@ -47,7 +47,6 @@ afterEach(() => {
 
 describe('nav-layout contract', () => {
 	it('names the row, the modes, the defaults and the five-item rule', () => {
-		expect(fixture.pluginId).toBe('qinqin-core');
 		expect(fixture.scope).toBe('user-global');
 		expect(NAV_LAYOUT_KEY).toBe(fixture.key);
 		expect([...PHONE_MODES]).toEqual(fixture.phoneModes);

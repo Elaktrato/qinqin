@@ -96,7 +96,7 @@
 		"access": "user"
 	},
 	{
-		"pattern": "DELETE /api/plugins/{id}/data/{key}",
+		"pattern": "DELETE /api/rows/{key}",
 		"access": "user"
 	},
 	{
@@ -344,11 +344,11 @@
 		"access": "user"
 	},
 	{
-		"pattern": "GET /api/plugins/{id}/data",
+		"pattern": "GET /api/rows",
 		"access": "user"
 	},
 	{
-		"pattern": "GET /api/plugins/{id}/data/{key}",
+		"pattern": "GET /api/rows/{key}",
 		"access": "user"
 	},
 	{
@@ -696,11 +696,11 @@
 		"access": "user"
 	},
 	{
-		"pattern": "PUT /api/plugins/{id}/data/{key}",
+		"pattern": "PUT /api/plugins/{id}/state",
 		"access": "user"
 	},
 	{
-		"pattern": "PUT /api/plugins/{id}/state",
+		"pattern": "PUT /api/rows/{key}",
 		"access": "user"
 	},
 	{

@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-// Namespace is the plugin-data namespace of the legacy rows (and of the
-// keyed study rows that stay plugin data: goals, known marks, vacations).
-const Namespace = "qinqin-flashcards"
-
 // Family is a typed study collection, named as on the wire.
 type Family string
 

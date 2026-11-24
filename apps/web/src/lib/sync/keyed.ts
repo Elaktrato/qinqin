@@ -1,7 +1,8 @@
-// Keyed plugin-data rows (#193): one path for every namespace — the study
-// namespace's keyed rows (goals, known marks, vacations, milestones), the
-// core rows (notes, lookups, layout, widget options, theme, navigation
-// layout) and, until #199 retires it, the plugin SDK's data scope. Route
+// The keyed settings rows (#193, #199; docs/contracts/keyed/): the core's one
+// generic store of small JSON documents — the study's keyed rows (goals, known
+// marks, vacations, milestones) and the core rows (notes, lookups, layout,
+// widget options, appearance, navigation layout, activity view). The server
+// accepts only the families of families.json, each in its scope. Route
 // building, the one data decode, the decode of a listed or pulled row and the
 // last-write-wins batch push live here; nothing else spells the routes.
 //
@@ -14,14 +15,41 @@ import { ApiError, api } from '../api/client';
 import { readableRow } from './rows';
 import { pushChunks, stampOf, type ChunkOptions } from './push';
 
-/** The core namespace: notes, lookups, layout, widget options, theme, navigation layout, activity view. */
-export const CORE_NAMESPACE = 'qinqin-core';
-/** The study namespace: its keyed rows (goals, known marks, vacations, milestones); typed rows are no plugin data. */
-export const STUDY_NAMESPACE = 'qinqin-flashcards';
+/** Where a family's rows live: one workspace, or every workspace of the user. */
+export type RowScope = 'workspace' | 'user-global';
+
+/** One accepted key family (docs/contracts/keyed/families.json): the exact key, or the prefix and at least one character. */
+export interface RowFamily {
+	key: string;
+	prefix: boolean;
+	scope: RowScope;
+}
+
+/** The accepted key families, as the server's (server/internal/keyed). */
+export const ROW_FAMILIES: readonly RowFamily[] = [
+	{ key: 'note:', prefix: true, scope: 'workspace' },
+	{ key: 'notecfg', prefix: false, scope: 'workspace' },
+	{ key: 'lookups', prefix: false, scope: 'workspace' },
+	{ key: 'lookupcfg', prefix: false, scope: 'user-global' },
+	{ key: 'known:', prefix: true, scope: 'workspace' },
+	{ key: 'milestone:', prefix: true, scope: 'workspace' },
+	{ key: 'goals:workspace', prefix: false, scope: 'workspace' },
+	{ key: 'vacation:', prefix: true, scope: 'user-global' },
+	{ key: 'home-layout', prefix: false, scope: 'user-global' },
+	{ key: 'activity-view', prefix: false, scope: 'user-global' },
+	{ key: 'widget-options', prefix: false, scope: 'user-global' },
+	{ key: 'nav-layout', prefix: false, scope: 'user-global' },
+	{ key: 'appearance', prefix: false, scope: 'user-global' }
+];
+
+/** rowFamilyOf: the family of a key, or null when no family accepts it (keys are 1 to 512 bytes). */
+export function rowFamilyOf(key: string): RowFamily | null {
+	if (key === '' || new TextEncoder().encode(key).length > 512) return null;
+	return ROW_FAMILIES.find((f) => (f.prefix ? key.startsWith(f.key) && key.length > f.key.length : key === f.key)) ?? null;
+}
 
 /** A keyed row as the list route and the pull send it, its data decoded. */
 export interface KeyedRow<T = unknown> {
-	pluginId: string;
 	key: string;
 	workspaceId: number | null;
 	data: T;
@@ -47,12 +75,11 @@ export function decodeKeyedData(data: unknown): unknown {
 
 /** keyedRowOf decodes one row of the list route or of a pull, or null when it is off the contract shape. */
 export function keyedRowOf(raw: unknown): KeyedRow | null {
-	if (!readableRow('pluginData', raw)) return null;
+	if (!readableRow('rows', raw)) return null;
 	const row = raw as Record<string, unknown>;
 	const workspaceId = row.workspaceId;
 	if (workspaceId !== null && !Number.isInteger(workspaceId)) return null;
 	return {
-		pluginId: row.pluginId as string,
 		key: row.key as string,
 		workspaceId: workspaceId as number | null,
 		data: decodeKeyedData(row.data),
@@ -62,18 +89,16 @@ export function keyedRowOf(raw: unknown): KeyedRow | null {
 	};
 }
 
-function base(namespace: string): string {
-	return `/api/plugins/${encodeURIComponent(namespace)}/data`;
-}
+const BASE = '/api/rows';
 
 /** keyedPath: the key route of one row; `workspace` null is the user-global row. */
-export function keyedPath(namespace: string, key: string, workspace: number | null): string {
+export function keyedPath(key: string, workspace: number | null): string {
 	// '.' and '..' would be resolved away as path segments, and an empty key is no route.
 	if (key === '' || key === '.' || key === '..') {
-		throw new Error(`${namespace}: invalid data key "${key}"`);
+		throw new Error(`rows: invalid key "${key}"`);
 	}
-	// ':' is legal in a path segment, so keys like `entry:<id>` keep their readable form.
-	const path = `${base(namespace)}/${encodeURIComponent(key).replaceAll('%3A', ':')}`;
+	// ':' is legal in a path segment, so keys like `note:<id>` keep their readable form.
+	const path = `${BASE}/${encodeURIComponent(key).replaceAll('%3A', ':')}`;
 	return workspace === null ? path : `${path}?workspace=${workspace}`;
 }
 
@@ -90,11 +115,11 @@ export interface KeyedScope {
 	delete(key: string): Promise<void>;
 }
 
-/** keyedData: the key routes of one namespace, scoped to a workspace or (null) user-global. */
-export function keyedData(namespace: string, workspace: number | null): KeyedScope {
+/** keyedData: the key routes, scoped to a workspace or (null) user-global. */
+export function keyedData(workspace: number | null): KeyedScope {
 	const scope: KeyedScope = {
 		async get<T>(key: string): Promise<T | null> {
-			const path = keyedPath(namespace, key, workspace);
+			const path = keyedPath(key, workspace);
 			try {
 				const row = await api<{ data?: unknown } | undefined>(path, { method: 'GET' });
 				return row === undefined || row === null ? null : ((decodeKeyedData(row.data) ?? null) as T | null);
@@ -104,7 +129,7 @@ export function keyedData(namespace: string, workspace: number | null): KeyedSco
 			}
 		},
 		async put(key, value, opts) {
-			const path = keyedPath(namespace, key, workspace);
+			const path = keyedPath(key, workspace);
 			const answer = await api<unknown>(path, {
 				method: 'PUT',
 				body: value,
@@ -121,7 +146,7 @@ export function keyedData(namespace: string, workspace: number | null): KeyedSco
 			const query: string[] = [];
 			if (workspace !== null) query.push(`workspace=${workspace}`);
 			if (prefix !== undefined) query.push(`prefix=${encodeURIComponent(prefix)}`);
-			const rows = await api<unknown[] | undefined>(`${base(namespace)}${query.length ? `?${query.join('&')}` : ''}`);
+			const rows = await api<unknown[] | undefined>(`${BASE}${query.length ? `?${query.join('&')}` : ''}`);
 			const out: KeyedRow<T>[] = [];
 			let skipped = 0;
 			for (const raw of Array.isArray(rows) ? rows : []) {
@@ -129,11 +154,11 @@ export function keyedData(namespace: string, workspace: number | null): KeyedSco
 				if (row === null) skipped++;
 				else out.push(row as KeyedRow<T>);
 			}
-			if (skipped > 0) console.warn(`${namespace}: skipped ${skipped} unreadable data row(s)`);
+			if (skipped > 0) console.warn(`rows: skipped ${skipped} unreadable row(s)`);
 			return out;
 		},
 		async delete(key) {
-			const path = keyedPath(namespace, key, workspace);
+			const path = keyedPath(key, workspace);
 			try {
 				await api(path, { method: 'DELETE' });
 			} catch (err) {
@@ -160,7 +185,6 @@ export interface KeyedWrite {
  * row was sent with; a skipped row is a PartialPushError (pushChunks).
  */
 export async function pushKeyed(
-	namespace: string,
 	workspace: number | null,
 	rows: readonly KeyedWrite[],
 	opts: ChunkOptions = {},
@@ -168,11 +192,10 @@ export async function pushKeyed(
 	stamps: string[] = []
 ): Promise<string[]> {
 	await pushChunks(rows.length, opts, (from, to, nowMs) => ({
-		pluginData: rows.slice(from, to).map((row, i) => {
+		rows: rows.slice(from, to).map((row, i) => {
 			const stamp = stampOf(nowMs, row.knownAt);
 			stamps[from + i] = stamp;
 			return {
-				pluginId: namespace,
 				key: row.key,
 				workspaceId: workspace,
 				data: row.data,

@@ -355,11 +355,13 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/audio/entries/{id}":              tokReadAny,
 	"GET /api/audio/clips/{file}":              tokReadAny,
 
-	"GET /api/events":                  tokReadWS,
-	"GET /api/stats/activity":          tokReadWS,
-	"GET /api/library/books":           tokReadWS,
-	"GET /api/plugins/{id}/data":       tokReadWS,
-	"GET /api/plugins/{id}/data/{key}": tokReadWS,
+	"GET /api/events":         tokReadWS,
+	"GET /api/stats/activity": tokReadWS,
+	"GET /api/library/books":  tokReadWS,
+	// #199: the keyed rows replace the plugin data routes with the same
+	// rules (plan Ruling "personal access tokens keep the reach they had").
+	"GET /api/rows":       tokReadWS,
+	"GET /api/rows/{key}": tokReadWS,
 
 	"POST /api/sync/push":                             tokWriteAny,
 	"POST /api/events/batch":                          tokWriteAny,
@@ -376,8 +378,8 @@ var v1TokenRoutes = map[string]tokenRule{
 	"DELETE /api/library/books/{id}/highlights/{hid}": tokWriteAny,
 	"PUT /api/plugins/{id}/state":                     tokWriteAny,
 
-	"PUT /api/plugins/{id}/data/{key}":    tokWriteWS,
-	"DELETE /api/plugins/{id}/data/{key}": tokWriteWS,
+	"PUT /api/rows/{key}":    tokWriteWS,
+	"DELETE /api/rows/{key}": tokWriteWS,
 }
 
 // readPOSTs are the POST routes whose handlers change nothing and may be

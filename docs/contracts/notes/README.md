@@ -7,9 +7,8 @@ side. Spec: `docs/superpowers/specs/2026-11-16-v030s-notes-design.md` (issue #77
 
 ## Rows
 
-Plugin data of the built-in plugin **`qinqin-core`** (not `qinqin-flashcards`: the entry page works with
-the flashcards plugin switched off). Workspace-scoped: always read and written with
-`?workspace=<current workspace>` through the generic plugin data routes and the `pluginData` sync
+Keyed rows (`keyed/`; the entry page works with the flashcards feature switched off). Workspace-scoped:
+always read and written with `?workspace=<current workspace>` through `/api/rows` and the `rows` sync
 collection. There is no note-specific route and the server never parses note text.
 
 | Key | JSON shape |
@@ -60,15 +59,15 @@ row, or a non-boolean `onAnswer`, reads as `true` (the default is ON).
 
 ## Saving and deleting
 
-- Save = `PUT .../data/note:<id>?workspace=<ws>` with the object above; members of the stored row other
+- Save = `PUT /api/rows/note:<id>?workspace=<ws>` with the object above; members of the stored row other
   than `version`, `entryId`, `text` are kept verbatim (room for attachments later). Last write wins per
-  key with the client's edit time, like every plugin data row.
-- Delete = `DELETE .../data/note:<id>?workspace=<ws>`: the server tombstones the row and other devices
+  key with the client's edit time, like every keyed row.
+- Delete = `DELETE /api/rows/note:<id>?workspace=<ws>`: the server tombstones the row and other devices
   learn it by pull; a later save revives the key.
 
 ## Backup and restore
 
-Live note rows are exported with the other plugin data rows, and each note's `data.entryId` is listed in
+Live note rows are exported with the other keyed rows, and each note's `data.entryId` is listed in
 `refs/entries.json`. On restore the key and `entryId` are rewritten together to the target server's entry
 id; a note whose entry cannot be resolved is dropped and counted under `notes` of the unresolved entry in
 the dry-run report; when two archive notes map to the same target entry the newest

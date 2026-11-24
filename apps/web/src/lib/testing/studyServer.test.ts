@@ -51,9 +51,9 @@ describe('the fake study server', () => {
 
 	it('stamps plugin-data writes with its own clock', async () => {
 		const s = new StudyServer({ now: () => Date.parse('2026-02-01T10:00:00Z') });
-		const put = await (await s.fetch('/api/plugins/p/data/k?workspace=7', { method: 'PUT', body: '{"a":1}' })).json();
+		const put = await (await s.fetch('/api/rows/k?workspace=7', { method: 'PUT', body: '{"a":1}' })).json();
 		expect(put).toMatchObject({ key: 'k', workspaceId: 7, data: { a: 1 }, updatedAt: '2026-02-01T10:00:00.000Z' });
-		expect((await s.fetch('/api/plugins/p/data/k', { method: 'DELETE' })).status).toBe(404);
-		expect((await s.fetch('/api/plugins/p/data/k?workspace=7', { method: 'DELETE' })).status).toBe(204);
+		expect((await s.fetch('/api/rows/k', { method: 'DELETE' })).status).toBe(404);
+		expect((await s.fetch('/api/rows/k?workspace=7', { method: 'DELETE' })).status).toBe(204);
 	});
 });

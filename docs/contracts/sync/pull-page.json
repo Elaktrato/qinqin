@@ -6,7 +6,7 @@
  "collections": [
   "workspaces",
   "pluginStates",
-  "pluginData",
+  "rows",
   "cards",
   "decks",
   "deckSettings",
@@ -31,7 +31,7 @@
  ],
  "studyCollections": [
   "pluginStates",
-  "pluginData",
+  "rows",
   "cards",
   "decks",
   "deckSettings",
@@ -54,8 +54,7 @@
    "order",
    "updatedAt"
   ],
-  "pluginData": [
-   "pluginId",
+  "rows": [
    "key",
    "userId",
    "workspaceId",
@@ -154,7 +153,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -210,9 +209,8 @@
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-flashcards",
        "key": "vacation:01JD0000000000000000000001",
        "userId": 1,
        "workspaceId": null,
@@ -225,7 +223,6 @@
        "deletedAt": null
       },
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -261,7 +258,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -285,9 +282,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -372,7 +368,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -396,7 +392,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -514,7 +510,7 @@
    "valid": true,
    "requested": [
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -546,9 +542,8 @@
     "restarted": [],
     "collections": {
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -654,7 +649,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -677,9 +672,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -763,7 +757,7 @@
    "reason": "only requested collections",
    "requested": [
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -794,9 +788,8 @@
     "restarted": [],
     "collections": {
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -846,7 +839,7 @@
    "reason": "only requested collections",
    "requested": [
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -877,9 +870,8 @@
     "restarted": [],
     "collections": {
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -930,7 +922,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -953,9 +945,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1004,7 +995,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1027,9 +1018,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1115,7 +1105,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1138,7 +1128,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -1258,7 +1248,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1281,7 +1271,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -1401,7 +1391,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1424,9 +1414,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1512,7 +1501,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1535,7 +1524,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -1655,7 +1644,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1678,9 +1667,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1766,7 +1754,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1789,9 +1777,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1877,7 +1864,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -1900,9 +1887,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -1988,7 +1974,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2013,9 +1999,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -2101,7 +2086,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2124,9 +2109,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -2212,7 +2196,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2266,9 +2250,8 @@
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-flashcards",
        "key": "vacation:01JD0000000000000000000001",
        "userId": 1,
        "workspaceId": null,
@@ -2281,7 +2264,6 @@
        "deletedAt": null
       },
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -2318,7 +2300,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2373,9 +2355,8 @@
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-flashcards",
        "key": "vacation:01JD0000000000000000000001",
        "userId": 1,
        "workspaceId": null,
@@ -2388,7 +2369,6 @@
        "deletedAt": null
       },
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -2425,7 +2405,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2480,9 +2460,8 @@
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-flashcards",
        "key": "vacation:01JD0000000000000000000001",
        "userId": 1,
        "workspaceId": null,
@@ -2495,7 +2474,6 @@
        "deletedAt": null
       },
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -2532,7 +2510,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2555,9 +2533,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -2645,7 +2622,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2700,9 +2677,8 @@
        "updatedAt": "2026-11-02T08:00:00Z"
       }
      ],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-flashcards",
        "key": "vacation:01JD0000000000000000000001",
        "userId": 1,
        "workspaceId": null,
@@ -2715,7 +2691,6 @@
        "deletedAt": null
       },
       {
-       "pluginId": "qinqin-core",
        "key": "lookups",
        "userId": 1,
        "workspaceId": 7,
@@ -2752,7 +2727,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2775,9 +2750,8 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [
+     "rows": [
       {
-       "pluginId": "qinqin-core",
        "key": "known:1201",
        "userId": 1,
        "workspaceId": 7,
@@ -2865,7 +2839,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -2888,7 +2862,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -3008,7 +2982,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -3031,7 +3005,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -3153,7 +3127,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -3176,7 +3150,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -3297,7 +3271,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -3320,7 +3294,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -3442,7 +3416,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -3465,7 +3439,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],
@@ -3586,7 +3560,7 @@
    "requested": [
     "workspaces",
     "pluginStates",
-    "pluginData",
+    "rows",
     "cards",
     "decks",
     "deckSettings",
@@ -3609,7 +3583,7 @@
     "collections": {
      "workspaces": [],
      "pluginStates": [],
-     "pluginData": [],
+     "rows": [],
      "cards": [],
      "decks": [],
      "deckSettings": [],

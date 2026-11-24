@@ -52,7 +52,7 @@ func canon(t *testing.T, data []byte) string {
 				json.Unmarshal([]byte(l), &e)
 				out = append(out, fmt.Sprintf("EV %v ws=%s %v %v %s", e["id"], wsName[e["workspaceId"].(float64)], e["ts"], e["type"], jsonOf(e["payload"])))
 			}
-		case FamilyOf(name) == NamePluginData:
+		case FamilyOf(name) == NameRows:
 			for _, l := range lines(b) {
 				var r map[string]any
 				json.Unmarshal([]byte(l), &r)
@@ -109,7 +109,7 @@ func scramble(t *testing.T, w *baseWorld) (extraWS, extraBook int64) {
 	t.Helper()
 	uid := w.AliceUID
 	exec(t, w.DB, `DELETE FROM study_events WHERE user_id = ? AND workspace_id = ?`, uid, w.Alice.WS1)
-	exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at) VALUES ('junk', ?, NULL, 'j', '{"junk":1}', 1, 't')`, uid)
+	exec(t, w.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, NULL, 'j', '{"junk":1}', 1, 't', 't')`, uid)
 	exec(t, w.DB, `UPDATE user_edits SET written = 'CHANGED' WHERE user_id = ?`, uid)
 	exec(t, w.DB, `DELETE FROM user_time_zones WHERE user_id = ?`, uid)
 	res, _ := w.DB.Exec(`INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, 'zh', 'Extra', '{}', 't')`, uid)
@@ -163,13 +163,13 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 		fmt.Sprintf(`SELECT COUNT(*) FROM workspaces WHERE id IN (%d, %d, %d)`, w.Alice.WS1, w.Alice.WS2, extraWS),
 		fmt.Sprintf(`SELECT COUNT(*) FROM study_events WHERE workspace_id IN (%d, %d, %d)`, w.Alice.WS1, w.Alice.WS2, extraWS),
 		fmt.Sprintf(`SELECT COUNT(*) FROM library_books WHERE id IN (%d, %d)`, w.Alice.Book, extraBook),
-		`SELECT COUNT(*) FROM plugin_data WHERE pack_id = 'junk'`,
+		`SELECT COUNT(*) FROM keyed_rows WHERE pack_id = 'junk'`,
 		fmt.Sprintf(`SELECT COUNT(*) FROM journal_photos WHERE user_id = %d`, uid),
 		fmt.Sprintf(`SELECT COUNT(*) FROM study_cards WHERE user_id = %d AND id = 'c-later'`, uid),
 		fmt.Sprintf(`SELECT COUNT(*) FROM study_decks WHERE user_id = %d`, uid),
 		fmt.Sprintf(`SELECT COUNT(*) FROM library_deletions WHERE user_id = %d`, uid),
 		// typed families land in the typed tables, never in plugin_data
-		fmt.Sprintf(`SELECT COUNT(*) FROM plugin_data WHERE user_id = %d AND pack_id = 'qinqin-flashcards' AND key LIKE 'card:%%'`, uid),
+		fmt.Sprintf(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = %d AND key LIKE 'card:%%'`, uid),
 	} {
 		var n int
 		w.DB.QueryRow(q).Scan(&n)
@@ -212,12 +212,12 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 	if bobSess != 1 {
 		t.Errorf("bob's sessions %d", bobSess)
 	}
-	// plugin rows got updated_at = now (restored stamp), modified_at kept (NULL stays NULL)
+	// rows got updated_at = now (restored stamp), modified_at kept
 	var nullMod int
-	w.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND modified_at IS NULL`, uid).Scan(&nullMod)
+	w.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND modified_at IS NULL`, uid).Scan(&nullMod)
 	var stale int
-	w.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND updated_at < '2026-11-16'`, uid).Scan(&stale)
-	if nullMod != 1 || stale != 0 {
+	w.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND updated_at < '2026-11-16'`, uid).Scan(&stale)
+	if nullMod != 0 || stale != 0 {
 		t.Errorf("modified_at NULL rows %d, rows with an old updated_at %d", nullMod, stale)
 	}
 	// typed cards: updated_at = now (the restore's stamp, so every pull sees them), version and
@@ -231,7 +231,7 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 	// user-global rows (workspaceId null) round-trip, and the vacation scope follows the NEW workspace
 	var vac string
 	var vws sql_NullInt
-	if err := w.DB.QueryRow(`SELECT data, workspace_id FROM plugin_data WHERE user_id = ? AND key LIKE 'vacation:%'`, uid).Scan(&vac, &vws); err != nil {
+	if err := w.DB.QueryRow(`SELECT data, workspace_id FROM keyed_rows WHERE user_id = ? AND key LIKE 'vacation:%'`, uid).Scan(&vac, &vws); err != nil {
 		t.Fatalf("vacation row: %v", err)
 	}
 	var newWS1 int64
@@ -503,7 +503,7 @@ func TestRestoreVersusDeleteUserNeverLeavesDataOrBusy(t *testing.T) {
 			t.Fatalf("round %d: restore: %v (never SQLITE_BUSY or a half state)", round, restoreErr)
 		}
 		for _, q := range []string{`SELECT COUNT(*) FROM workspaces WHERE user_id = %d`, `SELECT COUNT(*) FROM study_events WHERE user_id = %d`,
-			`SELECT COUNT(*) FROM plugin_data WHERE user_id = %d`, `SELECT COUNT(*) FROM library_books WHERE user_id = %d`, `SELECT COUNT(*) FROM user_edits WHERE user_id = %d`} {
+			`SELECT COUNT(*) FROM keyed_rows WHERE user_id = %d`, `SELECT COUNT(*) FROM library_books WHERE user_id = %d`, `SELECT COUNT(*) FROM user_edits WHERE user_id = %d`} {
 			var n int
 			w.DB.QueryRow(fmt.Sprintf(q, uid)).Scan(&n)
 			if n != 0 {

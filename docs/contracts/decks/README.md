@@ -42,7 +42,7 @@ See the fixture cases. Per item in level order: no live vocab card -> create `c-
 join (append the target to its row and every sibling row of that entry); already inside -> skip. The deck
 row `{id, name, createdAt, source: {type: "level", packId, level}}` is written only when no live row with
 that id exists. Re-adding writes nothing new; two devices planning from the same input and `now` write
-identical rows. Writes go through `POST /api/sync/push` (`pluginData`), 200 rows per request, deck row
+identical rows. Writes go through `POST /api/sync/push` (the typed `cards` and `decks`), 200 rows per request, deck row
 first; a response with `dataSkipped` or `dataRefused` > 0 is a failure.
 
 ## Character mastery (`char-mastery.json`)

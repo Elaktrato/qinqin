@@ -67,8 +67,8 @@ var userTables = []UserTable{
 	{Name: "study_events", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM study_events WHERE user_id = ?1`},
 		PreviewKey: "studyEvents", Count: `SELECT COUNT(*) FROM study_events WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "plugin_states", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM plugin_states WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
-	{Name: "plugin_data", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM plugin_data WHERE user_id = ?1`},
-		PreviewKey: "pluginData", Count: `SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "keyed_rows", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM keyed_rows WHERE user_id = ?1`},
+		PreviewKey: "keyedRows", Count: `SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "user_edits", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_edits WHERE user_id = ?1`},
 		PreviewKey: "overlays", Count: `SELECT COUNT(*) FROM user_edits WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "sentences", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sentences WHERE user_id = ?1`},
@@ -77,7 +77,7 @@ var userTables = []UserTable{
 		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "library_highlights", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_highlights WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
-	// Typed study rows (migration 038): exported as v1 legacy plugin rows,
+	// Typed study rows (migration 038): exported in their keyed form,
 	// replaced on restore.
 	{Name: "study_cards", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM study_cards WHERE user_id = ?1`},
 		PreviewKey: "cards", Count: `SELECT COUNT(*) FROM study_cards WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
@@ -160,7 +160,7 @@ func UserTables() []UserTable {
 type Preview struct {
 	Workspaces     int `json:"workspaces"`
 	StudyEvents    int `json:"studyEvents"`
-	PluginData     int `json:"pluginData"`
+	KeyedRows      int `json:"keyedRows"`
 	Cards          int `json:"cards"`
 	Books          int `json:"books"`
 	JournalEntries int `json:"journalEntries"`
@@ -182,7 +182,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 		return Preview{}, fmt.Errorf("read user: %w", err)
 	}
 	var p Preview
-	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "pluginData": &p.PluginData, "cards": &p.Cards,
+	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "keyedRows": &p.KeyedRows, "cards": &p.Cards,
 		"books": &p.Books, "journalEntries": &p.JournalEntries, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
 		"overlays": &p.Overlays, "sentences": &p.Sentences, "accessTokens": &p.AccessTokens}
 	for _, t := range userTables {

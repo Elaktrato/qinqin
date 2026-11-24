@@ -17,7 +17,7 @@
 			"workspace": "refused"
 		},
 		{
-			"pattern": "DELETE /api/plugins/{id}/data/{key}",
+			"pattern": "DELETE /api/rows/{key}",
 			"scope": "write",
 			"workspace": "query"
 		},
@@ -157,12 +157,12 @@
 			"workspace": "refused"
 		},
 		{
-			"pattern": "GET /api/plugins/{id}/data",
+			"pattern": "GET /api/rows",
 			"scope": "read",
 			"workspace": "query"
 		},
 		{
-			"pattern": "GET /api/plugins/{id}/data/{key}",
+			"pattern": "GET /api/rows/{key}",
 			"scope": "read",
 			"workspace": "query"
 		},
@@ -282,14 +282,14 @@
 			"workspace": "refused"
 		},
 		{
-			"pattern": "PUT /api/plugins/{id}/data/{key}",
-			"scope": "write",
-			"workspace": "query"
-		},
-		{
 			"pattern": "PUT /api/plugins/{id}/state",
 			"scope": "write",
 			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/rows/{key}",
+			"scope": "write",
+			"workspace": "query"
 		}
 	]
 }

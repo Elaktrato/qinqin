@@ -54,7 +54,6 @@ import * as build from '$lib/testing/study';
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => newSession(ctx));
 import {
-  PLUGIN_ID,
   WORKSPACE_ID,
   ULID,
   fakeStorage,
@@ -128,7 +127,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [pluginRow("deck:deck-1", existing)],
+          rows: [pluginRow("deck:deck-1", existing)],
         });
       });
 
@@ -146,7 +145,7 @@ describe("deck commands", () => {
     });
 
     it("refuses to rename a deck that does not exist", async () => {
-      vi.mocked(fetch).mockResolvedValue(jsonResponse({ pluginData: [] }));
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ rows: [] }));
 
       await expect(renameDeck(ctx.session.study, WORKSPACE_ID, "missing", "New name")).rejects.toThrow(/deck/i);
       expect(writtenRows()).toEqual([]);
@@ -157,7 +156,7 @@ describe("deck commands", () => {
 
     it("loads deckcfg rows into deckSettings", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("deckcfg:general", {
             deckId: "general",
             cardTypes: ["reverse"],
@@ -175,7 +174,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deckcfg:general", {
               deckId: "general",
               cardTypes: [],
@@ -202,7 +201,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deckcfg:d1", {
               deckId: "d1",
               cardTypes: [],
@@ -224,7 +223,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deckcfg:d1", {
               deckId: "d1",
               cardTypes: ["cloze"],
@@ -249,7 +248,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deckcfg:d1", {
               deckId: "d1",
               cardTypes: [],
@@ -267,7 +266,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "popular" } }),
           ],
         });
@@ -279,7 +278,7 @@ describe("deck commands", () => {
     it("saveDeckCardTypes creates the row when none exists", async () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });
-        return jsonResponse({ pluginData: [] });
+        return jsonResponse({ rows: [] });
       });
       await saveDeckCardTypes(ctx.session.study, WORKSPACE_ID, "d9", ["reverse"]);
       expect(writtenRows()[0]!.body).toMatchObject({ deckId: "d9", cardTypes: ["reverse"] });
@@ -290,7 +289,7 @@ describe("deck commands", () => {
         // Another tab removed the settings row already: the server skips its tombstone.
         if (isPush(input, init)) return pushAnswer(init, (key) => key.startsWith("deckcfg:"));
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:d1", deck("d1", "Doomed")),
             pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: ["reverse"] }),
           ],
@@ -321,7 +320,7 @@ describe("deck commands", () => {
           return new Response(null, { status: 204 });
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
             pluginRow("deck:deck-2", deck("deck-2", "Kept")),
             pluginRow("card:card-orphan", orphan),
@@ -351,7 +350,7 @@ describe("deck commands", () => {
           return new Response(null, { status: 204 });
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
             pluginRow("card:card-early", early),
             pluginRow("card:card-late", late),
@@ -376,7 +375,7 @@ describe("deck commands", () => {
           return new Response(null, { status: 204 });
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
             pluginRow("deck:deck-2", deck("deck-2", "Kept")),
             pluginRow("card:card-shared", shared),
@@ -410,7 +409,7 @@ describe("deck commands", () => {
           return rawResponse({ dataAccepted: items.length, dataSkipped: 0, dataRefused: 0 });
         }
         return jsonResponse({
-          pluginData: [
+          rows: [
             ...[...decks].map(([key, data]) => pluginRow(key, data)),
             ...[...cards].map(([key, data]) => pluginRow(key, data)),
           ],
@@ -434,7 +433,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (input, init) => {
         if (isPush(input, init)) return pushAnswer(init);
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:deck-1", deck("deck-1", "Big")),
             ...cards.map((c) => pluginRow(`card:${c.id}`, c)),
           ],
@@ -451,7 +450,7 @@ describe("deck commands", () => {
       vi.mocked(fetch).mockImplementation(async (input, init) => {
         if (isPush(input, init)) return new Response("boom", { status: 500 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
             pluginRow("card:card-1", card("card-1", 1, ["deck-1"])),
           ],
@@ -484,7 +483,7 @@ describe("deck commands", () => {
 
     it("loadRawStudyData reports the newest known time of every row, tombstones included", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("card:live", { id: "live", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-01T00:00:00Z" }),
           // A tombstone keeps its last data (migrated tombstones are typed rows too).
           pluginRow("card:gone", { id: "gone", kind: "vocab", entryId: 2, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
@@ -502,7 +501,7 @@ describe("deck commands", () => {
   describe("copied decks and batch writes", () => {
     it("keeps the source of a copied deck", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("deck:d-lvl-hsk-words-b06fd2ac", {
             id: "d-lvl-hsk-words-b06fd2ac",
             name: "HSK words · HSK 1",
@@ -524,7 +523,7 @@ describe("deck commands", () => {
 
     it("keeps a frequency source and drops a malformed one", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("deck:d-frq-jiten-frequency-d4514a31", {
             id: "d-frq-jiten-frequency-d4514a31",
             name: "Jiten · Top 500",
@@ -550,7 +549,7 @@ describe("deck commands", () => {
 
     it("loadRawStudyData returns the live deck settings", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
         ],
       });
@@ -560,7 +559,7 @@ describe("deck commands", () => {
 
     it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           pluginRow("card:c-vocab-1", { id: "c-vocab-1", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }),
           pluginRow("card:01JDUP", { id: "01JDUP", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" }),
         ],
@@ -586,7 +585,7 @@ describe("deck commands", () => {
       const bodies = pushBodies();
       expect(bodies.map((b) => (b.cards as unknown[]).length)).toEqual([200, 200, 50]);
       // Only the typed collection: never pluginData for a typed family.
-      expect(bodies.every((b) => b.pluginData === undefined)).toBe(true);
+      expect(bodies.every((b) => b.rows === undefined)).toBe(true);
       const first = (bodies[0]!.cards as Array<Record<string, unknown>>)[0]!;
       expect(first).toMatchObject({ id: "c-vocab-0", workspaceId: WORKSPACE_ID, extra: {} });
       expect("version" in first).toBe(false);

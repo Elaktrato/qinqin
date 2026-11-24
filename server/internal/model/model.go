@@ -173,14 +173,11 @@ type PluginState struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// PluginData is one plugin-owned data row — settings, decks, anything a
-// plugin stores per key. A nil WorkspaceID is user-global data shared
-// by all the user's workspaces; a non-nil one scopes the row to a
-// single workspace. Version increments on every write, so clients can
-// sync by pulling rows changed since a timestamp; DeletedAt set marks
-// a tombstone.
-type PluginData struct {
-	PluginID    string          `json:"pluginId"`
+// KeyedRow is one row of the keyed settings store (internal/keyed): a
+// small JSON document of one user under a key of an accepted family. A nil
+// WorkspaceID is user-global; a non-nil one scopes the row to a workspace.
+// Version increments on every write; DeletedAt set marks a tombstone.
+type KeyedRow struct {
 	Key         string          `json:"key"`
 	UserID      int64           `json:"userId"`
 	WorkspaceID *int64          `json:"workspaceId"`

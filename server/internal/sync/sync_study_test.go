@@ -114,8 +114,8 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 					t.Errorf("pull %s: %s has %d rows, want %d", c, other, n, want)
 				}
 			}
-			if len(d.PluginData) != 0 {
-				t.Errorf("pull %s shipped pluginData %+v", c, d.PluginData)
+			if len(d.Rows) != 0 {
+				t.Errorf("pull %s shipped rows %+v", c, d.Rows)
 			}
 			// Bob's full pull holds only his row.
 			d, _ = pullDelta(ctx, sqlDB, bob, false, nil)
@@ -190,7 +190,7 @@ func TestTypedPushIsAllOrNothing(t *testing.T) {
 	}
 }
 
-// One push carries events, keyed plugin rows and typed rows.
+// One push carries events, keyed rows and typed rows.
 func TestMixedPush(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := dbtest.Open(t)
@@ -199,18 +199,18 @@ func TestMixedPush(t *testing.T) {
 	registerReserved(t, sqlDB)
 	now := time.Now().UTC()
 	body := chinsync.PushBody{
-		Events:     []model.StudyEvent{eventItem("01J00000000000000000000002", ws)},
-		PluginData: []model.PluginData{{PluginID: "qinqin-flashcards", WorkspaceID: &ws, Key: "known:5", Data: json.RawMessage(`{"at":"t"}`), UpdatedAt: now}},
-		Cards:      []json.RawMessage{typedItem("cards", ws, "c-vocab-1201", now)},
-		Decks:      []json.RawMessage{typedItem("decks", ws, "d1", now)},
+		Events: []model.StudyEvent{eventItem("01J00000000000000000000002", ws)},
+		Rows:   []model.KeyedRow{{WorkspaceID: &ws, Key: "known:5", Data: json.RawMessage(`{"at":"t"}`), UpdatedAt: now}},
+		Cards:  []json.RawMessage{typedItem("cards", ws, "c-vocab-1201", now)},
+		Decks:  []json.RawMessage{typedItem("decks", ws, "d1", now)},
 	}
 	res, err := chinsync.Push(ctx, sqlDB, alice, body)
 	if err != nil || res.EventsAccepted != 1 || res.DataAccepted != 3 {
 		t.Fatalf("mixed push = %+v, %v; want 1 event and 3 data rows", res, err)
 	}
 	d, _ := pullDelta(ctx, sqlDB, alice, false, nil)
-	if len(d.Cards) != 1 || len(d.Decks) != 1 || len(d.PluginData) != 1 || d.PluginData[0].Key != "known:5" {
-		t.Errorf("pull after mixed push: cards %d decks %d pluginData %+v", len(d.Cards), len(d.Decks), d.PluginData)
+	if len(d.Cards) != 1 || len(d.Decks) != 1 || len(d.Rows) != 1 || d.Rows[0].Key != "known:5" {
+		t.Errorf("pull after mixed push: cards %d decks %d rows %+v", len(d.Cards), len(d.Decks), d.Rows)
 	}
 }
 

@@ -251,7 +251,6 @@ export function toLegacy(c: StudyCollection, body: StudyRowBody, modifiedAt?: st
 }
 
 interface LegacyRow {
-	pluginId?: unknown;
 	key?: unknown;
 	workspaceId?: unknown;
 	data?: unknown;
@@ -261,25 +260,26 @@ interface LegacyRow {
 }
 
 /**
- * typedPull: a pull body with v0.3.0 `qinqin-flashcards` rows, as the
- * migrated server answers it: every readable typed-family row of a workspace
- * moves into its typed collection (meta kept); unreadable or user-global ones
- * stay leftovers in `pluginData`; every typed collection is present.
+ * typedPull: a pull body with keyed rows in the old shape (typed study rows
+ * in their keyed form among the keyed rows), as the server answers it: every
+ * readable typed-family row of a workspace moves into its typed collection
+ * (meta kept); unreadable or user-global ones stay in `rows`; every typed
+ * collection is present.
  */
 export function typedPull(body: Obj): Obj {
-	if (!Array.isArray(body.pluginData)) return body;
-	const out: Obj = { ...body, pluginData: [] as unknown[] };
+	if (!Array.isArray(body.rows)) return body;
+	const out: Obj = { ...body, rows: [] as unknown[] };
 	for (const c of STUDY_COLLECTIONS) if (!Array.isArray(out[c])) out[c] = [];
-	for (const raw of body.pluginData as LegacyRow[]) {
+	for (const raw of body.rows as LegacyRow[]) {
 		const typed = typedOf(raw);
-		if (typed === null) (out.pluginData as unknown[]).push(raw);
+		if (typed === null) (out.rows as unknown[]).push(raw);
 		else (out[typed.collection] as unknown[]).push(typed.row);
 	}
 	return out;
 }
 
 function typedOf(raw: LegacyRow): { collection: StudyCollection; row: StudyRow } | null {
-	if (!isRecord(raw) || raw.pluginId !== 'qinqin-flashcards' || typeof raw.key !== 'string') return null;
+	if (!isRecord(raw) || typeof raw.key !== 'string') return null;
 	if (typeof raw.workspaceId !== 'number') return null;
 	let data = raw.data;
 	if (typeof data === 'string') {
@@ -310,15 +310,14 @@ export function pagedPull(body: Obj): Obj {
 	return pageOf(typedPull(body));
 }
 
-/** pageOf: a body already in the migrated shape (typed collections, leftovers in pluginData) as one v2 page. */
+/** pageOf: a body already in the migrated shape (typed collections, keyed rows in rows) as one v2 page. */
 export function pageOf(typed: Obj): Obj {
 	const collections: Obj = {};
-	for (const name of ['pluginStates', 'pluginData', ...STUDY_COLLECTIONS]) {
+	for (const name of ['pluginStates', 'rows', ...STUDY_COLLECTIONS]) {
 		const list = Array.isArray(typed[name]) ? (typed[name] as unknown[]) : [];
 		collections[name] =
-			name === 'pluginData'
+			name === 'rows'
 				? list.map((r) => ({
-						pluginId: 'qinqin-flashcards',
 						userId: 1,
 						workspaceId: null,
 						version: 1,

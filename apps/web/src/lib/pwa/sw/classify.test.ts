@@ -75,8 +75,8 @@ describe('classify: spec table', () => {
 			'/api/plugins',
 			'/api/languages',
 			'/api/me/time-zone',
-			'/api/plugins/qinqin-flashcards/data',
-			'/api/plugins/qinqin-flashcards/data/vacation%3A01ABC',
+			'/api/rows?workspace=3&prefix=note%3A',
+			'/api/rows/vacation%3A01ABC',
 			'/api/events?since=1970-01-01T00:00:00Z&workspace=3',
 			'/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=3',
 			'/api/events?page=e1.eyJ1IjozfQ&workspace=3',
@@ -114,18 +114,20 @@ describe('classify: spec table', () => {
 	});
 
 	it('the lookup history rows are never saved offline (#72)', () => {
-		expect(kind('/api/plugins/qinqin-core/data/lookups?workspace=3')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data/lookupcfg')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data?workspace=3&prefix=lookups')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data?prefix=lookupcfg')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data?prefix=look')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A')).toBe('api');
-		expect(kind('/api/plugins/qinqin-core/data/note:5?workspace=3')).toBe('api');
-		expect(kind('/api/plugins/qinqin-flashcards/data/lookups?workspace=3')).toBe('api');
+		expect(kind('/api/rows/lookups?workspace=3')).toBe('bypass');
+		expect(kind('/api/rows/lookupcfg')).toBe('bypass');
+		expect(kind('/api/rows?workspace=3&prefix=lookups')).toBe('bypass');
+		expect(kind('/api/rows?prefix=lookupcfg')).toBe('bypass');
+		expect(kind('/api/rows?prefix=look')).toBe('bypass');
+		expect(kind('/api/rows?workspace=3&prefix=note%3A')).toBe('api');
+		expect(kind('/api/rows/note:5?workspace=3')).toBe('api');
+		// a list without a prefix can hold the lookup rows
+		expect(kind('/api/rows?workspace=3')).toBe('bypass');
+		expect(kind('/api/rows')).toBe('bypass');
 		// an encoded path names the same route
-		expect(kind('/api/plugins/qinqin%2Dcore/data/lookups?workspace=3')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin%2Dcore/data?workspace=3&prefix=lookups')).toBe('bypass');
-		expect(kind('/api/plugins/qinqin-core/data/%6Cookups?workspace=3')).toBe('bypass');
+		expect(kind('/api/%72ows/lookups?workspace=3')).toBe('bypass');
+		expect(kind('/api/%72ows?workspace=3&prefix=lookups')).toBe('bypass');
+		expect(kind('/api/rows/%6Cookups?workspace=3')).toBe('bypass');
 	});
 
 	it('access token management is never cached (the list, and create, which carries the token once)', () => {
@@ -137,10 +139,10 @@ describe('classify: spec table', () => {
 	// #198: the legacy pull (no v=2) is gone; the server answers 404, and no copy is kept.
 	it('a sync/pull without v=2 is never cached', () => {
 		for (const url of [
-			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
+			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=rows,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
 			'/api/sync/pull?collections=cards',
-			'/api/sync/pull?collections=fsrsActive,pluginData',
-			'/api/sync/pull?collections=pluginData,pluginStates',
+			'/api/sync/pull?collections=fsrsActive,rows',
+			'/api/sync/pull?collections=rows,pluginStates',
 			'/api/sync/pull?collections=pluginStates',
 			'/api/sync/pull'
 		]) {
@@ -149,12 +151,12 @@ describe('classify: spec table', () => {
 	});
 
 	it('a v2 study page is cacheable: first page with workspace and a study subset, and a p2 continuation', () => {
-		const study = 'pluginStates,pluginData,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
+		const study = 'pluginStates,rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
 		for (const url of [
 			`/api/sync/pull?collections=${study}&v=2&workspace=3`,
 			`/api/sync/pull?collections=${study}&tombstones=1&v=2&workspace=3`, // the web study pull
 			`/api/sync/pull?collections=cards&limit=100&v=2&workspace=3`,
-			'/api/sync/pull?collections=pluginData&v=2&workspace=12',
+			'/api/sync/pull?collections=rows&v=2&workspace=12',
 			'/api/sync/pull?page=p2.abcDEF-_123&v=2'
 		]) {
 			expect(kind(url), url).toBe('api');
@@ -188,14 +190,14 @@ describe('classify: spec table', () => {
 	});
 
 	it('the cacheable pull collections are the plugin ones and every typed study collection', () => {
-		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
+		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['rows', 'pluginStates', ...STUDY_COLLECTIONS]);
 	});
 
 	it('sync/pull only for the plugin collections', () => {
 		expect(kind('/api/sync/pull?cursor=1970-01-01T00:00:00Z')).toBe('bypass');
-		expect(kind('/api/sync/pull?collections=pluginData,lexicon')).toBe('bypass');
+		expect(kind('/api/sync/pull?collections=rows,lexicon')).toBe('bypass');
 		expect(kind('/api/sync/pull?collections=')).toBe('bypass');
-		expect(kind('/api/sync/pull?collections=pluginData&collections=entries')).toBe('bypass');
+		expect(kind('/api/sync/pull?collections=rows&collections=entries')).toBe('bypass');
 	});
 
 	it('events need a workspace; entry sub-routes and lookalikes are bypass', () => {
@@ -213,7 +215,7 @@ describe('classify: spec table', () => {
 		expect(kind('/api/entries/12/chars')).toBe('bypass');
 		expect(kind('/api/entries/bases')).toBe('bypass');
 		expect(kind('/api/workspaces/3')).toBe('bypass');
-		expect(kind('/api/plugins/x/data/a/b')).toBe('bypass');
+		expect(kind('/api/rows/a/b')).toBe('bypass');
 		expect(kind('/api/auth/me/../logout')).toBe('bypass');
 	});
 
@@ -237,8 +239,8 @@ describe('classify: the server route table', () => {
 		'GET /api/languages',
 		'GET /api/me/time-zone',
 		'GET /api/sync/pull',
-		'GET /api/plugins/{id}/data',
-		'GET /api/plugins/{id}/data/{key}',
+		'GET /api/rows',
+		'GET /api/rows/{key}',
 		'GET /api/events',
 		'GET /api/entries/{id}',
 		'GET /api/themes',
@@ -246,12 +248,13 @@ describe('classify: the server route table', () => {
 	]);
 
 	function sample(pattern: string): string {
-		if (pattern === 'GET /api/sync/pull') return '/api/sync/pull?v=2&collections=pluginData,pluginStates&workspace=3';
+		if (pattern === 'GET /api/sync/pull') return '/api/sync/pull?v=2&collections=rows,pluginStates&workspace=3';
+		if (pattern === 'GET /api/rows') return '/api/rows?workspace=3&prefix=note%3A';
 		const path = pattern.split(' ')[1]
 			.replace('{id}', pattern.includes('/entries/') ? '12' : 'qinqin-flashcards')
-			.replace('{key}', 'card%3A1')
+			.replace('{key}', 'note%3A1')
 			.replace(/\{[a-z]+\}/g, '1');
-		return `${path}?collections=pluginData,pluginStates&workspace=3&since=1970-01-01T00:00:00Z`;
+		return `${path}?collections=rows,pluginStates&workspace=3&since=1970-01-01T00:00:00Z`;
 	}
 
 	it('the opt-in list only names routes that exist', () => {

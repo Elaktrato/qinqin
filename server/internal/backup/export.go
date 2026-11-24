@@ -247,8 +247,8 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	if counts["events"], err = writeEvents(ctx, tx, a, userID, refs); err != nil {
 		return man, err
 	}
-	// plugin data (all live rows, user-global ones included)
-	if counts["pluginData"], err = writePluginData(ctx, tx, a, userID, refs); err != nil {
+	// keyed and typed rows (all live rows, user-global ones included)
+	if counts["rows"], err = writeRows(ctx, tx, a, userID, refs); err != nil {
 		return man, err
 	}
 	// overlays
@@ -432,37 +432,29 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 		})
 }
 
-// writePluginData writes the plugin-data family: the live plugin rows, then
-// every live typed study row as its legacy qinqin-flashcards row
-// (rows.ToLegacy), so the archive stays format v1 and restores on a v0.3
-// server too. A qinqin-flashcards plugin row of a typed family (a leftover a
-// downgraded binary wrote) is never written: no client reads it, the typed
-// rows are the study state, and its key could collide with a typed row's,
-// which would make the archive invalid (#198).
-func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
-	pw := &partWriter{a: a, fam: NamePluginData}
-	rs, err := tx.QueryContext(ctx, `SELECT pack_id, workspace_id, key, data, version, updated_at, modified_at FROM plugin_data
-		 WHERE user_id = ? AND deleted_at IS NULL ORDER BY pack_id, IFNULL(workspace_id, 0), key`, userID)
+// writeRows writes the rows family: the live keyed rows, then every live
+// typed study row in its keyed form (rows.ToLegacy), the journal's documents
+// and the grammar progress in theirs.
+func writeRows(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
+	pw := &partWriter{a: a, fam: NameRows}
+	rs, err := tx.QueryContext(ctx, `SELECT workspace_id, key, data, version, updated_at, modified_at FROM keyed_rows
+		 WHERE user_id = ? AND deleted_at IS NULL ORDER BY IFNULL(workspace_id, 0), key`, userID)
 	if err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 	}
 	for rs.Next() {
-		var r PluginRow
-		var data string
-		if err := rs.Scan(&r.PluginID, &r.WorkspaceID, &r.Key, &data, &r.Version, &r.UpdatedAt, &r.ModifiedAt); err != nil {
+		var r Row
+		var data, modified string
+		if err := rs.Scan(&r.WorkspaceID, &r.Key, &data, &r.Version, &r.UpdatedAt, &modified); err != nil {
 			rs.Close()
-			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+			return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 		}
+		r.ModifiedAt = &modified
 		if !json.Valid([]byte(data)) {
 			rs.Close()
-			return 0, fmt.Errorf("backup: %s: row %s/%s holds unreadable JSON", NamePluginData, r.PluginID, r.Key)
+			return 0, fmt.Errorf("backup: %s: row %s holds unreadable JSON", NameRows, r.Key)
 		}
 		r.Data = json.RawMessage(data)
-		if r.PluginID == FlashcardsPlugin {
-			if _, typed := rows.FamilyOf(r.Key); typed {
-				continue // a leftover: never exported
-			}
-		}
 		// a personal note or known mark names its entry, so a restore can move it to the same word
 		if id, ok := entryKeyedID(r); ok {
 			refs.entries[id] = struct{}{}
@@ -488,22 +480,22 @@ func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID i
 			if r.Family() == rows.Cards {
 				noteCard(refs, key, data)
 			}
-			return pw.encode(PluginRow{PluginID: FlashcardsPlugin, WorkspaceID: &ws, Key: key, Data: data,
+			return pw.encode(Row{WorkspaceID: &ws, Key: key, Data: data,
 				Version: int64(m.Version), UpdatedAt: m.UpdatedAt.UTC().Format(time.RFC3339), ModifiedAt: &modified})
 		}); err != nil {
-			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+			return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 		}
 	}
 	// the journal's documents in their keyed form (journal/keyed.go)
 	if err := journal.EachKeyed(ctx, tx, userID, func(d journal.KeyedDoc) error {
 		ws := d.WorkspaceID
-		return pw.encode(PluginRow{PluginID: JournalPlugin, WorkspaceID: &ws, Key: d.Key, Data: d.Data, Version: 1, UpdatedAt: d.UpdatedAt})
+		return pw.encode(Row{WorkspaceID: &ws, Key: d.Key, Data: d.Data, Version: 1, UpdatedAt: d.UpdatedAt})
 	}); err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 	}
 	// grammar lesson progress in its keyed form (grammar/progress.go)
 	if err := writeGrammarProgress(ctx, tx, pw, userID); err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 	}
 	return pw.total, pw.close()
 }
@@ -670,8 +662,8 @@ func hiddenDictionaryIDs(settings json.RawMessage) []int64 {
 	return out
 }
 
-// writeGrammarProgress writes every lesson's progress of the user as a
-// qinqin-grammar row of its keyed form, workspace by workspace.
+// writeGrammarProgress writes every lesson's progress of the user as a row
+// of its keyed form, workspace by workspace.
 func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userID int64) error {
 	rs, err := tx.QueryContext(ctx, `SELECT DISTINCT workspace_id FROM grammar_progress WHERE user_id = ? ORDER BY workspace_id`, userID)
 	if err != nil {
@@ -697,7 +689,7 @@ func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userI
 		for _, p := range list {
 			key, data := grammar.KeyedOf(p)
 			w := ws
-			if err := pw.encode(PluginRow{PluginID: GrammarPlugin, WorkspaceID: &w, Key: key, Data: data, Version: 1, UpdatedAt: p.CompletedAt}); err != nil {
+			if err := pw.encode(Row{WorkspaceID: &w, Key: key, Data: data, Version: 1, UpdatedAt: p.CompletedAt}); err != nil {
 				return err
 			}
 		}

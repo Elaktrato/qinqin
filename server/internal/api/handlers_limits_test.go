@@ -13,7 +13,7 @@ func TestLargeBodiesAreRejected(t *testing.T) {
 	ts, _ := newServer(t)
 	token := registerUser(t, ts.URL, "owner", "")
 
-	huge := `{"events":[],"pluginData":[],"pad":"` + strings.Repeat("x", 9<<20) + `"}`
+	huge := `{"events":[],"rows":[],"pad":"` + strings.Repeat("x", 9<<20) + `"}`
 	if resp := doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", token, huge); resp.StatusCode != http.StatusRequestEntityTooLarge {
 		t.Errorf("oversized sync push status = %d, want 413", resp.StatusCode)
 	}

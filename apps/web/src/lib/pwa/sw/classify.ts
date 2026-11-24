@@ -26,11 +26,11 @@ export function normalizeUrl(url: string): string {
 }
 
 /**
- * The pull collections an offline copy may hold: the plugin rows and switches
+ * The pull collections an offline copy may hold: the keyed rows, the switches
  * and the typed study rows (docs/contracts/study/); never the dictionary.
  */
 export const CACHEABLE_PULL_COLLECTIONS: readonly string[] = [
-	'pluginData',
+	'rows',
 	'pluginStates',
 	'cards',
 	'decks',
@@ -47,37 +47,37 @@ const API_PATTERNS: RegExp[] = [
 	/^\/api\/plugins$/,
 	/^\/api\/languages$/,
 	/^\/api\/me\/time-zone$/,
-	new RegExp(`^/api/plugins/${SEGMENT}/data$`),
-	new RegExp(`^/api/plugins/${SEGMENT}/data/${SEGMENT}$`),
+	/^\/api\/rows$/,
+	new RegExp(`^/api/rows/${SEGMENT}$`),
 	/^\/api\/entries\/[0-9]+$/,
 	/^\/api\/themes$/,
 	// The installed font faces (#97): kept so the pack faces stay registered offline.
 	/^\/api\/fonts$/
 ];
 
-const CORE_DATA = '/api/plugins/qinqin-core/data';
+const ROWS = '/api/rows';
 
 /**
- * holdsLookups: a qinqin-core plugin data read that can return the lookup
- * history rows (`lookups`, `lookupcfg`, #72): the key route of such a key,
- * or a list whose prefix can match one. Never saved offline, so a Clear
- * leaves no copy in Cache Storage.
+ * holdsLookups: a keyed row read that can return the lookup history rows
+ * (`lookups`, `lookupcfg`, #72): the key route of such a key, or a list whose
+ * prefix can match one. Never saved offline, so a Clear leaves no copy in
+ * Cache Storage.
  */
 export function holdsLookups(url: URL): boolean {
 	const { searchParams } = url;
 	let pathname: string;
 	try {
-		// An encoded path (qinqin%2Dcore, %6Cookups) names the same route.
+		// An encoded path (%72ows, %6Cookups) names the same route.
 		pathname = decodeURIComponent(url.pathname);
 	} catch {
 		return true;
 	}
-	if (pathname === CORE_DATA) {
+	if (pathname === ROWS) {
 		const p = searchParams.get('prefix') ?? '';
 		return 'lookups'.startsWith(p) || 'lookupcfg'.startsWith(p) || p.startsWith('lookup');
 	}
-	if (!pathname.startsWith(`${CORE_DATA}/`)) return false;
-	return pathname.slice(CORE_DATA.length + 1).startsWith('lookup');
+	if (!pathname.startsWith(`${ROWS}/`)) return false;
+	return pathname.slice(ROWS.length + 1).startsWith('lookup');
 }
 
 /**

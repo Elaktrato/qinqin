@@ -37,22 +37,21 @@ type pushCase struct {
 	} `json:"expect"`
 	Stored *struct {
 		Events               *int                       `json:"events"`
-		PluginData           []string                   `json:"pluginData"`
+		Rows                 []string                   `json:"rows"`
 		Cards                []string                   `json:"cards"`
-		PluginDataValue      map[string]json.RawMessage `json:"pluginDataValue"`
+		RowsValue            map[string]json.RawMessage `json:"rowsValue"`
 		CardVersionUnchanged bool                       `json:"cardVersionUnchanged"`
 	} `json:"stored"`
 }
 
 type pushSetup struct {
-	Events     []json.RawMessage `json:"events"`
-	PluginData []struct {
-		PluginID    string          `json:"pluginId"`
+	Events []json.RawMessage `json:"events"`
+	Rows   []struct {
 		Key         string          `json:"key"`
 		WorkspaceID json.RawMessage `json:"workspaceId"`
 		Data        json.RawMessage `json:"data"`
 		UpdatedAt   string          `json:"updatedAt"`
-	} `json:"pluginData"`
+	} `json:"rows"`
 	Cards []json.RawMessage `json:"cards"`
 }
 
@@ -194,13 +193,13 @@ func pushSetupRows(t *testing.T, sqlDB *sql.DB, user, ws, bobWS int64, s *pushSe
 			t.Fatal(err)
 		}
 	}
-	for _, r := range s.PluginData {
+	for _, r := range s.Rows {
 		var wsID any
 		if w := expandPush(string(r.WorkspaceID), ws, bobWS); w != "null" && w != "" {
 			wsID, _ = strconv.ParseInt(w, 10, 64)
 		}
-		if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
-			r.PluginID, user, wsID, r.Key, string(r.Data), r.UpdatedAt, r.UpdatedAt); err != nil {
+		if _, err := sqlDB.Exec(`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, 1, ?, ?)`,
+			user, wsID, r.Key, string(r.Data), r.UpdatedAt, r.UpdatedAt); err != nil {
 			t.Fatal(err)
 		}
 		keys[r.Key] = true
@@ -243,11 +242,11 @@ func checkPushStored(t *testing.T, sqlDB *sql.DB, user int64, setupKeys map[stri
 			t.Errorf("%d events stored, want %d", n, *s.Events)
 		}
 	}
-	if s.PluginData != nil {
-		got := slices.DeleteFunc(strs(`SELECT key FROM plugin_data WHERE user_id = ? AND deleted_at IS NULL ORDER BY key`),
+	if s.Rows != nil {
+		got := slices.DeleteFunc(strs(`SELECT key FROM keyed_rows WHERE user_id = ? AND deleted_at IS NULL ORDER BY key`),
 			func(k string) bool { return setupKeys[k] })
-		if !slices.Equal(got, s.PluginData) {
-			t.Errorf("plugin keys %v, want %v", got, s.PluginData)
+		if !slices.Equal(got, s.Rows) {
+			t.Errorf("row keys %v, want %v", got, s.Rows)
 		}
 	}
 	if s.Cards != nil {
@@ -255,9 +254,9 @@ func checkPushStored(t *testing.T, sqlDB *sql.DB, user int64, setupKeys map[stri
 			t.Errorf("cards %v, want %v", got, s.Cards)
 		}
 	}
-	for key, want := range s.PluginDataValue {
+	for key, want := range s.RowsValue {
 		var data string
-		sqlDB.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND key = ?`, user, key).Scan(&data)
+		sqlDB.QueryRow(`SELECT data FROM keyed_rows WHERE user_id = ? AND key = ?`, user, key).Scan(&data)
 		if !jsonValueEqual([]byte(data), want) {
 			t.Errorf("%s = %s, want %s", key, data, want)
 		}

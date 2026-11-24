@@ -2,7 +2,6 @@ package plugins_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"qinqin/internal/dbtest"
@@ -33,41 +32,6 @@ func TestSetStateRowMatchesStorage(t *testing.T) {
 	}
 	if got := st.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"); got != stored {
 		t.Errorf("UpdatedAt = %s, stored %s", got, stored)
-	}
-}
-
-// TestPutDataRowReturnsWrittenRow: the row comes back from the write itself.
-func TestPutDataRowReturnsWrittenRow(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := dbtest.Open(t)
-	alice := newUser(t, sqlDB, "alice")
-	mustRegister(t, sqlDB, `{"id":"notes","name":"Notes","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]}`)
-
-	for want := 1; want <= 2; want++ {
-		row, err := plugins.PutDataRow(ctx, sqlDB, alice, nil, "notes", "k", json.RawMessage(`{"n":1}`), nil)
-		if err != nil {
-			t.Fatalf("PutDataRow: %v", err)
-		}
-		if row.Version != want || row.PluginID != "notes" || row.Key != "k" || string(row.Data) != `{"n":1}` {
-			t.Errorf("row = %+v, want version %d of notes/k", row, want)
-		}
-		got, err := plugins.GetData(ctx, sqlDB, alice, nil, "notes", "k")
-		if err != nil || got.Version != row.Version || !got.UpdatedAt.Equal(row.UpdatedAt) {
-			t.Errorf("stored = %+v (%v), returned %+v", got, err, row)
-		}
-	}
-}
-
-// TestPutDataRejectsWorkspaceZero: the unique key coalesces a NULL
-// workspace to 0, so 0 (or less) must never be a real workspace id.
-func TestPutDataRejectsWorkspaceZero(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := dbtest.Open(t)
-	alice := newUser(t, sqlDB, "alice")
-	for _, ws := range []int64{0, -1} {
-		if _, err := plugins.PutData(ctx, sqlDB, alice, &ws, "notes", "k", json.RawMessage(`1`)); err == nil {
-			t.Errorf("PutData with workspace %d succeeded, want an error", ws)
-		}
 	}
 }
 

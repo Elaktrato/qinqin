@@ -189,7 +189,7 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['admin.delete.preview.workspaces', {}, '1 workspace', '2 workspaces'],
 	['admin.delete.preview.studyEvents', {}, '1 recorded review and study event', '2 recorded reviews and study events'],
 	['admin.delete.preview.cards', {}, '1 flashcard, with its decks and study settings', '2 flashcards, with their decks and study settings'],
-	['admin.delete.preview.pluginData', {}, '1 other saved item (notes, known words, settings)', '2 other saved items (notes, known words, settings)'],
+	['admin.delete.preview.keyedRows', {}, '1 other saved item (notes, known words, settings)', '2 other saved items (notes, known words, settings)'],
 	['admin.delete.preview.books', {}, '1 book in the library, with its bookmarks and highlights', '2 books in the library, with their bookmarks and highlights'],
 	['admin.delete.preview.overlays', {}, '1 edited dictionary entry', '2 edited dictionary entries'],
 	['admin.delete.preview.sentences', {}, '1 sentence they added', '2 sentences they added'],

@@ -18,13 +18,12 @@ import (
 // The collections of the paged pull: one or more keyset segments each, in
 // round order (V2Collections). Every query filters by the caller's user_id
 // (keysetQuery); the fragments below narrow further:
-//   - workspace= keeps a workspace's rows plus user-global ones (pluginData
+//   - workspace= keeps a workspace's rows plus user-global ones (rows
 //     without a workspace, pluginStates); bookmarks and highlights follow
 //     their book's workspace, library tombstones the logged workspace_id;
 //   - overlays and own sentences ship only for entries of the round's
 //     languages (?8);
-//   - lookup events never ship, nor study-namespace plugin rows of a
-//     typed family (leftovers).
+//   - lookup events never ship.
 // Row shapes: docs/contracts/sync/pull-page.json.
 
 // PullPage answers one v2 pull request of userID over the caller's own
@@ -66,18 +65,14 @@ func v2Segments() []segment {
 			extra: byWorkspace("id"), encode: encodeWorkspace},
 		{coll: "pluginStates", table: "plugin_states", stamp: "updated_at", cols: "pack_id, user_id, enabled, ord, updated_at",
 			encode: encodePluginState},
-		{coll: "pluginData", table: "plugin_data", stamp: "updated_at", tomb: true,
-			cols: "pack_id, key, user_id, workspace_id, data, version, updated_at, deleted_at",
+		{coll: "rows", table: "keyed_rows", stamp: "updated_at", tomb: true,
+			cols: "key, user_id, workspace_id, data, version, updated_at, deleted_at",
 			extra: func(ws int64) string {
-				// a leftover study-namespace row of a typed family (an old
-				// binary's write the start could not adopt) is never shipped:
-				// those rows are typed collections only (#198)
-				typed := " AND NOT (pack_id = '" + rows.Namespace + "' AND " + study.LegacyKeySQL + ")"
 				if ws == 0 {
-					return typed
+					return ""
 				}
-				return typed + " AND (workspace_id IS NULL OR workspace_id = ?7)"
-			}, encode: encodePluginData},
+				return " AND (workspace_id IS NULL OR workspace_id = ?7)"
+			}, encode: encodeKeyedRow},
 	}
 	for _, f := range rows.Families {
 		segs = append(segs, segment{coll: string(f), table: study.TableOf(f), stamp: "updated_at", tomb: true,
@@ -166,13 +161,13 @@ func encodePluginState(sc scanner) (string, int64, []byte, error) {
 	return marshalRow(updated, rowid, s)
 }
 
-func encodePluginData(sc scanner) (string, int64, []byte, error) {
+func encodeKeyedRow(sc scanner) (string, int64, []byte, error) {
 	var rowid int64
-	var d model.PluginData
+	var d model.KeyedRow
 	var ws sql.NullInt64
 	var data, updated string
 	var deleted sql.NullString
-	if err := sc.Scan(&rowid, &d.PluginID, &d.Key, &d.UserID, &ws, &data, &d.Version, &updated, &deleted); err != nil {
+	if err := sc.Scan(&rowid, &d.Key, &d.UserID, &ws, &data, &d.Version, &updated, &deleted); err != nil {
 		return "", 0, nil, err
 	}
 	if ws.Valid {

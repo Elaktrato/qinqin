@@ -132,8 +132,8 @@ func extraText(e json.RawMessage) string {
 }
 
 // InsertStored inserts r for userID as stored elsewhere: version and the
-// three stamps are written verbatim (the migration copies plugin_data's
-// strings byte for byte). The row must not exist yet.
+// three stamps are written verbatim (a restore keeps the archive's
+// stamps byte for byte). The row must not exist yet.
 func InsertStored(ctx context.Context, q Querier, userID int64, r rows.Row, version int, updatedAt, modifiedAt string, deletedAt *string) error {
 	t := tables[r.Family()]
 	cols := append([]string{"user_id", "workspace_id"}, t.cols...)

@@ -51,9 +51,8 @@ test `lib/plugins/packTypes.contract.test.ts` checks the web knows every type. H
 [architecture record 0008](../../architecture/0008-pack-types.md). A client meets a pack type it does
 not know only in admin and Sources views; it shows it by its `type` string.
 
-**Data packs are not plugins.** `GET /api/plugins` lists registry plugins only (the per-pack rows it
-synthesized for v0.3.x web shells were removed in #198), and a pack id has no plugin state or plugin data
-(404 `not_found` on `PUT /api/plugins/{id}/state` and the data routes). Packs are listed by
+**Data packs are content, not features.** There are no code plugins (#199): a pack id has no feature switch
+and no rows of its own (`features/`, `keyed/`). Packs are listed by
 their own routes (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/sentence-packs`, `/api/audio-packs`, ...;
 `docs/wiki/API-Routes.md`) and, for administrators, `GET /api/admin/packs`; their data by this catalogue.
 

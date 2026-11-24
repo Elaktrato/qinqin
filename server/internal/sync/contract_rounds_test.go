@@ -456,13 +456,13 @@ func (w *world) addRow(r roundRow) {
 	case "pluginStates":
 		w.exec(`INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, ?, 1, 0, ?)`, uid, r.Ref, r.UpdatedAt)
 		w.place(r.Ref, placed{coll: r.Collection, user: uid, id: r.Ref})
-	case "pluginData":
+	case "rows":
 		data := `{}`
 		if r.DataString > 0 {
 			data = `"` + strings.Repeat("x", r.DataString) + `"`
 		}
-		w.exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, deleted_at, modified_at)
-			VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`, w.plugin, uid, wsID, r.Ref, data, r.UpdatedAt, nullIfEmpty(r.DeletedAt), r.UpdatedAt)
+		w.exec(`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, deleted_at, modified_at)
+			VALUES (?, ?, ?, ?, 1, ?, ?, ?)`, uid, wsID, r.Ref, data, r.UpdatedAt, nullIfEmpty(r.DeletedAt), r.UpdatedAt)
 		w.place(r.Ref, placed{coll: r.Collection, user: uid, id: r.Ref, ws: wsInt})
 	case "cards":
 		card := &rows.Card{ID: r.Ref, Kind: "vocab", EntryID: entry, SkipKinds: []string{}, DeckIDs: []string{}, CreatedAt: r.UpdatedAt}
@@ -518,8 +518,8 @@ var libraryTables = map[string]string{"books": "library_books", "bookmarks": "li
 func (w *world) delete(ref, at string) {
 	p := w.rowsByRef[ref]
 	switch p.coll {
-	case "pluginData":
-		w.exec(`UPDATE plugin_data SET deleted_at = ?, updated_at = ?, modified_at = ? WHERE key = ? AND user_id = ?`, at, at, at, p.id, p.user)
+	case "rows":
+		w.exec(`UPDATE keyed_rows SET deleted_at = ?, updated_at = ?, modified_at = ? WHERE key = ? AND user_id = ?`, at, at, at, p.id, p.user)
 	case "cards":
 		w.exec(`UPDATE study_cards SET deleted_at = ?, updated_at = ?, modified_at = ? WHERE id = ? AND user_id = ?`, at, at, at, p.id, p.user)
 	case "sentences":
@@ -535,8 +535,8 @@ func (w *world) delete(ref, at string) {
 func (w *world) write(ref, at string) {
 	p := w.rowsByRef[ref]
 	switch p.coll {
-	case "pluginData":
-		w.exec(`UPDATE plugin_data SET data = '{"w":1}', version = version + 1, updated_at = ?, modified_at = ? WHERE key = ? AND user_id = ?`, at, at, p.id, p.user)
+	case "rows":
+		w.exec(`UPDATE keyed_rows SET data = '{"w":1}', version = version + 1, updated_at = ?, modified_at = ? WHERE key = ? AND user_id = ?`, at, at, p.id, p.user)
 	case "cards":
 		w.exec(`UPDATE study_cards SET version = version + 1, updated_at = ?, modified_at = ? WHERE id = ? AND user_id = ?`, at, at, p.id, p.user)
 	case "books", "bookmarks", "highlights":
@@ -552,7 +552,7 @@ func naturalID(coll string, row json.RawMessage) (string, bool, error) {
 	if err := json.Unmarshal(row, &m); err != nil {
 		return "", false, err
 	}
-	field := map[string]string{"pluginStates": "pluginId", "pluginData": "key", "overlays": "entryId"}[coll]
+	field := map[string]string{"pluginStates": "pluginId", "rows": "key", "overlays": "entryId"}[coll]
 	if field == "" {
 		field = "id"
 	}

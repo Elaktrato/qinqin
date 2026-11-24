@@ -68,7 +68,7 @@ func TestEveryWorkspaceTableHasADeleteRule(t *testing.T) {
 // ?3 is a number distinct per workspace, for keys.
 var seedSQL = map[string][]string{
 	"study_events":        {`INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('ev' || ?3, ?1, ?2, 'd', 't', 'review', '{}', 't')`},
-	"plugin_data":         {`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at) VALUES ('p', ?1, ?2, 'k', '{}', 1, 't')`},
+	"keyed_rows":          {`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?1, ?2, 'notecfg', '{}', 1, 't', 't')`},
 	"library_books":       {`INSERT INTO library_books (user_id, workspace_id, language, title, source, source_id, created_at) VALUES (?1, ?2, 'zh', 'B', 'upload', 's' || ?3, 't')`},
 	"study_cards":         {`INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, created_at, version, updated_at, modified_at) VALUES (?1, ?2, 'c', 'vocab', 1, 't', 1, 't', 't')`},
 	"study_decks":         {`INSERT INTO study_decks (user_id, workspace_id, id, name, created_at, version, updated_at, modified_at) VALUES (?1, ?2, 'd', 'n', 't', 1, 't', 't')`},

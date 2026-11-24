@@ -33,7 +33,7 @@ beforeEach(() => {
 		if (url === '/api/account/tokens' && !opts?.method) return { accessTokens: [] };
 		if (url === '/api/account/email') return { email: 'a@example.org', emailVerified: false };
 		if (url === '/api/account/deletion-preview') {
-			return { workspaces: 2, studyEvents: 5, pluginData: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 1, overlays: 0, sentences: 0 };
+			return { workspaces: 2, studyEvents: 5, keyedRows: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 1, overlays: 0, sentences: 0 };
 		}
 		if (url === '/api/account' && opts?.method === 'DELETE') {
 			if (deleteError) throw deleteError;

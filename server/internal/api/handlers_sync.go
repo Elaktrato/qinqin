@@ -78,9 +78,9 @@ func writeStoredUnreadable(w http.ResponseWriter) {
 }
 
 // handleSyncPush serves POST /api/sync/push: a client's offline events,
-// plugin data and typed study rows. Events are idempotent by id; plugin
-// data and typed rows are last-write-wins. A malformed item is 400, a
-// foreign or unknown workspace or plugin is 404, and then nothing in the
+// keyed rows and typed study rows. Events are idempotent by id; keyed and
+// typed rows are last-write-wins. A malformed item is 400, a foreign or
+// unknown workspace is 404, and then nothing in the
 // push is applied; an item above 256 KiB is 413. Authenticated.
 func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -93,16 +93,16 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
-	for _, d := range body.PluginData {
-		if len(d.Data) > maxPluginDataValue {
-			writeTooLarge(w) // the per-value cap of PUT /api/plugins/{id}/data/{key}
+	for _, d := range body.Rows {
+		if len(d.Data) > maxRowValue {
+			writeTooLarge(w) // the per-value cap of PUT /api/rows/{key}
 			return
 		}
 	}
-	// A typed study row replaces a plugin-data row: the same per-item cap.
+	// A typed study row: the same per-item cap.
 	for _, coll := range body.Typed() {
 		for _, item := range coll.Items {
-			if len(item) > maxPluginDataValue {
+			if len(item) > maxRowValue {
 				writeTooLarge(w)
 				return
 			}
@@ -113,7 +113,7 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, chinsync.ErrInvalid):
 		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
-		writeError(w, http.StatusNotFound, "not_found", "No such workspace or plugin.")
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
 	case errors.Is(err, chinsync.ErrStoredUnreadable):
 		writeStoredUnreadable(w)
 	case err != nil:

@@ -54,7 +54,6 @@ import * as build from '$lib/testing/study';
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => newSession(ctx));
 import {
-  PLUGIN_ID,
   WORKSPACE_ID,
   ULID,
   fakeStorage,
@@ -108,7 +107,7 @@ describe("settings commands", () => {
 
     it("resolves the active pointer from the pull", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           setRow("A", wWith(8, 1.5)),
           setRow("B", wWith(8, 2.5)),
           pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
@@ -123,7 +122,7 @@ describe("settings commands", () => {
 
     it("uses the defaults for a tombstoned active row and without fsrs", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           setRow("A", wWith(8, 1.5)),
           pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, {
             deletedAt: "2026-03-01T00:00:00Z",
@@ -138,7 +137,7 @@ describe("settings commands", () => {
 
     it("ignores rows of another workspace and invalid sets", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           setRow("A", wWith(8, 1.5), { workspaceId: 8 }),
           setRow("B", wWith(4, 11)),
           pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, { workspaceId: 8 }),
@@ -169,11 +168,11 @@ describe("settings commands", () => {
 
     it("writes the active pointer, null meaning the defaults", async () => {
       vi.mocked(fetch).mockImplementation(async (input) =>
-        String(input).startsWith("/api/sync/pull") ? jsonResponse(pagedPull({ pluginData: [] })) : jsonResponse({ version: 1 }),
+        String(input).startsWith("/api/sync/pull") ? jsonResponse(pagedPull({ rows: [] })) : jsonResponse({ version: 1 }),
       );
       await setActiveSet(ctx.session.study, WORKSPACE_ID, "A");
       // The server now holds A: switching back to the defaults writes setId null.
-      respondPull({ pluginData: [pluginRow("fsrs:active", { setId: "A", changedAt: "2026-01-06T00:00:00Z" })] });
+      respondPull({ rows: [pluginRow("fsrs:active", { setId: "A", changedAt: "2026-01-06T00:00:00Z" })] });
       await setActiveSet(ctx.session.study, WORKSPACE_ID, null);
       const [first, second] = writtenRows();
       expect(first.key).toBe("fsrs:active");
@@ -183,7 +182,7 @@ describe("settings commands", () => {
 
     it("refuses to delete the active set and deletes another", async () => {
       respondPull({
-        pluginData: [
+        rows: [
           setRow("A", wWith(8, 1.5)),
           setRow("B", wWith(8, 2.5)),
           pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
@@ -214,7 +213,7 @@ describe("limit rows", () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return jsonResponse([]);
       return jsonResponse({
-        pluginData: [
+        rows: [
           pluginRow("limits:workspace", { version: 1, new: 10, reviews: null }),
           pluginRow("limits:deck:d1", { version: 1, new: 0 }),
           pluginRow("limits:deck:d2", { version: 2, new: 5 }),
@@ -230,7 +229,7 @@ describe("limit rows", () => {
   it("saves the workspace row and a deck row, and deletes a deck row when nothing is left to say", async () => {
     vi.mocked(fetch).mockImplementation(async (input, init) => {
       if (isPush(input, init)) return pushAnswer(init);
-      return jsonResponse({ pluginData: [pluginRow("limits:deck:d2", { version: 1, new: 3 })] });
+      return jsonResponse({ rows: [pluginRow("limits:deck:d2", { version: 1, new: 3 })] });
     });
     await saveWorkspaceLimits(ctx.session.study, WORKSPACE_ID, { new: 15, reviews: null });
     await saveDeckLimits(ctx.session.study, WORKSPACE_ID, "d1", { reviews: null });
@@ -254,7 +253,7 @@ describe("limit rows", () => {
       // Another tab removed the limits row already: its tombstone is skipped.
       if (isPush(input, init)) return pushAnswer(init, (key) => key.startsWith("limits:"));
       return jsonResponse({
-        pluginData: [pluginRow("deck:d1", deck("d1", "Doomed")), pluginRow("limits:deck:d1", { version: 1, new: 1 })],
+        rows: [pluginRow("deck:d1", deck("d1", "Doomed")), pluginRow("limits:deck:d1", { version: 1, new: 1 })],
       });
     });
     await deleteDeck(ctx.session.study, WORKSPACE_ID, "d1");

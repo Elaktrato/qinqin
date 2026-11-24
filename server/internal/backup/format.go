@@ -1,5 +1,5 @@
 // Package backup writes and restores a user's personal data archive
-// (format v1, docs/contracts/backup/) and the admin whole-server backup.
+// (format v2, docs/contracts/backup/) and the admin whole-server backup.
 package backup
 
 import (
@@ -13,7 +13,7 @@ import (
 // accepts exactly the versions it knows and rejects the rest.
 const (
 	FormatName    = "qinqin-user-backup"
-	FormatVersion = 1
+	FormatVersion = 2
 )
 
 // Caps, enforced on the bytes actually read (declared sizes are ignored).
@@ -24,7 +24,7 @@ const (
 	MaxJSONFile      = 64 << 20 // a book file or a JSON array file
 	MaxTotal         = 2 << 30  // all entries uncompressed together
 	MaxEntries       = 10000
-	MaxPluginValue   = 256 << 10 // like PUT /api/plugins/{id}/data/{key}
+	MaxRowValue      = 256 << 10 // like PUT /api/rows/{key}
 	EventsPerFile    = 100000
 	MaxEvents        = 2000000 // events per restore: a restore holds the write lock about 30 s per million
 	maxBooksJSONSize = 8 << 20
@@ -46,7 +46,7 @@ const (
 // entry can outgrow the per-entry cap a reader enforces.
 const (
 	FamEvents      = "events"
-	NamePluginData = "plugin-data"
+	NameRows       = "rows"
 	NameOverlays   = "overlays"
 	NameSentences  = "sentences"
 	NameBookmarks  = "library/bookmarks"
@@ -54,7 +54,7 @@ const (
 )
 
 // Families lists every JSONL family.
-var Families = []string{FamEvents, NamePluginData, NameOverlays, NameSentences, NameBookmarks, NameHighlights}
+var Families = []string{FamEvents, NameRows, NameOverlays, NameSentences, NameBookmarks, NameHighlights}
 
 // Kinds of a known archive entry name.
 const (
@@ -69,7 +69,7 @@ var (
 		NameManifest: true, NameAccount: true, NameRefEntries: true, NameRefDicts: true,
 		NameRefSentences: true, NameWorkspaces: true, NameBooks: true,
 	}
-	partName = regexp.MustCompile(`^(events|plugin-data|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
+	partName = regexp.MustCompile(`^(events|rows|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
 )
 
 // KnownName classifies an archive entry name. Only the names of format v1
@@ -214,9 +214,9 @@ type Event struct {
 	UpdatedAt   string          `json:"updatedAt"`
 }
 
-// PluginRow is a live plugin_data row; WorkspaceID nil is a user-global row.
-type PluginRow struct {
-	PluginID    string          `json:"pluginId"`
+// Row is a live keyed row of the archive (a keyed settings row, or a typed
+// row in its keyed form); WorkspaceID nil is a user-global row.
+type Row struct {
 	WorkspaceID *int64          `json:"workspaceId"`
 	Key         string          `json:"key"`
 	Data        json.RawMessage `json:"data"`
@@ -301,19 +301,3 @@ func ParseDerivedCardID(id string) (kind string, entryID int64, ok bool) {
 	}
 	return m[1], n, true
 }
-
-// FlashcardsPlugin is the plugin whose rows hold cards (card:<id>) and
-// vacation periods (vacation:<ULID>, user-global).
-const FlashcardsPlugin = "qinqin-flashcards"
-
-// JournalPlugin carries the journal's documents in their keyed form
-// (journal:entry:<id>, ...; journal/keyed.go).
-const JournalPlugin = "qinqin-journal"
-
-// GrammarPlugin carries grammar lesson progress in its keyed form
-// (grammar:progress:<packId>:<lessonId>; grammar/progress.go).
-const GrammarPlugin = "qinqin-grammar"
-
-// CorePlugin is the built-in plugin whose workspace rows hold personal
-// notes on entries (note:<entryId>, docs/contracts/notes/).
-const CorePlugin = "qinqin-core"

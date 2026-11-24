@@ -37,13 +37,13 @@ func byWorkspace(table string) rule {
 }
 
 // rules are the delete rules in the order Delete runs them: the study
-// events, the plugin data rows (user-global rows have no workspace and
+// events, the keyed rows (user-global rows have no workspace and
 // stay), the typed study rows (migration 038), the journal's documents
 // (migration 044), the grammar lesson progress (045), the access tokens limited
 // to the workspace, the library books with their bookmarks and highlights,
 // the journal photos.
 func rules() []rule {
-	out := []rule{byWorkspace("study_events"), byWorkspace("plugin_data")}
+	out := []rule{byWorkspace("study_events"), byWorkspace("keyed_rows")}
 	for _, table := range study.Tables() {
 		out = append(out, byWorkspace(table))
 	}

@@ -1,4 +1,4 @@
-# Settings: workspace settings keys and the `qinqin-core` user rows
+# Settings: workspace settings keys and the user-global keyed rows
 
 Two kinds of shared settings a second client reads and writes. Design:
 `docs/superpowers/specs/2026-11-17-v040p-contract-gaps-design.md` (Q10; issue #109).
@@ -10,17 +10,17 @@ Fixtures:
   `lib/features/reader/displaySettings.test.ts`) and `merge` (`PUT /api/workspaces/{id}` with
   `{"settings": patch}` over a stored object; Go: `server/internal/api/contract_settings_test.go`).
   `"$string:n"` is a JSON string of n `x` characters.
-- `core-rows.json` — the user-global rows `home-layout` and `activity-view` of plugin `qinqin-core`
+- `core-rows.json` — the user-global rows `home-layout` and `activity-view` (a keyed row, `keyed/`)
   (web: `lib/widgets/layout.test.ts`, `lib/activity/viewPrefs.test.ts`).
-- `widget-options.json` — the user-global row `widget-options` of plugin `qinqin-core`: `row` (an example),
+- `widget-options.json` — the user-global row `widget-options` (a keyed row, `keyed/`): `row` (an example),
   `parse` (`value` → the heatmap layout read) and `write` (`stored` + `layout` → the row written) (web:
-  `lib/widgets/options.test.ts`; Go: `cmd/qinqin/core_widget_options_test.go`,
+  `lib/widgets/options.test.ts`; Go: `cmd/qinqin/core_rows_test.go`,
   `internal/backup/widget_options_test.go`).
-- `nav-layout.json` — the user-global row `nav-layout` of plugin `qinqin-core` (the phone navigation): `row` (an
+- `nav-layout.json` — the user-global row `nav-layout` (a keyed row, `keyed/`) (the phone navigation): `row` (an
   example), `parse` (`value` → `{phone, bar}` read), `write` (`stored` + `change` → the row written) and `items`
   (visible section ids + `bar` → the bottom bar's items, the More rows and the current item; `bar: null` is the
   default pins) (web: `lib/frame/navLayout.test.ts`, `lib/frame/barItems.test.ts`; Go:
-  `cmd/qinqin/core_nav_layout_test.go`, `internal/backup/nav_layout_test.go`).
+  `cmd/qinqin/core_rows_test.go`, `internal/backup/nav_layout_test.go`).
 
 ## Workspace settings
 
@@ -52,9 +52,9 @@ members come out in alphabetical order, numbers pass through a 64-bit float (an 
 precision), and `<`, `>`, `&` are escaped as `\u003c`, `\u003e`, `\u0026` — six bytes each toward the 64 KiB cap.
 Compare stored settings as JSON values, never as text.
 
-## `qinqin-core` user-global rows
+## User-global keyed rows
 
-All are plugin data rows of `qinqin-core` with `workspaceId: null` (one per user, shared by every device,
+All are keyed rows (`keyed/`) with `workspaceId: null` (one per user, shared by every device,
 last write wins; `sync/`).
 
 **`home-layout`** — `{"version": 1, "widgets": [widget id, ...]}`: the home widgets in order.
@@ -99,7 +99,7 @@ individual home widgets, one member per widget id. Today only the activity heatm
   applies its change to that copy, never to the copy it loaded with the page — so keys another device wrote
   meanwhile survive. Last write wins between two writes that race.
 - Stats keeps the garden grid; the layout applies to the home page only (until #105 decides Stats).
-- The server stores the row like any user-global plugin row (no code of its own); a restore brings it back
+- The server stores the row like any user-global keyed row (no code of its own); a restore brings it back
   unchanged.
 
 Ruling: `widget-options` is a row of its own, not a member of `home-layout`, because the `home-layout` writer
@@ -134,7 +134,7 @@ navigation (below 720 px) and the sections pinned to its bottom bar, in order. D
   non-empty strings, each once.
 - Re-read before write (`saveNavLayout`): like `widget-options`, a writer reads the row fresh (`find`) right
   before it `put`s. Last write wins between two writes that race.
-- The server stores the row like any user-global plugin row (no code of its own); it syncs, and a restore brings
+- The server stores the row like any user-global keyed row (no code of its own); it syncs, and a restore brings
   it back unchanged.
 
 Ruling: the five-item rule fills nothing: with more than five visible sections and fewer than four visible pins,
@@ -144,5 +144,5 @@ it); filling the gaps would bring back a section the person just took out.
 Ruling: Android reads and writes `nav-layout` the same way (its phone frame follows `phone` and `bar`; lenient
 read, unknown keys kept, re-read before write) — cost: none.
 
-**`appearance`** — the person's theme, accent and adjustments: a third user-global `qinqin-core` row, specified
+**`appearance`** — the person's theme, accent and adjustments: a third user-global keyed row, specified
 with the themes in [`themes/README.md`](../themes/README.md) ("The `appearance` row", fixture `themes/appearance.json`).

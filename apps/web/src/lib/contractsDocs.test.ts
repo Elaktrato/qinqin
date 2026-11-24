@@ -44,7 +44,7 @@ function walk(dir: string, keep: (name: string) => boolean, skip: (path: string)
 }
 
 /** Fixtures no test needs to name: generator input, and the sample archive (decoded as a whole). */
-const NOT_DECODED_BY_NAME = ['scheduler/optimizer-steps.inside.json', 'backup/sample-v1/'];
+const NOT_DECODED_BY_NAME = ['scheduler/optimizer-steps.inside.json', 'backup/sample-v2/'];
 
 describe('docs/contracts coverage', () => {
 	const fixtures = walk(root, (n) => n.endsWith('.json'))
@@ -83,7 +83,7 @@ describe('docs/contracts coverage', () => {
 	it('the allowlisted files exist and are decoded otherwise', () => {
 		expect(existsSync(resolve(root, 'scheduler/optimizer-steps.inside.json'))).toBe(true);
 		expect(readFileSync(resolve(repo, 'scripts/contracts/gen-scheduler-fixtures.mjs'), 'utf8')).toContain('optimizer-steps.inside.json');
-		expect(tests.some((t) => t.includes('backup/sample-v1'))).toBe(true);
+		expect(tests.some((t) => t.includes('backup/sample-v2'))).toBe(true);
 	});
 
 	const overview = readFileSync(resolve(root, 'overview.md'), 'utf8');

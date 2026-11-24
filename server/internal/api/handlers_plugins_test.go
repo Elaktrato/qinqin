@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"testing"
 
-	"qinqin/internal/lang"
 	"qinqin/internal/plugins"
 )
 
@@ -30,9 +28,8 @@ type pluginStateBody struct {
 	Order    int    `json:"order"`
 }
 
-// pluginDataBody mirrors the response of the plugin data routes.
-type pluginDataBody struct {
-	PluginID    string          `json:"pluginId"`
+// rowBody mirrors the response of the keyed row routes.
+type rowBody struct {
 	Key         string          `json:"key"`
 	UserID      int64           `json:"userId"`
 	WorkspaceID *int64          `json:"workspaceId"`
@@ -207,174 +204,6 @@ func TestPluginStateRoute(t *testing.T) {
 	}
 }
 
-func TestPluginDataRoute(t *testing.T) {
-	lang.Register(lang.Zh{}) // the workspace below; no reliance on another test registering it
-	ts, sqlDB := newServer(t)
-	admin := registerUser(t, ts.URL, "root", "")
-	alice := registerUser(t, ts.URL, "alice", admin)
-	bob := registerUser(t, ts.URL, "bob", admin)
-	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
-
-	// Alice opens a zh workspace to scope a deck to.
-	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("POST workspace: status = %d, want %d", resp.StatusCode, http.StatusCreated)
-	}
-	var ws workspaceBody
-	decodeJSON(t, resp, &ws)
-	scoped := "/api/plugins/qinqin-flashcards/data/decks?workspace=" + strconv.FormatInt(ws.ID, 10)
-	global := "/api/plugins/qinqin-flashcards/data/decks"
-
-	// Storing data in her workspace versions the row.
-	resp = doRaw(t, http.MethodPut, ts.URL, scoped, alice, `{"cards":["你好"]}`)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("PUT workspace data: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	var d pluginDataBody
-	decodeJSON(t, resp, &d)
-	if d.PluginID != "qinqin-flashcards" || d.Key != "decks" || d.UserID == 0 ||
-		d.WorkspaceID == nil || *d.WorkspaceID != ws.ID ||
-		d.Version != 1 || string(d.Data) != `{"cards":["你好"]}` {
-		t.Errorf("stored workspace data = %+v, want version 1 in alice's workspace", d)
-	}
-	resp = doRaw(t, http.MethodPut, ts.URL, scoped, alice, `{"cards":["你好","谢谢"]}`)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("re-PUT workspace data: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	decodeJSON(t, resp, &d)
-	if d.Version != 2 {
-		t.Errorf("re-PUT version = %d, want 2", d.Version)
-	}
-
-	// GET reads the row back.
-	resp = doJSON(t, http.MethodGet, ts.URL, scoped, alice, nil)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET workspace data: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	decodeJSON(t, resp, &d)
-	if d.Version != 2 || string(d.Data) != `{"cards":["你好","谢谢"]}` {
-		t.Errorf("read workspace data = %+v, want version 2 with the re-put value", d)
-	}
-
-	// Without ?workspace the row is user-global — a different row.
-	if resp := doJSON(t, http.MethodGet, ts.URL, global, alice, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("GET user-global before storing: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	resp = doRaw(t, http.MethodPut, ts.URL, global, alice, `{"goal":20}`)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("PUT user-global data: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	decodeJSON(t, resp, &d)
-	if d.WorkspaceID != nil || d.Version != 1 {
-		t.Errorf("stored user-global data = %+v, want version 1 with no workspace", d)
-	}
-	resp = doJSON(t, http.MethodGet, ts.URL, scoped, alice, nil)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET workspace data after user-global put: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	decodeJSON(t, resp, &d)
-	if d.Version != 2 {
-		t.Errorf("workspace data after user-global put = version %d, want still 2 — separate rows", d.Version)
-	}
-
-	// Bob sees none of alice's rows.
-	if resp := doJSON(t, http.MethodGet, ts.URL, global, bob, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("bob reads alice's user-global row: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-
-	// DELETE tombstones the workspace row; the user-global row stays.
-	if resp := doJSON(t, http.MethodDelete, ts.URL, scoped, alice, nil); resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("DELETE workspace data: status = %d, want %d", resp.StatusCode, http.StatusNoContent)
-	}
-	if resp := doJSON(t, http.MethodGet, ts.URL, scoped, alice, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("GET deleted workspace data: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doJSON(t, http.MethodDelete, ts.URL, scoped, alice, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("re-DELETE workspace data: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doJSON(t, http.MethodGet, ts.URL, global, alice, nil); resp.StatusCode != http.StatusOK {
-		t.Errorf("GET user-global after workspace delete: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-
-	// Foreign and unknown workspaces are 404.
-	bobWS := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "zh"})
-	if bobWS.StatusCode != http.StatusCreated {
-		t.Fatalf("POST bob's workspace: status = %d, want %d", bobWS.StatusCode, http.StatusCreated)
-	}
-	var bobWorkspace workspaceBody
-	decodeJSON(t, bobWS, &bobWorkspace)
-	foreign := "/api/plugins/qinqin-flashcards/data/decks?workspace=" + strconv.FormatInt(bobWorkspace.ID, 10)
-	if resp := doRaw(t, http.MethodPut, ts.URL, foreign, alice, `{"cards":[]}`); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("PUT data in bob's workspace: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/decks?workspace=999999", alice, `{"cards":[]}`); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("PUT data in unknown workspace: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/decks?workspace=not-a-number", alice, `{"cards":[]}`); resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("PUT data with malformed workspace: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
-	}
-
-	// Data writes key to registered plugins only, and the body must be
-	// valid JSON.
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/ghost/data/decks", alice, `{"cards":[]}`); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("PUT data for unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doRaw(t, http.MethodPut, ts.URL, global, alice, `{`); resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("PUT invalid JSON data: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
-	}
-	if resp := doJSON(t, http.MethodGet, ts.URL, global, "", nil); resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("GET data without token: status = %d, want %d", resp.StatusCode, http.StatusUnauthorized)
-	}
-}
-
-func TestListPluginDataRoute(t *testing.T) {
-	// Its own language pack: the test must not depend on another test having
-	// registered zh first (review fix, phase A, 10: it failed when run alone).
-	lang.Register(lang.Zh{})
-	ts, sqlDB := newServer(t)
-	admin := registerUser(t, ts.URL, "root", "")
-	alice := registerUser(t, ts.URL, "alice", admin)
-	bob := registerUser(t, ts.URL, "bob", admin)
-	seedBuiltin(t, sqlDB, validManifest("qinqin-journal", ""))
-
-	var ws workspaceBody
-	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
-	decodeJSON(t, resp, &ws)
-	w := "?workspace=" + strconv.FormatInt(ws.ID, 10)
-	for _, k := range []string{"entry:2", "entry:1", "review:1"} {
-		if r := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-journal/data/"+k+w, alice, `{"k":"`+k+`"}`); r.StatusCode != http.StatusOK {
-			t.Fatalf("PUT %s: %d", k, r.StatusCode)
-		}
-	}
-
-	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=entry:", alice, nil)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("list: status = %d", resp.StatusCode)
-	}
-	var rows []pluginDataBody
-	decodeJSON(t, resp, &rows)
-	if len(rows) != 2 || rows[0].Key != "entry:1" || rows[1].Key != "entry:2" || string(rows[0].Data) != `{"k":"entry:1"}` {
-		t.Fatalf("rows = %+v", rows)
-	}
-
-	// An empty result is [] not null.
-	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=none:", alice, nil)
-	if body := readAll(t, resp); strings.TrimSpace(body) != "[]" {
-		t.Errorf("empty list body = %q, want []", body)
-	}
-
-	// A foreign workspace is 404, as is an unknown plugin; no token is 401.
-	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, bob, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("foreign workspace: status = %d, want 404", r.StatusCode)
-	}
-	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/ghost/data"+w, alice, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("unknown plugin: status = %d, want 404", r.StatusCode)
-	}
-	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, "", nil); r.StatusCode != http.StatusUnauthorized {
-		t.Errorf("no token: status = %d, want 401", r.StatusCode)
-	}
-}
-
 func readAll(t *testing.T, resp *http.Response) string {
 	t.Helper()
 	b, err := io.ReadAll(resp.Body)
@@ -382,36 +211,6 @@ func readAll(t *testing.T, resp *http.Response) string {
 		t.Fatal(err)
 	}
 	return string(b)
-}
-
-// TestPluginDataWriteNeedsOwnsData: PUT and DELETE are refused for an
-// sdk-1 plugin that does not declare owns-data; reads stay as before.
-func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
-	ts, sqlDB := newServer(t)
-	admin := registerUser(t, ts.URL, "root", "")
-	reader := validManifest("qinqin-reader", `"permissions":["read:entries"]`)
-	seedBuiltin(t, sqlDB, reader)
-	path := "/api/plugins/qinqin-reader/data/k"
-	for _, method := range []string{http.MethodPut, http.MethodDelete} {
-		resp := doRaw(t, method, ts.URL, path, admin, `{"a":1}`)
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusForbidden || errorCode(t, body) != "plugin_no_data" {
-			t.Errorf("%s: status = %d body %q, want 403 plugin does not declare owns-data", method, resp.StatusCode, body)
-		}
-	}
-	if resp := doJSON(t, http.MethodGet, ts.URL, path, admin, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("GET: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-reader/data", admin, nil); resp.StatusCode != http.StatusOK {
-		t.Errorf("list: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/nobody/data/k", admin, `{}`); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("PUT unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
-	if resp := doJSON(t, http.MethodDelete, ts.URL, "/api/plugins/nobody/data/k", admin, nil); resp.StatusCode != http.StatusNotFound {
-		t.Errorf("DELETE unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
-	}
 }
 
 func TestPluginRegistrationRefusesBuiltinID(t *testing.T) {
@@ -440,120 +239,6 @@ func TestPluginRegistrationRefusesTrailingData(t *testing.T) {
 				t.Errorf("trailing-data manifest was stored")
 			}
 		}
-	}
-}
-
-// seedCore registers the shipped qinqin-core manifest, as serve startup does.
-func seedCore(t *testing.T, sqlDB *sql.DB) {
-	t.Helper()
-	for _, raw := range plugins.Builtin() {
-		m, err := plugins.ParseManifest(raw)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if m.ID == "qinqin-core" {
-			seedBuiltin(t, sqlDB, string(raw))
-			return
-		}
-	}
-	t.Fatal("no qinqin-core manifest among the built-ins")
-}
-
-// TestNoteRowsIsolation: personal notes (qinqin-core note:<entryId>, issue
-// #77) are only ever the author's, per workspace, through the generic
-// plugin data routes.
-func TestNoteRowsIsolation(t *testing.T) {
-	lang.Register(lang.Zh{})
-	ts, sqlDB := newServer(t)
-	admin := registerUser(t, ts.URL, "root", "")
-	alice := registerUser(t, ts.URL, "alice", admin)
-	bob := registerUser(t, ts.URL, "bob", admin)
-	seedCore(t, sqlDB)
-	newWS := func(token, name string) int64 {
-		t.Helper()
-		resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", token, map[string]string{"language": "zh", "name": name})
-		if resp.StatusCode != http.StatusCreated {
-			t.Fatalf("POST workspace: %d %s", resp.StatusCode, readAll(t, resp))
-		}
-		var ws workspaceBody
-		decodeJSON(t, resp, &ws)
-		return ws.ID
-	}
-	a1, a2, b1 := newWS(alice, "One"), newWS(alice, "Two"), newWS(bob, "One")
-	q := func(ws int64) string { return "?workspace=" + strconv.FormatInt(ws, 10) }
-	const key = "/api/plugins/qinqin-core/data/note:1201"
-	const list = "/api/plugins/qinqin-core/data"
-	const aliceNote = `{"version":1,"entryId":1201,"text":"Horse\n<img src=x onerror=alert(1)>"}`
-	if r := doRaw(t, http.MethodPut, ts.URL, key+q(a1), alice, aliceNote); r.StatusCode != http.StatusOK {
-		t.Fatalf("alice PUT: %d", r.StatusCode)
-	}
-	aliceRow := func() string {
-		t.Helper()
-		r := doJSON(t, http.MethodGet, ts.URL, key+q(a1), alice, nil)
-		if r.StatusCode != http.StatusOK {
-			t.Fatalf("alice GET: %d", r.StatusCode)
-		}
-		var d pluginDataBody
-		decodeJSON(t, r, &d)
-		return canonJSON(t, d.Data)
-	}
-	if got := aliceRow(); got != canonJSON(t, []byte(aliceNote)) {
-		t.Fatalf("alice reads %s", got)
-	}
-
-	// Bob cannot read, overwrite, delete or list alice's note through her workspace.
-	if r := doJSON(t, http.MethodGet, ts.URL, key+q(a1), bob, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("bob GET: %d, want 404", r.StatusCode)
-	}
-	if r := doRaw(t, http.MethodPut, ts.URL, key+q(a1), bob, `{"version":1,"entryId":1201,"text":"bob was here"}`); r.StatusCode != http.StatusNotFound {
-		t.Errorf("bob PUT: %d, want 404", r.StatusCode)
-	}
-	if r := doJSON(t, http.MethodDelete, ts.URL, key+q(a1), bob, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("bob DELETE: %d, want 404", r.StatusCode)
-	}
-	if r := doJSON(t, http.MethodGet, ts.URL, list+q(a1)+"&prefix=note:", bob, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("bob list: %d, want 404", r.StatusCode)
-	}
-	if got := aliceRow(); got != canonJSON(t, []byte(aliceNote)) {
-		t.Errorf("alice's note changed to %s", got)
-	}
-
-	// Bob's own note on the same entry stays his.
-	if r := doRaw(t, http.MethodPut, ts.URL, key+q(b1), bob, `{"version":1,"entryId":1201,"text":"bob's"}`); r.StatusCode != http.StatusOK {
-		t.Fatalf("bob PUT own: %d", r.StatusCode)
-	}
-	listed := func(token string, ws int64) []pluginDataBody {
-		t.Helper()
-		r := doJSON(t, http.MethodGet, ts.URL, list+q(ws)+"&prefix=note:", token, nil)
-		if r.StatusCode != http.StatusOK {
-			t.Fatalf("list: %d", r.StatusCode)
-		}
-		var rows []pluginDataBody
-		decodeJSON(t, r, &rows)
-		return rows
-	}
-	if rows := listed(alice, a1); len(rows) != 1 || canonJSON(t, rows[0].Data) != canonJSON(t, []byte(aliceNote)) {
-		t.Errorf("alice's list in workspace 1 = %+v", rows)
-	}
-	// Per workspace: alice's second workspace has no note.
-	if rows := listed(alice, a2); len(rows) != 0 {
-		t.Errorf("alice's list in workspace 2 = %+v", rows)
-	}
-	if r := doJSON(t, http.MethodGet, ts.URL, key+q(a2), alice, nil); r.StatusCode != http.StatusNotFound {
-		t.Errorf("alice GET in workspace 2: %d, want 404", r.StatusCode)
-	}
-	if rows := listed(bob, b1); len(rows) != 1 || !strings.Contains(string(rows[0].Data), "bob's") {
-		t.Errorf("bob's list = %+v", rows)
-	}
-
-	// No token is 401 on every note route.
-	for _, m := range []string{http.MethodGet, http.MethodPut, http.MethodDelete} {
-		if r := doRaw(t, m, ts.URL, key+q(a1), "", aliceNote); r.StatusCode != http.StatusUnauthorized {
-			t.Errorf("%s without token: %d, want 401", m, r.StatusCode)
-		}
-	}
-	if r := doJSON(t, http.MethodGet, ts.URL, list+q(a1)+"&prefix=note:", "", nil); r.StatusCode != http.StatusUnauthorized {
-		t.Errorf("list without token: %d, want 401", r.StatusCode)
 	}
 }
 
@@ -621,10 +306,5 @@ func TestReservedFeatureRows(t *testing.T) {
 				t.Errorf("%s hidden = true, want false (the documented answer)", p.ID)
 			}
 		}
-	}
-	// The study namespace still owns data: a keyed row is accepted.
-	ws := createWorkspace(t, ts.URL, admin, "zh", "")
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/known:5?workspace="+strconv.FormatInt(ws, 10), admin, `{"at":"t"}`); resp.StatusCode != http.StatusOK {
-		t.Errorf("PUT known row: %d", resp.StatusCode)
 	}
 }

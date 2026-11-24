@@ -432,10 +432,10 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
 		{"PUT /api/plugins/{id}/state", s.handleSetPluginState, accUser, nil, tokWriteAny},
-		{"GET /api/plugins/{id}/data", s.handleListPluginData, accUser, nil, tokReadWS},
-		{"GET /api/plugins/{id}/data/{key}", s.handleGetPluginData, accUser, nil, tokReadWS},
-		{"PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData, accUser, nil, tokWriteWS},
-		{"DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData, accUser, nil, tokWriteWS},
+		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
+		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},
+		{"PUT /api/rows/{key}", s.handlePutRow, accUser, nil, tokWriteWS},
+		{"DELETE /api/rows/{key}", s.handleDeleteRow, accUser, nil, tokWriteWS},
 	}
 }
 
@@ -453,12 +453,11 @@ const (
 	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
 	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
 	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
-	// maxPluginDataValue caps one plugin data value, on PUT
-	// /api/plugins/{id}/data/{key} and per item in a sync push. Real
-	// values are far smaller: a flashcards card or deck row is under
-	// 2 KiB, reader preferences a few hundred bytes; the headroom leaves
-	// room for a plugin that keeps a list in one key.
-	maxPluginDataValue = 256 << 10
+	// maxRowValue caps one keyed row value, on PUT /api/rows/{key}, and
+	// per item (keyed or typed) in a sync push. Real values are far
+	// smaller: a card or deck row is under 2 KiB, a layout a few hundred
+	// bytes; the lookup history (500 items) is the largest.
+	maxRowValue = 256 << 10
 
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points

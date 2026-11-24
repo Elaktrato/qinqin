@@ -12,7 +12,7 @@ A review recorded offline is the unchanged `review` event of
 `ts` (the device clock at grading time) and `payload`. The server stores an id once
 (`accepted` / `duplicates`), so a retry after an ambiguous failure can never count
 twice. Offline sessions create no cards: a companion card (sentence, writing, tone,
-reverse, cloze) is a plugin-data write and is only planned online. `PUT
+reverse, cloze) is a typed card write and is only planned online. `PUT
 /api/sync/push` is last-write-wins per row key, so the offline path never writes
 rows and cannot create duplicate cards.
 
@@ -51,22 +51,22 @@ when the request carries an `Authorization` header: `/api/auth/me`,
 `/api/workspaces`, `/api/plugins`, `/api/languages`, `/api/me/time-zone`,
 `/api/sync/pull` in two forms. Paged (`v=2`, `docs/contracts/sync/`): a round's first
 page with `workspace=<id>` and `collections` a non-empty subset of
-`pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
+`rows,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
 (optionally `limit` and `tombstones=1`, which the web study pull sends; never `since`, a delta is not offline data, never `events`,
 `overlays`, `books` or a moved name), and its continuations `v=2&page=p2.<token>`
 (nothing else in the query; the token carries its filters, the server validates
 them, and the URL is the cache key). Each page is a separate saved copy, so offline
 study reads the same pages in the same order; "Prepare offline" reads the round
 through the study read and its receipt counts the pages. A pull without `v=2` (the removed legacy form, #198)
-is never cached. Also `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=` (the legacy array or a first page with `limit`, and a page continuation of exactly `page=e1.<token>&workspace=<id>`: the token holds no clock, so the URL is a stable cache key; each page is its own saved copy; after a complete read the page deletes the saved continuations of the workspace that no saved first page leads to, `events/` Paging),
+is never cached. Also `/api/rows` (with a `prefix` that cannot match a lookup row) and `/api/rows/{key}`, `/api/events` with `workspace=` (the legacy array or a first page with `limit`, and a page continuation of exactly `page=e1.<token>&workspace=<id>`: the token holds no clock, so the URL is a stable cache key; each page is its own saved copy; after a complete read the page deletes the saved continuations of the workspace that no saved first page leads to, `events/` Paging),
 `/api/entries/{id}` and the theme list `/api/themes` (public and not personal, but cached per credential like every other read; signed out, the web paints from its stored tokens and the compiled-in fallback, `themes/`); plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
 installed strokes package; 404 when none is installed). The font list `/api/fonts` and the font slices `/fonts/<sha256>.woff2` (#97) are not cached by the worker yet (`bypass`): the web does not use them until it registers pack faces, which adds them (slices cache-first in a shared, content-addressed cache) together with their consumer. The package catalogue and package downloads
 (`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
 installs no packages.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
-`../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can
-match one; paths are compared decoded) are not cached, and a saved pull (any v2 page's `collections.pluginData`, or the body of a legacy pull an older worker saved) loses its `qinqin-core` `lookup*` rows
+`../lookups/`) never reaches the cache: keyed row reads of `lookup*` keys (or with a `prefix` that can, an empty one included;
+paths are compared decoded) are not cached, and a saved pull (any v2 page's `collections.rows`) loses its `lookup*` rows
 and a saved event log (the array, or a page's `events`) its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
 Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
 stored, and never one whose `Cache-Control` says `no-store` (the paged reads answer `private, no-cache` so that

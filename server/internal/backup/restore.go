@@ -436,11 +436,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	// 7. plugin rows: decide every card id and note winner first (one pass over the OLD ids), then insert
+	// 7. rows: decide every card id and note winner first (one pass over the OLD ids), then insert
 	m.Cards = map[string]string{}
 	m.noteWinner = map[string]noteCandidate{}
-	if err := a.PluginRows(func(r PluginRow) error {
-		if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix) {
+	if err := a.Rows(func(r Row) error {
+		if strings.HasPrefix(r.Key, cardKeyPrefix) {
 			m.RegisterCard(r.Key, r.Data)
 		}
 		m.RegisterNote(r)
@@ -448,77 +448,63 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	insRow, err := tx.PrepareContext(ctx, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+	insRow, err := tx.PrepareContext(ctx, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return nil, err
 	}
 	defer insRow.Close()
-	if err := a.PluginRows(func(r PluginRow) error {
-		nr, drop := m.PluginRow(r)
+	if err := a.Rows(func(r Row) error {
+		nr, drop := m.Row(r)
 		if drop {
 			res.DroppedRows++
 			return nil
 		}
-		// A typed study family goes to its typed table through the codec
-		// (one storage); updated_at = now as below, version and edit time kept.
-		if row, typed, ok := typedRow(nr); typed {
-			if !ok {
-				res.DroppedRows++
-				return nil
+		ok := true
+		switch kindOf(nr) {
+		case kindTyped:
+			// A typed study family goes to its typed table through the codec;
+			// updated_at = now as below, version and edit time kept.
+			row, _, decoded := typedRow(nr)
+			if ok = decoded; ok {
+				if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
+					return fmt.Errorf("backup: study row: %w", err)
+				}
+				if row.Family() == rows.Cards {
+					res.Restored.Cards++
+				}
 			}
-			if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
-				return fmt.Errorf("backup: study row: %w", err)
-			}
-			res.Restored.PluginData++
-			if row.Family() == rows.Cards {
-				res.Restored.Cards++
-			}
-			return nil
-		}
-		// The journal's documents go to their tables (journal/keyed.go); a
-		// row of an older layout, or one the store refuses, is dropped.
-		if nr.PluginID == JournalPlugin {
-			ok := false
-			if nr.WorkspaceID != nil && journal.IsKeyed(nr.Key) {
+		case kindJournal:
+			// The journal's documents go to their tables (journal/keyed.go).
+			if ok = nr.WorkspaceID != nil; ok {
 				var err error
 				if ok, err = journal.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
 					return fmt.Errorf("backup: journal document: %w", err)
 				}
 			}
-			if !ok {
-				res.DroppedRows++
-				return nil
-			}
-			res.Restored.PluginData++
-			return nil
-		}
-		if nr.PluginID == GrammarPlugin {
-			ok := false
-			if nr.WorkspaceID != nil && grammar.IsKeyed(nr.Key) {
+		case kindGrammar:
+			if ok = nr.WorkspaceID != nil; ok {
 				var err error
 				if ok, err = grammar.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
 					return fmt.Errorf("backup: grammar progress: %w", err)
 				}
 			}
-			if !ok {
-				res.DroppedRows++
-				return nil
+		case kindKeyed:
+			var ws any
+			if nr.WorkspaceID != nil {
+				ws = *nr.WorkspaceID
 			}
-			res.Restored.PluginData++
+			// updated_at = now, so every client's delta pull sees the restored row.
+			if _, err := insRow.ExecContext(ctx, userID, ws, nr.Key, string(nr.Data), nr.Version, now, restoredModified(nr, now)); err != nil {
+				return fmt.Errorf("backup: row: %w", err)
+			}
+		default:
+			ok = false
+		}
+		if !ok {
+			res.DroppedRows++
 			return nil
 		}
-		var ws any
-		if nr.WorkspaceID != nil {
-			ws = *nr.WorkspaceID
-		}
-		// updated_at = now, so every client's delta pull sees the restored row.
-		if _, err := insRow.ExecContext(ctx, nr.PluginID, userID, ws, nr.Key, string(nr.Data), nr.Version, now, nr.ModifiedAt); err != nil {
-			return fmt.Errorf("backup: plugin row: %w", err)
-		}
-		res.Restored.PluginData++
-		if nr.PluginID == FlashcardsPlugin && strings.HasPrefix(nr.Key, cardKeyPrefix) {
-			res.Restored.Cards++
-		}
+		res.Restored.Rows++
 		return nil
 	}); err != nil {
 		return nil, err

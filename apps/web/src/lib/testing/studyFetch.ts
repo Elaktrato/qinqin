@@ -9,7 +9,6 @@ import { legacyFamily, pagedPull, toLegacy } from "./legacyCodec";
 import { STUDY_COLLECTIONS, type StudyCollection } from "../study/rows";
 import * as build from "./study";
 
-export const PLUGIN_ID = "qinqin-flashcards";
 export const WORKSPACE_ID = 7;
 export const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -34,7 +33,7 @@ export function fakeStorage(): Storage {
  */
 export function jsonResponse(body: unknown, status = 200): Response {
   const isPull =
-    typeof body === "object" && body !== null && Array.isArray((body as { pluginData?: unknown }).pluginData);
+    typeof body === "object" && body !== null && Array.isArray((body as { rows?: unknown }).rows);
   return rawResponse(isPull ? pagedPull(body as Record<string, unknown>) : body, status);
 }
 
@@ -47,7 +46,6 @@ export function rawResponse(body: unknown, status = 200): Response {
 }
 
 export interface PluginDataRow {
-  pluginId: string;
   key: string;
   userId: number;
   workspaceId: number | null;
@@ -63,7 +61,6 @@ export function pluginRow(
   overrides: Partial<PluginDataRow> = {},
 ): PluginDataRow {
   return {
-    pluginId: PLUGIN_ID,
     key,
     userId: 1,
     workspaceId: WORKSPACE_ID,
@@ -168,7 +165,7 @@ export function deletedKeys(): string[] {
 export function pushedRows(): Array<{ key: string; data: unknown; updatedAt: string }> {
   return pushBodies().flatMap((body) => [
     ...itemsOf(body).map(({ key, data, updatedAt }) => ({ key, data, updatedAt })),
-    ...(((body.pluginData as Array<{ key: string; data: unknown; updatedAt: string }>) ?? [])),
+    ...(((body.rows as Array<{ key: string; data: unknown; updatedAt: string }>) ?? [])),
   ]);
 }
 
@@ -177,7 +174,7 @@ export function pushAnswer(init: RequestInit | undefined, skip: (key: string) =>
   const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
   const keys = [
     ...itemsOf(body).map((w) => w.key),
-    ...((body.pluginData as Array<{ key: string }> | undefined) ?? []).map((r) => r.key),
+    ...((body.rows as Array<{ key: string }> | undefined) ?? []).map((r) => r.key),
   ];
   const skipped = keys.filter(skip).length;
   return rawResponse({ dataAccepted: keys.length - skipped, dataSkipped: skipped, dataRefused: 0 });
@@ -211,11 +208,11 @@ export function reviewEvent(
 // through the plugin-data routes or a pluginData push item.
 export function expectOneStorage(): void {
   const onRoutes = calls()
-    .map(([url]) => /^\/api\/plugins\/qinqin-flashcards\/data\/([^?]+)/.exec(String(url))?.[1])
+    .map(([url]) => /^\/api\/rows\/([^?]+)/.exec(String(url))?.[1])
     .filter((key): key is string => key !== undefined && legacyFamily(decodeURIComponent(key)) !== null);
   expect(onRoutes).toEqual([]);
   const inPluginData = pushBodies()
-    .flatMap((b) => (b.pluginData as Array<{ key: string }> | undefined) ?? [])
+    .flatMap((b) => (b.rows as Array<{ key: string }> | undefined) ?? [])
     .filter((row) => legacyFamily(row.key) !== null);
   expect(inPluginData).toEqual([]);
 }

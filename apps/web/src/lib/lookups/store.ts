@@ -6,7 +6,7 @@
 
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
-import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
+import { keyedData, type KeyedScope } from '../sync/keyed';
 import { ownPartition } from '../pwa/partitions';
 import { clearReceipts } from '../pwa/prepareOffline';
 import { holdsLookups } from '../pwa/sw/classify';
@@ -35,8 +35,8 @@ export class LookupEventsNotDeletedError extends Error {
 	}
 }
 
-const rows = (ws: number): KeyedScope => keyedData(CORE_NAMESPACE, ws);
-const global = (): KeyedScope => keyedData(CORE_NAMESPACE, null);
+const rows = (ws: number): KeyedScope => keyedData(ws);
+const global = (): KeyedScope => keyedData(null);
 
 export async function loadHistory(ws: number): Promise<LookupHistory> {
 	return parseLookups(await rows(ws).find(LOOKUPS_KEY));

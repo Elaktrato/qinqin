@@ -45,7 +45,7 @@ import type { StudySnapshot } from './plan';
 import { GOALS_KEY, parseGoalsRow, type ParsedGoals } from '../goals/goals';
 import { MILESTONE_KEY_PREFIX } from '../milestones/catalogue';
 import { parseSeenRows, tombstoneStamps } from '../milestones/seen';
-import { STUDY_NAMESPACE, keyedRowOf, type KeyedRow } from '../sync/keyed';
+import { keyedRowOf, type KeyedRow } from '../sync/keyed';
 import type { StudyEvent } from '../events';
 import type { ReviewEvent, StudyCard, StudyData, StudyHistory, Deck } from './types';
 
@@ -60,7 +60,7 @@ export function cardsInDecks(cards: readonly StudyCard[], deckIds: readonly stri
 	return cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
 }
 
-type Counted = StudyCollection | 'pluginData';
+type Counted = StudyCollection | 'rows';
 
 /** What this version could not read of one row with a known identity. */
 export interface UnreadableRow {
@@ -137,18 +137,23 @@ function setLast<V>(map: Map<string, V>, key: string, value: V): void {
 	map.set(key, value);
 }
 
+/** isStudyKey: a keyed row the study reads (goals, known marks, vacations, milestones). */
+function isStudyKey(key: string): boolean {
+	return key === GOALS_KEY || key.startsWith(KNOWN_PREFIX) || key.startsWith(VACATION_PREFIX) || key.startsWith(MILESTONE_KEY_PREFIX);
+}
+
 /**
  * mergeRows folds the rows of one pull round (`collections`, as the pager
  * merged them) into `rows`, by key: a row replaces what is held for its key
  * unless what is held is newer (a write of this tab the round started before).
- * Rows of other workspaces and of other namespaces are left out. Answers
+ * Rows of other workspaces and keyed rows that are not the study's are left out. Answers
  * whether anything changed.
  */
 export function mergeRows(rows: StudyRows, collections: Record<string, unknown[] | undefined>, workspaceId: number): boolean {
 	let changed = false;
 	const protect = (key: string, collection: Counted, raw: unknown): void => {
 		const stamp = stampOfRaw(raw);
-		const typedKey = collection === 'pluginData' ? undefined : key;
+		const typedKey = collection === 'rows' ? undefined : key;
 		const held = heldStamp(rows, key, typedKey === undefined ? rows.keyed.get(key) : rows.typed.get(key));
 		if (!newerOrSame(stamp, held)) return;
 		rows.typed.delete(key);
@@ -186,16 +191,17 @@ export function mergeRows(rows: StudyRows, collections: Record<string, unknown[]
 		}
 	}
 
-	const plugin = collections.pluginData;
-	for (const value of Array.isArray(plugin) ? plugin : []) {
-		const foreign = isRecord(value) && typeof value.pluginId === 'string' && value.pluginId !== STUDY_NAMESPACE;
+	const keyedList = collections.rows;
+	for (const value of Array.isArray(keyedList) ? keyedList : []) {
+		// The core's other keyed rows (notes, lookups, layouts, ...) are not the study's.
+		const foreign = isRecord(value) && typeof value.key === 'string' && !isStudyKey(value.key);
 		if (foreign) continue;
 		const row = keyedRowOf(value);
 		if (row === null) {
 			const where = isRecord(value) ? value.workspaceId : undefined;
 			if (typeof where === 'number' && where !== workspaceId) continue;
-			if (isRecord(value) && typeof value.key === 'string') protect(keyedSlot(value.key, where === null), 'pluginData', value);
-			else anonymous('pluginData', value);
+			if (isRecord(value) && typeof value.key === 'string') protect(keyedSlot(value.key, where === null), 'rows', value);
+			else anonymous('rows', value);
 			continue;
 		}
 		if (row.workspaceId !== null && row.workspaceId !== workspaceId) continue;
@@ -276,11 +282,11 @@ export function viewOf(rows: StudyRows): StudyView {
 		counts[name] = (counts[name] ?? 0) + 1;
 	};
 	const unreadableKeyed = (slot: string): void => {
-		count('pluginData');
+		count('rows');
 		keyedUnreadable.add(slot);
 		const key = slot.slice(slot.indexOf(':') + 1);
-		unreadableKeys.push(`pluginData:${key}`);
-		snapshot.unreadable.add(`pluginData:${key}`);
+		unreadableKeys.push(`rows:${key}`);
+		snapshot.unreadable.add(`rows:${key}`);
 	};
 
 	for (const [key, row] of rows.typed) {
@@ -351,11 +357,11 @@ export function viewOf(rows: StudyRows): StudyView {
 
 	for (const [key, row] of rows.unreadable) {
 		if (row.counted) count(row.collection);
-		if (row.collection === 'pluginData') {
+		if (row.collection === 'rows') {
 			keyedUnreadable.add(key);
 			const plain = key.slice(key.indexOf(':') + 1);
-			unreadableKeys.push(`pluginData:${plain}`);
-			snapshot.unreadable.add(`pluginData:${plain}`);
+			unreadableKeys.push(`rows:${plain}`);
+			snapshot.unreadable.add(`rows:${plain}`);
 		} else {
 			unreadableKeys.push(key);
 			snapshot.unreadable.add(key);

@@ -7,7 +7,7 @@
 // which workspace changed (data.ts onStudyChange).
 
 import { PartialPushError } from '../../sync/push';
-import { STUDY_NAMESPACE, keyedData, pushKeyed, type KeyedRow, type KeyedWrite } from '../../sync/keyed';
+import { keyedData, pushKeyed, type KeyedRow, type KeyedWrite } from '../../sync/keyed';
 import { stampOf } from '../../sync/push';
 import { ALL_WORKSPACES, assertReadableKeyed, planningView, type StudyState } from '../data';
 import type { StudyView } from '../readModel';
@@ -115,7 +115,6 @@ export async function pushOptional(study: StudyState, workspaceId: number, write
 
 function keyedHeld(workspaceId: number | null, key: string, data: unknown, stamp: string, deleted: boolean): KeyedRow {
 	return {
-		pluginId: STUDY_NAMESPACE,
 		key,
 		workspaceId,
 		data,
@@ -125,13 +124,13 @@ function keyedHeld(workspaceId: number | null, key: string, data: unknown, stamp
 	};
 }
 
-/** putData stores one keyed row of the study namespace (PUT: the server stamps it and answers the row). */
+/** putData stores one keyed row of the study (PUT: the server stamps it and answers the row). */
 export async function putData(study: StudyState, workspaceId: number | null, key: string, value: unknown): Promise<void> {
 	const cache = bound(study);
 	assertReadableKeyed(study, workspaceId ?? ALL_WORKSPACES, key);
 	let row: KeyedRow | null;
 	try {
-		row = await keyedData(STUDY_NAMESPACE, workspaceId).put(key, value);
+		row = await keyedData(workspaceId).put(key, value);
 	} catch (err) {
 		cache.markStale(workspaceId);
 		throw err;
@@ -145,7 +144,7 @@ export async function deleteData(study: StudyState, workspaceId: number | null, 
 	const cache = bound(study);
 	assertReadableKeyed(study, workspaceId ?? ALL_WORKSPACES, key);
 	try {
-		await keyedData(STUDY_NAMESPACE, workspaceId).delete(key);
+		await keyedData(workspaceId).delete(key);
 	} catch (err) {
 		cache.markStale(workspaceId);
 		throw err;
@@ -176,5 +175,5 @@ export async function pushKeyedRows(
 		const held = rows.slice(from, to).map((row, i) => keyedHeld(workspaceId, row.key, row.data, stamps[from + i], row.deleted === true));
 		cache.applyKeyed(workspaceId, held);
 	};
-	await pushKeyed(STUDY_NAMESPACE, workspaceId, rows, { ...opts, after }, stamps);
+	await pushKeyed(workspaceId, rows, { ...opts, after }, stamps);
 }

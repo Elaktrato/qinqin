@@ -1,6 +1,6 @@
 {
  "format": "qinqin-user-backup",
- "formatVersion": 1,
+ "formatVersion": 2,
  "appVersion": "0.3.0",
  "schemaVersion": "035_user_time_zones",
  "createdAt": "2026-11-15T12:00:00Z",
@@ -11,7 +11,7 @@
  "counts": {
   "workspaces": 2,
   "events": 6,
-  "pluginData": 12,
+  "rows": 12,
   "overlays": 1,
   "sentences": 1,
   "books": 1,
@@ -55,11 +55,6 @@
    "sha256": "e927fc1f9bcbf70a89d7088532e94531fdc0bc6774b8cf6d161ad93055866ad7"
   },
   {
-   "name": "plugin-data/000001.jsonl",
-   "bytes": 3480,
-   "sha256": "b56308389c17caaf09302b4b889d7d8bdfae4f762326b9cdfb0733604f9962f5"
-  },
-  {
    "name": "refs/dictionaries.json",
    "bytes": 45,
    "sha256": "70ec3a7c82d07654b40701cb081af2bda7a7450c6ec019fdf89c561d4f32f6ee"
@@ -73,6 +68,11 @@
    "name": "refs/sentences.json",
    "bytes": 108,
    "sha256": "9a5e6b90b8e3ce11a040d9e4f444bce05a62c8951b4a0bcd1d0f83343806958e"
+  },
+  {
+   "name": "rows/000001.jsonl",
+   "bytes": 3120,
+   "sha256": "d07b9de53fa490121f3e004174a413082b61be1146003cbd0b34b9ce83b0d3af"
   },
   {
    "name": "sentences/000001.jsonl",

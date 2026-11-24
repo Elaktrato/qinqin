@@ -9,8 +9,7 @@ Fixtures: `lookup-rows.json` (parse rules), `lookup-merge.json` (merge, remove, 
 
 ## Rows
 
-Plugin data of the built-in plugin **`qinqin-core`**, read and written through the generic plugin data
-routes and the `pluginData` sync collection. There is no lookup-specific data route and the server never
+Keyed rows (`keyed/`), read and written through `/api/rows` and the `rows` sync collection. There is no lookup-specific data route and the server never
 parses the rows (except on a backup restore, below).
 
 | Key | Scope | JSON shape |
@@ -52,7 +51,7 @@ is decoded first, as the web SDK does for every row) or whose `version` is not t
   "least recently looked-up first; ties: smaller count, then larger entryId".
 
 500 realistic items serialise to under 80 000 bytes and 500 items at the field maxima to under
-110 000 (fixture `size` cases), well inside the 256 KiB plugin data value cap.
+110 000 (fixture `size` cases), well inside the 256 KiB row value cap.
 
 Timestamps are compared as instants; their text is kept as it is (only `firstAt` may be replaced by
 `lastAt`'s text). A writer serialises `{...extra, version: 1, clearedAt, items}` with each item's six
@@ -130,7 +129,7 @@ ordered by `count` descending, then `lastAt` descending, then `entryId` ascendin
 ## `lookup` events
 
 The web app no longer emits `lookup` events (they held free-text search queries); the event type stays
-declared by the `qinqin-core` manifest and the server still accepts it. Events are append-only with one
+one of the core event types (`events/`) and the server still accepts it. Events are append-only with one
 exception: **`DELETE /api/events/lookups?workspace=<id>`** (signed-in user) deletes the caller's events of
 type `lookup` in that workspace and answers `{"deleted": n}`; no `workspace` or a non-numeric one is 400,
 a workspace that is not the caller's is 404. Nothing derives from `lookup` events. Other event types are
@@ -138,7 +137,7 @@ never deleted.
 
 ## Backup and restore
 
-The `lookups` row is exported with the other plugin data rows and every item's `entryId` is listed in
+The `lookups` row is exported with the other keyed rows and every item's `entryId` is listed in
 `refs/entries.json`. On restore each item follows its entry to the target server's id (an unresolved entry
 drops the item), `books` ids follow the restored books (unresolved ids are removed), items that map to
 the same target entry merge (`count` and every `sources` member summed, earliest `firstAt`, latest

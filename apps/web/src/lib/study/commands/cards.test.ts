@@ -54,7 +54,6 @@ import * as build from '$lib/testing/study';
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => newSession(ctx));
 import {
-  PLUGIN_ID,
   WORKSPACE_ID,
   ULID,
   fakeStorage,
@@ -102,7 +101,7 @@ describe("card commands", () => {
         if (init?.method === "DELETE") return new Response(null, { status: 204 });
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: rows.map((row) => pluginRow(`card:${row.id}`, row)),
+          rows: rows.map((row) => pluginRow(`card:${row.id}`, row)),
         });
       });
     }
@@ -195,7 +194,7 @@ describe("card commands", () => {
       vi.mocked(fetch).mockImplementation(async (_i, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("deck:d2", deck("d2", "Two")),
             ...["c-vocab-7:vocab", "c-reverse-7:reverse", "c-cloze-7:cloze"].map((spec) => {
               const [id, kind] = spec.split(":");
@@ -218,7 +217,7 @@ describe("card commands", () => {
       vi.mocked(fetch).mockImplementation(async (input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });
         if (String(input).startsWith("/api/events")) return jsonResponse([]);
-        return jsonResponse({ pluginData: rows });
+        return jsonResponse({ rows: rows });
       });
     }
 
@@ -408,7 +407,7 @@ describe("card commands", () => {
           ]);
         }
         const snapshot = [...server].map(([key, data]) => pluginRow(key, data));
-        return jsonResponse({ pluginData: snapshot });
+        return jsonResponse({ rows: snapshot });
       });
 
       const [deviceA, deviceB] = await Promise.all([
@@ -561,7 +560,7 @@ describe("card commands", () => {
           return new Response(null, { status: 204 });
         if (init?.method === "PUT") return jsonResponse({ version: 2 });
         return jsonResponse({
-          pluginData: [
+          rows: [
             ...["deck-1", "deck-2", "deck-3"].map((id) =>
               pluginRow(`deck:${id}`, deck(id, id)),
             ),
@@ -599,7 +598,7 @@ describe("card commands", () => {
         // Another tab deleted the companion: the server skips its tombstone.
         if (isPush(input, init)) return pushAnswer(init, (key) => key === "card:c-writing-42");
         return jsonResponse({
-          pluginData: [vocab, companion].map((row) =>
+          rows: [vocab, companion].map((row) =>
             pluginRow(`card:${row.id}`, row),
           ),
         });
@@ -616,7 +615,7 @@ describe("card commands", () => {
             : pushAnswer(init);
         }
         return jsonResponse({
-          pluginData: [vocab, companion].map((row) =>
+          rows: [vocab, companion].map((row) =>
             pluginRow(`card:${row.id}`, row),
           ),
         });
@@ -635,7 +634,7 @@ describe("card commands", () => {
           puts += 1;
           return puts === 2 ? rawResponse({ error: "boom" }, 500) : pushAnswer(init);
         }
-        return jsonResponse({ pluginData: [] });
+        return jsonResponse({ rows: [] });
       });
       const err = await restoreCards(ctx.session.study, WORKSPACE_ID, [vocab, companion, other]).catch(
         (e: unknown) => e,
@@ -742,7 +741,7 @@ describe("card commands", () => {
     it("a tombstoned card no longer loads", async () => {
       vi.mocked(fetch).mockImplementation(async (input) =>
         String(input).startsWith("/api/events") ? jsonResponse([]) : jsonResponse({
-          pluginData: [
+          rows: [
             pluginRow("card:c-vocab-42", vocab, {
               deletedAt: "2026-02-01T00:00:00Z",
             }),

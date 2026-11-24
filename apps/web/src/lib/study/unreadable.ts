@@ -8,8 +8,8 @@ import { t } from '../i18n';
 import { ShownError } from '../api/userError';
 import type { StudyCollection } from './rows';
 
-/** Unreadable rows per collection (typed collections and pluginData). */
-export type UnreadableCounts = Partial<Record<StudyCollection | 'pluginData', number>>;
+/** Unreadable rows per collection (typed collections and rows). */
+export type UnreadableCounts = Partial<Record<StudyCollection | 'rows', number>>;
 
 export interface UnreadableReport {
 	workspaceId: number;

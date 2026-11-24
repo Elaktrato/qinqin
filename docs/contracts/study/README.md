@@ -1,7 +1,7 @@
 # Typed study rows
 
 Cards, decks, deck settings, daily limits, FSRS parameter sets and the active FSRS set are core data with
-fixed shapes (v0.4.0, issue #85). Until v0.3.x they were keyed JSON rows of plugin `qinqin-flashcards`
+fixed shapes (v0.4.0, issue #85). Until v0.3.x they were keyed JSON rows of the plugin data store
 (`card:*`, `deck:*`, `deckcfg:*`, `limits:*`, `fsrs:set:*`, `fsrs:active`); migration `038_core_study`
 moved every readable row into one table per family, keeping its identity, `version`, stamps and tombstone.
 Design: `docs/superpowers/specs/2026-11-16-v040p-core-features-design.md`.
@@ -34,14 +34,12 @@ Every typed row is a workspace row; there is no user-global typed row.
 | `fsrsSets` | `fsrs:set:<id>` | `id` |
 | `fsrsActive` | `fsrs:active` | one per workspace |
 
-The remaining keyed rows of the study namespace `qinqin-flashcards` (`goals:workspace`, `known:<entryId>`,
-user-global `vacation:<id>`, unknown keys) stay plugin-data rows with their own contracts.
+The study's other rows (`goals:workspace`, `known:<entryId>`, `milestone:<id>`, user-global `vacation:<id>`)
+are keyed rows (`keyed/`) with their own contracts.
 
-**The keys of the six families are never plugin data (#198).** `GET`, `PUT` and `DELETE
-/api/plugins/qinqin-flashcards/data/{key}` of such a key answer 404 `not_found`; a prefix list leaves them out;
-a push item of `pluginData` with such a key is refused alone (`dataRefused`); the paged pull never ships one in
-`pluginData`. A leftover `plugin_data` row of such a key (one migration 038 could not read, or one a
-downgraded binary wrote) stays inert: no route serves it and no backup carries it.
+**The keys of the six families are never keyed rows (#198, #199).** The keyed rows store accepts no such key:
+`GET`, `PUT` and `DELETE /api/rows/{key}` of one answer 404 `not_found`, and a push item of `rows` with one is
+refused alone (`dataRefused`).
 
 ## Wire shape
 
@@ -87,7 +85,7 @@ typed value always wins: the server drops `extra` members shadowed by a set type
 
 ## Last-write-wins and tombstones (`lww.json`)
 
-The plugin-data rule, per row: a push item's edit time is its `updatedAt`, or its `deletedAt` when later,
+The keyed-row rule, per row: a push item's edit time is its `updatedAt`, or its `deletedAt` when later,
 clamped to the server clock. It wins when the stored edit time (`modified_at`, second precision) is not
 after it (a same-second client write wins). An item whose typed members and `extra` equal the stored live
 row is `unchanged`, whatever its stamp: nothing is written (`version` included) and it counts
@@ -99,8 +97,8 @@ only; any other cursor (including `1970-01-01T00:00:00Z`) ships tombstones too.
 
 ## The keyed form (backups only)
 
-Until v0.3.x the six families were `qinqin-flashcards` plugin rows; a personal backup (format v1) still carries
-them in that keyed form, in both directions. The codec (`FromLegacy`, `ToLegacy`) and its fixture are part of
+Until v0.3.x the six families were keyed JSON rows; a personal backup still carries them in that keyed form, in
+both directions. The codec (`FromLegacy`, `ToLegacy`) and its fixture are part of
 the backup contract: `docs/contracts/backup/README.md` and `backup/study-rows.json`. No route reads or writes
 the keyed form any more (the v0.3.x "legacy view" and the legacy pull were removed in #198).
 

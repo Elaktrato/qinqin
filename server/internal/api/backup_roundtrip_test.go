@@ -68,7 +68,7 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 	decodeJSON(t, r, &sent)
 	put := func(ws int64, key, body string) {
 		t.Helper()
-		path := "/api/plugins/qinqin-flashcards/data/" + key
+		path := "/api/rows/" + key
 		if ws != 0 {
 			path += "?workspace=" + itoa(ws)
 		}
@@ -173,7 +173,7 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		scopes = append(scopes, fmt.Sprintf("?workspace=%d", int64(id)))
 	}
 	for _, sc := range scopes {
-		rows := getJSON(t, e.ts.URL, "/api/plugins/qinqin-flashcards/data"+sc, w.alice).([]any)
+		rows := getJSON(t, e.ts.URL, "/api/rows"+sc, w.alice).([]any)
 		for _, x := range rows {
 			m := x.(map[string]any)
 			b, _ := json.Marshal(m["data"])

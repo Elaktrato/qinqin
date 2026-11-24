@@ -1,10 +1,9 @@
 {
  "version": 1,
  "rule": "sync/pull-rounds",
- "_doc": "Scenarios run by server/internal/sync (B2) against one fresh database each. setup: workspaces (ref, user, language), entries (ref, language; created live), rows (ref, user, collection, workspace ref or null for user-global, entry/book ref, updatedAt (workspaces default to defaults.workspaceUpdatedAt; pluginData rows use plugin defaults.plugin and key = ref), deletedAt when the row is a tombstone — for books/bookmarks/highlights a library_deletions row instead of the row; dataString n makes pluginData data a JSON string of n 'x' characters; events carry type). The test writes rows with exactly these stamps. requests run in order with the server clock at now; query: collections (list, comma-joined), limit, workspace (a workspace ref or a literal id), since ($cursor = the cursor of the last completed round of this case), page ($next = the next token of the previous answer), tombstones (the literal value, \"1\" asks a round from no since for tombstones too); v=2 is implied. before: writes applied just before the request (op write: restamp a row's data at at; op delete: tombstone or delete-and-log at at; op insert: a new setup row). expect: status; error (the JSON error code); rows: per collection the row refs in page order (collections not listed are []); tombstones: refs that must come with deletedAt set; scope: whether scope is set (default: set on a request without page); scopeLanguages, scopeWorkspaces (refs, sorted by id); restarted (default []); catalogueChanged: scope.catalogue differs from the previous round's; keys: exactly these collection keys; more; cursorAt: the time inside the returned cursor (until - 30 s, only on the last page). more is false exactly when no row of the round remains (the server looks one row ahead), so only a round without rows ends on an empty page.",
+ "_doc": "Scenarios run by server/internal/sync (B2) against one fresh database each. setup: workspaces (ref, user, language), entries (ref, language; created live), rows (ref, user, collection, workspace ref or null for user-global, entry/book ref, updatedAt (workspaces default to defaults.workspaceUpdatedAt; rows (keyed rows) use key = ref), deletedAt when the row is a tombstone — for books/bookmarks/highlights a library_deletions row instead of the row; dataString n makes a keyed row's data a JSON string of n 'x' characters; events carry type). The test writes rows with exactly these stamps. requests run in order with the server clock at now; query: collections (list, comma-joined), limit, workspace (a workspace ref or a literal id), since ($cursor = the cursor of the last completed round of this case), page ($next = the next token of the previous answer), tombstones (the literal value, \"1\" asks a round from no since for tombstones too); v=2 is implied. before: writes applied just before the request (op write: restamp a row's data at at; op delete: tombstone or delete-and-log at at; op insert: a new setup row). expect: status; error (the JSON error code); rows: per collection the row refs in page order (collections not listed are []); tombstones: refs that must come with deletedAt set; scope: whether scope is set (default: set on a request without page); scopeLanguages, scopeWorkspaces (refs, sorted by id); restarted (default []); catalogueChanged: scope.catalogue differs from the previous round's; keys: exactly these collection keys; more; cursorAt: the time inside the returned cursor (until - 30 s, only on the last page). more is false exactly when no row of the round remains (the server looks one row ahead), so only a round without rows ends on an empty page.",
  "defaults": {
-  "workspaceUpdatedAt": "2026-11-12T07:00:00Z",
-  "plugin": "qinqin-core"
+  "workspaceUpdatedAt": "2026-11-12T07:00:00Z"
  },
  "budget": {
   "rows": {
@@ -47,14 +46,14 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:01:00Z"
      },
      {
       "ref": "d2",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:02:00Z",
       "deletedAt": "2026-11-12T08:02:00Z"
@@ -116,7 +115,7 @@
      {
       "ref": "bd1",
       "user": "bob",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "bz",
       "updatedAt": "2026-11-12T08:01:30Z"
      },
@@ -160,7 +159,7 @@
        "pluginStates": [
         "s1"
        ],
-       "pluginData": [
+       "rows": [
         "d1"
        ],
        "cards": [
@@ -194,7 +193,7 @@
        "workspaces": [
         "bz"
        ],
-       "pluginData": [
+       "rows": [
         "bd1"
        ],
        "cards": [
@@ -214,7 +213,7 @@
    ]
   },
   {
-   "name": "a delta round ships changes since the cursor, tombstones included (plugin data, typed, library)",
+   "name": "a delta round ships changes since the cursor, tombstones included (keyed rows, typed, library)",
    "setup": {
     "workspaces": [
      {
@@ -233,7 +232,7 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:01:00Z"
      },
@@ -274,7 +273,7 @@
      "now": "2026-11-12T09:00:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books",
        "bookmarks",
@@ -284,7 +283,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ],
        "cards": [
@@ -336,7 +335,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books",
        "bookmarks",
@@ -347,7 +346,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ],
        "cards": [
@@ -390,14 +389,14 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:00:00Z"
      },
      {
       "ref": "d2",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:01:00Z"
      }
@@ -409,7 +408,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "limit": 1
      },
@@ -417,7 +416,7 @@
       "status": 200,
       "scope": true,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ]
       },
@@ -441,7 +440,7 @@
       "status": 200,
       "scope": false,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d2"
        ]
       },
@@ -454,7 +453,7 @@
      "now": "2026-11-12T10:05:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "limit": 1,
       "since": "$cursor"
@@ -462,7 +461,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ]
       },
@@ -486,7 +485,7 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:00:00Z"
      }
@@ -498,13 +497,13 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ]
      },
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ]
       },
@@ -519,7 +518,7 @@
        "row": {
         "ref": "late",
         "user": "alice",
-        "collection": "pluginData",
+        "collection": "rows",
         "workspace": "z",
         "updatedAt": "2026-11-12T09:59:50Z"
        }
@@ -529,14 +528,14 @@
      "now": "2026-11-12T10:01:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "since": "$cursor"
      },
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "late"
        ]
       },
@@ -572,21 +571,21 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:00:00Z"
      },
      {
       "ref": "d2",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:01:00Z"
      },
      {
       "ref": "d3",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:01:00Z"
      },
@@ -607,7 +606,7 @@
      "query": {
       "collections": [
        "pluginStates",
-       "pluginData",
+       "rows",
        "cards"
       ],
       "limit": 3
@@ -618,7 +617,7 @@
        "pluginStates": [
         "s1"
        ],
-       "pluginData": [
+       "rows": [
         "d1",
         "d2"
        ]
@@ -635,7 +634,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d3"
        ],
        "cards": [
@@ -662,7 +661,7 @@
      {
       "ref": "d01",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:01:00Z",
       "dataString": 307200
@@ -670,7 +669,7 @@
      {
       "ref": "d02",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:02:00Z",
       "dataString": 307200
@@ -678,7 +677,7 @@
      {
       "ref": "d03",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:03:00Z",
       "dataString": 307200
@@ -686,7 +685,7 @@
      {
       "ref": "d04",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:04:00Z",
       "dataString": 307200
@@ -694,7 +693,7 @@
      {
       "ref": "d05",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:05:00Z",
       "dataString": 307200
@@ -702,7 +701,7 @@
      {
       "ref": "d06",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:06:00Z",
       "dataString": 307200
@@ -710,7 +709,7 @@
      {
       "ref": "d07",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:07:00Z",
       "dataString": 307200
@@ -718,7 +717,7 @@
      {
       "ref": "d08",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:08:00Z",
       "dataString": 307200
@@ -726,7 +725,7 @@
      {
       "ref": "d09",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:09:00Z",
       "dataString": 307200
@@ -734,7 +733,7 @@
      {
       "ref": "d10",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:10:00Z",
       "dataString": 307200
@@ -742,7 +741,7 @@
      {
       "ref": "d11",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:11:00Z",
       "dataString": 307200
@@ -750,7 +749,7 @@
      {
       "ref": "d12",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:12:00Z",
       "dataString": 307200
@@ -758,7 +757,7 @@
      {
       "ref": "d13",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:13:00Z",
       "dataString": 307200
@@ -766,7 +765,7 @@
      {
       "ref": "d14",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:14:00Z",
       "dataString": 307200
@@ -774,7 +773,7 @@
      {
       "ref": "d15",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:15:00Z",
       "dataString": 307200
@@ -782,7 +781,7 @@
      {
       "ref": "big",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:30:00Z",
       "dataString": 5242880
@@ -790,7 +789,7 @@
      {
       "ref": "tail",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:31:00Z"
      }
@@ -802,13 +801,13 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ]
      },
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d01",
         "d02",
         "d03",
@@ -836,7 +835,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d14",
         "d15"
        ]
@@ -853,7 +852,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "big"
        ]
       },
@@ -869,7 +868,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "tail"
        ]
       },
@@ -919,21 +918,21 @@
      {
       "ref": "dg",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": null,
       "updatedAt": "2026-11-12T08:01:00Z"
      },
      {
       "ref": "dz",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:02:00Z"
      },
      {
       "ref": "dj",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "j",
       "updatedAt": "2026-11-12T08:03:00Z"
      },
@@ -1051,7 +1050,7 @@
        "pluginStates": [
         "s1"
        ],
-       "pluginData": [
+       "rows": [
         "dg",
         "dz"
        ],
@@ -1101,7 +1100,7 @@
        "pluginStates": [
         "s1"
        ],
-       "pluginData": [
+       "rows": [
         "dg",
         "dz",
         "dj"
@@ -1373,14 +1372,14 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:00:00Z"
      },
      {
       "ref": "d2",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T09:01:00Z"
      }
@@ -1392,14 +1391,14 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "limit": 1
      },
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ]
       },
@@ -1423,7 +1422,7 @@
      "query": {
       "page": "$next",
       "collections": [
-       "pluginData"
+       "rows"
       ]
      },
      "expect": {
@@ -1452,7 +1451,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d2"
        ]
       },
@@ -1465,7 +1464,7 @@
      "now": "2026-11-12T10:01:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards"
       ],
       "since": "$cursor"
@@ -1480,7 +1479,7 @@
      "now": "2026-11-12T10:01:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "workspace": "z",
       "since": "$cursor"
@@ -1495,7 +1494,7 @@
      "now": "2026-11-12T10:01:00Z",
      "query": {
       "collections": [
-       "pluginData"
+       "rows"
       ],
       "since": "$cursor"
      },
@@ -1564,7 +1563,7 @@
      "now": "2026-11-12T10:01:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "flashcards"
       ]
      },
@@ -1579,13 +1578,13 @@
      "query": {
       "limit": 2000,
       "collections": [
-       "pluginData"
+       "rows"
       ]
      },
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1",
         "d2"
        ]
@@ -1614,7 +1613,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "entries"
       ]
      },
@@ -1680,7 +1679,7 @@
       "keys": [
        "workspaces",
        "pluginStates",
-       "pluginData",
+       "rows",
        "cards",
        "decks",
        "deckSettings",
@@ -1725,14 +1724,14 @@
      {
       "ref": "d1",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:01:00Z"
      },
      {
       "ref": "d2",
       "user": "alice",
-      "collection": "pluginData",
+      "collection": "rows",
       "workspace": "z",
       "updatedAt": "2026-11-12T08:02:00Z",
       "deletedAt": "2026-11-12T08:02:00Z"
@@ -1777,7 +1776,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ]
@@ -1785,7 +1784,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ],
        "cards": [
@@ -1803,7 +1802,7 @@
      "now": "2026-11-12T10:00:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ],
@@ -1812,7 +1811,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1",
         "d2"
        ],
@@ -1839,7 +1838,7 @@
      "now": "2026-11-12T10:30:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ],
@@ -1855,7 +1854,7 @@
      "now": "2026-11-12T10:30:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ],
@@ -1872,7 +1871,7 @@
      "now": "2026-11-12T10:30:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ],
@@ -1888,7 +1887,7 @@
      "now": "2026-11-12T10:30:00Z",
      "query": {
       "collections": [
-       "pluginData",
+       "rows",
        "cards",
        "books"
       ],
@@ -1898,7 +1897,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d1"
        ]
       },
@@ -1926,7 +1925,7 @@
      "expect": {
       "status": 200,
       "rows": {
-       "pluginData": [
+       "rows": [
         "d2"
        ]
       },

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "rule": "lookups/rows",
-  "_doc": "Parse rules of the qinqin-core lookups (per workspace) and lookupcfg (user-global) rows (docs/contracts/lookups/README.md). op rows: input {data, deletedAt} -> {clearedAt, items, extra}; op cfg: -> {record, extra}. A tombstone (deletedAt set) is a missing row. Web: lib/lookups/lookups.test.ts.",
+  "_doc": "Parse rules of the keyed lookups (per workspace) and lookupcfg (user-global) rows (docs/contracts/lookups/README.md). op rows: input {data, deletedAt} -> {clearedAt, items, extra}; op cfg: -> {record, extra}. A tombstone (deletedAt set) is a missing row. Web: lib/lookups/lookups.test.ts.",
   "cases": [
     {
       "name": "valid row",

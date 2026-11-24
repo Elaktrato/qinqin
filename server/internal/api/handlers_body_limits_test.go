@@ -134,7 +134,7 @@ func TestPluginBodyLimits(t *testing.T) {
 		padded(`"enabled":true,"order":1`, 64<<10)))
 
 	ws := strconv.FormatInt(createWorkspace(t, ts.URL, admin, "zh", "w"), 10)
-	data := "/api/plugins/qinqin-flashcards/data/x?workspace=" + ws
+	data := "/api/rows/notecfg?workspace=" + ws
 	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded(`"id":"x"`, 200<<10)); resp.StatusCode != http.StatusOK {
 		t.Errorf("200 KiB plugin data: status = %d, want 200", resp.StatusCode)
 	}
@@ -142,7 +142,7 @@ func TestPluginBodyLimits(t *testing.T) {
 
 	// Sync push carries plugin data too: one oversized value is refused
 	// there as well, so the push cannot bypass the per-value cap.
-	push := `{"events":[],"pluginData":[{"pluginId":"qinqin-flashcards","workspaceId":` + ws +
+	push := `{"events":[],"rows":[{"workspaceId":` + ws +
 		`,"key":"card:y","data":` + padded("", 256<<10) + `,"updatedAt":"2026-11-14T10:00:00Z"}]}`
 	wantTooLarge(t, "sync push plugin data", doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, push))
 

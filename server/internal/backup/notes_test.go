@@ -22,8 +22,8 @@ func putNote(t *testing.T, w *baseWorld, uid, ws, entry int64, text string, dele
 		del = "2026-11-12T00:00:00Z"
 	}
 	data, _ := json.Marshal(map[string]any{"version": 1, "entryId": entry, "text": text})
-	exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
-		VALUES ('qinqin-core', ?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T07:59:00Z', ?)`,
+	exec(t, w.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+		VALUES (?, ?, ?, ?, 1, '2026-11-11T08:00:00Z', '2026-11-11T07:59:00Z', ?)`,
 		uid, ws, fmt.Sprintf("note:%d", entry), string(data), del)
 }
 
@@ -59,11 +59,11 @@ func TestExportNotesAndTheirEntryRefs(t *testing.T) {
 	if refs[gone] || refs[bobs] {
 		t.Errorf("a tombstoned or foreign note added a ref: %v", refs)
 	}
-	var notes []PluginRow
-	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
-		var r PluginRow
+	var notes []Row
+	for _, l := range lines(files[PartName(NameRows, 1)]) {
+		var r Row
 		strictDecode(t, []byte(l), &r)
-		if r.PluginID == CorePlugin {
+		if strings.HasPrefix(r.Key, "note:") {
 			notes = append(notes, r)
 		}
 	}
@@ -73,8 +73,8 @@ func TestExportNotesAndTheirEntryRefs(t *testing.T) {
 	if id, _ := intMember(notes[0].Data, "entryId"); id != horse {
 		t.Errorf("entryId %d", id)
 	}
-	if man.Counts["pluginData"] != 6 {
-		t.Errorf("pluginData count %d, want 6", man.Counts["pluginData"])
+	if man.Counts["rows"] != 6 {
+		t.Errorf("pluginData count %d, want 6", man.Counts["rows"])
 	}
 }
 
@@ -106,16 +106,16 @@ func TestPlanReportsNotesOfUnresolvedEntries(t *testing.T) {
 	if rep.Unresolved.DroppedRows != baseRep.Unresolved.DroppedRows+1 {
 		t.Errorf("dropped rows %d, want %d + 1", rep.Unresolved.DroppedRows, baseRep.Unresolved.DroppedRows)
 	}
-	if rep.Restores.PluginData != baseRep.Restores.PluginData || len(rep.Blocking) != 0 {
+	if rep.Restores.Rows != baseRep.Restores.Rows || len(rep.Blocking) != 0 {
 		t.Errorf("restores %+v blocking %v", rep.Restores, rep.Blocking)
 	}
 	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
 		t.Fatal(err)
 	}
 	var n int
-	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core'`, tg.UID).Scan(&n)
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key LIKE 'note:%'`, tg.UID).Scan(&n)
 	if n != 0 {
-		t.Errorf("%d core rows restored, want 0", n)
+		t.Errorf("%d notes restored, want 0", n)
 	}
 }
 
@@ -137,8 +137,8 @@ func TestRestoreNoteOntoShiftedEntryIds(t *testing.T) {
 	}
 	var key, data, updated, wsName string
 	var modified *string
-	if err := tg.DB.QueryRow(`SELECT p.key, p.data, p.updated_at, p.modified_at, w.name FROM plugin_data p JOIN workspaces w ON w.id = p.workspace_id
-		WHERE p.user_id = ? AND p.pack_id = 'qinqin-core'`, tg.UID).Scan(&key, &data, &updated, &modified, &wsName); err != nil {
+	if err := tg.DB.QueryRow(`SELECT p.key, p.data, p.updated_at, p.modified_at, w.name FROM keyed_rows p JOIN workspaces w ON w.id = p.workspace_id
+		WHERE p.user_id = ?`, tg.UID).Scan(&key, &data, &updated, &modified, &wsName); err != nil {
 		t.Fatal(err)
 	}
 	if key != "note:"+strconv.FormatInt(tg.E2, 10) || wsName != "JP" {
@@ -195,7 +195,7 @@ func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	var key, data string
-	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT key, data FROM keyed_rows WHERE user_id = ? AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
 		t.Fatalf("no restored note: %v", err)
 	}
 	if key != "note:"+strconv.FormatInt(tgE, 10) {
@@ -209,7 +209,7 @@ func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
 	if err := tg.DB.QueryRow(`SELECT id FROM library_books WHERE user_id = ?`, tg.UID).Scan(&book); err != nil {
 		t.Fatal(err)
 	}
-	if err := tg.DB.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key = 'lookups'`, tg.UID).Scan(&data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT data FROM keyed_rows WHERE user_id = ? AND key = 'lookups'`, tg.UID).Scan(&data); err != nil {
 		t.Fatalf("no restored lookup history: %v", err)
 	}
 	want := fmt.Sprintf(`{"version":1,"clearedAt":null,"items":[{"entryId":%d,"count":4,"firstAt":"2026-11-10T09:00:00Z","lastAt":"2026-11-14T08:00:00Z","sources":{"reader":3,"search":1},"books":[%d]}]}`, tgE, book)
@@ -250,7 +250,7 @@ func TestNoteRowsFixtureRestoreKeeps(t *testing.T) {
 			continue
 		}
 		n++
-		r := PluginRow{PluginID: CorePlugin, Key: c.Input.Key, Data: c.Input.Data}
+		r := Row{Key: c.Input.Key, Data: c.Input.Data}
 		id, ok := noteEntryID(r)
 		if ok != *c.RestoreKeeps {
 			t.Errorf("%s: noteEntryID ok=%v, fixture restoreKeeps=%v", c.Name, ok, *c.RestoreKeeps)
@@ -271,12 +271,12 @@ func TestNoteRowsFixtureRestoreKeeps(t *testing.T) {
 		m := NewMaps()
 		// with no entry map every note: row is dropped: a kept row because its
 		// entry is unresolved, any other because it is not a note
-		if _, drop := m.PluginRow(r); !drop {
+		if _, drop := m.Row(r); !drop {
 			t.Errorf("%s: row kept without a resolvable entry", c.Name)
 		}
 		if *c.RestoreKeeps {
 			m.Entries[id] = id + 1000
-			if nr, drop := m.PluginRow(r); drop || nr.Key != "note:"+strconv.FormatInt(id+1000, 10) {
+			if nr, drop := m.Row(r); drop || nr.Key != "note:"+strconv.FormatInt(id+1000, 10) {
 				t.Errorf("%s: kept row not remapped: drop=%v key=%s", c.Name, drop, nr.Key)
 			}
 		}
@@ -293,8 +293,8 @@ func TestInvalidNoteCannotCollideWithARemappedNote(t *testing.T) {
 	src := newWorld(t)
 	tg := newTarget(t, nil)
 	putNote(t, src, src.AliceUID, src.Alice.WS2, src.E2, "valid", false)
-	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-		VALUES ('qinqin-core', ?, ?, ?, '{"version":1,"entryId":999999,"text":"evil"}', 1, '2026-11-11T08:00:00Z', NULL)`,
+	exec(t, src.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES (?, ?, ?, '{"version":1,"entryId":999999,"text":"evil"}', 1, '2026-11-11T08:00:00Z', '2026-11-11T08:00:00Z')`,
 		src.AliceUID, src.Alice.WS2, fmt.Sprintf("note:%d", tg.E2))
 	base, _, err := Plan(context.Background(), newTarget(t, nil).DB, openExport(t, newWorld(t), src.AliceUID), tg.UID)
 	if err != nil {
@@ -309,14 +309,14 @@ func TestInvalidNoteCannotCollideWithARemappedNote(t *testing.T) {
 		t.Errorf("blocking %v", rep.Blocking)
 	}
 	// +1 valid note restored, +1 invalid row dropped
-	if rep.Restores.PluginData != base.Restores.PluginData+1 || rep.Unresolved.DroppedRows != base.Unresolved.DroppedRows+1 {
-		t.Errorf("restores %d (base %d), dropped %d (base %d)", rep.Restores.PluginData, base.Restores.PluginData, rep.Unresolved.DroppedRows, base.Unresolved.DroppedRows)
+	if rep.Restores.Rows != base.Restores.Rows+1 || rep.Unresolved.DroppedRows != base.Unresolved.DroppedRows+1 {
+		t.Errorf("restores %d (base %d), dropped %d (base %d)", rep.Restores.Rows, base.Restores.Rows, rep.Unresolved.DroppedRows, base.Unresolved.DroppedRows)
 	}
 	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
 		t.Fatalf("restore: %v", err)
 	}
 	var key, data string
-	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT key, data FROM keyed_rows WHERE user_id = ? AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
 		t.Fatal(err)
 	}
 	if key != fmt.Sprintf("note:%d", tg.E2) || !strings.Contains(data, `"valid"`) {
@@ -329,15 +329,15 @@ func TestInvalidNoteCannotCollideWithARemappedNote(t *testing.T) {
 func TestNoteWithoutEntryIDIsNotRestoredVerbatim(t *testing.T) {
 	src := newWorld(t)
 	tg := newTarget(t, nil)
-	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-		VALUES ('qinqin-core', ?, ?, ?, '{"version":1,"text":"no entryId"}', 1, '2026-11-11T08:00:00Z', NULL)`,
+	exec(t, src.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES (?, ?, ?, '{"version":1,"text":"no entryId"}', 1, '2026-11-11T08:00:00Z', '2026-11-11T08:00:00Z')`,
 		src.AliceUID, src.Alice.WS2, fmt.Sprintf("note:%d", src.E1))
 	a := openExport(t, src, src.AliceUID)
 	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
 		t.Fatal(err)
 	}
 	var n int
-	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&n)
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key LIKE 'note:%'`, tg.UID).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d note rows restored, want 0", n)
 	}

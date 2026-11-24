@@ -1,7 +1,6 @@
 {
  "version": 1,
  "rule": "settings/nav-layout",
- "pluginId": "qinqin-core",
  "key": "nav-layout",
  "scope": "user-global",
  "defaults": {
