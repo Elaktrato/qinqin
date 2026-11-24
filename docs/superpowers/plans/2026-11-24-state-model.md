@@ -278,3 +278,8 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   it does not (a multi-line object literal, a filled table changed at runtime).
 - F7 (nit 8): accepted as a Ruling (the remount at a sign-in or sign-out on `/sources` and at the end of `/reset`);
   no code change.
+- F3 follow-up: the reviewer's probe P2 still showed "Sign out and delete them" deleting the next user's reviews
+  when called with the prompt closed. Test first (`signOut.test.ts` "deletes nothing when the prompt was closed by
+  a session switch"), seen failing; `signOutAndDelete` deletes only while the prompt is open (the session's end
+  closes it). The probes P1–P5 were run against the fixed tree: P1 and P4 keep the session, P2 opens no prompt
+  over the next user and deletes nothing, P3 leaves the newer app's observer, P5 keeps the page mounted.

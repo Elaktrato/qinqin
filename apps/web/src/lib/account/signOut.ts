@@ -26,10 +26,14 @@ export async function requestSignOut(app: AppContext): Promise<void> {
 	else app.logoutPrompt = count;
 }
 
-/** The dialog's "Sign out and delete them": the session's own user's reviews only. */
+/**
+ * The dialog's "Sign out and delete them": the session's own user's reviews
+ * only, and only while the prompt is open (a session switch closes it: it asked
+ * the previous user).
+ */
 export function signOutAndDelete(app: AppContext): void {
 	const session = app.session;
-	const id = session?.alive ? session.user : null;
+	const id = session?.alive && app.logoutPrompt !== null ? session.user : null;
 	if (session !== null && id !== null) session.outbox.clearPending(id);
 	app.logoutPrompt = null;
 	app.auth.logout();

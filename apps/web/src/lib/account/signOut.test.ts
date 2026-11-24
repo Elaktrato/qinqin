@@ -76,8 +76,19 @@ describe('signOutAndDelete', () => {
 	it("deletes the unsent reviews of the session's own user", () => {
 		const session = app.session!;
 		const clear = vi.spyOn(session.outbox, 'clearPending');
+		app.logoutPrompt = 2;
 		signOutAndDelete(app);
 		expect(clear).toHaveBeenCalledWith(1);
 		expect(app.session).toBeNull();
+	});
+
+	it('deletes nothing when the prompt was closed by a session switch (it asked the previous user)', async () => {
+		const { done, release } = heldSignOut();
+		switchToB();
+		const clear = vi.spyOn(app.session!.outbox, 'clearPending');
+		release();
+		await done;
+		signOutAndDelete(app);
+		expect(clear).not.toHaveBeenCalled();
 	});
 });
