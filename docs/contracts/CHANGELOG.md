@@ -8,8 +8,8 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 ## #211 — bootstrap administrator by default
 
 - **Registration:** `POST /api/auth/register` no longer makes the first user on an empty instance the
-  administrator; an empty instance answers by its mode like any other (default `closed`: 403
-  `registration_closed`). The server creates the first administrator before it listens.
+  administrator; an instance with no users answers 403 `registration_closed` whatever its mode (an invite
+  included). The server creates the first administrator before it listens.
 - **Options:** `GET /api/auth/options` no longer has `bootstrap` (`auth/options.json`: the `bootstrap` case is
   gone).
 

@@ -20,9 +20,8 @@ empty database became the administrator, in every registration mode (`GET /api/a
   serve then logs that no administrator exists and how to create one (`qinqin adduser --admin`).
 - An invalid name or password still stops `serve` before it listens.
 - Once users exist both variables are ignored and nothing is logged, so they can stay set.
-- Registration on an empty instance is **closed**: `POST /api/auth/register` no longer has a zero-users path;
-  the instance's registration mode decides as for any instance (default `closed`, so 403
-  `registration_closed`). `auth.CreateFirstUser` and its API hook go. `GET /api/auth/options` loses
+- Registration on an empty instance is **closed**: `POST /api/auth/register` answers 403
+  `registration_closed` while no user exists, whatever the stored mode (fix wave). `auth.CreateFirstUser` and its API hook go. `GET /api/auth/options` loses
   `bootstrap`; the web register and sign-in pages lose the bootstrap notice and link.
 
 ## Rulings
@@ -38,10 +37,22 @@ empty database became the administrator, in every registration mode (`GET /api/a
   the register route and `bootstrap` from the options contract — cost if wrong: an operator who opts out and
   wants to pick the admin in the browser must instead set `QINQIN_BOOTSTRAP_ADMIN=<name>` (and optionally
   the password) or run `adduser`; the startup log and the wiki say so.
-- Ruling: the closure needs no special case: with no users nobody can have changed the registration mode, so
-  the migration default `closed` applies; a restored or hand-edited database whose mode is `open` or
-  `invite` with zero users lets a registration through as an ordinary non-admin user — cost if wrong: such an
-  instance has users but no admin; `adduser --admin` fixes it.
+- Ruling (revised in the fix wave): an instance with no users answers every registration 403
+  `registration_closed`, whatever its stored mode and with or without an invite (one `CountUsers` query per
+  register) — the first version relied on the migration default `closed`, which a restored or hand-edited
+  database in `open` or `invite` mode bypassed with an admin-less user; the extra query is one indexed count
+  — cost if wrong: an operator who opted out cannot let people self-register before an administrator exists,
+  which is the point.
+- Ruling (fix wave): values that look like off (`false`, `none`, `disabled`, `disable`, `no`, `0`, `n`,
+  `nobody`, `null`, any case, trimmed) are refused on an empty instance with `use "off" to switch the
+  bootstrap off`, so serve does not start — taking them as usernames created an admin called `false`, and
+  `no`/`0` failed with a puzzling length error; only `off` switches it off so there is one spelling to document
+  — cost if wrong: nobody can bootstrap an admin with one of these names (use `adduser`).
+- Ruling (fix wave): a start whose users include no active administrator (an `adduser` without `--admin` after
+  `off`, the only admin disabled) logs one line naming `qinqin recover --username <name> --admin` and `qinqin
+  adduser --admin --username <name>`, every start, and creates nothing — the bootstrap acts only on an empty
+  table (race-safe), so the operator must be told; the line holds no name or secret — cost if wrong: a
+  repeated log line on an instance that deliberately runs without an admin.
 - Ruling: only `serve` bootstraps; `seed`, `adduser`, `backup`, `recover` and the other commands that open the
   database do not — they run before or beside a server, and `adduser` on an empty database is the opt-out
   path itself; bootstrapping there would create a second admin or print a password into a one-off command's
@@ -115,3 +126,32 @@ empty database became the administrator, in every registration mode (`GET /api/a
   `gen-api-docs --check`: clean (no route changed).
 - Not verified: a real `docker compose up` (no Docker here; the compose file only passes the variables through,
   unchanged); the Portainer log view.
+
+### Fix wave (review)
+
+- Off look-alikes: `TestBootstrapAdminRefusesOffLookalikes` (the probe's `false`, `none`, `disabled`, `no`,
+  `0` plus `disable`, `n`, `nobody`, `null`, case and whitespace variants; blank stays `admin`, `\toff\n` stays
+  off) failed for every value first, then passed.
+- No active administrator: `TestBootstrapWarnsWhenNoActiveAdmin` (only a non-admin; only a disabled admin; with
+  and without `off` plus a password) failed first, then passed: one line naming `recover --username <name>
+  --admin` and `adduser --admin`, no secret, nothing created. `TestBootstrapAdminIgnoresConfigOnceUsersExist`
+  now seeds an admin (it seeded a non-admin and asserted silence, which is now the warning case).
+  Both commands and flags exist (`recover --admin`, `adduser --admin`).
+- The review probe's lockstep race is now `TestBootstrapAdminLockstepRace` (10 iterations, both inserts after
+  both counts): passed at once, as the guarded insert already handled it; `-race` on the bootstrap tests: pass.
+- Empty instance closed whatever the mode: `TestEmptyInstanceGrantsNoAdminByRegistration` now expects 403
+  `registration_closed` for closed, invite and open, with and without an invite; it failed first (`open` 201 and a
+  user, `invite` gave `invite_invalid`), then passed. `TestRegisterAppliesPolicy` now creates its owner first.
+- `mustRegister` (auth tests) now fails the test when a tokenless call meets a server it does not know, like the
+  api helper. No test pins this; it was not seen failing (every caller uses `newServer`).
+- Docs: `Development.md` (the first start prints the `admin` password; `QINQIN_BOOTSTRAP_ADMIN=you`; `off` plus
+  `adduser --admin`), `Admin-deploying` (look-alikes, `--admin` matters, the no-admin line and its fix),
+  `Admin-environment-variables`, `Admin-users-and-registration`, `Admin-backup-and-recovery` (the scripted
+  `adduser --admin` example says to set `off`), `Troubleshooting`, `API-Reference`, `auth/README.md`, the
+  CHANGELOG and NEXT.md. Searched docs, README, compose, scripts and e2e for other fresh-instance `adduser`
+  instructions: the compose comment already says to switch off first; the e2e template runs `adduser --admin`
+  before any `serve`, so it never meets the bootstrap.
+- Fix-wave gates: full Go `./...` (vet + test, `gofmt -l` empty): 55 packages ok, only the known `internal/ai`
+  IPv6 test failed; targeted api, auth, cmd/qinqin, events, sentences, sync: ok. `npm run check`: 0 errors. Vitest
+  (Node 26) on the register, login and account files: 22 files, 229 passed (no web file changed in this wave).
+  e2e once: 17 passed. Script tests: 156 pass, 0 fail. `gen-api-docs --check`: clean.

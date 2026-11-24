@@ -4,7 +4,7 @@ All of this lives in **Settings → Admin** (`/settings?tab=admin`), which only 
 
 ## The first administrator
 
-Nobody becomes administrator by registering. On the first start the server creates the administrator `admin` (or the name in `QINQIN_BOOTSTRAP_ADMIN`) before it opens the port and prints a one-time password in its log; that admin must choose a new password at the first sign-in ([Deploying](Admin-deploying#the-bootstrap-administrator)). With `QINQIN_BOOTSTRAP_ADMIN=off` you create the admin with `qinqin adduser --admin --username <name>` in the container; until then registration is closed. The default mode `closed` refuses everyone but an administrator.
+Nobody becomes administrator by registering. On the first start the server creates the administrator `admin` (or the name in `QINQIN_BOOTSTRAP_ADMIN`) before it opens the port and prints a one-time password in its log; that admin must choose a new password at the first sign-in ([Deploying](Admin-deploying#the-bootstrap-administrator)). With `QINQIN_BOOTSTRAP_ADMIN=off` you create the admin with `qinqin adduser --admin --username <name>` in the container; until a user exists, registration is closed whatever the mode. The default mode `closed` refuses everyone but an administrator.
 
 ## Registration and email policy (Admin → Security)
 

@@ -109,8 +109,8 @@ answers `201` with the user; then sign in as usual. `403 registration_closed` (m
 missing one in invite mode), `422 email_required | email_disabled | invalid_email`, `409 email_taken |
 username_taken`, `422 weak_password | invalid_username`. An invite supplied in `open` mode is spent too and
 must be valid. Registering never makes an administrator: the server creates the first one before it listens
-(`QINQIN_BOOTSTRAP_ADMIN`, default `admin`), or the operator does with `qinqin adduser --admin`; an empty
-instance has the default mode, `closed`.
+(`QINQIN_BOOTSTRAP_ADMIN`, default `admin`), or the operator does with `qinqin adduser --admin`; an instance
+with no users answers `403 registration_closed` whatever its mode, invite or not.
 An invite arrives as a link `https://host/register#invite=<token>`: the web app (in the Android shell too) opens
 it, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
 the token. The token is in the fragment so it never reaches a server log.
