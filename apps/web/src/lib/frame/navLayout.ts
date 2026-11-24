@@ -9,8 +9,7 @@
 // Contract: docs/contracts/settings/README.md, nav-layout.json.
 
 import { moveWidgetTo } from '$lib/widgets/editor';
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { CORE_NAMESPACE, keyedData } from '$lib/sync/keyed';
 
 export const NAV_LAYOUT_KEY = 'nav-layout';
 export const PHONE_MODES = ['bar', 'drawer'] as const;
@@ -81,7 +80,7 @@ export function withNavLayout(stored: unknown, change: NavLayoutChange): Record<
 }
 
 function store() {
-	return createPluginSdk(coreManifest).data.user();
+	return keyedData(CORE_NAMESPACE, null);
 }
 
 /** loadNavLayout reads the row (find: no 404 for a never-saved row). Errors reject. */

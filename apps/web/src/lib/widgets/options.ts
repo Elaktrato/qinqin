@@ -5,8 +5,7 @@
 // first so keys another device wrote meanwhile survive.
 // Contract: docs/contracts/settings/README.md, widget-options.json.
 
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { CORE_NAMESPACE, keyedData } from '$lib/sync/keyed';
 
 export const WIDGET_OPTIONS_KEY = 'widget-options';
 export const HEATMAP_LAYOUTS = ['garden', 'month', 'week'] as const;
@@ -61,7 +60,7 @@ export function withHeatmapLayout(stored: unknown, layout: HeatmapLayout): Recor
 }
 
 function store() {
-	return createPluginSdk(coreManifest).data.user();
+	return keyedData(CORE_NAMESPACE, null);
 }
 
 /** loadWidgetOptions reads the row (find: no 404 for a never-saved row). Errors reject. */

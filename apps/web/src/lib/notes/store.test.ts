@@ -4,6 +4,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { NoteTooLongError, deleteNote, loadNote, loadNoteCfg, loadNotes, saveNote, saveNoteCfg } from './store';
+import { dataRow } from '../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -60,8 +61,8 @@ describe('notes store', () => {
 	it('lists every note of a workspace by entry id', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json([
-				{ key: 'note:1', data: { version: 1, entryId: 1, text: 'one' } },
-				{ key: 'note:2', data: { version: 1, entryId: 9, text: 'bad' } }
+				dataRow({ key: 'note:1', data: { version: 1, entryId: 1, text: 'one' } }),
+				dataRow({ key: 'note:2', data: { version: 1, entryId: 9, text: 'bad' } })
 			])
 		);
 		expect([...(await loadNotes(4)).entries()]).toEqual([[1, 'one']]);
@@ -69,7 +70,7 @@ describe('notes store', () => {
 	});
 
 	it('reads and writes notecfg', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'notecfg', data: { version: 1, onAnswer: false, x: 1 } }]));
+		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'notecfg', data: { version: 1, onAnswer: false, x: 1 } })]));
 		const cfg = await loadNoteCfg(4);
 		expect(cfg).toEqual({ onAnswer: false, extra: { x: 1 } });
 		expect(calls()[0][0]).toBe('/api/plugins/qinqin-core/data?workspace=4&prefix=notecfg');

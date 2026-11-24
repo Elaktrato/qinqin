@@ -8,8 +8,7 @@ import { onSessionEnd } from '../session/sessionEnd';
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
 import { invalidateWorkspaceEvents } from '../events';
-import { coreManifest } from '../plugins/core/manifest';
-import { createPluginSdk, type DataScope } from '../plugins/sdk';
+import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
 import { ownPartition } from '../pwa/partitions';
 import { clearReceipts } from '../pwa/prepareOffline';
 import { holdsLookups } from '../pwa/sw/classify';
@@ -38,13 +37,12 @@ export class LookupEventsNotDeletedError extends Error {
 	}
 }
 
-const sdk = () => createPluginSdk(coreManifest);
-const rows = (ws: number): DataScope => sdk().data.workspace(ws);
-const global = (): DataScope => sdk().data.user();
+const rows = (ws: number): KeyedScope => keyedData(CORE_NAMESPACE, ws);
+const global = (): KeyedScope => keyedData(CORE_NAMESPACE, null);
 
 export const recorderIO: RecorderIO = {
 	readRow: (ws) => rows(ws).find(LOOKUPS_KEY),
-	writeRow: (ws, data) => rows(ws).put(LOOKUPS_KEY, data),
+	writeRow: async (ws, data) => void (await rows(ws).put(LOOKUPS_KEY, data)),
 	readCfg: () => global().find(LOOKUP_CFG_KEY)
 };
 
@@ -105,7 +103,7 @@ function serverTime(res: unknown): string | null {
 }
 
 async function writeCleared(ws: number, h: LookupHistory): Promise<string | null> {
-	return serverTime(await api<unknown>(`/api/plugins/qinqin-core/data/${LOOKUPS_KEY}?workspace=${ws}`, { method: 'PUT', body: serializeLookups(h) }));
+	return serverTime(await rows(ws).put(LOOKUPS_KEY, serializeLookups(h)));
 }
 
 /**

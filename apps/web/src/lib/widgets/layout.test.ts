@@ -22,6 +22,7 @@ import { allWidgets } from './registry';
 import { webPlugins } from '$lib/plugins';
 import { coreFeatures } from '$lib/features';
 import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
+import { dataRow } from '../testing/keyed';
 
 const component = null as unknown as Component;
 
@@ -231,8 +232,8 @@ describe('layout store', () => {
 		expect(LAYOUT_KEY).toBe('home-layout');
 		vi.mocked(fetch).mockResolvedValue(
 			jsonResponse([
-				{ key: 'home-layout-old', data: { version: 1, widgets: ['nope'] }, version: 1, updatedAt: '' },
-				{ key: 'home-layout', data: { version: 1, widgets: ['flashcards-summary'] }, version: 2, updatedAt: '' }
+				dataRow({ key: 'home-layout-old', data: { version: 1, widgets: ['nope'] }, version: 1 }),
+				dataRow({ key: 'home-layout', data: { version: 1, widgets: ['flashcards-summary'] }, version: 2 })
 			])
 		);
 
@@ -251,7 +252,7 @@ describe('layout store', () => {
 
 	it('loads no layout when the row is corrupt', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
-			jsonResponse([{ key: 'home-layout', data: { widgets: 'nope' }, version: 1, updatedAt: '' }])
+			jsonResponse([dataRow({ key: 'home-layout', data: { widgets: 'nope' }, version: 1 })])
 		);
 		expect(await loadLayout()).toBeNull();
 	});

@@ -20,6 +20,7 @@ import {
 	resetLookupRecorder,
 	saveLookupCfg
 } from './store';
+import { dataRow } from '../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -28,7 +29,7 @@ const calls = () =>
 	vi.mocked(fetch).mock.calls.map(([url, init]) => [String(url), (init as RequestInit | undefined)?.method ?? 'GET', (init as RequestInit | undefined)?.body] as const);
 const T = '2026-11-15T09:00:00.000Z';
 const item = (entryId: number) => ({ entryId, count: 1, firstAt: T, lastAt: T, sources: { reader: 1 }, books: [] });
-const listOf = (data: unknown) => json([{ pluginId: 'qinqin-core', key: 'lookups', data, version: 1, updatedAt: T }]);
+const listOf = (data: unknown) => json([dataRow({ pluginId: 'qinqin-core', key: 'lookups', data, version: 1, updatedAt: T })]);
 
 beforeEach(() => {
 	vi.stubGlobal('localStorage', { getItem: () => 'tok', setItem: () => {}, removeItem: () => {} });
@@ -98,8 +99,8 @@ describe('lookups store', () => {
 
 	it('the clear uses the server time of its write as clearedAt (clock skew)', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
-		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:58Z' }));
-		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:59Z' }));
+		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:58Z' })));
+		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:59Z' })));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 0 }));
 		const out = await clearHistory(3, new Date('2026-11-16T12:00:07.000Z'));
 		expect(out.history.clearedAt).toBe('2026-11-16T11:59:58Z');
@@ -121,10 +122,10 @@ describe('lookups store', () => {
 		expect(calls()).toHaveLength(3);
 	});
 	it('reads and writes the user-global switch, keeping unknown members', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } }]));
+		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } })]));
 		expect(await loadLookupCfg()).toEqual({ record: false, extra: { k: 2 } });
 		expect(calls()[0][0]).toBe('/api/plugins/qinqin-core/data?prefix=lookupcfg');
-		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } }]));
+		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } })]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		await saveLookupCfg(true);
 		const [url, method, body] = calls()[2];
@@ -165,7 +166,7 @@ describe('scrubOfflineLookups', () => {
 		const caches = new FakeCacheStorage();
 		const own = await caches.open(await ownPartition('tok'));
 		const other = await caches.open('qinqin-api-v1-someoneelse');
-		const pull = { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-core', key: 'note:5', data: { text: 'n' } }] };
+		const pull = { pluginData: [dataRow({ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }), dataRow({ pluginId: 'qinqin-core', key: 'note:5', data: { text: 'n' } })] };
 		await own.put(pullUrl, new Response(JSON.stringify(pull), { headers: savedAt }));
 		await own.put(eventsUrl, new Response(JSON.stringify([{ id: '1', type: 'lookup', payload: { query: 'ma' } }, { id: '2', type: 'review' }]), { headers: savedAt }));
 		await own.put(noteUrl, new Response('[]', { headers: savedAt }));
@@ -220,11 +221,11 @@ describe('Clear against another device that read the row before it (the real rac
 			if (url.pathname === '/api/events/lookups') return json({ deleted: 1 });
 			if (method === 'GET') {
 				const r = server.get(ws);
-				return json(r ? [{ key: 'lookups', data: r.data, updatedAt: r.updatedAt }] : []);
+				return json(r ? [dataRow({ key: 'lookups', data: r.data, updatedAt: r.updatedAt })] : []);
 			}
 			if (method === 'PUT') {
 				server.set(ws, { data: JSON.parse(String((init as RequestInit).body)), updatedAt: serverNow });
-				return json({ key: 'lookups', updatedAt: serverNow });
+				return json(dataRow({ key: 'lookups', workspaceId: ws, updatedAt: serverNow }));
 			}
 			return json({});
 		});

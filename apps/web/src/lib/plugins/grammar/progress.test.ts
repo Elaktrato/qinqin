@@ -29,6 +29,7 @@ import {
 	recordRun,
 	saveProgress
 } from './progress';
+import { dataRow } from '../../testing/keyed';
 
 beforeEach(() => {
 	api.mockReset();
@@ -55,10 +56,10 @@ describe('progress', () => {
 	it('loads the workspace rows by prefix, skipping junk', async () => {
 		const good = { completedAt: 'x', best: 2, total: 4 };
 		api.mockResolvedValue([
-			{ key: 'lesson:p:a', data: good, version: 1, updatedAt: 'y' },
-			{ key: 'lesson:p:e', data: JSON.stringify(good), version: 1, updatedAt: 'y' },
-			{ key: 'lesson:p:f', data: 'nope', version: 1, updatedAt: 'y' },
-			{ key: 'lesson:p:g', data: { best: 1 }, version: 1, updatedAt: 'y' }
+			dataRow({ key: 'lesson:p:a', data: good }),
+			dataRow({ key: 'lesson:p:e', data: JSON.stringify(good) }),
+			dataRow({ key: 'lesson:p:f', data: 'nope' }),
+			dataRow({ key: 'lesson:p:g', data: { best: 1 } })
 		]);
 		const map = await loadProgress(7);
 		expect([...map.keys()].sort()).toEqual(['lesson:p:a', 'lesson:p:e']);

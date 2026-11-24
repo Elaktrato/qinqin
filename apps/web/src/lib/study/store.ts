@@ -15,7 +15,9 @@ import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { t } from "../i18n";
 import { pullStudyRound } from "./sync/pull";
-import { readableRow } from "../sync/rows";
+import { STUDY_NAMESPACE, keyedData, keyedRowOf, pushKeyed } from "../sync/keyed";
+import { PartialPushError, pushChunks, sendPush, skippedOf, stampOf, type PushResult } from "../sync/push";
+export { PartialPushError };
 import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import { resolveState, type ParamSet } from "./fsrs/params";
@@ -76,20 +78,10 @@ import {
   type StudyHistory,
 } from "./types";
 
-export const FLASHCARDS_PLUGIN_ID = "qinqin-flashcards";
+const FLASHCARDS_PLUGIN_ID = STUDY_NAMESPACE;
 
 // The implicit deck always exists; it is never written to plugin data.
 import { GENERAL_DECK_ID } from "./types";
-
-// Only the fields the study layer reads; the server sends more.
-interface PluginDataRow {
-  pluginId: string;
-  key: string;
-  workspaceId: number | null;
-  data: unknown;
-  deletedAt: unknown;
-  updatedAt: unknown;
-}
 
 type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unknown>>;
 
@@ -142,36 +134,8 @@ function requireWorkspaceArg(workspaceId: number, fn: string): void {
   }
 }
 
-function dataPath(key: string, workspaceId: number): string {
-  return `/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${key}?workspace=${workspaceId}`;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * decodeData unwraps a plugin data payload. The API serves it as JSON,
- * but a row may still carry it as a string when a caller constructed
- * the fixture (or an older client wrote one); unparsable data is
- * treated as absent.
- */
-function decodeData(data: unknown): unknown {
-  if (typeof data !== "string") return data;
-  try {
-    return JSON.parse(data) as unknown;
-  } catch {
-    return null;
-  }
-}
-
-function asPluginDataRow(value: unknown): PluginDataRow | null {
-  if (!isRecord(value)) return null;
-  const { pluginId, key, workspaceId, data, deletedAt, updatedAt } = value;
-  if (typeof pluginId !== "string" || typeof key !== "string") return null;
-  const workspace = workspaceId === undefined ? null : workspaceId;
-  if (workspace !== null && typeof workspace !== "number") return null;
-  return { pluginId, key, workspaceId: workspace, data, deletedAt, updatedAt };
 }
 
 /** The newest time the server holds for a row, live or tombstoned. */
@@ -313,7 +277,7 @@ async function fetchStudyData(
   for (const value of rows) {
     const foreign = isRecord(value) && typeof value.pluginId === "string" && value.pluginId !== FLASHCARDS_PLUGIN_ID;
     if (foreign) continue;
-    const row = readableRow("pluginData", value) ? asPluginDataRow(value) : null;
+    const row = keyedRowOf(value);
     if (row === null) {
       const where = isRecord(value) ? value.workspaceId : undefined;
       if (typeof where === "number" && where !== workspaceId) continue;
@@ -323,7 +287,7 @@ async function fetchStudyData(
     }
     if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
       if (row.deletedAt != null) continue;
-      const period = parseVacation(row.key, decodeData(row.data));
+      const period = parseVacation(row.key, row.data);
       if (period !== null) vacations.push(period);
       else {
         count("pluginData", value);
@@ -340,7 +304,7 @@ async function fetchStudyData(
       // Seen milestones: tombstones too (a tombstone reads as not seen).
       milestoneRows.push({
         key: row.key,
-        data: row.deletedAt != null ? null : decodeData(row.data),
+        data: row.deletedAt != null ? null : row.data,
         deletedAt: row.deletedAt == null ? null : String(row.deletedAt),
         ...(typeof row.updatedAt === "string" ? { updatedAt: row.updatedAt } : {}),
       });
@@ -348,7 +312,7 @@ async function fetchStudyData(
     }
     if (row.deletedAt != null) continue;
 
-    const data = decodeData(row.data);
+    const data = row.data;
     if (row.key === GOALS_KEY) {
       goals = parseGoalsRow(data);
       if (goals === null) {
@@ -456,41 +420,11 @@ async function putData(
 ): Promise<void> {
   assertReadableKeyed(workspaceId, key);
   try {
-    await api(dataPath(key, workspaceId), { method: "PUT", body: value });
+    await keyedData(FLASHCARDS_PLUGIN_ID, workspaceId).put(key, value);
   } finally {
     // A failed write may still have landed: stale caches are dropped either way.
     notifyWrite(workspaceId);
   }
-}
-
-/**
- * PartialPushError: a batch write stopped. `done` rows were written; `skipped`
- * is how many the server did not apply because it holds a newer row for the key
- * (e.g. a later tombstone) or refused them. Re-planning and trying again writes
- * only what is still missing.
- */
-export class PartialPushError extends ShownError {
-  done: number;
-  skipped: number;
-
-  constructor(message: string, done: number, skipped = 0) {
-    super(message);
-    this.name = "PartialPushError";
-    this.done = done;
-    this.skipped = skipped;
-  }
-}
-
-/** The earliest stamp that beats a row last written at `knownAt`: one millisecond later. */
-function stampAfter(knownAt: string | undefined): number {
-  const ms = knownAt === undefined ? NaN : Date.parse(knownAt);
-  return Number.isNaN(ms) ? 0 : ms + 1;
-}
-
-interface PushResult {
-  dataAccepted?: number;
-  dataSkipped?: number;
-  dataRefused?: number;
 }
 
 /** One typed study write: the row's typed body (no meta), its stored time, and whether it is a tombstone. */
@@ -543,17 +477,6 @@ function studyDelete(snap: Snap, collection: StudyCollection, identity: string):
   return stored === undefined ? null : studyWrite(snap, collection, bodyOf(stored), { deleted: true });
 }
 
-function stampOf(nowMs: number, knownAt: string | undefined): string {
-  // Last write wins on this stamp: never earlier than what the server
-  // already holds for the row (a client clock behind the server's would
-  // lose to a fresh tombstone for ever).
-  return new Date(Math.max(nowMs, stampAfter(knownAt))).toISOString();
-}
-
-async function sendPush(body: Record<string, unknown>): Promise<PushResult> {
-  return api<PushResult>("/api/sync/push", { method: "POST", body });
-}
-
 function typedBody(workspaceId: number, writes: readonly StudyWrite[], nowMs: number): Record<string, unknown[]> {
   const body: Record<string, unknown[]> = {};
   for (const write of writes) {
@@ -581,8 +504,11 @@ export async function pushStudy(
   writes: readonly StudyWrite[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
-  await pushChunks(workspaceId, writes.length, opts, (from, to, nowMs) =>
-    typedBody(workspaceId, writes.slice(from, to), nowMs),
+  await pushChunks(
+    writes.length,
+    // A failed write may still have landed: stale caches are dropped either way.
+    { ...opts, after: () => notifyWrite(workspaceId) },
+    (from, to, nowMs) => typedBody(workspaceId, writes.slice(from, to), nowMs),
   );
 }
 
@@ -597,39 +523,7 @@ async function pushOptional(workspaceId: number, write: StudyWrite): Promise<boo
   } finally {
     notifyWrite(workspaceId);
   }
-  return (result?.dataSkipped ?? 0) + (result?.dataRefused ?? 0) === 0;
-}
-
-async function pushChunks(
-  workspaceId: number,
-  total: number,
-  opts: { chunk?: number; onProgress?: (done: number, total: number) => void },
-  bodyOf: (from: number, to: number, nowMs: number) => Record<string, unknown>,
-): Promise<void> {
-  const size = Math.max(1, opts.chunk ?? 200);
-  let done = 0;
-  for (let i = 0; i < total; i += size) {
-    const count = Math.min(size, total - i);
-    let result: PushResult;
-    try {
-      result = await sendPush(bodyOf(i, i + count, Date.now()));
-    } catch (err) {
-      throw new PartialPushError(errorText(err, t("study.store.writeFailed")), done);
-    } finally {
-      // A failed write may still have landed: stale caches are dropped either way.
-      notifyWrite(workspaceId);
-    }
-    const skipped = (result?.dataSkipped ?? 0) + (result?.dataRefused ?? 0);
-    done += result?.dataAccepted ?? count - skipped;
-    if (skipped > 0) {
-      throw new PartialPushError(
-        t("study.store.partialPush", { count: skipped }),
-        done,
-        skipped,
-      );
-    }
-    opts.onProgress?.(done, total);
-  }
+  return skippedOf(result) === 0;
 }
 
 /**
@@ -644,25 +538,17 @@ async function pushKeyedRows(
   for (const row of rows) {
     assertReadableKeyed(workspaceId, row.key);
   }
-  await pushChunks(workspaceId, rows.length, opts, (from, to, nowMs) => ({
-    pluginData: rows.slice(from, to).map((row) => {
-      const stamp = stampOf(nowMs, row.knownAt);
-      return {
-        pluginId: FLASHCARDS_PLUGIN_ID,
-        key: row.key,
-        workspaceId,
-        data: row.data,
-        updatedAt: stamp,
-        ...(row.deleted ? { deletedAt: stamp } : {}),
-      };
-    }),
-  }));
+  await pushKeyed(FLASHCARDS_PLUGIN_ID, workspaceId, rows, {
+    ...opts,
+    // A failed write may still have landed: stale caches are dropped either way.
+    after: () => notifyWrite(workspaceId),
+  });
 }
 
 async function deleteData(workspaceId: number, key: string): Promise<void> {
   assertReadableKeyed(workspaceId, key);
   try {
-    await api(dataPath(key, workspaceId), { method: "DELETE" });
+    await keyedData(FLASHCARDS_PLUGIN_ID, workspaceId).delete(key);
   } finally {
     notifyWrite(workspaceId);
   }
@@ -1419,10 +1305,7 @@ export async function dropSiblingCards(
 export async function saveVacation(period: VacationPeriod): Promise<void> {
   assertReadableKeyed(ALL_WORKSPACES, `${VACATION_PREFIX}${period.id}`);
   try {
-    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${period.id}`, {
-      method: "PUT",
-      body: period,
-    });
+    await keyedData(FLASHCARDS_PLUGIN_ID, null).put(`${VACATION_PREFIX}${period.id}`, period);
   } finally {
     notifyWrite(ALL_WORKSPACES);
   }
@@ -1432,9 +1315,7 @@ export async function saveVacation(period: VacationPeriod): Promise<void> {
 export async function deleteVacation(id: string): Promise<void> {
   assertReadableKeyed(ALL_WORKSPACES, `${VACATION_PREFIX}${id}`);
   try {
-    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${id}`, {
-      method: "DELETE",
-    });
+    await keyedData(FLASHCARDS_PLUGIN_ID, null).delete(`${VACATION_PREFIX}${id}`);
   } finally {
     notifyWrite(ALL_WORKSPACES);
   }

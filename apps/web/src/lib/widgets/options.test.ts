@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { find, put } = vi.hoisted(() => ({ find: vi.fn(), put: vi.fn() }));
 
-vi.mock('$lib/plugins/sdk', () => ({
-	createPluginSdk: () => ({ data: { user: () => ({ find, put }) } })
+vi.mock('$lib/sync/keyed', () => ({
+	CORE_NAMESPACE: 'qinqin-core',
+	keyedData: () => ({ find, put })
 }));
 
 import {

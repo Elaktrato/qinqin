@@ -3,11 +3,10 @@
 // `qinqin-core` / `home-layout`, so every device shares it and sync
 // carries it. A missing row means the default layout; last write wins.
 
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { CORE_NAMESPACE, keyedData } from '$lib/sync/keyed';
 import type { WidgetDef, WidgetSurface } from './types';
 
-export const LAYOUT_PLUGIN_ID = coreManifest.id;
+export const LAYOUT_PLUGIN_ID = CORE_NAMESPACE;
 export const LAYOUT_KEY = 'home-layout';
 const LAYOUT_VERSION = 1;
 
@@ -124,10 +123,10 @@ export function placeWidgets(widgets: readonly WidgetDef[]): PlacedWidget[] {
 export async function loadLayout(): Promise<string[] | null> {
 	// find() reads through the list route: a never-saved layout is a 200
 	// with no rows, where a single-key GET would log a 404 on every visit.
-	return parseLayout(await createPluginSdk(coreManifest).data.user().find(LAYOUT_KEY));
+	return parseLayout(await keyedData(CORE_NAMESPACE, null).find(LAYOUT_KEY));
 }
 
 /** saveLayout stores the user's layout for every device. */
 export async function saveLayout(ids: readonly string[]): Promise<void> {
-	await createPluginSdk(coreManifest).data.user().put(LAYOUT_KEY, serializeLayout(ids));
+	await keyedData(CORE_NAMESPACE, null).put(LAYOUT_KEY, serializeLayout(ids));
 }
