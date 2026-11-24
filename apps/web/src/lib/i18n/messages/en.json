@@ -428,6 +428,7 @@
 	"admin.users.you": "You",
 	"apiError.accountDisabled": "This account is disabled. Ask an administrator to enable it.",
 	"apiError.aiDisabled": "AI is not set up on this server.",
+	"apiError.animatedImage": "Animated pictures can't be used. Choose a still picture.",
 	"apiError.backupInvalid": "This file is not a valid qinqin backup.",
 	"apiError.backupRunning": "A server backup is already running.",
 	"apiError.backupTooLarge": "This backup is larger than the limits allow.",

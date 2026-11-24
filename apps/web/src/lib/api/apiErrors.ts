@@ -110,6 +110,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	empty: 'apiError.empty',
 	photo_too_large: 'apiError.photoTooLarge',
 	unsupported_image: 'apiError.unsupportedImage',
+	animated_image: 'apiError.animatedImage',
 	image_too_large: 'apiError.imageTooLarge',
 	too_many_photos: 'apiError.tooManyPhotos',
 	conversation_full: 'apiError.conversationFull',

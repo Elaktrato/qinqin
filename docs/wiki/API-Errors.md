@@ -107,9 +107,10 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `bad_reply` | 422 | The AI answer could not be parsed. |
 | `too_long` | 413 | Journal review: the text is longer than 5,000 characters. |
 | `empty` | 422 | Journal review or ideas: there is no text to work with. |
-| `photo_too_large` | 413 | POST /api/journal/photos: the photo is larger than 10 MB. |
-| `unsupported_image` | 415 | POST /api/journal/photos: not a JPEG, PNG or WebP image. |
-| `image_too_large` | 422 | POST /api/journal/photos: the photo has more than 25 megapixels. |
+| `photo_too_large` | 413 | POST /api/journal/photos: the photo is larger than 10 MB. POST /api/account/avatar: the picture is larger than 5 MB. |
+| `unsupported_image` | 415 | POST /api/journal/photos and POST /api/account/avatar: not a JPEG, PNG or WebP image (judged by the content; SVG and GIF are not). |
+| `animated_image` | 415 | POST /api/account/avatar: an animated picture (APNG or animated WebP); only still pictures can be a profile picture. |
+| `image_too_large` | 422 | POST /api/journal/photos: the photo has more than 25 megapixels. POST /api/account/avatar: more than 25 megapixels or more than 8192 pixels a side. |
 | `conversation_full` | 409 | Journal conversation partner: the conversation holds the maximum of 50 messages; save it or start a new one. |
 | `wrong_language` | 422 | Journal conversation partner: the AI's reply was not (mostly) in the workspace language; nothing was stored, send again. |
 | `examples_full` | 409 | AI example sentences: the word has the maximum of 10 kept AI examples; delete one first. |
