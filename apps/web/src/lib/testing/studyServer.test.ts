@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parsePullPage, pullAll, firstPageUrl, V2_STUDY_COLLECTIONS } from '../sync/pager';
+import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
+import { parsePullPage, pullAll, firstPageUrl } from '../sync/pager';
 import { cardRow } from '../study/rows';
 import { StudyServer } from './studyServer';
 import * as build from './study';
@@ -18,10 +19,10 @@ const get = (s: StudyServer) => async (path: string) => (await s.fetch(path)).js
 describe('the fake study server', () => {
 	it('serves contract pages: a paged round, then a cursor', async () => {
 		const s = seeded(Date.parse('2026-02-01T10:00:00.400Z'), 5);
-		const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: WS, tombstones: true });
+		const first = firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: WS, tombstones: true });
 		const page = await (await s.fetch(first)).json();
-		expect(parsePullPage(page, V2_STUDY_COLLECTIONS)).not.toBeNull();
-		const round = await pullAll(get(s), first, V2_STUDY_COLLECTIONS);
+		expect(parsePullPage(page, STUDY_PULL_COLLECTIONS)).not.toBeNull();
+		const round = await pullAll(get(s), first, STUDY_PULL_COLLECTIONS);
 		expect(round.pages).toBe(3);
 		expect(round.collections.cards).toHaveLength(5);
 		expect(s.counts.pullPages).toBe(4);
@@ -31,11 +32,11 @@ describe('the fake study server', () => {
 		let now = Date.parse('2026-02-01T10:00:00.400Z');
 		const s = new StudyServer({ now: () => now });
 		s.putTyped('cards', { ...cardRow(build.card({ id: 'late' })), ...meta('2026-02-01T10:00:00.100Z') });
-		const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: WS, tombstones: true });
-		const round = await pullAll(get(s), first, V2_STUDY_COLLECTIONS);
+		const first = firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: WS, tombstones: true });
+		const round = await pullAll(get(s), first, STUDY_PULL_COLLECTIONS);
 		expect(round.collections.cards).toEqual([]);
 		now += 1000;
-		const delta = await pullAll(get(s), firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: WS, tombstones: true, since: round.cursor }), V2_STUDY_COLLECTIONS);
+		const delta = await pullAll(get(s), firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: WS, tombstones: true, since: round.cursor }), STUDY_PULL_COLLECTIONS);
 		expect(delta.collections.cards).toHaveLength(1);
 	});
 

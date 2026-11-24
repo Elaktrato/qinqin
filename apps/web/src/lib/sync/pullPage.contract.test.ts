@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
 
 import pageFixture from '../../../../../docs/contracts/sync/pull-page.json';
 import roundsFixture from '../../../../../docs/contracts/sync/pull-rounds.json';
 import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
 import { normalizeUrl } from '../pwa/sw/classify';
-import { firstPageUrl, nextPageUrl, parsePullPage, pullAll, V2_STUDY_COLLECTIONS } from './pager';
+import { firstPageUrl, nextPageUrl, parsePullPage, pullAll } from './pager';
 import { readableRow } from './rows';
 
 interface PageCase {
@@ -21,7 +22,7 @@ const cases = pageFixture.cases as PageCase[];
 
 describe('docs/contracts/sync/pull-page.json', () => {
 	it('keeps the study collection list of the fixture', () => {
-		expect([...V2_STUDY_COLLECTIONS]).toEqual(pageFixture.studyCollections);
+		expect([...STUDY_PULL_COLLECTIONS]).toEqual(pageFixture.studyCollections);
 	});
 	for (const c of cases) {
 		it(`${c.valid ? 'decodes' : 'refuses'}: ${c.name}${c.reason ? ` (${c.reason})` : ''}`, () => {

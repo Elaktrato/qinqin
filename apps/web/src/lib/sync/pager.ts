@@ -6,17 +6,6 @@
 // readableRow, the typed study decode): an unreadable row is skipped by the
 // consumer and never blocks the round (docs/contracts/sync/, "Reading rows").
 
-export const V2_STUDY_COLLECTIONS: readonly string[] = [
-	'pluginStates',
-	'pluginData',
-	'cards',
-	'decks',
-	'deckSettings',
-	'limits',
-	'fsrsSets',
-	'fsrsActive'
-];
-
 export interface PullScope {
 	workspaces: { id: number; language: string }[];
 	languages: string[];

@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
 import classifyFixtureRoutes from './sw/routes.fixture.json';
 import { classify } from './sw/classify';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
 import { STUDY_COLLECTIONS } from '../study/rows';
-import { V2_STUDY_COLLECTIONS, firstPageUrl, nextPageUrl } from '../sync/pager';
+import { firstPageUrl, nextPageUrl } from '../sync/pager';
 import { fullLogPath } from '../events';
 import { entryPath } from '../api/entries';
 import { strokeUrl } from '../study/strokeData';
@@ -22,7 +23,7 @@ import {
 import * as build from '$lib/testing/study';
 
 // The first page of the study pull the web makes (v=2, store.ts).
-const SYNC_PULL_PATH = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 3, tombstones: true });
+const SYNC_PULL_PATH = firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: 3, tombstones: true });
 
 const now = new Date('2026-03-01T12:00:00Z');
 
@@ -201,7 +202,7 @@ describe('prepareOffline', () => {
 	it('the v2 first page and its continuation of a workspace round are what the worker keeps', () => {
 		const ctx = { origin: 'https://x.test', shellUrls: new Set<string>() };
 		const headers = { get: () => 'Bearer t' };
-		for (const url of [firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 7 }), nextPageUrl('p2.abc')]) {
+		for (const url of [firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: 7 }), nextPageUrl('p2.abc')]) {
 			expect(classify({ method: 'GET', url: `https://x.test${url}`, mode: 'cors', headers }, ctx), url).toBe('api');
 		}
 	});

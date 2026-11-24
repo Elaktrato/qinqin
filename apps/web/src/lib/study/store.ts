@@ -14,7 +14,7 @@ import { ShownError } from "$lib/api/userError";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { t } from "../i18n";
-import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
+import { pullStudyRound } from "./sync/pull";
 import { readableRow } from "../sync/rows";
 import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
@@ -123,11 +123,8 @@ export function studyPullPages(workspaceId: number): number {
 }
 
 async function pullStudy(workspaceId: number): Promise<SyncDelta> {
-  // tombstones=1: the stamps in knownAt must include the server's
-  // tombstones, or a re-add from a slower clock loses to them (stampOf).
-  const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId, tombstones: true });
   const epoch = sessionEpoch();
-  const round = await pullAll((path) => api<unknown>(path), first, V2_STUDY_COLLECTIONS);
+  const round = await pullStudyRound((path) => api<unknown>(path), workspaceId);
   if (epoch === sessionEpoch()) pulledPages.set(workspaceId, round.pages);
   return round.collections as SyncDelta;
 }

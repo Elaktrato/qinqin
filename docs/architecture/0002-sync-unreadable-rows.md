@@ -66,11 +66,11 @@ Not allowed:
 - Rewriting, overwriting, tombstoning or reusing the id of an unreadable row.
 - Logging or showing an unreadable row's data.
 - A second list that decides which rows are typed or how they decode: that is `STUDY_COLLECTIONS` and
-  `parseRow`. Two lists name pull collections for another purpose, the scope: `V2_STUDY_COLLECTIONS`
-  (`apps/web/src/lib/sync/pager.ts`, what the study pull asks for; `apps/web/src/lib/sync/pullPage.contract.test.ts`
-  pins it to the fixture only) and `CACHEABLE_PULL_COLLECTIONS` (`apps/web/src/lib/pwa/sw/classify.ts`, what an
-  offline copy may hold; `apps/web/src/lib/pwa/sw/classify.test.ts` pins it to the plugin collections plus
-  `STUDY_COLLECTIONS`).
+  `parseRow`. Two lists name pull collections for another purpose, the scope: `STUDY_PULL_COLLECTIONS`
+  (`apps/web/src/lib/study/sync/pull.ts`, what the study pull asks for, built from `STUDY_COLLECTIONS` since #193;
+  `apps/web/src/lib/sync/pullPage.contract.test.ts` pins it to the fixture) and `CACHEABLE_PULL_COLLECTIONS`
+  (`apps/web/src/lib/pwa/sw/classify.ts`, what an offline copy may hold; `apps/web/src/lib/pwa/sw/classify.test.ts`
+  pins it to the plugin collections plus `STUDY_COLLECTIONS`).
 
 ## Enforcement
 
@@ -85,8 +85,3 @@ Not allowed:
   (`server/internal/sync/unreadable_stored_test.go`), `TestUnreadableStoredRowOverHTTP`
   (`server/internal/sync/unreadable_http_test.go`).
 - Review: a new consumer of pull rows or a new write path; no test finds one that forgets the rule.
-
-## Open questions
-
-- Derive `V2_STUDY_COLLECTIONS` from `STUDY_COLLECTIONS` (or pin it to them in a test), so a new typed family
-  cannot be left out of the study pull. A follow-up; this record's branch is docs-only.
