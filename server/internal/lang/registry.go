@@ -365,6 +365,10 @@ func Use(ctx context.Context, q Queryer, code string) (Usage, error) {
 // install or workspace creation cannot slip in between check and delete.
 // Errors: ErrNotFound, a BuiltInError (a code pack, with or without a
 // row), an InUseError naming what blocks it.
+//
+// The caller serialises Remove with workspaces.Create (the server holds its
+// language lock, langMu, around both): the create checks the language, may
+// add its row and adds the workspace in three statements.
 func Remove(ctx context.Context, ex Execer, code string) error {
 	var stored string
 	err := ex.QueryRowContext(ctx, `

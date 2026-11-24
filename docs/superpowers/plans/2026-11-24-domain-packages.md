@@ -178,3 +178,12 @@ The review found no MUST-FIX. Each group below is one commit, test first.
   ... a child of library_books"); without the highlights in `library.DeleteWorkspaceBooks` it fails (a
   highlight of the deleted book remains). The limit (a child by another column name without a foreign key)
   is in 0003's Enforcement section.
+- NITs 2 and 4: `lang.Remove` says that its caller holds the language lock with `workspaces.Create`;
+  `TestARuleKeepsExactlyWhenItDeletesNothing` (an in-package test of `rules()`) checks that a rule has a
+  `Keep` reason exactly when it has no delete statement. It passed at once on the rules as they are; with the
+  `access_tokens` statement removed (reverted) it failed.
+- NIT 5, follow-up (not built): a failed file removal after a workspace delete (`RemoveContent`,
+  `RemoveFiles` in `handleDeleteWorkspace`) is logged and the book or photo file stays on disk for good; this
+  is older than #194. `auth.SweepOrphanUserDirs` only removes whole directories of deleted users. A sweep of
+  book and photo files without a row needs the library and journal file layouts and a test per store; it is
+  left for a follow-up issue rather than added in a fix wave.

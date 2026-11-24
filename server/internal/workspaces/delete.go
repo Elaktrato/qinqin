@@ -12,8 +12,9 @@ import (
 
 // Rule is what deleting a workspace does to one table with a workspace_id
 // column. Keep is empty for a table whose rows of the workspace go, else
-// the reason they stay. TestEveryWorkspaceTableHasADeleteRule fails on a
-// table of the schema without a rule.
+// the reason they stay: a rule has a reason exactly when it deletes nothing
+// (TestARuleKeepsExactlyWhenItDeletesNothing). TestEveryWorkspaceTableHasADeleteRule
+// fails on a table of the schema without a rule.
 type Rule struct {
 	Table string
 	Keep  string
@@ -130,7 +131,7 @@ func Delete(ctx context.Context, db *sql.DB, userID, id int64) (Deleted, error) 
 	var d Deleted
 	for _, r := range rules() {
 		if r.del == nil {
-			continue
+			continue // a kept table
 		}
 		if err := r.del(ctx, tx, &d, userID, id); err != nil {
 			return Deleted{}, err
