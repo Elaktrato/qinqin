@@ -13,6 +13,10 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   no access token (`journal/README.md#conversations`). New fixture: `journal/conversations.json`. New error codes
   `conversation_full` and `conversation_limit` (409). A backup carries each conversation as
   `journal:conversation:<id>`; the deletion previews count `journalConversations` (`auth/admin-users.json`).
+- **Fix wave:** a turn takes `{text, turnId}` (required) and a message carries `turnId`; a retry with a stored id
+  answers the stored turn. New error code `wrong_language` (422) for a reply not mostly in the workspace language.
+  The transcript quotes every partner line and escapes a learner line starting with `>`
+  (`journal/conversations.json` `transcripts`, replacing `transcript`).
 
 ## #199 — core features instead of code plugins
 

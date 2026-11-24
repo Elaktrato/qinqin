@@ -38,9 +38,9 @@ The review is stored with the entry. Editing the text afterwards marks it as **W
 - Your messages get the journal's corrections: mistakes and suggestions are underlined in your message and listed in the margin, or on a phone behind **Show corrections** in the same bottom sheet as a review. The explanations use the explanation language of the Journal settings, and the correction guidance applies.
 - The partner's replies are lookup text like a book in the [reader](Reader): hover or tap a word to see its entry, and **+** adds it to a deck of this workspace.
 - The line under the title names the provider and model of the latest reply ("Answered by …").
-- **Save as journal entry** turns the conversation into an entry titled with the topic (the partner's lines start with "> ") and opens it; you can review it like any entry. **Discard** deletes the conversation (asked first). Open conversations are listed on the Talk page until you save or discard them.
+- **Save as journal entry** turns the conversation into an entry titled with the topic (every line of the partner starts with "> "; a line of yours that starts with ">" gets a backslash in front) and opens it; you can review it like any entry. **Discard** deletes the conversation (asked first). Open conversations are listed on the Talk page until you save or discard them.
 
-The partner always answers in the workspace's language and script; a reply in another language is refused ("The AI answer could not be read. Try again.") and nothing is stored, so you can send again. A failed reply keeps your text in the box. A conversation holds up to 50 messages, a message up to 1,000 characters (replies are cut at 800), and a workspace up to 20 open conversations.
+The partner always answers in the workspace's language and script; a reply mostly in another language is refused ("The AI did not answer in this workspace's language. Nothing was saved; send your message again.") and nothing is stored. A failed reply keeps your text in the box. When the answer is lost on the way (a weak connection), the page says "Still waiting for the partner's answer…" and picks it up when it arrives; sending the same message again never asks the AI twice. A conversation holds up to 50 messages, a message up to 1,000 characters (replies are cut at 800), and a workspace up to 20 open conversations.
 
 ## Photo to entry
 

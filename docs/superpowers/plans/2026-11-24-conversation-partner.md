@@ -191,6 +191,44 @@ Decoded by `server/internal/journal/conversation_contract_test.go` and
   spec checks the lookup popup on a reply without a new fixture pack — cost if wrong: none.
 - Ruling: the Settings → AI privacy line now names conversation messages ("Your journal text, conversation
   messages, guidance and the photos …") — what is sent must be said where the key is typed — cost if wrong: none.
+- Ruling (fix wave): a turn is idempotent by a client turn id (`turnId`, required, stored on both messages,
+  unique per conversation and role) — a retry after a lost answer then answers the stored turn and never pays a
+  second reply; the alternative (refusing a duplicate by text) would also refuse a learner who repeats themselves
+  — cost if wrong: a client that sends a new id per retry is charged twice (the web reuses its id).
+- Ruling (fix wave): migration 048 is changed in place (the `turn_id` column and its index) — it never reached
+  develop or a release — cost if wrong: a developer database migrated from an earlier state of this branch needs
+  a fresh start.
+- Ruling (fix wave): the turn reads the conversation again inside the provider call's closure, while it holds
+  the user's one AI slot, and the store numbers the annotation ids from the stored seq — every turn of a user needs
+  that slot, so no other turn can land between that read and the write; a turn that finds its conversation changed
+  there (gone, the turn already stored, now full or opened) ends without a provider call and records none — cost
+  if wrong: none found. The history race itself cannot be timed in a test without a hook in the handler; the id
+  numbering is tested at the store (`TestAppendTurnNumbersAnnotationsFromTheStoredSeq`).
+- Ruling (fix wave): every write transaction of the journal store that reads first takes the write lock first
+  (`beginWrite`, the `pack.BeginWrite` pattern of #192): `AppendTurn` and `SaveConversation` read first and were
+  exposed; `DeleteConversation` and `DeleteEntry` wrote first and are converted for one rule. The other journal
+  and grammar writes of #199 are single statements (upserts, `INSERT … SELECT … WHERE EXISTS`, the grammar
+  progress upsert), and the workspace delete writes first; the restore writes in the backup's own transaction —
+  cost if wrong: a writer that waits up to the busy timeout instead of failing.
+- Ruling (fix wave): the transcript quotes every line of a partner message ("> ", an empty line ">") and escapes a
+  learner line starting with ">" with a backslash (Markdown's escape) — the entry stays plain text and a reader
+  tells the speakers apart; a learner line that starts with "\>" itself stays ambiguous (rare) — cost if wrong:
+  none. A transcript over 50,000 code points, reachable only with hundreds of one-character lines, is cut rather
+  than refused.
+- Ruling (fix wave): a reply needs at least half of its letters in the workspace script (on top of the journal's
+  one-letter rule) and is refused as the new code `wrong_language` (422) — "Sure! 你好" passed the journal's rule;
+  for Latin-script languages the check cannot tell English from Spanish and passes as before — cost if wrong: a
+  reply that legitimately quotes a long foreign name is refused once.
+- Ruling (fix wave): the restore applies the live rules (turn order 1..n partner first, caps, annotation ids and
+  fields, model and provider, the open-conversation cap) and drops a duplicate id as a refused document — the
+  archive came from a server with the same rules; anything else is a hand-edited archive — cost if wrong: an
+  archive of a future server with looser rules loses conversations on restore (counted).
+- Ruling (fix wave): the web reuses one turn id for a message until its turn is answered, and polls (every 5 s, up
+  to 180 s, as the review does) after a lost answer or `in_flight`, counting only a conversation that holds this
+  turn id — another tab's growth never clears the text — cost if wrong: a learner who edits the text after a lost
+  answer and resends gets the stored earlier turn.
+- Ruling (fix wave): the message field is read-only (not disabled) while a turn runs, so it keeps the focus and
+  the Android keyboard; the live region reads "Partner: <reply>" — cost if wrong: none.
 - Ruling: no data is wiped by this branch (new tables only); `docs/releases/NEXT.md` gets a "What's new" line, no
   upgrade line — cost if wrong: none.
 - Ruling: CHANGELOG line: new routes, the two error codes, the fixture, the keyed backup family
@@ -236,3 +274,28 @@ Not verified:
   same mechanism as the review's).
 - Under Node 22 (local) five reader/settings DOM tests fail on the untouched base as well; under Node 26 (CI)
   the whole suite passes.
+
+### Fix wave (review)
+
+Commits after merging develop (`e8e1c240`, brings c04f6514: `startPackages` takes `prepare`; this branch had no
+caller of it):
+
+1. `ec18373d` server: idempotent turns (`turnId`), the history read under the AI slot, annotation ids from the
+   stored seq, `beginWrite` for the journal's read-then-write transactions, the quoted transcript, the
+   majority-script reply check (`wrong_language`), the strict restore, `StudiedWords` for a turn.
+2. `81658102` web: turn ids and polling for this turn ("Still waiting…"), read-only field and the reply in the
+   live region, turn-specific texts and the limit as a parameter, the privacy line names the topic and guidance, a
+   picked level is kept, `pollUntil`, the contract cases through `startBody`/`turnGate`, the e2e comment.
+3. the docs commit (contracts README and CHANGELOG, wiki, these Rulings and this record).
+
+Review items: 1 (lost answer, double charge) — server idempotency plus client polling; 2 (stale seq/history) —
+re-read under the slot and ids in `AppendTurn`; 3 (transcript) — fixed with fixture cases; 4 (focus) — read-only;
+5 (busy snapshot) — `beginWrite` (cases listed in the Ruling); nits 6–10 done; 10c (history spoofing inside the
+nonce) left as is, as the review said.
+
+Test-first: red seen for the store tests (build failure on the new signatures), the write-lock test (written with
+the hook before `beginWrite` existed), the transcript and reply-script tests, the strict restore test, the API
+retry and `wrong_language` tests (build failure, then the access test needed a turn id), the web `pollUntil`,
+`runTurn`, `turnErrorText`, `startBody` and contract cases (13 failures). The Go marshal comparison and the two new
+DOM tests (focus kept, picked level kept) were checked to fail with the old code or a mutated fixture after they
+passed. Not verified: the history race end to end (see the Ruling); a real Android WebView keyboard.

@@ -39,23 +39,33 @@ for the AI turn (the journal's `no_key`, rate limit and provider errors apply):
 | `POST /api/journal/conversations` `{topic, level}` | starts one, 201 with the conversation (no AI call); 400 `bad_request` for a level outside `levels` or a topic that is not plain text of at most `topicRunes`; 409 `conversation_limit` when the workspace has `conversations` open |
 | `GET /api/journal/conversations/{id}` | the conversation with its messages; 404 `not_found` |
 | `DELETE /api/journal/conversations/{id}` | discards it (204; 404 when missing) |
-| `POST /api/journal/conversations/{id}/turn` `{text}` | one AI call; stores the learner's message with its corrections and the partner's reply and answers the conversation. A blank `text` is allowed only while the conversation has no message (the partner opens), else 422 `empty`; over `messageRunes` is 413 `too_long`; 409 `conversation_full` when two more messages would pass `messages`. A failed call stores nothing |
+| `POST /api/journal/conversations/{id}/turn` `{text, turnId}` | one AI call; stores the learner's message with its corrections and the partner's reply, both marked with `turnId`, and answers the conversation. `turnId` (required, `^[0-9A-Za-z_-]{1,64}$`, else 400) is the client's id of the turn: when the conversation already holds it (a retry after a lost answer) the stored conversation is answered and the provider is not called again; a retry while the first call still runs is 409 `in_flight`. A blank `text` is allowed only while the conversation has no message (the partner opens), else 422 `empty`; over `messageRunes` is 413 `too_long`; 409 `conversation_full` when two more messages would pass `messages`; 422 `wrong_language` for a reply that is not mostly in the workspace language. A failed call stores nothing |
 | `POST /api/journal/conversations/{id}/save` `{entryId, date}` | turns it into a journal entry and deletes it in one transaction; answers the entry. 422 `empty` without messages; 400 for an `entryId` or `date` an entry refuses or an existing entry's id |
 
 A conversation is `{id, topic, level, createdAt, updatedAt, messages: [{seq, role: "learner" | "partner", text,
-annotations, model?, provider?, createdAt}]}`. A learner message carries the corrections of its text in the review's
+annotations, model?, provider?, turnId, createdAt}]}`. A learner message carries the corrections of its text in the review's
 annotation shape (below), validated against that text like a review's; their ids are unique in the conversation
-(`m<seq>a<n>`). A partner message has no annotations and names the `model` and `provider` that wrote it. The
-partner's reply is plain text cut to `replyRunes`, and must be written in the workspace language's script (the
-journal's script check, by the language profile); a reply that is not is refused as 422 `bad_reply`.
+(`m<seq>a<n>`, given by the store from the seq the message really gets). A partner message has no annotations and
+names the `model` and `provider` that wrote it. The partner's reply is plain text cut to `replyRunes`, and must be
+written in the workspace language's script (the journal's script check, by the language profile) with at least half
+of its letters in that script; a reply that is not is refused as 422 `wrong_language`, an empty one as `bad_reply`.
+The turn reads the conversation (history, numbering) again while it holds the user's one AI slot.
 
 What a turn sends to the provider: the workspace language, the `level` with a CEFR-like description, the topic,
 at most `wordSample` of the workspace's most recently reviewed studied words (never the whole deck), the last
 `contextMessages` messages and the new message, the journal settings' explanation language and guidance.
 
-A saved conversation becomes an entry with `title` = the topic, `source` `typed` and `text` = the transcript: one
-paragraph per message (separated by a blank line), the partner's lines quoted with `> `. The caps keep the longest
-transcript under an entry's 50000 code points.
+A saved conversation becomes an entry with `title` = the topic, `source` `typed` and `text` = the transcript
+(`transcripts`): one paragraph per message (separated by a blank line); every line of a partner message is quoted
+with `> ` (an empty line with `>`), and a learner line that starts with `>` is escaped with a backslash (`\>`). The
+caps keep a normal transcript under an entry's 50000 code points; one over it (only a pathological line structure)
+is cut there.
+
+A restore applies the live rules: a conversation is kept only when its messages are numbered 1..n, the partner first
+and then learner and partner in turns, texts within their caps, a partner message without annotations and a learner
+message without model and provider, every annotation as a turn stores it (its id, a quote in the text, the closed
+kind, the field caps), and the workspace has room under `conversations`; a refused one, or a second row with the
+same id, is dropped and counted.
 
 A client reads a conversation leniently (`reads`): an unknown level reads as `beginner`, a message of another role
 or without text is dropped, annotations that are not a list read as none, an annotation without a string `quote`
