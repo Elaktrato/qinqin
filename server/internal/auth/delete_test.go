@@ -24,6 +24,7 @@ var seedSQL = map[string][]string{
 	"user_edits":            {`INSERT INTO user_edits (user_id, entry_id, updated_at) VALUES (?1, 1, 't')`},
 	"sentences":             {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
 	"example_drafts":        {`INSERT INTO example_drafts (user_id, entry_id, request_id, hanzi, pinyin, translation, level, provider, model, created_at) VALUES (?1, 1, 'r', 'h', '', 't', 'beginner', 'p', 'm', 't')`},
+	"example_generations":   {`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at) VALUES (?1, 1, 'r', 'beginner', 0, 'p', 'm', 't')`},
 	"example_reports":       {`INSERT INTO example_reports (user_id, entry_id, language, hanzi, pinyin, translation, reason, level, provider, model, created_at) VALUES (?1, 1, 'zh', 'h', '', 't', 'other', 'beginner', 'p', 'm', 't')`},
 	"library_books":         {`INSERT INTO library_books (user_id, workspace_id, language, title, created_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'zh', 'B', 't')`},
 	"library_bookmarks":     {`INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), '0:0', 't')`},
@@ -339,9 +340,9 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
 				t.Errorf("journal_photos: skip export, drop on restore")
 			}
-		case tb.Name == "example_drafts":
+		case tb.Name == "example_drafts" || tb.Name == "example_generations":
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
-				t.Errorf("example_drafts: skip export (undecided AI output), drop on restore")
+				t.Errorf("%s: skip export (undecided AI output, retry bookkeeping), drop on restore", tb.Name)
 			}
 		default:
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreKeep {

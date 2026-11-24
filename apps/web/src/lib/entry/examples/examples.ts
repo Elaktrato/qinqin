@@ -58,8 +58,10 @@ export function levelLabel(level: ExampleLevel): string {
 
 /** generatedText: what the live region says after a generation. */
 export function generatedText(g: Generated): string {
-	if (g.drafts.length === 0) return t('entry.examples.noneKept');
-	const head = t('entry.examples.arrived', { count: g.drafts.length });
+	// The answer lists the entry's drafts; only this request's are new.
+	const fresh = g.drafts.filter((d) => d.requestId === g.requestId).length;
+	if (fresh === 0) return t('entry.examples.noneKept');
+	const head = t('entry.examples.arrived', { count: fresh });
 	return g.dropped > 0 ? `${head} ${t('entry.examples.dropped', { count: g.dropped })}` : head;
 }
 
@@ -91,11 +93,21 @@ export async function runGenerate(
 		opts.onWaiting?.();
 		const late = await pollUntil(
 			() => io.reload(),
-			(v) => v.drafts.some((d) => d.requestId === requestId),
+			(v) => v.lastRequest?.requestId === requestId || v.drafts.some((d) => d.requestId === requestId),
 			opts
 		);
 		if (late === null) return { generated: null, error: err };
-		const drafts = late.drafts.filter((d) => d.requestId === requestId);
-		return { generated: { drafts, dropped: 0, provider: drafts[0].provider, model: drafts[0].model }, error: null };
+		const marker = late.lastRequest?.requestId === requestId ? late.lastRequest : null;
+		const mine = late.drafts.find((d) => d.requestId === requestId);
+		return {
+			generated: {
+				drafts: late.drafts,
+				dropped: marker?.dropped ?? 0,
+				provider: marker?.provider ?? mine?.provider ?? '',
+				model: marker?.model ?? mine?.model ?? '',
+				requestId
+			},
+			error: null
+		};
 	}
 }

@@ -29,7 +29,11 @@ type server struct {
 	// segmentHook runs inside POST /api/segment once its slot is taken
 	// (tests); segments counts each user's segmentations in flight.
 	segmentHook func()
-	segments    inFlight
+	// aiSlotHook runs inside runAI when the user's AI slot is taken
+	// ("acquired", before the provider call) and just before it is released
+	// ("releasing") (tests).
+	aiSlotHook func(kind, phase string)
+	segments   inFlight
 
 	db        *sql.DB
 	dataDir   string

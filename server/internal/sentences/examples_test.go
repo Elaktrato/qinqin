@@ -49,11 +49,11 @@ func cands(texts ...string) []sentences.Candidate {
 
 func gen(t *testing.T, e examplesEnv, user, entry int64, requestID, level string, texts ...string) []sentences.Draft {
 	t.Helper()
-	d, err := sentences.ReplaceDrafts(e.ctx, e.db, user, entry, sentences.Generation{RequestID: requestID, Level: level, Provider: "anthropic", Model: "m1"}, cands(texts...))
+	g, err := sentences.StoreGeneration(e.ctx, e.db, user, entry, sentences.Generation{RequestID: requestID, Level: level, Provider: "anthropic", Model: "m1"}, cands(texts...), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return d
+	return g.Drafts
 }
 
 func TestDraftsReplaceAndAreIdempotentByRequest(t *testing.T) {
@@ -67,8 +67,8 @@ func TestDraftsReplaceAndAreIdempotentByRequest(t *testing.T) {
 	if len(again) != 2 || again[0].ID != first[0].ID {
 		t.Fatalf("a repeated request = %+v", again)
 	}
-	if got, ok, err := sentences.DraftsOfRequest(e.ctx, e.db, e.alice, e.xuexi, "r1"); err != nil || !ok || len(got) != 2 {
-		t.Fatalf("DraftsOfRequest = %+v %v %v", got, ok, err)
+	if got, ok, err := sentences.StoredGeneration(e.ctx, e.db, e.alice, e.xuexi, "r1"); err != nil || !ok || len(got.Drafts) != 2 {
+		t.Fatalf("StoredGeneration = %+v %v %v", got, ok, err)
 	}
 	// A new request replaces the undecided drafts.
 	second := gen(t, e, e.alice, e.xuexi, "r2", "advanced", "学习是一件事。")
@@ -81,7 +81,7 @@ func TestDraftsReplaceAndAreIdempotentByRequest(t *testing.T) {
 	if err != nil || len(bv.Drafts) != 0 || bv.DefaultLevel != "beginner" {
 		t.Fatalf("bob = %+v %v", bv, err)
 	}
-	if _, ok, _ := sentences.DraftsOfRequest(e.ctx, e.db, e.bob, e.xuexi, "r2"); ok {
+	if _, ok, _ := sentences.StoredGeneration(e.ctx, e.db, e.bob, e.xuexi, "r2"); ok {
 		t.Fatal("bob sees alice's request")
 	}
 }
@@ -227,5 +227,53 @@ func TestReportsKeepTheNewest(t *testing.T) {
 	got := reports(t, e, e.alice)
 	if len(got) != sentences.MaxReportsPerUser || got[0] != "other:学习3。:anthropic:beginner" {
 		t.Fatalf("%d reports, oldest %q", len(got), got[0])
+	}
+}
+
+// Fix wave: a generation where every sentence was dropped is remembered under
+// its request id (a retry answers it without a second call) and leaves the
+// earlier undecided drafts alone, so their Keep still works.
+func TestAnEmptyGenerationIsRememberedAndKeepsTheDrafts(t *testing.T) {
+	e := newExamplesEnv(t)
+	first := gen(t, e, e.alice, e.xuexi, "r1", "beginner", "我喜欢学习。", "学习很好。")
+	g := sentences.Generation{RequestID: "r2", Level: "advanced", Provider: "anthropic", Model: "m2"}
+	got, err := sentences.StoreGeneration(e.ctx, e.db, e.alice, e.xuexi, g, nil, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Drafts) != 2 || got.Drafts[0].ID != first[0].ID || got.Dropped != 3 || got.RequestID != "r2" || got.Provider != "anthropic" || got.Model != "m2" {
+		t.Fatalf("empty generation = %+v", got)
+	}
+	stored, ok, err := sentences.StoredGeneration(e.ctx, e.db, e.alice, e.xuexi, "r2")
+	if err != nil || !ok || stored.Dropped != 3 || len(stored.Drafts) != 2 {
+		t.Fatalf("stored = %+v %v %v", stored, ok, err)
+	}
+	// A retry with sentences writes nothing.
+	again, err := sentences.StoreGeneration(e.ctx, e.db, e.alice, e.xuexi, g, cands("学习再来。"), 0)
+	if err != nil || again.Dropped != 3 || len(again.Drafts) != 2 {
+		t.Fatalf("retry = %+v %v", again, err)
+	}
+	if _, err := sentences.KeepDraft(e.ctx, e.db, e.alice, e.xuexi, first[0].ID); err != nil {
+		t.Fatalf("keep a draft of the earlier generation: %v", err)
+	}
+	v, err := sentences.Examples(e.ctx, e.db, e.alice, e.xuexi)
+	if err != nil || v.LastRequest == nil || v.LastRequest.RequestID != "r2" || v.LastRequest.Dropped != 3 || v.DefaultLevel != "advanced" {
+		t.Fatalf("examples = %+v %v", v, err)
+	}
+	if bv, _ := sentences.Examples(e.ctx, e.db, e.bob, e.xuexi); bv.LastRequest != nil {
+		t.Fatalf("bob sees alice's request %+v", bv.LastRequest)
+	}
+}
+
+// Generation markers are kept a day (the client polls for 180 s at most).
+func TestGenerationMarkersExpire(t *testing.T) {
+	e := newExamplesEnv(t)
+	if _, err := e.db.Exec(`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at)
+		VALUES (?, ?, 'old', 'beginner', 0, 'p', 'm', '2000-01-01T00:00:00Z')`, e.alice, e.nihao); err != nil {
+		t.Fatal(err)
+	}
+	gen(t, e, e.alice, e.xuexi, "new", "beginner", "学习。")
+	if _, ok, _ := sentences.StoredGeneration(e.ctx, e.db, e.alice, e.nihao, "old"); ok {
+		t.Fatal("a marker older than a day survived")
 	}
 }

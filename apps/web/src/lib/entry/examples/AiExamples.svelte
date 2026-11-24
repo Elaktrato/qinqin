@@ -100,7 +100,8 @@
 		if (id !== entryId) return;
 		if (r.generated) {
 			pendingRequest = null;
-			view = { drafts: r.generated.drafts, defaultLevel: level };
+			const g = r.generated;
+			view = { drafts: g.drafts, defaultLevel: level, lastRequest: { requestId: g.requestId, dropped: g.dropped, provider: g.provider, model: g.model } };
 			status = generatedText(r.generated);
 		} else {
 			status = '';

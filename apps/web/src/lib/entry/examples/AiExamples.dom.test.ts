@@ -61,8 +61,14 @@ function mount(sentences: Sentence[], onkept = vi.fn()) {
 
 describe('AiExamples', () => {
 	it('generates at the default level, shows the drafts marked with model and provider, and keeps one', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'elementary' });
-		vi.mocked(generateExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], dropped: 1, provider: 'anthropic', model: 'claude-opus-5-5' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'elementary', lastRequest: null });
+		vi.mocked(generateExamples).mockImplementation(async (_id, _level, requestId) => ({
+			drafts: [{ ...draft(1, '我喜欢学习。'), requestId }, { ...draft(2, '学习很好。'), requestId }],
+			dropped: 1,
+			provider: 'anthropic',
+			model: 'claude-opus-5-5',
+			requestId
+		}));
 		const kept = sentence(50, '我喜欢学习。', { provider: 'anthropic', model: 'claude-opus-5-5' });
 		vi.mocked(keepExample).mockResolvedValue(kept);
 		const onkept = mount([sentence(9, '你好。')]);
@@ -89,7 +95,7 @@ describe('AiExamples', () => {
 	});
 
 	it('keeps its drafts and status when the page adds the kept sentence to the entry', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner', lastRequest: null });
 		const kept = sentence(50, '我喜欢学习。', { provider: 'anthropic', model: 'claude-opus-5-5' });
 		vi.mocked(keepExample).mockResolvedValue(kept);
 		const onkept = vi.fn();
@@ -105,7 +111,7 @@ describe('AiExamples', () => {
 	});
 
 	it('reports a draft with a reason from a picker, and deletes one without', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner', lastRequest: null });
 		vi.mocked(discardExample).mockResolvedValue();
 		mount([]);
 		await screen.findByText('我喜欢学习。');
@@ -123,8 +129,8 @@ describe('AiExamples', () => {
 
 	it('keeps the focus on the button while a generation runs, and polls after a lost answer', async () => {
 		vi.mocked(getExamples)
-			.mockResolvedValueOnce({ drafts: [], defaultLevel: 'beginner' })
-			.mockResolvedValue({ drafts: [{ ...draft(3, '学习。'), requestId: 'x' }], defaultLevel: 'beginner' });
+			.mockResolvedValueOnce({ drafts: [], defaultLevel: 'beginner', lastRequest: null })
+			.mockResolvedValue({ drafts: [{ ...draft(3, '学习。'), requestId: 'x' }], defaultLevel: 'beginner', lastRequest: null });
 		let reject!: (e: unknown) => void;
 		vi.mocked(generateExamples).mockImplementation(() => new Promise((_, r) => (reject = r)));
 		mount([]);
@@ -137,13 +143,13 @@ describe('AiExamples', () => {
 		await fireEvent.click(button);
 		expect(generateExamples).toHaveBeenCalledTimes(1);
 		const requestId = vi.mocked(generateExamples).mock.calls[0][2];
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [{ ...draft(3, '学习。'), requestId }], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [{ ...draft(3, '学习。'), requestId }], defaultLevel: 'beginner', lastRequest: null });
 		reject(new TypeError('network'));
 		expect(await screen.findByText('学习。', {}, { timeout: 8000 })).toBeTruthy();
 	}, 15000);
 
 	it('points to Settings → AI without a key', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner', lastRequest: null });
 		vi.mocked(getAiStatus).mockResolvedValue({ available: false } as never);
 		mount([]);
 		const link = await screen.findByRole('link', { name: 'Open Settings → AI' });
@@ -152,7 +158,7 @@ describe('AiExamples', () => {
 	});
 
 	it('stays hidden for a word with enough examples and no drafts', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner', lastRequest: null });
 		mount([sentence(1, '一。'), sentence(2, '二。'), sentence(3, '三。')]);
 		await waitFor(() => expect(getExamples).toHaveBeenCalled());
 		await Promise.resolve();
@@ -160,7 +166,7 @@ describe('AiExamples', () => {
 	});
 
 	it('words a refused generation by its code', async () => {
-		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner' });
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner', lastRequest: null });
 		const { ApiError } = await import('$lib/api/client');
 		vi.mocked(generateExamples).mockRejectedValue(new ApiError(409, JSON.stringify({ error: 'examples_full', message: 'x' })));
 		mount([]);

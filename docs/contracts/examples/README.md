@@ -12,12 +12,14 @@ sentences pack. Fixture: `examples.json` (Go: `server/internal/sentences/example
 - Per user and entry, not per workspace (like every own sentence): a workspace delete keeps them; the account delete
   removes drafts, reports and kept examples; the deletion preview counts reports as `exampleReports` (kept examples
   count in `sentences`).
-- Drafts (`example_drafts`): the undecided output of the latest generation for the entry; a new generation replaces
-  them. Never in the pull, never in a backup (a restore drops them), never shown on a card.
+- Drafts (`example_drafts`): the undecided output of the latest generation for the entry that kept sentences; such a
+  generation replaces them, one that kept none leaves them. Never in the pull, never in a backup (a restore drops them), never shown on a card.
 - Kept examples: own sentences, so they reach the entry answer (`GET /api/entries/{id}`, after the pack sentences and
   the other own sentences), every card that shows a sentence, the offline copy of the entry, the paged pull
   (`sentences` collection) and the backup (`sentences/NNNNNN.jsonl` line with `ai`; the restore refuses a mark with
   neither provider nor model, a provider over 64 or a model over 200 bytes).
+- Generation markers (`example_generations`): one per stored generation (request id, level, dropped count, provider,
+  model), so a retry of a generation that kept nothing is answered too; kept a day, not in the pull or a backup.
 - Reports (`example_reports`): the sentence, its reason, level, provider and model, at most 500 per user (the oldest
   goes first). They stay with the user (no administrator view); not in a backup (a restore keeps them).
 
@@ -31,8 +33,8 @@ card kind, the cloze card); a malformed non-null value still marks it (`marks` c
 
 | Route | Answer |
 | --- | --- |
-| `GET /api/entries/{id}/examples` | `{drafts: [Draft], defaultLevel}`: the caller's drafts, oldest first; `defaultLevel` is the level of their latest draft or kept example, else `beginner` |
-| `POST /api/entries/{id}/examples` `{level, requestId}` | one AI call with the caller's key, the journal's hourly limit and one call in flight (`in_flight`); 200 `{drafts, dropped, provider, model}`. `requestId` (1–64 of `A-Z a-z 0-9 _ -`) makes it idempotent: a request id whose drafts are stored answers them without a call (`dropped: 0`). 409 `examples_full` at 10 kept examples |
+| `GET /api/entries/{id}/examples` | `{drafts: [Draft], defaultLevel, lastRequest}`: the caller's drafts, oldest first; `defaultLevel` is the level of their latest generation (else latest kept example, else latest draft, else `beginner`); `lastRequest` is the entry's latest stored generation `{requestId, dropped, provider, model}` or `null` |
+| `POST /api/entries/{id}/examples` `{level, requestId}` | one AI call with the caller's key, the journal's hourly limit and one call in flight (`in_flight`); 200 `{drafts, dropped, provider, model, requestId}`, where `drafts` are the entry's drafts after the generation (only those with this `requestId` are new). The sentences are checked and stored while the call still holds the user's AI slot. `requestId` (1–64 of `A-Z a-z 0-9 _ -`) makes it idempotent: a stored request id (its marker) is answered without a call, with its `dropped`. 409 `examples_full` at 10 kept examples |
 | `POST /api/entries/{id}/examples/{draftId}/keep` | 201 with the kept sentence; 404 for a draft that is not the caller's on that entry; 409 `examples_full` |
 | `DELETE /api/entries/{id}/examples/{draftId}[?reason=]` | 204; with a reason the draft is also reported |
 | `DELETE /api/entries/{id}/sentences/{sentenceId}[?reason=]` | 204: the caller's kept AI example is deleted (a tombstone the pull ships); with a reason also reported. Any other sentence is 404 |
@@ -72,5 +74,6 @@ candidate by construction.
   text, or has drafts.
 - A client reads drafts leniently (`reads` cases): a draft without a numeric `id` or with an empty text is skipped;
   missing strings are empty; an unknown level reads as `beginner`.
-- After a lost answer (network, a proxy, `in_flight`) the client reloads `GET …/examples` until drafts of its
-  request id appear, and reuses its request id for a retry.
+- After a lost answer (a network error, 502 or 504) the client reloads `GET …/examples` until `lastRequest` (or a
+  draft) carries its request id. After `in_flight` the client
+  polls the same way.

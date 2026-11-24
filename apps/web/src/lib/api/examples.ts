@@ -47,16 +47,27 @@ export interface ExampleDraft {
 	requestId: string;
 }
 
+/** The latest stored generation of the entry (a retry of it is answered from this). */
+export interface LastRequest {
+	requestId: string;
+	dropped: number;
+	provider: string;
+	model: string;
+}
+
 export interface ExamplesView {
 	drafts: ExampleDraft[];
 	defaultLevel: ExampleLevel;
+	lastRequest: LastRequest | null;
 }
 
+/** A generation's answer: the entry's drafts after it (a generation that kept nothing leaves the earlier ones). */
 export interface Generated {
 	drafts: ExampleDraft[];
 	dropped: number;
 	provider: string;
 	model: string;
+	requestId: string;
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -95,14 +106,21 @@ function drafts(v: unknown): ExampleDraft[] {
 	return out;
 }
 
+const count = (v: unknown): number => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
+
+function lastRequest(v: unknown): LastRequest | null {
+	if (!isRecord(v) || str(v.requestId) === '') return null;
+	return { requestId: str(v.requestId), dropped: count(v.dropped), provider: str(v.provider), model: str(v.model) };
+}
+
 export function parseExamples(v: unknown): ExamplesView {
 	const r = isRecord(v) ? v : {};
-	return { drafts: drafts(r.drafts), defaultLevel: level(r.defaultLevel) };
+	return { drafts: drafts(r.drafts), defaultLevel: level(r.defaultLevel), lastRequest: lastRequest(r.lastRequest) };
 }
 
 export function parseGenerated(v: unknown): Generated {
 	const r = isRecord(v) ? v : {};
-	return { drafts: drafts(r.drafts), dropped: typeof r.dropped === 'number' ? r.dropped : 0, provider: str(r.provider), model: str(r.model) };
+	return { drafts: drafts(r.drafts), dropped: count(r.dropped), provider: str(r.provider), model: str(r.model), requestId: str(r.requestId) };
 }
 
 const base = (entryId: number) => `/api/entries/${entryId}`;

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/api"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/pack"
@@ -79,11 +80,11 @@ type examplesEnv struct {
 	xuexi, nihao, taberu int64
 }
 
-func newExamplesEnv(t *testing.T, p ai.Provider, withKey bool) examplesEnv {
+func newExamplesEnv(t *testing.T, p ai.Provider, withKey bool, opts ...api.Option) examplesEnv {
 	t.Helper()
 	lang.Register(lang.Ja{})
 	lang.Register(lang.Zh{})
-	e := examplesEnv{journalEnv: newJournalEnv(t, p, withKey)}
+	e := examplesEnv{journalEnv: newJournalEnvOpts(t, p, withKey, opts...)}
 	lookupImport(t, e.db, pack.Manifest{ID: "cedict-ex", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict"}, "dictionary.txt",
 		"學習 学习 [xue2 xi2] /to learn/to study/\n你好 你好 [ni3 hao3] /hello/\n喜歡 喜欢 [xi3 huan5] /to like/\n")
@@ -304,7 +305,7 @@ func TestExampleRequestIsIdempotent(t *testing.T) {
 	e := newExamplesEnv(t, spy, true)
 	r1, g1 := e.generateAs(t, e.token, e.xuexi, "beginner", "same-1")
 	r2, g2 := e.generateAs(t, e.token, e.xuexi, "beginner", "same-1")
-	if r1.StatusCode != 200 || r2.StatusCode != 200 || spy.calls() != 1 || len(g2.Drafts) != len(g1.Drafts) || g2.Drafts[0].ID != g1.Drafts[0].ID || g2.Dropped != 0 {
+	if r1.StatusCode != 200 || r2.StatusCode != 200 || spy.calls() != 1 || len(g2.Drafts) != len(g1.Drafts) || g2.Drafts[0].ID != g1.Drafts[0].ID || g2.Dropped != g1.Dropped {
 		t.Fatalf("retry: %d %d, %d calls, %+v", r1.StatusCode, r2.StatusCode, spy.calls(), g2)
 	}
 	// While a call runs, a retry of it waits for the slot and then answers its drafts.
@@ -347,7 +348,8 @@ func TestExampleChecksDropSentences(t *testing.T) {
 	spy.answer = []ai.ExampleSentence{{Text: "你好。", Translation: "Hello."}}
 	spy.mu.Unlock()
 	g = e.generate(t, e.xuexi)
-	if len(g.Drafts) != 0 || g.Dropped != 1 {
+	// Nothing kept: the earlier undecided drafts stay (fix wave).
+	if len(g.Drafts) != 3 || g.Dropped != 1 {
 		t.Fatalf("nothing kept = %+v", g)
 	}
 }
@@ -406,5 +408,127 @@ func TestExamplesRateLimited(t *testing.T) {
 	decodeJSON(t, last, &b)
 	if last.StatusCode != 429 || b.Error != "rate_limited" || last.Header.Get("Retry-After") == "" {
 		t.Errorf("past the hourly calls: %d %q", last.StatusCode, b.Error)
+	}
+}
+
+// Fix wave: a generation where every sentence was dropped is answered from its
+// marker on a retry, without a second provider call.
+func TestAnEmptyGenerationRetryIsFree(t *testing.T) {
+	spy := &examplesSpy{answer: []ai.ExampleSentence{{Text: "你好。", Translation: "Hello."}}}
+	e := newExamplesEnv(t, spy, true)
+	_, g1 := e.generateAs(t, e.token, e.xuexi, "beginner", "empty-1")
+	_, g2 := e.generateAs(t, e.token, e.xuexi, "beginner", "empty-1")
+	if spy.calls() != 1 || g1.Dropped != 1 || g2.Dropped != 1 || len(g2.Drafts) != 0 {
+		t.Fatalf("g1 %+v, g2 %+v, %d calls", g1, g2, spy.calls())
+	}
+}
+
+// slotHook is a hook the test fills in once the env exists.
+type slotHook struct {
+	mu sync.Mutex
+	fn func(kind, phase string)
+}
+
+func (h *slotHook) option() api.Option {
+	return api.WithAISlotHook(func(kind, phase string) {
+		h.mu.Lock()
+		fn := h.fn
+		h.mu.Unlock()
+		if fn != nil {
+			fn(kind, phase)
+		}
+	})
+}
+
+func (h *slotHook) set(fn func(kind, phase string)) {
+	h.mu.Lock()
+	h.fn = fn
+	h.mu.Unlock()
+}
+
+// The generation is checked and stored while the call still holds the user's
+// AI slot, so a retry with the same id can never slip in before it is stored.
+func TestExamplesAreStoredBeforeTheSlotIsReleased(t *testing.T) {
+	hook := &slotHook{}
+	e := newExamplesEnv(t, ai.Fake{}, true, hook.option())
+	var stored atomic.Int64
+	hook.set(func(kind, phase string) {
+		if kind == "examples" && phase == "releasing" {
+			var n int64
+			e.db.QueryRow(`SELECT COUNT(*) FROM example_generations WHERE request_id = 'slot-1'`).Scan(&n)
+			stored.Store(n + 10) // 10: the hook ran
+		}
+	})
+	if r, _ := e.generateAs(t, e.token, e.xuexi, "beginner", "slot-1"); r.StatusCode != 200 {
+		t.Fatalf("generate: %d", r.StatusCode)
+	}
+	if got := stored.Load(); got != 11 {
+		t.Fatalf("at the slot's release the generation was stored: %v (want 11)", got)
+	}
+}
+
+// What changed while the call waited for the slot decides the answer: the cap
+// reached is examples_full, the same request stored meanwhile is its answer;
+// neither pays a provider call.
+func TestExamplesRecheckUnderTheSlot(t *testing.T) {
+	hook := &slotHook{}
+	spy := &examplesSpy{}
+	e := newExamplesEnv(t, spy, true, hook.option())
+	hook.set(func(kind, phase string) {
+		if kind != "examples" || phase != "acquired" {
+			return
+		}
+		for i := 0; i < sentences.MaxKeptPerEntry; i++ {
+			e.db.Exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model)
+				VALUES (?, '', (SELECT id FROM users WHERE username = 'root'), ?, '', 't', '2026-11-24T00:00:00Z', 'anthropic', 'm')`, e.xuexi, fmt.Sprintf("学习%d。", i))
+		}
+	})
+	r, _ := e.generateAs(t, e.token, e.xuexi, "beginner", "cap-1")
+	var b aiErrBody
+	decodeJSON(t, r, &b)
+	if r.StatusCode != 409 || b.Error != "examples_full" || spy.calls() != 0 {
+		t.Fatalf("cap reached under the slot: %d %q, %d calls", r.StatusCode, b.Error, spy.calls())
+	}
+	hook.set(func(kind, phase string) {
+		if kind == "examples" && phase == "acquired" {
+			e.db.Exec(`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at)
+				VALUES ((SELECT id FROM users WHERE username = 'root'), ?, 'twin-1', 'beginner', 4, 'anthropic', 'm', '2099-01-01T00:00:00Z')`, e.nihao)
+		}
+	})
+	r, g := e.generateAs(t, e.token, e.nihao, "beginner", "twin-1")
+	if r.StatusCode != 200 || g.Dropped != 4 || spy.calls() != 0 {
+		t.Fatalf("stored under the slot: %d %+v, %d calls", r.StatusCode, g, spy.calls())
+	}
+}
+
+// #185, fix wave: a turn whose conversation is discarded while it waits for the
+// AI slot answers 404 (it answered 500: errors.Unwrap of a two-%w error is
+// nil), and a turn is stored before the slot is released.
+func TestConversationTurnUnderTheSlot(t *testing.T) {
+	hook := &slotHook{}
+	e := newExamplesEnv(t, ai.Fake{}, true, hook.option())
+	c := e.startConversation(t, "", "beginner")
+	hook.set(func(kind, phase string) {
+		if kind == "converse" && phase == "acquired" {
+			e.db.Exec(`DELETE FROM journal_conversations WHERE id = ?`, c.ID)
+		}
+	})
+	if r := e.turn(t, c.ID, ""); r.StatusCode != 404 {
+		t.Fatalf("a conversation gone under the slot: %d %s", r.StatusCode, aiBodyOf(t, r))
+	}
+	c2 := e.startConversation(t, "", "beginner")
+	var stored atomic.Int64
+	hook.set(func(kind, phase string) {
+		if kind == "converse" && phase == "releasing" {
+			var n int64
+			e.db.QueryRow(`SELECT COUNT(*) FROM journal_messages WHERE conversation_id = ?`, c2.ID).Scan(&n)
+			stored.Store(n + 10)
+		}
+	})
+	if r := e.turn(t, c2.ID, ""); r.StatusCode != 200 {
+		t.Fatalf("turn: %d", r.StatusCode)
+	}
+	if got := stored.Load(); got != 11 {
+		t.Fatalf("at the slot's release the turn was stored: %v (want 11)", got)
 	}
 }

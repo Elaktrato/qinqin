@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -81,22 +82,6 @@ func (s *server) handleGetExamples(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, v)
 }
 
-// examplesAnswer is the body of a generation.
-type examplesAnswer struct {
-	Drafts   []sentences.Draft `json:"drafts"`
-	Dropped  int               `json:"dropped"`
-	Provider string            `json:"provider"`
-	Model    string            `json:"model"`
-}
-
-func storedAnswer(drafts []sentences.Draft) examplesAnswer {
-	a := examplesAnswer{Drafts: drafts}
-	if len(drafts) > 0 {
-		a.Provider, a.Model = drafts[0].Provider, drafts[0].Model
-	}
-	return a
-}
-
 // handleGenerateExamples serves POST /api/entries/{id}/examples {level,
 // requestId}: one provider call with the caller's own key writes example
 // sentences, the server checks each (sentences.FilterExamples) and the
@@ -122,7 +107,7 @@ func (s *server) handleGenerateExamples(w http.ResponseWriter, r *http.Request) 
 	}
 	// precheck is the state the call depends on: a stored answer or the cap.
 	precheck := func(ctx context.Context) error {
-		if _, found, err := sentences.DraftsOfRequest(ctx, s.db, u.ID, e.ID, in.RequestID); err != nil {
+		if _, found, err := sentences.StoredGeneration(ctx, s.db, u.ID, e.ID, in.RequestID); err != nil {
 			return err
 		} else if found {
 			return errExamplesStored
@@ -137,12 +122,12 @@ func (s *server) handleGenerateExamples(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 	answerStored := func() {
-		stored, _, err := sentences.DraftsOfRequest(r.Context(), s.db, u.ID, e.ID, in.RequestID)
+		stored, _, err := sentences.StoredGeneration(r.Context(), s.db, u.ID, e.ID, in.RequestID)
 		if err != nil {
 			writeInternal(w, r)
 			return
 		}
-		writeJSON(w, http.StatusOK, storedAnswer(stored))
+		writeJSON(w, http.StatusOK, stored)
 	}
 	switch err := precheck(r.Context()); {
 	case errors.Is(err, errExamplesStored):
@@ -153,58 +138,59 @@ func (s *server) handleGenerateExamples(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	segmented := segmentable(e.Language)
-	var reply ai.ExamplesReply
-	var existing []model.Sentence
-	run, err := s.runAI(r, u.ID, "examples", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, cr ai.Credentials) (ai.CallResult, error) {
-		// Under the slot: the drafts and the kept examples as stored now.
-		if err := precheck(ctx); err != nil {
-			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
-		}
-		var err error
-		if existing, err = sentences.ForEntry(ctx, s.db, e.ID, u.ID); err != nil {
-			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
-		}
-		reply, err = p.Examples(ctx, cr, sentences.RequestFor(*e, existing, in.Level, !segmented))
-		return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
-	})
-	switch {
-	case errors.Is(err, errExamplesStored):
-		answerStored()
-		return
-	case errors.Is(err, errNoProviderCall):
-		// The cause is wrapped beside errNoProviderCall; the mapper matches it with errors.Is.
-		answerExamplesError(w, r, err)
-		return
-	case err != nil:
-		writeAIError(w, err)
-		return
-	}
-	// The paid answer is kept even when the client is gone.
-	ctx := context.WithoutCancel(r.Context())
 	var seg sentences.SegmentFunc
 	if segmented {
 		seg = s.segmenter().Segment
 	}
-	texts := make([]string, 0, len(existing))
-	for _, x := range existing {
-		texts = append(texts, x.Hanzi)
-	}
-	readingSystem := sentences.RequestFor(*e, nil, in.Level, !segmented).ReadingSystem
-	kept, dropped, err := sentences.FilterExamples(ctx, seg, sentences.WordOf(*e), readingSystem, reply.Sentences, texts)
-	if err != nil {
+	var res sentences.GenerationResult
+	var storeErr error
+	_, err := s.runAI(r, u.ID, "examples", func(ctx context.Context, p ai.Provider, spec ai.ProviderSpec, cr ai.Credentials) (ai.CallResult, error) {
+		// Under the slot: the marker and the kept examples as stored now.
+		if err := precheck(ctx); err != nil {
+			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
+		}
+		existing, err := sentences.ForEntry(ctx, s.db, e.ID, u.ID)
+		if err != nil {
+			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
+		}
+		req := sentences.RequestFor(*e, existing, in.Level, !segmented)
+		reply, err := p.Examples(ctx, cr, req)
+		call := ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}
+		if err != nil {
+			return call, err
+		}
+		// Checked and stored before the slot is released, so a retry with the
+		// same request id finds the marker (ctx is detached from the client).
+		texts := make([]string, 0, len(existing))
+		for _, x := range existing {
+			texts = append(texts, x.Hanzi)
+		}
+		kept, dropped, ferr := sentences.FilterExamples(ctx, seg, sentences.WordOf(*e), req.ReadingSystem, reply.Sentences, texts)
+		if ferr != nil {
+			storeErr = ferr
+			return call, nil
+		}
+		modelID := reply.Model
+		if modelID == "" {
+			modelID = cr.Model
+		}
+		res, storeErr = sentences.StoreGeneration(ctx, s.db, u.ID, e.ID, sentences.Generation{RequestID: in.RequestID, Level: in.Level, Provider: spec.ID, Model: modelID}, kept, dropped)
+		return call, nil
+	})
+	switch {
+	case errors.Is(err, errExamplesStored):
+		answerStored()
+	case errors.Is(err, errNoProviderCall):
+		// The cause is wrapped beside errNoProviderCall; the mapper matches it with errors.Is.
+		answerExamplesError(w, r, err)
+	case err != nil:
+		writeAIError(w, err)
+	case storeErr != nil:
+		log.Printf("ai examples: store: %v", storeErr)
 		writeInternal(w, r)
-		return
+	default:
+		writeJSON(w, http.StatusOK, res)
 	}
-	modelID := reply.Model
-	if modelID == "" {
-		modelID = run.Creds.Model
-	}
-	drafts, err := sentences.ReplaceDrafts(ctx, s.db, u.ID, e.ID, sentences.Generation{RequestID: in.RequestID, Level: in.Level, Provider: run.Spec.ID, Model: modelID}, kept)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	writeJSON(w, http.StatusOK, examplesAnswer{Drafts: drafts, Dropped: dropped, Provider: run.Spec.ID, Model: modelID})
 }
 
 // handleKeepExample serves POST /api/entries/{id}/examples/{draftId}/keep:

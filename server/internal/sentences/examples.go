@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -282,8 +283,9 @@ type Draft struct {
 // ExamplesView is GET /api/entries/{id}/examples: the caller's drafts of the
 // entry and the level of their latest generation or kept example.
 type ExamplesView struct {
-	Drafts       []Draft `json:"drafts"`
-	DefaultLevel string  `json:"defaultLevel"`
+	Drafts       []Draft      `json:"drafts"`
+	DefaultLevel string       `json:"defaultLevel"`
+	LastRequest  *LastRequest `json:"lastRequest"`
 }
 
 // Generation is who wrote a set of drafts, for which request and level.
@@ -323,28 +325,38 @@ func Examples(ctx context.Context, sqlDB *sql.DB, userID, entryID int64) (Exampl
 		return ExamplesView{}, err
 	}
 	v := ExamplesView{Drafts: list, DefaultLevel: "beginner"}
-	var level string
-	err = sqlDB.QueryRowContext(ctx, `
-		SELECT level FROM (
-			SELECT level, created_at AS at, id AS n FROM example_drafts WHERE user_id = ?1
-			UNION ALL
-			SELECT ai_level, updated_at, id FROM sentences WHERE user_id = ?1 AND ai_level <> '' AND deleted_at IS NULL)
-		ORDER BY at DESC, n DESC LIMIT 1`, userID).Scan(&level)
+	// The latest generation's level, else the latest kept example's, else the
+	// latest draft's (markers expire after a day).
+	for _, q := range []string{
+		`SELECT level FROM example_generations WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+		`SELECT ai_level FROM sentences WHERE user_id = ? AND ai_level <> '' AND deleted_at IS NULL ORDER BY updated_at DESC, id DESC LIMIT 1`,
+		`SELECT level FROM example_drafts WHERE user_id = ? ORDER BY id DESC LIMIT 1`,
+	} {
+		var level string
+		err := sqlDB.QueryRowContext(ctx, q, userID).Scan(&level)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return ExamplesView{}, fmt.Errorf("default level of user %d: %w", userID, err)
+		}
+		if ai.ValidLevel(level) {
+			v.DefaultLevel = level
+		}
+		break
+	}
+	var last LastRequest
+	err = sqlDB.QueryRowContext(ctx, `SELECT request_id, dropped, provider, model FROM example_generations
+		WHERE user_id = ? AND entry_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`, userID, entryID).
+		Scan(&last.RequestID, &last.Dropped, &last.Provider, &last.Model)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 	case err != nil:
-		return ExamplesView{}, fmt.Errorf("default level of user %d: %w", userID, err)
-	case ai.ValidLevel(level):
-		v.DefaultLevel = level
+		return ExamplesView{}, fmt.Errorf("last generation of user %d: %w", userID, err)
+	default:
+		v.LastRequest = &last
 	}
 	return v, nil
-}
-
-// DraftsOfRequest is the caller's drafts of entryID written by requestID; ok
-// is false when that request stored none (or was replaced since).
-func DraftsOfRequest(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, requestID string) ([]Draft, bool, error) {
-	list, err := drafts(ctx, sqlDB, `user_id = ? AND entry_id = ? AND request_id = ?`, userID, entryID, requestID)
-	return list, err == nil && len(list) > 0, err
 }
 
 // KeptCount is the number of the caller's live AI examples on entryID.
@@ -364,37 +376,97 @@ func keptCount(ctx context.Context, q interface {
 	return n, nil
 }
 
-// ReplaceDrafts stores a generation's sentences as the caller's drafts of
-// entryID, replacing the undecided ones, and answers the entry's drafts. When
-// drafts of g.RequestID are stored already (a retry) nothing is written and
-// those are answered. An empty list removes the old drafts and stores none.
-func ReplaceDrafts(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, g Generation, items []Candidate) ([]Draft, error) {
+// GenerationResult is the answer of a stored generation: the entry's drafts
+// after it, how many sentences the checks dropped, who wrote them and the
+// request id.
+type GenerationResult struct {
+	Drafts    []Draft `json:"drafts"`
+	Dropped   int     `json:"dropped"`
+	Provider  string  `json:"provider"`
+	Model     string  `json:"model"`
+	RequestID string  `json:"requestId"`
+}
+
+// LastRequest is the latest stored generation of an entry (its marker).
+type LastRequest struct {
+	RequestID string `json:"requestId"`
+	Dropped   int    `json:"dropped"`
+	Provider  string `json:"provider"`
+	Model     string `json:"model"`
+}
+
+// generationTTL is how long a generation marker answers a retry.
+const generationTTL = 24 * time.Hour
+
+func storedGeneration(ctx context.Context, q interface {
+	querier
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}, userID, entryID int64, requestID string) (GenerationResult, bool, error) {
+	r := GenerationResult{RequestID: requestID}
+	err := q.QueryRowContext(ctx, `SELECT dropped, provider, model FROM example_generations
+		WHERE user_id = ? AND entry_id = ? AND request_id = ?`, userID, entryID, requestID).Scan(&r.Dropped, &r.Provider, &r.Model)
+	if errors.Is(err, sql.ErrNoRows) {
+		return GenerationResult{}, false, nil
+	}
+	if err != nil {
+		return GenerationResult{}, false, fmt.Errorf("read generation: %w", err)
+	}
+	if r.Drafts, err = drafts(ctx, q, `user_id = ? AND entry_id = ?`, userID, entryID); err != nil {
+		return GenerationResult{}, false, err
+	}
+	return r, true, nil
+}
+
+// StoredGeneration is the answer of the caller's generation requestID of
+// entryID when it is stored (a retry), with the entry's drafts as they are now.
+func StoredGeneration(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, requestID string) (GenerationResult, bool, error) {
+	return storedGeneration(ctx, sqlDB, userID, entryID, requestID)
+}
+
+// StoreGeneration stores a generation of the caller for entryID: its marker
+// (request id, dropped count, provider, model) and, when it kept sentences,
+// those as the entry's drafts in place of the undecided ones. A generation that
+// kept nothing leaves the earlier drafts alone (their Keep still works). When
+// g.RequestID is stored already (a retry) nothing is written and the stored
+// answer comes back. Markers older than a day are removed.
+func StoreGeneration(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, g Generation, items []Candidate, dropped int) (GenerationResult, error) {
 	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
-		return nil, fmt.Errorf("store drafts: %w", err)
+		return GenerationResult{}, fmt.Errorf("store generation: %w", err)
 	}
 	defer tx.Rollback()
-	if have, err := drafts(ctx, tx, `user_id = ? AND entry_id = ? AND request_id = ?`, userID, entryID, g.RequestID); err != nil {
-		return nil, err
-	} else if len(have) > 0 {
+	if have, ok, err := storedGeneration(ctx, tx, userID, entryID, g.RequestID); err != nil {
+		return GenerationResult{}, err
+	} else if ok {
 		return have, nil
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM example_drafts WHERE user_id = ? AND entry_id = ?`, userID, entryID); err != nil {
-		return nil, fmt.Errorf("replace drafts: %w", err)
+	now := time.Now().UTC()
+	stamp := now.Format(time.RFC3339)
+	if _, err := tx.ExecContext(ctx, `DELETE FROM example_generations WHERE user_id = ? AND created_at < ?`,
+		userID, now.Add(-generationTTL).Format(time.RFC3339)); err != nil {
+		return GenerationResult{}, fmt.Errorf("prune generations: %w", err)
 	}
-	stamp := pack.Now()
+	if _, err := tx.ExecContext(ctx, `INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, userID, entryID, g.RequestID, g.Level, dropped, g.Provider, g.Model, stamp); err != nil {
+		return GenerationResult{}, fmt.Errorf("store generation: %w", err)
+	}
+	if len(items) > 0 {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM example_drafts WHERE user_id = ? AND entry_id = ?`, userID, entryID); err != nil {
+			return GenerationResult{}, fmt.Errorf("replace drafts: %w", err)
+		}
+	}
 	for _, c := range items {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO example_drafts (user_id, entry_id, request_id, hanzi, pinyin, translation, level, provider, model, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, userID, entryID, g.RequestID, c.Text, c.Reading, c.Translation, g.Level, g.Provider, g.Model, stamp); err != nil {
-			return nil, fmt.Errorf("store draft: %w", err)
+			return GenerationResult{}, fmt.Errorf("store draft: %w", err)
 		}
 	}
-	out, err := drafts(ctx, tx, `user_id = ? AND entry_id = ?`, userID, entryID)
+	out, _, err := storedGeneration(ctx, tx, userID, entryID, g.RequestID)
 	if err != nil {
-		return nil, err
+		return GenerationResult{}, err
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("store drafts: %w", err)
+		return GenerationResult{}, fmt.Errorf("store generation: %w", err)
 	}
 	return out, nil
 }

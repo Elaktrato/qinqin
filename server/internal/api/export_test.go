@@ -85,3 +85,9 @@ func WithEventStream(f func(ctx context.Context, w io.Writer, db *sql.DB, user i
 // WithSegmentHook runs hook inside every POST /api/segment, after its
 // concurrency slot is taken (tests hold requests in flight with it).
 func WithSegmentHook(hook func()) Option { return func(s *server) { s.segmentHook = hook } }
+
+// WithAISlotHook runs hook(kind, phase) inside runAI: "acquired" once the
+// user's AI slot is taken, "releasing" just before it is given back.
+func WithAISlotHook(hook func(kind, phase string)) Option {
+	return func(s *server) { s.aiSlotHook = hook }
+}

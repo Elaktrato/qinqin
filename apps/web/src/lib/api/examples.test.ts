@@ -18,22 +18,23 @@ describe('AI examples api (#186)', () => {
 
 	it('reads the drafts and the default level leniently', async () => {
 		vi.mocked(fetch).mockResolvedValue(
-			json({ drafts: [{ id: 3, entryId: 9, hanzi: '我喜欢学习。', translation: 't' }, { id: 'x' }], defaultLevel: 'advanced' })
+			json({ drafts: [{ id: 3, entryId: 9, hanzi: '我喜欢学习。', translation: 't' }, { id: 'x' }], defaultLevel: 'advanced', lastRequest: { requestId: 'r9', dropped: 2 } })
 		);
 		const v = await getExamples(9);
 		expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/entries/9/examples');
 		expect(v.defaultLevel).toBe('advanced');
 		expect(v.drafts.map((d) => d.id)).toEqual([3]);
+		expect(v.lastRequest).toEqual({ requestId: 'r9', dropped: 2, provider: '', model: '' });
 	});
 
 	it('generates with a level and a request id', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ drafts: [], dropped: 2, provider: 'openai', model: 'm' }));
+		vi.mocked(fetch).mockResolvedValue(json({ drafts: [], dropped: 2, provider: 'openai', model: 'm', requestId: 'req-1' }));
 		const g = await generateExamples(9, 'elementary', 'req-1');
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
 		expect(url).toBe('/api/entries/9/examples');
 		expect(init?.method).toBe('POST');
 		expect(JSON.parse(init?.body as string)).toEqual({ level: 'elementary', requestId: 'req-1' });
-		expect(g).toEqual({ drafts: [], dropped: 2, provider: 'openai', model: 'm' });
+		expect(g).toEqual({ drafts: [], dropped: 2, provider: 'openai', model: 'm', requestId: 'req-1' });
 	});
 
 	it('keeps a draft and answers the sentence with its mark', async () => {

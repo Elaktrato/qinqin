@@ -6,7 +6,10 @@
 -- `example_drafts`; `request_id` is the client's id of the generation, so a
 -- retry answers the stored drafts instead of a second AI call. A draft or a
 -- kept example deleted with a reason leaves a row in `example_reports`
--- (the user's own feedback on the AI; at most 500 per user). Drafts and
+-- (the user's own feedback on the AI; at most 500 per user). Every stored
+-- generation leaves a marker in `example_generations` (its request id and how
+-- many sentences the checks dropped), so a retry of a generation that kept
+-- nothing is answered too; markers are kept a day. Drafts, markers and
 -- reports are per user and entry, not in the paged pull and not in a backup.
 
 ALTER TABLE sentences ADD COLUMN ai_provider TEXT NOT NULL DEFAULT '';
@@ -28,6 +31,18 @@ CREATE TABLE example_drafts (
 );
 
 CREATE INDEX idx_example_drafts_user_entry ON example_drafts (user_id, entry_id);
+
+CREATE TABLE example_generations (
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    entry_id INTEGER NOT NULL REFERENCES entries(id),
+    request_id TEXT NOT NULL CHECK (length(request_id) BETWEEN 1 AND 64),
+    level TEXT NOT NULL CHECK (level IN ('beginner', 'elementary', 'intermediate', 'advanced')),
+    dropped INTEGER NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, entry_id, request_id)
+);
 
 CREATE TABLE example_reports (
     id INTEGER PRIMARY KEY,

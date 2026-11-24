@@ -190,8 +190,9 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 		writeInternal(w, r)
 		return
 	}
-	var reply ai.ConverseReply
-	run, err := s.runAI(r, userID, "converse", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, cr ai.Credentials) (ai.CallResult, error) {
+	var out journal.Conversation
+	var replyErr, storeErr error
+	_, err = s.runAI(r, userID, "converse", func(ctx context.Context, p ai.Provider, spec ai.ProviderSpec, cr ai.Credentials) (ai.CallResult, error) {
 		// Under the slot: the conversation as stored now.
 		now, err := journal.GetConversation(ctx, s.db, userID, ws, id)
 		switch {
@@ -207,11 +208,35 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 		for _, m := range now.Messages {
 			history = append(history, ai.Turn{Role: m.Role, Text: m.Text})
 		}
-		reply, err = p.Converse(ctx, cr, ai.ConverseRequest{
+		reply, err := p.Converse(ctx, cr, ai.ConverseRequest{
 			Language: t.language, ExplanationLanguage: t.settings.ExplanationLanguage, Guidance: t.settings.Guidance,
 			Level: now.Level, Topic: now.Topic, Words: journal.WordSample(words), History: history, Text: text,
 		})
-		return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
+		call := ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}
+		if err != nil {
+			return call, err
+		}
+		// Checked and stored before the slot is released (fix wave of #186), so a
+		// retry with the same turn id finds the stored turn.
+		partnerText, rerr := journal.PartnerReply(t.language, reply.Reply)
+		if rerr != nil {
+			log.Printf("ai converse: provider=%s refused reply: %v", spec.ID, rerr)
+			replyErr = rerr
+			return call, nil
+		}
+		model := reply.Model
+		if model == "" {
+			model = cr.Model
+		}
+		partner := journal.Message{Role: "partner", Text: partnerText, Model: model, Provider: spec.ID}
+		var learner *journal.Message
+		if text != "" {
+			learner = &journal.Message{Role: "learner", Text: text, Annotations: journal.TurnAnnotations(text, t.language, reply.Annotations)}
+		}
+		// The conversation may have been discarded while the provider worked:
+		// AppendTurn writes nothing then. ctx is detached from the client.
+		out, storeErr = journal.AppendTurn(ctx, s.db, userID, ws, id, in.TurnID, learner, partner)
+		return call, nil
 	})
 	switch {
 	case errors.Is(err, errTurnStored):
@@ -221,43 +246,21 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		writeJSON(w, http.StatusOK, stored)
-		return
 	case errors.Is(err, errNoProviderCall):
 		// The cause is wrapped beside errNoProviderCall (two %w): errors.Unwrap
 		// would give nil, the mappers match the cause with errors.Is/As.
 		answerTurnError(w, r, err)
-		return
 	case err != nil:
 		writeAIError(w, err)
-		return
+	case errors.Is(replyErr, journal.ErrReplyLanguage):
+		writeError(w, http.StatusUnprocessableEntity, "wrong_language", "The AI did not answer in the workspace language.")
+	case replyErr != nil:
+		writeAIError(w, ai.ErrBadReply)
+	case storeErr != nil:
+		answerConversationError(w, r, storeErr)
+	default:
+		writeJSON(w, http.StatusOK, out)
 	}
-	partnerText, err := journal.PartnerReply(t.language, reply.Reply)
-	if err != nil {
-		log.Printf("ai converse: provider=%s refused reply: %v", run.Spec.ID, err)
-		if errors.Is(err, journal.ErrReplyLanguage) {
-			writeError(w, http.StatusUnprocessableEntity, "wrong_language", "The AI did not answer in the workspace language.")
-		} else {
-			writeAIError(w, ai.ErrBadReply)
-		}
-		return
-	}
-	model := reply.Model
-	if model == "" {
-		model = run.Creds.Model
-	}
-	partner := journal.Message{Role: "partner", Text: partnerText, Model: model, Provider: run.Spec.ID}
-	var learner *journal.Message
-	if text != "" {
-		learner = &journal.Message{Role: "learner", Text: text, Annotations: journal.TurnAnnotations(text, t.language, reply.Annotations)}
-	}
-	// The conversation may have been discarded while the provider worked:
-	// AppendTurn writes nothing then.
-	out, err := journal.AppendTurn(context.WithoutCancel(r.Context()), s.db, userID, ws, id, in.TurnID, learner, partner)
-	if err != nil {
-		answerConversationError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, out)
 }
 
 // handleSaveConversation serves POST /api/journal/conversations/{id}/save?workspace=

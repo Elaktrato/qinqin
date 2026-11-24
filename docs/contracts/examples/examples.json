@@ -39,13 +39,15 @@
  },
  "examples": {
   "drafts": [],
-  "defaultLevel": "beginner"
+  "defaultLevel": "beginner",
+  "lastRequest": null
  },
  "generated": {
   "drafts": [],
   "dropped": 1,
   "provider": "anthropic",
-  "model": "claude-opus-5-5"
+  "model": "claude-opus-5-5",
+  "requestId": "r-01"
  },
  "kept": {
   "id": 9002,
@@ -701,5 +703,15 @@
     "model": ""
    }
   }
- ]
+ ],
+ "examplesWithRequest": {
+  "drafts": [],
+  "defaultLevel": "advanced",
+  "lastRequest": {
+   "requestId": "r-02",
+   "dropped": 5,
+   "provider": "anthropic",
+   "model": "claude-opus-5-5"
+  }
+ }
 }

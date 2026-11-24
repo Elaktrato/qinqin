@@ -78,6 +78,8 @@ var userTables = []UserTable{
 	// AI. Neither is exported; a restore drops the drafts and keeps the reports.
 	{Name: "example_drafts", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_drafts WHERE user_id = ?1`},
 		Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
+	{Name: "example_generations", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_generations WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: "retry bookkeeping of AI calls (kept a day)", Restore: RestoreDrop},
 	{Name: "example_reports", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_reports WHERE user_id = ?1`},
 		PreviewKey: "exampleReports", Count: `SELECT COUNT(*) FROM example_reports WHERE user_id = ?1`,
 		Export: ExportSkip, ExportReason: "feedback on the AI's sentences, not learning data", Restore: RestoreKeep},

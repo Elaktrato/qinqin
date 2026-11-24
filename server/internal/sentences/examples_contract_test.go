@@ -40,11 +40,13 @@ type examplesFixture struct {
 	Limits  struct {
 		PerGeneration, KeptPerEntry, TextRunes, ReadingRunes, TranslationRunes, FewExamples, ReportsPerUser, RequestIDLength int
 	} `json:"limits"`
-	Draft    json.RawMessage `json:"draft"`
-	Examples json.RawMessage `json:"examples"`
-	Kept     json.RawMessage `json:"kept"`
-	Plain    json.RawMessage `json:"plain"`
-	Generate struct {
+	Draft     json.RawMessage `json:"draft"`
+	Examples  json.RawMessage `json:"examples"`
+	WithReq   json.RawMessage `json:"examplesWithRequest"`
+	Generated json.RawMessage `json:"generated"`
+	Kept      json.RawMessage `json:"kept"`
+	Plain     json.RawMessage `json:"plain"`
+	Generate  struct {
 		Accept []struct {
 			Level     string   `json:"level"`
 			RequestID fxString `json:"requestId"`
@@ -142,8 +144,11 @@ func TestExamplesFixtureShapes(t *testing.T) {
 	fx := readExamplesFixture(t)
 	var d sentences.Draft
 	remarshal(t, "draft", fx.Draft, &d)
-	var v sentences.ExamplesView
+	var v, vr sentences.ExamplesView
 	remarshal(t, "examples", fx.Examples, &v)
+	remarshal(t, "examplesWithRequest", fx.WithReq, &vr)
+	var g sentences.GenerationResult
+	remarshal(t, "generated", fx.Generated, &g)
 	var kept, plain model.Sentence
 	remarshal(t, "kept", fx.Kept, &kept)
 	remarshal(t, "plain", fx.Plain, &plain)
