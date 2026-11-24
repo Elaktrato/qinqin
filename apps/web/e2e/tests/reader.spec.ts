@@ -1,35 +1,10 @@
 // Flow 3: open a Japanese book in the reader, point at a word, and the
 // lookup popup shows its dictionary entry.
 
-import type { Locator, Page } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 import { expect, test } from '../support/fixtures';
+import { pointAt } from '../support/pointer';
 import { addBook } from '../support/study';
-
-/** The centre of the first occurrence of `text` inside `container`. */
-async function centreOf(container: Locator, text: string): Promise<{ x: number; y: number }> {
-	const box = await container.evaluate((el, needle) => {
-		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-			const at = (node as Text).data.indexOf(needle);
-			if (at < 0) continue;
-			const range = document.createRange();
-			range.setStart(node, at);
-			range.setEnd(node, at + needle.length);
-			const r = range.getBoundingClientRect();
-			return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-		}
-		return null;
-	}, text);
-	if (box === null) throw new Error(`${text} is not in the text`);
-	return box;
-}
-
-/** Moves the mouse onto `text` (the reader looks a word up on hover, from the character under the pointer). */
-async function pointAt(page: Page, container: Locator, text: string): Promise<void> {
-	const { x, y } = await centreOf(container, text);
-	await page.mouse.move(x - 40, y);
-	await page.mouse.move(x, y, { steps: 4 });
-}
 
 test('pointing at a word in a Japanese book shows its dictionary entry', async ({ page, learner }) => {
 	const bookId = await addBook(learner, 'ja', '学校の本', ['私は学校に行きます。', '水を飲みます。', '学生は本を読みます。']);

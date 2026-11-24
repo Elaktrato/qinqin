@@ -4,6 +4,7 @@
 // Workers copy the template, so no worker ever seeds.
 
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -60,6 +61,12 @@ export function buildBinary(work: string): string {
 }
 
 /** The environment every qinqin process of the suite gets: no network services, no proxy, no seed. */
+/**
+ * A throw-away secret per test process: it seals the fake AI keys the
+ * conversation spec stores, on a server that is deleted with the run.
+ */
+const AI_SECRET = randomBytes(32).toString('base64');
+
 export function serverEnv(packs: string): NodeJS.ProcessEnv {
 	const env: NodeJS.ProcessEnv = {};
 	for (const key of ['PATH', 'HOME', 'TMPDIR', 'GOCOVERDIR']) {
@@ -73,7 +80,11 @@ export function serverEnv(packs: string): NodeJS.ProcessEnv {
 		QINQIN_PACKS: packs,
 		// The fixture logs in through X-Forwarded-For (one address per test), so the
 		// per-address sign-in limit never trips across tests.
-		QINQIN_TRUSTED_PROXIES: '127.0.0.1'
+		QINQIN_TRUSTED_PROXIES: '127.0.0.1',
+		// The deterministic fake AI provider (server/internal/ai/fake.go): it never
+		// touches the network. A learner without a stored key still sees "no key".
+		QINQIN_AI_PROVIDER: 'fake',
+		QINQIN_SECRET: AI_SECRET
 	};
 }
 

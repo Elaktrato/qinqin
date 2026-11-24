@@ -172,8 +172,8 @@ func (g *Gemini) Converse(ctx context.Context, cr Credentials, r ConverseRequest
 }
 
 // Converse of the fake: a fixed short reply in the language's script (zh and
-// ja Han, any other a Latin sentence; [[fake:wrongscript]] in the message
-// makes it English), and the corrections Fake.Review gives the message. The
+// ja about 学校, a word of the e2e dictionaries; any other a Spanish sentence;
+// [[fake:wrongscript]] in the message makes it English), and the corrections Fake.Review gives the message. The
 // review's failure markers apply to the message.
 func (f Fake) Converse(ctx context.Context, c Credentials, r ConverseRequest) (ConverseReply, error) {
 	var anns []RawAnnotation
@@ -187,9 +187,9 @@ func (f Fake) Converse(ctx context.Context, c Credentials, r ConverseRequest) (C
 	reply := "¡Hola! ¿Qué tal tu día?"
 	switch primary, _, _ := strings.Cut(r.Language, "-"); primary {
 	case "zh":
-		reply = "你好！你今天做什么了？"
+		reply = "你好！你今天去学校了吗？"
 	case "ja":
-		reply = "こんにちは！今日は何をしましたか？"
+		reply = "こんにちは！今日は学校に行きましたか？"
 	}
 	if strings.Contains(r.Text, "[[fake:wrongscript]]") {
 		reply = "Hello! This reply is in English."

@@ -71,7 +71,8 @@ npm run e2e -- --headed --debug    # watch and step through
   building it (CI sets it after its own web build); `QINQIN_E2E_BINARY=/path/to/qinqin` skips both builds and
   runs that binary (a build with a deliberate mutation, for example).
 - Each worker runs its own server on a free loopback port over a copy of the template, with
-  `QINQIN_AUTO_SEED=0` and no AI, mail or other network; each test signs in as a new user of its own.
+  `QINQIN_AUTO_SEED=0` and no mail or other network; the AI is the fake provider (`QINQIN_AI_PROVIDER=fake` with a
+  throw-away `QINQIN_SECRET`), which never leaves the server. Each test signs in as a new user of its own.
 - A browser other than the one the pinned `@playwright/test` version installs:
   `QINQIN_E2E_CHROMIUM=/path/to/chrome npm run e2e`.
 - On a failure the trace, screenshot and video are kept in `apps/web/e2e/test-results/` (open a trace with
@@ -89,7 +90,9 @@ Back (#131), with the reviews the server stores; the reader popup on hover (desk
 no stale lookup) and from a selection (phone sheet); offline study after the service worker cached the app and
 today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
 grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
-long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back.
+long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a
+journal conversation with the fake AI partner (its opening, the lookup popup on a reply, corrections in the
+margin, saving it as an entry).
 
 Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
 prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke
