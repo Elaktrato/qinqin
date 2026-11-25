@@ -10,7 +10,7 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`) |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`, `images`) |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |

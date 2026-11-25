@@ -20,6 +20,11 @@ const (
 	// TypeLemmaRules is a lemmatizer rule-table pack: one rules.json in the
 	// format of docs/contracts/lemma/ for one language (#176).
 	TypeLemmaRules = "lemma-rules"
+	// TypeImages is a pictures pack (#216): SVG pictures and a word -> picture
+	// mapping per language. It serves several languages, so its manifest
+	// states languages. It builds no data package: the web app fetches the
+	// pictures from the server (docs/contracts/images/).
+	TypeImages = "images"
 	// TypeTheme is a colour theme pack; it states no language.
 	TypeTheme = "theme"
 	// TypeFont is a hanzi/kanji font pack; it states no language.
@@ -101,6 +106,7 @@ var All = []Descriptor{
 	{Type: TypeLemmaRules, Registry: "lemma_rule_packs", Languages: One, Uploadable: true, Package: "lemma-rules", Format: FormatRulesJSON},
 	{Type: TypeTheme, Registry: "theme_packs", Languages: None, Uploadable: true, Format: FormatThemesJSON},
 	{Type: TypeFont, Registry: "font_packs", Languages: None, Uploadable: true, Format: FormatFontSlices},
+	{Type: TypeImages, Registry: "image_packs", Languages: Many, Uploadable: true, Format: FormatImagesSVG},
 }
 
 // Index is the position of typ in All, -1 for an unknown type.

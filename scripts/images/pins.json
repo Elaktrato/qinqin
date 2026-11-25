@@ -1,0 +1,21 @@
+{
+  "doc": "Pinned upstream files of the images packs (#216). Every file is checked by SHA-256 before it is used; to adopt a new release a maintainer re-reads its licence, then updates the pin. Licence evidence checked 2026-11-25: OpenMoji README and LICENSE.txt (CC BY-SA 4.0 legal code); Mulberry website and LICENSE.txt (CC BY-SA 4.0 by URL); CLDR LICENSE (Unicode License v3).",
+  "openmoji": {
+    "version": "17.0.0",
+    "zip": { "url": "https://github.com/hfg-gmuend/openmoji/releases/download/17.0.0/openmoji-svg-black.zip", "sha256": "f127e2cfd5e8fb17c2a5ec6ec73a66c954a83588ffd1d91047988fc6b70f26e8", "bytes": 3702558 },
+    "data": { "url": "https://raw.githubusercontent.com/hfg-gmuend/openmoji/17.0.0/data/openmoji.json", "sha256": "ab181dd523021dfbe2b98a13d96ab384b7b3014d17815261bc267fb39d9a211b", "bytes": 2193231 },
+    "license": { "url": "https://raw.githubusercontent.com/hfg-gmuend/openmoji/17.0.0/LICENSE.txt", "sha256": "5e436ff8ffbb77d8607220e9bce20c8915d860010feeb6c1ebef5a85688e9b39", "bytes": 20137 }
+  },
+  "mulberry": {
+    "version": "3.6.1",
+    "zip": { "url": "https://github.com/mulberrysymbols/mulberry-symbols/releases/download/v3.6.1/mulberry-symbols.zip", "sha256": "9da3f23a17bd71aec3c94eae9a3367e977e7b65d3d7feeaadb3f4690182aa05b", "bytes": 52347398 },
+    "data": { "url": "https://github.com/mulberrysymbols/mulberry-symbols/releases/download/v3.6.1/symbol-info.csv", "sha256": "7ab9c0a3a964334c4f8d38fb2d49bd3e08a3be652a1eca36ac9036ba7adc568c", "bytes": 302110 },
+    "licenseInZip": { "path": "LICENSE.txt", "sha256": "dc26aeda254c860a5d8e8ad5ba3ce44f41c6b1418836df87119899d9a2a7e13c" }
+  },
+  "cldr": {
+    "version": "49.0.0",
+    "zh": { "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/cldr-json/cldr-annotations-full/annotations/zh/annotations.json", "sha256": "7d49968f977021fefe6ceea2613e0313de5ea416d8f3c0a8fe3032c9b7f2ebfb", "bytes": 422486 },
+    "ja": { "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/cldr-json/cldr-annotations-full/annotations/ja/annotations.json", "sha256": "e42dacabf2eee0aab36c168c995efeaf8add896f8940c5ee86a809d85c2816e7", "bytes": 440358 },
+    "license": { "url": "https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/LICENSE", "sha256": "220ba0e1c43b99530d2d5bdb892a99dca0989414f51ab695ecd90163eaa1ec3b", "bytes": 2033 }
+  }
+}

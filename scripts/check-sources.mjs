@@ -32,6 +32,8 @@
 //   g. the packs the project writes itself (PROJECT_PACKS) state licence
 //      exactly CC-BY-4.0 (optionally followed by " (qualifier)"), carry the credit "qinqin contributors, CC BY 4.0" in their
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
+//   h. the images packs (#216; only when scripts/images/pins.json exists): each has its committed
+//      mapping, and docs/sources.md names the pack, its pinned version and its licence.
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -68,8 +70,38 @@ export const FETCHED_PACKS = [
 	'noto-serif-tc',
 	'noto-serif-jp',
 	'lxgw-wenkai',
-	'klee-one'
+	'klee-one',
+	'images-openmoji',
+	'images-mulberry'
 ];
+
+/**
+ * The images packs (#216) are built from pinned upstream releases and the committed mappings
+ * (scripts/images/pins.json, scripts/images/<pack>/map.tsv). When the pins exist, each pack needs its
+ * mapping, and docs/sources.md must name the pack, its pinned version and its licence.
+ */
+export const IMAGES_PACKS = { 'images-openmoji': ['openmoji', 'CC BY-SA 4.0'], 'images-mulberry': ['mulberry', 'CC BY-SA 4.0'] };
+
+function imagesProblems(root, doc) {
+	const pinFile = join(root, 'scripts/images/pins.json');
+	if (!existsSync(pinFile)) return [];
+	let pins;
+	try {
+		pins = JSON.parse(readFileSync(pinFile, 'utf8'));
+	} catch (e) {
+		return [`scripts/images/pins.json: not valid JSON (${e.message})`];
+	}
+	const problems = [];
+	for (const [id, [dir, licence]] of Object.entries(IMAGES_PACKS)) {
+		if (!existsSync(join(root, 'scripts/images', dir, 'map.tsv'))) problems.push(`scripts/images/${dir}/map.tsv: the mapping of ${id} is missing`);
+		const version = pins[dir]?.version;
+		if (!version) problems.push(`scripts/images/pins.json: no pinned version of ${dir}`);
+		if (!doc.includes('`' + id + '`')) problems.push(`docs/sources.md: images pack "${id}" is not mentioned; add it, in backticks`);
+		else if (version && !doc.includes(version)) problems.push(`docs/sources.md: the pinned ${dir} version ${version} is not mentioned`);
+		if (!doc.includes(licence)) problems.push(`docs/sources.md: the licence ${licence} of ${id} is not stated`);
+	}
+	return problems;
+}
 /**
  * Packs a maintainer tool generates into plugins/data, documented before
  * they exist: server/tools/tatoeba writes the example sentence packs from a
@@ -417,6 +449,7 @@ export function checkSources(root) {
 			problems.push(`docs/sources.md: bundled pack "${id}" (${rel}) is not mentioned; add it, in backticks, to the tables`);
 		}
 	}
+	problems.push(...imagesProblems(root, doc));
 	problems.push(...fontProblems(root, doc));
 	problems.push(...namedWithLicence(root, doc, iconFiles(root), 'vendored icon set'));
 	for (const id of docPackIds(doc)) {

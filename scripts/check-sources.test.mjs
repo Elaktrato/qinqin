@@ -336,3 +336,23 @@ test('rule f: a vendored icon set the docs do not name, or name without a licenc
 		'apps/web/src/lib/ui/icons/lucide.ts: the docs/sources.md section naming it names no licence text that exists under apps/web/static'
 	]);
 });
+
+test('rule h: the images packs need their mapping and a docs section with pack id, version and licence', () => {
+	const withPins = (doc, maps = ['openmoji', 'mulberry']) => {
+		const root = repo(okPacks(), doc);
+		mkdirSync(join(root, 'scripts/images'), { recursive: true });
+		writeFileSync(join(root, 'scripts/images/pins.json'), JSON.stringify({ openmoji: { version: '17.0.0' }, mulberry: { version: '3.6.1' } }));
+		for (const m of maps) {
+			mkdirSync(join(root, 'scripts/images', m), { recursive: true });
+			writeFileSync(join(root, 'scripts/images', m, 'map.tsv'), 'x\n');
+		}
+		return root;
+	};
+	const good = DOC + '\n`images-openmoji` OpenMoji 17.0.0 CC BY-SA 4.0; `images-mulberry` Mulberry 3.6.1 CC BY-SA 4.0\n';
+	assert.deepEqual(checkSources(withPins(good)), []);
+	assert.match(checkSources(withPins(good, ['openmoji'])).join('\n'), /scripts\/images\/mulberry\/map\.tsv: the mapping of images-mulberry is missing/);
+	assert.match(checkSources(withPins(DOC)).join('\n'), /images pack "images-openmoji" is not mentioned/);
+	assert.match(checkSources(withPins(good.replace('17.0.0', '16'))).join('\n'), /pinned openmoji version 17\.0\.0 is not mentioned/);
+	assert.match(checkSources(withPins(DOC + '`images-openmoji` 17.0.0 `images-mulberry` 3.6.1')).join('\n'), /licence CC BY-SA 4\.0 of images-openmoji is not stated/);
+	assert.deepEqual(checkSources(repo(okPacks())), [], 'without the pins the rule does not apply');
+});

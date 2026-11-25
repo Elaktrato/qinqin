@@ -52,6 +52,18 @@ CC BY-SA, which asks for share-alike). They are listed, with links and pinned ve
 [`docs/sources.md`](docs/sources.md) and on the app's Sources page, and each pack carries its licence text
 and an `ATTRIBUTION.md` in `plugins/data/<pack>/`.
 
+### Pictures (OpenMoji and Mulberry Symbols)
+
+The bundled word pictures are [OpenMoji](https://openmoji.org) 17.0.0 (CC BY-SA 4.0) and
+[Mulberry Symbols](https://mulberrysymbols.org) 3.6.1 by Steve Lee (CC BY-SA 4.0). Each is its own data pack
+(`images-openmoji`, `images-mulberry`) with its licence text, credit and notice, and the word mapping shipped with it
+is distributed under the same licence. ShareAlike reaches the pictures and any adaptation of them, including the
+recoloured copy the web app draws (the file itself is never modified); the pack says so. The position this
+project takes is that a program which reads a separate data file and shows it, shipped next to it, does not adapt
+the data (a collection, as with the dictionaries above), so the MIT code stays MIT. To keep that true the pictures are
+never compiled into the binary and never bundled in the web build: the server serves them from the installed packs.
+This position is the project owner's to confirm; it is not legal advice. See `docs/sources.md`, "Pictures".
+
 ### The HSK lists
 
 The official HSK word and character lists (`hsk-words`, `hsk-chars`) are from the syllabus published by CLEC and
