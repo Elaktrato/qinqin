@@ -59,7 +59,7 @@ and streaks are computed by the clients (`docs/contracts/scheduler/`, `goals/`).
 
 ## Enforcement
 
-- `server/internal/reminders` tests decode `docs/contracts/reminders/{settings,plan,unsubscribe}.json`; the scheduler
+- `server/internal/reminders` tests decode `docs/contracts/reminders/settings.json`, `plan.json` and `unsubscribe.json`; the scheduler
   tests use a fake clock, mailer and push sender.
 - `server/internal/webpush` reproduces the RFC 8291 worked example byte for byte.
 - `internal/api` route, error and gate walks cover the new routes; `docs/wiki/API-Routes.md` is generated.
