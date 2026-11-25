@@ -14,7 +14,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** adb: runs `adb <args>`; returns trimmed stdout. A failing command throws unless `soft`. */
 export function adb(args, { soft = false, timeout = 120_000 } = {}) {
 	try {
-		return execFileSync(ADB, args, { encoding: 'utf8', timeout, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+		return execFileSync(ADB, args, { encoding: 'utf8', timeout, maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 	} catch (err) {
 		if (soft) return `ERROR: ${(err.stderr || err.message || '').toString().trim()}`;
 		throw new Error(`adb ${args.join(' ')}: ${(err.stderr || err.message || '').toString().trim()}`);
