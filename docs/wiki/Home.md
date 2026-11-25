@@ -23,6 +23,7 @@ This wiki has five parts. Pick the one that matches why you are here.
 
 - [Deploying with Docker or Portainer](Admin-deploying)
 - [Upgrading](Admin-upgrading): the routine, log lines after an upgrade, notes per release.
+- [Updates and the release check](Admin-updates): installed against latest version, release notes, the offline state, what is sent to GitHub and how to switch it off.
 - [Environment variables](Admin-environment-variables)
 - [Users, registration and invites](Admin-users-and-registration)
 - [Email, two-step sign-in and security](Admin-email-and-security)
