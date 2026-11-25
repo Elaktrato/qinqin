@@ -60,7 +60,7 @@ function step(state: number): [number, number] {
 	return [((t ^ (t >>> 14)) >>> 0) / 4294967296, next];
 }
 
-function pick(count: number, size: number, rng: number): [number[], number] {
+export function pick(count: number, size: number, rng: number): [number[], number] {
 	const pool = Array.from({ length: count }, (_, i) => i);
 	const out: number[] = [];
 	let state = rng;
