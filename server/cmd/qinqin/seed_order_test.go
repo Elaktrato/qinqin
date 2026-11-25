@@ -63,10 +63,10 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		"slices/" + sha + ".woff2": slice,
 	})
 	writeOrderPack(t, root, "a-images", map[string]string{
-		"manifest.json": `{"id":"order-images","name":"order-images","version":"1","type":"images","languages":["zh"],"license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"images-svg"}`,
-		"pictures.tsv": "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\ta\tb\n",
+		"manifest.json":  `{"id":"order-images","name":"order-images","version":"1","type":"images","languages":["zh"],"license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"images-svg"}`,
+		"pictures.tsv":   "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\ta\tb\n",
 		"pictures/A.svg": `<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>`,
-		"map.tsv": "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t好\t0\tA\t90\tname\t\n",
+		"map.tsv":        "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t好\t0\tA\t90\tname\t\n",
 	})
 	writeOrderPack(t, root, "b-theme", map[string]string{
 		"manifest.json": manifest("order-theme", "theme", "", "themes-json"),

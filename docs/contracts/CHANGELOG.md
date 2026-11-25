@@ -5,6 +5,23 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #216 — images packs: bundled pictures for words (contract 8)
+
+- **New pack type:** `images` (format `images-svg`, `languages` like a strokes pack, uploadable, no data package),
+  last in `packages/pack-types.json` (`type`, `registry` `image_packs`, `languages: "many"`, `package: null`). A
+  client that lists packs meets the type in the admin list and the Sources page only.
+- **New routes:** `GET /api/images/entries/{id}[?sense=N]` (signed-in users, not access tokens): the best bundled
+  picture of an entry as `{"picture": {packId, concept, label, credit, license, attribution, basis, sense, score,
+  svg}}` or `{"picture": null}`; and `GET /api/image-packs` (public, not access tokens): the installed packs for the
+  Sources page. Neither is cached offline by the service worker (`routes.fixture.json`).
+- **New fixtures:** `images/resolve.json` (rule `images/resolve`: which mapping wins for an entry, sense and
+  targets) and `images/svg.json` (rule `images/svg`: the picture vocabulary, what a client must refuse, and
+  `themeSvg`). The pack format and the licence position (BY-SA data in its own packs, never compiled in or bundled
+  in the web build) are in `images/README.md`.
+- **Clients** that do not draw pictures change nothing. A client that does calls `GET /api/images/entries/{id}`
+  (web: `entryPicture`), refuses active content in the svg (`safeSvg`), draws black outlines in the text colour
+  (`themeSvg`) and shows the credit (`pictureCreditLine`).
+
 ## #215 — hints on every flashcard (contract 7)
 
 - **New fixture:** `cards/hints.json` (rule `cards/hints`): the hint kinds (`reading`, then `picture`, a registry in

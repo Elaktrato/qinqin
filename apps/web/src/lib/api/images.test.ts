@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
+import svgFixture from '../../../../../docs/contracts/images/svg.json';
 import { entryPicture, imagePacks, pictureCreditLine, safeSvg, themeSvg, type EntryPicture } from './images';
 
 const APPLE =
@@ -117,5 +118,18 @@ describe('safeSvg', () => {
 describe('pictureCreditLine', () => {
 	it('names the designer and the licence', () => {
 		expect(pictureCreditLine(picture())).toBe('OpenMoji, Liz Bravo, CC BY-SA 4.0');
+	});
+});
+
+// docs/contracts/images/svg.json: the vocabulary every client agrees on.
+describe('images/svg contract', () => {
+	it.each(svgFixture.valid)('safeSvg accepts: $name', (c) => {
+		expect(safeSvg(c.svg)).toBe(c.svg);
+	});
+	it.each(svgFixture.invalid.filter((c) => c.client))('safeSvg refuses: $name', (c) => {
+		expect(safeSvg(c.svg)).toBeNull();
+	});
+	it.each(svgFixture.theme)('themeSvg: $name', (c) => {
+		expect(themeSvg(c.input)).toBe(c.output);
 	});
 });

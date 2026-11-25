@@ -7,10 +7,10 @@ import (
 
 func TestCheckSVGAcceptsPlainDrawings(t *testing.T) {
 	for name, svg := range map[string]string{
-		"openmoji": `<svg id="emoji" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg"><g id="line"><path fill="none" stroke="#000" stroke-width="2" d="M1 2h3"/><circle cx="1" cy="1" r="2"/></g></svg>`,
-		"mulberry": `<svg xmlns="http://www.w3.org/2000/svg" width="850.394" height="850.394" viewBox="0 0 850.394 850.394" overflow="visible"><path d="M0 0" fill="#abda4d"/><path class="aac-skin-fill" fill="#ffeec8" d="M1 1"/></svg>`,
+		"openmoji":                `<svg id="emoji" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg"><g id="line"><path fill="none" stroke="#000" stroke-width="2" d="M1 2h3"/><circle cx="1" cy="1" r="2"/></g></svg>`,
+		"mulberry":                `<svg xmlns="http://www.w3.org/2000/svg" width="850.394" height="850.394" viewBox="0 0 850.394 850.394" overflow="visible"><path d="M0 0" fill="#abda4d"/><path class="aac-skin-fill" fill="#ffeec8" d="M1 1"/></svg>`,
 		"xml header and gradient": `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="a"><stop offset="0" stop-color="#fff"/></linearGradient></defs><rect fill="url(#a)" width="1" height="1"/><use href="#a"/></svg>`,
-		"style attribute": `<svg xmlns="http://www.w3.org/2000/svg"><path style="fill:#000;stroke:none" d="M0 0"/></svg>`,
+		"style attribute":         `<svg xmlns="http://www.w3.org/2000/svg"><path style="fill:#000;stroke:none" d="M0 0"/></svg>`,
 	} {
 		if err := CheckSVG([]byte(svg)); err != nil {
 			t.Errorf("%s: %v", name, err)

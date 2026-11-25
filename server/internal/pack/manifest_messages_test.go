@@ -23,7 +23,7 @@ func TestManifestMessagesArePinned(t *testing.T) {
 		{"no version", func(m *pack.Manifest) { m.Version = "" }, "manifest: version is required"},
 		{"no license", func(m *pack.Manifest) { m.License = "" }, "manifest: license is required — packs without license terms are rejected"},
 		{"no attribution", func(m *pack.Manifest) { m.Attribution = "" }, "manifest: attribution is required — packs without attribution are rejected"},
-		{"unknown type", func(m *pack.Manifest) { m.Type = "bogus" }, "manifest: unknown type \"bogus\" (want dictionary, frequency, levels, sentences, grammar, audio, components, strokes, lemma-rules, images, theme, or font)"},
+		{"unknown type", func(m *pack.Manifest) { m.Type = "bogus" }, "manifest: unknown type \"bogus\" (want dictionary, frequency, levels, sentences, grammar, audio, components, strokes, lemma-rules, theme, font, or images)"},
 		{"unknown format", func(m *pack.Manifest) { m.Format = "bogus" }, "manifest: unknown format \"bogus\" (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, font-slices, rules-json, or images-svg)"},
 		{"theme with json", func(m *pack.Manifest) { m.Type, m.Language = "theme", "" }, "manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type theme, format json)"},
 		{"dictionary with themes-json", func(m *pack.Manifest) { m.Format = "themes-json" }, "manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type dictionary, format themes-json)"},

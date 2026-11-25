@@ -30,6 +30,7 @@ where the rule is implemented today.
 | Settings | `settings/` (workspace settings keys and their merge; the user-global keyed rows `home-layout`, `activity-view`, `widget-options` and `nav-layout`) |
 | Reminders | `reminders/` (the opt-in `reminders` row, the client's facts, the plan the shell schedules local notifications from, web push routes, the email unsubscribe link) |
 | Data safety | `backup/` (archive format 2, id remapping) |
+| Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the picture vocabulary, theming and credits) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
 | Interface text | `i18n/` (catalogue format, key scheme, message syntax, Android conversion, interface-language negotiation, formatting locale) |
 
@@ -39,7 +40,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `images/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 

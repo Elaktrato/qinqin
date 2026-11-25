@@ -691,7 +691,7 @@
 								<tr>
 									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
 									{@render noteCell(images.table, row.noteId, row.name)}
-									<td title={(images.languages[row.key] ?? []).join(', ')}>{(images.languages[row.key] ?? []).map(languageLabel).join(', ')}</td>
+									<td title={(images.languages[row.key] ?? []).join(', ')}>{(images.languages[row.key] ?? []).map((code) => languageLabel(code)).join(', ')}</td>
 									<td>{row.version}</td>
 									<td>
 										{#if images.licenseHref[row.key]}

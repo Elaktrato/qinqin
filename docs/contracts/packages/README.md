@@ -49,7 +49,7 @@ dictionaries' `lexicon` is per language), and that package's `requiresLexicon` a
 server keeps one table of these (`server/internal/pack/types.go`) and a Go test compares it with the fixture; the web
 test `lib/settings/packTypes.contract.test.ts` checks the web knows every type. How the server adds a type:
 [architecture record 0008](../../architecture/0008-pack-types.md). A client meets a pack type it does
-not know only in admin and Sources views; it shows it by its `type` string.
+not know only in admin and Sources views; it shows it by its `type` string. The `images` type (#216) builds no package: its pictures are fetched per entry (`../images/README.md`).
 
 **Data packs are content, not features.** There are no code plugins (#199): a pack id has no feature switch
 and no rows of its own (`features/`, `keyed/`). Packs are listed by

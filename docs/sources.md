@@ -950,6 +950,53 @@ reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
 offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in
 `plugins/samples/`).
 
-## Picture sources (considered, issue #216; not bundled yet)
+## Pictures
 
-Checked 2026-11-25, details in `docs/superpowers/specs/2026-11-26-v080-data-sources.md`: **OpenMoji** 17.0.0 is CC BY-SA 4.0 (README and `LICENSE.txt`; credit "All emojis designed by OpenMoji - the open-source emoji and icon project. License: CC BY-SA 4.0"); **Mulberry Symbols** v3.6.1 is CC BY-SA 4.0 (website and `LICENSE.txt`, © Steve Lee), not 2.0 UK as an older note said. Both pass the licence rule. Neither is in the repository: they wait for the `images` pack type. ARASAAC (CC BY-NC-SA) is excluded.
+Bundled pictures for words (issue #216): two **images packs**, each its own pack with its licence, notice and
+credit. They are data packs of type `images` (see the wiki's Data-pack-format page and
+`docs/contracts/images/README.md`), fetched at image build time, never committed, never compiled into the binary and
+never bundled in the web build or the APK's web assets: the web app and the APK get pictures from the server
+(`GET /api/images/entries/{id}`). Licence evidence checked 2026-11-25 against the upstream files.
+
+| Pack | Upstream | Licence | Pictures | Word mappings |
+|---|---|---|---|---|
+| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 962 (1.7 MB of SVG) | 3,172 (zh 1,936, ja 1,236) |
+| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 711 (4.6 MB of SVG, in colour) | 2,570 (zh 541, ja 2,029) |
+
+- **Credit** (shown on the Sources page and in each pack's `ATTRIBUTION.md`): OpenMoji's own wording, "All emojis
+  designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0"; Mulberry's, "Mulberry Symbols
+  by Steve Lee are licenced under the Creative Commons Attribution-ShareAlike 4.0 License". Every picture is also
+  credited in the pack's `pictures.tsv` (OpenMoji's designer per emoji) and next to the picture where the app draws it.
+- **Pins:** `scripts/images/pins.json` (upstream URLs, SHA-256 and sizes of every file used: the two zips,
+  `data/openmoji.json`, `symbol-info.csv`, the OpenMoji `LICENSE.txt` that carries the CC BY-SA 4.0 legal code, the
+  Mulberry `LICENSE.txt` inside the zip, and the CLDR files below). A mismatch stops the build.
+- **ShareAlike.** Both sets are CC BY-SA 4.0 and so is anything adapted from them: the pack says so, and the
+  recoloured copy the web app draws (the black outline takes the text colour; the file itself is never modified) is
+  covered by the same licence. The position this project takes (owner-unconfirmed, flagged in the #216 plan): the
+  pictures are a collection next to the MIT code, as the dictionaries are; to keep that true each set stays in its
+  own pack directory with its licence text, is never `go:embed`ded (a Dockerfile test checks this), and is not part of
+  the web build. Whether pictures inside an Android APK's assets would be more than a collection is unsettled (see
+  the v0.8.0 data-sources audit); the APK's web assets carry none, it asks the server.
+- **The mapping** (`scripts/images/<pack>/map.tsv`, committed, 130 KB and 98 KB) is derived data: the Unicode CLDR
+  emoji annotations of Chinese and Japanese (CLDR 49.0.0, Copyright Unicode, Inc., [Unicode License v3](https://www.unicode.org/license.txt);
+  the annotations' names and keywords), the English glosses of CC-CEDICT and JMdict, OpenMoji's English annotations
+  and tags, and Mulberry's English symbol names; it is distributed with the packs under CC BY-SA 4.0 and carries the
+  Unicode notice. `scripts/build-picture-map.mjs` makes it (rules in `scripts/picture-match.mjs`, tested); 92 rows are
+  hand-checked overrides (`scripts/images/openmoji/manual.tsv`). Only words an unambiguous match covers have a
+  picture; the rest wait on a review list. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
+  selection gate at build time; no list data is copied); for Japanese, only JMdict words with a priority marking.
+- **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
+- **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are
+  mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) still need
+  hand review (100-300 words per language).
+- **Not bundled:** ARASAAC (CC BY-NC-SA, non-commercial); Wikimedia Commons pictures via Wikidata (per-file
+  licences, later); OpenMoji's colour set (a later per-user choice).
+
+Build a pack into the gitignored `plugins/data-images/` (a default seed root when present) with
+
+    node scripts/prepare-images-pack.mjs --pack openmoji --out plugins/data-images/images-openmoji
+    node scripts/prepare-images-pack.mjs --pack mulberry --out plugins/data-images/images-mulberry
+
+(needs Node 22 or newer and `unzip`; the Docker image does it in its `images` stage, `--build-arg WITH_IMAGES=0`
+skips it, and ships the packs under `/opt/qinqin/images`). `node scripts/build-picture-map.mjs --cache <dir>
+[--report <dir>]` rebuilds the mappings after a new pin or a changed dictionary.

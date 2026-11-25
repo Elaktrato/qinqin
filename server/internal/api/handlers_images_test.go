@@ -64,12 +64,12 @@ func newImagesEnv(t *testing.T) imagesEnv {
 
 	dir := t.TempDir()
 	files := map[string]string{
-		"manifest.json":      `{"id":"images-test","name":"Test pictures","version":"1","type":"images","languages":["zh","ja"],"license":"CC BY-SA 4.0","attribution":"Testers","notice":"Synthetic.","format":"images-svg"}`,
-		"pictures.tsv":       "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\tred apple\tOpenMoji, Liz Bravo\nH\tpictures/H.svg\thit\tOpenMoji\nP\tpictures/P.svg\tphone\tOpenMoji\n",
-		"pictures/A.svg":     envApple,
-		"pictures/H.svg":     envHit,
-		"pictures/P.svg":     envPhone,
-		"map.tsv":            "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t蘋果\t0\tA\t100\tmanual\t\nzh\t打\t1\tH\t80\tgloss\t\nzh\t打\t3\tP\t80\tgloss\t\nja\tいぬ\t0\tA\t90\tname\t\n",
+		"manifest.json":  `{"id":"images-test","name":"Test pictures","version":"1","type":"images","languages":["zh","ja"],"license":"CC BY-SA 4.0","attribution":"Testers","notice":"Synthetic.","format":"images-svg"}`,
+		"pictures.tsv":   "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\tred apple\tOpenMoji, Liz Bravo\nH\tpictures/H.svg\thit\tOpenMoji\nP\tpictures/P.svg\tphone\tOpenMoji\n",
+		"pictures/A.svg": envApple,
+		"pictures/H.svg": envHit,
+		"pictures/P.svg": envPhone,
+		"map.tsv":        "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t蘋果\t0\tA\t100\tmanual\t\nzh\t打\t1\tH\t80\tgloss\t\nzh\t打\t3\tP\t80\tgloss\t\nja\tいぬ\t0\tA\t90\tname\t\n",
 	}
 	for name, content := range files {
 		p := filepath.Join(dir, filepath.FromSlash(name))
