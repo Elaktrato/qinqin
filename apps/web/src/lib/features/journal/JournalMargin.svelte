@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// The journal's margin (#103): topic ideas while writing, corrections
 	// after a review. Corrections are a list in text order; list-only and
 	// missing ones follow under their own headings. Unboxed, hairlines only.
@@ -57,7 +58,7 @@
 	class="margin"
 	aria-label={t('journal.margin.label')}
 	onkeydown={(event) => {
-		if (event.key === 'Escape' && openId !== null) {
+		if (event.key === 'Escape' && openId !== null && !isImeKey(event)) {
 			event.preventDefault();
 			const id = openId;
 			onopen(null);

@@ -29,6 +29,8 @@ export function otpAttrs(method: MfaMethod): OtpAttrs {
  * recovery code loses spaces and keeps letters, digits and dashes.
  */
 export function sanitizeOtp(raw: string, method: MfaMethod): string {
+	// NFKC folds full-width digits and letters an IME types (１２３ -> 123).
+	raw = raw.normalize('NFKC');
 	if (method === 'recovery') return raw.replace(/[^A-Za-z0-9-]/g, '').toUpperCase().slice(0, 19);
 	return raw.replace(/\D/g, '').slice(0, 6);
 }
@@ -73,4 +75,17 @@ export function codeFailure(body: { error: string; attemptsLeft?: number } | nul
 		return { text, restart: false };
 	}
 	return { text: Object.hasOwn(API_ERROR_KEYS, body.error) ? apiErrorText(body.error) : fallback, restart: false };
+}
+
+/**
+ * reconcileOtp is the input handler body: it returns the value to keep and
+ * writes the cleaned text back into the field, except while an IME
+ * composition is open (rewriting would destroy the composition string); the
+ * compositionend handler calls it again with composing false.
+ */
+export function reconcileOtp(el: HTMLInputElement, method: MfaMethod, composing: boolean): string {
+	if (composing) return el.value;
+	const code = sanitizeOtp(el.value, method);
+	el.value = code;
+	return code;
 }

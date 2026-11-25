@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import ReadingText from '$lib/components/ReadingText.svelte';
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
@@ -72,7 +73,7 @@
 	function onFieldKeydown(event: KeyboardEvent): void {
 		if (event.key !== 'Enter') return;
 		// An IME confirming a candidate also sends Enter (keyCode 229).
-		if (event.isComposing || event.keyCode === 229) return;
+		if (isImeKey(event)) return;
 		event.preventDefault();
 		if (typed.trim() === '') return;
 		finish();
@@ -101,6 +102,7 @@
 		<Field
 			label={t('flashcards.card.typeWord')}
 			id="reverse-answer"
+			data-testid="typing-answer"
 			autocomplete="off"
 			autocapitalize="off"
 			spellcheck="false"

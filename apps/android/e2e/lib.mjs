@@ -37,13 +37,56 @@ export async function waitFor(what, fn, { timeout = 30_000, interval = 500 } = {
 	}
 }
 
+/**
+ * dismissAnr: a busy software emulator shows "<app> isn't responding" even with hide_error_dialogs; it swallows adb
+ * touches and sits in screenshots. When one is on screen, taps its "Wait" button (the app keeps running). Returns
+ * true when one was dismissed.
+ */
+export function dismissAnr() {
+	try {
+		if (!/Application Not Responding|isn't responding/.test(adb(['shell', 'dumpsys', 'window', 'windows'], { soft: true, timeout: 20_000 }))) return false;
+		adb(['shell', 'uiautomator', 'dump', '/sdcard/anr.xml'], { soft: true, timeout: 30_000 });
+		const xml = adb(['shell', 'cat', '/sdcard/anr.xml'], { soft: true });
+		const m = /text="Wait"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(xml);
+		if (!m) return false;
+		adb(['shell', 'input', 'tap', String(Math.round((+m[1] + +m[3]) / 2)), String(Math.round((+m[2] + +m[4]) / 2))], { soft: true });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function screenshot(name) {
+	dismissAnr();
 	try {
 		const png = execFileSync(ADB, ['exec-out', 'screencap', '-p'], { maxBuffer: 64 * 1024 * 1024, timeout: 30_000 });
 		writeFileSync(join(OUT, `${name}.png`), png);
 	} catch {
 		// A missing screenshot never fails a step.
 	}
+}
+
+/**
+ * gmsSettled: waits until Google Play services (the google_apis image) stopped restarting: its persistent process
+ * keeps one pid for `quietMs`. A restart of it kills apps bound to its fonts provider, ours included, so the driver
+ * starts only after it has settled (or after `max` ms, whichever comes first).
+ */
+export async function gmsSettled({ quietMs = 20_000, max = 120_000 } = {}) {
+	const pidOf = () => adb(['shell', 'pidof', 'com.google.android.gms.persistent'], { soft: true }).split(/\s+/)[0];
+	const t0 = Date.now();
+	let pid = pidOf();
+	let since = Date.now();
+	let restarts = 0;
+	while (Date.now() - t0 < max) {
+		await sleep(2500);
+		const now = pidOf();
+		if (now !== pid) {
+			pid = now;
+			since = Date.now();
+			restarts++;
+		} else if (/^\d+$/.test(pid) && Date.now() - since >= quietMs) break;
+	}
+	return { settled: Date.now() - since >= quietMs, waitedMs: Date.now() - t0, restarts, pid };
 }
 
 export function appPid() {
@@ -56,8 +99,10 @@ export class Cdp {
 		this.ws = ws;
 		this.next = 1;
 		this.pending = new Map();
+		this.listeners = new Map();
 		ws.addEventListener('message', (ev) => {
 			const msg = JSON.parse(ev.data);
+			if (msg.method) for (const fn of this.listeners.get(msg.method) || []) fn(msg.params);
 			const p = msg.id !== undefined ? this.pending.get(msg.id) : undefined;
 			if (!p) return;
 			this.pending.delete(msg.id);
@@ -79,6 +124,11 @@ export class Cdp {
 				if (this.pending.delete(id)) reject(new Error(`${method}: no answer in ${timeoutMs / 1000} s`));
 			}, timeoutMs);
 		});
+	}
+
+	/** on: calls fn(params) for every DevTools event `method` (Runtime.exceptionThrown, ...). */
+	on(method, fn) {
+		this.listeners.set(method, [...(this.listeners.get(method) || []), fn]);
 	}
 
 	/** eval: the value of a JS expression in the page (promises awaited, result by value). */
@@ -153,6 +203,15 @@ export class Recorder {
 		entry.ms = Date.now() - t0;
 		if (entry.data !== undefined) console.log(JSON.stringify(entry.data));
 		return entry.ok;
+	}
+
+	/** Marks the start of a suite: suiteFailed() looks only at the steps since. */
+	startSuite() {
+		this.from = this.steps.length;
+	}
+
+	suiteFailed() {
+		return this.steps.slice(this.from || 0).some((x) => !x.ok);
 	}
 
 	summary() {

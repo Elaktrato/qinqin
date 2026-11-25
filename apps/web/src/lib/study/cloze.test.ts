@@ -75,6 +75,20 @@ describe('normalizeAnswer and accepted answers', () => {
 		expect(normalizeAnswer('é')).toBe('é');
 	});
 
+	it('folds full-width and half-width forms an IME produces (NFKC), case and edge punctuation', () => {
+		expect(normalizeAnswer('ＡＢＣ１２３')).toBe('abc123');
+		expect(normalizeAnswer('ｶﾀｶﾅ')).toBe('カタカナ');
+		expect(normalizeAnswer('食べる。')).toBe('食べる');
+		expect(normalizeAnswer('「食べる」')).toBe('食べる');
+		expect(normalizeAnswer('Hello!')).toBe('hello');
+		expect(normalizeAnswer('ｷﾞﾀｰ')).toBe(normalizeAnswer('ギター'));
+	});
+
+	it('keeps the script and the long vowel mark: hiragana and katakana are different answers', () => {
+		expect(normalizeAnswer('コーヒー')).not.toBe(normalizeAnswer('こーひー'));
+		expect(normalizeAnswer('コーヒー')).toBe('コーヒー');
+	});
+
 	it('accepts the surface; a written/form surface also accepts the other forms and variants', () => {
 		const entry = { written: '食べる', forms: [{ text: '食べます' }], variants: [{ written: '喰べる' }] };
 		expect([...acceptedClozeAnswers('食べます', entry)].sort()).toEqual(

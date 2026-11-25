@@ -290,6 +290,7 @@
 					<Field
 						label={activeSource ? t('reader.sources.searchNamed', { name: activeSource.name }) : t('reader.sources.searchSource')}
 						id="source-query"
+						data-testid="source-search"
 						type="search"
 						placeholder={t('reader.sources.placeholder')}
 						bind:value={query}

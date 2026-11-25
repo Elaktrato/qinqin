@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { errorText } from '$lib/api/apiErrors';
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
@@ -209,7 +210,7 @@
 									autocomplete="off"
 									placeholder={t('settings.workspaces.noName')}
 									onkeydown={(event) => {
-										if (event.key === 'Escape') {
+										if (event.key === 'Escape' && !isImeKey(event)) {
 											event.preventDefault();
 											cancelRename();
 										}

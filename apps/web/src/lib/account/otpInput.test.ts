@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attemptsText, codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
+import { attemptsText, codeFailure, otpAttrs, otpComplete, reconcileOtp, resendText, sanitizeOtp } from './otpInput';
 import { apiErrorText } from '$lib/api/apiErrors';
 
 describe('otpInput', () => {
@@ -13,6 +13,17 @@ describe('otpInput', () => {
 		expect(sanitizeOtp(' 12-34-56 ', 'email')).toBe('123456');
 		expect(sanitizeOtp('1234567890', 'totp')).toBe('123456');
 		expect(sanitizeOtp('abc', 'totp')).toBe('');
+	});
+	it('reads full-width digits an IME produced (１２３４５６) as digits', () => {
+		expect(sanitizeOtp('１２３　４５６', 'totp')).toBe('123456');
+		expect(sanitizeOtp('ａｂｃｄ', 'recovery')).toBe('ABCD');
+	});
+	it('leaves the field alone while an IME composition is open and cleans it afterwards', () => {
+		const el = { value: 'いち２' } as HTMLInputElement;
+		expect(reconcileOtp(el, 'totp', true)).toBe('いち２');
+		expect(el.value).toBe('いち２');
+		expect(reconcileOtp(el, 'totp', false)).toBe('2');
+		expect(el.value).toBe('2');
 	});
 	it('keeps a recovery code readable', () => {
 		expect(sanitizeOtp('abcd efgh-ijkl mnop', 'recovery')).toBe('ABCDEFGH-IJKLMNOP');

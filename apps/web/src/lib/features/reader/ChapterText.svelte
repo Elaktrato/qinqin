@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { onDestroy } from 'svelte';
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, fontStack, type ReaderDisplay } from './displaySettings';
@@ -95,7 +96,7 @@
 		};
 		const onKey = (e: KeyboardEvent): void => {
 			const mark = highlightMark(e.target);
-			if (!mark || e.key !== 'Enter' || e.isComposing || e.defaultPrevented) return;
+			if (!mark || e.key !== 'Enter' || isImeKey(e) || e.defaultPrevented) return;
 			e.preventDefault();
 			open(mark.id, mark.el);
 		};

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// The reviewed text (#103): every placed annotation is a button that
 	// opens its note in the margin (wide) or the sheet (phone). The class
 	// comes from the closed kind only, never from model text; the open mark
@@ -46,7 +47,7 @@
 	}
 
 	function keydown(event: KeyboardEvent): void {
-		if (event.key !== 'Escape' || openId === null) return;
+		if (event.key !== 'Escape' || openId === null || isImeKey(event)) return;
 		event.preventDefault();
 		event.stopPropagation();
 		const id = openId;

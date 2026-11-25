@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -60,7 +61,7 @@
 	}
 
 	function keydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape') {
+		if (event.key === 'Escape' && !isImeKey(event)) {
 			event.preventDefault();
 			event.stopPropagation();
 			onclose();

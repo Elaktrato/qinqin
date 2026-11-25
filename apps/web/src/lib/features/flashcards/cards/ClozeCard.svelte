@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import type { Entry, Sentence } from '$lib/api/types';
@@ -65,7 +66,7 @@
 	function onFieldKeydown(event: KeyboardEvent): void {
 		if (event.key !== 'Enter') return;
 		// An IME confirming a candidate also sends Enter (keyCode 229).
-		if (event.isComposing || event.keyCode === 229) return;
+		if (isImeKey(event)) return;
 		event.preventDefault();
 		check();
 	}
@@ -80,7 +81,7 @@
 				ctrlKey: event.ctrlKey,
 				metaKey: event.metaKey,
 				altKey: event.altKey,
-				isComposing: event.isComposing,
+				isComposing: isImeKey(event),
 				target: event.target instanceof HTMLElement ? event.target : null
 			},
 			choices.length
@@ -147,6 +148,7 @@
 			<Field
 				label={t('flashcards.card.typeWord')}
 				id="cloze-answer"
+				data-testid="typing-answer"
 				autocomplete="off"
 				autocapitalize="off"
 				spellcheck="false"

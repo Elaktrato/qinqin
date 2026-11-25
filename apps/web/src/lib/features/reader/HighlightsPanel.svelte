@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { tick } from 'svelte';
@@ -77,7 +78,7 @@
 	}
 
 	function confirmKey(event: KeyboardEvent, id: number): void {
-		if (event.key !== 'Escape' || event.isComposing) return;
+		if (event.key !== 'Escape' || isImeKey(event)) return;
 		event.preventDefault();
 		void cancelDelete(id);
 	}

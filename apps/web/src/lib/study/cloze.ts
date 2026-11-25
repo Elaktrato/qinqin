@@ -212,9 +212,19 @@ export function pickDistractors(input: {
 	return [...same, ...other].slice(0, 3);
 }
 
-/** NFC, trimmed, inner whitespace removed. */
+/**
+ * What an answer is compared by: NFKC (full-width Latin and digits, half-width
+ * katakana and the like fold to one form), case-folded, all whitespace
+ * (including U+3000) removed, and sentence punctuation or brackets at either
+ * edge dropped. The script is NOT folded: hiragana and katakana stay
+ * different answers, and the long vowel mark is kept.
+ */
 export function normalizeAnswer(text: string): string {
-	return text.normalize('NFC').replace(/\s+/gu, '');
+	return text
+		.normalize('NFKC')
+		.toLowerCase()
+		.replace(/\s+/gu, '')
+		.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
 }
 
 /** The accepted answers: the surface, plus every form when the surface is a plain one. */

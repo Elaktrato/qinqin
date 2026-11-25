@@ -341,6 +341,7 @@
 				label={t('search.input.label')}
 				hideLabel
 				name="q"
+				data-testid="search-input"
 				type="search"
 				bind:value={query}
 				placeholder={lang !== null

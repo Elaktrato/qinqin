@@ -86,6 +86,28 @@ describe('ClozeCard (type)', () => {
 		expect(onDone.mock.calls[0][0].suggested).toBe(1);
 	});
 
+	it('ignores Enter through a whole composition (Gboard: isComposing false) and acts on Enter after it', async () => {
+		vi.useFakeTimers();
+		try {
+			const { onDone } = setup();
+			const field = screen.getByLabelText('Type the word');
+			await fireEvent.compositionStart(field);
+			await fireEvent.compositionUpdate(field, { data: 'xi' });
+			await fireEvent.input(field, { target: { value: '喜欢' } });
+			await fireEvent.keyDown(field, { key: 'Enter', isComposing: false });
+			expect(onDone).not.toHaveBeenCalled();
+			await fireEvent.compositionEnd(field, { data: '喜欢' });
+			// Safari: the confirming Enter keydown arrives after compositionend.
+			await fireEvent.keyDown(field, { key: 'Enter', isComposing: false });
+			expect(onDone).not.toHaveBeenCalled();
+			vi.advanceTimersByTime(100);
+			await fireEvent.keyDown(field, { key: 'Enter' });
+			expect(onDone).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('Enter while composing neither checks nor reveals', async () => {
 		const { onDone } = setup();
 		const field = screen.getByLabelText('Type the word');
@@ -107,6 +129,8 @@ describe('ClozeCard (choose)', () => {
 
 	it('a right pick suggests Good and a wrong one Again, with the digit key preventing default', async () => {
 		const { onDone } = setup({ mode: 'choose', choices });
+		// The IME guard's window after a compositionend (an earlier test's) must have passed.
+		await new Promise((r) => setTimeout(r, 60));
 		const down = new KeyboardEvent('keydown', { key: '2', cancelable: true, bubbles: true });
 		window.dispatchEvent(down);
 		expect(down.defaultPrevented).toBe(true);

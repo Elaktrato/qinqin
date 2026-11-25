@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// The side drawer (design §9, the phone menu): a modal dialog like Sheet
 	// (lib/ui/modal.ts: focus moves in, Tab stays inside, Escape closes,
 	// focus returns, the page behind is inert) anchored to the inline-start
@@ -84,6 +85,7 @@
 	}
 
 	function onkeydown(e: KeyboardEvent): void {
+		if (isImeKey(e)) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			dismiss();

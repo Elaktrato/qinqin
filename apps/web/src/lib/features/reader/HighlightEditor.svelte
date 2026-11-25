@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { snippetAt } from './bookmarks';
@@ -165,7 +166,7 @@
 	}
 
 	function noteKey(event: KeyboardEvent): void {
-		if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing) {
+		if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !isImeKey(event)) {
 			event.preventDefault();
 			void saveNote();
 		}
@@ -192,7 +193,7 @@
 		// Escape: the confirmation first, then the editor, before any other
 		// handler (capture on window runs first; they skip handled keys).
 		const onKey = (e: KeyboardEvent): void => {
-			if (e.key !== 'Escape' || e.isComposing || e.defaultPrevented) return;
+			if (e.key !== 'Escape' || isImeKey(e) || e.defaultPrevented) return;
 			e.preventDefault();
 			if (confirming) void cancelDelete();
 			else close();

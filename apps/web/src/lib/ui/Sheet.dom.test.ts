@@ -45,6 +45,15 @@ describe('Sheet', () => {
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
+	it('Escape that cancels an IME composition in a field does not close the sheet', async () => {
+		const { onclose } = await open();
+		const note = screen.getByRole('textbox', { name: 'Note' });
+		await fireEvent.keyDown(note, { key: 'Escape', isComposing: true });
+		await fireEvent.keyDown(note, { key: 'Escape', keyCode: 229 });
+		expect(screen.getByRole('dialog')).toBeTruthy();
+		expect(onclose).not.toHaveBeenCalled();
+	});
+
 	it('a key an inner action took does not close the sheet', async () => {
 		const onescape = vi.fn();
 		const { sheet, onclose } = await open({ onescape });

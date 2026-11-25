@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// A modal dialog: the native <dialog> (lib/ui/modal.ts) with a title, an
 	// optional description, content and an actions row. A floating layer
 	// (panel, --radius-large, --shadow-float) over a backdrop dimmed from
@@ -75,6 +76,7 @@
 			dismiss();
 		}}
 		onkeydown={(e) => {
+			if (isImeKey(e)) return;
 			if (e.key === 'Escape') {
 				e.preventDefault();
 				dismiss();

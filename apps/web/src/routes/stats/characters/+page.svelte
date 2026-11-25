@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { profileOf } from '$lib/languages/profiles';
 	import { hasCharacterMap } from '$lib/languages/profiles';
 	import { errorText } from '$lib/api/apiErrors';
@@ -710,7 +711,7 @@
 					placeholder={t('stats.map.searchPlaceholder')}
 					bind:value={queryInput}
 					oninput={onSearchInput}
-					onkeydown={(event) => event.key === 'Escape' && clearSearch()}
+					onkeydown={(event) => event.key === 'Escape' && !isImeKey(event) && clearSearch()}
 				/>
 			</div>
 			<form class="jump" onsubmit={jump}>

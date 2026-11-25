@@ -75,6 +75,7 @@
 				hideLabel
 				type="search"
 				name="q"
+				data-testid="home-search"
 				bind:value={query}
 				placeholder={t('app.home.searchPlaceholder')}
 			/>
