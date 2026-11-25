@@ -1,11 +1,13 @@
-// Hover and selection lookup over the chapter text, shown as a stack of
-// popups. One controller per reading view; the chapter container delegates
-// its pointer events here (no per-paragraph listeners), the popups delegate
-// theirs to `popups` (PopupPointer), and attach() wires the document-level
-// ones. This file is the DOM side: it turns pointers and selections into
-// text offsets. The timing (grace, aborts, stale results) lives in the
-// DOM-free HoverLookup and NestedScan.
+// Hover, tap and selection lookup over the chapter text, shown as a stack of
+// popups. One controller per reading view; listen() delegates the text
+// container's pointer events here (no per-paragraph listeners), the popups
+// delegate theirs to `popups` (PopupPointer), and attach() wires the
+// document-level ones. This file is the DOM side: it turns pointers, taps
+// and selections into text offsets. The timing (grace, aborts, stale
+// results) lives in the DOM-free HoverLookup and NestedScan, what a tap is
+// in tapGesture, and where the word scrolls to in keepAbove.
 import { lookupAt } from '$lib/api/lookup';
+import type { LookupResult } from '$lib/api/types';
 import { DwellCounter } from '$lib/lookups/dwell';
 import {
 	caretFromPoint,
@@ -20,12 +22,14 @@ import {
 import { apiErrorMessage } from './errors';
 import type { ParagraphSpan } from './highlightUi';
 import { HoverLookup, type HoverShown, type Span } from './hoverLookup';
+import { scrollDeltaAbove, scrollParent } from './keepAbove';
 import { hoverable } from './lookup';
 import { cachedLookup } from './lookupCache';
 import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
 import { anchorOf, inPopup, PopupPointer } from './popupPointer.svelte';
 import { PopupStack } from './popupStack.svelte';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
+import { TAP_IGNORE, TAP_SETTLE_MS, TapTracker, touchClick, type PointerSample } from './tapGesture';
 
 const HOVER_DEBOUNCE_MS = 80;
 const SELECTION_DEBOUNCE_MS = 250;
@@ -33,7 +37,7 @@ const HIGHLIGHT = 'reader-lookup';
 
 /** What the whole open stack shares: how it was opened and its language. */
 export interface StackInfo {
-	/** Hover stacks close after the grace delay; selection stacks are sticky. */
+	/** Hover stacks close after the grace delay; selection stacks (a selection or a tap) are sticky. */
 	mode: 'hover' | 'selection';
 	/** The lookup language (zh, ja): what data-scan regions look up in. */
 	lang: string;
@@ -57,10 +61,24 @@ export interface LookupOptions {
 	runsOf: RunsOf;
 	/**
 	 * A lookup for the lookup history (#72): a root hover popup that stayed
-	 * open HOVER_DWELL_MS or was entered, or a selection popup with results;
-	 * the entry is the popup's first result. Nested popups never count.
+	 * open HOVER_DWELL_MS or was entered, or a selection or tap popup with
+	 * results (both 'selection'); the entry is the popup's first result.
+	 * Nested popups never count.
 	 */
 	onLookup?: (entryId: number, mode: 'hover' | 'selection') => void;
+	/** The clock taps are timed with (ms); performance.now by default. */
+	now?: () => number;
+}
+
+/** A word under a point: paragraph p, its text, and the code point there. */
+interface WordPoint {
+	p: number;
+	text: string;
+	offset: number;
+}
+
+function reducedMotion(): boolean {
+	return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export class LookupController {
@@ -84,6 +102,13 @@ export class LookupController {
 	#dwell: DwellCounter;
 	/** The paragraph of the current (or last) lookup's word, for focus after the phone sheet closes. */
 	#word: HTMLElement | null = null;
+	// Taps (touch and pen): the gesture, the settle timer, the last touch release.
+	#tap = new TapTracker();
+	#tapTimer: ReturnType<typeof setTimeout> | undefined;
+	#lastTouchUp: number | null = null;
+	#now: () => number;
+	/** The open sticky stack was opened by a tap (not a selection). */
+	tapped = false;
 	/**
 	 * The selection a selection popup was opened for, as the highlighter
 	 * needs it (untrimmed, clamped to its first paragraph); null otherwise.
@@ -92,6 +117,7 @@ export class LookupController {
 
 	constructor(opts: LookupOptions) {
 		this.#opts = opts;
+		this.#now = opts.now ?? (() => performance.now());
 		this.#dwell = new DwellCounter((entryId) => this.#opts.onLookup?.(entryId, 'hover'));
 		this.#hover = new HoverLookup({
 			lookup: this.#lookup,
@@ -125,17 +151,39 @@ export class LookupController {
 			// Tracked document-wide, so a drag that starts outside the text
 			// and extends into it still counts as a drag in progress.
 			if (e.button === 0) this.#pointerDown = true;
+			clearTimeout(this.#tapTimer);
+			this.#tap.down(this.#sample(e));
+			// A tap on no word closes the lookup here; a tap on a word opens the next.
 			if (this.info && !inPopup(e.target)) this.close();
 		};
-		const onUp = () => {
+		const onMove = (e: PointerEvent) => this.#tap.move(this.#sample(e));
+		const release = () => {
 			if (!this.#pointerDown) return;
 			this.#pointerDown = false;
 			this.#scheduleSelection(30);
+		};
+		const onUp = (e: PointerEvent) => {
+			const sample = this.#sample(e);
+			if (sample.type === 'touch' || sample.type === 'pen') this.#lastTouchUp = sample.at;
+			const point = this.#tap.up(sample);
+			if (point) {
+				const target = e.target;
+				clearTimeout(this.#tapTimer);
+				this.#tapTimer = setTimeout(() => void this.#resolveTap(point.x, point.y, target), TAP_SETTLE_MS);
+			}
+			release();
+		};
+		const onCancel = () => {
+			// The browser took the gesture over (a pan, a zoom): no tap.
+			this.#tap.cancel();
+			release();
 		};
 		const onSelection = () => {
 			if (!this.#pointerDown) this.#scheduleSelection(SELECTION_DEBOUNCE_MS);
 		};
 		const onScroll = (e: Event) => {
+			// A finger that scrolled the page did not tap.
+			this.#tap.cancel();
 			// A popup scrolling its own long entry list moves nothing.
 			if (!this.info || inPopup(e.target)) return;
 			if (this.info.mode === 'hover') this.close();
@@ -145,8 +193,9 @@ export class LookupController {
 		window.addEventListener('keyup', this.popups.key);
 		window.addEventListener('blur', this.popups.blur);
 		window.addEventListener('pointerdown', onDown, true);
+		window.addEventListener('pointermove', onMove, { passive: true });
 		window.addEventListener('pointerup', onUp);
-		window.addEventListener('pointercancel', onUp);
+		window.addEventListener('pointercancel', onCancel);
 		window.addEventListener('scroll', onScroll, { capture: true, passive: true });
 		document.addEventListener('selectionchange', onSelection);
 		return () => {
@@ -154,12 +203,43 @@ export class LookupController {
 			window.removeEventListener('keyup', this.popups.key);
 			window.removeEventListener('blur', this.popups.blur);
 			window.removeEventListener('pointerdown', onDown, true);
+			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
-			window.removeEventListener('pointercancel', onUp);
+			window.removeEventListener('pointercancel', onCancel);
 			window.removeEventListener('scroll', onScroll, { capture: true });
 			document.removeEventListener('selectionchange', onSelection);
 			this.close();
 		};
+	}
+
+	/**
+	 * listen wires the text container's pointer events to this controller
+	 * (hover) and sets touch-action: manipulation on it, so a tap is not held
+	 * back for a double-tap zoom; returns the cleanup, which gives the
+	 * element's touch-action back.
+	 */
+	listen(el: HTMLElement): () => void {
+		const options = { passive: true };
+		el.addEventListener('pointermove', this.pointermove, options);
+		el.addEventListener('pointerleave', this.pointerleave, options);
+		el.addEventListener('pointerdown', this.pointerdown, options);
+		const touchAction = el.style.touchAction;
+		el.style.touchAction = 'manipulation';
+		return () => {
+			el.removeEventListener('pointermove', this.pointermove);
+			el.removeEventListener('pointerleave', this.pointerleave);
+			el.removeEventListener('pointerdown', this.pointerdown);
+			el.style.touchAction = touchAction;
+		};
+	}
+
+	/**
+	 * fromTouch tells a click that a touch or pen tap produced (the tap has
+	 * opened its lookup already), so a click handler on the text can leave it
+	 * alone; a mouse click is never one.
+	 */
+	fromTouch(e: MouseEvent): boolean {
+		return touchClick({ pointerType: (e as Partial<PointerEvent>).pointerType, at: this.#now() }, this.#lastTouchUp);
 	}
 
 	// --- container events (delegated) ---
@@ -197,6 +277,7 @@ export class LookupController {
 	/** Closes every popup and cancels everything in flight. */
 	close(): void {
 		clearTimeout(this.#hoverTimer);
+		clearTimeout(this.#tapTimer);
 		this.#hover.close();
 		this.#dwell.closed();
 		this.popups.cancel();
@@ -211,6 +292,7 @@ export class LookupController {
 		this.#highlight(null);
 		this.stack.closeAll();
 		this.info = null;
+		this.tapped = false;
 	}
 
 	/**
@@ -252,16 +334,28 @@ export class LookupController {
 	// --- hover ---
 
 	#resolveHover(): void {
-		const container = this.#opts.container();
 		const { x, y, target } = this.#pointer;
+		const at = this.#wordAt(x, y, target);
+		if (!at) return this.#hover.noWord();
+		this.#hover.point(at.p, at.text, at.offset);
+	}
+
+	/**
+	 * wordAt finds the lookable character under a point of the text: the
+	 * word finding of hover and tap alike, so the two always agree. Null
+	 * over a gap between lines or paragraphs, outside the text, or on
+	 * whitespace, punctuation, Latin letters and digits.
+	 */
+	#wordAt(x: number, y: number, target: EventTarget | null): WordPoint | null {
+		const container = this.#opts.container();
 		// Only text counts: the gaps between lines and paragraphs do not.
-		if (!container || !(target instanceof Element) || !target.closest('[data-r]')) {
-			return this.#hover.noWord();
+		if (!container || !(target instanceof Element) || !container.contains(target) || !target.closest('[data-r]')) {
+			return null;
 		}
 		const caret = caretFromPoint(x, y);
 		const point = caret && runPointAt(caret.node, caret.offset, 'start');
 		const runs = point && this.#opts.runsOf(point.p);
-		if (!point || !runs) return this.#hover.noWord();
+		if (!point || !runs) return null;
 		const text = paragraphString(runs);
 		let offset = offsetFromRun(runs, point.r, point.utf16);
 		if (!point.inRt) {
@@ -272,11 +366,91 @@ export class LookupController {
 				const range = o >= 0 && rangeForSpan(container, point.p, runs, o, o + 1);
 				return range && rangeContainsPoint(range, x, y);
 			});
-			if (under === undefined) return this.#hover.noWord();
+			if (under === undefined) return null;
 			offset = under;
 		}
-		if (!hoverable(sliceCodePoints(text, offset, offset + 1))) return this.#hover.noWord();
-		this.#hover.point(point.p, text, offset);
+		if (!hoverable(sliceCodePoints(text, offset, offset + 1))) return null;
+		return { p: point.p, text, offset };
+	}
+
+	#sample(e: PointerEvent): PointerSample {
+		return {
+			id: e.pointerId,
+			type: e.pointerType,
+			x: e.clientX,
+			y: e.clientY,
+			at: this.#now(),
+			primary: e.isPrimary,
+			button: e.button
+		};
+	}
+
+	// --- tap ---
+
+	/**
+	 * A tap (touch or pen) at x, y: the word under it opens a sticky lookup
+	 * the way a selection does, on the span of its first (longest) result.
+	 * A tap on a control, or one that left a selection (a long press), is
+	 * not ours; a tap on no word leaves the lookup closed (pointerdown
+	 * closed it).
+	 */
+	async #resolveTap(x: number, y: number, target: EventTarget | null): Promise<void> {
+		const container = this.#opts.container();
+		if (!container || !(target instanceof Element) || !container.contains(target) || target.closest(TAP_IGNORE)) return;
+		const selection = typeof window === 'undefined' ? null : window.getSelection();
+		if (selection && selection.rangeCount > 0 && !selection.isCollapsed) return;
+		const at = this.#wordAt(x, y, target);
+		this.close();
+		if (!at) return;
+		const abort = new AbortController();
+		this.#selectionAbort = abort;
+		const seq = this.#selectionSeq;
+		const lang = this.#opts.lang();
+		let results: LookupResult[] = [];
+		let error = '';
+		try {
+			results = await this.#lookup(lang, at.text, at.offset, undefined, abort.signal);
+		} catch (err) {
+			error = apiErrorMessage(err, 'lookup');
+		}
+		if (abort.signal.aborted || seq !== this.#selectionSeq) return;
+		const first = results[0];
+		const span = first ? { p: at.p, start: first.start, end: first.end } : { p: at.p, start: at.offset, end: at.offset + 1 };
+		const range = this.#rangeOf(span);
+		if (!range) return;
+		this.#highlight(range);
+		this.#word = paragraphElement(container, span.p);
+		this.#selectionSpan = span;
+		this.selectedSpan = { ...span, clamped: false };
+		const id = this.stack.open({
+			anchor: anchorOf(range.getBoundingClientRect()),
+			text: first?.matched ?? sliceCodePoints(at.text, at.offset, at.offset + 1),
+			offset: at.offset,
+			results,
+			error: error || undefined
+		});
+		if (id === null) return;
+		this.tapped = true;
+		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: at.text };
+		if (first) this.#opts.onLookup?.(first.entryId, 'selection');
+	}
+
+	/**
+	 * keepWordAbove scrolls the text so the word of the sticky lookup ends
+	 * above `sheetTop` (the phone sheet's top edge, viewport px) with a small
+	 * margin. The phone sheet calls it when it opens and when it grows; a
+	 * word in view already does not move. Never for a hover lookup, which a
+	 * scroll closes.
+	 */
+	keepWordAbove(sheetTop: number): void {
+		if (this.info?.mode !== 'selection' || !this.#selectionSpan) return;
+		const range = this.#rangeOf(this.#selectionSpan);
+		if (!range) return;
+		const scroller = this.#word?.isConnected ? scrollParent(this.#word) : null;
+		const top = scroller ? scroller.getBoundingClientRect().top : 0;
+		const delta = scrollDeltaAbove(range.getBoundingClientRect(), { top, bottom: sheetTop });
+		if (Math.abs(delta) < 1) return;
+		(scroller ?? window).scrollBy({ top: delta, behavior: reducedMotion() ? 'instant' : 'smooth' });
 	}
 
 	#showHover(shown: HoverShown): void {
