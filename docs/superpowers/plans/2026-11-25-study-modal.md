@@ -146,6 +146,10 @@ sessionStorage copy.
   family is a change a client must follow (`version/README.md`) — cost: none.
 - Ruling: stored data: the old local keys are not migrated (owner, 2026-11-24); NEXT.md says the remembered card
   types reset to the defaults once — cost: one reselection per workspace.
+- Ruling (fix wave): signing out still removes the cached setups, an unsaved change included, without a prompt;
+  the sign-out prompt counts unsent reviews in one plural message, and adding a second reason to it is more than
+  this wave should change — privacy on a shared device first, and the change is one choice to make again — cost:
+  a learner who signs out offline right after changing a chip loses that change (the wiki says so).
 - Ruling: the modal is mounted for every signed-in, unrestricted page, whatever the flashcards switch — only
   flashcards pieces open it, and a switched-off feature hides pages only (record 0006) — cost: none.
 
@@ -366,3 +370,26 @@ Not verified:
   made offline and synced later.
 - A setup written by a newer client with members this one does not know (fixture and unit tests only).
 - The modal over a page in a non-default workspace switched while the modal is open (unit-level only).
+
+### Fix wave (independent review, 2026-11-25)
+
+Before the review, develop was merged in (`b08fc585`, no conflicts: develop changed the layout's phone padding,
+`lib/native/back.ts`, the reader sheet and `e2e/support/pointer.ts`, none of which overlap this branch's lines;
+the back handler still closes the innermost dismissable first), and the spec's status became "Approved by the
+owner on 2026-11-25" (`3b80ba81`).
+
+| Item | Commit | Test first? |
+| --- | --- | --- |
+| 1 Blocker: a change before the row loaded replaced the synced setup | `a5b23c92` | Yes: the store test of a cold device (the reviewer's probe as a test) failed, and the modal's and the advanced page's cold-start tests failed with the guard removed. The modal test now uses the real store over a fake rows API instead of a mocked `loaded: true`. |
+| 2 Last write wins over the whole setup; refresh while dirty never read the server | `a5b23c92` | Yes: the patch, reload-and-reapply and refusal tests failed on the old store. The two-device test passed on the old store by accident (its partial object acted as a patch) and pins the patch contract. |
+| 3 A failed scheme read counted as an uninstalled level | `8aabbc6e` | Yes for the loader (`knownSchemes`, 2 failing tests). The new contract case passed at once (repair already treats `null` as unknown; it documents the rule). The modal test was written with the fix. |
+| 4 Open redirect through `?from=` | `0fc5f70e` | Yes: tab, newline and carriage-return cases failed for `safeFrom`, and the session config's `from` test failed. |
+| 5 Deep-linked one-off starts used the defaults | `9f49d2f6` | Yes: both deep-link tests failed (no refresh, no wait). |
+| 6 "Not saved" through `errorText` | `a5b23c92` | Yes, inside the modal's unsaved-change test (offline text vs. the refusal's catalogue text). |
+| 7 Sign-out drops an unsaved change | — | A Ruling (above); the wiki says it. |
+| 8 A late write recreated a deleted workspace's cache key | `a5b23c92` | Yes: failed on the old store. The store now asks the session whether the workspace still exists. |
+| 9 Ruling 2's estimate | docs commit | The wiki now calls the count an estimate. |
+
+Also found while testing: two DOM test files shared the jsdom `localStorage` between tests (a cached setup made
+the next test's cold start warm); they now clear it after each test.
+
