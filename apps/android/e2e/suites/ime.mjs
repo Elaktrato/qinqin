@@ -97,6 +97,11 @@ export async function run(ctx) {
 		await sleep(600);
 		let text = await bodyText(ctx.cdp);
 		if (/Correct|Not quite/.test(text)) throw new Error(`the card was checked during composition: ${text.slice(0, 200)}`);
+		if ((await imeLog(ctx.cdp)).some((e) => e.t === 'compositionend')) {
+			// As in the search step: the emulator may commit the synthetic composition early; start the commit from an empty field.
+			num.imeTypingEarlyEnd = true;
+			await ctx.cdp.eval(`(() => { const f = ${field}; f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+		}
 		await commit(ctx.cdp, '学校');
 		const typed = await value(ctx.cdp, field);
 		if (typed !== '学校') throw new Error(`typed text is "${typed}"`);
