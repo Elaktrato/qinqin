@@ -434,7 +434,16 @@ async function shellSuite() {
 	});
 
 	await rec.step('storage survives: force-stop, pm trim-caches, relaunch', async () => {
-		const before = (await cdp.eval(MEASURE)).caches;
+		let before;
+		try {
+			before = (await cdp.eval(MEASURE)).caches;
+		} catch (err) {
+			// The emulator image may have killed the app (a Google Play services restart): start it again and measure.
+			num.storageSurvivesRelaunched = String(err.message);
+			forceStop();
+			cdp = (await coldStart('online')).cdp;
+			before = (await cdp.eval(MEASURE)).caches;
+		}
 		cdp.close();
 		forceStop();
 		const trim = adb(['shell', 'pm', 'trim-caches', '9999999999999'], { soft: true });

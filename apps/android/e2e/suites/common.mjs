@@ -167,5 +167,11 @@ export async function setMode(ctx, mode, click) {
 	await waitFor('the appearance tab', () => ctx.cdp.eval(`!!document.querySelector('input[name=appearance-mode][value=${mode}]')`), { timeout: 30_000 });
 	await click(ctx.cdp, `document.querySelector('input[name=appearance-mode][value=${mode}]').closest('label')`);
 	await waitFor(`the ${mode} scheme`, () => ctx.cdp.eval(`document.documentElement.dataset.scheme === ${JSON.stringify(mode === 'dark' ? 'dark' : 'light')}`), { timeout: 15_000, interval: 300 });
+	// The radio only previews; Save writes the row. Without it the next page load paints the saved look again.
+	const canSave = await ctx.cdp.eval(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Save'); return !!b && !b.disabled; })()`);
+	if (canSave) {
+		await click(ctx.cdp, `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Save')`);
+		await waitFor('the appearance saved', () => ctx.cdp.eval(`document.body.innerText.includes('Appearance saved.')`), { timeout: 15_000, interval: 300 });
+	}
 	return ctx.cdp.eval('({ scheme: document.documentElement.dataset.scheme, bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(), chrome: getComputedStyle(document.documentElement).getPropertyValue("--chrome").trim() })');
 }

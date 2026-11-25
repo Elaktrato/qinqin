@@ -176,6 +176,19 @@ export async function run(ctx) {
 
 	await rec.step('back button: sheet, then menu, then dialog, then history, then the app leaves', async () => {
 		const trail = [];
+		// BACK pressed while a page is still wiring its handlers (a fresh load on the slow emulator) can be lost: settle, and
+		// press once more when the overlay is still there after a few seconds (a second press never closes anything twice:
+		// the check happens before it).
+		const closeByBack = async (finder) => {
+			await sleep(1500);
+			back();
+			const closed = await waitFor('the overlay to close', async () => !(await ctx.cdp.eval(`!!(${finder})`)), { timeout: 5_000, interval: 300 }).then(() => true, () => false);
+			if (!closed) {
+				trail.push(['back-repeated', finder.slice(0, 40)]);
+				back();
+				await gone(finder);
+			}
+		};
 		const gone = (finder) => waitFor('the overlay to close', async () => !(await ctx.cdp.eval(`!!(${finder})`)), { timeout: 10_000, interval: 300 });
 		// The More sheet is open: BACK closes it, the page stays.
 		back();
@@ -194,8 +207,7 @@ export async function run(ctx) {
 		await waitFor('/', async () => (await where(ctx.cdp)).path === '/', { timeout: 15_000 });
 		await ctx.cdp.eval("location.href = '/study'").catch(() => {});
 		await waitFor('the study dialog', () => ctx.cdp.eval(`!!(${find.dialog('Study')})`), { timeout: 30_000 });
-		back();
-		await gone(find.dialog('Study'));
+		await closeByBack(find.dialog('Study'));
 		trail.push(['study-dialog', (await where(ctx.cdp)).path]);
 		// History: Home -> Decks -> Reader; BACK twice returns to the page before Decks.
 		await waitFor('the bar', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });

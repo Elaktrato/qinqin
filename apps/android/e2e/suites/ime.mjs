@@ -18,7 +18,7 @@ export async function run(ctx) {
 
 	await rec.step('ime: sign in as the learner, seed one typing card (reverse)', async () => {
 		await useLearner(ctx, D);
-		await addCards(D, 'ja', [{ kind: 'reverse', written: '学校' }], ['reverse']);
+		await addCards(D, 'ja', [{ kind: 'vocab', written: '学校' }], ['reverse']);
 		await setCardTypes(D, 'ja', ['reverse']);
 		return { ws: D.ws };
 	});

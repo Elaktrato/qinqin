@@ -37,7 +37,27 @@ export async function waitFor(what, fn, { timeout = 30_000, interval = 500 } = {
 	}
 }
 
+/**
+ * dismissAnr: a busy software emulator shows "<app> isn't responding" even with hide_error_dialogs; it swallows adb
+ * touches and sits in screenshots. When one is on screen, taps its "Wait" button (the app keeps running). Returns
+ * true when one was dismissed.
+ */
+export function dismissAnr() {
+	try {
+		if (!/Application Not Responding|isn't responding/.test(adb(['shell', 'dumpsys', 'window', 'windows'], { soft: true, timeout: 20_000 }))) return false;
+		adb(['shell', 'uiautomator', 'dump', '/sdcard/anr.xml'], { soft: true, timeout: 30_000 });
+		const xml = adb(['shell', 'cat', '/sdcard/anr.xml'], { soft: true });
+		const m = /text="Wait"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(xml);
+		if (!m) return false;
+		adb(['shell', 'input', 'tap', String(Math.round((+m[1] + +m[3]) / 2)), String(Math.round((+m[2] + +m[4]) / 2))], { soft: true });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function screenshot(name) {
+	dismissAnr();
 	try {
 		const png = execFileSync(ADB, ['exec-out', 'screencap', '-p'], { maxBuffer: 64 * 1024 * 1024, timeout: 30_000 });
 		writeFileSync(join(OUT, `${name}.png`), png);

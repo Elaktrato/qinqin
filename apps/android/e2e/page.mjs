@@ -1,7 +1,7 @@
 // Page-level helpers of the emulator driver (#37): finding elements by what a person sees, real input through the
 // DevTools Input domain (mouse, keys, IME composition) and through Android itself (adb touch), the touch calibration
 // that maps CSS pixels to screen pixels, and a collector for uncaught errors. No Playwright.
-import { adb, sleep, waitFor } from './lib.mjs';
+import { adb, dismissAnr, sleep, waitFor } from './lib.mjs';
 
 const J = (s) => JSON.stringify(s);
 
@@ -139,6 +139,7 @@ export const toScreen = (cal, x, y) => [Math.round(cal.ox + x * cal.dpr), Math.r
 
 /** swipe: one straight touch stroke between two viewport points (down, moves, up) lasting `ms`. */
 export function swipe(cal, from, to, ms = 300) {
+	dismissAnr();
 	const [x1, y1] = toScreen(cal, from.x, from.y);
 	const [x2, y2] = toScreen(cal, to.x, to.y);
 	adb(['shell', 'input', 'swipe', String(x1), String(y1), String(x2), String(y2), String(ms)]);
@@ -146,6 +147,7 @@ export function swipe(cal, from, to, ms = 300) {
 
 /** stroke: a touch path through several viewport points held down the whole time (input motionevent in one shell). */
 export function stroke(cal, points) {
+	dismissAnr();
 	const pts = points.map((p) => toScreen(cal, p.x, p.y));
 	const cmd = pts.map(([x, y], i) => `input motionevent ${i === 0 ? 'DOWN' : i === pts.length - 1 ? 'UP' : 'MOVE'} ${x} ${y}`).join('; ');
 	adb(['shell', cmd]);

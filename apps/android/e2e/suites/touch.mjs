@@ -26,7 +26,7 @@ const padBox = (cdp, sel) =>
 	cdp.eval(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; })()`);
 
 async function chip(ctx, label) {
-	await click(ctx.cdp, find.named(label, '[role=dialog] label, [role=dialog] [role=checkbox], [role=dialog] button'));
+	await click(ctx.cdp, find.named(label, 'dialog label, dialog [role=checkbox], dialog button, [role=dialog] label, [role=dialog] [role=checkbox], [role=dialog] button'));
 }
 async function savedTypes(user, language) {
 	const rows = await user.api(`/api/rows?workspace=${user.ws[language]}&prefix=study-setup`);
@@ -159,14 +159,16 @@ export async function run(ctx) {
 
 	await rec.step('screen edge: where a stroke starting at the very edge goes (informational: gesture zones recorded)', async () => {
 		const mode = adb(['shell', 'cmd', 'overlay', 'list', '--user', '0', 'android'], { soft: true }).split('\n').filter((l) => /navbar|navigation/i.test(l)).join(' ').slice(0, 200);
-		await ctx.cdp.eval(`(() => {
+		// The edge swipe can be a system Back gesture that navigates or reloads the page: install the probe layer anew each time.
+		const install = () => ctx.cdp.eval(`(() => {
+			document.getElementById('__edge')?.remove();
 			const d = document.createElement('div'); d.id = '__edge'; d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:transparent;touch-action:none';
 			const c = { down: 0, move: 0, up: 0, cancel: 0, firstX: null, lastX: null }; window.__edge = c;
 			for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) d.addEventListener(t, (e) => { c[t === 'pointerdown' ? 'down' : t === 'pointermove' ? 'move' : t === 'pointerup' ? 'up' : 'cancel']++; if (c.firstX === null) c.firstX = e.clientX; c.lastX = e.clientX; }, true);
 			document.body.appendChild(d);
 		})()`);
 		const probe = async (label, x1, x2) => {
-			await ctx.cdp.eval('(() => { const c = window.__edge; c.down = c.move = c.up = c.cancel = 0; c.firstX = c.lastX = null; })()');
+			await install().catch(() => {});
 			const y = Math.round(cal.size.sh ? cal.size.sh * cal.dpr * 0.5 : 1200);
 			adb(['shell', 'input', 'swipe', String(x1), String(y), String(x2), String(y), '300'], { soft: true });
 			await sleep(1200);
