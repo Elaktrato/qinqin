@@ -62,4 +62,4 @@ A page of a feature you switched off (Decks, Reader) says "You switched this off
 
 ## Old addresses
 
-Links from older versions keep working: `/p/flashcards` opens the Decks page, `/p/reader` the Reader, `/p/journal` the Journal, `/p/grammar` Grammar, and `/study/map` opens Stats → Characters. Any other `/p/…` address is gone.
+Links from older versions keep working: `/p/flashcards` opens the Decks page, `/p/reader` the Reader, `/p/journal` the Journal, `/p/grammar` Grammar, `/study/map` opens Stats → Characters, and `/study` opens the study modal over the home page. Any other `/p/…` address is gone.

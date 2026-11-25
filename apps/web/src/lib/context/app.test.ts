@@ -71,6 +71,18 @@ describe('the session follows the token', () => {
 		expect(getToken()).toBeNull();
 	});
 
+	it('the session owns the saved study setups and the study modal; signing out forgets the cached setups', async () => {
+		await app.auth.login('u1', 'pw');
+		const session = app.session!;
+		expect(session.studyModal.open).toBe(false);
+		session.studyModal.show();
+		expect(session.studyModal.open).toBe(true);
+		localStorage.setItem('qinqin.study.setup.1.4', '{"raw":{"version":1},"dirty":false}');
+		expect(session.setups.of(4).loaded).toBe(false);
+		app.auth.logout();
+		expect(localStorage.getItem('qinqin.study.setup.1.4')).toBeNull();
+	});
+
 	it('a 401 disposes it with expired', async () => {
 		await app.auth.login('u1', 'pw');
 		const session = app.session!;

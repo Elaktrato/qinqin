@@ -27,7 +27,7 @@ The top bar (on a phone, the menu) leads to Search, Decks, Reader, Journal, Gram
 ## A first ten minutes
 
 1. Search for a word you know ([Searching and entries](Searching-and-entries)) and press **Add to deck** on its entry. Or open **Decks** and press **Add** on a starter or level deck to copy a whole list of words in one click ([Decks, limits and vacation](Flashcards-decks-limits-vacation)).
-2. Press **Study** on a deck, or open the study setup (`/study`), keep the defaults and press **Start studying** ([Flashcards: study sessions](Flashcards-study-sessions)).
+2. Press **Study** on a deck, or **Study** on the home page's flashcards widget, keep the defaults and press **Start studying** in the study modal ([Flashcards: study sessions](Flashcards-study-sessions)).
 3. Open a book in the [Reader](Reader), or a lesson in [Grammar](Grammar-lessons), and look words up as you go.
 4. Optional: check your time zone under Settings → Study, so that "today" matches your day ([Settings tour](Settings-tour#study)).
 5. Optional: pick your colours under Settings → Appearance ([Appearance and themes](Appearance-and-themes)) and your interface language under Settings → Account → Language.

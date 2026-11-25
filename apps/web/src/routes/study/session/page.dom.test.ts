@@ -62,6 +62,7 @@ import { loadStudyData } from '$lib/study/data';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
 import Page from './+page.svelte';
+import { goto } from '$app/navigation';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -916,5 +917,53 @@ describe('Back: change a misclicked grade (#131)', () => {
 		expect(screen.queryByRole('button', { name: /^Back to the card graded before/ })).toBeNull();
 		await fireEvent.keyDown(window, { key: 'z' });
 		expect(screen.queryByText(/^Graded/)).toBeNull();
+	});
+});
+
+describe('leaving the session (the study modal)', () => {
+	function configureFrom(from: string): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], from })
+		);
+	}
+	const word = (id: number): StudyCard => build.card({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'] });
+	async function gradeShown(name: RegExp): Promise<void> {
+		await fireEvent.click(await screen.findByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(screen.getByRole('button', { name }));
+	}
+
+	it('without a running session it opens the study modal in place of the old address', async () => {
+		render(Page, { context: ctx.context });
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study', { replaceState: true }));
+	});
+
+	it('an empty session goes back where it was started and opens the modal', async () => {
+		configureFrom('/flashcards');
+		render(Page, { context: ctx.context });
+		await fireEvent.click(await screen.findByRole('link', { name: 'Back to study' }));
+		expect(goto).toHaveBeenCalledWith('/flashcards');
+		await waitFor(() => expect(ctx.session.studyModal.open).toBe(true));
+	});
+
+	it('a finished session goes back with the modal closed', async () => {
+		configureFrom('/flashcards/deck/d1');
+		history([word(11)], []);
+		render(Page, { context: ctx.context });
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('link', { name: 'Done' }));
+		expect(goto).toHaveBeenCalledWith('/flashcards/deck/d1');
+		await Promise.resolve();
+		expect(ctx.session.studyModal.open).toBe(false);
+	});
+
+	it('End session goes back where it was started and opens the modal', async () => {
+		configureFrom('/');
+		history([word(11), word(12)], []);
+		render(Page, { context: ctx.context });
+		await fireEvent.click(await screen.findByRole('link', { name: 'End session' }));
+		expect(goto).toHaveBeenCalledWith('/');
+		await waitFor(() => expect(ctx.session.studyModal.open).toBe(true));
 	});
 });
