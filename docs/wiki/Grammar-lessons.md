@@ -25,7 +25,7 @@ Opening a lesson (`/p/grammar/<pack>/<lesson>`) shows:
 - **Examples**: each sentence with the grammar point in the accent colour, its reading and its translation. **Show readings** hides or shows the readings; the choice is remembered in this browser.
 - **Practice**, and links to the **previous** and **next lesson** and back to **All lessons**.
 
-Every word in the pattern, the explanation and the examples can be looked up like in the [Reader](Reader#looking-words-up): hover or select it for the popup, or tap it on a phone. **Add to deck** in the popup adds the word to the current workspace when the workspace has the lesson's language. Popups that stay open count in your [lookup history](Searching-and-entries#lookup-history) as lookups "in lessons".
+Every word in the pattern, the explanation and the examples can be looked up like in the [Reader](Reader#looking-words-up): hover or select it for the popup, or tap it on a phone. **Add to deck** in the popup adds the word to the current workspace when the workspace has the lesson's language. Popups that stay open, and every tap or selection that finds an entry, count in your [lookup history](Searching-and-entries#lookup-history) as lookups "in lessons".
 
 Chinese lessons follow the reader's **Script** setting (original, simplified or traditional, see [Reader](Reader#display-settings)), so lessons and their exercises appear in the script you read in.
 

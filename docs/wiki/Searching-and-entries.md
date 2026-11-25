@@ -75,7 +75,7 @@ Press **Add to deck** next to an entry's title. The card joins the General deck 
 
 What counts as a lookup:
 
-- In the reader and in grammar lessons: a hover popup that stays open for a second, or that you move the pointer into, and every selection popup that finds something. The word recorded is the popup's first entry. Moving the mouse across a line records nothing, and popups opened from inside a popup never count.
+- In the reader and in grammar lessons: a hover popup that stays open for a second, or that you move the pointer into, and every tap or selection popup that finds something. The word recorded is the popup's first entry. Moving the mouse across a line records nothing, and popups opened from inside a popup never count.
 - In search: opening a result (a click, Enter or a middle click; opening it from the right-click menu is not noticed). Typing a query records nothing.
 - Looking the same word up again within ten minutes only updates "last" (rereading a paragraph does not inflate the count). Visiting an entry page from a link is not a lookup.
 

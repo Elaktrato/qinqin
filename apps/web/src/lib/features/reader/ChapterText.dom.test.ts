@@ -20,7 +20,16 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const lookup = { pointermove() {}, pointerleave() {}, pointerdown() {} } as unknown as LookupController;
+// The text's listeners go through listen(); this stand-in forwards pointerdown only.
+const lookup = {
+	pointerdown() {},
+	listen(this: { pointerdown(e: PointerEvent): void }, el: HTMLElement) {
+		const down = (e: PointerEvent) => this.pointerdown(e);
+		el.addEventListener('pointerdown', down);
+		return () => el.removeEventListener('pointerdown', down);
+	},
+	fromTouch: () => false
+} as unknown as LookupController;
 const dict = (start: number, end: number, rt: string, concealed = false): Piece => ({ start, end, rt, concealed, source: 'dict' });
 const display = (over: Partial<ReaderDisplay> = {}): ReaderDisplay => ({ ...DEFAULT_DISPLAY, ...over });
 
