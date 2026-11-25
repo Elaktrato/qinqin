@@ -170,10 +170,12 @@ including the doc checks and the repository layout: [Development](https://github
 
 ## Licence and credits
 
-The bundled data keeps its own licences: CC-CEDICT, JMdict and KANJIDIC2 (CC BY-SA 4.0), Unihan (Unicode
+The MIT licence covers the code only. The bundled data keeps its own licences: CC-CEDICT, JMdict and KANJIDIC2 (CC BY-SA 4.0), Unihan (Unicode
 License v3), the Jiten frequency list (CC BY-SA 4.0), KanjiVG components (CC BY-SA 3.0), the stroke-order
 data (Arphic Public License), the HSK 3.0 lists (no reuse licence granted; included with attribution) and
 more. [`docs/sources.md`](docs/sources.md) is the licence and attribution reference for every pack, theme,
 font and library, and the app's public **Sources** page (`/sources`) shows the credits of what is installed.
 
-The repository contains no licence file for qinqin's own code yet.
+qinqin's own code is under the [MIT licence](LICENSE). Content the project writes (the grammar packs, the
+lemmatizer rule table and the qinqin themes) is under CC BY 4.0, credited as "qinqin contributors, CC BY 4.0".
+[`LICENSING.md`](LICENSING.md) explains the split.
