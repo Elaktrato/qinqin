@@ -7,6 +7,7 @@
 	import { t } from '$lib/i18n';
 	import { Button, Select } from '$lib/ui';
 	import type { EntryBase } from '$lib/api/types';
+	import SelfAssessQuestion from './SelfAssessQuestion.svelte';
 	import { newMarks, rangeEntries, type LevelMembers } from './declare';
 	import { answer, currentItem, placementResult, startPlacement, type PlacementState } from './placement';
 
@@ -60,17 +61,15 @@
 </script>
 
 {#if !result.done && entry}
-	<div class="test" data-testid="placement-question">
-		<p class="meta">{t('settings.placement.progress', { n: result.answered + 1 })}</p>
-		<p class="prompt">{unit === 'character' ? t('settings.placement.promptChar') : t('settings.placement.promptWord')}</p>
-		<p class="item" lang={language}>{entry.written}</p>
-		<p class="hint">{t('settings.placement.honest')}</p>
-		<div class="row">
-			<Button variant="primary" onclick={() => reply(true)} data-testid="placement-know">{t('settings.placement.know')}</Button>
-			<Button onclick={() => reply(false)} data-testid="placement-unsure">{t('settings.placement.unsure')}</Button>
-			<Button variant="plain" onclick={oncancel}>{t('settings.placement.cancel')}</Button>
-		</div>
-	</div>
+	<SelfAssessQuestion
+		written={entry.written}
+		{language}
+		{unit}
+		progress={t('settings.placement.progress', { n: result.answered + 1 })}
+		cancelLabel={t('settings.placement.cancel')}
+		onreply={reply}
+		oncancel={oncancel}
+	/>
 {:else}
 	<div class="test" data-testid="placement-result">
 		<h4 class="result-title">{t('settings.placement.resultTitle')}</h4>
@@ -105,21 +104,10 @@
 		gap: var(--space-2);
 		max-width: 28rem;
 	}
-	.meta,
 	.hint {
 		margin: 0;
 		color: var(--readable-muted);
 		font-size: var(--font-size-s);
-	}
-	.prompt {
-		margin: 0;
-	}
-	.item {
-		margin: var(--space-2) 0;
-		font-size: 3rem;
-		line-height: var(--line-tight);
-		text-align: center;
-		overflow-wrap: anywhere;
 	}
 	.row {
 		display: flex;

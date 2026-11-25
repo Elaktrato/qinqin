@@ -261,7 +261,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 - ~~[#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"~~ — built for v0.8.0 (declarations are `known:` marks with a batch, undoable; design in `docs/superpowers/specs/2026-11-26-placement-design.md`)
 - [#60](https://github.com/Elaktrato/qinqin/issues/60) Anki import
 - ~~[#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary~~ — done (v0.3.0 stretch, in-app; milestones deferred)
-- [#82](https://github.com/Elaktrato/qinqin/issues/82) level check (experimental)
+- ~~[#82](https://github.com/Elaktrato/qinqin/issues/82) level check (experimental)~~ — built for v0.8.0 in Settings → Study (vocabulary and character coverage only, not the exam; design in `docs/superpowers/specs/2026-11-26-level-check-design.md`)
 
 **Japanese**
 
