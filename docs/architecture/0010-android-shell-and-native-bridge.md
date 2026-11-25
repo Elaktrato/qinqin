@@ -59,7 +59,7 @@ UI in native code.
 - **Offline and storage stay in the WebView (#35, measured in an emulator, `docs/superpowers/specs/2026-11-23-android-shell-design.md`).**
   The service worker registers over `http://localhost` or https and the app starts offline from its cache; the
   quota is about 60 % of the disk and the web app stores 5 to 20 MB, so there is no native file storage. The session
-  token stays in `localStorage` (no Keystore plugin). The manifest declares `ACCESS_NETWORK_STATE` so the page's
+  token stays in `localStorage` (no Keystore plugin). The manifest declares the network-state permission so the page's
   online and offline events fire. The emulator job (`.github/workflows/android-emulator.yml`) is the only place
   these run.
 - **One source of screens.** No screen except the first-run one exists in native code. A feature of the web app
