@@ -18,7 +18,9 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
  * qinqin's own tiny Capacitor plugin ("QinqinShell"): the saved server address, "Change server", and the colour
- * behind the system bars. Everything else the web app needs from the shell is a stock Capacitor plugin.
+ * behind the system bars, plus keep-awake and vibration. The other pieces of the shell are their own plugins
+ * (SpeechPlugin, FilesPlugin, SharePlugin, NotificationsPlugin), registered in MainActivity; the rest is stock
+ * Capacitor (App, ...).
  */
 @CapacitorPlugin(name = "QinqinShell")
 public class ShellPlugin extends Plugin {
@@ -51,10 +53,10 @@ public class ShellPlugin extends Plugin {
         reload();
     }
 
-    /** Forgets the address and shows the first-run screen. */
+    /** Forgets the address (and the old account's reminders) and shows the first-run screen. */
     @PluginMethod
     public void clearServer(PluginCall call) {
-        ServerStore.clear(getContext());
+        ServerStore.forget(getContext());
         call.resolve();
         reload();
     }

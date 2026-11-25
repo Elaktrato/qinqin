@@ -44,6 +44,14 @@ and streaks are computed by the clients (`docs/contracts/scheduler/`, `goals/`).
 
 - A phone that does not run the app for more than the plan's seven days gets no local reminders until it does;
   Android may delay a local alarm in Doze. An exact, always-on push needs UnifiedPush or the Play flavour.
+  The web app replans on every start, every return to the foreground, every return of the network and once a day
+  while it runs; nothing replans while it is closed. A periodic native background replan (WorkManager) is a follow-up.
+- The text of a local notification (its counts) is fixed when it is scheduled. Study done **on this phone** is
+  accounted for: if its facts or the new plan cannot be fetched (offline), the remaining device notifications are
+  cancelled instead of showing old counts, and come back at the next replan. Study done on **another device** cannot
+  be known offline: the counts may be wrong until the phone is online again.
+- "Change server" cancels every scheduled and shown notification of the old account; a notification tap reaches the
+  web app through a non-exported trampoline activity, never through an extra on the exported main activity.
 - Server-side reminders depend on the last facts a client published (30-day staleness cap). A learner who never opens
   the web app after opting in has no facts and gets nothing.
 - Web push needs HTTPS and a usable `QINQIN_SECRET`; on iOS only for a home-screen web app (16.4+).

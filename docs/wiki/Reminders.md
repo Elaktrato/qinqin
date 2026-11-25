@@ -65,7 +65,17 @@ Every device that did so is listed there and can be removed. Limits:
 
 The Android app schedules the reminders **on the phone** from the server's plan: no Google service and no push server
 is involved, so it also works from F-Droid. It re-plans when you open the app, after syncing and once a day, and
-cancels everything when you sign out or turn the switch off. See [The Android app](Android).
+cancels everything when you sign out, change the server or turn the switch off. See [The Android app](Android).
+
+Limits of device notifications:
+
+- **Seven days.** The plan covers the next 7 days and nothing replans while the app is closed. If you do not open the
+  app for a week, the notifications run out; opening it (or returning to it from another app) plans the next week.
+  A background replan is planned as a later improvement.
+- **Offline.** The counts in a notification ("12 cards are due") are fixed when it is scheduled. Reviews you do on this
+  phone are taken into account: if they cannot be sent while you are offline, the remaining notifications of today are
+  removed rather than shown with old numbers. Reviews done on another device cannot be known until this phone is
+  online again, so a count may be out of date until then.
 
 ## For administrators
 

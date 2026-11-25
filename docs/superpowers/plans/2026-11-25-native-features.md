@@ -58,3 +58,32 @@ unchanged by this work (androidx, Kotlin stdlib, Capacitor 8.6.2, `@capacitor/ap
 `com.google.*` artifact is `com.google.guava:listenablefuture:1.0`, the empty Apache-2.0 placeholder androidx
 pulls in; no `com.google.android.gms`, no Firebase. The new manifest entries are normal permissions
 (`VIBRATE`, `RECEIVE_BOOT_COMPLETED`) plus `POST_NOTIFICATIONS`, asked at run time only by a feature that needs it.
+
+## Review fixes (stage 2)
+
+- Ruling: "Change server" goes through `ServerStore.forget` (all three paths: `ShellPlugin.clearServer`,
+  `MainActivity.load`, `onNewIntent`), which cancels every stored alarm and every shown notification, then clears the
+  address. Native only, not also in `lib/native` — the launcher shortcut has no web page, so the native side is the one
+  place all paths share. Cost if wrong: none visible; the call is idempotent. No JVM test for the cancel itself (needs a
+  `Context`; the repo has no Robolectric) — only the pure parts are tested.
+- Ruling: after a local study change whose facts or plan cannot be fetched, the scheduler cancels **all** device
+  notifications (not only today's): the port has no "list pending" and later days' counts are projections from the same
+  facts. They return at the next successful replan. Stale mark is in memory only (an app killed offline right after a
+  review keeps old text until the next open). Cost if wrong: a person offline for days after studying gets no
+  notifications; the cheaper wrong text was judged worse.
+- Ruling: counts changed on another device cannot be fixed offline (documented), and the 7-day horizon is documented
+  (wiki, ADR 0011) with a native background replan as a follow-up. The web app now also replans on foreground
+  (`visibilitychange`) and `online`, through the debounced facts publisher. Cost if wrong: one extra plan fetch per resume.
+- Ruling: `EXTRA_ROUTE` is no longer read from any intent. The notification tap opens `NotificationTapActivity`
+  (`exported=false`, so no other app can start it), which hands the route to `IncomingStore.pushRoute` in-process and
+  starts `MainActivity` with a plain MAIN intent. A private action name on the exported activity would not be safe
+  (any app can send any action/extra to an exported component). `IncomingText.route` / `routeHref` also reject `..`,
+  dot segments, `%2e`, `%5c`, backslash, `//` and anything not starting with a single `/`. Cost if wrong: one extra
+  (invisible) activity hop on a tap; a legitimate path containing `..` is refused.
+- Ruling: `cancel()` ends the device scheduler for good (a `stopped` flag checked between steps, and cancel waits for the
+  running replan before `cancelAll`). The scheduler is per session, so nothing needs it to restart. Cost if wrong: a
+  scheduler reused after cancel would stay silent. The port's batch `schedule` loop is not interruptible; cancel's
+  trailing `cancelAll` removes whatever it added.
+- Ruling: a 401 that expires the session now runs `forgetThisDevice` too (browser unsubscribe and remembered id; the
+  server DELETE may be refused for lack of a token, and the row is pruned by the push service's 404/410 at the next
+  send). A user switched under a tab is not covered. Cost if wrong: a stale server row until the next push.

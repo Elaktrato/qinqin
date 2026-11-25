@@ -36,6 +36,7 @@ describe('createFactsPublisher', () => {
 		await advance(2100);
 		expect(publish.mock.calls.map((c) => c[0])).toEqual([3, 4]);
 		expect(after).toHaveBeenCalledTimes(1);
+		expect(after).toHaveBeenCalledWith({ published: true });
 	});
 	it('runs at most once a minute: a later request waits for the gap', async () => {
 		const { publisher, publish, advance } = setup();
@@ -66,14 +67,16 @@ describe('createFactsPublisher', () => {
 		await advance(5100);
 		expect(publish).toHaveBeenCalledTimes(2);
 		expect(after).toHaveBeenCalledTimes(1);
+		expect(after).toHaveBeenCalledWith({ published: false });
 		warn.mockRestore();
 	});
 	it('a failing settings read publishes nothing and does not throw', async () => {
-		const { publisher, publish, advance } = setup({ enabled: async () => Promise.reject(new Error('offline')) });
+		const { publisher, publish, after, advance } = setup({ enabled: async () => Promise.reject(new Error('offline')) });
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		publisher.request();
 		await advance(5100);
 		expect(publish).not.toHaveBeenCalled();
+		expect(after).toHaveBeenCalledWith({ published: false });
 		warn.mockRestore();
 	});
 	it('stop cancels a pending run and ignores later requests', async () => {

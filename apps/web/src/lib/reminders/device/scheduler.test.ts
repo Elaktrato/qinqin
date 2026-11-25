@@ -91,7 +91,72 @@ describe('replan', () => {
 	});
 });
 
+describe('stale text after a local study change (A)', () => {
+	it('cancels the scheduled notifications when the plan cannot be fetched after a local change', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		await scheduler.replan();
+		expect(port.scheduled.length).toBe(2);
+		scheduler.markStale();
+		fetchPlan.mockRejectedValueOnce(new Error('offline'));
+		await expect(scheduler.replan()).resolves.toBeUndefined();
+		expect(port.scheduled).toEqual([]);
+	});
+	it('does not trust the server plan when publishing the facts failed after a local change', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		await scheduler.replan();
+		fetchPlan.mockClear();
+		scheduler.markStale();
+		await scheduler.replan({ factsFailed: true });
+		expect(fetchPlan).not.toHaveBeenCalled();
+		expect(port.scheduled).toEqual([]);
+	});
+	it('keeps the old ones when nothing changed locally and the plan cannot be fetched (B: offline, no local change)', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		await scheduler.replan();
+		fetchPlan.mockRejectedValueOnce(new Error('offline'));
+		await scheduler.replan({ factsFailed: true });
+		expect(port.scheduled.length).toBe(2);
+	});
+	it('a successful replan after the facts went out clears the stale mark', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		scheduler.markStale();
+		await scheduler.replan();
+		expect(port.scheduled.length).toBe(2);
+		fetchPlan.mockRejectedValueOnce(new Error('offline'));
+		await scheduler.replan();
+		expect(port.scheduled.length).toBe(2);
+	});
+});
+
 describe('cancel', () => {
+	it('waits for a running replan and leaves nothing scheduled (logout racing a replan)', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		let release: (p: ReminderPlan) => void = () => undefined;
+		fetchPlan.mockImplementationOnce(() => new Promise<ReminderPlan>((r) => (release = r)));
+		const running = scheduler.replan();
+		await vi.waitFor(() => expect(fetchPlan).toHaveBeenCalled());
+		const cancelled = scheduler.cancel();
+		release(plan([slot(1, 'due', '2026-11-25T17:00:00Z', 15)]));
+		await Promise.all([running, cancelled]);
+		expect(port.scheduled).toEqual([]);
+		expect(port.calls[port.calls.length - 1]).toBe('cancelAll');
+		expect(port.calls).not.toContain('schedule:1');
+	});
+	it('stops a queued second pass and any later replan', async () => {
+		const { port, fetchPlan, scheduler } = setup();
+		let release: (p: ReminderPlan) => void = () => undefined;
+		fetchPlan.mockImplementationOnce(() => new Promise<ReminderPlan>((r) => (release = r)));
+		const first = scheduler.replan();
+		void scheduler.replan();
+		await vi.waitFor(() => expect(fetchPlan).toHaveBeenCalledTimes(1));
+		const cancelled = scheduler.cancel();
+		release(plan([slot(1, 'due', '2026-11-25T17:00:00Z', 15)]));
+		await Promise.all([first, cancelled]);
+		await scheduler.replan();
+		expect(fetchPlan).toHaveBeenCalledTimes(1);
+		expect(port.scheduled).toEqual([]);
+	});
+
 	it('cancels everything', async () => {
 		const { port, scheduler } = setup();
 		await scheduler.replan();

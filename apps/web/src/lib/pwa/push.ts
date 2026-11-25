@@ -255,8 +255,9 @@ export async function removeDevice(deps: PushDeps, id: number): Promise<void> {
 }
 
 /**
- * forgetThisDevice: at sign-out, delete this device's subscription. Best effort and never blocks: the DELETE is
- * started synchronously (the request still carries the token, which the caller clears right after), everything
+ * forgetThisDevice: when the session ends (sign-out, or a 401 that expired it), delete this device's subscription.
+ * Best effort and never blocks: the DELETE is started synchronously (at sign-out the request still carries the
+ * token; after a 401 it has none and may be refused, the browser-side unsubscribe still happens), everything
  * else runs in the background.
  */
 export function forgetThisDevice(deps: PushDeps): void {

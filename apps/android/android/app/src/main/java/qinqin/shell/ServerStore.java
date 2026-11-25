@@ -43,6 +43,16 @@ final class ServerStore {
         pendingError = null;
     }
 
+    /**
+     * "Change server": forgets the address AND everything the old account armed (scheduled reminders, shown
+     * notifications). Otherwise they survive in SharedPreferences, are re-armed on boot, and a tap opens /study
+     * on the NEW server. Every path that drops the server goes through here.
+     */
+    static void forget(Context c) {
+        Reminders.clearEverything(c);
+        clear(c);
+    }
+
     static void failed(String kind) {
         pendingError = kind;
     }

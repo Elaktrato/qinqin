@@ -28,10 +28,18 @@ final class IncomingText {
         return s.isEmpty() ? null : s;
     }
 
-    /** An in-app path ("/study", "/search?q=%E4%BD%A0"): one leading slash, printable ASCII, no backslash. */
+    /**
+     * An in-app path ("/study", "/search?q=%E4%BD%A0"): one leading slash (not "//"), printable ASCII, no backslash
+     * (also not as %5c), no dot segment ("..", "%2e": "/x/../api" must not walk out of its prefix). The same rule
+     * as routeHref in src/lib/native/incoming.ts.
+     */
     static String route(String raw) {
         if (raw == null || raw.length() > MAX_ROUTE) return null;
         if (!raw.matches("/[\\x21-\\x7e]*") || raw.startsWith("//") || raw.indexOf('\\') >= 0) return null;
+        String lower = raw.toLowerCase(java.util.Locale.ROOT);
+        if (raw.contains("..") || lower.contains("%2e") || lower.contains("%5c")) return null;
+        String path = raw.split("[?#]", 2)[0];
+        for (String segment : path.split("/", -1)) if (segment.equals(".")) return null;
         return raw;
     }
 }
