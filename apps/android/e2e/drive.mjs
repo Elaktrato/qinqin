@@ -261,7 +261,8 @@ async function main() {
 	});
 
 	await rec.step('share in: ACTION_SEND text/plain opens the lookup with that text', async () => {
-		adb(['shell', 'am', 'start', '-a', 'android.intent.action.SEND', '-t', 'text/plain', '--es', 'android.intent.extra.TEXT', '你好 world', '-n', `${PKG}/qinqin.shell.MainActivity`]);
+		// One shell string: adb would split an argument with a space into two words.
+		adb(['shell', `am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT '你好 world' -n ${PKG}/qinqin.shell.MainActivity`]);
 		const where = await waitFor('the lookup', async () => {
 			const w = await cdp.eval('({ path: location.pathname, q: new URLSearchParams(location.search).get("q") })');
 			return w.path === '/search' && w.q === '你好 world' ? w : false;

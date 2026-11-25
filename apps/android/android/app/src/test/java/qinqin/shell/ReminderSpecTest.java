@@ -61,4 +61,14 @@ public class ReminderSpecTest {
         assertEquals(1, keep.size());
         assertTrue(keep.get(0).id == 2);
     }
+
+    @Test
+    public void wholeNumbersFromJsonWhateverTheirBoxing() {
+        assertEquals(Long.valueOf(4242), ReminderSpec.asLong(Integer.valueOf(4242)));
+        assertEquals(Long.valueOf(1_800_000_000_000L), ReminderSpec.asLong(Long.valueOf(1_800_000_000_000L)));
+        assertEquals(Long.valueOf(7), ReminderSpec.asLong(Double.valueOf(7.0)));
+        assertNull(ReminderSpec.asLong(Double.valueOf(7.5)));
+        assertNull(ReminderSpec.asLong("7"));
+        assertNull(ReminderSpec.asLong(null));
+    }
 }

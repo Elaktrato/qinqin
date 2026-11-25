@@ -28,6 +28,16 @@ final class ReminderSpec {
         this.route = route;
     }
 
+    /**
+     * A whole number from a JSON value: Capacitor's PluginCall.getLong only accepts a Long, and JSON gives an Integer
+     * for small numbers (an id) and a Long for large ones (a time). Null for anything else.
+     */
+    static Long asLong(Object v) {
+        if (v instanceof Integer || v instanceof Long || v instanceof Short || v instanceof Byte) return ((Number) v).longValue();
+        if (v instanceof Double && ((Double) v) == Math.rint((Double) v) && !Double.isInfinite((Double) v)) return ((Double) v).longValue();
+        return null;
+    }
+
     /** Null when the input is not acceptable. Text is capped (title 100, body 500, channel name 60). */
     static ReminderSpec of(long id, String title, String body, long at, String channelId, String channelName, String route) {
         if (id < 0 || id > Integer.MAX_VALUE) return null;

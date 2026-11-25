@@ -95,7 +95,8 @@ public class SpeechPlugin extends Plugin {
     public void speak(PluginCall call) {
         String text = SpeechLangs.text(call.getString("text", ""));
         String lang = call.getString("lang", "");
-        float rate = SpeechLangs.rate(call.getDouble("rate"));
+        Object wanted = call.getData().opt("rate");
+        float rate = SpeechLangs.rate(wanted instanceof Number ? ((Number) wanted).doubleValue() : null);
         if (text.isEmpty()) {
             call.reject("nothing to say");
             return;

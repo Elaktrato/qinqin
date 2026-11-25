@@ -73,8 +73,8 @@ public class NotificationsPlugin extends Plugin {
     @PluginMethod
     public void schedule(PluginCall call) {
         JSObject channel = call.getObject("channel", new JSObject());
-        Long id = call.getLong("id");
-        Long at = call.getLong("at");
+        Long id = ReminderSpec.asLong(call.getData().opt("id"));
+        Long at = ReminderSpec.asLong(call.getData().opt("at"));
         ReminderSpec spec = (id == null || at == null) ? null : ReminderSpec.of(
             id, call.getString("title"), call.getString("body"), at,
             channel.getString("id"), channel.getString("name"), call.getString("route"));
@@ -93,7 +93,7 @@ public class NotificationsPlugin extends Plugin {
 
     @PluginMethod
     public void cancel(PluginCall call) {
-        Long id = call.getLong("id");
+        Long id = ReminderSpec.asLong(call.getData().opt("id"));
         if (id == null || id < 0 || id > Integer.MAX_VALUE) {
             call.reject("bad id");
             return;
