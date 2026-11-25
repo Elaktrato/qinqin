@@ -245,5 +245,16 @@ The review found 5 should-fix items and 6 nits; all were fixed test-first (each 
 Also: the `useLookup.tap.dom.test.ts` layout stand-in needed a type annotation for the check (`test(reader)`
 commit).
 
-Fix-wave gates are listed below.
+Fix-wave gates (2026-11-25, at 67db08a4):
+
+- `npm run check`: 0 errors, 0 warnings (1780 files).
+- `npm run build`: ok.
+- Full vitest under Node 26.13.1: 627 files, 13033 passed, 2 skipped, exit 0, no unhandled errors.
+- e2e: 3 runs, 20 passed each (develop's 18, the tap test, the last-line test), no failures.
+- `node --test scripts/*.test.mjs`: 144 tests, 143 passed, 1 skipped, 0 failed.
+- `node scripts/gen-api-docs.mjs --check`: ok.
+
+Still not verified after the fix wave: a real device or WebView (the backdrop release, the swallowed click and the
+fling rule are seen in emulated Chromium touch and jsdom only), the keyboard-closing resize, and BookView's
+`onTapNoWord` wiring beyond the type check.
 
