@@ -10,7 +10,7 @@ const layout = vi.hoisted(() => ({
 	caret: null as { node: Node; offset: number } | null,
 	rect: { top: 600, height: 30 },
 	/** Whether a character box holds a point at this height (the line's glyphs). */
-	hit: (_y: number) => true
+	hit: (_y: number): boolean => true
 }));
 vi.mock('./dom', async (orig) => ({
 	...(await orig<typeof import('./dom')>()),
