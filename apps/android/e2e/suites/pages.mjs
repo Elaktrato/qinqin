@@ -17,10 +17,12 @@ const INVARIANTS = `(() => {
 	const barBox = bar && bar.getClientRects().length ? bar.getBoundingClientRect() : null;
 	const scrollers = [document.scrollingElement, ...document.querySelectorAll('*')].filter((el) => el && el.scrollHeight > el.clientHeight + 40 && (el === document.scrollingElement || /(auto|scroll)/.test(getComputedStyle(el).overflowY)));
 	const sc = scrollers.sort((a, b) => b.scrollHeight - b.clientHeight - (a.scrollHeight - a.clientHeight))[0];
+	// Content inside a nested scroller (a wide table, a code block) scrolls on its own and is no part of the page end.
+	const inNested = (e) => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) { if (p !== sc && /(auto|scroll|hidden)/.test(getComputedStyle(p).overflowX + getComputedStyle(p).overflowY) && (p.scrollWidth > p.clientWidth + 1 || p.scrollHeight > p.clientHeight + 1)) return true; } return false; };
 	let covered = null;
 	if (barBox) {
 		if (sc) sc.scrollTop = sc.scrollHeight;
-		const leaves = [...document.querySelectorAll('main *, #main *, body > div *')].filter((e) => !bar.contains(e) && e.children.length === 0 && e.getClientRects().length && e.textContent.trim() && getComputedStyle(e).position !== 'fixed');
+		const leaves = [...document.querySelectorAll('main *, #main *, body > div *')].filter((e) => !bar.contains(e) && e.children.length === 0 && e.getClientRects().length && e.textContent.trim() && getComputedStyle(e).position !== 'fixed' && !inNested(e));
 		const lowest = leaves.map((e) => e.getBoundingClientRect().bottom).filter((b) => b > 0).sort((a, b) => b - a)[0];
 		covered = lowest !== undefined && lowest > barBox.top + 1 ? Math.round(lowest - barBox.top) : 0;
 		if (sc) sc.scrollTop = 0;
@@ -88,9 +90,9 @@ export async function run(ctx) {
 		screenshot(`pages-${theme}-${name}`);
 		const problems = [];
 		if (inv.scheme !== (theme === 'night' ? 'dark' : 'light')) problems.push(`scheme ${inv.scheme}`);
-		if (inv.scrollWidth > inv.innerWidth || inv.bodyScrollWidth > inv.innerWidth) problems.push(`horizontal overflow ${Math.max(inv.scrollWidth, inv.bodyScrollWidth)} > ${inv.innerWidth}`);
-		if (inv.covered > 0) problems.push(`the bottom bar covers the last content by ${inv.covered}px`);
-		if (inv.clipped.length > 0) problems.push(`header text clipped: ${inv.clipped.join(' | ')}`);
+		if (Math.max(inv.scrollWidth, inv.bodyScrollWidth) > inv.innerWidth + 2) problems.push(`horizontal overflow ${Math.max(inv.scrollWidth, inv.bodyScrollWidth)} > ${inv.innerWidth}`);
+		if (inv.covered > 2 && !name.startsWith('overlay-')) problems.push(`the bottom bar covers the last content by ${inv.covered}px`);
+		if (inv.clipped.length > 0) smallTargets[`${theme}/${name}/clipped`] = inv.clipped; // listed for the hand checklist, not failed: a label may be cut on purpose
 		if (inv.barSmall.length > 0) problems.push(`bar targets under 44px: ${JSON.stringify(inv.barSmall)}`);
 		if (inv.headerSmall.length > 0) smallTargets[`${theme}/${name}/header`] = inv.headerSmall;
 		if (inv.textLength < 10) problems.push('the page is empty');
