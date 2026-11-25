@@ -35,8 +35,7 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
 - [x] 4. Real-data check: seed JMdict and CC-CEDICT, resolve both sets (`QINQIN_STARTER_DB=... go test -run
   RealDictionaries -v`), read every word's entry; two zh words removed (苹果, 鸟), the rest kept with the findings in the
   spec.
-- [x] 5. Picture hint lit: `hintsForEntry(entry, {hasPicture})`, `ready: true`, `PictureCache`, `HintShown` draws the
-  SVG with `themeSvg` and the credit line, `HintScope` carries the picture.
+- [x] 5. Picture: uses #212's Picture hint (`hintsForEntry(entry, {hasPicture})`, `EntryPicture`, the session picture cache); Starter only forces its mode.
 - [x] 6. `VocabCard` Starter front, `starter` prop, ruby, below-annotation, note, play button; session page computes the
   stage per card from the loaded and session reviews, passes `forced` to `resolveHints`, loads the picture only when a plan
   could show one.
@@ -64,8 +63,7 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
 2. **Thresholds:** 7 spaced successes for Japanese, 6 for Chinese; Again drops a stage. Right pace?
 3. **Manual nudge** ("show me the kanji already"): worth a keyed row per word?
 4. **Create-workspace "I'm new" checkbox** and **reader/entry pages** following the stage: next?
-5. **Picture hint everywhere:** with the picture kind lit, every vocab card of a word with a picture offers a Hint
-   (the #215 default `hint` on Recognise). Keep, or default picture to `never` outside Starter mode?
+5. (answered as a ruling in the spec) the picture hint stays a hint by default on Recognise.
 6. **The pictures need a server round trip** (no offline pictures, #216 ruling 5): a Starter card offline shows romaji
    and no picture.
 

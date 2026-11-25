@@ -102,7 +102,7 @@ The actions sit at the bottom of the screen. Before the answer there is one butt
 
 ## Hints
 
-Every card can offer a small **Hint** button (and the H key) that shows one more piece of help each time you press it, in a fixed order: the word's **reading** (kana, pinyin or zhuyin, above the word like furigana), then its **picture**, when an images pack is installed and has one for the word. The Hint button disappears when no hint is left, and after you answer.
+Every card can offer a small **Hint** button (and the H key) that shows one more piece of help each time you press it, in a fixed order: the word's **reading** (kana, pinyin or zhuyin, above the word like furigana), then its **picture**. The picture is offered only for words that have one (a bundled picture set is installed on the server) and while the **Pictures** visual aid is on ([Settings tour](Settings-tour)). The answer of a Recognise, Recall or writing card also shows the picture, with its credit, unless the hint already showed it. The Hint button disappears when no hint is left, and after you answer.
 
 What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
 

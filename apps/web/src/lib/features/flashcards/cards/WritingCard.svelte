@@ -9,6 +9,7 @@
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
 	import WritingPad from './WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
@@ -239,6 +240,7 @@
 {#if done && feedback}
 	<FaceAnswer>
 		<p class="fa-source">{feedback}</p>
+		<AnswerAids {entry} {chars} />
 	</FaceAnswer>
 {/if}
 

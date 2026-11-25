@@ -50,9 +50,9 @@ describe('Settings → Study → Hints (#215)', () => {
 		);
 	});
 
-	it('says where pictures come from', () => {
+	it('explains that a picture shows only where an installed pack has one, and is a visual aid', () => {
 		open();
-		expect(screen.getByText(/A picture of the word from an installed pictures pack/)).toBeTruthy();
+		expect(screen.getByText(/only for words that have one/)).toBeTruthy();
 	});
 
 	it('shows a failed save', async () => {

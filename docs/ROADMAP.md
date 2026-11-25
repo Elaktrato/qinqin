@@ -162,7 +162,7 @@ plan. Native pieces only where the WebView falls short.
 
 ### v0.8.0 — the beginner experience (milestone 7)
 
-- Study aids: [#212](https://github.com/Elaktrato/qinqin/issues/212) visual aids,
+- Study aids: [#212](https://github.com/Elaktrato/qinqin/issues/212) visual aids (on `feature/visual-aids-212`: pictures on the entry page, card answers and the Picture hint, Chinese tone colours with a contour cue, character anatomy from the components packs, one Visual aids settings group, contract 9; pitch accent, grammar diagrams, word maps and gender/case colours are follow-ups; spec `docs/superpowers/specs/2026-11-26-visual-aids-design.md`),
   [#214](https://github.com/Elaktrato/qinqin/issues/214) Starter mode (on `feature/starter-214`: the per-word stage derived from the card's review history, the picture hint drawn, a Starter set per language with two small seeds, settings, Home offer; the sets still need a human to review and extend them to 100-300 words; design `docs/superpowers/specs/2026-11-26-starter-mode-design.md`),
   [#215](https://github.com/Elaktrato/qinqin/issues/215) hints on every card (on `feature/hints-215`: one Hint control, reading hint now, picture kind defined and empty until #212/#216; design `docs/superpowers/specs/2026-11-26-hints-design.md`),
   [#216](https://github.com/Elaktrato/qinqin/issues/216) pictures for words (on `feature/images-216`: the `images` pack type, OpenMoji and Mulberry packs built at image build time, a matcher and committed mappings for zh and ja, `GET /api/images/entries/{id}`, `entryPicture` in the web client, no picture UI yet; plan `docs/superpowers/plans/2026-11-26-images-pack.md`)

@@ -2,25 +2,17 @@
 // show them (HintShown) and offer the one Hint control (HintControl). The rules are in lib/study/hints.ts.
 
 import { getContext, setContext } from 'svelte';
-import type { EntryPicture } from '$lib/api/images';
 import { EMPTY_PLAN, nextHint, visibleHints, type HintKind, type HintPlan } from '$lib/study/hints';
 
 export class CardHints {
 	#plan: () => HintPlan;
 	#locked: () => boolean;
-	#picture: () => EntryPicture | null;
 	/** How many times the learner pressed Hint on this card. */
 	revealed = $state(0);
 
-	constructor(plan: () => HintPlan, locked: () => boolean, picture: () => EntryPicture | null = () => null) {
+	constructor(plan: () => HintPlan, locked: () => boolean) {
 		this.#plan = plan;
 		this.#locked = locked;
-		this.#picture = picture;
-	}
-
-	/** The card's picture (#216), when it has one; the picture hint draws it. */
-	get picture(): EntryPicture | null {
-		return this.#picture();
 	}
 
 	/** Hints on view, in the fixed order. */

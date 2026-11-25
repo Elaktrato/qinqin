@@ -7,7 +7,6 @@
 	import HintScope from '../HintScope.svelte';
 	import { EMPTY_PLAN, type HintPlan } from '$lib/study/hints';
 	import type { CardHints } from '../cardHints.svelte';
-	import type { EntryPicture } from '$lib/api/images';
 
 	let {
 		card,
@@ -19,7 +18,6 @@
 		done = false,
 		onend,
 		hintPlan = EMPTY_PLAN,
-		picture = null,
 		onhints,
 		instance = $bindable()
 	}: {
@@ -33,8 +31,6 @@
 		onend?: () => void;
 		/** The hints of the card (#215); none by default. */
 		hintPlan?: HintPlan;
-		/** The card's picture (#216) for the picture hint. */
-		picture?: EntryPicture | null;
 		/** Receives the card's hint state (how many hints were used). */
 		onhints?: (hints: CardHints) => void;
 		instance?: unknown;
@@ -66,7 +62,7 @@
 	{onend}
 	keys="Keys: test"
 >
-	<HintScope plan={hintPlan} {picture} locked={done} bind:hints={bound}>
+	<HintScope plan={hintPlan} locked={done} bind:hints={bound}>
 		<Card bind:this={instance} {...cardProps} />
 	</HintScope>
 </StudyFace>

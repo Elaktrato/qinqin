@@ -99,6 +99,8 @@ import type { Run } from '$lib/study/vacation';
 	import { provideCardFace } from '$lib/features/flashcards/face/cardFace.svelte';
 	import type { CardHints } from '$lib/features/flashcards/face/cardHints.svelte';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
+	import { pictureFor } from '$lib/aids/pictures';
+	import { readVisualAids } from '$lib/aids/visualAids';
 	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/study/hints';
 	import {
 		readStarterSettings,
@@ -112,8 +114,6 @@ import type { Run } from '$lib/study/vacation';
 		type StarterFront,
 		type StarterReview
 	} from '$lib/study/starter';
-	import { PictureCache } from '$lib/study/pictureCache';
-	import type { EntryPicture } from '$lib/api/images';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
 	import { nextIntervals } from '$lib/study/scheduler';
 	import { longInterval } from '$lib/study/intervalText';
@@ -143,11 +143,6 @@ import type { Run } from '$lib/study/vacation';
 	// (bound from its HintScope) and the plan of a resolved card.
 	const hintSettings = $derived(readHintSettings(session.workspaces.current?.settings));
 	let cardHints = $state<CardHints | null>(null);
-	// Pictures of the cards (#216): asked once per entry, only for a card whose plan could show one.
-	const pictureCache = new PictureCache();
-	let pictures = $state.raw<Record<number, EntryPicture | null>>({});
-	const pictureOf = (entryId: number): EntryPicture | null => pictures[entryId] ?? null;
-
 	// Starter mode (#214): the stage of a vocab card's word, derived from the card's own reviews.
 	const starterSettings = $derived(readStarterSettings(session.workspaces.current?.settings));
 	const starterReviews = $derived.by(() => {
@@ -196,23 +191,24 @@ import type { Run } from '$lib/study/vacation';
 			forced: starterForcedHints(profile, progress.stage, word)
 		};
 	}
-	const hintPlanOf = (current: { item: FlowItem; entry: Entry }, hasPicture = pictureOf(current.entry.id) !== null) =>
+	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
+	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
+	let pictureTick = $state(0);
+	const hasPicture = (id: number): boolean => {
+		void pictureTick;
+		return visualAids.pictures && (session.caches.pictures.peek(id) ?? null) !== null;
+	};
+	const hintPlanOf = (current: { item: FlowItem; entry: Entry }) =>
 		resolveHints({
 			cardKind: current.item.kind,
 			settings: hintSettings,
-			entry: hintsForEntry(current.entry, { hasPicture }),
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) }),
 			forced: starterOf(current)?.forced
 		});
 	$effect(() => {
-		const current = shownCard;
-		if (current === null) return;
-		const id = current.entry.id;
-		if (pictures[id] !== undefined) return;
-		const plan = hintPlanOf(current, true);
-		if (!plan.always.includes('picture') && !plan.onRequest.includes('picture')) return;
-		void pictureCache.load(id).then((picture) => {
-			if (pictures[id] === undefined) pictures = { ...pictures, [id]: picture };
-		});
+		const id = shownCard?.entry.id;
+		if (id === undefined || !visualAids.pictures) return;
+		void pictureFor(session.caches.pictures, id).then(() => (pictureTick += 1));
 	});
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
@@ -1553,7 +1549,7 @@ import type { Run } from '$lib/study/vacation';
 				{@const done = shownDone}
 				{@const onCardDone = viewing === null ? onCardShown : noop}
 				{#key viewing === null ? index : `back:${backAt}`}
-					<HintScope plan={hintPlanOf(current)} picture={pictureOf(current.entry.id)} locked={done} bind:hints={cardHints}>
+					<HintScope plan={hintPlanOf(current)} locked={done} bind:hints={cardHints}>
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
 							{starter}

@@ -17,7 +17,7 @@ describe('the hint registry', () => {
 		expect(HINT_REGISTRY.map((d) => d.id)).toEqual(['reading', 'picture']);
 	});
 
-	it('picture is ready and available only when the entry has one', () => {
+	it('picture is ready (#212) and offered only for an entry that has one', () => {
 		const picture = HINT_REGISTRY.find((d) => d.id === 'picture');
 		expect(picture?.available({ hasReading: true, hasPicture: false })).toBe(false);
 		expect(picture?.available({ hasReading: false, hasPicture: true })).toBe(true);
@@ -34,9 +34,9 @@ describe('hintsForEntry', () => {
 		expect(hintsForEntry({ readings: [] })).toEqual({ hasReading: false, hasPicture: false });
 	});
 
-	it('reports a picture only when the caller found one', () => {
+	it('offers a picture only when the caller says the entry has one', () => {
 		expect(hintsForEntry({ readings: [] }, { hasPicture: true })).toEqual({ hasReading: false, hasPicture: true });
-		expect(hintsForEntry({ readings: [] }, { hasPicture: false }).hasPicture).toBe(false);
+		expect(hintsForEntry({ readings: [] }, {})).toEqual({ hasReading: false, hasPicture: false });
 	});
 });
 

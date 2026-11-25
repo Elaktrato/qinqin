@@ -1,7 +1,8 @@
 // Hints on a flashcard (#215): optional help the learner may ask for, one at a time, instead of
 // looking at the answer. The rules are pure and shared with Android (docs/contracts/cards/, hints.json).
 //
-// A hint KIND is registered once below (reading, and picture from an installed images pack, #216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
+// A hint KIND is registered once below (reading now; picture is defined and waits for the pictures of
+// #212/#216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
 // or never. Starter mode (#214) reuses this: it passes `forced` modes per stage instead of the settings.
 
 import { CARD_KINDS, type ReviewGrade, type ReviewMeta, type StudyCardKind } from './types';
@@ -44,8 +45,8 @@ export const HINT_REGISTRY: readonly HintKindDef[] = [
 	},
 	{
 		id: 'picture',
-		// Pictures come from an installed images pack (#216) through entryPicture; the session tells
-		// `hintsForEntry` whether the card's entry has one.
+		// #212/#216: the images packs map words to pictures; `hasPicture` is true when the entry has one and the
+		// Pictures visual aid is on (the session asks entryPicture and passes it to hintsForEntry).
 		ready: true,
 		applies: () => true,
 		available: (entry) => entry.hasPicture,
@@ -92,7 +93,10 @@ export function hintPatch(kind: HintKind, cardKind: StudyCardKind, mode: HintMod
 	return { [HINTS_SETTINGS_KEY]: { [kind]: { [cardKind]: mode } } };
 }
 
-/** hintsForEntry: what an entry can offer: its readings, and a picture when the caller found one (#216). */
+/**
+ * hintsForEntry: what an entry can offer: its readings, and a picture when the caller knows one is shown
+ * (`hasPicture`: an images pack maps the entry and the Pictures visual aid is on; the default is none).
+ */
 export function hintsForEntry(entry: { readings: readonly unknown[] }, opts: { hasPicture?: boolean } = {}): HintEntry {
 	return { hasReading: entry.readings.length > 0, hasPicture: opts.hasPicture === true };
 }

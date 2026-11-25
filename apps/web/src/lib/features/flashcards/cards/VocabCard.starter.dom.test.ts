@@ -1,7 +1,6 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
-import type { EntryPicture } from '$lib/api/images';
 import type { FlowItem } from '$lib/study/cardFlow';
 import { starterFront } from '$lib/study/starter';
 
@@ -27,19 +26,6 @@ const entry = {
 } as unknown as Entry;
 const item: FlowItem = { cardId: 'c-vocab-1', kind: 'vocab', entryId: 1, virtual: false, card: null };
 const plain = { usuallyKana: false };
-
-const picture: EntryPicture = {
-	packId: 'images-openmoji',
-	concept: '1F34E',
-	label: 'red apple',
-	credit: 'OpenMoji, Liz Bravo',
-	license: 'CC BY-SA 4.0',
-	attribution: 'x',
-	basis: 'manual',
-	sense: 0,
-	score: 100,
-	svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><path fill="none" stroke="#000" d="M1 2h3"/></svg>'
-};
 
 afterEach(cleanup);
 
@@ -104,28 +90,5 @@ describe('the Starter front of a Japanese word', () => {
 		cleanup();
 		setup(1, {}, { revealed: true });
 		expect(screen.getByText('apple')).toBeTruthy();
-	});
-});
-
-describe('the picture on a Starter card (#216)', () => {
-	it('is on the front from the start when the stage shows it', () => {
-		setup(1, { hintPlan: { always: ['picture'], onRequest: [] }, picture });
-		const drawing = screen.getByRole('img', { name: 'red apple' });
-		expect(drawing.querySelector('svg')).not.toBeNull();
-		expect(screen.getByText('OpenMoji, Liz Bravo, CC BY-SA 4.0')).toBeTruthy();
-		expect(screen.queryByRole('button', { name: 'Hint' })).toBeNull();
-	});
-
-	it('is hidden behind the Hint button at stage 4 and 5', async () => {
-		setup(4, { hintPlan: { always: [], onRequest: ['picture'] }, picture });
-		expect(screen.queryByRole('img', { name: 'red apple' })).toBeNull();
-		await fireEvent.click(screen.getByRole('button', { name: 'Hint' }));
-		expect(screen.getByRole('img', { name: 'red apple' })).toBeTruthy();
-	});
-
-	it('draws black outlines in the text colour', () => {
-		setup(1, { hintPlan: { always: ['picture'], onRequest: [] }, picture });
-		const path = screen.getByRole('img', { name: 'red apple' }).querySelector('path')!;
-		expect(path.getAttribute('stroke')).toBe('currentColor');
 	});
 });

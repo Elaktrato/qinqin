@@ -1,0 +1,17 @@
+{
+ "version": 1,
+ "rule": "aids/anatomy",
+ "note": "Character anatomy (#212): parts from GET /api/components (`chars`), meanings from the first gloss `m` of GET /api/characters. Web: apps/web/src/lib/aids/aids.contract.test.ts.",
+ "maxParts": 8,
+ "components": { "語": ["言", "口", "吾", "五", "二"], "明": ["日", "月"], "木": ["木"], "一": [], "字": ["a", "b", "a", "c", "d", "e", "f", "g", "h", "i", "j"] },
+ "meanings": { "言": "say", "口": "mouth", "日": "sun" },
+ "cases": [
+  { "name": "parts in pack order with meanings, none for a part the dictionary lacks", "char": "語", "expect": [["言", "say", false], ["口", "mouth", false], ["吾", null, false], ["五", null, false], ["二", null, false]] },
+  { "name": "the radical is marked", "char": "語", "radical": "言", "expect": [["言", "say", true], ["口", "mouth", false], ["吾", null, false], ["五", null, false], ["二", null, false]] },
+  { "name": "the character itself is not its own part", "char": "木", "expect": [] },
+  { "name": "no parts", "char": "一", "expect": [] },
+  { "name": "not in the pack", "char": "猫", "expect": [] },
+  { "name": "a string of more than one character has no anatomy (callers pass one character)", "char": "明日", "expect": [] },
+  { "name": "each part once, at most maxParts", "char": "字", "expectGlyphs": ["a", "b", "c", "d", "e", "f", "g", "h"] }
+ ]
+}

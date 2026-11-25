@@ -12,9 +12,8 @@ written: the stage tables, "per word", loanwords in katakana, words usually writ
 
 - #215 built the hint registry for this: `resolveHints({cardKind, settings, entry, forced})`, the one Hint control, the
   grade cap (a hint asked for suggests Hard). Starter mode passes `forced` per stage; no second mechanism.
-- The `picture` hint kind was registered but `ready: false` and `hintsForEntry` said `hasPicture: false`. #216 added
-  `entryPicture(entryId)`; nothing drew a picture. This change draws it (it has to) and so lights the kind for every
-  card (ruling 12).
+- The `picture` hint kind was lit by #212 (merged first): `hintsForEntry(entry, {hasPicture})`, `EntryPicture` in `HintShown`, gated by the `visualAids.pictures` switch and the session's picture cache. Starter mode only forces its mode through `resolveHints({forced})`; there is one picture implementation.
+- Ruling: with #212 the picture hint is on by default for Recognise cards (the #215 default `hint`); that default is kept — a Hint button that appears only for a word that has a picture and costs nothing until pressed is not a concrete problem, and Starter mode forces its own modes anyway — cost if wrong: a Recognise card of a pictured word offers a Hint it did not before; the setting is one select (Settings > Study > Hints).
 - Japanese entries already carry a derived `romaji` reading and the dictionary's kana readings (katakana for loanwords);
   Chinese entries carry `pinyin`. No converter is needed.
 - CC-CEDICT's one-character lines are **character** entries in the lexicon (kind `character`), not words, and their

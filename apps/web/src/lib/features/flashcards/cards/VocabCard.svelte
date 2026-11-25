@@ -10,6 +10,7 @@
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import type { StarterFront } from '$lib/study/starter';
 	import { buildVocabFaces } from '$lib/study/cardView';
+	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
@@ -104,6 +105,7 @@
 
 {#if revealed}
 	<FaceAnswer>
+		<AnswerAids {entry} />
 		{#if hasReadings || audio}
 			<div class="fa-readings">
 				{#if hasReadings}
