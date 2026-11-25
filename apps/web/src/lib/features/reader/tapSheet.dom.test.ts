@@ -45,7 +45,7 @@ let ctl: LookupController;
 let detach: () => void;
 let run: HTMLElement;
 let link: HTMLAnchorElement;
-let followed: ReturnType<typeof vi.fn>;
+let followed: ReturnType<typeof vi.fn<(e: Event) => void>>;
 
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -73,7 +73,7 @@ beforeEach(() => {
 	link.href = '#elsewhere';
 	link.textContent = 'Next chapter';
 	document.body.append(link);
-	followed = vi.fn();
+	followed = vi.fn<(e: Event) => void>();
 	link.addEventListener('click', followed);
 });
 afterEach(() => {
