@@ -137,26 +137,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # A release tag must be one the Android build accepts (apps/android/scripts/version-code.mjs: semver, and a
-  # pre-release as alpha.N, beta.N or rc.N). Checked here, cheaply, before the image is published, so a bad tag
-  # publishes nothing. Every step is skipped on other events, so the job always succeeds there.
-  tag:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      - uses: actions/setup-node@v7
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        with:
-          node-version: 26
-      - name: The tag has an Android version
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          TAG: ${{ github.ref_name }}
-        run: node apps/android/scripts/version-code.mjs "$TAG"
-
   image:
-    needs: [test, e2e, tag]
+    needs: [test, e2e]
     # Develop pushes are test-only; images publish from main and release tags.
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
@@ -218,67 +200,33 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # The signed Android APK of a release tag (#148), built by the reusable android-apk workflow in the environment
-  # android-release, with the four signing secrets passed explicitly (nothing else is inherited). It never runs on
-  # a fork (the called workflow also checks the repository). The image job does not wait for it, so a tag whose APK
-  # cannot be built or signed still has its image pushed; it gets no GitHub release (the release job needs the
-  # APK). Repair the secret and re-run the failed jobs.
-  android:
-    needs: [test, tag]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'Elaktrato/qinqin'
-    uses: ./.github/workflows/android-apk.yml
-    with:
-      version: ${{ github.ref_name }}
-      release: true
-    secrets:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
-  # A GitHub Release for every v* tag, after the image is pushed and the APK is built. The body is
-  # docs/releases/<tag>.md when that file exists, else GitHub's generated
-  # notes. Tags with a hyphen (v0.5.0-rc.1) become pre-releases. The release is created as a DRAFT, the APK and
-  # its SHA-256 file are uploaded (replaced when the job is re-run), and only then is it published, so there is
-  # never a public release without its APK. On a fork there is no APK job, so the release has no APK.
+  # A GitHub Release for every v* tag, after the image is pushed. The body is docs/releases/<tag>.md when that
+  # file exists, else GitHub's generated notes. Tags with a hyphen (v0.5.0-rc.1) become pre-releases. The release
+  # is created as a DRAFT: the Android APK is built and signed on the owner's machine (apps/android/scripts/
+  # release-local.sh), uploaded to the draft by hand, and the owner publishes it (docs/release-checklist.md).
+  # Re-running the job for a tag that already has a release changes nothing.
   release:
-    needs: [image, android]
-    if: >-
-      always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      && needs.image.result == 'success'
-      && (needs.android.result == 'success' || (needs.android.result == 'skipped' && github.repository != 'Elaktrato/qinqin'))
+    needs: image
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
-        if: needs.android.result == 'success'
-        with:
-          name: android-apk
-          path: dist
-      - name: Create the release
+      - name: Create the draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists."
+            echo "Release $TAG already exists; nothing to do."
+            exit 0
+          fi
+          args=(--draft --verify-tag --title "qinqin $TAG")
+          if [ -f "docs/releases/$TAG.md" ]; then
+            args+=(--notes-file "docs/releases/$TAG.md")
           else
-            args=(--draft --verify-tag --title "qinqin $TAG")
-            if [ -f "docs/releases/$TAG.md" ]; then
-              args+=(--notes-file "docs/releases/$TAG.md")
-            else
-              args+=(--generate-notes)
-            fi
-            case "$TAG" in *-*) args+=(--prerelease) ;; esac
-            gh release create "$TAG" "${args[@]}"
+            args+=(--generate-notes)
           fi
-          if [ -d dist ]; then
-            # qinqin-<version>.apk and qinqin-<version>.apk.sha256 (sha256sum format)
-            gh release upload "$TAG" dist/qinqin-*.apk dist/qinqin-*.apk.sha256 --clobber
-          fi
-          # Publish (a no-op for a release that already was). A hyphenated tag stays a pre-release.
-          edit=(--draft=false)
-          case "$TAG" in *-*) edit+=(--prerelease) ;; esac
-          gh release edit "$TAG" "${edit[@]}"
+          case "$TAG" in *-*) args+=(--prerelease) ;; esac
+          gh release create "$TAG" "${args[@]}"

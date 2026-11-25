@@ -2,8 +2,25 @@
 
 Two parts: the **server and image** (browser walk-through) and the **Android APK** (sideloaded). Tags are cut from
 `main` after a `release/<version>` branch ([Development](wiki/Development.md#branches-and-releases)); pushing a
-`v*` tag builds the image, the signed APK and the GitHub Release. Never put a keystore, a password or a secret value
-in the repository, an issue or a pull request.
+`v*` tag builds the image and creates the GitHub Release as a **draft**. The APK is **not** built in CI: the owner
+builds and signs it on their own machine with `apps/android/scripts/release-local.sh`, uploads it to the draft and
+publishes. The keystore never leaves that machine and no signing secret exists in GitHub. Never put a keystore, a
+password or a secret value in the repository, an issue or a pull request.
+
+## The owner flow in short
+
+1. Bump and changelog on the `release/<version>` branch (below), merge to `main`, tag `vX.Y.Z` and push the tag.
+2. Wait for the `build` workflow: the image is pushed and the **draft** GitHub Release exists (the `release` job).
+   (No draft, for example on a fork? Create it by hand: `gh release create <tag> --draft --verify-tag --title
+   "qinqin <tag>" --notes-file docs/releases/<tag>.md`.)
+3. Locally: `git fetch --tags && git checkout <tag>`, then
+   `apps/android/scripts/release-local.sh <tag>` (see "Building the APK locally").
+4. Smoke-test the APK on a phone (below).
+5. Upload with the command the script prints: `gh release upload <tag> dist/qinqin-<version>.apk
+   dist/qinqin-<version>.apk.sha256 --clobber`.
+6. Check the draft (image tag, APK, `.sha256`, notes with the signing fingerprint) and **publish** it
+   (`gh release edit <tag> --draft=false`, or the button; a hyphenated tag stays a pre-release).
+   Do not publish before the APK is attached: a public release without its APK is what the draft avoids.
 
 ## Owner-only prerequisites (before the first APK release)
 
@@ -12,21 +29,34 @@ Full steps: [`docs/superpowers/plans/2026-11-25-android-release-apk.md`](superpo
 - [ ] **Package id and app name** chosen and set in `apps/android/identity.json` (`appId`, `appName`). The file
   still holds a placeholder (`io.github.elaktrato.qinqin`, `qinqin`). The id can never change once an APK is
   installed anywhere: a different id is a different app.
-- [ ] **Signing keystore** created once, offline (`keytool -genkeypair ... -alias qinqin`), with a backup and the
-  passwords in a password manager. A lost keystore means no more updates for installed phones.
-- [ ] **Environment `android-release`** created (Settings, Environments), its deployment restricted to `v*` tags
-  (optionally with required reviewers), and the four secrets set there: `ANDROID_KEYSTORE_BASE64`,
-  `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Repository-level secrets with the same
-  names keep working until they are moved, but any collaborator's branch workflow can read those, so move them and
-  delete the repository copies. A tag build fails, naming the missing secret and never printing a value, instead of
-  publishing an unsigned APK.
-- [ ] **Dry run**: Actions, `android-apk`, Run workflow. It builds a debug-signed `qinqin-<version>-dryrun.apk`
-  with no secrets; never distribute it.
-- [ ] **Signing fingerprint** (SHA-256 of the certificate: `keytool -list -v -keystore qinqin-release.jks -alias
-  qinqin`) recorded, and the repository **variable** `ANDROID_CERT_SHA256` set to it (Settings, Secrets and
-  variables, Actions, Variables; it is public, not a secret). From then on a release signed with any other
-  certificate fails. Until it is set the job only prints the fingerprint (job summary) and warns; do that after the
-  first release at the latest.
+- [ ] **Signing keystore** created once, offline, **outside the repository** (`keytool -genkeypair -v -keystore
+  qinqin-release.jks -alias qinqin -keyalg RSA -keysize 4096 -validity 10000`), with a backup and the passwords in a
+  password manager. A lost keystore means no more updates for installed phones. It stays on your machine: nothing
+  is uploaded to GitHub (no secrets, no environment, no repository variable for it).
+- [ ] **Toolchain** on the release machine: Node 26, a JDK 17 or newer (the project uses 21; `JAVA_HOME`), the
+  Android SDK with platform 35 and build-tools (`ANDROID_HOME`), `git`, and the `gh` CLI logged in for the upload.
+  The script stops with a clear message when one is missing.
+- [ ] **Signing fingerprint** (the script prints the SHA-256 of the certificate): after the **first** release commit
+  it, as one line, to `apps/android/release-fingerprint.txt` (public; `#` comment lines are allowed). From then on
+  the script refuses to produce an APK signed with any other key. Until the file exists the script only warns.
+
+## Building the APK locally
+
+```sh
+export JAVA_HOME=/path/to/jdk-21 ANDROID_HOME=/path/to/android-sdk
+export QINQIN_KEYSTORE_FILE=$HOME/keys/qinqin-release.jks QINQIN_KEY_ALIAS=qinqin
+# the two passwords are asked for (no echo) unless QINQIN_KEYSTORE_PASSWORD / QINQIN_KEY_PASSWORD are set
+git checkout v0.7.0
+apps/android/scripts/release-local.sh v0.7.0
+```
+
+It validates the tag (`version-code.mjs`), requires a clean tree at the tag commit (`QINQIN_ALLOW_OFF_TAG=1`
+overrides, with a loud warning), runs `npm ci`, `npm test` and `npm run sync` with no signing input in the
+environment, then Gradle `assembleRelease` with the version from the tag. It verifies with `apksigner` (v2 signature
+verified, signer SHA-256 printed, debug certificate refused), compares the certificate with
+`apps/android/release-fingerprint.txt`, checks versionCode and versionName with `aapt2`, writes
+`dist/qinqin-<version>.apk` and `dist/qinqin-<version>.apk.sha256` (`dist/` is not committed) and prints the upload
+command. The passwords are never printed, logged or written to disk; keystore files are gitignored.
 
 ## Before tagging
 
@@ -36,9 +66,10 @@ Set from the tag, nothing to edit: the image version (`build.yml` strips the `v`
 `vMAJOR.MINOR.PATCH[-pre]`, else the image job fails) and the APK's `versionName` (the tag without `v`) and
 `versionCode` (`apps/android/scripts/version-code.mjs`). The code is `major*1000000 + minor*10000 + patch*100 +
 slot`: release 99, `alpha.N` 1-29, `beta.N` 30-59, `rc.N` 60-89, so a pre-release is always below its release.
-`node apps/android/scripts/version-code.mjs v0.7.0` prints the pair (`70099`). The `tag` job runs this script
-before the image is published and the Android build refuses a pre-release other than exactly `alpha.N`, `beta.N` or
-`rc.N` (no leading zeros: `rc`, `rc1` and `rc.01` are refused), and minor or patch above 99.
+`node apps/android/scripts/version-code.mjs v0.7.0` prints the pair (`70099`). The local script runs it first and
+refuses a pre-release other than exactly `alpha.N`, `beta.N` or `rc.N` (no leading zeros: `rc`, `rc1` and `rc.01`
+are refused), and minor or patch above 99. Check the tag with it before pushing it: the image job accepts any
+semver tag, so a tag the APK script refuses would still publish an image.
 
 Edited by hand:
 
@@ -85,7 +116,8 @@ release, using `GET /api/version` (`contract`, `bridge.level`, `bridge.features`
 
 On a phone (or emulator) with **no earlier qinqin install** and a server reachable over https, with a test account:
 
-- [ ] Install the APK from the dry run or from a release candidate (see "Smoke-testing the signed APK" below);
+- [ ] Install the locally built, signed APK (`dist/qinqin-<version>.apk`, before uploading it; `adb install` or copy
+  it over);
   Android asks for "Install unknown apps" once.
 - [ ] First start: the server address screen. A wrong address, a non-qinqin address and a plain-http address on the
   public internet are refused with a clear message; the real address shows the server version and opens the app.
@@ -103,7 +135,8 @@ On a phone (or emulator) with **no earlier qinqin install** and a server reachab
 
 ## Verify the artifacts
 
-On the release (or the workflow artifact `android-apk`), with the APK and its `.sha256` in one folder:
+The script has already done these checks; repeat them on the downloaded release files if you want a second look.
+With the APK and its `.sha256` in one folder:
 
 ```sh
 sha256sum --check qinqin-<version>.apk.sha256        # qinqin-<version>.apk: OK
@@ -112,21 +145,22 @@ aapt2 dump badging qinqin-<version>.apk | grep '^package:'      # versionCode / 
 ```
 
 - [ ] `sha256sum` says OK. The checksum file sits beside the APK, so it proves integrity, not origin.
-- [ ] `apksigner` verifies, and the SHA-256 certificate digest equals the fingerprint recorded by the owner. It must
-  not be "Android Debug", and it must be the same on every release.
+- [ ] `apksigner` verifies, and the SHA-256 certificate digest equals `apps/android/release-fingerprint.txt`. It
+  must not be "Android Debug", and it must be the same on every release.
 - [ ] `package` shows the owner's package id, `versionName` is the tag without `v`, `versionCode` is the
-  `version-code.mjs` value. (The workflow already fails a build where these differ.)
+  `version-code.mjs` value. (The script already fails a build where these differ.)
 - [ ] The release lists the image tag, the APK and the `.sha256`; a tag with a hyphen is a pre-release.
-- [ ] **The signing fingerprint is in the release notes** (the first Android release: from the job summary or
-  `keytool`; later ones: the pinned `ANDROID_CERT_SHA256`) and **the DRAFT banner is removed** from
-  `docs/releases/<tag>.md` before the tag is pushed.
+- [ ] **The signing fingerprint is in the release notes** (the first Android release: from the script's output;
+  later ones: `release-fingerprint.txt`) and **the DRAFT banner is removed** from `docs/releases/<tag>.md` before the
+  tag is pushed.
 
-### Smoke-testing the signed APK before the final tag
+### Smoke-testing before the final tag
 
-The release job creates the GitHub release as a **draft**, uploads the APK and its `.sha256`, and publishes it only
-then, so a draft exists during the run only and cannot be used to test before tagging. To try the signed APK first,
-push an `-rc.N` tag (for example `v0.7.0-rc.1`: same key, a pre-release with a lower versionCode than the final
-release), smoke-test that APK, then tag the final version.
+The APK is built after the tag, from the tag, and the release stays a draft until you publish it, so the smoke test
+happens between building and uploading (flow above). To try a whole release first, push an `-rc.N` tag (for example
+`v0.7.0-rc.1`: same key, a pre-release with a lower versionCode than the final release), build and test that APK,
+then tag the final version. A flawed build of a final tag is fixed by building again from the same tag and uploading
+with `--clobber`, as long as nobody has downloaded it; otherwise ship a new patch tag.
 
 ## Updating an installed APK
 
