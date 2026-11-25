@@ -61,6 +61,8 @@
 		highlightKey,
 		highlightKeyBusy,
 		loadLastColor,
+		actionSpan,
+		highlightMark,
 		planHighlight,
 		saveLastColor,
 		type HighlightActions,
@@ -343,7 +345,12 @@
 		textLang: () => textLang,
 		runsOf: (p) => paragraphs[p],
 		// The lookup history (#72), in the book's workspace like "+".
-		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id }),
+		// A tap on a highlighted character that is no word (punctuation, Latin) edits the highlight.
+		onTapNoWord: (target) => {
+			const hit = highlightMark(target);
+			if (hit) editFromText(hit.id, hit.el);
+		}
 	});
 	$effect(() => lookup.attach());
 	// One read of the history for the popup's "looked up N times" hint.
@@ -861,7 +868,10 @@
 		else if (!withNote) tell(plan.clamped ? clampNotice() : t('reader.highlights.added', { text: snippetAt(body.text, 30) }));
 	}
 
-	// The popup's action bar acts on the selection the popup was opened for.
+	// The popup's action bar acts on the selection the popup was opened for,
+	// or for a tapped word inside a highlight on that highlight.
+	const actionTarget = (): ParagraphSpan | null =>
+		actionSpan(lookup.selectedSpan, lookup.tapped, highlights.items, content?.n ?? -1);
 	const highlighter: HighlightActions = {
 		get color() {
 			return lastColor;
@@ -872,8 +882,8 @@
 		get notice() {
 			return highlightNotice;
 		},
-		pick: (color) => void highlightSelection(lookup.selectedSpan, color, false),
-		note: () => void highlightSelection(lookup.selectedSpan, lastColor, true)
+		pick: (color) => void highlightSelection(actionTarget(), color, false),
+		note: () => void highlightSelection(actionTarget(), lastColor, true)
 	};
 
 	// `h` highlights the current selection in the last colour.
@@ -883,7 +893,7 @@
 			const busy = highlightKeyBusy(target, document, inPopup(e.target));
 			if (!highlightKey(e, { busy })) return;
 			const span =
-				lookup.currentSelection() ?? (lookup.info?.mode === 'selection' ? lookup.selectedSpan : null);
+				lookup.currentSelection() ?? (lookup.info?.mode === 'selection' ? actionTarget() : null);
 			if (!span) return;
 			e.preventDefault();
 			void highlightSelection(span, lastColor, false);

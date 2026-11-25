@@ -69,15 +69,7 @@
 	$effect(() => {
 		const el = container;
 		if (!el) return;
-		const options = { passive: true };
-		el.addEventListener('pointermove', lookup.pointermove, options);
-		el.addEventListener('pointerleave', lookup.pointerleave, options);
-		el.addEventListener('pointerdown', lookup.pointerdown, options);
-		return () => {
-			el.removeEventListener('pointermove', lookup.pointermove);
-			el.removeEventListener('pointerleave', lookup.pointerleave);
-			el.removeEventListener('pointerdown', lookup.pointerdown);
-		};
+		return lookup.listen(el);
 	});
 
 	const practiceHref = $derived(grammarHref({ view: 'practice', pack, lesson: lessonId }));

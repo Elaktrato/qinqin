@@ -3,6 +3,7 @@
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, fontStack, type ReaderDisplay } from './displaySettings';
 	import type { Highlight } from './highlights';
+	import { highlightMark } from './highlightUi';
 	import type { Run } from './paragraphText';
 	import { createReveal, type Reveal } from './reveal';
 	import type { Piece } from './smartReadings';
@@ -78,25 +79,25 @@
 	});
 
 	// A click on a highlight edits it; a click that ended a selection (a
-	// drag, a double click) is the selection lookup's, not ours.
+	// drag, a double click) is the selection lookup's, and a tap's click is
+	// the tap lookup's (its sheet carries the highlight actions), not ours. A
+	// tap that finds no word on a highlight edits it (BookView, onTapNoWord).
 	$effect(() => {
 		const el = container;
 		const open = onhighlight;
 		if (!el || !open) return;
-		const markOf = (target: EventTarget | null) =>
-			target instanceof Element ? target.closest<HTMLElement>('mark[data-h]') : null;
 		const onClick = (e: MouseEvent): void => {
-			const mark = markOf(e.target);
-			if (!mark || e.button !== 0 || e.detail > 1) return;
+			const mark = highlightMark(e.target);
+			if (!mark || e.button !== 0 || e.detail > 1 || lookup.fromTouch(e)) return;
 			const selection = window.getSelection();
 			if (selection && !selection.isCollapsed) return;
-			open(Number(mark.dataset.h), mark);
+			open(mark.id, mark.el);
 		};
 		const onKey = (e: KeyboardEvent): void => {
-			const mark = markOf(e.target);
+			const mark = highlightMark(e.target);
 			if (!mark || e.key !== 'Enter' || e.isComposing || e.defaultPrevented) return;
 			e.preventDefault();
-			open(Number(mark.dataset.h), mark);
+			open(mark.id, mark.el);
 		};
 		el.addEventListener('click', onClick);
 		el.addEventListener('keydown', onKey);
@@ -128,15 +129,7 @@
 	$effect(() => {
 		const el = container;
 		if (!el) return;
-		const options = { passive: true };
-		el.addEventListener('pointermove', lookup.pointermove, options);
-		el.addEventListener('pointerleave', lookup.pointerleave, options);
-		el.addEventListener('pointerdown', lookup.pointerdown, options);
-		return () => {
-			el.removeEventListener('pointermove', lookup.pointermove);
-			el.removeEventListener('pointerleave', lookup.pointerleave);
-			el.removeEventListener('pointerdown', lookup.pointerdown);
-		};
+		return lookup.listen(el);
 	});
 </script>
 

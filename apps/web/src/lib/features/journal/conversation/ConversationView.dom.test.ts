@@ -26,9 +26,9 @@ vi.mock('$lib/features/reader/useLookup.svelte', () => ({
 			return () => {};
 		}
 		close(): void {}
-		pointermove(): void {}
-		pointerleave(): void {}
-		pointerdown(): void {}
+		listen(): () => void {
+			return () => {};
+		}
 	}
 }));
 vi.mock('$lib/features/reader/PopupStackView.svelte', async () => ({ default: (await import('./EmptyStub.test.svelte')).default }));
