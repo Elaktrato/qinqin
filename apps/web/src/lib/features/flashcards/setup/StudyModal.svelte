@@ -57,7 +57,7 @@
 			? null
 			: repairSetup(entry.setup, {
 					deckIds: ready ? data.decks.map((deck) => deck.id) : null,
-					schemes: data.schemesLoaded ? data.schemes : null,
+					schemes: data.knownSchemes,
 					language
 				})
 	);

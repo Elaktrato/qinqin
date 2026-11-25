@@ -87,3 +87,21 @@ describe('createSetupData', () => {
 		expect(data.levelEntries).toEqual([]);
 	});
 });
+
+describe('createSetupData and a failed scheme read (review)', () => {
+	it('a failed read leaves the schemes unknown, so no level is repaired away', async () => {
+		vi.mocked(getSchemes).mockRejectedValue(new Error('down'));
+		const data = createSetupData(ctx.session, { fresh: true });
+		await data.load(1, 'ja');
+		expect(data.schemesLoaded).toBe(true);
+		expect(data.schemeError).toBe('Could not load level schemes.');
+		expect(data.knownSchemes).toBeNull();
+	});
+
+	it('a read that answered gives the schemes of the language', async () => {
+		const data = createSetupData(ctx.session, { fresh: true });
+		expect(data.knownSchemes).toBeNull();
+		await data.load(1, 'ja');
+		expect(data.knownSchemes?.map((s) => s.id)).toEqual([3]);
+	});
+});

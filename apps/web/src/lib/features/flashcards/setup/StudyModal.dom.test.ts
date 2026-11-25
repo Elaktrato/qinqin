@@ -218,6 +218,15 @@ describe('the study modal', () => {
 		await waitFor(() => expect(dialog.textContent).toContain('JLPT N5 ·'));
 	});
 
+	it('a failed scheme read keeps a level setup a level setup (review)', async () => {
+		vi.mocked(getSchemes).mockRejectedValue(new Error('down'));
+		saved = { ...defaultSetup(), mode: 'levels', schemeId: 3, levelName: 'N5' };
+		const dialog = await open();
+		await waitFor(() => expect(dialog.textContent).toContain('Could not load level schemes.'));
+		expect(dialog.textContent).not.toContain('Your level is no longer installed');
+		expect((within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement).disabled).toBe(true);
+	});
+
 	it('Escape closes it', async () => {
 		const dialog = await open();
 		await fireEvent.keyDown(dialog, { key: 'Escape' });

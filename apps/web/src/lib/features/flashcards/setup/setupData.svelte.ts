@@ -120,6 +120,10 @@ export function createSetupData(session: Session, opts: { fresh: boolean }) {
 		get schemes() {
 			return schemes;
 		},
+		/** The schemes when the read answered; null while loading or after a failed read (unknown: nothing is repaired). */
+		get knownSchemes(): Scheme[] | null {
+			return schemesLoaded && schemeError === '' ? schemes : null;
+		},
 		get schemesLoaded() {
 			return schemesLoaded;
 		},
