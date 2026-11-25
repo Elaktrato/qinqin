@@ -76,3 +76,14 @@ describe('saveReminderSettings', () => {
 	});
 	it('exports the defaults', () => expect(defaultReminderSettings().enabled).toBe(false));
 });
+
+describe('loadReminderRow', () => {
+	it('reads the settings and whether the row is from a newer version', async () => {
+		const { loadReminderRow } = await import('./settings');
+		expect(await loadReminderRow({ find: async () => null })).toEqual({ settings: defaultReminderSettings(), newer: false });
+		expect((await loadReminderRow({ find: async () => ({ version: 1, enabled: true }) })).settings.enabled).toBe(true);
+		const newer = await loadReminderRow({ find: async () => ({ version: 2, enabled: true }) });
+		expect(newer).toMatchObject({ newer: true });
+		expect(newer.settings.enabled).toBe(true);
+	});
+});

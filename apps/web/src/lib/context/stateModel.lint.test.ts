@@ -46,6 +46,7 @@ const ALLOWED: Record<string, string> = {
 	'lib/weekly/summary.ts:summaryStats': 'an operation counter the performance tests read, no user data',
 	'lib/milestones/reached.ts:reachedStats': 'an operation counter the performance tests read, no user data',
 	'lib/time/studyDay.ts:studyDayStats': 'an operation counter the performance tests read, no user data',
+	'lib/reminders/device/port.ts:installed': "the shell's native notification module, installed once at startup by setDevicePort (app-wide hardware access, no user data)",
 	'lib/api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it at every session end'
 };
 

@@ -121,3 +121,9 @@ export async function saveReminderSettings(change: ReminderChange, store: Store 
 	await store.put(REMINDERS_KEY, next);
 	return parseReminderSettings(next);
 }
+
+/** loadReminderRow: the settings and whether the stored row is from a newer version (then it is read, never written). */
+export async function loadReminderRow(store: Pick<KeyedScope, 'find'> = keyedData(null)): Promise<{ settings: ReminderSettings; newer: boolean }> {
+	const raw = await store.find(REMINDERS_KEY);
+	return { settings: parseReminderSettings(raw), newer: isRecord(raw) && validVersion(raw.version) && raw.version > 1 };
+}

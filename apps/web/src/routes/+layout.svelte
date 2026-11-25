@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
@@ -26,6 +26,7 @@
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
+	import { startReminders } from '$lib/reminders/runtime';
 	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
@@ -177,6 +178,14 @@
 			clearTimeout(timer);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
+	});
+
+	// Reminders (#137): facts for the server and local notifications for the Android shell, only for
+	// accounts that turned them on (lib/reminders/runtime.ts reads the row); stops with the session.
+	$effect(() => {
+		const current = session;
+		if (current === null || !current.workspaces.loaded || app.auth.restriction !== null) return;
+		return untrack(() => startReminders(current));
 	});
 
 	// The person's appearance row: loaded once per signed-in user (not for a
