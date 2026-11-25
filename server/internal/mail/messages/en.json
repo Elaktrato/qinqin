@@ -10,7 +10,6 @@
 	"mail.reminderDue.body": "{count, plural, one {# card is due for review.} other {# cards are due for review.}}",
 	"mail.reminderGoal.body": "Your daily goal is not met yet today.",
 	"mail.reminderPageAsk.body": "Stop the study reminder emails for this account?",
-	"mail.reminderPageBad.body": "This link is not valid. Open Settings, Notifications in qinqin to change your reminders.",
 	"mail.reminderPageButton.body": "Stop the emails",
 	"mail.reminderPageDone.body": "Done. You will not get study reminder emails any more. You can turn them on again in Settings, Notifications.",
 	"mail.reminderStreak.body": "{count, plural, one {Your streak is at risk: # day. Study today to keep it.} other {Your streak is at risk: # days. Study today to keep it.}}",

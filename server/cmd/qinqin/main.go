@@ -38,7 +38,9 @@ import (
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
+	"qinqin/internal/netguard"
 	"qinqin/internal/packs"
+	"qinqin/internal/reminders"
 	"qinqin/internal/update"
 	"qinqin/internal/webdist"
 )
@@ -209,6 +211,12 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		close(mailDone)
 	}()
 	runJanitor(func() { auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf) })
+	// Study reminders by email and web push (#138, #139): one pass every few
+	// minutes, only for accounts that opted in; it stops with bg.
+	pushSubject := os.Getenv("QINQIN_VAPID_SUBJECT")
+	pushProvider := &reminders.PushProvider{DB: sqlDB, Cur: sec.Current, Prev: sec.Previous, Subject: pushSubject}
+	reminderJob := &reminders.Scheduler{DB: sqlDB, Mail: mailSvc, PublicURL: mailSvc.PublicURL, Push: pushProvider.SenderFor, Seal: sec.Current, Prev: sec.Previous, Logf: log.Printf}
+	runJanitor(func() { reminderJob.Run(bg) })
 	// Rule tables changed by another process (`qinqin seed` while serving)
 	// take effect within half a minute (#176).
 	runJanitor(func() { lemmapack.Watch(bg, sqlDB, lemmaWatchEvery, nil) })
@@ -272,7 +280,7 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		return err
 	} else {
 		log.Printf("qinqin listening on %s (data: %s)", ln.Addr(), data)
-		srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, data, librarySources(data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(bg, 5*time.Minute), api.WithBackgroundGroup(&apiJobs), api.WithTrustedProxies(trusted), api.WithPackages(pkgs), api.WithBuild(buildInfo()), api.WithUpdateChecker(update.NewChecker(update.Config{Token: os.Getenv("QINQIN_UPDATE_TOKEN")})))))
+		srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, data, librarySources(data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithPush(pushSubject, netguard.GuardPolicy{}), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(bg, 5*time.Minute), api.WithBackgroundGroup(&apiJobs), api.WithTrustedProxies(trusted), api.WithPackages(pkgs), api.WithBuild(buildInfo()), api.WithUpdateChecker(update.NewChecker(update.Config{Token: os.Getenv("QINQIN_UPDATE_TOKEN")})))))
 		if err := runHTTP(ctx, srv, ln, httpGrace, log.Printf); err != nil {
 			log.Printf("%v", err)
 		}

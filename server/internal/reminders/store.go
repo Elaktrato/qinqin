@@ -320,3 +320,16 @@ func LoadVAPID(ctx context.Context, db *sql.DB, current, previous *secretbox.Sea
 	}
 	return v, nil
 }
+
+// LoadSettings reads the user's `reminders` row (the defaults when there is none).
+func LoadSettings(ctx context.Context, db *sql.DB, userID int64) (Settings, error) {
+	var data string
+	err := db.QueryRowContext(ctx, `SELECT data FROM keyed_rows WHERE user_id = ? AND key = ? AND workspace_id IS NULL AND deleted_at IS NULL`, userID, Key).Scan(&data)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ParseSettings(nil), nil
+	}
+	if err != nil {
+		return Settings{}, fmt.Errorf("reminders: load settings: %w", err)
+	}
+	return ParseSettings([]byte(data)), nil
+}

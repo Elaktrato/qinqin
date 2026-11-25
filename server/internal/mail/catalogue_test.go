@@ -17,7 +17,7 @@ import (
 var allKinds = []Kind{KindReset, KindLoginCode, KindMFACode, KindVerifyEmail, KindTest, KindEmailChanged, KindReminder}
 
 // lineKinds are the body-only lines the reminder mail is built from.
-var lineKinds = []Kind{"reminder_due", "reminder_goal", "reminder_streak", "reminder_test", "reminder_page_ask", "reminder_page_button", "reminder_page_done", "reminder_page_bad"}
+var lineKinds = []Kind{"reminder_due", "reminder_goal", "reminder_streak", "reminder_test", "reminder_page_ask", "reminder_page_button", "reminder_page_done"}
 
 // The English mails are byte-identical to the text/template versions they
 // replaced, except the reset mail's hour, which is now a real plural.

@@ -105,7 +105,6 @@ const (
 	PageAsk    Kind = "reminder_page_ask"
 	PageButton Kind = "reminder_page_button"
 	PageDone   Kind = "reminder_page_done"
-	PageBad    Kind = "reminder_page_bad"
 )
 
 // Line is one catalogue line (body part) of a reminder text kind in lang,

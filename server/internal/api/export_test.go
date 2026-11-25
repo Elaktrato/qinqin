@@ -9,6 +9,7 @@ import (
 	"qinqin/internal/auth"
 	"qinqin/internal/model"
 	"qinqin/internal/pack"
+	"qinqin/internal/reminders"
 )
 
 // Test hooks: the clock the stage store reads, the channel a finished
@@ -91,3 +92,13 @@ func WithAISlotHook(hook func(kind, phase string)) Option {
 // WithAvatarHook runs inside POST /api/account/avatar once the picture is
 // decoded, before it is stored (tests).
 func WithAvatarHook(hook func()) Option { return func(s *server) { s.avatarHook = hook } }
+
+// WithPushSender replaces the web push sender (the reminder test route).
+func WithPushSender(sender reminders.PushSender) Option {
+	return func(s *server) {
+		if s.push == nil {
+			s.push = &pushSetup{}
+		}
+		s.push.sender = sender
+	}
+}
