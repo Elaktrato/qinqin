@@ -3,8 +3,8 @@
 
 import type { Locator, Page } from '@playwright/test';
 
-/** The centre of the first occurrence of `text` inside `container`. */
-export async function centreOf(container: Locator, text: string): Promise<{ x: number; y: number }> {
+/** The viewport box of the first occurrence of `text` inside `container`. */
+export async function boxOf(container: Locator, text: string): Promise<{ x: number; y: number; width: number; height: number }> {
 	const box = await container.evaluate((el, needle) => {
 		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
 		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -14,12 +14,18 @@ export async function centreOf(container: Locator, text: string): Promise<{ x: n
 			range.setStart(node, at);
 			range.setEnd(node, at + needle.length);
 			const r = range.getBoundingClientRect();
-			return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+			return { x: r.x, y: r.y, width: r.width, height: r.height };
 		}
 		return null;
 	}, text);
 	if (box === null) throw new Error(`${text} is not in the text`);
 	return box;
+}
+
+/** The centre of the first occurrence of `text` inside `container`. */
+export async function centreOf(container: Locator, text: string): Promise<{ x: number; y: number }> {
+	const box = await boxOf(container, text);
+	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
 /** Moves the mouse onto `text`. */

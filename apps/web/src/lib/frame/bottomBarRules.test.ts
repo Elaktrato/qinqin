@@ -71,7 +71,10 @@ describe('pages keep clear of the bar (phone frame, bar showing)', () => {
 
 	it('the page panel gets the bar space as bottom padding, on the phone frame only', () => {
 		const phone = mediaBlocks(layoutCss, PHONE_MEDIA_QUERY).join('\n');
-		expect(phone).toMatch(/\.framed \.panel\s*\{\s*padding-bottom:\s*var\(--bottom-bar-space\);/);
+		// The open lookup sheet (LookupSheet.svelte) covers more: the page can scroll its last line above it.
+		expect(phone).toMatch(
+			/\.framed \.panel\s*\{\s*padding-bottom:\s*max\(var\(--bottom-bar-space\), var\(--lookup-sheet-space, 0px\)\);/
+		);
 		expect(outsidePhone(layoutCss)).not.toContain('bottom-bar');
 	});
 

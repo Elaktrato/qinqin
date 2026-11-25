@@ -53,7 +53,7 @@ export function startShellBars(): () => void {
 	if (shell === null || typeof document === 'undefined') return () => undefined;
 	return startBars({
 		root: document.documentElement,
-		apply: (style) => void shell.setBars(style).catch(() => undefined),
+		apply: (style) => void Promise.resolve(shell.setBars(style)).catch(() => undefined),
 		watch: (root, onChange) => {
 			const observer = new MutationObserver(onChange);
 			observer.observe(root, { attributes: true, attributeFilter: ['style', 'data-scheme', 'class'] });
