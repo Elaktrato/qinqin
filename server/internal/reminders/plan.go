@@ -51,7 +51,10 @@ const StaleAfter = 30 * 24 * time.Hour
 
 // Input is everything the computation reads.
 type Input struct {
-	Now      time.Time
+	Now time.Time
+	// From is the earliest instant a slot may have (exclusive); zero: Now. The
+	// scheduler sets it back to catch slots that just fell due.
+	From     time.Time
 	History  studyday.History
 	Settings Settings
 	Facts    []Facts
@@ -100,7 +103,11 @@ func Plan(in Input) []Slot {
 			minutes = append(minutes, m)
 		}
 	}
-	first := in.Now.In(loc)
+	from := in.From
+	if from.IsZero() {
+		from = in.Now
+	}
+	first := from.In(loc)
 	var out []Slot
 	for i := 0; i < in.Days; i++ {
 		date := time.Date(first.Year(), first.Month(), first.Day()+i, 0, 0, 0, 0, loc)
@@ -110,7 +117,7 @@ func Plan(in Input) []Slot {
 				continue
 			}
 			at := time.Date(date.Year(), date.Month(), date.Day(), m/60, m%60, 0, 0, loc)
-			if at.After(in.Now) {
+			if at.After(from) {
 				cands = append(cands, at.UTC())
 			}
 		}

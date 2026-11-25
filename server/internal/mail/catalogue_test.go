@@ -14,18 +14,22 @@ import (
 	"qinqin/internal/mail/mailtest"
 )
 
-var allKinds = []Kind{KindReset, KindLoginCode, KindMFACode, KindVerifyEmail, KindTest, KindEmailChanged}
+var allKinds = []Kind{KindReset, KindLoginCode, KindMFACode, KindVerifyEmail, KindTest, KindEmailChanged, KindReminder}
+
+// lineKinds are the body-only lines the reminder mail is built from.
+var lineKinds = []Kind{"reminder_due", "reminder_goal", "reminder_streak", "reminder_test"}
 
 // The English mails are byte-identical to the text/template versions they
 // replaced, except the reset mail's hour, which is now a real plural.
 func TestEnglishMailsKeepTheirText(t *testing.T) {
-	d := TemplateData{Site: "words.example.org", Link: "https://words.example.org/reset#t=abc", Code: "123456", Minutes: 10, Hours: 1}
+	d := TemplateData{Site: "words.example.org", Link: "https://words.example.org/reset#t=abc", Code: "123456", Minutes: 10, Hours: 1, Lines: "3 cards are due.", Unsubscribe: "https://words.example.org/u?t=T"}
 	want := map[Kind][2]string{
 		KindReset:        {"Reset your qinqin password", "Someone asked to reset the password of your words.example.org account.\n\nOpen this link within 1 hour to choose a new password:\n\nhttps://words.example.org/reset#t=abc\n\nIf this was not you, ignore this message: nothing changes until the link is used.\n"},
 		KindLoginCode:    {"Your qinqin sign-in code", "Your sign-in code for words.example.org is:\n\n123456\n\nIt is valid for 10 minutes and works once.\n\nIf this was not you, ignore this message and do not share the code with anyone.\n"},
 		KindMFACode:      {"Your qinqin two-step code", "Your two-step check code for words.example.org is:\n\n123456\n\nIt is valid for 10 minutes and works once.\n\nIf this was not you, someone knows your password: change it and ignore this code.\n"},
 		KindVerifyEmail:  {"Confirm your email address for qinqin", "Confirm this email address for your words.example.org account with this code:\n\n123456\n\nIt is valid for 10 minutes.\n\nIf this was not you, ignore this message: the address stays unconfirmed.\n"},
 		KindTest:         {"qinqin test message", "This is a test message from words.example.org. Email delivery works.\n\nIf this was not you, ignore this message: it was sent by an administrator of the site.\n"},
+		KindReminder:     {"Your qinqin study reminder", "Hello from words.example.org.\n\n3 cards are due.\n\nOpen qinqin: https://words.example.org/reset#t=abc\n\nYou get this email because you turned on study reminders. Stop these emails with one click: https://words.example.org/u?t=T\n\nYou can also change them in Settings, Notifications.\n"},
 		KindEmailChanged: {"Your qinqin email address was changed", "The email address of your words.example.org account was changed.\n\nFrom now on, password reset links and sign-in codes go to the new address. Reset links that were still open were cancelled.\n\nIf this was not you, someone with access to your session changed it: sign in, review Settings, Account, and ask your administrator for help if you cannot.\n"},
 	}
 	for _, k := range allKinds {
@@ -54,7 +58,7 @@ func TestMailCatalogue(t *testing.T) {
 	if err != nil || len(files) == 0 {
 		t.Fatalf("no catalogue files (%v)", err)
 	}
-	allowed := map[string]bool{"site": true, "link": true, "code": true, "minutes": true, "hours": true}
+	allowed := map[string]bool{"site": true, "link": true, "code": true, "minutes": true, "hours": true, "count": true, "lines": true, "unsubscribe": true}
 	var en map[string]string
 	for _, f := range files {
 		raw, err := os.ReadFile(f)
@@ -78,7 +82,11 @@ func TestMailCatalogue(t *testing.T) {
 		}
 		for _, k := range keys {
 			parts := strings.Split(k, ".")
-			if len(parts) != 3 || parts[0] != "mail" || (parts[2] != "subject" && parts[2] != "body") || kindOfKey(parts[1]) == "" {
+			isLine := false
+			for _, lk := range lineKinds {
+				isLine = isLine || catalogueKey(lk, "x") == "mail."+parts[1]+".x"
+			}
+			if len(parts) != 3 || parts[0] != "mail" || (parts[2] != "subject" && parts[2] != "body") || (kindOfKey(parts[1]) == "" && !isLine) || (isLine && parts[2] != "body") {
 				t.Errorf("%s: key %q is not mail.<kind>.subject|body", f, k)
 				continue
 			}
@@ -91,7 +99,7 @@ func TestMailCatalogue(t *testing.T) {
 				if !allowed[a] {
 					t.Errorf("%s %s: argument %q", f, k, a)
 				}
-				if parts[2] == "subject" && (a == "code" || a == "link") {
+				if parts[2] == "subject" && (a == "code" || a == "link" || a == "unsubscribe" || a == "lines" || a == "count") {
 					t.Errorf("%s %s: %s in a subject", f, k, a)
 				}
 			}

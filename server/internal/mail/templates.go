@@ -21,6 +21,7 @@ const (
 	KindVerifyEmail  Kind = "verify_email"
 	KindTest         Kind = "test"
 	KindEmailChanged Kind = "email_changed"
+	KindReminder     Kind = "reminder"
 )
 
 // The mail catalogue (docs/contracts/i18n/): one flat JSON file per
@@ -94,10 +95,15 @@ type TemplateData struct {
 	Code    string // six-digit code
 	Minutes int
 	Hours   int
+
+	// The reminder mail (#138): the lines (one per kind, counts only), the study
+	// link and the one-click unsubscribe link.
+	Lines       string
+	Unsubscribe string
 }
 
 func (d TemplateData) args() map[string]any {
-	return map[string]any{"site": d.Site, "link": d.Link, "code": d.Code, "minutes": d.Minutes, "hours": d.Hours}
+	return map[string]any{"site": d.Site, "link": d.Link, "code": d.Code, "minutes": d.Minutes, "hours": d.Hours, "lines": d.Lines, "unsubscribe": d.Unsubscribe}
 }
 
 func lookup(lang, key string) (string, bool) {

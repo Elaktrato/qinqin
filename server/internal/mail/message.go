@@ -12,6 +12,7 @@ import (
 	"mime"
 	"mime/quotedprintable"
 	"net/mail"
+	"net/url"
 	"strings"
 	"time"
 	"unicode"
@@ -28,7 +29,12 @@ var ErrAddress = errors.New("mail: invalid address")
 type Sender struct{ Address, Name string }
 
 // Message is one outgoing mail: one recipient, plain text.
-type Message struct{ To, Subject, Body string }
+type Message struct {
+	To, Subject, Body string
+	// ListUnsubscribe is an https URL; when set the mail carries the
+	// List-Unsubscribe and List-Unsubscribe-Post (one-click, RFC 8058) headers.
+	ListUnsubscribe string
+}
 
 const maxAddressBytes = 254
 
@@ -70,7 +76,7 @@ func headerSafe(name, v string) error {
 // subject) or validated (addresses) otherwise. rnd supplies the Message-ID
 // (crypto/rand in production).
 func Compose(from Sender, m Message, now time.Time, rnd io.Reader) ([]byte, error) {
-	for name, v := range map[string]string{"from name": from.Name, "from": from.Address, "to": m.To, "subject": m.Subject} {
+	for name, v := range map[string]string{"from name": from.Name, "from": from.Address, "to": m.To, "subject": m.Subject, "list-unsubscribe": m.ListUnsubscribe} {
 		if err := headerSafe(name, v); err != nil {
 			return nil, err
 		}
@@ -92,6 +98,12 @@ func Compose(from Sender, m Message, now time.Time, rnd io.Reader) ([]byte, erro
 	if strings.TrimSpace(from.Name) != "" {
 		fromHdr = (&mail.Address{Name: from.Name, Address: fromAddr}).String()
 	}
+	if m.ListUnsubscribe != "" {
+		u, err := url.Parse(m.ListUnsubscribe)
+		if err != nil || u.Scheme != "https" || u.Host == "" || strings.ContainsAny(m.ListUnsubscribe, " <>\t") {
+			return nil, fmt.Errorf("%w: list-unsubscribe", ErrHeader)
+		}
+	}
 	var body bytes.Buffer
 	qp := quotedprintable.NewWriter(&body)
 	if _, err := qp.Write([]byte(strings.ReplaceAll(strings.ReplaceAll(m.Body, "\r\n", "\n"), "\r", "\n"))); err != nil {
@@ -111,6 +123,10 @@ func Compose(from Sender, m Message, now time.Time, rnd io.Reader) ([]byte, erro
 	hdr("Content-Type", "text/plain; charset=utf-8")
 	hdr("Content-Transfer-Encoding", "quoted-printable")
 	hdr("Auto-Submitted", "auto-generated")
+	if m.ListUnsubscribe != "" {
+		hdr("List-Unsubscribe", "<"+m.ListUnsubscribe+">")
+		hdr("List-Unsubscribe-Post", "List-Unsubscribe=One-Click")
+	}
 	b.WriteString("\r\n")
 	b.Write(body.Bytes())
 	return b.Bytes(), nil

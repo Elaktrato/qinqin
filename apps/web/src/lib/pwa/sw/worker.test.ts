@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FakeCacheStorage } from '../../testing/fakeCaches';
+import { writePushTexts } from './pushTexts';
 import { startWorker, type FetchEv, type SwEv, type SwScope } from './worker';
 
 const ORIGIN = 'https://qinqin.example';
@@ -14,7 +15,8 @@ function fakeScope(fetchImpl: (req: Request) => Promise<Response>) {
 			listeners.set(type, [...(listeners.get(type) ?? []), l]);
 		}) as SwScope['addEventListener'],
 		skipWaiting: vi.fn(async () => {}),
-		clients: { claim: vi.fn(async () => {}) },
+		clients: { claim: vi.fn(async () => {}), matchAll: vi.fn(async () => []), openWindow: vi.fn(async () => null) },
+		registration: { showNotification: vi.fn(async () => {}) },
 		caches,
 		fetch: ((req: Request) => fetchImpl(req)) as SwScope['fetch'],
 		location: { origin: ORIGIN }
@@ -107,5 +109,40 @@ describe('startWorker with a fake ServiceWorkerGlobalScope', () => {
 		emit('fetch', ev);
 		expect(await (await responded()!).text()).toBe('/_app/immutable/a.js');
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it('shows a push notification through the registration and never fetches', async () => {
+		const fetchImpl = vi.fn(async () => new Response('x'));
+		const { scope, emit } = fakeScope(fetchImpl);
+		startWorker(scope, config);
+		const { waited, ev } = waitable();
+		emit('push', { ...ev, data: { json: () => ({ v: 1, kind: 'due', count: 2, route: '/study' }) } });
+		await Promise.all(waited);
+		expect(scope.registration.showNotification).toHaveBeenCalledWith(
+			'Time to study',
+			expect.objectContaining({ body: '2 cards are due.', tag: 'due', data: { route: '/study' } })
+		);
+		expect(fetchImpl).not.toHaveBeenCalled();
+	});
+
+	it('uses the page-stored texts from the cache for a push', async () => {
+		const { scope, caches, emit } = fakeScope(async () => new Response('x'));
+		await writePushTexts(caches, { locale: 'en', messages: { 'settings.reminders.notify.goal.title': 'Stored title' } });
+		startWorker(scope, config);
+		const { waited, ev } = waitable();
+		emit('push', { ...ev, data: { json: () => ({ kind: 'goal', count: null }) } });
+		await Promise.all(waited);
+		expect(scope.registration.showNotification).toHaveBeenCalledWith('Stored title', expect.anything());
+	});
+
+	it('a notification click closes it and opens the route in a new window', async () => {
+		const { scope, emit } = fakeScope(async () => new Response('x'));
+		startWorker(scope, config);
+		const { waited, ev } = waitable();
+		const close = vi.fn();
+		emit('notificationclick', { ...ev, notification: { close, data: { route: '/study' } } });
+		await Promise.all(waited);
+		expect(close).toHaveBeenCalled();
+		expect(scope.clients.openWindow).toHaveBeenCalledWith(`${ORIGIN}/study`);
 	});
 });
