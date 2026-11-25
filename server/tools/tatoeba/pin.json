@@ -1,46 +1,46 @@
 {
   "source": "https://downloads.tatoeba.org/exports/",
-  "exportDate": "",
+  "exportDate": "2026-11-21",
   "licence": {
-    "checked": "",
-    "statement": "To fill at pin time (pin and build refuse this placeholder): after re-reading https://tatoeba.org/en/downloads and https://tatoeba.org/en/terms_of_use, write what they state, and confirm explicitly that every row of sentences_detailed is CC BY 2.0 FR and every row of sentences_CC0 is CC0 1.0, and which attribution Tatoeba asks for."
+    "checked": "2026-11-25",
+    "statement": "Read 2026-11-25 from https://tatoeba.org/en/downloads: \"These files are released under CC BY 2.0 FR. A part of our sentences are also available under CC0 1.0.\" and \"Many of the Japanese and English sentences are from the Tanaka Corpus, which belongs to the public domain.\" Terms of use (https://tatoeba.org/en/terms_of_use, 6.2): \"Tatoeba's technical infrastructure uses the default Creative Commons Attribution 2.0 France license (CC-BY 2.0 FR) for the use of textual sentences.\" The BY condition: the author's name must be cited. Tatoeba's audio licences vary and audio is not used. The export files carry no per-row licence column (sentences_detailed has 6 columns); the pages' statement is the evidence that every row is CC BY 2.0 FR, and sentences_CC0 lists the CC0 subset. This is Tatoeba's statement, not independently verifiable per row."
   },
   "archives": [
     {
       "name": "sentences_detailed",
       "url": "https://downloads.tatoeba.org/exports/sentences_detailed.tar.bz2",
       "member": "sentences_detailed.csv",
-      "sha256": ""
+      "sha256": "98956f8d7c01e3a1e315d89e4ba0b47772421343306bdf3902bb2ccd45bfd950"
     },
     {
       "name": "sentences_CC0",
       "url": "https://downloads.tatoeba.org/exports/sentences_CC0.tar.bz2",
       "member": "sentences_CC0.csv",
-      "sha256": ""
+      "sha256": "ffece08afdd32f25cf1ae12040a41991e757df322eef93fbde40d51f0cd205bb"
     },
     {
       "name": "links",
       "url": "https://downloads.tatoeba.org/exports/links.tar.bz2",
       "member": "links.csv",
-      "sha256": ""
+      "sha256": "7a6e0438fe8f1b083ffadf45150ff7ed22404a86ab70b72d7d67eba8873fb427"
     },
     {
       "name": "tags",
       "url": "https://downloads.tatoeba.org/exports/tags.tar.bz2",
       "member": "tags.csv",
-      "sha256": ""
+      "sha256": "b4b35c7c831b8752abb60d9323450414e81f2bb3ec281864e9ba109919fff605"
     },
     {
       "name": "user_languages",
       "url": "https://downloads.tatoeba.org/exports/user_languages.tar.bz2",
       "member": "user_languages.csv",
-      "sha256": ""
+      "sha256": "7752863c15bdae22b5a4ee4489f625492bb3d0a62f0c395307c822660dae00bb"
     },
     {
       "name": "users_sentences",
-      "url": "https://downloads.tatoeba.org/exports/users_sentences.tar.bz2",
+      "url": "https://downloads.tatoeba.org/exports/users_sentences.csv",
       "member": "users_sentences.csv",
-      "sha256": ""
+      "sha256": "2587042b9589ef0736aa913f0505a23a87f481b1ba5450740abbcfaad31de54f"
     }
   ]
 }

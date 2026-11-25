@@ -20,6 +20,7 @@
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import FeedbackSettings from '$lib/settings/FeedbackSettings.svelte';
+	import HintSettings from '$lib/settings/HintSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -315,6 +316,7 @@
 			<div class="group" hidden={activeTab !== 'study'}>
 				<StudyDaySettings />
 				<StudySettings />
+				<HintSettings />
 				<KnownSettings />
 				<FeedbackSettings />
 			</div>

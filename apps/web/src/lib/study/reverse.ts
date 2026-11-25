@@ -39,16 +39,15 @@ export function acceptedReverseAnswers(
 }
 
 /**
- * Nothing typed: no suggestion (self-grade). Accepted: Good, or Hard when
- * the reading was shown. Not accepted: Again. Never Easy.
+ * Nothing typed: no suggestion (self-grade). Accepted: Good. Not accepted:
+ * Again. Never Easy. A hint lowers it afterwards (hints.ts `lowerForHints`).
  */
 export function suggestReverseGrade(result: {
 	typed: string;
 	accepted: ReadonlySet<string>;
-	readingShown: boolean;
 }): ReviewGrade | null {
 	const typed = normalizeAnswer(result.typed);
 	if (typed === '') return null;
 	if (!result.accepted.has(typed)) return 1;
-	return result.readingShown ? 2 : 3;
+	return 3;
 }
