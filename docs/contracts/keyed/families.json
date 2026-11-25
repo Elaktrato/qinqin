@@ -16,7 +16,8 @@
   {"key": "activity-view", "prefix": false, "scope": "user-global", "contract": "settings/"},
   {"key": "widget-options", "prefix": false, "scope": "user-global", "contract": "settings/"},
   {"key": "nav-layout", "prefix": false, "scope": "user-global", "contract": "settings/"},
-  {"key": "appearance", "prefix": false, "scope": "user-global", "contract": "themes/"}
+  {"key": "appearance", "prefix": false, "scope": "user-global", "contract": "themes/"},
+  {"key": "reminders", "prefix": false, "scope": "user-global", "contract": "reminders/"}
  ],
  "cases": [
   {"name": "a note in a workspace", "key": "note:1201", "scope": "workspace", "accept": true},

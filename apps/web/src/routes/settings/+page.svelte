@@ -23,6 +23,7 @@
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
+	import NotificationSettings from '$lib/settings/NotificationSettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
@@ -317,6 +318,11 @@
 
 			<div class="group" hidden={activeTab !== 'features'}>
 				<FeatureSettings />
+			</div>
+
+			<div class="group" hidden={activeTab !== 'notifications'}>
+				<!-- Mounted only while open: it reads the plan and the devices when shown. -->
+				{#if activeTab === 'notifications'}<NotificationSettings />{/if}
 			</div>
 
 			<div class="group" hidden={activeTab !== 'appearance'}>

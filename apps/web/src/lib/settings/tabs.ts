@@ -8,6 +8,7 @@ export const SETTINGS_TABS = [
 	'appearance',
 	'study',
 	'features',
+	'notifications',
 	'ai',
 	'account',
 	'data',
@@ -30,6 +31,9 @@ export const SETTINGS_TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 	},
 	get features() {
 		return t('settings.tabs.features');
+	},
+	get notifications() {
+		return t('settings.tabs.notifications');
 	},
 	get ai() {
 		return t('settings.tabs.ai');

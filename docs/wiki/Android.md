@@ -51,7 +51,7 @@ The outbox is sent when the app opens, when it returns to the front and when the
 
 ## Notifications
 
-The app can show local notifications (no Google services, nothing is sent anywhere): the groundwork is in place, but no feature uses it yet, so the app does not ask for the Android notification permission. Local reminders are planned (#137-#139); they will ask only then, and a reminder may arrive a few minutes late when the phone is idle (Android's battery saving; exact alarms would need a special permission screen). Scheduled reminders are armed again after a reboot or an app update.
+Study reminders are optional and off until you turn them on (Settings, Notifications): the app schedules them on the phone from the server's plan, with no Google service involved, and asks for the Android notification permission only then. See [Reminders](Reminders).
 
 ## For the person running the server
 

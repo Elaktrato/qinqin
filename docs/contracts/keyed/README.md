@@ -19,6 +19,7 @@ scope; the shapes of the documents are pinned by the folder each family names (`
 | `vacation:<ULID>` | user-global | `scheduler/` |
 | `home-layout`, `activity-view`, `widget-options`, `nav-layout` | user-global | `settings/` |
 | `appearance` | user-global | `themes/` |
+| `reminders` | user-global | `reminders/` |
 
 A prefix family is the prefix and at least one more character (`note:` alone is no key); any other family is the
 exact key. Keys are 1 to 512 bytes. A new family is a contract change: a line here, in `families.json`, and in

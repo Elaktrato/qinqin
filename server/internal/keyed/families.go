@@ -44,6 +44,7 @@ var Families = []Family{
 	{"widget-options", false, ScopeGlobal},
 	{"nav-layout", false, ScopeGlobal},
 	{"appearance", false, ScopeGlobal},
+	{"reminders", false, ScopeGlobal},
 }
 
 // MaxKey caps a key's length in bytes.

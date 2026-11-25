@@ -51,6 +51,7 @@ const ALLOWED: Record<string, string> = {
 	'lib/native/awake.ts:asking': 'whether a wake lock request is in flight: device state, nothing of a user',
 	'lib/native/awake.ts:visibilityOn': 'whether the tab-visibility listener is installed: device state, nothing of a user',
 	'lib/native/speech.ts:known': 'which languages this device has a text-to-speech voice for: a device fact, nothing of a user',
+	'lib/reminders/device/port.ts:installed': "the shell's native notification module, installed once at startup by setDevicePort (app-wide hardware access, no user data)",
 	'lib/api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it at every session end'
 };
 

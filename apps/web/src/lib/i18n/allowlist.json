@@ -108,5 +108,40 @@
 		"file": "lib/sources/coreCredits.ts",
 		"text": "CC BY 4.0",
 		"reason": "An SPDX-style licence name, shown verbatim (data)."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Time to study",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Your daily goal",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Today's goal is still open.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Keep your streak",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Test reminder",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Reminders work on this device.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Open qinqin to see what is waiting.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
 	}
 ]

@@ -1,6 +1,6 @@
 {
   "doc": "GET /api/version. anonymous: a caller with no or a restricted session. signedIn: a full session adds commit and buildDate. Both answer 200 with Cache-Control: no-store. Go: server/internal/api/handlers_version_test.go.",
   "build": { "version": "0.6.0", "commit": "abc1234", "buildDate": "2026-11-01T00:00:00Z" },
-  "anonymous": { "app": "qinqin", "version": "0.6.0", "contract": 3, "bridge": { "level": 1, "features": ["files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"] } },
-  "signedIn": { "app": "qinqin", "version": "0.6.0", "contract": 3, "bridge": { "level": 1, "features": ["files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"] }, "commit": "abc1234", "buildDate": "2026-11-01T00:00:00Z" }
+  "anonymous": { "app": "qinqin", "version": "0.6.0", "contract": 4, "bridge": { "level": 1, "features": ["files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"] } },
+  "signedIn": { "app": "qinqin", "version": "0.6.0", "contract": 4, "bridge": { "level": 1, "features": ["files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"] }, "commit": "abc1234", "buildDate": "2026-11-01T00:00:00Z" }
 }
