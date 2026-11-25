@@ -1,8 +1,8 @@
-// The session setup is a small choice the user makes before studying:
-// which decks to draw from, how many new and review cards to include,
-// and which card kinds to queue. It is per-tab state, so it lives in
-// sessionStorage rather than the server: no sync, no stale setup on the
-// next device.
+// The running study session of this tab: what Start in the study modal, or a
+// deck's or level's Study, planned (decks or a level, limits, kinds, orders,
+// the shuffle's seed, Study all and the page it was started from). It lives in
+// sessionStorage, so a reload of /study/session keeps its order; the setup the
+// modal starts from is the synced, per-workspace `study-setup` row (setup.ts).
 
 import { t } from '$lib/i18n';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';

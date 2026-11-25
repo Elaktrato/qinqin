@@ -109,11 +109,13 @@ test.describe('on a phone', () => {
 		await expect(sheet).toBeVisible();
 		await expect(sheet.getByRole('heading', { name: 'Study' })).toBeVisible();
 		await expect(sheet).toContainText('This session: 4 cards');
-		// Anchored to the bottom edge of the screen, as wide as the screen.
-		const box = await sheet.boundingBox();
-		expect(box, 'the sheet is rendered').not.toBeNull();
-		expect(Math.abs(box!.y + box!.height - PHONE.height)).toBeLessThanOrEqual(1);
-		expect(Math.round(box!.width)).toBe(PHONE.width);
+		// Anchored to the bottom edge of the screen, as wide as the screen, once it has slid in.
+		await expect
+			.poll(async () => {
+				const box = await sheet.boundingBox();
+				return box === null ? null : { bottomGap: Math.round(Math.abs(box.y + box.height - PHONE.height)), width: Math.round(box.width) };
+			})
+			.toEqual({ bottomGap: 0, width: PHONE.width });
 		await sheet.getByRole('button', { name: 'Start studying' }).click();
 		await expect(page).toHaveURL(/\/study\/session$/);
 	});

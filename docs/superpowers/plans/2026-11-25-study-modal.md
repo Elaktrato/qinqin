@@ -303,4 +303,59 @@ modify `routes/+layout.svelte`, `routes/study/+page.svelte` (replaced), `Flashca
 
 ## Execution record
 
-(Filled in as the tasks run.)
+Executed inline by the builder, in the order 1, 2, 3, 4, 5, 6, 8, 7, 9, 10 (Task 8 before 7, so the study page's
+deck strings moved to the decks page in one green step).
+
+| Task | Commit | Test first? |
+| --- | --- | --- |
+| Plan | `53e86771` | — |
+| 1 Contract and family | `a26bd972` | Yes: the Go and web family tests and `TestStudySetupContract` failed first (14 vs 13 families, unknown key). |
+| 2 Setup module | `9e4d48c7` | Yes: `setup.test.ts` failed on the missing module. |
+| 3 Store and opener | `7bd27c07` | Yes for the store, the opener, the session test and the workspace cleanup (each seen failing). |
+| 4 Readers | `3300c6b9` | Partly. `prepareOffline.test.ts` and the decks tests failed first. `studyStart.ts` was rewritten before its new test ran; the test was then run against the old file (6 failed) and the new one (pass). The widget's setup test was written after the change and checked against the old widget (1 failed). `lib/routing/here.ts` (two small functions) was written together with its test. |
+| 5 Plan and data | `f7559065` | Yes: both modules failed on the missing module first; one test had the limits shape wrong and was corrected. |
+| 6 Modal and entry points | `a4c2df03` | Yes for the view, the modal, End session, the session's Back/Done/redirect, `/study`, and the widget's and deck list's Study buttons. The layout mount has no unit test (the e2e spec covers it). |
+| 8 Rename and delete | `9220004f` | Yes. |
+| 7 `/study/advanced` | `0bd1665d` | Yes: the rewritten page test failed on the moved page (21 of 30), and the scheduling back-link test first. |
+| 9 e2e | `a8addd24` | No: the spec was written after the feature. Its first run failed only on an ambiguous locator (`getByLabel('New cards')` also matched "Order of new cards"). |
+| 10 Docs | `12a6b918` | — (repo doc tests pass). |
+
+Deviations and findings:
+
+- `cardTypesMemory.ts` was deleted in Task 7, not Task 4: the old page still imported it until it moved.
+- Task 7 found a real bug in Task 3's store: `refresh()` read the reactive entries synchronously, so a component
+  that refreshes from an `$effect` re-ran that effect on every answer (an endless refresh loop in the browser;
+  the earlier DOM tests mocked the store or let its reads fail, so they did not show it). Fixed with `untrack` in
+  the store, pinned by `lib/study/setupStore.dom.test.ts` (it hung before the fix).
+- The study page's "Study all ignores the limits…" hint was not carried into the modal (the modal holds only
+  the spec's lines); the wiki explains Study all.
+- A level setup's opt-in kinds: the modal hides Reverse and Cloze in levels mode (a level session never plans
+  them), as the page did.
+- Under the local Node 22 only, `BookView.dom.test.ts` (4) and `AccountSettings.dom.test.ts` (1) fail; they fail
+  the same way on `f7559065` with this branch's later work stashed, and pass under Node 26 (the CI version).
+- The phone e2e test first measured the sheet during its slide-in animation and failed once in three runs; it now
+  polls until the sheet has settled at the bottom edge (a condition, no sleep), then passed 3 full runs and 5
+  repeats of the spec.
+
+Gates (2026-11-25, on the branch's last code):
+
+- Go: `gofmt -l` empty; `go vet ./...` clean; `go test -count=1 -p 2 ./...`: 56 packages ok, one failure, the known
+  sandbox-only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets). Targeted
+  `./internal/keyed/ ./internal/api/` ok in Task 1.
+- `npm run check`: 0 errors, 0 warnings (svelte-check, 1791 files; `tsc -p e2e`).
+- `npm run build`: ok.
+- vitest, Node 26.13.1: 630 files, 13,076 passed, 2 skipped, 0 failed.
+- e2e (`npm run e2e -- --trace off`, pre-installed Chromium): 22 passed in each of 3 runs; `study-modal.spec.ts`
+  5 repeats, 20 passed.
+- `node --test scripts/*.test.mjs`: 143 passed, 1 skipped. `node scripts/gen-api-docs.mjs --check`: ok (no route
+  changed).
+
+Not verified:
+
+- The Android shell itself (back button closing the modal, the sheet on a real phone, focus): covered only by
+  `Dialog`/`Sheet` being on the dismiss stack (`dismissStack.dom.test.ts`) and the 360 px e2e test; no device or
+  emulator was run.
+- Offline editing: a chip changed offline is kept on the device and retried (unit tests); no e2e drives a change
+  made offline and synced later.
+- A setup written by a newer client with members this one does not know (fixture and unit tests only).
+- The modal over a page in a non-default workspace switched while the modal is open (unit-level only).
