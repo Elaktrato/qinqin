@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fixture from '../../../../../docs/contracts/pwa/outbox-v2.json';
+import fixture from '../../../../../docs/contracts/pwa/outbox-v3.json';
 import { flushable, settle, type OutboxItem } from './outbox';
 
 describe('outbox v2 contract fixture', () => {

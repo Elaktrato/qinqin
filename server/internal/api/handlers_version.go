@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"qinqin/internal/auth"
 	"qinqin/internal/update"
 )
 
@@ -126,27 +125,9 @@ func (s *server) handlePatchUpdateSettings(w http.ResponseWriter, r *http.Reques
 	if !readAccountBodyStrict(w, r, &req) {
 		return
 	}
-	cur, err := update.LoadSettings(r.Context(), s.db)
-	if err != nil {
+	if _, err := update.SaveSettings(r.Context(), s.db, ap.User.ID, update.SettingsPatch{Enabled: req.Enabled, Prereleases: req.Prereleases}); err != nil {
 		writeInternal(w, r)
 		return
-	}
-	if _, err := update.SaveSettings(r.Context(), s.db, update.SettingsPatch{Enabled: req.Enabled, Prereleases: req.Prereleases}); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	for _, c := range []struct {
-		field    string
-		from, to *bool
-		old      bool
-	}{{"update_check", req.Enabled, req.Enabled, cur.Enabled}, {"update_prereleases", req.Prereleases, req.Prereleases, cur.Prereleases}} {
-		if c.to != nil && *c.to != c.old {
-			if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "settings_changed", ActorID: ap.User.ID,
-				Detail: map[string]any{"field": c.field, "to": *c.to}}); err != nil {
-				writeInternal(w, r)
-				return
-			}
-		}
 	}
 	v, ok := s.updateAnswer(r, req.Enabled != nil || req.Prereleases != nil, false)
 	if !ok {

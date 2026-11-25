@@ -22,11 +22,30 @@ server while its answer was lost, so a rewritten item (same id) would be a dupli
 dropped one would leave the stored wrong grade in place. Items flush oldest first, so a replacement normally
 arrives after its target; if not, the rule still holds (the late target is replaced when it arrives).
 
-## Outbox v2 (`outbox-v2.json`)
+## Outbox v3 (`outbox-v3.json`)
 
-`localStorage['qinqin.study.pending.v2']` = `[{userId, queuedAt, event}]`.
+The queue is an IndexedDB object store (database `qinqin-outbox`, store `items`, key = `event.id`) of
+`{userId, queuedAt, event}` records: the same item as v2 (the item, the ownership and the flush rules below
+are unchanged). What v3 adds is how the web client keeps them (#35, measured on Android: a process kill within
+about 5 s after grading lost reviews that localStorage had not yet written):
 
-- An item belongs to the user who was signed in when the review was recorded
+- **Write-ahead.** A review is committed to the store before its POST is made; "saved" is reported only after the
+  transaction's `complete` (`durability: 'strict'`). The record is deleted after the server answered (or refused it
+  permanently). A crash between the answer and the delete is harmless: the server keeps an event id once, so the
+  retry is a duplicate (exactly once in effect).
+- **One record per review**, no whole-queue rewrite: two tabs add and remove records without overwriting each other.
+  The page reads an in-memory copy for its synchronous needs (counts, the offline banner, the study history) and
+  refreshes it from the store before each flush and when the app returns to the front.
+- **Event writes time out** (20 s) so a request that never answers becomes a retryable failure and the review,
+  already stored, waits for the next flush.
+- **Migration.** On start the v2 localStorage array `qinqin.study.pending.v2` is put into the store by event id (an
+  id already in the store keeps the stored record), then the key is removed (`migration` in the fixture).
+- **Fallback.** Where IndexedDB is missing or refuses (private mode, a blocked database) the queue stays the v2
+  localStorage array, and with no storage at all it lives in memory for the session: reviews are still queued and
+  retried, only not durable.
+- **Sign-out** ends the session and its in-memory copy. The stored items stay for their user unless the user chose
+  "sign out and delete them" (which deletes their records from the store).
+- An item (`{userId, queuedAt, event}`) belongs to the user who was signed in when the review was recorded
   (`userId` null: no user was known yet, adopted by the next user to flush).
 - The pre-v2 queue (`qinqin.study.pending`, bare events, v0.3.x) is neither read nor removed (#198):
   open the app online on every device before upgrading from v0.3.x, so an old copy sends its reviews first.

@@ -1,0 +1,615 @@
+{
+ "description": "Review outbox v3 (IndexedDB database 'qinqin-outbox', object store 'items', keyPath 'event.id'): one record per item {userId, queuedAt, event}, the same item as v2. settle(items, user, now) adopts unowned items for `user`, removes other users' items older than 30 days, and flushes only `user`'s items. Events keep their original ids and the unchanged review event format. `migration` holds the one-time move of the v2 localStorage array ('qinqin.study.pending.v2') into the store: items are put by event id (an id already in the store keeps the stored record), invalid entries are dropped, the key is removed. `order` holds the queue order. The pre-v2 queue ('qinqin.study.pending', v0.3.x) is no longer read (#198).",
+ "expiryDays": 30,
+ "cases": [
+  {
+   "name": "another user never flushes the first user's items",
+   "now": "2026-11-12T00:00:00Z",
+   "user": 2,
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A1",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": 2,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "B1",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "flush": [
+     "B1"
+    ]
+   }
+  },
+  {
+   "name": "the first user's next sign-in flushes what survived the other session",
+   "now": "2026-11-13T00:00:00Z",
+   "user": 1,
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A1",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": 2,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "B1",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "flush": [
+     "A1"
+    ]
+   }
+  },
+  {
+   "name": "items of another user older than 30 days are removed, newer ones kept",
+   "now": "2026-12-20T00:00:00Z",
+   "user": 2,
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A-old",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": 1,
+     "queuedAt": "2026-12-01T08:00:00.000Z",
+     "event": {
+      "id": "A-new",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-01T08:00:00.000Z",
+     "event": {
+      "id": "B-old",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-12-01T08:00:00.000Z",
+      "event": {
+       "id": "A-new",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": 2,
+      "queuedAt": "2026-11-01T08:00:00.000Z",
+      "event": {
+       "id": "B-old",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "flush": [
+     "B-old"
+    ]
+   }
+  },
+  {
+   "name": "unowned items (recorded before the user was known) go to the next user",
+   "now": "2026-11-12T00:00:00Z",
+   "user": 3,
+   "state": [
+    {
+     "userId": null,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "U1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 3,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "U1",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "flush": [
+     "U1"
+    ]
+   }
+  }
+ ],
+ "migration": [
+  {
+   "name": "v2 items move into an empty store",
+   "v2": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": null,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "store": [],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": null,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "B",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "v2KeyRemoved": true
+   }
+  },
+  {
+   "name": "an id already in the store keeps the stored record",
+   "v2": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "store": [
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 2,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "v2KeyRemoved": true
+   }
+  },
+  {
+   "name": "invalid entries are dropped, the key still goes",
+   "v2": [
+    {
+     "junk": true
+    },
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "store": [],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "B",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "v2KeyRemoved": true
+   }
+  },
+  {
+   "name": "no v2 key: nothing changes",
+   "v2": null,
+   "store": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "C",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "C",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "v2KeyRemoved": true
+   }
+  }
+ ],
+ "order": {
+  "rule": "by queuedAt, then event id",
+  "cases": [
+   {
+    "name": "queue time first",
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T09:00:00.000Z",
+      "event": {
+       "id": "B",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "expect": [
+     "A",
+     "B"
+    ]
+   },
+   {
+    "name": "same time: event id (a replacement's ULID sorts above its target)",
+    "items": [
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "B",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     },
+     {
+      "userId": 1,
+      "queuedAt": "2026-11-10T08:00:00.000Z",
+      "event": {
+       "id": "A",
+       "workspaceId": 7,
+       "device": "web",
+       "ts": "2026-11-10T08:00:00.000Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     }
+    ],
+    "expect": [
+     "A",
+     "B"
+    ]
+   }
+  ]
+ }
+}

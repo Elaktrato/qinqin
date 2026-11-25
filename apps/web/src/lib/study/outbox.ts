@@ -1,7 +1,7 @@
 // The pure rules of the review outbox v2: who owns a queued review, which
 // items a user may send, and when another user's items expire. No storage
 // here (events.ts reads and writes); the same cases are the contract fixture
-// docs/contracts/pwa/outbox-v2.json.
+// docs/contracts/pwa/outbox-v3.json.
 
 import type { StudyEventBody } from '../api/types';
 
