@@ -8,7 +8,7 @@ In a study session every grade button shows the interval that grade would give (
 
 ## Scheduling page
 
-The study setup (`/study`) has a link "Scheduling: …" (for example "Scheduling: default parameters" or "optimised on 3 Nov 2026") that opens `/study/scheduling`; Settings → Study links to it too. It tunes the FSRS parameters of the current workspace:
+The advanced study settings (`/study/advanced`, from **Advanced settings** in the study modal) have a link "Scheduling: …" (for example "Scheduling: default parameters" or "optimised on 3 Nov 2026") that opens `/study/scheduling`; Settings → Study links to it too. It tunes the FSRS parameters of the current workspace:
 
 - **Active** shows which parameter set is in use ("Use defaults" returns to the standard parameters).
 - **Optimise** fits parameters to your own review history in the browser (the work runs on your device, nothing is sent anywhere). It needs enough reviews: at least 400 labelled reviews, and it warns when you have fewer than 1000.
