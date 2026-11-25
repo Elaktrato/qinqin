@@ -10,8 +10,9 @@ file records what the pack is, how its content was chosen, and the conventions i
   order, the explanations, the example sentences, the readings, the translations and the wrong
   answers used in the exercises are original; nothing was copied or paraphrased from a textbook,
   a JLPT preparation book, a website or a published grammar list.
-- Licence: CC0 1.0 Universal (public domain dedication),
-  https://creativecommons.org/publicdomain/zero/1.0/. See `LICENSE`.
+- Licence: CC BY 4.0 (Creative Commons Attribution 4.0 International),
+  https://creativecommons.org/licenses/by/4.0/. See `LICENSE`. Credit: "qinqin contributors, CC BY 4.0",
+  https://github.com/Elaktrato/qinqin.
 
 ## Selection
 

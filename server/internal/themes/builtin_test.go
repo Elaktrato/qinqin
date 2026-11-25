@@ -53,10 +53,20 @@ func TestBuiltinPacks(t *testing.T) {
 		}
 		seenPack[p.Manifest.ID] = true
 		m := p.Manifest
-		if m.Type != "theme" || m.Format != "themes-json" || m.License != "MIT" || m.Attribution == "" || m.Notice == "" || m.Version == "" {
+		house := m.ID == "qinqin" || m.ID == "qinqin-extras"
+		wantLicence := "MIT"
+		if house {
+			wantLicence = "CC-BY-4.0" // the project's own work (#217); third-party palettes keep their MIT
+		}
+		if m.Type != "theme" || m.Format != "themes-json" || m.License != wantLicence || m.Attribution == "" || m.Notice == "" || m.Version == "" {
 			t.Errorf("pack %s manifest %+v", m.ID, m)
 		}
-		if !strings.Contains(p.License, "Permission is hereby granted") || !strings.Contains(p.License, "Copyright") {
+		if house {
+			if !strings.Contains(p.License, "Attribution 4.0 International") || !strings.Contains(p.License, "Creative Commons Corporation") ||
+				!strings.Contains(m.Attribution, "qinqin contributors, CC BY 4.0") {
+				t.Errorf("pack %s: LICENSE or attribution is not the CC BY 4.0 text and credit it states", m.ID)
+			}
+		} else if !strings.Contains(p.License, "Permission is hereby granted") || !strings.Contains(p.License, "Copyright") {
 			t.Errorf("pack %s: LICENSE is not the MIT text it states", m.ID)
 		}
 	}

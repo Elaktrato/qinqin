@@ -3,8 +3,8 @@
 	"name": "qinqin",
 	"version": "1.0",
 	"type": "theme",
-	"license": "MIT",
-	"attribution": "© 2026 qinqin",
-	"notice": "qinqin's house themes: Day (the default light), Night (the default dark) and Deep. Built from the owner's own palette; the state and grade colours were added beside the blues.",
+	"license": "CC-BY-4.0",
+	"attribution": "qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin)",
+	"notice": "qinqin's house themes: Day (the default light), Night (the default dark) and Deep. Built from the owner's own palette; the state and grade colours were added beside the blues. Released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).",
 	"format": "themes-json"
 }

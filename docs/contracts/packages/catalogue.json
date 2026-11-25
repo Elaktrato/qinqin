@@ -551,8 +551,8 @@
         "packId": "ja-lemma",
         "name": "Japanese lemmatizer rules",
         "version": "2026-11-22",
-        "license": "CC0-1.0",
-        "attribution": "Japanese lemmatizer rule table written for qinqin by the project; CC0 1.0.",
+        "license": "CC-BY-4.0",
+        "attribution": "Japanese lemmatizer rule table written for qinqin by the project; qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin).",
         "notice": ""
        }
       ],

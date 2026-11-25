@@ -29,6 +29,6 @@ describe('compiled-in fallback themes', () => {
 		const pack = readFileSync(resolve(repo, 'server/internal/themes/builtin/qinqin/LICENSE'), 'utf8');
 		const shipped = readFileSync(resolve(repo, 'apps/web/static/QINQIN-LICENSE.TXT'), 'utf8');
 		expect(shipped).toBe(pack);
-		expect(shipped).toContain('MIT License');
+		expect(shipped).toContain('Attribution 4.0 International');
 	});
 });
