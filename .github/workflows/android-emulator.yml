@@ -7,8 +7,21 @@ name: android-emulator
 # time in the job summary), so it runs only for a change to the shell, to the web app's door to it, or to what
 # the offline and study checks exercise (the service worker, lib/pwa, the study logic and outbox, the back-button
 # overlay code), or by hand. It also runs the shell's Java unit tests (testDebugUnitTest).
+#
+# Two jobs of the matrix (#37), each boots its own emulator: `core` (the shell suite of #35/#36 plus the everyday
+# paths: sign in, study with Back, reader lookup, bottom bar and back button) and `extended` (every page in qinqin
+# Day and Night, Chinese/Japanese IME composition, the writing and tone pads under real touch, performance numbers).
+# By hand, pick the suites with the `suites` input (comma list of shell, core, pages, ime, touch, perf). A nightly
+# run covers the whole set on `develop`.
 on:
   workflow_dispatch:
+    inputs:
+      suites:
+        description: "Suites to run in ONE emulator (shell,core,pages,ime,touch,perf); empty runs both matrix jobs"
+        required: false
+        default: ""
+  schedule:
+    - cron: "17 3 * * *"
   pull_request:
     paths:
       - "apps/android/**"
@@ -21,6 +34,10 @@ on:
       - "apps/web/src/lib/study/**"
       - "apps/web/src/lib/ui/dismissStack*"
       - "apps/web/src/lib/ui/modal*"
+      - "apps/web/src/lib/ui/ime*"
+      - "apps/web/src/lib/writing/**"
+      - "apps/web/src/lib/features/flashcards/**"
+      - "apps/web/src/lib/features/reader/**"
       - ".github/workflows/android-emulator.yml"
 
 permissions:
@@ -28,8 +45,17 @@ permissions:
 
 jobs:
   emulator:
+    name: emulator (${{ matrix.name }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: core
+            suites: shell,core
+          - name: extended
+            suites: pages,ime,touch,perf
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -82,6 +108,7 @@ jobs:
           E2E_BIN: ${{ runner.temp }}/qinqin
           E2E_APK: ${{ env.APK }}
           E2E_OUT: ${{ github.workspace }}/apps/android/e2e-out
+          E2E_SUITES: ${{ inputs.suites || matrix.suites }}
         with:
           api-level: 34
           target: google_apis
@@ -102,10 +129,17 @@ jobs:
           if [ -f "$f" ]; then
             echo "summary=$(node -e 'console.log(JSON.stringify(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))))' "$f")" >> "$GITHUB_OUTPUT"
             {
-              echo '### Android emulator run'
+              echo "### Android emulator run (${{ matrix.name }}: ${{ inputs.suites || matrix.suites }})"
+              node -e 'const s=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log("| step | ok | ms |\n|---|---|---|"); for (const x of s.steps) console.log("| "+x.name.replace(/\|/g,"/")+" | "+(x.ok?"yes":"**NO**")+" | "+x.ms+" |")' "$f"
               echo '```json'
               cat "$f"
               echo '```'
+              if [ -f apps/android/e2e-out/perf.json ]; then
+                echo '#### Performance (CI emulator, software-rendered x86: a regression baseline, not phone numbers)'
+                echo '```json'
+                cat apps/android/e2e-out/perf.json
+                echo '```'
+              fi
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "no summary.json: the driver did not run" >> "$GITHUB_STEP_SUMMARY"
@@ -115,7 +149,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: android-emulator
+          name: android-emulator-${{ matrix.name }}
           path: apps/android/e2e-out/
           retention-days: 14
           if-no-files-found: ignore

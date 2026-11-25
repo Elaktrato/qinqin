@@ -9,12 +9,29 @@
 // preparation, storage numbers, airplane mode + server down, cold start from the cache, an offline study session,
 // a restart with unsent reviews, going online, and the exactly-once check on the server (and after two more restarts).
 // Passwords are generated per run and live only in this process and the throw-away data directory.
+//
+// Suites (#37), chosen by E2E_SUITES (comma list; default: all): `shell` = the offline, native-feature and storage
+// steps of #35/#36; `core` = sign in through the UI, a study session with Back, a reader lookup, the bottom bar
+// and the back button (suites/core.mjs); `pages` = every route in Day and Night with layout invariants and
+// screenshots (suites/pages.mjs); `ime` = composition in search, a typing card, the journal (suites/ime.mjs);
+// `touch` = the writing pad and the tone pad under real adb touches (suites/touch.mjs); `perf` = the numbers for
+// the design doc (suites/perf.mjs). Every run does the setup and the first sign-in; `core` and later suites run
+// as a second learner so that the shell suite's reviews and offline state do not interfere.
 import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, mkdtempSync, createWriteStream, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { PKG, OUT, Recorder, adb, appPid, connectPage, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
+import { PKG, OUT, Recorder, adb, appPid, connectPage, gmsSettled, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
+import { strokesPack } from './suites/common.mjs';
+import * as core from './suites/core.mjs';
+import * as pages from './suites/pages.mjs';
+import * as ime from './suites/ime.mjs';
+import * as touch from './suites/touch.mjs';
+import * as perf from './suites/perf.mjs';
+
+const ALL_SUITES = ['shell', 'core', 'pages', 'ime', 'touch', 'perf'];
+const SUITES = new Set((process.env.E2E_SUITES || ALL_SUITES.join(',')).split(',').map((x) => x.trim()).filter(Boolean));
 
 const BIN = resolve(process.env.E2E_BIN || '');
 const APK = resolve(process.env.E2E_APK || '');
@@ -39,6 +56,10 @@ const dataDir = join(work, 'data');
 const emptyPacks = join(work, 'no-packs');
 mkdirSync(emptyPacks);
 const secret = randomBytes(32).toString('base64');
+const newLearner = (tag, admin = false) => ({ tag, admin, username: `${tag}-${randomBytes(3).toString('hex')}`, password: `${randomBytes(12).toString('hex')}-Pw2!`, token: '', ws: {}, api: null });
+// One learner per later suite, so their cards and reviews never meet: B (core, pages; an administrator so that the
+// crawl reaches the admin pages), C (touch: pads), D (ime: a typing card), P (perf).
+const learners = { B: newLearner('core', true), C: newLearner('touch'), D: newLearner('ime'), P: newLearner('perf') };
 const username = `learner-${randomBytes(3).toString('hex')}`;
 const password = `${randomBytes(12).toString('hex')}-Pw1!`;
 const serverEnv = {
@@ -161,14 +182,20 @@ async function coldStart(label) {
 	return { cdp, ...l, renderMs };
 }
 
+let cdp = null;
+
 async function main() {
-	let cdp = null;
 	let cards = 0;
-	const recorded = [];
 
 	await rec.step('server: seed packs, create a learner with four cards', async () => {
-		execFileSync(BIN, ['seed', '--data', dataDir, '--packs', PACKS], { env: serverEnv, stdio: 'pipe' });
+		// The fixture dictionaries plus a tiny generated strokes pack (two characters with two strokes each; the touch suite).
+		const extraPacks = strokesPack(join(work, 'strokes-pack'));
+		execFileSync(BIN, ['seed', '--data', dataDir, '--packs', [PACKS, ...extraPacks].join(',')], { env: serverEnv, stdio: 'pipe' });
 		execFileSync(BIN, ['adduser', '--data', dataDir, '--username', username], { env: { ...serverEnv, QINQIN_PASSWORD: password }, stdio: 'pipe' });
+		// The learners of the suites after `shell`.
+		for (const l of Object.values(learners)) {
+			execFileSync(BIN, ['adduser', '--data', dataDir, '--username', l.username, ...(l.admin ? ['--admin'] : [])], { env: { ...serverEnv, QINQIN_PASSWORD: l.password }, stdio: 'pipe' });
+		}
 		await startServer();
 		const login = await (await fetch(`${HOST}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, password, deviceName: 'android-e2e' }) })).json();
 		if (login.status !== 'ok' || !login.token) throw new Error(`login: ${JSON.stringify({ ...login, token: undefined })}`);
@@ -189,6 +216,8 @@ async function main() {
 		return { cards };
 	});
 	if (rec.failed) return;
+
+	await rec.step('device: wait for Google Play services to settle (its restart kills apps)', async () => (num.gms = await gmsSettled()));
 
 	await rec.step('device: reverse the port, install the debug APK, first launch', async () => {
 		num.apiLevel = adb(['shell', 'getprop', 'ro.build.version.sdk']);
@@ -241,6 +270,25 @@ async function main() {
 	});
 	if (rec.failed) return;
 
+	// ---- the suites -----------------------------------------------------------------------------------------------
+	if (SUITES.has('shell')) await shellSuite();
+	const later = ['core', 'pages', 'ime', 'touch', 'perf'].filter((n) => SUITES.has(n));
+	if (later.length > 0) {
+		await recoverOnline();
+		const ctx = makeCtx();
+		for (const [name, mod] of [['core', core], ['pages', pages], ['ime', ime], ['touch', touch], ['perf', perf]]) {
+			if (!SUITES.has(name)) continue;
+			ctx.suite = name;
+			await mod.run(ctx);
+			if (ctx.cdp !== cdp) cdp = ctx.cdp;
+		}
+	}
+	cdp?.close();
+}
+
+/** The steps of #35/#36: native plugins, share-in, notification, storage, offline start and the offline session. */
+async function shellSuite() {
+	const recorded = [];
 	// ---- native device features (#36): cheap, deterministic checks of the bridge pieces ------------------------
 	await rec.step('native plugins: speech, files, share, notifications and the shell answer through the bridge', async () => {
 		const r = await cdp.eval(`(async () => {
@@ -499,7 +547,56 @@ async function main() {
 			return await verify(`restart ${n}`);
 		});
 	}
-	cdp?.close();
+}
+
+/** After the shell suite: radios on, server up, the app cold-started online (the offline suite may have failed anywhere). */
+async function recoverOnline() {
+	await rec.step('recover: back online, server up, app restarted', async () => {
+		airplane(false);
+		adb(['shell', 'svc', 'wifi', 'enable'], { soft: true });
+		adb(['shell', 'svc', 'data', 'enable'], { soft: true });
+		if (!(await fetch(`${HOST}/healthz`).then((r) => r.ok, () => false))) await startServer();
+		cdp?.close();
+		cdp = (await coldStart('recovered')).cdp;
+		return { online: await cdp.eval('navigator.onLine') };
+	});
+}
+
+/** What the later suites share (suites/*.mjs). */
+function makeCtx() {
+	return {
+		rec,
+		num,
+		suite: '',
+		ORIGIN,
+		HOST,
+		PKG,
+		learnerA: { username, password, token },
+		learners,
+		signedAs: null,
+		get cdp() {
+			return cdp;
+		},
+		set cdp(v) {
+			cdp = v;
+		},
+		coldStart,
+		launch,
+		forceStop,
+		airplane,
+		startServer,
+		api: (tok) => async (path, body) => {
+			const res = await fetch(HOST + path, {
+				method: body === undefined ? 'GET' : 'POST',
+				headers: { authorization: `Bearer ${tok}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+				body: body === undefined ? undefined : JSON.stringify(body)
+			});
+			const text = await res.text();
+			if (!res.ok) throw new Error(`${path}: ${res.status} ${text.slice(0, 200)}`);
+			return text === '' ? null : JSON.parse(text);
+		},
+		rawApi: (tok) => async (path, init = {}) => fetch(HOST + path, { ...init, headers: { authorization: `Bearer ${tok}`, ...(init.headers || {}) } })
+	};
 }
 
 try {

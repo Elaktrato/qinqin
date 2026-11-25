@@ -46,6 +46,29 @@ export function screenshot(name) {
 	}
 }
 
+/**
+ * gmsSettled: waits until Google Play services (the google_apis image) stopped restarting: its persistent process
+ * keeps one pid for `quietMs`. A restart of it kills apps bound to its fonts provider, ours included, so the driver
+ * starts only after it has settled (or after `max` ms, whichever comes first).
+ */
+export async function gmsSettled({ quietMs = 20_000, max = 120_000 } = {}) {
+	const pidOf = () => adb(['shell', 'pidof', 'com.google.android.gms.persistent'], { soft: true }).split(/\s+/)[0];
+	const t0 = Date.now();
+	let pid = pidOf();
+	let since = Date.now();
+	let restarts = 0;
+	while (Date.now() - t0 < max) {
+		await sleep(2500);
+		const now = pidOf();
+		if (now !== pid) {
+			pid = now;
+			since = Date.now();
+			restarts++;
+		} else if (/^\d+$/.test(pid) && Date.now() - since >= quietMs) break;
+	}
+	return { settled: Date.now() - since >= quietMs, waitedMs: Date.now() - t0, restarts, pid };
+}
+
 export function appPid() {
 	const out = adb(['shell', 'pidof', PKG], { soft: true });
 	return /^\d+/.test(out) ? out.split(/\s+/)[0] : null;
@@ -56,8 +79,10 @@ export class Cdp {
 		this.ws = ws;
 		this.next = 1;
 		this.pending = new Map();
+		this.listeners = new Map();
 		ws.addEventListener('message', (ev) => {
 			const msg = JSON.parse(ev.data);
+			if (msg.method) for (const fn of this.listeners.get(msg.method) || []) fn(msg.params);
 			const p = msg.id !== undefined ? this.pending.get(msg.id) : undefined;
 			if (!p) return;
 			this.pending.delete(msg.id);
@@ -79,6 +104,11 @@ export class Cdp {
 				if (this.pending.delete(id)) reject(new Error(`${method}: no answer in ${timeoutMs / 1000} s`));
 			}, timeoutMs);
 		});
+	}
+
+	/** on: calls fn(params) for every DevTools event `method` (Runtime.exceptionThrown, ...). */
+	on(method, fn) {
+		this.listeners.set(method, [...(this.listeners.get(method) || []), fn]);
 	}
 
 	/** eval: the value of a JS expression in the page (promises awaited, result by value). */
