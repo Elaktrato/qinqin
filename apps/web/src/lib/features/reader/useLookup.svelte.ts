@@ -118,7 +118,11 @@ export class LookupController {
 	attach(): () => void {
 		const onKey = (e: KeyboardEvent) => {
 			// Escape that cancels an IME composition (or was handled) is not ours.
-			if (e.key === 'Escape' && this.info && !e.isComposing && !e.defaultPrevented) this.closeTop();
+			if (e.key === 'Escape' && this.info && !e.isComposing && !e.defaultPrevented) {
+				// Handled: the shell's back button reads this as "closed something" and does not also go back.
+				e.preventDefault();
+				this.closeTop();
+			}
 			this.popups.key(e);
 		};
 		const onDown = (e: PointerEvent) => {
