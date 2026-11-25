@@ -6,8 +6,9 @@
 //
 // versionCode = major*1000000 + minor*10000 + patch*100 + slot. slot orders the pre-releases of one version below
 // its release, so every later release in semver order gets a larger code (Android only installs upward):
-//   alpha[.N] 1..29 (slot N), beta[.N] 30..59 (29+N), rc[.N] 60..89 (59+N, N up to 30), release 99.
-// A bare "rc" is rc.1. Any other pre-release label, a N out of range, minor/patch above 99 or major above 209
+//   alpha.N 1..29 (slot N), beta.N 30..59 (29+N), rc.N 60..89 (59+N, N up to 30), release 99.
+// Exactly one spelling is accepted: label, a dot, N without leading zeros. rc, rc1 and rc.01 are refused, because
+// they would map to the same code as rc.1 (two tags, one versionCode). Any other pre-release label, a N out of range, minor/patch above 99 or major above 209
 // (Play's limit is 2100000000) is refused: a wrong code is worse than a failed build.
 import { appendFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -26,10 +27,10 @@ export function parseTag(tag) {
 }
 
 function preSlot(pre) {
-	const m = /^(alpha|beta|rc)(?:\.?(\d+))?$/.exec(pre);
+	const m = /^(alpha|beta|rc)\.([1-9]\d*)$/.exec(pre);
 	if (!m) throw new VersionError(`pre-release "${pre}" has no Android version slot (use alpha.N, beta.N or rc.N)`);
 	const { base, max } = SLOTS[m[1]];
-	const n = m[2] === undefined ? 1 : Number(m[2]);
+	const n = Number(m[2]);
 	if (n < 1 || n > max) throw new VersionError(`pre-release "${pre}": the number must be 1..${max}`);
 	return base + n;
 }

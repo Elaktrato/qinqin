@@ -1,0 +1,177 @@
+name: android-apk
+description: >-
+  Builds, verifies and checksums the qinqin Android APK into dist/ (the caller uploads it). Used by
+  .github/workflows/android-apk.yml for the signed release job and for the secret-free dry run. The npm steps
+  (install, tests, sync) never see a signing input: the keystore is decoded and the signing environment is set
+  only in the Gradle step.
+
+inputs:
+  version:
+    description: The release tag or the dry-run version (semver, with or without v)
+    required: true
+  release:
+    description: "'true': sign with the release key; anything else: a debug-signed dry run"
+    required: false
+    default: "false"
+  keystore-base64:
+    required: false
+    default: ""
+  keystore-password:
+    required: false
+    default: ""
+  key-alias:
+    required: false
+    default: ""
+  key-password:
+    required: false
+    default: ""
+  expected-cert-sha256:
+    description: The pinned signing certificate fingerprint (repository variable ANDROID_CERT_SHA256), release only
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # The npm download cache is used for a dry run only. A release build starts from an empty cache: it runs a few
+    # times a year, so the minute saved is not worth a cache that something else could have written.
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 26
+        cache: ${{ inputs.release == 'true' && '' || 'npm' }}
+        cache-dependency-path: apps/android/package-lock.json
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: 21
+    # versionName is the tag without its v; versionCode is derived from it (apps/android/scripts/version-code.mjs
+    # explains the scheme). A tag that is not semver or has a pre-release spelling it refuses fails here.
+    - name: Version
+      id: version
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        node apps/android/scripts/version-code.mjs "$INPUT_VERSION"
+    # No secret is in the environment of this step: npm lifecycle scripts of the dependencies run here.
+    - name: Install, test and sync (no secrets)
+      shell: bash
+      working-directory: apps/android
+      run: |
+        set -euo pipefail
+        npm ci
+        npm test
+        # The generated capacitor.config.json and www/ must exist before Gradle.
+        npm run sync
+    # The keystore is written only now, right before Gradle, and removed afterwards. A missing secret fails the job
+    # with its name, with no value printed.
+    - name: Decode the keystore
+      if: inputs.release == 'true'
+      shell: bash
+      env:
+        KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
+        KEY_ALIAS: ${{ inputs.key-alias }}
+        KEY_PASSWORD: ${{ inputs.key-password }}
+      run: |
+        set -euo pipefail
+        missing=
+        [ -n "$KEYSTORE_BASE64" ] || missing="$missing ANDROID_KEYSTORE_BASE64"
+        [ -n "$KEYSTORE_PASSWORD" ] || missing="$missing ANDROID_KEYSTORE_PASSWORD"
+        [ -n "$KEY_ALIAS" ] || missing="$missing ANDROID_KEY_ALIAS"
+        [ -n "$KEY_PASSWORD" ] || missing="$missing ANDROID_KEY_PASSWORD"
+        if [ -n "$missing" ]; then
+          echo "::error::signing secrets missing:$missing. Refusing to publish an unsigned APK; see docs/superpowers/plans/2026-11-25-android-release-apk.md"
+          exit 1
+        fi
+        keystore="$RUNNER_TEMP/qinqin-release.jks"
+        umask 077
+        printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+        echo "QINQIN_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+    - name: Build the APK
+      shell: bash
+      working-directory: apps/android/android
+      env:
+        VERSION_NAME: ${{ steps.version.outputs.versionName }}
+        VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+        RELEASE: ${{ inputs.release == 'true' && 'true' || 'false' }}
+        QINQIN_KEYSTORE_PASSWORD: ${{ inputs.release == 'true' && inputs.keystore-password || '' }}
+        QINQIN_KEY_ALIAS: ${{ inputs.release == 'true' && inputs.key-alias || '' }}
+        QINQIN_KEY_PASSWORD: ${{ inputs.release == 'true' && inputs.key-password || '' }}
+      run: |
+        set -euo pipefail
+        if [ "$RELEASE" = true ]; then
+          task=assembleRelease; built=app/build/outputs/apk/release/app-release.apk
+        else
+          task=assembleDebug; built=app/build/outputs/apk/debug/app-debug.apk
+        fi
+        ./gradlew --no-daemon "$task" "-PqinqinVersionName=$VERSION_NAME" "-PqinqinVersionCode=$VERSION_CODE"
+        if [ "$RELEASE" = true ]; then name="qinqin-$VERSION_NAME.apk"; else name="qinqin-$VERSION_NAME-dryrun.apk"; fi
+        mkdir -p "$GITHUB_WORKSPACE/dist"
+        cp "$built" "$GITHUB_WORKSPACE/dist/$name"
+        echo "APK_NAME=$name" >> "$GITHUB_ENV"
+    - name: Remove the keystore
+      if: always() && inputs.release == 'true'
+      shell: bash
+      run: rm -f "$RUNNER_TEMP/qinqin-release.jks"
+    # build.gradle leaves a release build UNSIGNED when a signing input is missing, and apksigner then fails; a
+    # debug build (the dry run) is signed by Gradle with the Android debug key. The checks are positive: the v2
+    # signature verifies and a signer certificate digest is present, the version inside the APK is the one derived
+    # from the tag, and for a release the certificate is not the debug one and equals the pinned fingerprint.
+    - name: Verify the APK
+      shell: bash
+      env:
+        VERSION_NAME: ${{ steps.version.outputs.versionName }}
+        VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+        RELEASE: ${{ inputs.release == 'true' && 'true' || 'false' }}
+        EXPECTED_CERT: ${{ inputs.expected-cert-sha256 }}
+      run: |
+        set -euo pipefail
+        bt="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+        apk="dist/$APK_NAME"
+        signer="$RUNNER_TEMP/apksigner.txt"
+        # No pipe: a failing apksigner must fail the step.
+        "$bt/apksigner" verify --verbose --print-certs "$apk" > "$signer"
+        cat "$signer"
+        grep -qF 'Verified using v2 scheme (APK Signature Scheme v2): true' "$signer" \
+          || { echo "::error::the APK has no verified v2 signature"; exit 1; }
+        fp=$(sed -n 's/^Signer #1 certificate SHA-256 digest: *//p' "$signer" | head -n 1 | tr -d ': \r' | tr 'A-F' 'a-f')
+        printf '%s' "$fp" | grep -Eq '^[0-9a-f]{64}$' \
+          || { echo "::error::no signer certificate SHA-256 digest in the apksigner output"; exit 1; }
+        "$bt/aapt2" dump badging "$apk" | grep -E "^package:" > "$RUNNER_TEMP/badging.txt"
+        cat "$RUNNER_TEMP/badging.txt"
+        grep -q "versionCode='$VERSION_CODE'" "$RUNNER_TEMP/badging.txt" || { echo "::error::versionCode in the APK is not $VERSION_CODE"; exit 1; }
+        grep -q "versionName='$VERSION_NAME'" "$RUNNER_TEMP/badging.txt" || { echo "::error::versionName in the APK is not $VERSION_NAME"; exit 1; }
+        if [ "$RELEASE" = true ]; then
+          if grep -qi "Android Debug" "$signer"; then
+            echo "::error::the release APK is signed with a debug certificate"
+            exit 1
+          fi
+          expected=$(printf '%s' "$EXPECTED_CERT" | tr -d ': \r\n' | tr 'A-F' 'a-f')
+          {
+            echo "### Android release signing certificate"
+            echo
+            echo "SHA-256: \`$fp\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$expected" ]; then
+            if [ "$fp" != "$expected" ]; then
+              echo "::error::the signing certificate $fp is not the pinned ANDROID_CERT_SHA256 ($expected): wrong keystore, or the variable is stale"
+              echo "The certificate does **not** match the pinned \`ANDROID_CERT_SHA256\`. Not published." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            echo "The certificate matches the pinned \`ANDROID_CERT_SHA256\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "Signing certificate SHA-256 $fp matches ANDROID_CERT_SHA256."
+          else
+            echo "::warning::ANDROID_CERT_SHA256 is not set, so nothing pins the signing key. Fingerprint of this release: $fp. Put it in the release notes and set the repository variable ANDROID_CERT_SHA256 to it before the next release."
+            echo "**Not pinned.** Repository variable \`ANDROID_CERT_SHA256\` is unset: put this fingerprint in the release notes and set the variable to it, so later releases must use the same key." >> "$GITHUB_STEP_SUMMARY"
+          fi
+        fi
+    - name: Checksum
+      shell: bash
+      working-directory: dist
+      run: |
+        set -euo pipefail
+        sha256sum "$APK_NAME" > "$APK_NAME.sha256"
+        sha256sum --check "$APK_NAME.sha256"

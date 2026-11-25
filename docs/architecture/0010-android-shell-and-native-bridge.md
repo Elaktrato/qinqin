@@ -99,19 +99,33 @@ UI in native code.
 
 - A `v*` tag builds a signed release APK in `build.yml` (job `android`, the reusable `android-apk.yml`) and the
   `release` job attaches `qinqin-<version>.apk` and `qinqin-<version>.apk.sha256` (`sha256sum` format) to the
-  GitHub release. No APK means no release: the release job needs the APK job.
+  GitHub release. No APK means no release: the release job needs the APK job, creates the release as a draft,
+  uploads the files and only then publishes it. The image job does not wait for the APK (a tag whose APK fails
+  still has its image, and gets no release); a cheap `tag` job validates the tag with `version-code.mjs` before the
+  image is published.
 - versionName is the tag without its `v` (semver, checked like the image job's tag guard). versionCode is
   `major*1000000 + minor*10000 + patch*100 + slot`; slot is 99 for a release and orders `alpha.N` (1-29), `beta.N`
   (30-59) and `rc.N` (60-89) below it. `apps/android/scripts/version-code.mjs` holds the rule and its tests; any
-  other pre-release label fails the build. Gradle reads -PqinqinVersionName and -PqinqinVersionCode; a build
+  other pre-release label, or any spelling other than `rc.N`/`alpha.N`/`beta.N` without leading zeros, fails the build. Gradle reads -PqinqinVersionName and -PqinqinVersionCode; a build
   without them (local, debug) is `package.json`'s version with code 1. `package.json`'s `version` is therefore only
   that local default and need not be bumped per release.
 - Signing reads four environment variables (QINQIN_KEYSTORE_FILE, QINQIN_KEYSTORE_PASSWORD, QINQIN_KEY_ALIAS,
-  QINQIN_KEY_PASSWORD) and applies only when all four are set. The workflow decodes 
-  the repository secret ANDROID_KEYSTORE_BASE64 to a temporary file and removes it afterwards; the secrets are read only for a tag
-  build in `Elaktrato/qinqin`, never on a fork or pull request. A missing secret fails the job with its name.
+  QINQIN_KEY_PASSWORD) and applies only when all four are set. The signing job runs in the GitHub environment
+  `android-release` and build.yml passes the four secrets explicitly (no `secrets: inherit`). The owner creates the
+  environment, restricts its deployment branches and tags to `v*` tags and moves the four secrets into it, so a
+  workflow on any other branch cannot read them; required reviewers are optional. Until then the repository-level
+  secrets keep working. The secrets are read only for a tag build in `Elaktrato/qinqin`, never on a fork or pull
+  request. `npm ci`, `npm test` and `npm run sync` run in an earlier step with no secret in the environment (and
+  without the npm cache); the workflow decodes ANDROID_KEYSTORE_BASE64 to a temporary file immediately before the
+  Gradle step, which alone carries the signing environment, and removes it afterwards. A missing secret fails the
+  job with its name.
 - The build runs `npm run sync` (first-run screen, `capacitor.config.json`, `www/`) before Gradle, then checks the
-  APK: `apksigner verify`, the version read back with `aapt2 dump badging`, and no debug certificate on a release.
+  APK: `apksigner verify` must report a verified v2 signature and a signer certificate digest (a release build
+  without signing input is unsigned, so this fails), the version is read back with `aapt2 dump badging`, and a
+  release must not carry a debug certificate. The same signing certificate is required for every release: the
+  optional repository variable ANDROID_CERT_SHA256 (a public fingerprint, not a secret) pins it, and a different
+  certificate fails the job. While it is unset (the first release) the job prints the fingerprint, writes it to the
+  job summary and warns; the owner puts it in the release notes and sets the variable.
 - A manual run of `android-apk` (workflow_dispatch) builds a debug-signed `qinqin-<version>-dryrun.apk` as a
   workflow artifact only, with no secrets and no release.
 - Extension point: an Android App Bundle for Play (Gradle bundle task, same signing config) is not built; add it as a
