@@ -157,6 +157,11 @@ Not allowed:
   from desktop browsers. A new Enter handler uses it; the jsdom tests of each handler simulate a composition.
 - **Performance numbers** are a regression baseline of a software-rendered x86 emulator, not phone numbers; they are
   recorded in `perf.json` of the job summary and in the design doc, and never gate a run.
+- **Known gaps, plainly:** the typing-card IME check does not run on the emulator (the seeded card is served in the
+  Recognise mode, so no typing field appears; the step records that and passes); its Enter guard is covered by the
+  jsdom tests and the manual checklist. The page crawl's "bottom bar covers the end of the page" and "header text
+  clipped" heuristics are listed in the summary, not failing. Real keyboards (Gboard Pinyin, Japanese, handwriting)
+  and a physical phone stay manual.
 - The emulator can lose the app when Google Play services restart on the Google APIs image: the driver waits for it
   to settle and retries idempotent steps after a relaunch.
 
