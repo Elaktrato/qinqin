@@ -104,6 +104,25 @@ export interface ParagraphSpan {
 	clamped: boolean;
 }
 
+/**
+ * actionSpan is what the lookup's highlight actions act on. A tapped word
+ * (tap to look up) that lies inside a highlight of this chapter acts on that
+ * highlight: a colour recolours it, Note opens its editor. Anything else
+ * (a selection, a tapped word outside every highlight) acts on its own span.
+ */
+export function actionSpan(
+	span: ParagraphSpan | null,
+	tapped: boolean,
+	known: Highlight[],
+	chapter: number
+): ParagraphSpan | null {
+	if (!span || !tapped) return span;
+	const around = known.find(
+		(h) => h.chapter === chapter && h.paragraph === span.p && h.start <= span.start && span.end <= h.end
+	);
+	return around ? { p: span.p, start: around.start, end: around.end, clamped: false } : span;
+}
+
 export type HighlightPlan =
 	| { kind: 'none' }
 	| { kind: 'tooLong'; clamped: boolean }

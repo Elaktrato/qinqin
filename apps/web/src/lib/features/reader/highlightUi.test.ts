@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	actionSpan,
 	clampNotice,
 	elsewhereNotice,
 	addFailure,
@@ -317,5 +318,26 @@ describe('addFailure', () => {
 	it('passes the store error on, with a fallback', () => {
 		expect(addFailure({ ok: false }, 'Server error')).toEqual({ kind: 'message', text: 'Server error' });
 		expect(addFailure({ ok: false }, '')).toEqual({ kind: 'message', text: 'Could not save the highlight.' });
+	});
+});
+
+describe('actionSpan', () => {
+	const known = [hl(4, 0, 2, 6), hl(5, 1, 0, 3), hl(6, 0, 10, 12, '', { chapter: 1 })];
+	const span = (p: number, start: number, end: number) => ({ p, start, end, clamped: false });
+
+	it('a tapped word inside a highlight acts on that highlight', () => {
+		expect(actionSpan(span(0, 3, 4), true, known, 0)).toEqual(span(0, 2, 6));
+		expect(actionSpan(span(0, 2, 6), true, known, 0)).toEqual(span(0, 2, 6));
+	});
+
+	it('a tapped word outside every highlight, across one edge, or in another chapter acts on the word', () => {
+		expect(actionSpan(span(0, 7, 8), true, known, 0)).toEqual(span(0, 7, 8));
+		expect(actionSpan(span(0, 5, 7), true, known, 0)).toEqual(span(0, 5, 7));
+		expect(actionSpan(span(0, 10, 11), true, known, 0)).toEqual(span(0, 10, 11));
+	});
+
+	it('a selection keeps its own span; no span stays none', () => {
+		expect(actionSpan(span(0, 3, 4), false, known, 0)).toEqual(span(0, 3, 4));
+		expect(actionSpan(null, true, known, 0)).toBeNull();
 	});
 });

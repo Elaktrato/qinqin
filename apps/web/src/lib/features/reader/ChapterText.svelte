@@ -78,7 +78,8 @@
 	});
 
 	// A click on a highlight edits it; a click that ended a selection (a
-	// drag, a double click) is the selection lookup's, not ours.
+	// drag, a double click) is the selection lookup's, and a tap's click is
+	// the tap lookup's (its sheet carries the highlight actions), not ours.
 	$effect(() => {
 		const el = container;
 		const open = onhighlight;
@@ -87,7 +88,7 @@
 			target instanceof Element ? target.closest<HTMLElement>('mark[data-h]') : null;
 		const onClick = (e: MouseEvent): void => {
 			const mark = markOf(e.target);
-			if (!mark || e.button !== 0 || e.detail > 1) return;
+			if (!mark || e.button !== 0 || e.detail > 1 || lookup.fromTouch(e)) return;
 			const selection = window.getSelection();
 			if (selection && !selection.isCollapsed) return;
 			open(Number(mark.dataset.h), mark);
