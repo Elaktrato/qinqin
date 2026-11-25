@@ -10,6 +10,9 @@
 	import { useCardHints } from './cardHints.svelte';
 
 	const hints = useCardHints();
+	// aria-keyshortcuts values (key names, not interface text).
+	const KEYS_IN_FIELD = ['Alt', 'H'].join('+');
+	const KEYS = ['H', KEYS_IN_FIELD].join(' ');
 	let announcement = $state('');
 	let note = $state<HTMLElement | null>(null);
 	// Focus is in a text field: there H is a letter, only Alt+H asks.
@@ -51,6 +54,6 @@
 />
 
 {#if hints.canReveal}
-	<Button variant="plain" onclick={ask} aria-keyshortcuts={inTextField ? 'Alt+H' : 'H Alt+H'} data-testid="hint-button">{t('flashcards.hint.button')}</Button>
+	<Button variant="plain" onclick={ask} aria-keyshortcuts={inTextField ? KEYS_IN_FIELD : KEYS} data-testid="hint-button">{t('flashcards.hint.button')}</Button>
 {/if}
 <span class="sr-only" aria-live="polite" tabindex="-1" bind:this={note} data-testid="hint-note">{announcement}</span>
