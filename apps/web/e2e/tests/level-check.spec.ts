@@ -16,7 +16,11 @@ const marks = (learner: Learner) =>
 	learner.api.get<unknown[]>(`/api/rows?workspace=${learner.workspaces.zh}&prefix=known:`);
 
 async function answerAll(page: Page, testid: 'placement-know' | 'placement-unsure'): Promise<void> {
-	for (let i = 0; i < 25 && (await page.getByTestId('level-check-question').count()) > 0; i++) {
+	const question = page.getByTestId('level-check-question');
+	const result = page.getByTestId('level-check-result');
+	// The index loads first: wait for a question or the result before counting.
+	await expect(question.or(result)).toBeVisible();
+	for (let i = 0; i < 25 && (await question.count()) > 0; i++) {
 		await page.getByTestId(testid).click();
 	}
 }
