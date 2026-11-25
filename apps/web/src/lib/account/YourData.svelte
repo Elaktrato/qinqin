@@ -79,7 +79,7 @@
 			return;
 		}
 		if (view.status === 'done') {
-			droppedReviews = storage ? clearLocalAfterRestore(storage, app.session?.user ?? null) : 0;
+			droppedReviews = storage ? clearLocalAfterRestore(storage, app.session?.user ?? null, app.session?.outbox) : 0;
 			try {
 				if (typeof caches !== 'undefined') for (const k of await caches.keys()) await caches.delete(k);
 			} catch {

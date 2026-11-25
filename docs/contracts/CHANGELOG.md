@@ -12,6 +12,15 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   shell without `status-bar` now gets the "missing in this app" warning. `version/version.json` follows;
   `bridge-compat.json` is unchanged.
 
+## #35 — review outbox v3 (no contract bump)
+
+- **Outbox:** the web client's review queue moves from `localStorage` (`qinqin.study.pending.v2`) to an IndexedDB
+  store with one record per review, written before the POST and committed before a review counts as saved
+  (`pwa/README.md` "Outbox v3"). The item, the event, the ownership and the flush rules are unchanged, and no route
+  or answer changes, so the contract version stays 1: storage is the web client's own, and a second client only has to
+  keep the binding semantics, which did not change. The fixture `pwa/outbox-v2.json` is renamed `outbox-v3.json` and
+  gains `migration` and `order` cases. Event writes time out after 20 s on the web.
+
 ## #154 — version, bridge and release check (contract 1)
 
 - **Contract version:** the answer of `GET /api/version` carries `contract`, an integer that starts at 1 with this

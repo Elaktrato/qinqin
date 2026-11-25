@@ -43,7 +43,7 @@ export interface StudyDeps {
 	/** False once the session ended: an answer then changes nothing. */
 	alive(): boolean;
 	/** The session's outbox: queued reviews count as reviewed. */
-	outbox: Pick<ReviewOutbox, 'pendingReviews'>;
+	outbox: Pick<ReviewOutbox, 'pendingReviews' | 'ready'>;
 	/** The session's event log cache (the widgets' history reads the log through it). */
 	events: Pick<EventLog, 'load' | 'invalidate'>;
 }
@@ -160,7 +160,7 @@ function queued(study: StudyState, workspaceId: number): StudyEvent[] {
  */
 export async function loadStudyData(study: StudyState, workspaceId: number): Promise<StudyHistory> {
 	requireWorkspaceArg(workspaceId, 'loadStudyData');
-	const [view, events] = await Promise.all([study.cache.view(workspaceId), fetchFullLog(workspaceId)]);
+	const [view, events] = await Promise.all([study.cache.view(workspaceId), fetchFullLog(workspaceId), study.deps.outbox.ready()]);
 	// A copy: pages keep it in their state.
 	return historyOf(workspaceId, copyData(view.data), mergeQueued(events, queued(study, workspaceId)));
 }
@@ -192,7 +192,8 @@ export async function loadStudyHistory(
 	if (opts.force === true) study.deps.events.invalidate(workspaceId);
 	const [view, events] = await Promise.all([
 		study.cache.view(workspaceId, { force: opts.force, full: opts.full }),
-		study.deps.events.load(workspaceId)
+		study.deps.events.load(workspaceId),
+		study.deps.outbox.ready()
 	]);
 	const historyMemo = study.historyMemo;
 	const waiting = queued(study, workspaceId);

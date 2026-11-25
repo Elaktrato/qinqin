@@ -15,6 +15,13 @@ import type { StudyDay } from '$lib/time/studyDay';
 import { newUlid } from './ulid';
 import { createWorkspaceCache, type WorkspaceCache } from '$lib/workspace/workspaceCache';
 
+/** How long one event write may take before it counts as failed (a transient failure: the outbox retries it). */
+export const EVENT_WRITE_TIMEOUT_MS = 20_000;
+
+function timeoutSignal(ms: number): AbortSignal | undefined {
+	return typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(ms) : undefined;
+}
+
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
 // StudyEvent is one event as GET /api/events serves it (an item of a page,
@@ -119,7 +126,9 @@ export class EventLog {
 		// The session ended: its events must not go out with the next user's token.
 		if (this.#disposed) throw new SessionEndedError();
 		try {
-			await this.#deps.api('/api/events/batch', { method: 'POST', body: { events } });
+			// A request that never answers would pin a review that is only in memory
+			// (or in flight in the outbox) for good: give up and let the retry take it.
+			await this.#deps.api('/api/events/batch', { method: 'POST', body: { events }, signal: timeoutSignal(EVENT_WRITE_TIMEOUT_MS) });
 		} finally {
 			// A failed POST may still have landed: drop what may be stale either way.
 			this.#changed(events);

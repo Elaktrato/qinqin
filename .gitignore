@@ -31,3 +31,6 @@ syllabus*.tsv
 /server/internal/webdist/dist/*
 !/server/internal/webdist/dist/.gitkeep
 .svelte-kit/
+
+# stray vitest caches from running tests at apps/ level
+/apps/node_modules/

@@ -3,6 +3,8 @@ package update
 import (
 	"context"
 	"database/sql"
+
+	"qinqin/internal/auth"
 )
 
 // Settings is the one-row update_settings table.
@@ -28,23 +30,51 @@ func LoadSettings(ctx context.Context, q interface {
 	return Settings{e != 0, p != 0}, nil
 }
 
-// SaveSettings applies the patch and returns the new settings.
-func SaveSettings(ctx context.Context, db *sql.DB, p SettingsPatch) (Settings, error) {
-	b2i := func(b bool) int {
-		if b {
-			return 1
-		}
-		return 0
+// SaveSettings applies the patch, writes one audit record per changed field and
+// returns the new settings, all in one transaction: a failing audit write leaves
+// the settings as they were. actorID is the admin who changed them.
+func SaveSettings(ctx context.Context, db *sql.DB, actorID int64, p SettingsPatch) (Settings, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return Settings{}, err
 	}
-	if p.Enabled != nil {
-		if _, err := db.ExecContext(ctx, `UPDATE update_settings SET enabled = ? WHERE id = 1`, b2i(*p.Enabled)); err != nil {
+	defer tx.Rollback() //nolint:errcheck // a no-op after Commit
+	cur, err := LoadSettings(ctx, tx)
+	if err != nil {
+		return Settings{}, err
+	}
+	for _, c := range []struct {
+		field, column string
+		to            *bool
+		old           bool
+	}{
+		{"update_check", "enabled", p.Enabled, cur.Enabled},
+		{"update_prereleases", "prereleases", p.Prereleases, cur.Prereleases},
+	} {
+		if c.to == nil {
+			continue
+		}
+		v := 0
+		if *c.to {
+			v = 1
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE update_settings SET `+c.column+` = ? WHERE id = 1`, v); err != nil {
+			return Settings{}, err
+		}
+		if *c.to == c.old {
+			continue
+		}
+		if err := auth.Audit(ctx, tx, auth.AuditEvent{Action: "settings_changed", ActorID: actorID,
+			Detail: map[string]any{"field": c.field, "to": *c.to}}); err != nil {
 			return Settings{}, err
 		}
 	}
-	if p.Prereleases != nil {
-		if _, err := db.ExecContext(ctx, `UPDATE update_settings SET prereleases = ? WHERE id = 1`, b2i(*p.Prereleases)); err != nil {
-			return Settings{}, err
-		}
+	next, err := LoadSettings(ctx, tx)
+	if err != nil {
+		return Settings{}, err
 	}
-	return LoadSettings(ctx, db)
+	if err := tx.Commit(); err != nil {
+		return Settings{}, err
+	}
+	return next, nil
 }

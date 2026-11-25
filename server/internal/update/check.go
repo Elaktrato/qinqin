@@ -86,6 +86,7 @@ type Checker struct {
 	lastAttempt time.Time
 	failErr     string
 	failAt      time.Time
+	inflight    chan struct{} // closed when the request under way is stored
 }
 
 // NewChecker builds a Checker.
@@ -114,22 +115,51 @@ func (c *Checker) Last(prereleases bool) Result {
 
 // Check returns the cached answer while it is fresh, else asks GitHub. force
 // ("check now") skips the freshness windows but not a 30 s floor.
+//
+// The request to GitHub runs without the mutex (readers of the cached state are
+// never held up by a slow GitHub) and is shared: callers that arrive while one
+// is under way wait for its answer. It is detached from the caller's
+// cancellation, bounded by the client timeout instead: an admin who closes the
+// page must not record "offline" and cache it for the failure window.
 func (c *Checker) Check(ctx context.Context, prereleases, force bool) Result {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	now := c.cfg.Now()
 	switch {
 	case force:
 		if !c.lastAttempt.IsZero() && now.Sub(c.lastAttempt) < forceFloor {
+			defer c.mu.Unlock()
 			return c.resultLocked(prereleases)
 		}
 	case c.failErr != "" && now.Sub(c.failAt) < failFresh:
+		defer c.mu.Unlock()
 		return c.resultLocked(prereleases)
 	case c.failErr == "" && c.have && now.Sub(c.fetchedAt) < okFresh:
+		defer c.mu.Unlock()
+		return c.resultLocked(prereleases)
+	}
+	if done := c.inflight; done != nil {
+		c.mu.Unlock()
+		select {
+		case <-done:
+		case <-ctx.Done():
+		}
+		c.mu.Lock()
+		defer c.mu.Unlock()
 		return c.resultLocked(prereleases)
 	}
 	c.lastAttempt = now
-	c.fetchLocked(ctx, now)
+	done := make(chan struct{})
+	c.inflight = done
+	have, etag := c.have, c.etag
+	c.mu.Unlock()
+
+	out := c.fetch(context.WithoutCancel(ctx), have, etag)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.apply(out, now)
+	c.inflight = nil
+	close(done)
 	return c.resultLocked(prereleases)
 }
 
@@ -152,51 +182,65 @@ func (c *Checker) resultLocked(prereleases bool) Result {
 	return r
 }
 
-func (c *Checker) fail(kind string, now time.Time) {
-	c.failErr, c.failAt = kind, now
+// outcome is what one request to GitHub found; apply stores it.
+type outcome struct {
+	failKind    string // non-empty: the request failed
+	notModified bool
+	releases    []Release
+	etag        string
 }
 
-func (c *Checker) fetchLocked(ctx context.Context, now time.Time) {
+func failed(kind string) outcome { return outcome{failKind: kind} }
+
+// apply records an outcome in the cached state.
+func (c *Checker) apply(o outcome, now time.Time) {
+	switch {
+	case o.failKind != "":
+		c.failErr, c.failAt = o.failKind, now
+	case o.notModified:
+		c.failErr, c.fetchedAt = "", now
+	default:
+		c.releases = o.releases
+		c.etag, c.have, c.failErr, c.fetchedAt = o.etag, true, "", now
+	}
+}
+
+// fetch asks GitHub; it reads no mutable state of the Checker (have and etag are
+// the caller's snapshot).
+func (c *Checker) fetch(ctx context.Context, have bool, etag string) outcome {
 	u := strings.TrimRight(c.cfg.BaseURL, "/") + "/repos/" + c.cfg.Repo + "/releases?per_page=30"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		c.fail(ErrBadResponse, now)
-		return
+		return failed(ErrBadResponse)
 	}
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	if c.have && c.etag != "" {
-		req.Header.Set("If-None-Match", c.etag)
+	if have && etag != "" {
+		req.Header.Set("If-None-Match", etag)
 	}
 	if c.cfg.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.cfg.Token)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		c.fail(ErrOffline, now)
-		return
+		return failed(ErrOffline)
 	}
 	defer resp.Body.Close()
 	switch {
-	case resp.StatusCode == http.StatusNotModified && c.have:
-		c.failErr, c.fetchedAt = "", now
-		return
+	case resp.StatusCode == http.StatusNotModified && have:
+		return outcome{notModified: true}
 	case resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests:
-		c.fail(ErrRateLimited, now)
-		return
+		return failed(ErrRateLimited)
 	case resp.StatusCode != http.StatusOK:
-		c.fail(ErrBadResponse, now)
-		return
+		return failed(ErrBadResponse)
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
 	if err != nil {
-		c.fail(ErrOffline, now)
-		return
+		return failed(ErrOffline)
 	}
 	if len(body) > maxBody {
-		c.fail(ErrBadResponse, now)
-		return
+		return failed(ErrBadResponse)
 	}
 	var raw []struct {
 		Tag         string `json:"tag_name"`
@@ -208,8 +252,7 @@ func (c *Checker) fetchLocked(ctx context.Context, now time.Time) {
 		HTMLURL     string `json:"html_url"`
 	}
 	if err := json.Unmarshal(body, &raw); err != nil {
-		c.fail(ErrBadResponse, now)
-		return
+		return failed(ErrBadResponse)
 	}
 	type entry struct {
 		v   Version
@@ -234,11 +277,11 @@ func (c *Checker) fetchLocked(ctx context.Context, now time.Time) {
 		}})
 	}
 	sort.SliceStable(list, func(i, j int) bool { return list[i].v.Compare(list[j].v) > 0 })
-	c.releases = c.releases[:0]
+	releases := make([]Release, 0, len(list))
 	for _, e := range list {
-		c.releases = append(c.releases, e.rel)
+		releases = append(releases, e.rel)
 	}
-	c.etag, c.have, c.failErr, c.fetchedAt = resp.Header.Get("ETag"), true, "", now
+	return outcome{releases: releases, etag: resp.Header.Get("ETag")}
 }
 
 // capNotes cuts s to MaxNotes bytes at a rune boundary, ending in an ellipsis.

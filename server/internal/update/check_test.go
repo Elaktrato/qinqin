@@ -313,3 +313,73 @@ func TestRelationMatchesTheFixture(t *testing.T) {
 		}
 	}
 }
+
+// An admin who closes the page cancels the request context; GitHub was fine.
+func TestCheckSurvivesACancelledRequest(t *testing.T) {
+	f := newFakeGitHub(t, rel("v0.6.1"))
+	cl := start()
+	c := newChecker(f, cl, "")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	got := c.Check(ctx, false, false)
+	if got.State != StateOK || got.Latest == nil || got.Latest.Version != "0.6.1" {
+		t.Fatalf("a cancelled caller changed the answer: %+v", got)
+	}
+	// Nothing bad is cached: the next plain check serves the good answer.
+	if again := c.Check(context.Background(), false, false); again.State != StateOK || f.count() != 1 {
+		t.Fatalf("again = %+v after %d requests", again, f.count())
+	}
+}
+
+// A slow GitHub must not hold up readers of the cached state, and concurrent
+// checks share one request.
+func TestCheckDoesNotHoldTheLockDuringTheRequest(t *testing.T) {
+	release := make(chan struct{})
+	var mu sync.Mutex
+	hits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		hits++
+		mu.Unlock()
+		<-release
+		w.Write([]byte("[]"))
+	}))
+	t.Cleanup(srv.Close)
+	cl := start()
+	c := NewChecker(Config{BaseURL: srv.URL, Repo: "Elaktrato/qinqin", Now: cl.now})
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Check(context.Background(), false, false)
+		}()
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		mu.Lock()
+		n := hits
+		mu.Unlock()
+		if n > 0 || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	answered := make(chan Result, 1)
+	go func() { answered <- c.Last(false) }()
+	select {
+	case r := <-answered:
+		if r.State != StateUnchecked {
+			t.Errorf("Last during the request = %+v", r)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Last blocked while the request was under way")
+	}
+	close(release)
+	wg.Wait()
+	mu.Lock()
+	defer mu.Unlock()
+	if hits != 1 {
+		t.Fatalf("%d requests for three concurrent checks, want 1", hits)
+	}
+}

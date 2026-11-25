@@ -20,6 +20,8 @@ export interface WorkspacesDeps {
 	api: Api;
 	local(): Storage | null;
 	session(): Storage | null;
+	/** Removes the queued reviews of a deleted workspace from the outbox (IndexedDB). */
+	dropReviews?(workspaceId: number): void;
 	/** False once the session ended: a late answer then changes nothing outside this object. */
 	alive(): boolean;
 }
@@ -140,6 +142,7 @@ export class Workspaces {
 			gone = true;
 		}
 		forgetWorkspace(id, this.#deps.local(), this.#deps.session());
+		this.#deps.dropReviews?.(id);
 		if (gone) {
 			await this.load();
 			return;
