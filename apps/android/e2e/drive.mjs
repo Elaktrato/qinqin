@@ -407,9 +407,28 @@ async function shellSuite() {
 			if (shown) left = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
 		}
 		if (!shown) throw new Error(`timeout waiting for the notification (${attempts.join('; ')})`);
+		// Another app can send any extra to the exported MainActivity: a forged route must go nowhere.
+		const before = await cdp.eval('location.pathname');
 		adb(['shell', 'am', 'start', '-n', `${PKG}/qinqin.shell.MainActivity`, '--es', 'qinqin.shell.ROUTE', '/stats']);
+		await sleep(4000);
+		const forged = await cdp.eval('location.pathname');
+		if (forged === '/stats' && before !== '/stats') throw new Error('a route extra sent to MainActivity was honoured');
+		// The real tap: open the shade and tap the notification (its PendingIntent starts the non-exported trampoline).
+		let tapped = false;
+		for (let i = 0; i < 4 && !tapped; i++) {
+			adb(['shell', 'cmd', 'statusbar', 'expand-notifications'], { soft: true });
+			await sleep(2000);
+			adb(['shell', 'uiautomator', 'dump', '/sdcard/shade.xml'], { soft: true, timeout: 30_000 });
+			const xml = adb(['shell', 'cat', '/sdcard/shade.xml'], { soft: true });
+			const m = /text="qinqin e2e reminder"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(xml);
+			if (m) {
+				adb(['shell', 'input', 'tap', String(Math.round((+m[1] + +m[3]) / 2)), String(Math.round((+m[2] + +m[4]) / 2))]);
+				tapped = true;
+			}
+		}
+		if (!tapped) throw new Error('the notification was not found in the shade');
 		const at = await waitFor('the route', async () => ((await cdp.eval('location.pathname')) === '/stats' ? true : false), { timeout: 30_000 });
-		return { shown, stillPending: left.ids, routed: at, attempts };
+		return { shown, stillPending: left.ids, routed: at, forgedIgnored: true, attempts };
 	});
 
 	await rec.step('keep awake: the window flag is set while asked (informational)', async () => {
