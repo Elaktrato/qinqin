@@ -13,8 +13,10 @@ android {
         applicationId identity.appId
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName pkg.version
+        // Release builds pass both from the tag (apps/android/scripts/version-code.mjs, #148); a local or debug
+        // build gets package.json's version and code 1.
+        versionCode Integer.parseInt((findProperty('qinqinVersionCode') ?: '1').toString())
+        versionName((findProperty('qinqinVersionName') ?: pkg.version).toString())
         resValue "string", "app_name", identity.appName
         resValue "string", "app_id", identity.appId
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -24,8 +26,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Release signing exists only when the four environment variables are all set (the release workflow sets them
+    // from repository secrets, the keystore decoded to a temporary file). No variables: the release APK is
+    // unsigned, and nothing here ever names a key, a password or a keystore path.
+    def keystoreFile = System.getenv('QINQIN_KEYSTORE_FILE')
+    def signingEnv = ['QINQIN_KEYSTORE_FILE', 'QINQIN_KEYSTORE_PASSWORD', 'QINQIN_KEY_ALIAS', 'QINQIN_KEY_PASSWORD']
+    def canSign = signingEnv.every { !(System.getenv(it) ?: '').isEmpty() }
+    if (canSign) {
+        signingConfigs {
+            release {
+                storeFile file(keystoreFile)
+                storePassword System.getenv('QINQIN_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('QINQIN_KEY_ALIAS')
+                keyPassword System.getenv('QINQIN_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (canSign) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
