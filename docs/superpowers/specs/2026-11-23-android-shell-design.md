@@ -172,3 +172,33 @@ permission would show the offline state only after a request fails and delay a f
 remain for the owner), the reader and dictionary offline (they are online-only in the web app), eviction under disk
 pressure, other WebView versions (the image's is Chromium 113; a phone's is current and updates by itself), the
 writing pad on touch, the bridge's absence on a foreign origin.
+
+## Performance in the shell (#37)
+
+**Caveat first.** These numbers come from the CI emulator (Pixel 6 profile, API 34 Google APIs x86_64 image, WebView
+Chromium 113). Its graphics are software-rendered (swiftshader) and its CPU is a shared cloud core, so the figures are a
+regression baseline for the same job on later runs, not what a phone feels like; a real phone is expected to be
+faster, above all in frame times. Nothing here gates a build. The raw numbers are `perf.json` in the
+`android-emulator-extended` artifact of every run (suite `perf`, `apps/android/e2e/suites/perf.mjs`).
+
+Measured on run 45661607684 (the debug APK, the real server and SPA, a learner with eight cards and a 400-paragraph
+chapter):
+
+| Measure | Result |
+|---|---|
+| APK size (debug) | 3.9 MB |
+| Cold start to a rendered page (online, median of 3) | 2.4 s (`am start` itself 1.0 s; first start after install 3.3 s) |
+| Home load timeline | DOM interactive 0.83 s, first contentful paint 0.95 s, largest contentful paint 1.95 s, last long task ended at 0 ms (none after load) |
+| Study card flip (click to second frame, n = 8) | median 25 ms, range 23 to 32 ms |
+| Client-side route changes through the bottom bar | 58 to 71 ms |
+| Long reader chapter (400 paragraphs, 1062 DOM nodes) | text on screen 0.33 s after load |
+| JS heap after a session and the chapter | 12 MB used of 28 MB allocated (limit 803 MB) |
+| Process memory | about 91 MB total PSS right after the chapter (first run) |
+| Scrolling the long chapter with real swipes (14 swipes, 13.7k px) | 253 frames, 76 percent over the 16 ms budget, p50 69 ms, p90 93 ms, p99 117 ms |
+
+Reading: start-up and interaction latency are good even on this slow target (the flip is a style change and costs
+two frames). Scroll smoothness is not a usable number here: with software GL every frame of any WebView is slow
+(`slowDraw` is nearly every frame), so only a change of this figure between runs means anything. Run-to-run spread
+on the CI job was about 30 percent for cold start (2.3 to 3.7 s over three runs in one job, 2.4 to 2.7 s median across
+jobs), so a regression below that is invisible. The owner's phone numbers (cold start, scroll on the long chapter)
+belong on the hand checklist (`docs/superpowers/checklists/android-pages.md`).
