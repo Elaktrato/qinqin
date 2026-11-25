@@ -14,7 +14,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, mkdtempSync, createWriteStream, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { PKG, OUT, Recorder, adb, connectPage, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
+import { PKG, OUT, Recorder, adb, appPid, connectPage, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
 
 const BIN = resolve(process.env.E2E_BIN || '');
 const APK = resolve(process.env.E2E_APK || '');
@@ -284,19 +284,54 @@ async function main() {
 		// Doze and app standby may hold an inexact alarm for minutes on the emulator image: switch them off for this step.
 		adb(['shell', 'dumpsys', 'deviceidle', 'disable'], { soft: true });
 		adb(['shell', 'cmd', 'appops', 'set', PKG, 'RUN_ANY_IN_BACKGROUND', 'allow'], { soft: true });
-		// The web app's reminder scheduler (#137) cancels every device notification once after sign-in when this
-		// account has no reminders on: let that replan finish before the test schedules its own.
-		await sleep(12_000);
-		const perm = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.permission()');
-		if (perm.state !== 'granted') throw new Error(`permission: ${JSON.stringify(perm)}`);
-		await cdp.eval(`window.Capacitor.Plugins.QinqinNotifications.schedule({ id: 4242, title: 'qinqin e2e reminder', body: 'ready', at: Date.now() + 4000, channel: { id: 'e2e', name: 'E2E' }, route: '/stats' })`);
-		const pending = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
-		if (!pending.ids.includes(4242)) throw new Error(`not pending: ${JSON.stringify(pending)}`);
-		const shown = await waitFor('the notification', () => adb(['shell', 'dumpsys', 'notification', '--noredact'], { soft: true }).includes('qinqin e2e reminder'), { timeout: 180_000, interval: 2000 });
-		const left = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
+		// Two things on the emulator can destroy a scheduled test notification before its alarm rings; the step rides
+		// both out instead of sleeping and hoping:
+		//  1. The web app's reminder scheduler (#137) calls cancelAll() once per page load after sign-in when the
+		//     account has no reminders on. The device channel owns every local notification, so that is intended;
+		//     the driver waits for that call (the bridge logs it) before it schedules its own.
+		//  2. The emulator's GMS (com.google.android.gms.persistent) restarts itself to refresh its configuration a few
+		//     seconds after the first check-in, and the OS then kills every app bound to its FontsProvider, ours
+		//     included ("Killing ...: depends on provider ...FontsProvider in dying proc"). The relaunch replans
+		//     (cancelAll) again, so a dead app means: relaunch, wait for that replan, schedule again.
+		const cancelCalls = () => (adb(['logcat', '-d', '-s', 'Capacitor'], { soft: true, timeout: 60_000 }).match(/methodName: cancelAll/g) || []).length;
+		const attempts = [];
+		let shown = false;
+		let left = null;
+		for (let attempt = 1; attempt <= 3 && !shown; attempt++) {
+			let alive = !!appPid();
+			if (alive) {
+				try {
+					await cdp.send('Runtime.evaluate', { expression: '1+1', returnByValue: true }, 10_000);
+				} catch {
+					alive = false;
+				}
+			}
+			let base = 0; // the page that has been up since sign-in may have replanned already
+			if (!alive) {
+				cdp.close();
+				launch();
+				cdp = await connectPage(ORIGIN + '/', { timeout: 90_000 });
+				await waitFor('the app to render', async () => (await bodyText(cdp)).trim().length > 40, { timeout: 60_000 });
+				base = cancelCalls();
+			}
+			// No cancelAll within 40 s of a page load means none is coming.
+			const replan = await waitFor('the reminder replan', () => cancelCalls() > base, { timeout: 40_000, interval: 1000 }).catch(() => false);
+			await sleep(1500);
+			attempts.push(`attempt ${attempt}: ${alive ? 'app alive' : 'app was dead, relaunched'}, replan seen: ${!!replan}`);
+			const perm = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.permission()');
+			if (perm.state !== 'granted') throw new Error(`permission: ${JSON.stringify(perm)}`);
+			await cdp.eval(`window.Capacitor.Plugins.QinqinNotifications.schedule({ id: 4242, title: 'qinqin e2e reminder', body: 'ready', at: Date.now() + 4000, channel: { id: 'e2e', name: 'E2E' }, route: '/stats' })`);
+			const pending = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
+			if (!pending.ids.includes(4242)) throw new Error(`not pending: ${JSON.stringify(pending)}`);
+			const scheduledPid = appPid();
+			const got = await waitFor('the notification', () => adb(['shell', 'dumpsys', 'notification', '--noredact'], { soft: true }).includes('qinqin e2e reminder') || (appPid() !== scheduledPid ? 'app-died' : false), { timeout: 60_000, interval: 2000 }).catch(() => false);
+			shown = got === true;
+			if (shown) left = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
+		}
+		if (!shown) throw new Error(`timeout waiting for the notification (${attempts.join('; ')})`);
 		adb(['shell', 'am', 'start', '-n', `${PKG}/qinqin.shell.MainActivity`, '--es', 'qinqin.shell.ROUTE', '/stats']);
 		const at = await waitFor('the route', async () => ((await cdp.eval('location.pathname')) === '/stats' ? true : false), { timeout: 30_000 });
-		return { shown, stillPending: left.ids, routed: at };
+		return { shown, stillPending: left.ids, routed: at, attempts };
 	});
 
 	await rec.step('keep awake: the window flag is set while asked (informational)', async () => {
