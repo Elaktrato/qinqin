@@ -5,6 +5,7 @@
 // modal starts from is the synced, per-workspace `study-setup` row (setup.ts).
 
 import { t } from '$lib/i18n';
+import { appPath } from '$lib/routing/here';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';
 import type { TypeOrder } from './sessionMix';
 import { CARD_KINDS } from './types';
@@ -196,6 +197,9 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
+	// Only a path of this app: a stored address cannot send Back to another site.
+	const origin = appPath(typeof from === 'string' ? from : null);
+
 	// Round 1 stored no mode; those setups were all deck sessions.
 	const parsedMode = mode === undefined ? 'decks' : mode;
 	if (parsedMode !== 'decks' && parsedMode !== 'levels') return null;
@@ -212,7 +216,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
 		// An unknown order of card types is the default (mixed); it never discards the setup.
 		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {}),
-		...(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? { from } : {})
+		...(origin !== null ? { from: origin } : {})
 	};
 	// A missing or unreadable order is the default (random); it never discards the setup.
 	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;

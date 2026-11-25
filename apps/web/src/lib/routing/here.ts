@@ -7,7 +7,27 @@ export function here(): string {
 	return `${location.pathname}${location.search}`;
 }
 
-/** safeFrom: `raw` when it is a path of this app ("/…", not "//…"), else "/". */
+// Outside a browser (a unit test) paths resolve against a placeholder origin.
+const NO_ORIGIN = 'http://qinqin.invalid';
+
+/**
+ * appPath: `raw` as a path of this app (path, query and hash), or null. A
+ * value must start with one "/", hold no control character or backslash, and
+ * resolve to this origin: "/\t/evil.example" and "//evil.example" resolve to
+ * another host in a browser and are refused (review of 2026-11-25).
+ */
+export function appPath(raw: string | null | undefined): string | null {
+	if (typeof raw !== 'string' || !raw.startsWith('/') || /[\u0000-\u001f\u007f\\]/.test(raw)) return null;
+	const origin = typeof location === 'undefined' ? NO_ORIGIN : location.origin;
+	try {
+		const url = new URL(raw, origin);
+		return url.origin === origin ? `${url.pathname}${url.search}${url.hash}` : null;
+	} catch {
+		return null;
+	}
+}
+
+/** safeFrom: `raw` when it is a path of this app, else "/" (appPath). */
 export function safeFrom(raw: string | null | undefined): string {
-	return typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : '/';
+	return appPath(raw) ?? '/';
 }
