@@ -1,94 +1,50 @@
 <script lang="ts">
-	import { errorText } from '$lib/api/apiErrors';
-	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
-	import { pageTitle } from '$lib/routing/pageTitle';
-	import { t } from '$lib/i18n';
+	// /study/advanced (the study modal design, 4.3): every control of the
+	// saved study setup, the study page moved. Changes are saved as they are
+	// made (session.setups); Start lives in the study modal, deck management on
+	// the decks page. "Back to study" returns where the learner came from
+	// (?from=) and opens the modal there.
 	import { goto } from '$app/navigation';
-	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { errorText } from '$lib/api/apiErrors';
 	import { fetchCharacters } from '$lib/api/characters';
-	import type { CharRow } from '$lib/api/types';
-	import type { SchemeLevelMembers } from '$lib/study/charGroups';
-	import { levelMastery } from '$lib/study/levelMastery';
-	import type { EntryBase, Level, Scheme } from '$lib/api/types';
-	import { usesHan } from '$lib/languages';
-	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
-	import { deckSessionItems, sessionCounts } from '$lib/study/cardFlow';
-	import { profileOf } from '$lib/languages/profiles';
-	import { loadIneligible } from '$lib/study/ineligible';
-	import {
-		defaultExtraTypes,
-		hasTabSetup,
-		loadExtraChoices,
-		loadRememberedTypes,
-		rememberCardTypes,
-		rememberExtraChoice,
-		type ExtraChoices
-	} from '$lib/study/cardTypesMemory';
-	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
-	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import {
-		levelEntryCount,
-		levelPlanCounts,
-		levelTypeWarnings,
-		levelUsable,
-		type LevelUnit
-	} from '$lib/study/levelQueue';
-import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
-import type { StudyContext } from '$lib/study/studyContext';
-import type { VacationPeriod } from '$lib/study/vacation';
-import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
-import { startTodayText } from '$lib/study/limitsText';
-import { limitsOf } from '$lib/study/scheduler';
-	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
-	import type { FrequencyPack } from '$lib/api/types';
-	import { resolveSessionOrder } from '$lib/study/newOrder';
-	import type { TypeOrder } from '$lib/study/sessionMix';
-	import { parseTypeOrder, typeOrderChoices } from '$lib/study/typeOrderView';
-	import { mixedNote, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
-	import { deckOrdersOf } from '$lib/study/sessionOrder';
-	import { Button, Field, Section, Select } from '$lib/ui';
-	import {
-		CARD_TYPES,
-		loadConfig,
-		saveConfig,
-		sessionNewOrder,
-		sessionTypeOrder,
-		newSessionSeed,
-		validateConfig,
-		type StudySessionConfig,
-		type StudySessionMode
-	} from '$lib/study/session';
-	import { createDeck, deleteDeck, renameDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-	import { loadStudyData, onStudyChange, touches } from '$lib/study/data';
-	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
-	import {
-		CARD_KINDS,
-		OPT_IN_KINDS,
-		type OptInKind,
-		type Deck,
-		type ReviewEvent,
-		type StudyCard,
-		type StudyCardKind,
-		GENERAL_DECK_ID
-	} from '$lib/study/types';
+	import { fetchSchemeCharacters } from '$lib/api/schemes';
+	import type { CharRow, FrequencyPack, Level } from '$lib/api/types';
 	import { useSession } from '$lib/context/context';
+	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
+	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
+	import { createSetupData } from '$lib/features/flashcards/setup/setupData.svelte';
+	import { noteText } from '$lib/features/flashcards/setup/studyModalView';
+	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
+	import { t } from '$lib/i18n';
+	import { usesHan } from '$lib/languages';
+	import { profileOf } from '$lib/languages/profiles';
+	import { pageTitle } from '$lib/routing/pageTitle';
+	import { safeFrom } from '$lib/routing/here';
+	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
+	import type { SchemeLevelMembers } from '$lib/study/charGroups';
+	import { saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+	import { onContextStale } from '$lib/study/currentContext';
+	import { onStudyChange, touches } from '$lib/study/data';
+	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { loadIneligible } from '$lib/study/ineligible';
+	import { levelMastery } from '$lib/study/levelMastery';
+	import { startTodayText } from '$lib/study/limitsText';
+	import { resolveSessionOrder } from '$lib/study/newOrder';
+	import { decodeOrder, encodeOrder, mixedNote, sessionOrderChoices } from '$lib/study/newOrderView';
+	import { cardsInDecks } from '$lib/study/readModel';
+	import { CARD_TYPES, type StudySessionMode } from '$lib/study/session';
+	import { repairSetup, setupDeckIds, setupKinds, type StudySetup } from '$lib/study/setup';
+	import { planSetup } from '$lib/study/setupPlan';
+	import { deckOrdersOf } from '$lib/study/sessionOrder';
+	import { parseTypeOrder, typeOrderChoices } from '$lib/study/typeOrderView';
+	import { CARD_KINDS, GENERAL_DECK_ID, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
+	import { Button, Field, Section, Select } from '$lib/ui';
 
 	const session = useSession();
+	const data = createSetupData(session, { fresh: true });
 
-	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
-		const active = data.fsrs?.active;
-		if (active === null || active === undefined) return t('study.setup.schedDefault');
-		const day = active.createdAt.slice(0, 10);
-		return active.source === 'optimized' ? t('study.setup.schedOptimised', { day }) : t('study.setup.schedImported', { day });
-	}
-
-	// Counts only need to distinguish "none" from "some"; the actual
-	// session limits are applied by the session page.
-	const COUNT_CAP = 999;
-
+	const MAX_LIMIT = 999;
 	// One line per card type, shown next to its checkbox.
 	const TYPE_INFO: Record<StudyCardKind, string> = {
 		vocab: t('study.setup.info.vocab'),
@@ -99,330 +55,98 @@ import { limitsOf } from '$lib/study/scheduler';
 		cloze: t('study.setup.info.cloze')
 	};
 
-	// Restore this tab's setup before the first render: on an SPA the
-	// component never runs during SSR, so sessionStorage is available.
-	const saved = loadConfig();
+	// Where "Back to study" returns (?from=, an app path only).
+	const from = safeFrom(typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('from'));
 
-	let decks = $state<Deck[]>([]);
-	let cards = $state<StudyCard[]>([]);
-	let reviews = $state<ReviewEvent[]>([]);
-	let weights = $state.raw<readonly number[]>(DEFAULT_W);
-	// Vacation days and the study clock of the active workspace.
-	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
-	let vacations = $state.raw<VacationPeriod[]>([]);
-	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
-	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
-	let extraChoices = $state.raw<ExtraChoices>({});
-	let schedulingLabel = $state(t('study.setup.schedDefault'));
-	let loading = $state(true);
-	let loadError = $state('');
-	let noWorkspace = $state(false);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
+	const language = $derived(session.workspaces.current?.language ?? '');
 
-	let selectedDeckIds = $state<string[]>(saved.deckIds);
-	let newLimit = $state(saved.newLimit);
-	let reviewLimit = $state(saved.reviewLimit);
-	let cardTypes = $state<string[]>(saved.cardTypes);
-	let mode = $state<StudySessionMode>(saved.mode);
-	let schemeId = $state<number | null>(saved.schemeId);
-	let levelName = $state<string | null>(saved.levelName);
-	// The order of new cards (#75), as a select value; see newOrderView.ts.
-	let newOrderValue = $state(encodeOrder(sessionNewOrder(saved)));
-	// The order of card types (#132): mixed by default; see sessionMix.ts.
-	let typeOrder = $state<TypeOrder>(sessionTypeOrder(saved));
-	let frequencyPacks = $state.raw<FrequencyPack[]>([]);
-
-	// Schemes are global, so they are filtered by the language of the
-	// workspace the setup is running in. `schemesLoaded` separates "not
-	// fetched yet" from "none installed for this language", which decides
-	// whether a saved selection is kept or cleared.
-	let schemes = $state<Scheme[]>([]);
-	let workspaceLanguage = $state<string | null>(null);
-	let activeWorkspaceId = $state<number | null>(null);
-	let schemesLoaded = $state(false);
-	let schemeError = $state('');
-
-	let levelEntries = $state<EntryBase[]>([]);
-	let levelEntriesLoading = $state(false);
-	let levelEntriesError = $state('');
-	let levelEntriesSeq = 0;
-	// The scheme's characters per level (for "L of N learned"); optional
-	// decoration, so a failed load only hides the counts.
-	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
-	let schemeCharactersSeq = 0;
-	// The language's character rows (variants), the Stats map's universe.
-	let universeRows = $state.raw<CharRow[]>([]);
-
-	let advancedOpen = $state(false);
-	let typeSaving = $state<string | null>(null);
-	let typeError = $state('');
-
-	let deckName = $state('');
-	let creating = $state(false);
-	let renamingId = $state<string | null>(null);
-	let renameName = $state('');
-	let deletingId = $state<string | null>(null);
-	let deckError = $state('');
-	let starting = $state(false);
-	let errors = $state<string[]>([]);
-
-	// Guards against a slow load from an earlier workspace overwriting
-	// the data of the one now selected.
-	let requestSeq = 0;
-
-
-	/**
-	 * keepKnownDecks drops decks deleted since the setup was saved (or
-	 * belonging to another workspace). General always exists, so an empty
-	 * selection falls back to it instead of an invalid setup.
-	 */
-	function keepKnownDecks(ids: string[], available: readonly Deck[]): string[] {
-		const known = new Set([GENERAL_DECK_ID, ...available.map((deck) => deck.id)]);
-		const kept = ids.filter((id) => known.has(id));
-		return kept.length > 0 ? kept : [GENERAL_DECK_ID];
-	}
-
-	async function load(workspaceId: number | null, language: string | null): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		loadError = '';
-		noWorkspace = false;
-
-		// A pending level load belongs to the previous workspace or
-		// selection; its result must not land in the new one.
-		levelEntriesSeq += 1;
-		levelEntries = [];
-		levelEntriesLoading = false;
-		levelEntriesError = '';
-		schemes = [];
-		workspaceLanguage = language;
-		activeWorkspaceId = workspaceId;
-
-		// A tab without its own setup starts from the types last started in
-		// this workspace (any tab), so opted-in types do not reset to vocab.
-		if (workspaceId !== null && !hasTabSetup()) {
-			cardTypes = [...(loadRememberedTypes(workspaceId) ?? saved.cardTypes)];
-		}
-		schemesLoaded = false;
-		schemeError = '';
-		extraChoices = workspaceId === null ? {} : loadExtraChoices(workspaceId);
-
-		if (workspaceId === null) {
-			decks = [];
-			cards = [];
-			reviews = [];
-			noWorkspace = true;
-			loading = false;
-			return;
-		}
-
-		// Schemes do not gate the deck setup: the request runs alongside
-		// it, and the levels section shows its own loading state.
-		void loadSchemes(seq);
-
-		try {
-			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(session.study, workspaceId);
-			if (seq !== requestSeq) return;
-			decks = data.decks;
-			cards = data.cards;
-			reviews = data.reviews;
-			deckSettings = data.deckSettings ?? {};
-			weights = activeWeights(data);
-			ctx = contextForData(session.zone, data, workspaceId);
-			vacations = data.vacations ?? [];
-			schedulingLabel = describeScheduling(data);
-			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			decks = [];
-			cards = [];
-			reviews = [];
-			loadError = errorText(err, t('study.setup.decksFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
-	}
-
-	/**
-	 * refreshData re-reads decks, cards and reviews after a card change
-	 * without the page-wide loading state, so counts and the queue preview
-	 * follow the write.
-	 */
-	async function refreshData(): Promise<void> {
-		if (activeWorkspaceId === null) return;
-		const seq = requestSeq;
-		try {
-			const data = await loadStudyData(session.study, activeWorkspaceId);
-			if (seq !== requestSeq) return;
-			decks = data.decks;
-			cards = data.cards;
-			reviews = data.reviews;
-			deckSettings = data.deckSettings ?? {};
-			weights = activeWeights(data);
-			ctx = contextForData(session.zone, data, activeWorkspaceId);
-			vacations = data.vacations ?? [];
-			schedulingLabel = describeScheduling(data);
-		} catch (err) {
-			if (seq === requestSeq) deckError = errorText(err, t('study.setup.reloadFailed'));
-		}
-	}
-
+	// Refetch when the active workspace changes; the header switcher makes that possible without leaving the page.
+	$effect(() => {
+		const ws = workspaceId;
+		void data.load(ws, session.workspaces.current?.language ?? null);
+		if (ws !== null) void session.setups.refresh(ws);
+	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(session.zone, () => void refreshData()));
-
-	// A change of the workspace's study rows (a write elsewhere on the page, or a
-	// row another device wrote in the second of the load, which the cache's
-	// follow-up round brings, #193) reloads the counts without a new visit.
+	$effect(() => onContextStale(session.zone, () => void data.refresh()));
+	// A change of the workspace's study rows (a write on this page, or a row another
+	// device wrote in the second of the load, #193) reloads the counts.
 	$effect(() =>
 		onStudyChange(session.study, (changed) => {
-			if (touches(changed, activeWorkspaceId)) void refreshData();
+			if (touches(changed, data.workspaceId)) void data.refresh();
 		})
 	);
 
-	async function loadSchemes(seq: number): Promise<void> {
-		try {
-			const list = await getSchemes();
-			if (seq !== requestSeq) return;
-			schemes = list;
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			schemes = [];
-			schemeError = errorText(err, t('study.setup.schemesFailed'));
-		} finally {
-			if (seq === requestSeq) schemesLoaded = true;
-		}
-	}
-
-	// The installed frequency packs decide whether "most frequent first" is
-	// offered; without them the setup shows the hint (nothing is bundled).
+	let frequencyPacks = $state.raw<FrequencyPack[]>([]);
 	$effect(() => {
 		getFrequencyPacks()
 			.then((list) => (frequencyPacks = Array.isArray(list) ? list : []))
 			.catch(() => (frequencyPacks = []));
 	});
 
-	// Refetch when the active workspace changes; the header switcher
-	// makes that possible without leaving the page.
+	const ready = $derived(data.status === 'ready' && data.workspaceId === workspaceId);
+	const entry = $derived(workspaceId === null ? null : session.setups.of(workspaceId));
+	const repaired = $derived(
+		entry === null
+			? null
+			: repairSetup(entry.setup, {
+					deckIds: ready ? data.decks.map((deck) => deck.id) : null,
+					schemes: data.schemesLoaded ? data.schemes : null,
+					language
+				})
+	);
+	const setup = $derived(repaired?.setup ?? null);
+	const note = $derived(repaired === null ? null : noteText(repaired.notes));
+
+	// Optimistic per-deck switches after the global Reverse/Cloze click, until the data reloads.
+	let pendingSettings = $state.raw<Record<string, DeckSettings> | null>(null);
 	$effect(() => {
-		const workspace = session.workspaces.current;
-		void load(workspace?.id ?? null, workspace?.language ?? null);
+		void data.deckSettings;
+		pendingSettings = null;
 	});
+	const deckSettings = $derived(pendingSettings ?? data.deckSettings);
 
 	const allDecks = $derived([
-		{ id: GENERAL_DECK_ID, name: 'General', createdAt: '' },
-		...[...decks].sort(
-			(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
-		)
+		{ id: GENERAL_DECK_ID, name: t('flashcards.deck.general'), createdAt: '' },
+		...[...data.decks].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
 	]);
-
-	const selectedCards = $derived(cardsInDecks(cards, selectedDeckIds));
-
-	// Only schemes in the workspace's language are offered: studying a
-	// Japanese ladder in a Chinese workspace would mix entries.
-	const schemesForLanguage = $derived(
-		schemes.filter((scheme) => scheme.language === workspaceLanguage)
-	);
-
-	const selectedScheme = $derived(
-		schemesForLanguage.find((scheme) => scheme.id === schemeId) ?? null
-	);
-
-	const schemeLevels = $derived.by((): Level[] => {
-		const scheme = selectedScheme;
-		if (scheme === null) return [];
-		return [...scheme.levels].sort((a, b) => a.ord - b.ord);
-	});
-
-	// The selection a level session can actually use: it must resolve
-	// against the loaded schemes of the current workspace language, not
-	// just against the id saved in sessionStorage. Effects and Start key
-	// off this so a stale or not-yet-resolved scheme cannot fetch or start.
-	const levelSelection = $derived.by((): { schemeId: number; levelName: string } | null => {
-		if (!schemesLoaded) return null;
-		const scheme = selectedScheme;
-		const level = levelName;
-		if (scheme === null || level === null) return null;
-		if (!schemeLevels.some((item) => item.name === level)) return null;
-		return { schemeId: scheme.id, levelName: level };
-	});
-
-	// Keep the saved selection when it still exists; otherwise fall back
-	// to the first scheme/level. Clearing on an empty list means a stale
-	// levels setup from another language cannot start.
-	$effect(() => {
-		if (!schemesLoaded) return;
-		if (schemesForLanguage.length === 0) {
-			if (schemeId !== null) schemeId = null;
-			if (levelName !== null) levelName = null;
-			return;
-		}
-		if (selectedScheme === null) {
-			const first = schemesForLanguage[0];
-			schemeId = first.id;
-			levelName = [...first.levels].sort((a, b) => a.ord - b.ord)[0]?.name ?? null;
-			return;
-		}
-		if (!schemeLevels.some((level) => level.name === levelName)) {
-			levelName = schemeLevels[0]?.name ?? null;
-		}
-	});
-
-	async function loadLevelEntries(id: number, level: string): Promise<void> {
-		const seq = ++levelEntriesSeq;
-		levelEntriesLoading = true;
-		levelEntriesError = '';
-		levelEntries = [];
-		try {
-			const list = await getSchemeEntries(id, level);
-			if (seq !== levelEntriesSeq) return;
-			levelEntries = list;
-		} catch (err) {
-			if (seq !== levelEntriesSeq) return;
-			levelEntriesError = errorText(err, t('study.setup.levelFailed'));
-		} finally {
-			if (seq === levelEntriesSeq) levelEntriesLoading = false;
-		}
-	}
-
-	// Fetch the chosen level's words so the counts below reflect the
-	// exact level a session would study. Depending on the resolved
-	// selection and the workspace id makes a same-language workspace
-	// switch refetch even though the saved scheme/level stay valid.
-	$effect(() => {
-		const selection = levelSelection;
-		if (mode !== 'levels' || activeWorkspaceId === null || selection === null) {
-			levelEntriesSeq += 1;
-			levelEntries = [];
-			levelEntriesLoading = false;
-			levelEntriesError = '';
-			return;
-		}
-		void loadLevelEntries(selection.schemeId, selection.levelName);
-	});
+	const deckIds = $derived(setup === null ? [] : setupDeckIds(setup, data.decks));
+	const enabled = $derived(enabledKinds(deckSettings, deckIds));
+	const kinds = $derived<StudyCardKind[]>(setup === null ? [] : setupKinds(setup, enabled, language));
+	const scheme = $derived(setup === null ? null : (data.schemes.find((s) => s.id === setup.schemeId) ?? null));
+	const schemeLevels = $derived.by((): Level[] => (scheme === null ? [] : [...scheme.levels].sort((a, b) => a.ord - b.ord)));
 
 	$effect(() => {
-		const scheme = mode === 'levels' && schemesLoaded ? selectedScheme : null;
-		const seq = ++schemeCharactersSeq;
-		if (scheme === null) {
+		const level = setup?.mode === 'levels' && scheme !== null && scheme.levels.some((l) => l.name === setup.levelName) ? setup.levelName : null;
+		if (level === null || scheme === null) data.clearLevel();
+		else void data.loadLevel(scheme.id, level);
+	});
+
+	// The scheme's characters per level (for "L of N learned"); optional decoration.
+	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
+	let universeRows = $state.raw<CharRow[]>([]);
+	let charactersSeq = 0;
+	$effect(() => {
+		const shown = setup?.mode === 'levels' ? scheme : null;
+		const seq = ++charactersSeq;
+		if (shown === null) {
 			schemeCharacters = [];
 			return;
 		}
-		Promise.all([fetchSchemeCharacters(session.caches.schemes, scheme.id), fetchCharacters(session.caches.characters, scheme.language)]).then(
+		Promise.all([fetchSchemeCharacters(session.caches.schemes, shown.id), fetchCharacters(session.caches.characters, shown.language)]).then(
 			([levels, list]) => {
-				if (seq !== schemeCharactersSeq) return;
+				if (seq !== charactersSeq) return;
 				schemeCharacters = levels;
 				universeRows = list.chars;
 			},
 			() => {
-				if (seq !== schemeCharactersSeq) return;
+				if (seq !== charactersSeq) return;
 				schemeCharacters = [];
 				universeRows = [];
 			}
 		);
 	});
-
-	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, ctx.clock));
-
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, data.cards, data.reviews, new Date(), data.weights, data.ctx.clock));
 	function levelOptionLabel(name: string): string {
 		const count = levelLearned.get(name);
 		return count === undefined || count.total === 0
@@ -430,598 +154,279 @@ import { limitsOf } from '$lib/study/scheduler';
 			: t('study.setup.levelOption', { level: name, learned: count.learned, total: count.total });
 	}
 
-	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
-	// hidden type stays in the saved setup (switching back restores it)
-	// but never counts or reaches a session.
-	// Reverse and cloze are offered only when a selected deck switches them on;
-	// they start checked unless the learner unchecked them before in this workspace.
-	const enabledOptIn = $derived(enabledKinds(deckSettings, selectedDeckIds));
-
-	const visibleTypes = $derived(
-		CARD_TYPES.filter(
-			(type) =>
-				profileOf(workspaceLanguage ?? '').cardKinds.includes(type.id) &&
-				(mode === 'decks' || !isOptIn(type.id))
-		)
-	);
-
-	function isOptIn(kind: string): boolean {
-		return (OPT_IN_KINDS as readonly string[]).includes(kind);
-	}
-
-	const extraKinds = $derived(defaultExtraTypes(enabledOptIn, extraChoices));
-
-	const selectedKinds = $derived([
-		...CARD_KINDS.filter(
-			(kind) =>
-				!isOptIn(kind) &&
-				cardTypes.includes(kind) &&
-				visibleTypes.some((type) => type.id === kind)
-		),
-		...extraKinds
-	]);
-
-	function isChecked(id: string): boolean {
-		return isOptIn(id) ? extraKinds.includes(id as OptInKind) : cardTypes.includes(id);
-	}
-
-	// Due and new are counted separately so the setup shows what a
-	// session would actually contain today, with the selected types and
-	// the companion cards a deck session would plan. Cards reviewed but
-	// not due yet belong to neither bucket.
-	const deckPlan = $derived.by(() => {
-		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
-		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
-		const items = deckSessionItems({
-			cards,
-			reviews,
-			deckIds: selectedDeckIds,
-			kinds: selectedKinds,
-			newLimit: COUNT_CAP,
-			reviewLimit: COUNT_CAP,
-			now: new Date(),
-			w: weights,
-			language: workspaceLanguage ?? '',
-			deckSettings,
-			ctx,
-			// Words this tab already found unsuitable are not counted.
-			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
-		});
-		return sessionCounts(items, reviews);
-	});
-
-	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
-
-	// What Study all would contain: the same plan with Study all, which ignores the
-	// session caps and every daily limit (sessionQueue.ts), exactly as the session does.
-	const deckAllPlan = $derived.by(() => {
-		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
-		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
-		const items = deckSessionItems({
-			cards,
-			reviews,
-			deckIds: selectedDeckIds,
-			kinds: selectedKinds,
-			newLimit: COUNT_CAP,
-			reviewLimit: COUNT_CAP,
-			now: new Date(),
-			w: weights,
-			language: workspaceLanguage ?? '',
-			deckSettings,
-			ctx,
-			studyAll: true,
-			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
-		});
-		return sessionCounts(items, reviews);
-	});
-	const deckAllCounts = $derived({ due: deckAllPlan.due, fresh: deckAllPlan.fresh });
-
-	// Planned companions are candidates, not promises: whether a word has
-	// a sentence, stroke data or a clean pinyin reading is only known when
-	// it comes up, and unsuitable words are skipped then.
-	const plannedCompanions = $derived(
-		deckPlan.byKind.sentence +
-			deckPlan.byKind.writing +
-			deckPlan.byKind.tone +
-			deckPlan.byKind.reverse +
-			deckPlan.byKind.cloze
-	);
-
-	// Level sessions never plan reverse or cloze: they do not count towards the
-	// level's usable kinds or its "vocab only" warning.
-	const levelKinds = $derived(selectedKinds.filter((kind) => !isOptIn(kind)));
-
-	// A character scheme studies recognition and writing cards; every
-	// other scheme is a word scheme (vocab only).
-	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
-
-	const levelCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
-			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
-		}
-		return levelPlanCounts({
-			entries: levelEntries,
-			cards,
-			reviews,
-			now: new Date(),
-			w: weights,
-			unit: levelUnit,
-			kinds: levelKinds,
-			ctx,
-			hasStrokes: hasStrokeData,
-			// A word buried by a reverse or cloze answer today is left out, as in the session.
-			excludeEntries: buriedLevelEntries(
-				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
-				cards
-			),
-			// Items this tab already found unsuitable are not counted.
-			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
-		});
-	});
-
-	const levelAllCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
-			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
-		}
-		return levelPlanCounts({
-			entries: levelEntries,
-			cards,
-			reviews,
-			now: new Date(),
-			w: weights,
-			unit: levelUnit,
-			kinds: levelKinds,
-			ctx,
-			studyAll: true,
-			hasStrokes: hasStrokeData,
-			excludeEntries: buriedLevelEntries(
-				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
-				cards
-			),
-			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
-		});
-	});
-
-	// Selected types that have nothing to study: a warning, not a block,
-	// as long as another selected type has cards.
-	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') return levelTypeWarnings(levelUnit, levelKinds);
-		if (selectedCards.length === 0) return [];
-		return selectedKinds
-			.filter((kind) => deckPlan.byKind[kind] === 0)
-			.map(
-				(kind) =>
-					t('study.setup.nothingOfType', { type: CARD_TYPES.find((type) => type.id === kind)?.label ?? kind })
-			);
-	});
-
-	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
-	const allCounts = $derived(mode === 'levels' ? levelAllCounts : deckAllCounts);
-	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
-	const levelNoun = $derived(
-		levelUnit === 'character'
-			? t('study.setup.unit.characters', { count: levelEntryTotal })
-			: t('study.setup.unit.words', { count: levelEntryTotal })
-	);
-
-	// True when no deck of the session has a daily limit (the note is dropped then).
-	const noDailyLimit = $derived(
-		mode === 'levels'
-			? false
-			: selectedDeckIds.length > 0 &&
-					selectedDeckIds.every((id) => {
-						const limit = limitsOf(ctx, id);
-						return limit.new === null && limit.reviews === null;
-					})
-	);
-
-	// "Vacation until 3 Jan": nothing is due and no new card is offered today.
-	const vacationText = $derived(
-		activeWorkspaceId === null || !ctx.vacationToday
+	const plan = $derived(
+		setup === null
 			? null
-			: vacationBanner(
-					vacationStatus(vacations, activeWorkspaceId, ctx.day.today()),
-					ctx.day.today()
+			: planSetup(
+					{
+						status: workspaceId === null ? 'no-workspace' : ready ? 'ready' : 'loading',
+						mode: setup.mode,
+						deckIds,
+						kinds,
+						newLimit: setup.newLimit,
+						reviewLimit: setup.reviewLimit,
+						cards: data.cards,
+						reviews: data.reviews,
+						deckSettings,
+						weights: data.weights,
+						ctx: data.ctx,
+						language,
+						skip: workspaceId === null ? undefined : loadIneligible(workspaceId),
+						level: {
+							scheme,
+							levelName: setup.levelName,
+							schemesLoaded: data.schemesLoaded,
+							schemeError: data.schemeError,
+							schemeCount: data.schemes.length,
+							entries: data.levelEntries,
+							loading: data.levelLoading,
+							error: data.levelError
+						}
+					},
+					new Date()
 				)
 	);
 
-	const guidance = $derived.by(() => {
-		if (noWorkspace) return t('study.guide.noWorkspace');
-		if (loading) return t('study.guide.loading');
-		if (selectedKinds.length === 0) return t('study.config.selectType');
+	const selectedCards = $derived(cardsInDecks(data.cards, deckIds));
+	const levelNoun = $derived(
+		plan === null
+			? ''
+			: plan.levelUnit === 'character'
+				? t('study.setup.unit.characters', { count: plan.levelEntryTotal })
+				: t('study.setup.unit.words', { count: plan.levelEntryTotal })
+	);
+	const vacationText = $derived(
+		workspaceId === null || !ready || !data.ctx.vacationToday
+			? null
+			: vacationBanner(vacationStatus(data.vacations, workspaceId, data.ctx.day.today()), data.ctx.day.today())
+	);
 
-		if (mode === 'levels') {
-			if (!schemesLoaded) return t('study.guide.loadingSchemes');
-			if (schemeError) return schemeError;
-			if (schemesForLanguage.length === 0) {
-				return t('study.guide.noSchemes');
-			}
-			if (levelSelection === null) {
-				return t('study.guide.chooseLevel');
-			}
-			if (levelEntriesError) return levelEntriesError;
-			if (levelEntriesLoading) return t('study.guide.loadingLevel');
-			if (levelEntries.length === 0) {
-				return levelUnit === 'character' ? t('study.guide.levelNoCharacters') : t('study.guide.levelNoWords');
-			}
-			if (!levelUsable(levelUnit, levelKinds)) {
-				return levelUnit === 'character'
-					? t('study.guide.characterKinds')
-					: t('study.guide.vocabOnly');
-			}
-			if (counts.due + counts.fresh === 0) {
-				if (levelUnit === 'character' && !selectedKinds.includes('vocab')) {
-					return t('study.guide.nothingToWrite');
-				}
-				return t('study.guide.levelDone');
-			}
-			return '';
-		}
-
-		if (selectedDeckIds.length === 0) return t('study.guide.selectDeck');
-		if (selectedCards.length === 0) {
-			return t('study.guide.noCards');
-		}
-		if (counts.due + counts.fresh === 0) {
-			return t('study.guide.decksDone');
-		}
-		return '';
-	});
-
-	const studyAllBlocked = $derived(starting || (guidance !== '' && allCounts.due + allCounts.fresh === 0));
-
-	function toggleDeck(id: string): void {
-		errors = [];
-		selectedDeckIds = selectedDeckIds.includes(id)
-			? selectedDeckIds.filter((deckId) => deckId !== id)
-			: [...selectedDeckIds, id];
+	// The card types: the language's, opt-in ones only for deck sessions.
+	const visibleTypes = $derived(
+		CARD_TYPES.filter((type) => profileOf(language).cardKinds.includes(type.id) && (setup?.mode !== 'levels' || !isOptIn(type.id)))
+	);
+	function isOptIn(kind: string): kind is OptInKind {
+		return (OPT_IN_KINDS as readonly string[]).includes(kind);
 	}
-
-	async function toggleCardType(id: string): Promise<void> {
-		errors = [];
-		typeError = '';
-		if (isOptIn(id)) {
-			// The workspace whose decks are shown, captured at the click (#174).
-			const ws = activeWorkspaceId;
-			if (ws === null) return;
-			const kind = id as OptInKind;
-			const next = !extraKinds.includes(kind);
-			const previousSettings = deckSettings;
-			const previousChoices = extraChoices;
-			// Optimistic: the checkbox and the counts follow the click at once.
-			const optimistic: Record<string, DeckSettings> = { ...deckSettings };
-			for (const deck of allDecks) {
-				const stored = optimistic[deck.id];
-				const current = cleanCardTypes(stored?.cardTypes ?? []);
-				optimistic[deck.id] = {
-					deckId: deck.id,
-					cardTypes: next ? cleanCardTypes([...current, kind]) : current.filter((value) => value !== kind),
-					...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
-					extra: stored?.extra ?? {}
-				};
-			}
-			deckSettings = optimistic;
-			extraChoices = { ...extraChoices, [kind]: next };
-			rememberExtraChoice(ws, kind, next);
-			typeSaving = id;
-			try {
-				const saved = await saveDeckCardTypesForDecks(session.study, 
-					ws,
-					allDecks.map((deck) => deck.id),
-					kind,
-					next
-				);
-				// A switch while it saved: the page shows another workspace now.
-				if (activeWorkspaceId === ws) {
-					const next = { ...deckSettings, ...saved.saved };
-					// Decks whose stored switches this version cannot read keep them (#167).
-					for (const deckId of saved.unreadable) {
-						if (previousSettings[deckId] === undefined) delete next[deckId];
-						else next[deckId] = previousSettings[deckId];
-					}
-					deckSettings = next;
-					if (saved.unreadable.length > 0) typeError = t('study.store.unreadableRow');
-				}
-			} catch (err) {
-				rememberExtraChoice(ws, kind, !next);
-				if (activeWorkspaceId !== ws) return;
-				deckSettings = previousSettings;
-				extraChoices = previousChoices;
-				typeError = errorText(err, t('study.types.saveFailed'));
-			} finally {
-				typeSaving = null;
-			}
-			return;
-		}
-		cardTypes = cardTypes.includes(id)
-			? cardTypes.filter((type) => type !== id)
-			: [...cardTypes, id];
-	}
-
-	/** A per-deck switch under Advanced can enable a kind the global list shows. */
-	function deckTypesSaved(deckId: string, saved: DeckSettings): void {
-		deckSettings = { ...deckSettings, [deckId]: saved };
-		let next = extraChoices;
-		for (const kind of OPT_IN_KINDS) {
-			if (saved.cardTypes.includes(kind) && next[kind] !== true) {
-				next = { ...next, [kind]: true };
-				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, true);
-			}
-		}
-		extraChoices = next;
-	}
-
-	async function addDeck(event: SubmitEvent): Promise<void> {
-		event.preventDefault();
-		const name = deckName.trim();
-		const ws = activeWorkspaceId;
-		if (!name || creating || ws === null) return;
-
-		creating = true;
-		deckError = '';
-		try {
-			const deck = await createDeck(session.study, ws, name);
-			if (activeWorkspaceId !== ws) return;
-			decks = [...decks, deck];
-			// A deck the user just made is almost certainly one they want
-			// to study from, so select it instead of leaving it unticked.
-			selectedDeckIds = [...selectedDeckIds, deck.id];
-			deckName = '';
-		} catch (err) {
-			deckError = errorText(err, t('study.decks.createFailed'));
-		} finally {
-			creating = false;
-		}
-	}
-
-	function beginRename(deck: Deck): void {
-		renamingId = deck.id;
-		renameName = deck.name;
-		deckError = '';
-	}
-
-	function cancelRename(): void {
-		renamingId = null;
-		renameName = '';
-	}
-
-	async function submitRename(event: SubmitEvent, id: string): Promise<void> {
-		event.preventDefault();
-		const name = renameName.trim();
-		if (!name) {
-			deckError = t('study.decks.nameEmpty');
-			return;
-		}
-
-		const ws = activeWorkspaceId;
-		if (ws === null) return;
-		deckError = '';
-		try {
-			const renamed = await renameDeck(session.study, ws, id, name);
-			if (activeWorkspaceId !== ws) return;
-			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
-			cancelRename();
-		} catch (err) {
-			deckError = errorText(err, t('study.decks.renameFailed'));
-		}
-	}
-
-	async function removeDeck(deck: Deck): Promise<void> {
-		const ws = activeWorkspaceId;
-		if (deletingId !== null || ws === null) return;
-		if (
-			!confirm(t('study.decks.confirmDelete', { deck: deck.name }))
-		) {
-			return;
-		}
-
-		deletingId = deck.id;
-		deckError = '';
-		try {
-			await deleteDeck(session.study, ws, deck.id);
-			if (activeWorkspaceId !== ws) return;
-			decks = decks.filter((item) => item.id !== deck.id);
-			// Mirror the store's reassignment locally so the counts do not
-			// keep counting cards of a deck that is gone.
-			cards = cards.map((card) => {
-				if (!card.deckIds.includes(deck.id)) return card;
-				const remaining = card.deckIds.filter((id) => id !== deck.id);
-				return {
-					...card,
-					deckIds: remaining.length === 0 ? [GENERAL_DECK_ID] : remaining
-				};
-			});
-			selectedDeckIds = selectedDeckIds.filter((id) => id !== deck.id);
-		} catch (err) {
-			deckError = errorText(err, t('study.decks.deleteFailed'));
-		} finally {
-			deletingId = null;
-		}
-	}
+	const shownKinds = $derived(kinds.filter((kind) => setup?.mode !== 'levels' || !isOptIn(kind)));
 
 	const orderView = $derived(
 		sessionOrderChoices({
-			mode,
-			language: workspaceLanguage ?? '',
+			mode: setup?.mode ?? 'decks',
+			language,
 			packs: frequencyPacks,
-			schemes: schemesForLanguage,
-			levelScheme: selectedScheme
+			schemes: data.schemes,
+			levelScheme: scheme
 		})
 	);
-	// A value the current mode does not offer (switched mode, pack removed) is the default.
-	const orderValue = $derived(
-		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'random'
-	);
+	const orderValue = $derived.by(() => {
+		const value = setup === null ? 'random' : encodeOrder(setup.newOrder);
+		return orderView.choices.some((choice) => choice.value === value) ? value : 'random';
+	});
 	const ordersMixed = $derived(
-		mode === 'decks' &&
-			orderValue === 'deck' &&
-			resolveSessionOrder('deck', deckOrdersOf(selectedDeckIds, decks, deckSettings)).mixed
+		setup?.mode === 'decks' && orderValue === 'deck' && resolveSessionOrder('deck', deckOrdersOf(deckIds, data.decks, deckSettings)).mixed
 	);
 
-	function selectMode(next: StudySessionMode): void {
-		errors = [];
-		mode = next;
+	let limitError = $state('');
+	let typeSaving = $state<string | null>(null);
+	let typeError = $state('');
+	let advancedOpen = $state(false);
+
+	/** save writes the setup with `change` for the workspace shown now (captured at the call). */
+	function save(change: Partial<StudySetup>): void {
+		const ws = workspaceId;
+		if (ws === null || setup === null) return;
+		void session.setups.update(ws, { ...setup, ...change });
 	}
 
-	function start(studyAll = false): void {
-		const config: StudySessionConfig = {
-			...(studyAll ? { studyAll: true } : {}),
-			mode,
-			// Keep both modes' fields so switching back restores the
-			// selection; validateConfig reads only the active mode's.
-			schemeId,
-			levelName,
-			deckIds: [...selectedDeckIds],
-			newLimit,
-			reviewLimit,
-			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
-			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
-		};
-		// Always stored: absent means random, and 'deck' is a choice of its own.
-		config.newOrder = decodeOrder(orderValue);
-		config.typeOrder = typeOrder;
-		// Fixes the shuffle of this session, so a reload shows the same order.
-		config.seed = newSessionSeed();
-		// Validate what the session will actually use: a type hidden in
-		// this workspace does not count towards "at least one".
-		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
-		// A saved scheme from another workspace language still has a
-		// positive id and a level name, so validation alone cannot catch
-		// it; the resolved selection can.
-		if (errors.length === 0 && mode === 'levels' && levelSelection === null) {
-			errors = [t('study.setup.levelGone')];
+	function saveLimit(which: 'newLimit' | 'reviewLimit', raw: string): void {
+		const value = Number(raw);
+		if (!Number.isInteger(value) || value < 1 || value > MAX_LIMIT) {
+			limitError = which === 'newLimit' ? t('study.config.newLimit', { max: MAX_LIMIT }) : t('study.config.reviewLimit', { max: MAX_LIMIT });
+			return;
 		}
-		if (errors.length > 0) return;
+		limitError = '';
+		save({ [which]: value });
+	}
 
-		starting = true;
-		saveConfig(config);
-		if (activeWorkspaceId !== null) rememberCardTypes(activeWorkspaceId, config.cardTypes);
-		void goto('/study/session');
+	function selectMode(next: StudySessionMode): void {
+		if (setup === null) return;
+		if (next === 'levels' && scheme === null && data.schemes.length > 0) {
+			const first = data.schemes[0];
+			save({ mode: next, schemeId: first.id, levelName: [...first.levels].sort((a, b) => a.ord - b.ord)[0]?.name ?? null });
+			return;
+		}
+		save({ mode: next });
+	}
+
+	function selectScheme(id: number): void {
+		const chosen = data.schemes.find((s) => s.id === id);
+		if (chosen === undefined) return;
+		save({ mode: 'levels', schemeId: chosen.id, levelName: [...chosen.levels].sort((a, b) => a.ord - b.ord)[0]?.name ?? null });
+	}
+
+	function toggleAllDecks(): void {
+		if (setup === null) return;
+		save({ decks: setup.decks === 'all' ? [...deckIds] : 'all' });
+	}
+
+	function toggleDeck(id: string): void {
+		const next = deckIds.includes(id) ? deckIds.filter((deckId) => deckId !== id) : [...deckIds, id];
+		if (next.length === 0) return;
+		save({ decks: next });
+	}
+
+	async function toggleCardType(id: StudyCardKind): Promise<void> {
+		typeError = '';
+		if (setup === null) return;
+		if (!isOptIn(id)) {
+			save({ cardTypes: CARD_KINDS.filter((kind) => (kind === id ? !setup.cardTypes.includes(kind) : setup.cardTypes.includes(kind))) });
+			return;
+		}
+		// "Reverse and Cloze apply to all decks": the switch of every deck, and the setup's uncheck.
+		const ws = workspaceId;
+		if (ws === null) return;
+		const next = !kinds.includes(id);
+		const before = setup;
+		const optimistic: Record<string, DeckSettings> = { ...deckSettings };
+		for (const deck of allDecks) {
+			const stored = optimistic[deck.id];
+			const current = cleanCardTypes(stored?.cardTypes ?? []);
+			optimistic[deck.id] = {
+				deckId: deck.id,
+				cardTypes: next ? cleanCardTypes([...current, id]) : current.filter((value) => value !== id),
+				...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+				extra: stored?.extra ?? {}
+			};
+		}
+		pendingSettings = optimistic;
+		void session.setups.update(ws, {
+			...before,
+			unchecked: next ? before.unchecked.filter((kind) => kind !== id) : OPT_IN_KINDS.filter((kind) => kind === id || before.unchecked.includes(kind))
+		});
+		typeSaving = id;
+		try {
+			const result = await saveDeckCardTypesForDecks(session.study, ws, allDecks.map((deck) => deck.id), id, next);
+			// Decks whose stored switches this version cannot read keep them (#167).
+			if (result.unreadable.length > 0 && workspaceId === ws) typeError = t('study.store.unreadableRow');
+		} catch (err) {
+			if (workspaceId === ws) {
+				pendingSettings = null;
+				typeError = errorText(err, t('study.types.saveFailed'));
+			}
+		} finally {
+			typeSaving = null;
+		}
+	}
+
+	/** A per-deck switch under Advanced that turns a kind on clears the learner's uncheck of it. */
+	function deckTypesSaved(saved: DeckSettings): void {
+		if (setup === null) return;
+		const cleared = setup.unchecked.filter((kind) => !saved.cardTypes.includes(kind));
+		if (cleared.length !== setup.unchecked.length) save({ unchecked: cleared });
+	}
+
+	function backToStudy(event: MouseEvent): void {
+		event.preventDefault();
+		void goto(from).then(() => {
+			if (session.alive) session.studyModal.show();
+		});
 	}
 </script>
 
 <svelte:head>
-	<title>{pageTitle(t('study.setup.title'))}</title>
+	<title>{pageTitle(t('study.advanced.title'), t('study.setup.title'))}</title>
 </svelte:head>
 
 <div class="page-body setup">
-	<h1>{t('study.setup.title')}</h1>
+	<p class="back"><Button variant="plain" icon="back" href={from} onclick={backToStudy}>{t('study.advanced.back')}</Button></p>
+	<h1>{t('study.advanced.title')}</h1>
 
 	{#if vacationText !== null}
 		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">{t('study.setup.change')}</a></p>
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
-	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
+	<UnreadableRowsNotice {workspaceId} />
 	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
+	{#if note !== null}<p class="hint" role="status">{note}</p>{/if}
+	{#if entry?.saveError}<p class="error" role="alert">{t('study.modal.notSaved')}</p>{/if}
 
-	{#if loadError}
-		<p class="error" role="alert">{loadError}</p>
-	{:else if noWorkspace}
+	{#if data.status === 'error'}
+		<p class="error" role="alert">{data.error}</p>
+	{:else if data.status === 'no-workspace' || setup === null || plan === null}
 		<p class="hint" role="status">{t('study.guide.noWorkspace')}</p>
-	{:else if loading}
+	{:else if !ready}
 		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
-
-
 		<Section title={t('study.summary.title')} headingId="summary-heading">
 			{#if vacationText === null}
-				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
+				<p class="today">{startTodayText(plan.counts.due, plan.counts.fresh, plan.noDailyLimit)}</p>
 			{/if}
-			{#if mode === 'levels'}
+			{#if setup.mode === 'levels'}
 				<p class="stats">
-					<strong>{levelEntryTotal}</strong>
+					<strong>{plan.levelEntryTotal}</strong>
 					{t('study.summary.levelIn', { noun: levelNoun })}
-					<strong>{selectedScheme?.name ?? t('study.summary.thisScheme')}</strong>
-					{levelSelection?.levelName ?? ''} ·
-					<strong>{counts.due}</strong>
+					<strong>{scheme?.name ?? t('study.summary.thisScheme')}</strong>
+					{plan.levelSelected ? setup.levelName : ''} ·
+					<strong>{plan.counts.due}</strong>
 					{t('study.summary.dueDot')}
-					<strong>{counts.fresh}</strong>
+					<strong>{plan.counts.fresh}</strong>
 					{t('study.summary.new')}
 				</p>
 			{:else}
 				<p class="stats">
 					<strong>{selectedCards.length}</strong>
 					{t('study.summary.cardsIn', { count: selectedCards.length })}
-					<strong>{selectedDeckIds.length}</strong>
-					{t('study.summary.decksDot', { count: selectedDeckIds.length })}
-					<strong>{counts.due}</strong>
+					<strong>{deckIds.length}</strong>
+					{t('study.summary.decksDot', { count: deckIds.length })}
+					<strong>{plan.counts.due}</strong>
 					{t('study.summary.dueDot')}
-					<strong>{counts.fresh}</strong>
+					<strong>{plan.counts.fresh}</strong>
 					{t('study.summary.new')}
 				</p>
-				{#if plannedCompanions > 0}
-					<p class="hint">
-						{t('study.summary.companions', { count: plannedCompanions })}
-					</p>
+				{#if plan.companions > 0}
+					<p class="hint">{t('study.summary.companions', { count: plan.companions })}</p>
 				{/if}
 			{/if}
-
-			{#if typeWarnings.length > 0}
+			{#if plan.warnings.length > 0}
 				<ul class="warnings" aria-label={t('study.summary.warnings')}>
-					{#each typeWarnings as warning (warning)}
-						<li>{warning}</li>
-					{/each}
+					{#each plan.warnings as warning (warning)}<li>{warning}</li>{/each}
 				</ul>
 			{/if}
-
-			{#if errors.length > 0}
-				<ul class="errors" role="alert">
-					{#each errors as error (error)}
-						<li>{error}</li>
-					{/each}
-				</ul>
-			{/if}
-
-			{#if vacationText === null}
-				<div class="start-actions">
-					<Button
-						variant="primary"
-						disabled={starting || guidance !== ''}
-						onclick={() => start()}
-					>
-						{starting ? t('study.summary.starting') : t('study.summary.start')}
-					</Button>
-					<Button variant="secondary" disabled={studyAllBlocked} onclick={() => start(true)}>
-						{t('study.summary.startAll')}
-					</Button>
-				</div>
-				<p class="hint">{t('study.summary.startAllHint')}</p>
-			{/if}
-
-			{#if guidance && vacationText === null}
-				<p class="hint" role="status">{guidance}</p>
+			{#if plan.guidance && vacationText === null}
+				<p class="hint" role="status">{plan.guidance}</p>
 			{/if}
 		</Section>
 
 		<Section title={t('study.limitsSection.title')} headingId="limits-heading">
 			<p class="hint">{t('study.limitsSection.intro')}</p>
-
 			<div class="limits">
 				<Field
 					label={t('study.limitsSection.newCards')}
 					type="number"
 					min={1}
-					max={999}
+					max={MAX_LIMIT}
 					step={1}
-					value={String(newLimit)}
-					oninput={(event) => (newLimit = Number(event.currentTarget.value))}
+					value={String(setup.newLimit)}
+					onchange={(event: Event) => saveLimit('newLimit', (event.currentTarget as HTMLInputElement).value)}
 				/>
 				<Field
 					label={t('study.limitsSection.reviews')}
 					type="number"
 					min={1}
-					max={999}
+					max={MAX_LIMIT}
 					step={1}
-					value={String(reviewLimit)}
-					oninput={(event) => (reviewLimit = Number(event.currentTarget.value))}
+					value={String(setup.reviewLimit)}
+					onchange={(event: Event) => saveLimit('reviewLimit', (event.currentTarget as HTMLInputElement).value)}
 				/>
 			</div>
+			{#if limitError}<p class="error" role="alert">{limitError}</p>{/if}
 			<Select
 				label={t('study.limitsSection.order')}
 				value={orderValue}
-				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				onchange={(event) => save({ newOrder: decodeOrder((event.currentTarget as HTMLSelectElement).value) })}
 				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
 			/>
 			{#if ordersMixed}
@@ -1032,165 +437,99 @@ import { limitsOf } from '$lib/study/scheduler';
 			{/if}
 			<Select
 				label={t('study.limitsSection.typeOrder')}
-				value={typeOrder}
-				onchange={(event) => (typeOrder = parseTypeOrder((event.currentTarget as HTMLSelectElement).value))}
+				value={setup.typeOrder}
+				onchange={(event) => save({ typeOrder: parseTypeOrder((event.currentTarget as HTMLSelectElement).value) })}
 				options={typeOrderChoices()}
 			/>
 			<p class="hint">
-				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
+				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: data.schedulingLabel })}</a>
 			</p>
 		</Section>
 
 		<Section title={t('study.setup.source')} headingId="mode-heading">
 			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
 				<label class="inline">
-					<input
-						type="radio"
-						name="session-mode"
-						value="decks"
-						checked={mode === 'decks'}
-						onchange={() => selectMode('decks')}
-					/>
+					<input type="radio" name="session-mode" value="decks" checked={setup.mode === 'decks'} onchange={() => selectMode('decks')} />
 					{t('study.setup.myDecks')}
 				</label>
 				<label class="inline">
-					<input
-						type="radio"
-						name="session-mode"
-						value="levels"
-						checked={mode === 'levels'}
-						onchange={() => selectMode('levels')}
-					/>
+					<input type="radio" name="session-mode" value="levels" checked={setup.mode === 'levels'} onchange={() => selectMode('levels')} />
 					{t('study.setup.byLevel')}
 				</label>
 			</div>
 		</Section>
 
-		{#if mode === 'decks'}
+		{#if setup.mode === 'decks'}
 			<Section title={t('study.decks.title')} headingId="decks-heading">
-
-				{#if decks.length === 0}
-					<div class="empty">
-						<h3>{t('study.decks.none')}</h3>
-						<p>{t('study.decks.noneText')}</p>
-					</div>
-				{/if}
-
 				<ul class="decks">
+					<li class="deck">
+						<label class="deck-choice">
+							<input type="checkbox" checked={setup.decks === 'all'} onchange={toggleAllDecks} />
+							<span class="deck-name">{t('study.decks.all')}</span>
+						</label>
+					</li>
 					{#each allDecks as deck (deck.id)}
+						{@const ticked = deckIds.includes(deck.id)}
 						<li class="deck">
-							{#if renamingId === deck.id}
-								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
-									<Field
-										label={t('study.decks.newName', { deck: deck.name })}
-										hideLabel
-										bind:value={renameName}
-										maxlength={80}
-										required
-									/>
-									<Button type="submit">{t('common.action.save')}</Button>
-									<Button onclick={cancelRename}>{t('common.action.cancel')}</Button>
-								</form>
-							{:else}
-								<label class="deck-choice">
-									<input
-										type="checkbox"
-										checked={selectedDeckIds.includes(deck.id)}
-										onchange={() => toggleDeck(deck.id)}
-									/>
-									<span class="deck-name">{deck.name}</span>
-									{#if deck.id === GENERAL_DECK_ID}
-										<span class="tag">{t('study.decks.default')}</span>
-									{/if}
-								</label>
-
-								{#if deck.id !== GENERAL_DECK_ID}
-									<div class="deck-actions">
-										<Button onclick={() => beginRename(deck)}>{t('study.decks.rename')}</Button>
-										<Button
-											tone="danger"
-											disabled={deletingId === deck.id}
-											onclick={() => removeDeck(deck)}
-										>
-											{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}
-										</Button>
-									</div>
-								{/if}
-							{/if}
+							<label class="deck-choice">
+								<input type="checkbox" checked={ticked} disabled={ticked && deckIds.length === 1} onchange={() => toggleDeck(deck.id)} />
+								<span class="deck-name">{deck.name}</span>
+								{#if deck.id === GENERAL_DECK_ID}<span class="tag">{t('study.decks.default')}</span>{/if}
+							</label>
 						</li>
 					{/each}
 				</ul>
-
-				<form class="create" onsubmit={addDeck}>
-					<Field
-						label={t('study.decks.new')}
-						bind:value={deckName}
-						placeholder={t('study.decks.newPlaceholder')}
-						maxlength={80}
-						autocomplete="off"
-						required
-					/>
-					<Button type="submit" disabled={creating}>
-						{creating ? t('study.decks.creating') : t('study.decks.create')}
-					</Button>
-				</form>
-
-				{#if deckError}
-					<p class="error" role="alert">{deckError}</p>
-				{/if}
+				<p class="hint"><a href="/flashcards">{t('study.decks.manage')}</a></p>
 			</Section>
 
-			{#if activeWorkspaceId !== null}
+			{#if workspaceId !== null}
 				<!-- Its writes reach the page through onStudyChange (one reload each). -->
-				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} />
+				<CardManager {workspaceId} cards={data.cards} decks={allDecks} />
 			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">
 				<p class="hint">{t('study.level.intro')}</p>
-
-				{#if schemeError}
-					<p class="error" role="alert">{schemeError}</p>
-				{:else if !schemesLoaded}
+				{#if data.schemeError}
+					<p class="error" role="alert">{data.schemeError}</p>
+				{:else if !data.schemesLoaded}
 					<p class="hint" role="status">{t('study.level.loadingSchemes')}</p>
-				{:else if schemesForLanguage.length === 0}
+				{:else if data.schemes.length === 0}
 					<p class="hint">{t('study.level.noSchemes')}</p>
 				{:else}
 					<div class="levels">
 						<Select
 							label={t('study.level.scheme')}
-							value={schemeId === null ? '' : String(schemeId)}
-							onchange={(event) => (schemeId = Number(event.currentTarget.value))}
-							options={schemesForLanguage.map((scheme) => ({ value: String(scheme.id), label: scheme.name }))}
+							value={scheme === null ? '' : String(scheme.id)}
+							onchange={(event) => selectScheme(Number((event.currentTarget as HTMLSelectElement).value))}
+							options={data.schemes.map((s) => ({ value: String(s.id), label: s.name }))}
 						/>
 						<Select
 							label={t('study.level.level')}
-							value={levelName ?? ''}
-							onchange={(event) => (levelName = event.currentTarget.value)}
+							value={setup.levelName ?? ''}
+							onchange={(event) => save({ mode: 'levels', schemeId: scheme?.id ?? null, levelName: (event.currentTarget as HTMLSelectElement).value })}
 							options={schemeLevels.map((level) => ({ value: level.name, label: levelOptionLabel(level.name) }))}
 						/>
 					</div>
-
-					{#if levelEntriesError}
-						<p class="error" role="alert">{levelEntriesError}</p>
-					{:else if levelEntriesLoading}
+					{#if data.levelError}
+						<p class="error" role="alert">{data.levelError}</p>
+					{:else if data.levelLoading}
 						<p class="hint" role="status">{t('study.guide.loadingLevel')}</p>
 					{/if}
 				{/if}
 			</Section>
 		{/if}
 
-
 		<Section title={t('study.types.title')} headingId="types-heading">
-
 			<p class="hint">{t('study.types.intro')}</p>
 			<ul class="types">
 				{#each visibleTypes as type (type.id)}
+					{@const checked = shownKinds.includes(type.id)}
 					<li>
 						<label class="type-choice">
 							<input
 								type="checkbox"
-								checked={isChecked(type.id)}
-								disabled={typeSaving !== null}
+								{checked}
+								disabled={typeSaving !== null || (checked && shownKinds.length === 1)}
 								aria-describedby={`type-${type.id}-info`}
 								onchange={() => void toggleCardType(type.id)}
 							/>
@@ -1205,8 +544,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			{/if}
 		</Section>
 
-		{#if mode === 'decks'}
-			<Section title={t('study.advanced.title')} headingId="advanced-heading">
+		{#if setup.mode === 'decks'}
+			<Section title={t('study.advanced.perDeck')} headingId="advanced-heading">
 				<p class="hint">{t('study.advanced.intro')}</p>
 				<Button
 					variant="secondary"
@@ -1220,11 +559,11 @@ import { limitsOf } from '$lib/study/scheduler';
 							<li>
 								<span class="advanced-name">{deck.name}</span>
 								<DeckCardTypes
-									workspaceId={activeWorkspaceId}
+									{workspaceId}
 									deckId={deck.id}
 									deckName={deck.name}
 									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
-									onSaved={(saved) => deckTypesSaved(deck.id, saved)}
+									onSaved={(saved) => deckTypesSaved(saved)}
 								/>
 							</li>
 						{/each}
@@ -1232,15 +571,17 @@ import { limitsOf } from '$lib/study/scheduler';
 				{/if}
 			</Section>
 		{/if}
-
 	{/if}
 </div>
 
 <style>
 	/* .page-body is the only page column (#106); the setup brings no second one. */
-	h1,
-	h3 {
+	h1 {
 		margin-bottom: var(--space-2);
+	}
+
+	.back {
+		margin: 0 0 var(--space-2);
 	}
 
 	.modes,
@@ -1250,13 +591,6 @@ import { limitsOf } from '$lib/study/scheduler';
 	.types {
 		display: grid;
 		gap: var(--space-2);
-	}
-
-	.start-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-		align-items: center;
 	}
 
 	.advanced-decks {
@@ -1302,26 +636,6 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	.deck + .deck {
 		border-top: 1px solid var(--hair);
-	}
-
-
-	.deck-actions {
-		display: flex;
-		gap: var(--space-2);
-		margin-inline-start: auto;
-	}
-
-	.rename,
-	.create {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		align-items: end;
-	}
-
-	.rename :global(.field),
-	.create :global(.field) {
-		flex: 1 1 14rem;
 	}
 
 	.types {

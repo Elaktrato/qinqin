@@ -6,6 +6,7 @@
 // kept on the device as unsaved and written again at the next refresh, so a
 // change made offline is never silently replaced by the server's older value.
 
+import { untrack } from 'svelte';
 import { parseSetup, withSetup, type StudySetup } from './setup';
 
 const CACHE_PREFIX = 'qinqin.study.setup.';
@@ -72,7 +73,8 @@ export class StudySetups {
 	/** refresh reads the row from the server; an unsaved change on this device is written instead. */
 	async refresh(workspaceId: number): Promise<void> {
 		if (!this.#deps.alive()) return;
-		const current = this.of(workspaceId);
+		// Untracked: callers refresh from an effect, which must not depend on what the refresh writes.
+		const current = untrack(() => this.of(workspaceId));
 		if (current.saveError !== null) return this.update(workspaceId, current.setup);
 		const epoch = this.#writes.get(workspaceId) ?? 0;
 		try {
@@ -90,7 +92,7 @@ export class StudySetups {
 		if (!this.#deps.alive()) return Promise.resolve();
 		const mine = (this.#writes.get(workspaceId) ?? 0) + 1;
 		this.#writes.set(workspaceId, mine);
-		const before = this.of(workspaceId);
+		const before = untrack(() => this.of(workspaceId));
 		const optimistic = withSetup(before.raw, next);
 		this.#set(workspaceId, { setup: next, raw: before.raw, loaded: before.loaded, saveError: null });
 		this.#writeCache(workspaceId, { raw: optimistic, dirty: true });
@@ -105,7 +107,7 @@ export class StudySetups {
 				this.#writeCache(workspaceId, { raw: data, dirty: false });
 			} catch (err) {
 				if (!this.#deps.alive() || mine !== this.#writes.get(workspaceId)) return;
-				this.#set(workspaceId, { ...this.of(workspaceId), saveError: err ?? 'failed' });
+				this.#set(workspaceId, { ...untrack(() => this.of(workspaceId)), saveError: err ?? 'failed' });
 			}
 		};
 		const queued = (this.#queue.get(workspaceId) ?? Promise.resolve()).then(run);
@@ -130,7 +132,7 @@ export class StudySetups {
 	}
 
 	#set(workspaceId: number, entry: SetupEntry): void {
-		this.#entries = { ...this.#entries, [workspaceId]: entry };
+		this.#entries = { ...untrack(() => this.#entries), [workspaceId]: entry };
 	}
 
 	#readCache(workspaceId: number): Cached | null {
