@@ -296,6 +296,10 @@ async function main() {
 		num.airplane = { command: a, fallbackSvc: fallback, navigatorOnLineStillTrue: stillOnLine };
 		const reachable = await fetch(`${HOST}/healthz`).then(() => true, () => false);
 		if (reachable) throw new Error('server still reachable');
+		// Toggling airplane mode makes Google Play services restart on the google_apis image, and the system then kills
+		// every process that uses its fonts provider (the app too) about 20 s later (seen on the run of 2026-11-25:
+		// an app kill during the offline session). The app is restarted below anyway; wait the crash out first.
+		await sleep(45_000);
 		return num.airplane;
 	});
 
@@ -349,6 +353,7 @@ async function main() {
 		const c = await coldStart('offline_2');
 		cdp = c.cdp;
 		const saved = await waitFor('the unsent-reviews line', async () => (await bodyText(cdp)).match(/(\d+) reviews? (?:are|is) saved on this device/)?.[0], { timeout: 30_000 });
+		if (!saved.startsWith(`${WORDS.length} `)) throw new Error(`the outbox kept ${saved}; ${WORDS.length} were graded`);
 		return { saved };
 	});
 
