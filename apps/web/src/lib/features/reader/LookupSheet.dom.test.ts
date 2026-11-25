@@ -46,7 +46,8 @@ function fakeLookup(mode: 'hover' | 'selection', frames: PopupFrame[]) {
 		close: vi.fn(),
 		closeFrame: vi.fn(),
 		closeNested: vi.fn(),
-		wordParagraph: vi.fn(() => null)
+		wordParagraph: vi.fn(() => null),
+		keepWordAbove: vi.fn()
 	};
 	return lookup;
 }
@@ -189,6 +190,40 @@ describe('the lookup on the phone (#102)', () => {
 		const dialogs = screen.getAllByRole('dialog');
 		expect(dialogs).toHaveLength(1);
 		expect(dialogs[0].tagName).toBe('DIALOG');
+	});
+
+	it('opening the sheet keeps the word above its top edge, and again whenever the sheet grows', async () => {
+		stubPhone(true);
+		let resized: (() => void) | null = null;
+		let watched: Element | null = null;
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				constructor(cb: () => void) {
+					resized = cb;
+				}
+				observe(el: Element) {
+					watched = el;
+				}
+				unobserve() {}
+				disconnect() {}
+			}
+		);
+		let height = 300;
+		const offsetHeight = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+			return this.tagName === 'DIALOG' ? height : 0;
+		});
+		try {
+			const lookup = mount('selection');
+			const sheet = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+			expect(watched).toBe(sheet);
+			expect(lookup.keepWordAbove).toHaveBeenLastCalledWith(window.innerHeight - 300);
+			height = 500;
+			resized!();
+			expect(lookup.keepWordAbove).toHaveBeenLastCalledWith(window.innerHeight - 500);
+		} finally {
+			offsetHeight.mockRestore();
+		}
 	});
 
 	it('the Sheet is lib/ui/Sheet (the journal reuses it)', () => {
