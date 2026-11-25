@@ -59,7 +59,7 @@ export interface StoredEvent {
 
 export interface ReviewEvent extends StoredEvent {
 	type: 'review';
-	payload: { cardId: string; mode: string; grade: number; replaces?: string };
+	payload: { cardId: string; mode: string; grade: number; meta?: Record<string, unknown>; replaces?: string };
 }
 
 /** Signs in through the API, from an address of its own (X-Forwarded-For; the server trusts loopback). */

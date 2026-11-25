@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
@@ -13,6 +12,8 @@
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -167,19 +168,14 @@
 	<p class="fp-word written" lang={studyLang(entry.language)} aria-label={done ? written : t('flashcards.writing.wordLabel')}>
 		{masked}
 	</p>
-	{#if entry.readings.length > 0}
-		<ul class="readings" aria-label={t('flashcards.card.readings')}>
-			{#each entry.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-				<li><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-			{/each}
-		</ul>
-	{/if}
+	<HintShown {entry} />
 	{#if glosses.length > 0}
 		<p class="fp-sub">{glosses.join('; ')}</p>
 	{/if}
 </FacePrompt>
 
 <FaceWork>
+	<HintControl />
 	<ol class="dots" aria-label={t('flashcards.writing.characters')}>
 		{#each chars as ch, index (index)}
 			{@const outcome = outcomes[index]}
@@ -229,7 +225,7 @@
 
 	{#if !done && !failed}
 		<div class="actions">
-			<Button variant="secondary" disabled={busy} onclick={hint}>{t('flashcards.writing.hint')}</Button>
+			<Button variant="secondary" disabled={busy} onclick={hint}>{t('flashcards.writing.strokeHint')}</Button>
 			<span class="count" aria-hidden="true">{t('flashcards.writing.mistakes', { count: mistakes })}</span>
 		</div>
 	{/if}
@@ -249,17 +245,6 @@
 <style>
 	.written {
 		letter-spacing: 0.05em;
-	}
-
-	.readings {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--space-1) var(--space-3);
-		padding: 0;
-		list-style: none;
-		color: var(--reading-accent);
-		font-weight: var(--weight-medium);
 	}
 
 	.dots {

@@ -5,6 +5,23 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #215 — hints on every flashcard (contract 7)
+
+- **New fixture:** `cards/hints.json` (rule `cards/hints`): the hint kinds (`reading`, then `picture`, a registry in
+  a fixed order), the three modes (`always`, `hint`, `never`), the defaults per card kind, how the setting is read,
+  the plan of one card, and the grade rule: a hint asked for with the Hint control lowers the suggested grade to
+  Hard (Again stays Again; a self-graded card is suggested Hard), once, however many hints were used. Clients
+  implement the plan, the rule and the recording the same way (`cards/README.md` "Hints").
+- **Workspace setting:** the key `hints`, `{<kind>: {<card kind>: <mode>}}`, read cell by cell with defaults
+  (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **Review event:** `meta.hints` now also counts the hints asked for with the Hint control (`events/README.md`);
+  the shape is unchanged.
+- **Behaviour change:** the Recall card's "Show reading" is the reading hint; its suggestion (Hard after a right
+  answer with the reading shown) is now the general rule. The message `flashcards.card.showReading` is retired
+  (`i18n/retired-keys.json`); the writing card's stroke button reads "Next stroke hint" (key
+  `flashcards.writing.strokeHint`, replacing `flashcards.writing.hint`).
+- **Catalogue keys:** the area `flashcards` gains `flashcards.hint.*`; `settings` gains `settings.hints.*`.
+
 ## #204, #63 — writing-system trainer (scripts) (contract 6)
 
 - **Feature switch:** a fifth core feature id `scripts`, last in the order (`features/switches.json`:

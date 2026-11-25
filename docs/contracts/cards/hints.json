@@ -1,0 +1,183 @@
+{
+ "version": 1,
+ "rule": "cards/hints",
+ "note": "Hint kinds, their mode per card kind, the plan of one card and the grade rule (#215). Web: apps/web/src/lib/study/hints.ts, decoded by hints.contract.test.ts. An entry is {hasReading, hasPicture}.",
+ "kinds": ["reading", "picture"],
+ "modes": ["always", "hint", "never"],
+ "notApplicable": [{ "kind": "reading", "cardKind": "tone" }],
+ "defaults": {
+  "reading": { "vocab": "hint", "sentence": "hint", "writing": "always", "tone": "never", "reverse": "hint", "cloze": "hint" },
+  "picture": { "vocab": "hint", "sentence": "never", "writing": "hint", "tone": "hint", "reverse": "hint", "cloze": "never" }
+ },
+ "settings": [
+  {
+   "name": "no hints member: the defaults",
+   "settings": {},
+   "expect": "defaults"
+  },
+  {
+   "name": "null settings",
+   "settings": null,
+   "expect": "defaults"
+  },
+  {
+   "name": "one cell changed, the rest default",
+   "settings": { "hints": { "reading": { "vocab": "always" } } },
+   "expect": {
+    "reading": { "vocab": "always", "sentence": "hint", "writing": "always", "tone": "never", "reverse": "hint", "cloze": "hint" },
+    "picture": "defaults"
+   }
+  },
+  {
+   "name": "a not-applicable cell is never, whatever is stored",
+   "settings": { "hints": { "reading": { "tone": "always" } } },
+   "expect": "defaults"
+  },
+  {
+   "name": "unknown modes, kinds and card kinds are ignored",
+   "settings": { "hints": { "reading": { "vocab": "sometimes", "reverse": 7, "karaoke": "always" }, "smell": { "vocab": "always" } } },
+   "expect": "defaults"
+  },
+  {
+   "name": "a hints member that is not an object is the defaults",
+   "settings": { "hints": "always" },
+   "expect": "defaults"
+  },
+  {
+   "name": "a kind member that is not an object is the defaults for that kind",
+   "settings": { "hints": { "reading": ["always"], "picture": { "vocab": "never" } } },
+   "expect": {
+    "reading": "defaults",
+    "picture": { "vocab": "never", "sentence": "never", "writing": "hint", "tone": "hint", "reverse": "hint", "cloze": "never" }
+   }
+  }
+ ],
+ "plans": [
+  {
+   "name": "vocab: reading is a hint, no picture yet",
+   "cardKind": "vocab",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": [],
+   "onRequest": ["reading"]
+  },
+  {
+   "name": "writing: reading always shown by default",
+   "cardKind": "writing",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": ["reading"],
+   "onRequest": []
+  },
+  {
+   "name": "tone: reading never; a picture would be a hint",
+   "cardKind": "tone",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": [],
+   "onRequest": []
+  },
+  {
+   "name": "an entry without a reading offers no reading",
+   "cardKind": "vocab",
+   "settings": {},
+   "entry": { "hasReading": false, "hasPicture": false },
+   "always": [],
+   "onRequest": []
+  },
+  {
+   "name": "reading never",
+   "cardKind": "reverse",
+   "settings": { "hints": { "reading": { "reverse": "never" } } },
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": [],
+   "onRequest": []
+  },
+  {
+   "name": "an entry with a picture: both hints, in the fixed order reading then picture",
+   "cardKind": "vocab",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": true },
+   "always": [],
+   "onRequest": ["reading", "picture"]
+  },
+  {
+   "name": "picture always, reading as a hint",
+   "cardKind": "vocab",
+   "settings": { "hints": { "picture": { "vocab": "always" } } },
+   "entry": { "hasReading": true, "hasPicture": true },
+   "always": ["picture"],
+   "onRequest": ["reading"]
+  },
+  {
+   "name": "both always keep the fixed order",
+   "cardKind": "reverse",
+   "settings": { "hints": { "picture": { "reverse": "always" }, "reading": { "reverse": "always" } } },
+   "entry": { "hasReading": true, "hasPicture": true },
+   "always": ["reading", "picture"],
+   "onRequest": []
+  },
+  {
+   "name": "a picture setting without a picture shows nothing",
+   "cardKind": "reverse",
+   "settings": { "hints": { "picture": { "reverse": "always" } } },
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": [],
+   "onRequest": ["reading"]
+  },
+  {
+   "name": "forced modes (Starter, #214) win over the settings",
+   "cardKind": "vocab",
+   "settings": { "hints": { "reading": { "vocab": "never" } } },
+   "forced": { "reading": "always", "picture": "hint" },
+   "entry": { "hasReading": true, "hasPicture": true },
+   "always": ["reading"],
+   "onRequest": ["picture"]
+  },
+  {
+   "name": "a forced mode cannot show what the entry lacks",
+   "cardKind": "vocab",
+   "settings": {},
+   "forced": { "picture": "always" },
+   "entry": { "hasReading": true, "hasPicture": false },
+   "always": [],
+   "onRequest": ["reading"]
+  }
+ ],
+ "grades": [
+  { "suggested": null, "used": 0, "expect": null },
+  { "suggested": 3, "used": 0, "expect": 3 },
+  { "suggested": null, "used": 1, "expect": 2, "note": "a self-graded card with a hint is suggested Hard" },
+  { "suggested": 3, "used": 1, "expect": 2 },
+  { "suggested": 3, "used": 2, "expect": 2, "note": "a second hint lowers no further" },
+  { "suggested": 2, "used": 1, "expect": 2 },
+  { "suggested": 1, "used": 1, "expect": 1, "note": "Again stays Again" },
+  { "suggested": 4, "used": 1, "expect": 2, "note": "Easy is never suggested; a stray 4 is lowered too" }
+ ],
+ "results": [
+  {
+   "name": "no hint used: nothing changes",
+   "result": { "suggested": 3, "meta": { "mistakes": 0 } },
+   "used": 0,
+   "expect": { "suggested": 3, "meta": { "mistakes": 0 } }
+  },
+  {
+   "name": "one hint on a self-graded card",
+   "result": { "suggested": null, "meta": {} },
+   "used": 1,
+   "expect": { "suggested": 2, "meta": { "hints": 1 } }
+  },
+  {
+   "name": "hints add to the card's own help count",
+   "result": { "suggested": 3, "meta": { "hints": 2, "mistakes": 1 } },
+   "used": 2,
+   "expect": { "suggested": 2, "meta": { "hints": 4, "mistakes": 1 } }
+  },
+  {
+   "name": "a wrong answer keeps Again and still records the hint",
+   "result": { "suggested": 1, "meta": { "mistakes": 1 } },
+   "used": 1,
+   "expect": { "suggested": 1, "meta": { "mistakes": 1, "hints": 1 } }
+  }
+ ]
+}

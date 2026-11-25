@@ -97,6 +97,9 @@ import type { Run } from '$lib/study/vacation';
 	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';
 	import GradeBar from '$lib/features/flashcards/face/GradeBar.svelte';
 	import { provideCardFace } from '$lib/features/flashcards/face/cardFace.svelte';
+	import type { CardHints } from '$lib/features/flashcards/face/cardHints.svelte';
+	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
+	import { applyHints, hintsForEntry, readHintSettings, resolveHints } from '$lib/study/hints';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
 	import { nextIntervals } from '$lib/study/scheduler';
 	import { longInterval } from '$lib/study/intervalText';
@@ -121,6 +124,13 @@ import type { Run } from '$lib/study/vacation';
 
 	// The open page (#101): the card registers its primary action here.
 	provideCardFace();
+
+	// The hints of the card on screen (#215): the workspace's hint settings, the card's hint state
+	// (bound from its HintScope) and the plan of a resolved card.
+	const hintSettings = $derived(readHintSettings(session.workspaces.current?.settings));
+	let cardHints = $state<CardHints | null>(null);
+	const hintPlanOf = (current: { item: FlowItem; entry: Entry }) =>
+		resolveHints({ cardKind: current.item.kind, settings: hintSettings, entry: hintsForEntry(current.entry) });
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
 		vocab: t('study.cardType.vocab'),
@@ -992,8 +1002,11 @@ import type { Run } from '$lib/study/vacation';
 		done = true;
 		suggestionFocusedAt = null;
 		// Easy is never suggested automatically.
-		suggested = result.suggested === 4 ? 3 : result.suggested;
-		doneMeta = { ...result.meta, durationMs: Math.max(0, Date.now() - shownAt) };
+		const card = { suggested: result.suggested === 4 ? 3 : result.suggested, meta: result.meta };
+		// A hint asked for with the Hint control lowers the suggestion and counts in meta.hints (hints.ts).
+		const hinted = applyHints(card, cardHints?.used ?? 0);
+		suggested = hinted.suggested;
+		doneMeta = { ...hinted.meta, durationMs: Math.max(0, Date.now() - shownAt) };
 		if (suggested !== null) {
 			// Focus the suggestion so Enter/Space (or 1–4) confirms it and a
 			// tile or pad no longer holds focus.
@@ -1013,6 +1026,11 @@ import type { Run } from '$lib/study/vacation';
 	/** withBackKey adds "Z goes back" to the key line once something was graded. */
 	function withBackKey(keys: string): string {
 		return steps.length > 0 ? t('study.session.regrade.keysWithBack', { keys }) : keys;
+	}
+
+	/** withHintKey adds "H shows a hint" while the card still has a hint to offer (#215). */
+	function withHintKey(keys: string): string {
+		return cardHints?.canReveal ? t('study.session.keysHint', { keys }) : keys;
 	}
 
 	function revealByKey(): void {
@@ -1363,11 +1381,11 @@ import type { Run } from '$lib/study/vacation';
 			done={shownDone && shownCard !== null}
 			keys={viewing !== null
 				? t('study.session.regrade.keys')
-				: withBackKey(
+				: withBackKey(withHintKey(
 						done && canSound(currentAudio)
 							? t('study.session.keysPlays', { keys: KEY_HINTS[item.kind] })
 							: KEY_HINTS[item.kind]
-					)}
+					))}
 			bind:heading={faceHeading}
 		>
 			{#snippet chips()}
@@ -1451,6 +1469,7 @@ import type { Run } from '$lib/study/vacation';
 				{@const done = shownDone}
 				{@const onCardDone = viewing === null ? onCardShown : noop}
 				{#key viewing === null ? index : `back:${backAt}`}
+					<HintScope plan={hintPlanOf(current)} locked={done} bind:hints={cardHints}>
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
 							item={current.item}
@@ -1504,6 +1523,7 @@ import type { Run } from '$lib/study/vacation';
 							audio={currentAudio ?? undefined}
 						/>
 					{/if}
+					</HintScope>
 				{/key}
 			{/if}
 		</StudyFace>
