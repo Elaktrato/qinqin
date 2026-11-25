@@ -29,11 +29,18 @@
 //   f. every vendored icon set (a non-test .ts module under
 //      apps/web/src/lib/ui/icons) is named, in backticks, in docs/sources.md,
 //      in a section that also names its licence text the same way.
+//   g. the packs the project writes itself (PROJECT_PACKS) state licence
+//      CC-BY-4.0, carry the credit "qinqin contributors, CC BY 4.0" in their
+//      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/** Packs whose content the qinqin project writes: CC BY 4.0, credited "qinqin contributors, CC BY 4.0". */
+export const PROJECT_PACKS = ['zh-grammar', 'ja-grammar', 'ja-lemma', 'qinqin', 'qinqin-extras'];
+export const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
 
 /** Optional packs the docs describe that are never in the repository. */
 export const LOCAL_ONLY_PACKS = [
@@ -369,6 +376,18 @@ export function checkSources(root) {
 			for (const f of ['license', 'attribution']) {
 				if (typeof m[f] !== 'string' || m[f].trim() === '') {
 					problems.push(`${rel}/manifest.json: "${f}" is missing or empty; state it as the publisher does`);
+				}
+			}
+			if (PROJECT_PACKS.includes(id) && base !== 'plugins/samples') {
+				if (typeof m.license !== 'string' || !m.license.startsWith('CC-BY-4.0')) {
+					problems.push(`${rel}/manifest.json: project-written pack must state license "CC-BY-4.0" (SPDX), got ${JSON.stringify(m.license)}`);
+				}
+				if (typeof m.attribution !== 'string' || !m.attribution.includes(PROJECT_CREDIT)) {
+					problems.push(`${rel}/manifest.json: attribution must carry the credit "${PROJECT_CREDIT}"`);
+				}
+				const lic = join(root, rel, 'LICENSE');
+				if (!existsSync(lic) || !readFileSync(lic, 'utf8').includes('Attribution 4.0 International')) {
+					problems.push(`${rel}: LICENSE must be the CC BY 4.0 legal code (verbatim from creativecommons.org)`);
 				}
 			}
 			if (m.notice !== undefined) {

@@ -225,13 +225,13 @@ describe('featureCredits', () => {
 		expect(lucide.notice).toMatch(/icons/i);
 	});
 
-	it('credits the compiled-in fallback palette (qinqin themes, MIT) with its licence text', () => {
+	it('credits the compiled-in fallback palette (qinqin themes, CC BY 4.0) with its licence text', () => {
 		const house = coreCredits.find((credit) => credit.name === 'qinqin themes')!;
 		expect(house).toBeDefined();
 		expect(house.url).toBe('https://github.com/Elaktrato/qinqin');
-		expect(house.license).toBe('MIT');
-		expect(house.attribution).toBe('© 2026 qinqin');
-		expect(house.licenseTexts).toEqual([{ label: 'MIT license text', path: '/QINQIN-LICENSE.TXT' }]);
+		expect(house.license).toBe('CC BY 4.0');
+		expect(house.attribution).toBe('qinqin contributors, CC BY 4.0');
+		expect(house.licenseTexts).toEqual([{ label: 'CC BY 4.0 license text', path: '/QINQIN-LICENSE.TXT' }]);
 		expect(house.notice).toMatch(/Day and qinqin Night/);
 	});
 

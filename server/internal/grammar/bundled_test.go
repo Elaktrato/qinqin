@@ -19,7 +19,7 @@ func TestBundledGrammarPack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pk.Manifest.ID != "zh-grammar" || !strings.HasPrefix(pk.Manifest.License, "CC0-1.0") {
+	if pk.Manifest.ID != "zh-grammar" || !strings.HasPrefix(pk.Manifest.License, "CC-BY-4.0") {
 		t.Fatalf("manifest: %+v", pk.Manifest)
 	}
 	data, err := grammar.ReadData(dir)
@@ -117,7 +117,7 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pk.Manifest.ID != "ja-grammar" || pk.Manifest.Language != "ja" || pk.Manifest.License != "CC0-1.0" {
+	if pk.Manifest.ID != "ja-grammar" || pk.Manifest.Language != "ja" || pk.Manifest.License != "CC-BY-4.0" {
 		t.Fatalf("manifest: %+v", pk.Manifest)
 	}
 	data, err := grammar.ReadData(dir)

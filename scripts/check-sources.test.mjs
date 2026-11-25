@@ -231,6 +231,25 @@ test('built-in theme packs are bundled packs that need a LICENSE and a docs entr
 	assert.doesNotMatch(out, /builtin\/night/);
 });
 
+test('rule g: a project-written pack must be CC BY 4.0 with the qinqin credit and its legal code', () => {
+	const bad = okPacks();
+	bad['plugins/data/ja-grammar'] = { id: 'ja-grammar', license: 'CC0-1.0', attribution: 'written for qinqin; CC0 1.0' };
+	const out = checkSources(repo(bad, DOC + '- **J** (`ja-grammar`)\n')).join('\n');
+	assert.match(out, /plugins\/data\/ja-grammar\/manifest.json: project-written pack must state license "CC-BY-4.0"/);
+	assert.match(out, /plugins\/data\/ja-grammar\/manifest.json: attribution must carry the credit "qinqin contributors, CC BY 4.0"/);
+	assert.match(out, /plugins\/data\/ja-grammar: LICENSE must be the CC BY 4.0 legal code/);
+
+	const good = okPacks();
+	good['plugins/data/ja-grammar'] = {
+		id: 'ja-grammar',
+		license: 'CC-BY-4.0 (the lessons); the syllabus is referenced',
+		attribution: 'x; qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin)'
+	};
+	const root = repo(good, DOC + '- **J** (`ja-grammar`)\n');
+	writeFileSync(join(root, 'plugins/data/ja-grammar/LICENSE'), 'Attribution 4.0 International\n');
+	assert.deepEqual(checkSources(root), []);
+});
+
 /** withFont adds a font file (and optionally a licence text) to a temp repository. */
 function withFont(root, rel, licence) {
 	mkdirSync(dirname(join(root, rel)), { recursive: true });

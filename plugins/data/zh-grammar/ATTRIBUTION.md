@@ -12,11 +12,12 @@ syllabus, and the conventions it follows.
   the explanations, the example sentences, the readings, the translations and
   the wrong answers used in the exercises are original; nothing was copied or
   paraphrased from a textbook, a website or the syllabus.
-- Licence of the lessons: CC0 1.0 Universal (public domain dedication),
-  https://creativecommons.org/publicdomain/zero/1.0/. See `LICENSE`.
-- Licence split: the lessons are CC0; the HSK syllabus is **not** CC0 and no
+- Licence of the lessons: CC BY 4.0 (Creative Commons Attribution 4.0 International),
+  https://creativecommons.org/licenses/by/4.0/. See `LICENSE`. Credit: "qinqin contributors, CC BY 4.0",
+  https://github.com/Elaktrato/qinqin.
+- Licence split: the lessons are CC BY 4.0; the HSK syllabus is **not** CC BY 4.0 and no
   reuse licence is granted for it (see below). The Sources page must not imply
-  the syllabus is CC0.
+  the syllabus is CC BY 4.0.
 
 ## The syllabus as a source (not a licence)
 

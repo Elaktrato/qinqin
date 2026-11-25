@@ -11,8 +11,8 @@ import (
 	"text/template"
 )
 
-// cc0Text is the CC0 1.0 legal code, verbatim (the copy in
-// plugins/data/zh-grammar/LICENSE; a test keeps them equal).
+// cc0Text is the CC0 1.0 legal code, verbatim (the Tatoeba sentence data is
+// CC0; a test checks the text is the CC0 1.0 Universal legal code).
 //
 //go:embed templates/CC0-1.0.txt
 var cc0Text string

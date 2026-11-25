@@ -70,9 +70,9 @@ export const coreCredits: SourceCredit[] = [
 	credit({
 		name: 'qinqin themes',
 		url: 'https://github.com/Elaktrato/qinqin',
-		license: 'MIT',
-		attribution: '© 2026 qinqin',
-		licenseTexts: [licenceText('MIT', '/QINQIN-LICENSE.TXT')]
+		license: 'CC BY 4.0',
+		attribution: 'qinqin contributors, CC BY 4.0',
+		licenseTexts: [licenceText('CC BY 4.0', '/QINQIN-LICENSE.TXT')]
 	}, { notice: 'sources.core.qinqinThemes' }),
 	credit({
 		name: 'uqr',
