@@ -6,7 +6,7 @@
 
 Lessons come from **grammar packs** installed on the server. The page lists the packs for the language of the current workspace ("Grammar · Chinese"), each as a section, and inside it the levels with their lessons. A level can carry a badge such as "≈ HSK 1" when the matching level list is installed; the "≈" says the match is approximate. Each section ends with the pack's licence and attribution.
 
-qinqin ships two packs, both written for qinqin and released under CC0 1.0, and both installed on the first start:
+qinqin ships two packs, both written for qinqin and released under CC BY 4.0, and both installed on the first start:
 
 - **Chinese grammar (HSK-aligned)**: 386 lessons in seven levels, ≈ HSK 1 to 7–9. The topics follow the grammar outline of the HSK 3.0 syllabus, used as a topic index only; the explanations, examples and exercises are qinqin's own.
 - **Japanese grammar (≈ JLPT levels)**: 265 lessons in five levels, ≈ N5 to N1. The JLPT publishes no grammar list, so the choice and order of points are qinqin's own.
