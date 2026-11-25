@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { systemById } from './packs';
+import { allSystems, systemById } from './packs';
 import { DAY, MINUTE, type ItemState } from './progress';
 import { buildRound, distractors, itemQuestion, pickIds, seeded, shows, shuffle, syllableQuestion, wordQuestion } from './queue';
 
@@ -99,6 +99,36 @@ describe('itemQuestion', () => {
 		expect(qd.accepts).toEqual(['Д', 'д']);
 		expect(qd.key).toBe('L');
 		expect(shows(d)).toBe('Д д');
+	});
+
+	it('type: every glyph that shares the asked romanisation counts (じ/ぢ "ji", ず/づ "zu", the katakana rows too)', () => {
+		const ask = (system: typeof hira, glyph: string) => itemQuestion(system, 'type', system.items.find((i) => i.glyph === glyph)!, seeded(1));
+		expect(ask(hira, 'じ').accepts).toEqual(expect.arrayContaining(['じ', 'ぢ']));
+		expect(ask(hira, 'ぢ').accepts).toEqual(expect.arrayContaining(['じ', 'ぢ']));
+		expect(ask(hira, 'ず').accepts).toEqual(expect.arrayContaining(['ず', 'づ']));
+		const kata = systemById('katakana')!;
+		expect(ask(kata, 'ジ').accepts).toEqual(expect.arrayContaining(['ジ', 'ヂ']));
+		expect(ask(kata, 'ヅ').accepts).toEqual(expect.arrayContaining(['ズ', 'ヅ']));
+		// the asked glyph stays the first answer shown on a miss, and a different romanisation is not accepted
+		expect(ask(hira, 'ぢ').answer).toBe('ぢ');
+		expect(ask(hira, 'じ').accepts).not.toContain('し');
+	});
+
+	it('every item of every system: an accepted glyph always has the asked romanisation, and no choice round offers two correct options', () => {
+		for (const system of allSystems()) {
+			for (const item of system.items) {
+				const typed = itemQuestion(system, 'type', item, seeded(3));
+				const same = system.items.filter((i) => i.roman === item.roman);
+				for (const s of same) expect(typed.accepts).toContain(s.glyph);
+				for (let seed = 1; seed <= 3; seed++) {
+					const recall = itemQuestion(system, 'recall', item, seeded(seed));
+					const correct = recall.options.filter((o) => same.some((s) => shows(s) === o));
+					expect(correct).toEqual([shows(item)]);
+					const recognise = itemQuestion(system, 'recognise', item, seeded(seed));
+					expect(recognise.options.filter((o) => o === item.roman)).toHaveLength(1);
+				}
+			}
+		}
 	});
 
 	it('a Hangul jamo is spoken as a syllable', () => {
