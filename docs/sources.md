@@ -152,10 +152,15 @@ Licence checks done at the time of writing (2026-11-26), for sources that were l
 The example sentences on entry pages and in "Fill the gap" and "Build the
 sentence" cards come from **Tatoeba** (<https://tatoeba.org>), a collection of
 sentences and translations written by its contributors. Two packs are bundled
-in `plugins/data/` **once generated** (issue #133): the repository holds the
-tool that makes them, `server/tools/tatoeba`, and the owner generates and
-commits them from a pinned export (they are absent until then, and
-`scripts/check-sources.mjs` accepts that through its `GENERATED_PACKS` list).
+in `plugins/data/` (issue #133): the repository holds the tool that makes
+them, `server/tools/tatoeba`, and the packs generated from the pinned export of
+**2026-11-21** (licence re-read 2026-11-25, see the spec
+`docs/superpowers/specs/2026-11-26-v080-data-sources.md`).
+Sizes: Mandarin 32,810 sentences under 20,226 words, 12.8 MB raw (3.4 MB
+gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
+`qinqin seed` of `plugins/data` took 3 min 20 s on the development machine.
+`scripts/check-sources.mjs` ties both packs to the pin through its
+`GENERATED_PACKS` list.
 
 | Pack | Provides | License | Upstream |
 |---|---|---|---|
@@ -563,8 +568,8 @@ day are marked unverified):
 | Source | Evidence | Verdict |
 |---|---|---|
 | **Kanji alive** example-word audio (ja; 10,156 clips in the zip, 10,187 claimed by the README; male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
-| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
-| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Files carry CC BY-SA 4.0, CC BY 4.0 or CC0 per Commons metadata; the default "CC BY-SA 4.0" comes from a snippet of the RecordWizard manual (site 503, unverified). | **LOCAL-ONLY** through the same Commons tool |
+| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. Re-checked 2026-11-25 over all expected syllable titles: 301 files exist, 224 CC BY-SA 3.0 us, 51 CC BY-SA 3.0, 17 CC BY-SA 2.0 uk, 9 CC BY 2.0 fr, 50 without an author. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
+| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Checked 2026-11-25 through the Commons API for cmn: 2,976 files "CC BY-SA 4.0" and 1,132 "CC0", none other, every file with an author (jpn not re-checked). Whole-word coverage of HSK 1-4: 1,100 of 1,992 words. Details: `docs/superpowers/specs/2026-11-26-v080-data-sources.md`. | **BUNDLE-eligible** for cmn (licence), not built yet (needs a maintainer-built pack, see the spec); **LOCAL-ONLY** through the Commons tool until then |
 | **hugolpz/audio-cmn** (1,707 syllables, ~8k HSK words) | README: "CC-by-sa. See table upper for authors."; no version; refers to an unreachable Shtooka readme; GitHub shows no licence. | **LOCAL-ONLY** (version unverified) |
 | **cjhoward/cedict-tts** | Audio "CC0 1.0 Universal", but "Baidu Speech-generated TTS MP3s"; Baidu's output terms unchecked. | **LOCAL-ONLY** |
 | **Tatoeba** audio | https://tatoeba.org/en/downloads: "If the license field is empty, you may not reuse the audio outside the Tatoeba project"; others vary (incl. NC/ND). Sentences, not words. | Out of scope (sentences); LOCAL-ONLY if ever |
@@ -944,3 +949,7 @@ Entries must already exist in an imported dictionary; unknown ones are skipped a
 reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
 offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in
 `plugins/samples/`).
+
+## Picture sources (considered, issue #216; not bundled yet)
+
+Checked 2026-11-25, details in `docs/superpowers/specs/2026-11-26-v080-data-sources.md`: **OpenMoji** 17.0.0 is CC BY-SA 4.0 (README and `LICENSE.txt`; credit "All emojis designed by OpenMoji - the open-source emoji and icon project. License: CC BY-SA 4.0"); **Mulberry Symbols** v3.6.1 is CC BY-SA 4.0 (website and `LICENSE.txt`, © Steve Lee), not 2.0 UK as an older note said. Both pass the licence rule. Neither is in the repository: they wait for the `images` pack type. ARASAAC (CC BY-NC-SA) is excluded.
