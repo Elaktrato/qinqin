@@ -30,11 +30,11 @@ UI in native code.
 - **The bridge is for one origin.** Capacitor injects its bridge with a document-start script and a message
   listener limited to the allowed origin rules, which here are the server's origin and the bundled screen's;
   `Bridge.launchIntent` sends every navigation to another host to the system browser. No other site gets
-  the bridge. A WebView too old for these features (`WEB_MESSAGE_LISTENER`, `DOCUMENT_START_SCRIPT`) would make
+  the bridge. A WebView too old for these features (the web message listener and the document-start script) would make
   Capacitor fall back to an interface every frame can reach, so MainActivity refuses to open a remote server there and
   shows the first-run screen ("update Android System WebView"). Even the one origin with the bridge is limited:
-  `setServer` and `retry` of the plugin work only while the bundled first-run screen is the page (the server's own
-  page cannot repoint the app); `clearServer` and `setBars` are callable from the server's page.
+  the plugin methods setServer and retry work only while the bundled first-run screen is the page (the server's own
+  page cannot repoint the app); clearServer and `setBars` are callable from the server's page.
 - **A failed load never shows Chrome's error page for the app's own origin.** `ShellWebViewClient.java` turns a
   main-frame failure of the saved server (no connection, timeout, certificate) into the first-run screen with
   Retry and Change server. When a service worker can serve the app offline, the navigation does not fail, so the
