@@ -43,21 +43,29 @@ export function startBackHandler(): () => void {
 	if (app === null) return () => undefined;
 	let listener: PluginListener | null = null;
 	let stopped = false;
-	void app
-		.addListener('backButton', ({ canGoBack }) =>
+	// The injected `Capacitor.Plugins.App` proxy returns the handle itself (no promise), the module's returns a
+	// promise (found on the emulator, #35): Promise.resolve takes both, and a throw never breaks the page.
+	let added: PluginListener | Promise<PluginListener>;
+	try {
+		added = app.addListener('backButton', ({ canGoBack }) =>
 			onBack(canGoBack, {
 				dismiss: dismissTop,
 				escape: () => pressEscape(document),
 				goBack: () => history.back(),
 				leave: () => void app.minimizeApp()
 			})
-		)
+		);
+	} catch {
+		return () => undefined;
+	}
+	void Promise.resolve(added)
 		.then((l) => {
-			if (stopped) void l.remove();
-			else listener = l;
-		});
+			if (stopped) void l?.remove?.();
+			else listener = l ?? null;
+		})
+		.catch(() => undefined);
 	return () => {
 		stopped = true;
-		void listener?.remove();
+		void listener?.remove?.();
 	};
 }

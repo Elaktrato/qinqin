@@ -2,6 +2,8 @@
 // one-time storage persistence request (the install prompt itself is the app
 // context's InstallPrompt, installPrompt.svelte.ts).
 
+import { isShell } from '../native';
+
 /** isIos: iPhone/iPad, including the iPad that reports itself as a Mac (touch points). */
 export function isIos(userAgent: string, maxTouchPoints: number): boolean {
 	if (/iPhone|iPad|iPod/.test(userAgent)) return true;
@@ -37,6 +39,8 @@ const PERSIST_KEY = 'qinqin.pwa.persist';
 /**
  * requestPersistOnce asks the browser not to evict this origin's storage,
  * once, when the app runs installed (browsers grant it far more readily then).
+ * The Android shell counts as installed (#35): it is the app, and the WebView
+ * may grant or refuse; nothing depends on the answer.
  */
 export async function requestPersistOnce(env: {
 	standalone: boolean;
@@ -75,7 +79,7 @@ export function persistOnceNow(): Promise<void> {
 		storage = null;
 	}
 	return requestPersistOnce({
-		standalone: currentStandalone(),
+		standalone: currentStandalone() || isShell(),
 		persist: navigator.storage?.persist?.bind(navigator.storage),
 		storage
 	});
