@@ -1,0 +1,159 @@
+name: android-apk
+
+# The Android APK for sideloading (#148). Two ways in:
+#   - build.yml calls it with release: true for every v* tag. That build is SIGNED with the key from the repository
+#     secrets, and it fails (never publishes unsigned) when a secret is missing or the signature does not verify.
+#     build.yml's release job attaches the result to the GitHub release.
+#   - Run it by hand (workflow_dispatch) to test the pipeline: a debug-signed APK as a workflow artifact only. It
+#     never reads a secret, never signs with the release key and never touches a release.
+# Secrets (set by the owner, see docs/superpowers/plans/2026-11-25-android-release-apk.md):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, semver with or without v (a dry run, not a release)"
+        required: false
+        default: "0.0.0-rc.1"
+  workflow_call:
+    inputs:
+      version:
+        description: "The release tag (vMAJOR.MINOR.PATCH[-pre])"
+        required: true
+        type: string
+      release:
+        description: "true: sign with the release key (a v* tag only); false: a debug-signed dry run"
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    # Never on a fork: a fork has no secrets and must not build "releases" under the project's name.
+    if: github.repository == 'Elaktrato/qinqin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE: ${{ inputs.release == true && 'true' || 'false' }}
+      INPUT_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      # Signing happens only for a release tag. A "release" requested from any other ref is a mistake: stop.
+      - name: Check what is being built
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$RELEASE" = true ]; then
+            case "$REF" in
+              refs/tags/v*) ;;
+              *) echo "::error::a signed release APK is built only for a v* tag, not $REF"; exit 1 ;;
+            esac
+            if [ "$INPUT_VERSION" != "${REF#refs/tags/}" ]; then
+              echo "::error::version input $INPUT_VERSION is not the tag ${REF#refs/tags/}"
+              exit 1
+            fi
+          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: apps/android/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      # versionName is the tag without its v; versionCode is derived from it (apps/android/scripts/version-code.mjs
+      # explains the scheme). A tag that is not semver fails here, like in the image job.
+      - name: Version
+        id: version
+        run: node apps/android/scripts/version-code.mjs "$INPUT_VERSION"
+      # The release key never reaches a dry run: the secrets are only read in this step and the next, and only for
+      # RELEASE=true. A missing secret fails the job with its name, with no value printed.
+      - name: Decode the keystore
+        if: env.RELEASE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=
+          [ -n "$KEYSTORE_BASE64" ] || missing="$missing ANDROID_KEYSTORE_BASE64"
+          [ -n "$KEYSTORE_PASSWORD" ] || missing="$missing ANDROID_KEYSTORE_PASSWORD"
+          [ -n "$KEY_ALIAS" ] || missing="$missing ANDROID_KEY_ALIAS"
+          [ -n "$KEY_PASSWORD" ] || missing="$missing ANDROID_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::signing secrets missing:$missing. Refusing to publish an unsigned APK; see docs/superpowers/plans/2026-11-25-android-release-apk.md"
+            exit 1
+          fi
+          keystore="$RUNNER_TEMP/qinqin-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          chmod 600 "$keystore"
+          echo "QINQIN_KEYSTORE_FILE=$keystore" >> "$GITHUB_ENV"
+      - name: Build the APK
+        working-directory: apps/android
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.versionName }}
+          VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+          QINQIN_KEYSTORE_PASSWORD: ${{ env.RELEASE == 'true' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+          QINQIN_KEY_ALIAS: ${{ env.RELEASE == 'true' && secrets.ANDROID_KEY_ALIAS || '' }}
+          QINQIN_KEY_PASSWORD: ${{ env.RELEASE == 'true' && secrets.ANDROID_KEY_PASSWORD || '' }}
+        run: |
+          npm ci
+          npm test
+          # The generated capacitor.config.json and www/ must exist before Gradle.
+          npm run sync
+          cd android
+          if [ "$RELEASE" = true ]; then
+            task=assembleRelease; built=app/build/outputs/apk/release/app-release.apk
+          else
+            task=assembleDebug; built=app/build/outputs/apk/debug/app-debug.apk
+          fi
+          ./gradlew --no-daemon "$task" "-PqinqinVersionName=$VERSION_NAME" "-PqinqinVersionCode=$VERSION_CODE"
+          if [ "$RELEASE" = true ]; then name="qinqin-$VERSION_NAME.apk"; else name="qinqin-$VERSION_NAME-dryrun.apk"; fi
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cp "$built" "$GITHUB_WORKSPACE/dist/$name"
+          echo "APK_NAME=$name" >> "$GITHUB_ENV"
+      - name: Remove the keystore
+        if: always() && env.RELEASE == 'true'
+        run: rm -f "$RUNNER_TEMP/qinqin-release.jks"
+      # The signature must verify and the version inside the APK must be the one derived from the tag. A release
+      # APK signed with the debug certificate (the Gradle fallback) is refused.
+      - name: Verify the APK
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.versionName }}
+          VERSION_CODE: ${{ steps.version.outputs.versionCode }}
+        run: |
+          bt="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          apk="dist/$APK_NAME"
+          "$bt/apksigner" verify --verbose --print-certs "$apk" | tee "$RUNNER_TEMP/apksigner.txt"
+          "$bt/aapt2" dump badging "$apk" | grep -E "^package:" | tee "$RUNNER_TEMP/badging.txt"
+          grep -q "versionCode='$VERSION_CODE'" "$RUNNER_TEMP/badging.txt" || { echo "::error::versionCode in the APK is not $VERSION_CODE"; exit 1; }
+          grep -q "versionName='$VERSION_NAME'" "$RUNNER_TEMP/badging.txt" || { echo "::error::versionName in the APK is not $VERSION_NAME"; exit 1; }
+          if [ "$RELEASE" = true ] && grep -qi "Android Debug" "$RUNNER_TEMP/apksigner.txt"; then
+            echo "::error::the release APK is signed with a debug certificate"
+            exit 1
+          fi
+      - name: Checksum
+        working-directory: dist
+        run: |
+          sha256sum "$APK_NAME" > "$APK_NAME.sha256"
+          sha256sum --check "$APK_NAME.sha256"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-apk
+          path: dist/
+          retention-days: ${{ env.RELEASE == 'true' && 7 || 14 }}
+          if-no-files-found: error

@@ -2,11 +2,21 @@
 
 The Android app is the qinqin web app in a native shell. It has no server of its own: you give it the address of **your** qinqin server and it opens that server's web app, so every screen, rule and feature is the one your server runs, at your server's version. A server update reaches the phone with no app update.
 
-Status: not yet published. The first builds come with the Android releases (#147); until then it is built from source (see [Development](Development#android-app)).
+Status: the APK comes with each release (from v0.7.0), for sideloading. Play Store and F-Droid listings are planned. Building from source: see [Development](Development#android-app).
 
 ## Install
 
-Install the APK of a release (Play Store and F-Droid listings are planned), then open **qinqin**.
+1. On the [releases page](https://github.com/Elaktrato/qinqin/releases) open the release you want and download `qinqin-<version>.apk` and `qinqin-<version>.apk.sha256`.
+2. Check the download. On a computer, with both files in one folder:
+
+   ```sh
+   sha256sum --check qinqin-<version>.apk.sha256
+   ```
+
+   It must print `qinqin-<version>.apk: OK`. (On macOS: `shasum -a 256 -c qinqin-<version>.apk.sha256`. On Windows: `certutil -hashfile qinqin-<version>.apk SHA256` and compare with the text in the `.sha256` file.) The checksum shows the file arrived intact; it cannot prove who made it, because it sits beside the APK. Download from the project's releases page only. To check the signature as well, `apksigner verify --print-certs qinqin-<version>.apk` (Android SDK build-tools) prints the signing certificate; every release is signed with the same one, so compare its SHA-256 fingerprint with the one the project publishes.
+3. Copy the APK to the phone, open it, and allow your file manager or browser to install apps when Android asks ("Install unknown apps"). Then open **qinqin**.
+
+Updates: install the newer APK over the old one; your server address and data stay. Android only installs an update that is signed with the same key and has a higher version, so a release APK never installs over a debug build (uninstall that first).
 
 ## Server address
 

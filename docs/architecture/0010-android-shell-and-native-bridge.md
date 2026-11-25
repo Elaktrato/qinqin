@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #35, #36, #37. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #35, #36, #37, #148. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -95,6 +95,30 @@ UI in native code.
   download, sharing is `navigator.share` or the clipboard, the screen stays on through the Screen Wake Lock API, the
   grading buzz is `navigator.vibrate` on a touch device, and notifications are unsupported.
 
+## Release build and signing (#148)
+
+- A `v*` tag builds a signed release APK in `build.yml` (job `android`, the reusable `android-apk.yml`) and the
+  `release` job attaches `qinqin-<version>.apk` and `qinqin-<version>.apk.sha256` (`sha256sum` format) to the
+  GitHub release. No APK means no release: the release job needs the APK job.
+- `versionName` is the tag without its `v` (semver, checked like the image job's tag guard). `versionCode` is
+  `major*1000000 + minor*10000 + patch*100 + slot`; slot is 99 for a release and orders `alpha.N` (1-29), `beta.N`
+  (30-59) and `rc.N` (60-89) below it. `apps/android/scripts/version-code.mjs` holds the rule and its tests; any
+  other pre-release label fails the build. Gradle reads `-PqinqinVersionName` and `-PqinqinVersionCode`; a build
+  without them (local, debug) is `package.json`'s version with code 1. `package.json`'s `version` is therefore only
+  that local default and need not be bumped per release.
+- Signing reads four environment variables (`QINQIN_KEYSTORE_FILE`, `QINQIN_KEYSTORE_PASSWORD`, `QINQIN_KEY_ALIAS`,
+  `QINQIN_KEY_PASSWORD`) and applies only when all four are set. The workflow decodes the repository secret
+  `ANDROID_KEYSTORE_BASE64` to a temporary file and removes it afterwards; the secrets are read only for a tag
+  build in `Elaktrato/qinqin`, never on a fork or pull request. A missing secret fails the job with its name.
+- The build runs `npm run sync` (first-run screen, `capacitor.config.json`, `www/`) before Gradle, then checks the
+  APK: `apksigner verify`, the version read back with `aapt2 dump badging`, and no debug certificate on a release.
+- A manual run of `android-apk` (workflow_dispatch) builds a debug-signed `qinqin-<version>-dryrun.apk` as a
+  workflow artifact only, with no secrets and no release.
+- Extension point: an Android App Bundle for Play (`bundleRelease`, same signing config) is not built; add it as a
+  second Gradle task in `android-apk.yml` and a second release asset when a Play listing is decided.
+- The keystore is the identity of the app: Android refuses an update signed with another key. The owner keeps an
+  offline copy of the keystore and its passwords; losing them means a new package id.
+
 ## Consequences
 
 - A web app release reaches every phone with no app release; an old shell with a new server is told so.
@@ -146,4 +170,4 @@ Not allowed:
   loses it (measured, #35). Moving the outbox to IndexedDB belongs to the study data layer.
 - Whether plain http for 100.64.0.0/10 (Tailscale and carrier-grade NAT) should count as private. It does not
   today (the secure default); the owner decides.
-- Which Android package id the app ships under (`identity.json` is a placeholder).
+- Which Android package id the app ships under (`identity.json` is a placeholder) and the app name; the owner also creates the release keystore and its four secrets before the first tag (see the plan of #148).

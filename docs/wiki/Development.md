@@ -194,4 +194,4 @@ npm run assemble         # builds the first-run screen, cap sync, ./gradlew asse
 cd android && ./gradlew --no-daemon testDebugUnitTest   # JVM tests
 ```
 
-Android Studio opens `apps/android/android`. The package id and the launcher name are in `apps/android/identity.json` (a placeholder until the owner confirms them); the version is `apps/android/package.json`'s. Signing keys are never in the repository (#147).
+Android Studio opens `apps/android/android`. The package id and the launcher name are in `apps/android/identity.json` (a placeholder until the owner confirms them); a local build's version is `apps/android/package.json`'s with versionCode 1; a release build takes both from the tag. Signing keys are never in the repository: the release workflow signs from repository secrets ([Android](Android#install)).
