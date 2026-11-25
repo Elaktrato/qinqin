@@ -54,7 +54,7 @@
  ],
  "plans": [
   {
-   "name": "vocab: reading is a hint, no picture yet",
+   "name": "vocab: reading is a hint, the entry has no picture",
    "cardKind": "vocab",
    "settings": {},
    "entry": { "hasReading": true, "hasPicture": false },

@@ -73,6 +73,9 @@ describe('LevelCheck', () => {
 		}
 		await screen.findByTestId('level-check-result');
 		expect(screen.getByTestId('level-check-estimate').textContent).toMatch(/about \d+%.*HSK 1/);
+		// The whole pool was asked: the result is exact, not "Likely between".
+		expect(screen.getByTestId('level-check-exact').textContent).toMatch(/Exact/);
+		expect(screen.queryByText(/Likely between/)).toBeNull();
 		const coverage = screen.getByTestId('level-check-coverage').textContent ?? '';
 		expect(coverage).toMatch(/1 entry known/);
 		expect(coverage).toMatch(/3 entries not started/);

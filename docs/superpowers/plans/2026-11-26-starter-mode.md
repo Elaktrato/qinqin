@@ -41,7 +41,7 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
   could show one.
 - [x] 7. Add-to-deck plan for the set (`starterSet.ts`), `StarterAdd`, `StarterSettings`, `StarterOffer`, pages wired.
 - [x] 8. Catalogue keys, sentence-case name, repo guards (folder rules, overview read order, generated API docs).
-- [x] 9. Docs: README, CHANGELOG (contract 9, `ContractVersion` 9, `version.json`), wiki, ROADMAP, spec, this plan.
+- [x] 9. Docs: README, CHANGELOG (contract 10, `ContractVersion` 10, `version.json`), wiki, ROADMAP, spec, this plan.
 - [x] 10. Tests: pure (starter, contract, pictureCache, offer), dom (VocabCard Starter, settings, offer, session page),
   Go (format, resolve, handlers, real data), e2e spec `e2e/tests/starter.spec.ts` (written, run only by CI).
 - [ ] 11. Owner and a person: review and extend the Starter sets to 100-300 words per language (see below).
