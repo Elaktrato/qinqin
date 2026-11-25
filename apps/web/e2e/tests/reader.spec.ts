@@ -1,7 +1,7 @@
 // Flow 3: open a Japanese book in the reader, point at a word, and the
 // lookup popup shows its dictionary entry.
 
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures';
 import { boxOf, centreOf, pointAt } from '../support/pointer';
 import { addBook } from '../support/study';
@@ -98,15 +98,51 @@ test.describe('on a phone', () => {
 		await expect(sheet).toBeVisible();
 		await expect(sheet).toContainText('みず');
 		await expect(sheet).toContainText('water');
-		// Once the sheet has slid in, the word's box ends above its top edge.
-		await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
-		await expect
-			.poll(async () => {
-				const top = (await sheet.boundingBox())?.y ?? 0;
-				const w = await boxOf(paragraph, '水');
-				return top - (w.y + w.height);
-			}, { message: 'space between the word and the sheet' })
-			.toBeGreaterThan(0);
+		await expectAboveSheet(page, sheet, paragraph, '水');
 		expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
+
+		// Another word, behind the open sheet's backdrop: one tap looks it up.
+		const above = page.getByText('私は学校に行きます。').nth(11);
+		const school = await centreOf(above, '学');
+		await page.touchscreen.tap(school.x, school.y);
+		const next = page.getByRole('dialog', { name: /学校/ });
+		await expect(next).toBeVisible();
+		await expect(next).toContainText('school');
+		await expect(page.getByRole('dialog')).toHaveCount(1);
+		await expectAboveSheet(page, next, above, '学校');
+	});
+
+	test('a word on the last line of the chapter can still be read above the sheet', async ({ page, learner }) => {
+		const filler = Array.from({ length: 12 }, () => '私は学校に行きます。');
+		const bookId = await addBook(learner, 'ja', '最後の本', [...filler, '私は水を飲みます。']);
+		await page.goto(`/reader/book/${bookId}/0`);
+		const paragraph = page.getByText('私は水を飲みます。');
+		await expect(paragraph).toBeVisible();
+		// The very end of the page: nothing more to scroll.
+		await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+		const word = await centreOf(paragraph, '水');
+		await page.touchscreen.tap(word.x, word.y);
+		const sheet = page.getByRole('dialog', { name: /水/ });
+		await expect(sheet).toContainText('water');
+		await expectAboveSheet(page, sheet, paragraph, '水');
 	});
 });
+
+/**
+ * Once the sheet has slid in, the word's box ends above its top edge, is
+ * still on the screen, and is still marked as the looked-up word.
+ */
+async function expectAboveSheet(page: Page, sheet: Locator, paragraph: Locator, word: string): Promise<void> {
+	await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+	await expect
+		.poll(
+			async () => {
+				const top = (await sheet.boundingBox())?.y ?? 0;
+				const w = await boxOf(paragraph, word);
+				return { onScreen: w.y >= 0, above: top - (w.y + w.height) > 0 };
+			},
+			{ message: `${word} above the sheet and on the screen` }
+		)
+		.toEqual({ onScreen: true, above: true });
+	expect(await page.evaluate(() => CSS.highlights.has('reader-lookup')), 'the looked-up word stays marked').toBe(true);
+}
