@@ -14,7 +14,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, mkdtempSync, createWriteStream, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { PKG, OUT, Recorder, adb, connectPage, screenshot, sleep, waitFor } from './lib.mjs';
+import { PKG, OUT, Recorder, adb, connectPage, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
 
 const BIN = resolve(process.env.E2E_BIN || '');
 const APK = resolve(process.env.E2E_APK || '');
@@ -397,8 +397,14 @@ try {
 	} catch {
 		// Leave the emulator as found.
 	}
-	writeFileSync(join(OUT, 'logcat.txt'), adb(['logcat', '-d', '-v', 'time'], { soft: true, timeout: 60_000 }));
+	const log = logcatTail(rec.failed ? 150 : 20);
+	try {
+		writeFileSync(join(OUT, 'logcat.txt'), log);
+	} catch (err) {
+		console.log(`cannot write ${OUT}: ${err.message}`);
+	}
 	await stopServer();
+	console.log(`out dir: ${OUT}`);
 	rec.write();
 	process.exit(rec.summary().ok ? 0 : 1);
 }

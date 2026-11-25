@@ -70,14 +70,14 @@ export class Cdp {
 		});
 	}
 
-	send(method, params = {}) {
+	send(method, params = {}, timeoutMs = 60_000) {
 		const id = this.next++;
 		return new Promise((resolve, reject) => {
 			this.pending.set(id, { resolve, reject, method });
 			this.ws.send(JSON.stringify({ id, method, params }));
 			setTimeout(() => {
-				if (this.pending.delete(id)) reject(new Error(`${method}: no answer in 60 s`));
-			}, 60_000);
+				if (this.pending.delete(id)) reject(new Error(`${method}: no answer in ${timeoutMs / 1000} s`));
+			}, timeoutMs);
 		});
 	}
 
@@ -113,7 +113,15 @@ export async function connectPage(prefix, { timeout = 60_000 } = {}) {
 				ws.addEventListener('open', resolve, { once: true });
 				ws.addEventListener('error', () => reject(new Error('DevTools socket error')), { once: true });
 			});
-			return new Cdp(ws);
+			const cdp = new Cdp(ws);
+			try {
+				await cdp.send('Runtime.evaluate', { expression: '1+1', returnByValue: true }, 8_000);
+			} catch (err) {
+				console.log(`target ${pages[0].url} did not answer (${err.message}); targets: ${JSON.stringify(pages.map((p) => p.url))}`);
+				cdp.close();
+				return null;
+			}
+			return cdp;
 		},
 		{ timeout, interval: 1000 }
 	);
@@ -156,4 +164,12 @@ export class Recorder {
 		writeFileSync(join(OUT, 'summary.json'), JSON.stringify(this.summary(), null, 2));
 		console.log(`SUMMARY ${text}`);
 	}
+}
+
+/** Prints the log lines that matter when something fails (the whole log goes to e2e-out/logcat.txt). */
+export function logcatTail(lines = 120) {
+	const all = adb(['logcat', '-d', '-v', 'time'], { soft: true, timeout: 60_000 });
+	const keep = all.split('\n').filter((l) => /chromium|Capacitor|qinqin|WebView|ServiceWorker|AndroidRuntime|FATAL/i.test(l));
+	console.log(`--- logcat (last ${lines} relevant lines of ${keep.length})\n${keep.slice(-lines).join('\n')}`);
+	return all;
 }
