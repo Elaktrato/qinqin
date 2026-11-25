@@ -2,7 +2,7 @@ package qinqin.shell;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.net.Uri;
+import java.net.URI;
 
 /**
  * The server address the person entered, kept in SharedPreferences (private to the app), and the one-shot
@@ -60,16 +60,18 @@ final class ServerStore {
      * is the guard against a malformed value reaching the WebView.
      */
     static boolean isOrigin(String url) {
+        if (url == null) return false;
         try {
-            Uri u = Uri.parse(url);
+            URI u = new URI(url);
             String scheme = u.getScheme();
+            String path = u.getRawPath();
             return ("https".equals(scheme) || "http".equals(scheme))
                 && u.getHost() != null
                 && !u.getHost().isEmpty()
-                && u.getUserInfo() == null
-                && (u.getPath() == null || u.getPath().isEmpty())
-                && u.getQuery() == null
-                && u.getFragment() == null;
+                && u.getRawUserInfo() == null
+                && (path == null || path.isEmpty())
+                && u.getRawQuery() == null
+                && u.getRawFragment() == null;
         } catch (Exception e) {
             return false;
         }
