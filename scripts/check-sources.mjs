@@ -30,7 +30,7 @@
 //      apps/web/src/lib/ui/icons) is named, in backticks, in docs/sources.md,
 //      in a section that also names its licence text the same way.
 //   g. the packs the project writes itself (PROJECT_PACKS) state licence
-//      CC-BY-4.0, carry the credit "qinqin contributors, CC BY 4.0" in their
+//      exactly CC-BY-4.0 (optionally followed by " (qualifier)"), carry the credit "qinqin contributors, CC BY 4.0" in their
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
@@ -379,7 +379,7 @@ export function checkSources(root) {
 				}
 			}
 			if (PROJECT_PACKS.includes(id) && base !== 'plugins/samples') {
-				if (typeof m.license !== 'string' || !m.license.startsWith('CC-BY-4.0')) {
+				if (typeof m.license !== 'string' || !/^CC-BY-4\.0( \(.*)?$/.test(m.license)) {
 					problems.push(`${rel}/manifest.json: project-written pack must state license "CC-BY-4.0" (SPDX), got ${JSON.stringify(m.license)}`);
 				}
 				if (typeof m.attribution !== 'string' || !m.attribution.includes(PROJECT_CREDIT)) {

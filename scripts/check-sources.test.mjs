@@ -250,6 +250,20 @@ test('rule g: a project-written pack must be CC BY 4.0 with the qinqin credit an
 	assert.deepEqual(checkSources(root), []);
 });
 
+test('rule g: the licence is exactly CC-BY-4.0, optionally with a parenthesised qualifier', () => {
+	const make = (license) => {
+		const p = okPacks();
+		p['plugins/data/ja-grammar'] = { id: 'ja-grammar', license, attribution: 'qinqin contributors, CC BY 4.0' };
+		const root = repo(p, DOC + '- **J** (`ja-grammar`)\n');
+		writeFileSync(join(root, 'plugins/data/ja-grammar/LICENSE'), 'Attribution 4.0 International\n');
+		return checkSources(root).join('\n');
+	};
+	assert.equal(make('CC-BY-4.0'), '');
+	assert.equal(make('CC-BY-4.0 (the lessons)'), '');
+	for (const bad of ['CC-BY-4.0-or-later', 'CC-BY-4.0X', 'CC-BY-4.01', 'CC-BY-4.0; plus other terms', 'cc-by-4.0'])
+		assert.match(make(bad), /must state license "CC-BY-4\.0"/, bad);
+});
+
 /** withFont adds a font file (and optionally a licence text) to a temp repository. */
 function withFont(root, rel, licence) {
 	mkdirSync(dirname(join(root, rel)), { recursive: true });
