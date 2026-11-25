@@ -140,3 +140,15 @@ describe('pressEscape', () => {
 		expect(dismissTop()).toBe(false);
 	});
 });
+
+describe('the injected plugin proxy (emulator finding, #35)', () => {
+	it('survives an addListener that returns the handle itself, not a promise', async () => {
+		const remove = vi.fn();
+		const addListener = vi.fn(() => ({ remove }));
+		win.Capacitor = { isNativePlatform: () => true, Plugins: { App: { addListener, minimizeApp: vi.fn(), exitApp: vi.fn() }, QinqinShell: {} } };
+		const stop = startNative();
+		await vi.waitFor(() => expect(addListener).toHaveBeenCalled());
+		stop();
+		await vi.waitFor(() => expect(remove).toHaveBeenCalled());
+	});
+});
