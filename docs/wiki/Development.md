@@ -179,3 +179,19 @@ Pull requests are merged with merge commits only (no squash or rebase), so git-f
 ## The wiki
 
 These pages are generated from `docs/wiki/` in the repository; edit them there, never on the wiki (`docs/wiki/README.md` explains publishing).
+
+## Android app
+
+`apps/android` is a Capacitor project (the shell, [record 0010](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0010-android-shell-and-native-bridge.md)). It needs Node, JDK 21 and the Android SDK (platform 36, build-tools 36; `ANDROID_HOME` set, licences accepted). Gradle comes with the project (`./gradlew`).
+
+```sh
+cd apps/android
+npm ci
+npm test                 # address and verification rules, first-run screen (vitest)
+npm run check            # tsc
+npm run assemble         # builds the first-run screen, cap sync, ./gradlew assembleDebug
+# the APK: android/app/build/outputs/apk/debug/app-debug.apk
+cd android && ./gradlew --no-daemon testDebugUnitTest   # JVM tests
+```
+
+Android Studio opens `apps/android/android`. The package id and the launcher name are in `apps/android/identity.json` (a placeholder until the owner confirms them); the version is `apps/android/package.json`'s. Signing keys are never in the repository (#147).

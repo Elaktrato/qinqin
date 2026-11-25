@@ -18,6 +18,7 @@ This wiki has five parts. Pick the one that matches why you are here.
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data: export and restore](Your-data)
 - [Install as an app and study offline](Install-and-offline)
+- [The Android app](Android): the web app of your own server in a native shell.
 
 ## Running a server
 
