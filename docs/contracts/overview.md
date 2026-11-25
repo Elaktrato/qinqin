@@ -30,6 +30,7 @@ where the rule is implemented today.
 | Settings | `settings/` (workspace settings keys and their merge; the user-global keyed rows `home-layout`, `activity-view`, `widget-options` and `nav-layout`) |
 | Reminders | `reminders/` (the opt-in `reminders` row, the client's facts, the plan the shell schedules local notifications from, web push routes, the email unsubscribe link) |
 | Data safety | `backup/` (archive format 2, id remapping) |
+| Starter mode | `starter/` (the stage of a word from its own review history, what the front shows at each stage, the `starter` workspace setting, the Starter set format and its routes; builds on `cards/` hints and `images/`) |
 | Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the picture vocabulary, theming and credits) |
 | Visual aids | `aids/` (the `visualAids` workspace setting; pictures on entries and cards, tone colours and contours, character anatomy) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
@@ -41,7 +42,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `images/` → `aids/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `images/` → `aids/` → `starter/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -242,7 +243,7 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   limits count by the learner's day). XP and levels: `scheduler/xp.json`. Level sessions: `levels/`. Deck
   numbers and system deck ids: `decks/`; character mastery and the map: `decks/char-mastery.json`.
 - Reverse and cloze cards, sibling burying, the deck session plan (order, companions, budget, reserve,
-  eligibility): `cards/` (`deck-session.json`). Hints on a card (#215): `cards/` (`hints.json`); the setting is the workspace-settings key `hints`.
+  eligibility): `cards/` (`deck-session.json`). Hints on a card (#215): `cards/` (`hints.json`); the setting is the workspace-settings key `hints`. Starter mode (#214): `starter/` (`stages.json`: the stage of a word, what its front shows and the hints it forces; `set.json`); the setting is the workspace-settings key `starter`.
 - Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
   log), day status and goal streak (vacation days neutral): `goals/`.
 - Display form of an entry (the headword lists, cards and the reader show, and the `written` snapshot of

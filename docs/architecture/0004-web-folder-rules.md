@@ -26,7 +26,7 @@ Under `apps/web/src/lib/`:
   under `lib/features/<feature>` (flashcards, reader, journal, grammar: the features of record
   [0006](0006-core-features-instead-of-code-plugins.md), each with a switch); every other feature folder sits
   at the top of `lib/`: `account`, `activity`, `admin`, `aids` (the visual aids: tone colours, pictures, anatomy), `entry`, `goals`, `lookups` (the lookup history and
-  its page), `milestones`, `notes`, `placement` (the placement test and "I already know this", #74), `pwa`, `search`, `settings`, `sources`, `stats`, `weekly`, `widgets` (the
+  its page), `milestones`, `notes`, `placement` (the placement test and "I already know this", #74), `pwa`, `search`, `settings`, `sources`, `starter` (Starter mode's settings, offer and add button, #214), `stats`, `weekly`, `widgets` (the
   home and Stats overview board) and `workspace`.
 - **Logic-only folders**: the shared layers below the features, with no component: `api`, `audio`, `auth`,
   `context`, `events`, `fonts`, `i18n`, `languages`, `native`, `packages`, `radicals`, `routing`, `session`, `study`,

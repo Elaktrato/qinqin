@@ -41,6 +41,12 @@
    "owner": "apps/web/src/lib/study/hints.ts"
   },
   {
+   "key": "starter",
+   "shape": "object: {enabled: boolean, scope: \"base\" | \"all\"}",
+   "default": "enabled false, scope base, member by member (see starter/README.md)",
+   "owner": "apps/web/src/lib/study/starter.ts"
+  },
+  {
    "key": "visualAids",
    "shape": "object: aid (pictures, toneColors, anatomy) -> boolean",
    "default": "each switch true; see aids/visual-aids.json",

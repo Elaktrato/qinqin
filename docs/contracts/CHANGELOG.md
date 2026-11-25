@@ -5,6 +5,23 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #214 — Starter mode: per-word stages and Starter sets (contract 10)
+
+- **New fixtures:** `starter/stages.json` (rule `starter/stages`): the stage of a word derived from its vocab card's
+  own reviews (a success counts one point at least twelve hours after the last counted review, Hard pauses, Again drops
+  one stage, per-profile thresholds `ja` 0,1,2,3,5,7 and `zh` 0,1,2,4,6, words usually written in kana stop at stage 4),
+  what the front shows at each stage and the hint modes it forces; and `starter/set.json` (rule `starter/set`): the
+  Starter set file format. Clients that show Starter mode implement the rule the same way (`starter/README.md`).
+- **New routes:** `GET /api/starter-sets` (public, not access tokens) and `GET /api/starter-sets/{id}` (signed-in users,
+  not access tokens): the shipped sets, and one set's words resolved to dictionary entries in the set's order. Neither
+  is cached offline by the service worker beyond the default (`routes.fixture.json`).
+- **Workspace setting:** the key `starter`, `{enabled, scope}`, read member by member with the defaults off and `base`
+  (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **Deck id:** the Starter set is copied into the plain deck `d-starter-<ja|zh>` (no `source`, so no deck row shape
+  changes); `decks/README.md` lists the id.
+- **Catalogue keys:** `flashcards.starter.new.*`, `flashcards.starterSet.*`, `app.home.starter*`, `settings.starter.*`;
+  the picture is #212's Picture hint (gated by the `visualAids.pictures` switch); Starter mode only forces its mode.
+
 ## #212 — visual aids: pictures, tone colours, character anatomy (contract 9)
 
 - **Workspace setting:** the key `visualAids`, `{pictures, toneColors, anatomy}` booleans, all on by default, read

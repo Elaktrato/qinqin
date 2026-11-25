@@ -16,6 +16,7 @@ const PURE = [
 	'grade.ts',
 	'hints.ts',
 	'hintKey.ts',
+	'starter.ts',
 	'tones.ts',
 	'writing.ts',
 	'readModel.ts',

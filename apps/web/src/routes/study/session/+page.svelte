@@ -101,7 +101,19 @@ import type { Run } from '$lib/study/vacation';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
 	import { pictureFor } from '$lib/aids/pictures';
 	import { readVisualAids } from '$lib/aids/visualAids';
-	import { applyHints, hintsForEntry, readHintSettings, resolveHints } from '$lib/study/hints';
+	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/study/hints';
+	import {
+		readStarterSettings,
+		replayStarter,
+		stageNote,
+		starterAppliesTo,
+		starterForcedHints,
+		starterFront,
+		starterProfile,
+		usuallyKanaOf,
+		type StarterFront,
+		type StarterReview
+	} from '$lib/study/starter';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
 	import { nextIntervals } from '$lib/study/scheduler';
 	import { longInterval } from '$lib/study/intervalText';
@@ -131,6 +143,54 @@ import type { Run } from '$lib/study/vacation';
 	// (bound from its HintScope) and the plan of a resolved card.
 	const hintSettings = $derived(readHintSettings(session.workspaces.current?.settings));
 	let cardHints = $state<CardHints | null>(null);
+	// Starter mode (#214): the stage of a vocab card's word, derived from the card's own reviews.
+	const starterSettings = $derived(readStarterSettings(session.workspaces.current?.settings));
+	const starterReviews = $derived.by(() => {
+		const byCard = new Map<string, StarterReview[]>();
+		if (!starterSettings.enabled) return byCard;
+		for (const review of [...reviews, ...sessionReviews]) {
+			const id = review?.payload?.cardId;
+			if (typeof id !== 'string') continue;
+			const list = byCard.get(id) ?? [];
+			list.push({ at: review.ts, grade: review.payload.grade });
+			byCard.set(id, list);
+		}
+		return byCard;
+	});
+	const NOTE_TEXT = {
+		kana: t('flashcards.starter.new.kana'),
+		katakana: t('flashcards.starter.new.katakana'),
+		noRomaji: t('flashcards.starter.new.noRomaji'),
+		pictureHint: t('flashcards.starter.new.pictureHint'),
+		kanji: t('flashcards.starter.new.kanji'),
+		hanzi: t('flashcards.starter.new.hanzi'),
+		noPinyin: t('flashcards.starter.new.noPinyin'),
+		normal: t('flashcards.starter.new.normal')
+	};
+	interface StarterView {
+		front: StarterFront | null;
+		note: string | null;
+		forced: Partial<Record<HintKind, HintMode>>;
+	}
+	function starterOf(current: { item: FlowItem; entry: Entry }): StarterView | null {
+		if (current.item.kind !== 'vocab') return null;
+		const profile = starterProfile(current.entry.language);
+		if (profile === null) return null;
+		const deckIds = current.item.card?.deckIds ?? current.item.deckIds ?? [];
+		if (!starterAppliesTo(starterSettings, current.entry.language, deckIds)) return null;
+		const word = { usuallyKana: profile === 'ja' && usuallyKanaOf(current.entry) };
+		const progress = replayStarter(profile, word, starterReviews.get(current.item.cardId) ?? []);
+		const front = starterFront(profile, progress.stage, word, current.entry);
+		const kana = current.entry.readings.find((r) => r.type === 'kana')?.value ?? '';
+		const note = progress.justAdvanced
+			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana) })
+			: null;
+		return {
+			front,
+			note: note === null ? null : NOTE_TEXT[note],
+			forced: starterForcedHints(profile, progress.stage, word)
+		};
+	}
 	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
 	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
 	let pictureTick = $state(0);
@@ -142,7 +202,8 @@ import type { Run } from '$lib/study/vacation';
 		resolveHints({
 			cardKind: current.item.kind,
 			settings: hintSettings,
-			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) })
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) }),
+			forced: starterOf(current)?.forced
 		});
 	$effect(() => {
 		const id = shownCard?.entry.id;
@@ -1484,12 +1545,14 @@ import type { Run } from '$lib/study/vacation';
 				<p class="hint loading-card" role="status">{t('study.session.loadingCard')}</p>
 			{:else}
 				{@const current = shownCard}
+				{@const starter = starterOf(current)}
 				{@const done = shownDone}
 				{@const onCardDone = viewing === null ? onCardShown : noop}
 				{#key viewing === null ? index : `back:${backAt}`}
 					<HintScope plan={hintPlanOf(current)} locked={done} bind:hints={cardHints}>
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
+							{starter}
 							item={current.item}
 							entry={current.entry}
 							revealed={done}

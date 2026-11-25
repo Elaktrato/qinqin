@@ -108,6 +108,25 @@ What a card offers is set in Settings → Study → **Hints**, for each kind of 
 
 Asking for a hint costs a little: the suggested grade becomes **Hard** instead of Good (a wrong answer stays Again). You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
 
+## Starter mode
+
+For people who are new to a language (Japanese and Chinese so far). You get a short set of common, picturable words, the **Starter words**, in your own decks, and each word starts as a picture with its pronunciation. The more you get to know **that word**, the more of the real script it shows. It is a display rule only: the cards, their history and their schedules are the same with Starter mode on or off.
+
+| Stage | Japanese front | Chinese front |
+|---|---|---|
+| 1 | picture and romaji | picture and pinyin |
+| 2 | picture and hiragana with romaji | picture and hanzi with pinyin |
+| 3 | picture and hiragana | hanzi with pinyin, picture as a hint |
+| 4 | hiragana, picture as a hint | hanzi, picture as a hint |
+| 5 | kanji with hiragana above (furigana), picture as a hint | the normal card |
+| 6 | the normal card | |
+
+Loanwords show katakana where hiragana is used above. Words that are normally written in kana stop at stage 4, which is their normal card. "Picture as a hint" means the picture is hidden until you press **Hint** (or H), the same control and the same grading rule as every other hint. The meaning is always on the back, and the play button is on the front at every stage.
+
+A word moves up when you answer it **Good or Easy on a different day** (at least twelve hours after the last answer that counted): one step for the first answer, then at 2, 3, 5 and 7 such answers for Japanese (1, 2, 4 and 6 for Chinese). **Hard** keeps the word where it is, and **Again** drops it one stage. The first time a word reaches a new stage its card says what changed ("New: now with hiragana").
+
+Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are a seed list that has not yet been read through by a person.
+
 ## Your notes on the answer side
 
 When a card's answer is shown, your note on the word (see [Searching and entries](Searching-and-entries#your-note)) appears below the card, for every card type, level sessions included. It never shows before the answer, since a mnemonic often gives it away. Notes are loaded once when a session starts, so a note edited meanwhile in another tab appears in the next session; an offline session shows none, and a session never waits for them. Turn them off per workspace in Settings → Study: **Show my notes on the answer side**.
