@@ -444,6 +444,14 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/starter-sets",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/starter-sets/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/stats/activity",
 		"access": "user"
 	},
