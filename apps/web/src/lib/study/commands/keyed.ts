@@ -7,7 +7,7 @@ import { ApiError } from '../../api/client';
 import { GOALS_KEY, type GoalsRow } from '../../goals/goals';
 import { MILESTONE_KEY_PREFIX } from '../../milestones/catalogue';
 import { PartialPushError } from '../../sync/push';
-import { knownMarkKey, knownMarkRow } from '../knownMarks';
+import { knownMarkKey, knownMarkRow, type KnownBatch } from '../knownMarks';
 import { VACATION_PREFIX, type VacationPeriod } from '../vacation';
 import { deleteData, pushKeyedRows, putData, replanned, requireWorkspaceArg } from './write';
 
@@ -61,7 +61,7 @@ export async function setKnownMarks(
 	workspaceId: number,
 	entryIds: readonly number[],
 	on: boolean,
-	opts: { onProgress?: (done: number, total: number) => void } = {},
+	opts: { onProgress?: (done: number, total: number) => void; batch?: KnownBatch } = {},
 ): Promise<void> {
 	requireWorkspaceArg(workspaceId, 'setKnownMarks');
 	// Each row is stamped after the time the server holds for its key (a
@@ -69,7 +69,7 @@ export async function setKnownMarks(
 	return replanned(study, workspaceId, async ({ snapshot: { knownAt } }) => {
 		const now = new Date();
 		const rows = [...new Set(entryIds)].map((id) => {
-			const row = knownMarkRow(id, now);
+			const row = knownMarkRow(id, now, opts.batch);
 			const at = knownAt.get(row.key);
 			const stamp = at === undefined ? {} : { knownAt: at };
 			return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };

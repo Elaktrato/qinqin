@@ -1,0 +1,10 @@
+{
+  "id": "e2e-zh-levels",
+  "name": "Chinese end-to-end test levels",
+  "version": "1",
+  "type": "levels",
+  "language": "zh",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written test data",
+  "format": "json"
+}

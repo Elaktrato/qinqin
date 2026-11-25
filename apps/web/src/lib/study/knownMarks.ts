@@ -35,7 +35,37 @@ export function knownMarkKey(entryId: number): string {
 	return `${KNOWN_PREFIX}${entryId}`;
 }
 
-/** knownMarkRow is the row that marks `entryId` as known. */
-export function knownMarkRow(entryId: number, now: Date): { key: string; data: KnownMarkRow } {
-	return { key: knownMarkKey(entryId), data: { version: 1, entryId, createdAt: now.toISOString() } };
+/**
+ * KnownBatch names the declaration ("I already know this", #74) a mark was
+ * written by: a ULID, how it was made and a label of its scope. Marks of one
+ * batch are undone together.
+ */
+export interface KnownBatch {
+	id: string;
+	source: 'range' | 'placement';
+	scope: string;
+}
+
+const SCOPE_MAX = 120;
+
+/** parseKnownBatch reads the optional declaration fields of a mark's data; null for a mark made by hand. */
+export function parseKnownBatch(raw: unknown): KnownBatch | null {
+	if (!isRecord(raw)) return null;
+	const { batch, source, scope } = raw;
+	if (typeof batch !== 'string' || batch === '') return null;
+	if (source !== 'range' && source !== 'placement') return null;
+	return { id: batch, source, scope: typeof scope === 'string' ? scope.slice(0, SCOPE_MAX) : '' };
+}
+
+/** knownMarkRow is the row that marks `entryId` as known, optionally as part of a declaration. */
+export function knownMarkRow(
+	entryId: number,
+	now: Date,
+	batch?: KnownBatch
+): { key: string; data: KnownMarkRow & Partial<Record<'batch' | 'source' | 'scope', string>> } {
+	const data = { version: 1 as const, entryId, createdAt: now.toISOString() };
+	return {
+		key: knownMarkKey(entryId),
+		data: batch === undefined ? data : { ...data, batch: batch.id, source: batch.source, scope: batch.scope.slice(0, SCOPE_MAX) }
+	};
 }

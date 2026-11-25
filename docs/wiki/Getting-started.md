@@ -26,6 +26,7 @@ The top bar (on a phone, the menu) leads to Search, Decks, Reader, Journal, Gram
 
 ## A first ten minutes
 
+0. Optional, and the home page offers it on an empty workspace: under Settings → Study → **What you already know**, mark the levels you can already read (or take the short placement test) so that known words are not treated as new ([Settings tour](Settings-tour#study)).
 1. Search for a word you know ([Searching and entries](Searching-and-entries)) and press **Add to deck** on its entry. Or open **Decks** and press **Add** on a starter or level deck to copy a whole list of words in one click ([Decks, limits and vacation](Flashcards-decks-limits-vacation)).
 2. Press **Study** on a deck, or **Study** on the home page's flashcards widget, keep the defaults and press **Start studying** in the study modal ([Flashcards: study sessions](Flashcards-study-sessions)).
 3. Open a book in the [Reader](Reader), or a lesson in [Grammar](Grammar-lessons), and look words up as you go.

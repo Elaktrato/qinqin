@@ -5,7 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #204, #63 — writing-system trainer (scripts)
+## #204, #63 — writing-system trainer (scripts) (contract 6)
 
 - **Feature switch:** a fifth core feature id `scripts`, last in the order (`features/switches.json`:
   `features`, the fresh list). `GET /api/features` answers five rows; clients keep reading a missing row as on.
@@ -18,6 +18,16 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   new profiles `ko` (`hangul`) and `ru` (`cyrillic`) (`languages/profiles.json`; `ko` resolved to the fallback
   before). Readers that ignore unknown members are unaffected.
 - **Catalogue keys:** the key area `scripts` (`i18n/README.md`).
+
+## #74 — "I already know this": declaration batches on known marks (contract 5)
+
+No route, key family or fixture file changes. The reader's manual mark `known:<entryId>` (`reader/`) may now
+carry three optional fields: `batch` (a ULID), `source` (`range` | `placement`) and `scope` (a label, at most
+120 code points). A declaration ("everything up to HSK 3", a placement result) writes one such mark per entry
+that has no live mark, all with the same `batch`; undoing it tombstones exactly the live marks still carrying
+that batch. Clients that do not know the fields ignore them, keep them on rewrite and restore (the backup remap
+keeps the other bytes), and treat the mark as any other. `reader/word-states.json` gains `rowCases` for the
+fields. The placement test itself is client-side (pure, seeded) and has no contract.
 
 ## #36 — native device features advertised on the bridge (contract 4)
 
