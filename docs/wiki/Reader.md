@@ -28,7 +28,7 @@ Words you look up are kept in the workspace's [lookup history](Searching-and-ent
 
 ## I know this word
 
-Next to **Add to deck** every popup entry has an **I know this** toggle (a check mark shows when it is on). It marks the word as known without making a flashcard: the mark counts like a mastered card everywhere a word is called known (word highlighting, Smart readings, the Words tab, starter decks skip it). Press it again to take the mark back. The mark belongs to the book's workspace and is synced and included in your backup. With word highlighting on, the popup also says how well you know the word ("New word", "Learning", "Known — memory score 85" or "Known — marked by you").
+Next to **Add to deck** every popup entry has an **I know this** toggle (a check mark shows when it is on). It marks the word as known without making a flashcard: the mark counts like a mastered card everywhere a word is called known (word highlighting, Smart readings, the Words tab, starter decks skip it). Press it again to take the mark back. Marks also come from Settings → Study → **What you already know** (a whole level range or a placement test result), where a declaration can be undone as a whole ([Settings tour](Settings-tour#study)). The mark belongs to the book's workspace and is synced and included in your backup. With word highlighting on, the popup also says how well you know the word ("New word", "Learning", "Known — memory score 85" or "Known — marked by you").
 
 ## Display settings
 

@@ -48,6 +48,7 @@ export const FEATURE_FOLDERS = [
 	'lookups',
 	'milestones',
 	'notes',
+	'placement',
 	'pwa',
 	'reminders',
 	'search',

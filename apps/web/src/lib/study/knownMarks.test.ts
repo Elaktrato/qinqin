@@ -8,6 +8,12 @@ describe('parseKnownMark (reader/word-states.json rowCases)', () => {
 	});
 });
 
+describe('parseKnownBatch (reader/word-states.json batchCases)', () => {
+	it.each(fixture.batchCases)('$name', (c) => {
+		expect(parseKnownBatch(c.data)).toEqual(c.expect);
+	});
+});
+
 describe('knownMarkRow', () => {
 	it('builds the row a parse reads back', () => {
 		const row = knownMarkRow(41, new Date('2026-11-16T10:00:00.000Z'));
