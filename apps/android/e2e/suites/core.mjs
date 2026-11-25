@@ -5,7 +5,7 @@
 //   4. the bottom bar (phone layout, sections, More) and the Android back button: overlay first, then history,
 //      then the app leaves to the background (it must not crash).
 import { adb, appPid, connectPage, screenshot, sleep, waitFor } from '../lib.mjs';
-import { back, bodyText, calibrate, click, clickNamed, collectErrors, find, focusField, resumedActivity, tap, typeText, waitText, where } from '../page.mjs';
+import { back, bodyText, calibrate, click, clickNamed, collectErrors, find, focusField, resumedActivity, tap, typeText, waitText, where, NAV } from '../page.mjs';
 import { addBook, addCards, apiLogin, resilient, reviewsOf } from './common.mjs';
 
 const WORDS = ['私', '学校', '行く', '飲む'];
@@ -24,7 +24,7 @@ export async function run(ctx) {
 		B.bookId = await addBook(ctx, B, 'ja', '学校の本', ['私は学校に行きます。', '水を飲みます。']);
 		return { cards: ids.length, bookId: B.bookId, workspaces: B.ws };
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	await rec.step('sign in: a wrong password is refused with a sentence, the right one lands on Home', async () => {
 		await resilient(ctx, 'sign-out', async () => {
@@ -49,12 +49,12 @@ export async function run(ctx) {
 		await clickNamed(ctx.cdp, 'Sign in', { timeout: 10_000 });
 		await waitFor('Home', async () => (await where(ctx.cdp)).path === '/', { timeout: 30_000 });
 		ctx.signedAs = B.username;
-		await waitFor('the bar', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+		await waitFor('the bar', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 		errors = await collectErrors(ctx.cdp);
 		screenshot('core-02-home');
 		return { alert };
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	await rec.step('study: grade a card, go BACK, regrade it; the server holds the replacement exactly once', async () => {
 		await ctx.cdp.eval("location.assign('/study')");
@@ -153,9 +153,9 @@ export async function run(ctx) {
 
 	await rec.step('bottom bar: phone layout, sections, More; edge to edge above the system bar', async () => {
 		await ctx.cdp.eval("location.assign('/')");
-		await waitFor('the bar', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+		await waitFor('the bar', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 		const bar = await ctx.cdp.eval(`(() => {
-			const n = document.querySelector('nav[aria-label=Main]'); const r = n.getBoundingClientRect();
+			const n = ${NAV}; const r = n.getBoundingClientRect();
 			return { names: [...n.querySelectorAll('a')].map((a) => a.textContent.trim()), more: !![...n.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith('More')), bottom: r.bottom, innerHeight, width: innerWidth };
 		})()`);
 		if (bar.names.slice(0, 3).join() !== 'Home,Decks,Reader') throw new Error(`bar items: ${JSON.stringify(bar)}`);
@@ -165,11 +165,11 @@ export async function run(ctx) {
 		// Sections.
 		await click(ctx.cdp, find.named('Reader', 'nav[aria-label=Main] a'));
 		await waitFor('/reader', async () => (await where(ctx.cdp)).path === '/reader', { timeout: 20_000 });
-		const current = await ctx.cdp.eval(`document.querySelector('nav[aria-label=Main] a[aria-current=page]')?.textContent.trim()`);
+		const current = await ctx.cdp.eval(`(${NAV}).querySelector('a[aria-current=page]')?.textContent.trim()`);
 		if (current !== 'Reader') throw new Error(`current item: ${current}`);
 		// More opens the sheet with the other sections.
 		await click(ctx.cdp, find.named('More', 'nav[aria-label=Main] button'));
-		await waitFor('the More sheet', () => ctx.cdp.eval(`!!(${find.css('[role=dialog]')}) && !!(${find.named('Stats', '[role=dialog] a')})`), { timeout: 10_000 });
+		await waitFor('the More sheet', () => ctx.cdp.eval(`!!(${find.css('dialog[open], [role=dialog]')}) && !!(${find.named('Stats', '[role=dialog] a')})`), { timeout: 10_000 });
 		screenshot('core-07-more-sheet');
 		return { ...bar, current };
 	});
@@ -179,7 +179,7 @@ export async function run(ctx) {
 		const gone = (finder) => waitFor('the overlay to close', async () => !(await ctx.cdp.eval(`!!(${finder})`)), { timeout: 10_000, interval: 300 });
 		// The More sheet is open: BACK closes it, the page stays.
 		back();
-		await gone(find.css('[role=dialog]'));
+		await gone(find.css('dialog[open], [role=dialog]'));
 		trail.push(['more-sheet', (await where(ctx.cdp)).path]);
 		if ((await where(ctx.cdp)).path !== '/reader') throw new Error(`BACK with the sheet open changed the page: ${JSON.stringify(trail)}`);
 		// The account menu.
@@ -192,13 +192,13 @@ export async function run(ctx) {
 		// A dialog: the study modal is a dialog over Home; BACK closes it and the page stays Home.
 		await click(ctx.cdp, find.named('Home', 'nav[aria-label=Main] a'));
 		await waitFor('/', async () => (await where(ctx.cdp)).path === '/', { timeout: 15_000 });
-		await ctx.cdp.eval("document.querySelector('nav[aria-label=Main]') && (location.href = '/study')").catch(() => {});
+		await ctx.cdp.eval("location.href = '/study'").catch(() => {});
 		await waitFor('the study dialog', () => ctx.cdp.eval(`!!(${find.dialog('Study')})`), { timeout: 30_000 });
 		back();
 		await gone(find.dialog('Study'));
 		trail.push(['study-dialog', (await where(ctx.cdp)).path]);
 		// History: Home -> Decks -> Reader; BACK twice returns to the page before Decks.
-		await waitFor('the bar', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+		await waitFor('the bar', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 		await click(ctx.cdp, find.named('Decks', 'nav[aria-label=Main] a'));
 		await waitFor('/flashcards', async () => (await where(ctx.cdp)).path === '/flashcards', { timeout: 15_000 });
 		await click(ctx.cdp, find.named('Reader', 'nav[aria-label=Main] a'));

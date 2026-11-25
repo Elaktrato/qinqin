@@ -7,7 +7,7 @@ import { statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { OUT, adb, sleep, waitFor } from '../lib.mjs';
 import { addBook, addCards, useLearner } from './common.mjs';
-import { calibrate, click, clickNamed, find, swipe, waitText, where } from '../page.mjs';
+import { calibrate, click, clickNamed, find, swipe, waitText, where, NAV } from '../page.mjs';
 
 const WORDS = ['私', '学校', '行く', '飲む', '水', '本', '食べる', '読む'];
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
@@ -54,7 +54,7 @@ export async function run(ctx) {
 		P.bookId = await addBook(ctx, P, 'ja', '長い本', paras);
 		return { bookId: P.bookId };
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	await rec.step('perf: cold start online (3 runs) and the load timeline of Home', async () => {
 		const runs = [];
@@ -109,7 +109,7 @@ export async function run(ctx) {
 
 	await rec.step('perf: five client-side route transitions through the bottom bar (click to second frame with content)', async () => {
 		await ctx.cdp.eval("location.assign('/')");
-		await waitFor('Home', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+		await waitFor('Home', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 		await sleep(1500);
 		const hops = [['Decks', '/flashcards'], ['Reader', '/reader'], ['Search', '/search'], ['Home', '/'], ['Reader', '/reader']];
 		const times = {};

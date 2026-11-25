@@ -140,12 +140,12 @@ Not allowed:
 - Review: that no allowNavigation or a second server URL is added in MainActivity, and that a new overlay is
   reachable by the back button.
 
-## Testing in the shell (#37)
+### Testing in the shell (#37)
 
 - **The emulator job is the only place the shell runs** (it needs KVM; there is no Playwright for the shell). The driver
   (`apps/android/e2e/`) uses adb and the WebView's DevTools socket and is split into suites: `shell` (offline and native
   features), `core` (sign in, study with Back, reader lookup, bottom bar, back button), `pages` (every route in Day
-  and Night with layout invariants), `ime`, `touch`, `perf`. The workflow runs them as two matrix jobs, `core` and
+  and Night with layout invariants), IME, touch and performance suites. The workflow runs them as two matrix jobs, `core` and
   `extended`, and by hand with a `suites` list.
 - **Real input, not synthetic events, where the shell matters:** clicks and keys go through the DevTools `Input`
   domain (trusted events); the system back button is `adb shell input keyevent KEYCODE_BACK`; strokes and taps on the
@@ -157,7 +157,7 @@ Not allowed:
   from desktop browsers. A new Enter handler uses it; the jsdom tests of each handler simulate a composition.
 - **Performance numbers** are a regression baseline of a software-rendered x86 emulator, not phone numbers; they are
   recorded in `perf.json` of the job summary and in the design doc, and never gate a run.
-- The emulator can lose the app when Google Play services restart on the `google_apis` image: the driver waits for it
+- The emulator can lose the app when Google Play services restart on the Google APIs image: the driver waits for it
   to settle and retries idempotent steps after a relaunch.
 
 ## Open questions

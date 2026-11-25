@@ -185,6 +185,15 @@ export class Recorder {
 		return entry.ok;
 	}
 
+	/** Marks the start of a suite: suiteFailed() looks only at the steps since. */
+	startSuite() {
+		this.from = this.steps.length;
+	}
+
+	suiteFailed() {
+		return this.steps.slice(this.from || 0).some((x) => !x.ok);
+	}
+
 	summary() {
 		return { ok: !this.failed && this.steps.every((s) => s.ok), steps: this.steps, numbers: this.numbers };
 	}

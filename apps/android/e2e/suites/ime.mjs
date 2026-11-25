@@ -22,7 +22,7 @@ export async function run(ctx) {
 		await setCardTypes(D, 'ja', ['reverse']);
 		return { ws: D.ws };
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	await rec.step('ime: search box - Enter during composition does not submit; commit then Enter searches', async () => {
 		await ctx.cdp.eval("location.assign('/search')");

@@ -156,7 +156,7 @@ export async function useLearner(ctx, user) {
 		location.assign('/');
 	})()`);
 	await sleep(1500);
-	await waitFor('Home after the switch', async () => (await ctx.cdp.eval(`document.querySelector('nav[aria-label=Main], header') !== null && location.pathname === '/'`)), { timeout: 40_000, interval: 500 });
+	await waitFor('Home after the switch', async () => (await ctx.cdp.eval(`[...document.querySelectorAll('nav[aria-label=Main], header')].some((n) => n.getClientRects().length > 0) && location.pathname === '/'`)), { timeout: 40_000, interval: 500 });
 	ctx.signedAs = user.username;
 	return user;
 }

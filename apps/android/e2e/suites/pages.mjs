@@ -4,7 +4,7 @@
 // page, header text not clipped, tap targets of the bar and the top bar at least 44 px (other small targets are
 // listed in the summary, not failed). The theme is switched with the real control (Settings, Appearance).
 import { screenshot, sleep, waitFor } from '../lib.mjs';
-import { clickNamed, click, collectErrors, find, waitText } from '../page.mjs';
+import { clickNamed, click, collectErrors, find, waitText, NAV } from '../page.mjs';
 import { addBook, addCards, setMode, useLearner } from './common.mjs';
 
 const SETTINGS_TABS = ['workspaces', 'layout', 'appearance', 'study', 'features', 'notifications', 'ai', 'account', 'data', 'admin'];
@@ -13,7 +13,7 @@ const ADMIN_SECTIONS = ['users', 'invites', 'email', 'security', 'backup', 'upda
 /** Evaluated in the page after it settled: returns the invariants as numbers and lists. */
 const INVARIANTS = `(() => {
 	const de = document.documentElement;
-	const bar = document.querySelector('nav[aria-label=Main]');
+	const bar = ${NAV};
 	const barBox = bar && bar.getClientRects().length ? bar.getBoundingClientRect() : null;
 	const scrollers = [document.scrollingElement, ...document.querySelectorAll('*')].filter((el) => el && el.scrollHeight > el.clientHeight + 40 && (el === document.scrollingElement || /(auto|scroll)/.test(getComputedStyle(el).overflowY)));
 	const sc = scrollers.sort((a, b) => b.scrollHeight - b.clientHeight - (a.scrollHeight - a.clientHeight))[0];
@@ -51,7 +51,7 @@ export async function run(ctx) {
 		errors = await collectErrors(ctx.cdp);
 		return { bookId: B.bookId, entryId: B.entryId };
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	const routes = () => [
 		['home', '/'],
@@ -108,7 +108,7 @@ export async function run(ctx) {
 			screenshot(`pages-${theme}-0-settings-appearance-switched`);
 			return r;
 		});
-		if (rec.failed) return;
+		if (rec.suiteFailed()) return;
 
 		await rec.step(`pages (${theme}): every route`, async () => {
 			const seen = [];
@@ -128,10 +128,10 @@ export async function run(ctx) {
 		await rec.step(`pages (${theme}): overlays (More sheet, account menu, study modal, session card)`, async () => {
 			const views = [];
 			await ctx.cdp.eval("location.assign('/')");
-			await waitFor('Home', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+			await waitFor('Home', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 			await sleep(800);
 			await click(ctx.cdp, find.named('More', 'nav[aria-label=Main] button'));
-			await waitFor('the sheet', () => ctx.cdp.eval(`!!(${find.css('[role=dialog]')})`), { timeout: 10_000 });
+			await waitFor('the sheet', () => ctx.cdp.eval(`!!(${find.css('dialog[open], [role=dialog]')})`), { timeout: 10_000 });
 			await inspect(theme, 'overlay-more-sheet');
 			await ctx.cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
 			await ctx.cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });

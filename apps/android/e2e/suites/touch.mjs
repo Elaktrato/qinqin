@@ -7,7 +7,7 @@
 // probe of the screen edge (the back gesture zone) is recorded.
 import { adb, screenshot, sleep, waitFor } from '../lib.mjs';
 import { addCards, useLearner } from './common.mjs';
-import { bodyText, calibrate, click, clickNamed, find, resumedActivity, stroke, swipe, waitText, where } from '../page.mjs';
+import { bodyText, calibrate, click, clickNamed, find, resumedActivity, stroke, swipe, waitText, where, NAV } from '../page.mjs';
 
 /** Counters on one element and on the page, read with read(). */
 const INSTRUMENT = (sel) => `(() => {
@@ -47,7 +47,7 @@ export async function run(ctx) {
 		num.touchCalibration = cal;
 		return cal;
 	});
-	if (rec.failed) return;
+	if (rec.suiteFailed()) return;
 
 	await rec.step('writing pad: two strokes by finger (a swipe and a held multi-point path); each is judged, nothing scrolls or selects', async () => {
 		await ctx.cdp.eval("location.assign('/study')");
@@ -107,7 +107,7 @@ export async function run(ctx) {
 
 	await rec.step('tone pad: a finger swipe up and to the right sets tone 2 on both pads; Check marks it right', async () => {
 		await ctx.cdp.eval("location.assign('/')");
-		await waitFor('Home', () => ctx.cdp.eval(`!!document.querySelector('nav[aria-label=Main]')`), { timeout: 30_000 });
+		await waitFor('Home', () => ctx.cdp.eval(`!!${NAV}`), { timeout: 30_000 });
 		await clickNamed(ctx.cdp, 'Workspace:');
 		await click(ctx.cdp, find.named('Chinese', '[role=menuitemradio], [role=menuitem]'));
 		await waitFor('the Chinese workspace', () => ctx.cdp.eval(`!!(${find.named('Workspace: Chinese')})`), { timeout: 15_000 });

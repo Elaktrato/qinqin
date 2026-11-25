@@ -5,6 +5,9 @@ import { adb, sleep, waitFor } from './lib.mjs';
 
 const J = (s) => JSON.stringify(s);
 
+/** The visible bottom bar / drawer navigation (the desktop bar is another `nav` named Main, hidden on a phone). */
+export const NAV = "[...document.querySelectorAll('nav[aria-label=Main]')].find((n) => n.getClientRects().length > 0)";
+
 export const bodyText = (cdp) => cdp.eval('document.body ? document.body.innerText : ""');
 
 /** JS expressions (strings) that evaluate to an element or null; the visible one whose name starts with `label`. */
@@ -19,7 +22,7 @@ export const find = {
 		`[...document.querySelectorAll('input, textarea')].find((x) => x.getClientRects().length > 0 && ((x.getAttribute('aria-label') || [...(x.labels || [])].map((l) => l.textContent).join(' ') || x.placeholder || '').trim().startsWith(${J(label)})))`,
 	/** An element carrying a dialog role whose name or text starts with `label`. */
 	dialog: (label) =>
-		`[...document.querySelectorAll('[role=dialog], dialog[open]')].find((x) => x.getClientRects().length > 0 && (((x.getAttribute('aria-label') || '') + ' ' + x.textContent).trim().startsWith(${J(label)}) || (x.getAttribute('aria-label') || '').startsWith(${J(label)})))`
+		`[...document.querySelectorAll('[role=dialog], dialog[open]')].find((x) => x.getClientRects().length > 0 && ((x.getAttribute('aria-label') || '') + ' ' + x.textContent).includes(${J(label)}))`
 };
 
 /** The box of an element in CSS px after scrolling it to the middle; null when absent. */

@@ -279,6 +279,7 @@ async function main() {
 		for (const [name, mod] of [['core', core], ['pages', pages], ['ime', ime], ['touch', touch], ['perf', perf]]) {
 			if (!SUITES.has(name)) continue;
 			ctx.suite = name;
+			rec.startSuite();
 			await mod.run(ctx);
 			if (ctx.cdp !== cdp) cdp = ctx.cdp;
 		}

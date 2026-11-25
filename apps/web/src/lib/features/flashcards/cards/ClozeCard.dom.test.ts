@@ -129,6 +129,8 @@ describe('ClozeCard (choose)', () => {
 
 	it('a right pick suggests Good and a wrong one Again, with the digit key preventing default', async () => {
 		const { onDone } = setup({ mode: 'choose', choices });
+		// The IME guard's window after a compositionend (an earlier test's) must have passed.
+		await new Promise((r) => setTimeout(r, 60));
 		const down = new KeyboardEvent('keydown', { key: '2', cancelable: true, bubbles: true });
 		window.dispatchEvent(down);
 		expect(down.defaultPrevented).toBe(true);
