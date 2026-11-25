@@ -6,7 +6,7 @@
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { Button } from '$lib/ui';
-	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
+	import { codeFailure, otpAttrs, otpComplete, resendText, reconcileOtp } from './otpInput';
 
 	// Confirms a self-entered address with the six-digit code the server mailed
 	// to it. 403 code_invalid / challenge_expired: this is a signed-in route.
@@ -92,10 +92,8 @@
 			autocomplete={attrs.autocomplete}
 			maxlength={attrs.maxlength}
 			value={code}
-			oninput={(e) => {
-				code = sanitizeOtp(e.currentTarget.value, 'email');
-				e.currentTarget.value = code;
-			}}
+			oninput={(e) => (code = reconcileOtp(e.currentTarget, 'email', (e as unknown as InputEvent).isComposing))}
+			oncompositionend={(e) => (code = reconcileOtp(e.currentTarget, 'email', false))}
 			required
 		/>
 	</label>
