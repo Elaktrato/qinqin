@@ -26,6 +26,17 @@ The first screen asks for your server's address. Type it the way you would in a 
 - The **status and navigation bars** follow the theme (qinqin Day and Night, or yours); the page draws under them and keeps clear of notches and the gesture bar. The keyboard does not cover the field you type in.
 - Only your server's address gets the app's native features; no other site can use them.
 
+### Phone features
+
+Everything below is the same web app; the app only lends it the phone's parts. In a browser the same buttons do what the browser can (or nothing).
+
+- **Device voice.** When a word has no recording and "Use device voice" is on (Settings, Workspaces, Audio), the app speaks with Android's own text-to-speech: Chinese with a zh-CN voice (else zh-TW or zh-HK), Japanese with a ja-JP voice, slightly slower than normal. If your phone has no voice for a language, Settings, Audio says so with an **Open voice settings** button: install a voice pack there (Android's text-to-speech settings, your engine, Install voice data). Without a voice no play button is shown rather than one that stays silent.
+- **Photos for the journal.** **Take a photo** opens your camera app; **Choose a photo** opens the system picker. The app has no camera permission of its own: the camera app takes the picture. The web app still shrinks big photos before uploading.
+- **Saving backups.** **Download** in Settings, Account, Your data (and the server backup, and the recovery codes) opens Android's save screen: pick the folder (Downloads is the usual one) and confirm. Cancel there and nothing is saved. A very large backup is held in memory while it is saved; on a phone with little memory prefer downloading it on a computer.
+- **Share.** Entry pages and example sentences have a **Share** button (the system share sheet; a browser uses its own share or copies the text). An entry shares its word and first reading only, no dictionary text. Going the other way: **Share** from another app to qinqin, or select a text anywhere and choose **Look up in qinqin**: the lookup opens with that text (up to 200 characters, plain text). If you are not signed in yet it waits until you are.
+- **Screen stays on** while a study session runs, and may sleep again at the end of the session or when you leave it.
+- **Vibration on grading** (Settings, Study, Feedback, on by default, per workspace): a short buzz for a grade, a longer one for "Again". Also in phone browsers that support it.
+
 ## Offline
 
 Offline start and study work as in the browser, through the web app's own service worker ([Install and offline](Install-and-offline)): the same decks, queue and outbox, the same limits. That needs **https** (or `localhost`): over plain http on a home network a browser does not allow a service worker, and neither does the app, so without a connection to the server it shows its first screen with **Try again** instead of your decks. Use an https address if you want offline study. The very first start needs the server too: nothing is saved yet.
@@ -40,7 +51,7 @@ The outbox is sent when the app opens, when it returns to the front and when the
 
 ## Notifications
 
-Not yet. Local reminders are planned (#137) and will need the Android notification permission, asked only then.
+The app can show local notifications (no Google services, nothing is sent anywhere): the groundwork is in place, but no feature uses it yet, so the app does not ask for the Android notification permission. Local reminders are planned (#137-#139); they will ask only then, and a reminder may arrive a few minutes late when the phone is idle (Android's battery saving; exact alarms would need a special permission screen). Scheduled reminders are armed again after a reboot or an app update.
 
 ## For the person running the server
 
