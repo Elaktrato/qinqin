@@ -27,6 +27,8 @@ type Profile struct {
 	Variants      bool     `json:"variants"`
 	CardKinds     []string `json:"cardKinds"`
 	PracticeModes []string `json:"practiceModes"`
+	// WritingSystems are the scripts the writing-system trainer teaches (#204, #63): ids of the script data in the web app.
+	WritingSystems []string `json:"writingSystems"`
 }
 
 // HasCardKind reports whether a session of the language may hold kind.
@@ -47,11 +49,13 @@ var (
 // Profiles are the profiles in the fixture's order; the fallback is last.
 var Profiles = []Profile{
 	{Code: "zh", Script: ScriptHan, Readings: []string{"pinyin"}, Segmentation: "dictionary", Tones: true, Strokes: true, Variants: true,
-		CardKinds: []string{"vocab", "sentence", "writing", "tone", "reverse", "cloze"}, PracticeModes: allPractice},
+		CardKinds: []string{"vocab", "sentence", "writing", "tone", "reverse", "cloze"}, PracticeModes: allPractice, WritingSystems: []string{}},
 	{Code: "ja", Script: ScriptHan, Readings: []string{"kana"}, Segmentation: "dictionary", Kana: true,
-		CardKinds: []string{"vocab", "sentence", "writing", "reverse", "cloze"}, PracticeModes: allPractice},
-	{Code: "es", Script: ScriptLatin, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}},
-	{Code: "*", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}},
+		CardKinds: []string{"vocab", "sentence", "writing", "reverse", "cloze"}, PracticeModes: allPractice, WritingSystems: []string{"hiragana", "katakana"}},
+	{Code: "es", Script: ScriptLatin, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
+	{Code: "ko", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"hangul"}},
+	{Code: "ru", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"cyrillic"}},
+	{Code: "*", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
 }
 
 // ProfileOf resolves a code by its primary subtag, case-insensitive

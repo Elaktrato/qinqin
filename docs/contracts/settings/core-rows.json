@@ -10,7 +10,8 @@
   "weekly-summary",
   "flashcards-summary",
   "word-states",
-  "reading-time"
+  "reading-time",
+  "scripts-progress"
  ],
  "defaultLayout": [
   "activity-heatmap",

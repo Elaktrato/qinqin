@@ -169,7 +169,7 @@ plan. Native pieces only where the WebView falls short.
 - Getting started: [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test,
   [#82](https://github.com/Elaktrato/qinqin/issues/82) level check,
   [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study,
-  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer
+  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC0 data; write mode deferred, KanjiVG is CC BY-SA 3.0)
 - Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
   [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order,
   [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio

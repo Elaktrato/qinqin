@@ -114,6 +114,26 @@ unverified facts marked unverified) must stay the same in both places.
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
 
+## Writing-system trainer data (kana, Hangul, Cyrillic)
+
+The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
+`apps/web/src/lib/features/scripts/data/kana.json`, `hangul.json` and `cyrillic.json`, with their own
+`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC0 1.0** (public domain
+dedication), as the issue states; this differs from the CC BY 4.0 of the project's other written content
+(`LICENSING.md`), because a chart of letters has nothing to attribute. Nothing in them is copied from another
+source: the charts are tables of facts about writing systems (modified Hepburn, Revised Romanization, a plain
+Cyrillic transliteration), the example words are common words with an English gloss, and the keyboard keys are
+layout facts (Korean 2-set, Russian ЙЦУКЕН). The Sources page lists them under the feature (`FeatureDef.sources`).
+
+Licence checks done at the time of writing (2026-11-26), for sources that were looked at and **not bundled**:
+
+- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`). Below the project's floor
+  (CC BY-SA 4.0 or more permissive), so it is not used for the kana write mode. The `kanjivg-components` pack, which
+  predates this rule, is unchanged (see the owner question in the #204 pull request).
+- **Lingua Libre / Wikimedia Commons** (sound recordings): the licence is per file (often CC BY-SA 4.0, some
+  CC BY-SA 3.0 or CC0). Nothing was downloaded; each file would have to be checked at download time. The trainer
+  speaks with the device voice meanwhile.
+
 ## Lemmatizer rules
 
 - **Japanese lemmatizer rules** (`ja-lemma`, type `lemma-rules`; bundled): the

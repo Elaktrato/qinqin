@@ -48,7 +48,7 @@
 	};
 
 	const ready = $derived(session.features.status === 'ready');
-	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.features)]);
+	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.features, session.workspaces.current?.language ?? null)]);
 	const visibleIds = $derived(sections.map((s) => s.id));
 	const phone = $derived(store.phone);
 	const bar = $derived(store.bar);

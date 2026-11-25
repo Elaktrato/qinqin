@@ -23,7 +23,7 @@ export interface FrameSection {
 	match: string[];
 }
 
-const FEATURE_ICONS: Record<string, string> = { flashcards: 'study', reader: 'reader', journal: 'journal', grammar: 'grammar' };
+const FEATURE_ICONS: Record<string, string> = { flashcards: 'study', reader: 'reader', journal: 'journal', grammar: 'grammar', scripts: 'words' };
 const FEATURE_MATCH: Record<string, string[]> = { flashcards: ['/flashcards', '/study'], reader: ['/reader'] };
 
 /** iconOf maps an icon name to the icon set; unknown or absent names get the generic `plugin` icon. */
@@ -36,12 +36,15 @@ export function homeSection(): FrameSection {
 	return { id: 'home', label: t('nav.home'), href: '/', icon: 'home', match: [] };
 }
 
-/** frameSections lists the sections of the bar and the drawer (Home not included). */
-export function frameSections(state: FeatureSwitchesValue): FrameSection[] {
+/**
+ * frameSections lists the sections of the bar and the drawer (Home not included). A feature with an `appliesTo`
+ * (the writing-system trainer) shows only for a workspace language it accepts; no language (no workspace): it is left out.
+ */
+export function frameSections(state: FeatureSwitchesValue, language: string | null = null): FrameSection[] {
 	const features: FrameSection[] =
 		state.status === 'ready'
 			? coreFeatures
-					.filter((f) => featureEnabled(f.id, state.list))
+					.filter((f) => featureEnabled(f.id, state.list) && (f.appliesTo === undefined || (language !== null && f.appliesTo(language))))
 					.map((f) => ({
 						id: f.slug,
 						label: f.title,
