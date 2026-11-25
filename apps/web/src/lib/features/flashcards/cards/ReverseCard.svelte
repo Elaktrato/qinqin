@@ -18,6 +18,7 @@
 	import type { ReviewMeta } from '$lib/study/types';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
+	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
@@ -127,6 +128,7 @@
 			</p>
 		{/if}
 		<p class="fa-word" lang={studyLang(language)}>{faces.written}</p>
+		<AnswerAids {entry} />
 		{#if faces.readings.length > 0 || audio}
 			<div class="fa-readings">
 				{#if faces.readings.length > 0}

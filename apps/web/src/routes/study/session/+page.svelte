@@ -99,6 +99,8 @@ import type { Run } from '$lib/study/vacation';
 	import { provideCardFace } from '$lib/features/flashcards/face/cardFace.svelte';
 	import type { CardHints } from '$lib/features/flashcards/face/cardHints.svelte';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
+	import { pictureFor } from '$lib/aids/pictures';
+	import { readVisualAids } from '$lib/aids/visualAids';
 	import { applyHints, hintsForEntry, readHintSettings, resolveHints } from '$lib/study/hints';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
 	import { nextIntervals } from '$lib/study/scheduler';
@@ -129,8 +131,24 @@ import type { Run } from '$lib/study/vacation';
 	// (bound from its HintScope) and the plan of a resolved card.
 	const hintSettings = $derived(readHintSettings(session.workspaces.current?.settings));
 	let cardHints = $state<CardHints | null>(null);
+	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
+	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
+	let pictureTick = $state(0);
+	const hasPicture = (id: number): boolean => {
+		void pictureTick;
+		return visualAids.pictures && (session.caches.pictures.peek(id) ?? null) !== null;
+	};
 	const hintPlanOf = (current: { item: FlowItem; entry: Entry }) =>
-		resolveHints({ cardKind: current.item.kind, settings: hintSettings, entry: hintsForEntry(current.entry) });
+		resolveHints({
+			cardKind: current.item.kind,
+			settings: hintSettings,
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) })
+		});
+	$effect(() => {
+		const id = shownCard?.entry.id;
+		if (id === undefined || !visualAids.pictures) return;
+		void pictureFor(session.caches.pictures, id).then(() => (pictureTick += 1));
+	});
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
 		vocab: t('study.cardType.vocab'),

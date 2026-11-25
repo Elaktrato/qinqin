@@ -45,8 +45,9 @@ export const HINT_REGISTRY: readonly HintKindDef[] = [
 	},
 	{
 		id: 'picture',
-		// Entries carry no pictures until #212/#216; the day they do, `available` reads that field.
-		ready: false,
+		// #212/#216: the images packs map words to pictures; `hasPicture` is true when the entry has one and the
+		// Pictures visual aid is on (the session asks entryPicture and passes it to hintsForEntry).
+		ready: true,
 		applies: () => true,
 		available: (entry) => entry.hasPicture,
 		defaults: { vocab: 'hint', sentence: 'never', writing: 'hint', tone: 'hint', reverse: 'hint', cloze: 'never' }
@@ -92,9 +93,12 @@ export function hintPatch(kind: HintKind, cardKind: StudyCardKind, mode: HintMod
 	return { [HINTS_SETTINGS_KEY]: { [kind]: { [cardKind]: mode } } };
 }
 
-/** hintsForEntry: what an entry can offer (its readings; pictures wait for #212). */
-export function hintsForEntry(entry: { readings: readonly unknown[] }): HintEntry {
-	return { hasReading: entry.readings.length > 0, hasPicture: false };
+/**
+ * hintsForEntry: what an entry can offer: its readings, and a picture when the caller knows one is shown
+ * (`hasPicture`: an images pack maps the entry and the Pictures visual aid is on; the default is none).
+ */
+export function hintsForEntry(entry: { readings: readonly unknown[] }, opts: { hasPicture?: boolean } = {}): HintEntry {
+	return { hasReading: entry.readings.length > 0, hasPicture: opts.hasPicture === true };
 }
 
 /** The hints of one card: shown from the start, and offered one at a time (both in the fixed order). */

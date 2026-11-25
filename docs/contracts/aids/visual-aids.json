@@ -1,0 +1,19 @@
+{
+ "version": 1,
+ "rule": "aids/visual-aids",
+ "note": "The workspace-settings key `visualAids` (settings/workspace-settings.json). Web: apps/web/src/lib/aids/aids.contract.test.ts.",
+ "key": "visualAids",
+ "aids": ["pictures", "toneColors", "anatomy"],
+ "defaults": { "pictures": true, "toneColors": true, "anatomy": true },
+ "parse": [
+  { "name": "no key: the defaults", "settings": {}, "expect": { "pictures": true, "toneColors": true, "anatomy": true } },
+  { "name": "one switch off", "settings": { "visualAids": { "toneColors": false } }, "expect": { "pictures": true, "toneColors": false, "anatomy": true } },
+  { "name": "all off", "settings": { "visualAids": { "pictures": false, "toneColors": false, "anatomy": false } }, "expect": { "pictures": false, "toneColors": false, "anatomy": false } },
+  { "name": "a value that is not a boolean is the default", "settings": { "visualAids": { "pictures": "no", "anatomy": 0, "toneColors": null } }, "expect": { "pictures": true, "toneColors": true, "anatomy": true } },
+  { "name": "unknown members are ignored", "settings": { "visualAids": { "pitchAccent": true, "anatomy": false } }, "expect": { "pictures": true, "toneColors": true, "anatomy": false } },
+  { "name": "not an object: the defaults", "settings": { "visualAids": [false] }, "expect": { "pictures": true, "toneColors": true, "anatomy": true } }
+ ],
+ "patch": [
+  { "name": "a switch is written alone, by merge patch", "aid": "anatomy", "on": false, "patch": { "visualAids": { "anatomy": false } } }
+ ]
+}

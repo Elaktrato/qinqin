@@ -952,6 +952,8 @@ offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in
 
 ## Pictures
 
+Visual aids (issue #212) add no data: pictures are shown from the packs below, tone colours are drawn from the pinyin readings already in the dictionaries, and character anatomy reads the installed components packs (see "Character components") and the dictionary glosses.
+
 Bundled pictures for words (issue #216): two **images packs**, each its own pack with its licence, notice and
 credit. They are data packs of type `images` (see the wiki's Data-pack-format page and
 `docs/contracts/images/README.md`), fetched at image build time, never committed, never compiled into the binary and

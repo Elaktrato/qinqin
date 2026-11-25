@@ -39,6 +39,12 @@
    "shape": "object: hint kind -> card kind -> \"always\" | \"hint\" | \"never\"",
    "default": "see cards/hints.json (its own parse rules; not repeated here)",
    "owner": "apps/web/src/lib/study/hints.ts"
+  },
+  {
+   "key": "visualAids",
+   "shape": "object: aid (pictures, toneColors, anatomy) -> boolean",
+   "default": "each switch true; see aids/visual-aids.json",
+   "owner": "apps/web/src/lib/aids/visualAids.ts"
   }
  ],
  "parse": [

@@ -43,6 +43,7 @@ export const FEATURE_FOLDERS = [
 	'account',
 	'activity',
 	'admin',
+	'aids',
 	'entry',
 	'goals',
 	'lookups',

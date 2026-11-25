@@ -18,6 +18,8 @@ test('asking for a hint suggests Hard and is recorded in meta.hints', async ({ p
 	const card = page.getByRole('article', { name: /^Recognise card$/ });
 	// The reading is hidden at first and the Hint button is offered.
 	await expect(card.locator('[data-hint="reading"]')).toHaveCount(0);
+	// The card is resolved once its Hint button is there; an H pressed while it still loads is lost.
+	await expect(page.getByRole('button', { name: 'Hint' })).toBeVisible();
 	await page.keyboard.press('h');
 	await expect(card.locator('[data-hint="reading"]')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Hint' })).toHaveCount(0);
