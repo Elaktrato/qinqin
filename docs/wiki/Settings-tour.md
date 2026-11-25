@@ -1,6 +1,6 @@
 # Settings tour
 
-Settings is in the account menu (the avatar at the top right, your profile picture or your initial; in the menu drawer's account area on a phone, which also has a Settings button). Administrators also find **Admin settings** there. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Layout, Appearance, Study, Features, AI and Account for everyone, and Data and Admin for administrators. The tabs wrap onto a second line on narrow screens, so all of them stay visible.
+Settings is in the account menu (the avatar at the top right, your profile picture or your initial; in the menu drawer's account area on a phone, which also has a Settings button). Administrators also find **Admin settings** there. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Layout, Appearance, Study, Features, Notifications, AI and Account for everyone, and Data and Admin for administrators. The tabs wrap onto a second line on narrow screens, so all of them stay visible.
 
 ## Workspaces
 
@@ -31,6 +31,10 @@ Your colour theme and adjustments (`/settings?tab=appearance`), saved to your ac
 ## Features
 
 Switch **Decks** (flashcards), the **Reader**, the **Journal** or **Grammar** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
+
+## Notifications
+
+Opt-in study reminders (due cards, a goal not met, a streak at risk) by email, web push or, in the Android app, device notifications, with times and quiet hours. Everything is off until you turn it on. See [Reminders](Reminders).
 
 ## AI
 
