@@ -29,8 +29,6 @@ describe('androidVersion', () => {
 		expect(code('v0.7.0-alpha.1')).toBe(70001);
 		expect(code('v0.7.0-beta.1')).toBe(70030);
 		expect(code('v0.7.0-rc.1')).toBe(70060);
-		expect(code('v0.7.0-rc1')).toBe(70060);
-		expect(code('v0.7.0-rc')).toBe(70060);
 		expect(code('v0.7.0-rc.30')).toBe(70089);
 	});
 
@@ -40,7 +38,7 @@ describe('androidVersion', () => {
 		for (let i = 1; i < codes.length; i++) expect(codes[i]).toBeGreaterThan(codes[i - 1]);
 	});
 
-	test.each(['v0.7.0-nightly', 'v0.7.0-rc.31', 'v0.7.0-alpha.30', 'v0.7.0-rc.1.2', 'v0.7.0-rc.0', 'v0.7.100', 'v0.100.0', 'v210.0.0'])(
+	test.each(['v0.7.0-nightly', 'v0.7.0-rc', 'v0.7.0-rc1', 'v0.7.0-rc.01', 'v0.7.0-alpha', 'v0.7.0-beta2', 'v0.7.0-RC.1', 'v0.7.0-rc.31', 'v0.7.0-alpha.30', 'v0.7.0-rc.1.2', 'v0.7.0-rc.0', 'v0.7.100', 'v0.100.0', 'v210.0.0'])(
 		'refuses %j rather than a code that could collide or not order',
 		(tag) => {
 			expect(() => androidVersion(tag)).toThrow(VersionError);
