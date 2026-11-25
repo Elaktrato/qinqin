@@ -240,6 +240,22 @@ describe('auth store', () => {
 		expect(app.auth.state).toEqual({ token: null, user: null });
 	});
 
+	it('logout deletes this device\'s web push subscription first, with the token still attached (#139)', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		localStorage.setItem('qinqin.push.device.1', '7');
+		app.auth.set({ token: 'stored', user });
+		vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
+
+		app.auth.logout();
+
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+		const deletes = vi.mocked(fetch).mock.calls.filter(([url]) => String(url) === '/api/push/subscriptions/7');
+		expect(deletes).toHaveLength(1);
+		expect(deletes[0][1]?.method).toBe('DELETE');
+		expect((deletes[0][1]?.headers as Record<string, string>).authorization).toBe('Bearer stored');
+		expect(localStorage.getItem('qinqin.push.device.1')).toBeNull();
+	});
+
 	it('logout without a token sends nothing', () => {
 		app.auth.logout();
 		expect(fetch).not.toHaveBeenCalled();

@@ -116,6 +116,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/push/subscriptions/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/rows/{key}",
 		"access": "user"
 	},
@@ -382,6 +386,22 @@
 	{
 		"pattern": "GET /api/packages/{id}/{revision}",
 		"access": "user"
+	},
+	{
+		"pattern": "GET /api/push/subscriptions",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/push/vapid-key",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/reminders/plan",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/reminders/unsubscribe",
+		"access": "public"
 	},
 	{
 		"pattern": "GET /api/rows",
@@ -704,6 +724,18 @@
 		"access": "user"
 	},
 	{
+		"pattern": "POST /api/push/subscriptions",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/reminders/test",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/reminders/unsubscribe",
+		"access": "public"
+	},
+	{
 		"pattern": "POST /api/segment",
 		"access": "user"
 	},
@@ -769,6 +801,10 @@
 	},
 	{
 		"pattern": "PUT /api/me/time-zone",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/reminders/facts",
 		"access": "user"
 	},
 	{

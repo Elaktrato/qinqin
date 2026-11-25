@@ -68,6 +68,22 @@ describe('classify: spec table', () => {
 		expect(kind('/api/fonts', { auth: false })).toBe('bypass');
 	});
 
+	it('push and reminder routes are never cached, with or without a credential (#139)', () => {
+		for (const url of [
+			'/api/push/vapid-key',
+			'/api/push/subscriptions',
+			'/api/push/subscriptions/7',
+			'/api/reminders/plan?days=7',
+			'/api/reminders/facts',
+			'/api/reminders/test',
+			'/api/reminders/unsubscribe?t=x'
+		]) {
+			expect(kind(url), url).toBe('bypass');
+			expect(kind(url, { auth: false }), url).toBe('bypass');
+			expect(kind(url, { method: 'PUT' }), url).toBe('bypass');
+		}
+	});
+
 	it('api: allowlisted GETs with Authorization', () => {
 		for (const url of [
 			'/api/auth/me',

@@ -101,6 +101,8 @@ type server struct {
 	bgGroup    *Jobs            // the background goroutines (WithBackgroundGroup); nil: not counted
 	build      Build            // version, commit and date of this binary (WithBuild)
 	updates    *update.Checker  // nil: no release check (WithUpdateChecker)
+	push       *pushSetup       // nil: the defaults (WithPush)
+	testGate   reminderTestGate // one reminder test a minute per account
 }
 
 // Jobs is the group of a server's background goroutines (the stage
@@ -318,6 +320,15 @@ func (s *server) routes() []route {
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil, noTok},
 		{"POST /api/admin/backup", s.handleAdminBackupStart, accAdmin, nil, noTok},
 		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil, noTok},
+		{"PUT /api/reminders/facts", s.handlePutFacts, accUser, nil, noTok},
+		{"GET /api/reminders/plan", s.handleGetPlan, accUser, nil, noTok},
+		{"POST /api/reminders/test", s.handleReminderTest, accUser, nil, noTok},
+		{"GET /api/reminders/unsubscribe", s.handleUnsubscribe, accPublic, nil, noTok},
+		{"POST /api/reminders/unsubscribe", s.handleUnsubscribe, accPublic, nil, noTok},
+		{"GET /api/push/vapid-key", s.handleGetVAPIDKey, accUser, nil, noTok},
+		{"GET /api/push/subscriptions", s.handleListSubscriptions, accUser, nil, noTok},
+		{"POST /api/push/subscriptions", s.handleAddSubscription, accUser, nil, noTok},
+		{"DELETE /api/push/subscriptions/{id}", s.handleDeleteSubscription, accUser, nil, noTok},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil, tokReadAny},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil, noTok},
 		{"PUT /api/me/interface-language", s.handlePutInterfaceLanguage, accUser, nil, noTok},

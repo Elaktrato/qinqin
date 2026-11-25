@@ -46,6 +46,6 @@ Shows the install button (or "qinqin is installed on this device"; on iPhone and
 
 ## Limits, honestly
 
-Safari may delete a site's saved data after about a week without use (installed home-screen apps are treated more kindly) or under storage pressure. A review that has not been sent is only as safe as the device: open the app online to send them. Safari has no install prompt and no background sync. There are no push notifications. Private browsing windows keep nothing.
+Safari may delete a site's saved data after about a week without use (installed home-screen apps are treated more kindly) or under storage pressure. A review that has not been sent is only as safe as the device: open the app online to send them. Safari has no install prompt and no background sync. Study reminders by web push are optional and need HTTPS (on iPhone, the Home Screen app): see [Reminders](Reminders). Private browsing windows keep nothing.
 
 **Tested in a browser:** CI studies offline in Chromium after the service worker has cached the app and today's cards, and checks that each review reaches the server exactly once when the browser is back online. **Not verified in a browser by the developers:** installation on Android, iOS and desktop, offline behaviour on real devices, other browsers and the update flow. These are covered by unit and component tests and by checks of the served files and headers.

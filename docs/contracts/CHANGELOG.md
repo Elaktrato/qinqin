@@ -5,6 +5,21 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #137, #138, #139 — study reminders, email nudges and web push (contract 3)
+
+- **Settings row:** new user-global keyed row `reminders` (`keyed/families.json`; parse rules and fixture
+  `reminders/settings.json`): master switch (off by default), kinds, up to three local times, quiet hours (wrap
+  midnight), and the channels `email`, `push`, `device`. Clients keep unknown keys.
+- **Routes:** `PUT /api/reminders/facts` (the client's derived due/goal/streak/vacation snapshot per workspace; the
+  server has no scheduler), `GET /api/reminders/plan?days=N` (the planned reminder slots: kind, instant, local time,
+  count; the shell schedules local notifications from it; fixture `reminders/plan.json`), `POST /api/reminders/test`,
+  `GET /api/push/vapid-key`, `GET|POST /api/push/subscriptions`, `DELETE /api/push/subscriptions/{id}`, and the public
+  `GET|POST /api/reminders/unsubscribe?t=` (signed token, fixture `reminders/unsubscribe.json`). No access tokens.
+- **Error codes:** `push_unavailable`, `no_subscription`, `too_many_subscriptions`, `delivery_failed`
+  (`auth/errors.json`).
+- **Email:** reminder mails carry `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`.
+- **Version:** `version/version.json` answers `contract: 3`.
+
 ## Study modal — the saved study setup (contract 2)
 
 - **Keyed rows:** new workspace family `study-setup` (exact key; `keyed/families.json`, three new cases). A

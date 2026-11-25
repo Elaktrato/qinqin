@@ -49,6 +49,7 @@ export const FEATURE_FOLDERS = [
 	'milestones',
 	'notes',
 	'pwa',
+	'reminders',
 	'search',
 	'settings',
 	'sources',

@@ -85,6 +85,7 @@ var seedSQL = map[string][]string{
 	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, ?2, 'c' || ?3, 1, 'partner', 'x', '[]', 't1', 't')`},
 	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, ?2, 'p', 'l' || ?3, 't', 1, 2, 't')`},
 	"journal_photos":        {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?3, ?1, ?2, 't', 't')`},
+	"reminder_facts":        {`INSERT INTO reminder_facts (user_id, workspace_id, as_of, data, updated_at) VALUES (?1, ?2, 't', '{}', 't')`},
 	"access_tokens":         {`INSERT INTO access_tokens (user_id, workspace_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, ?2, 'n', 'ah' || ?3, 'abcdef', 'read', 't', '9999')`},
 }
 

@@ -71,6 +71,7 @@ repository path it names in backticks exists.
 | [0008](0008-pack-types.md) | Server: one pack system and how to add a pack type | Accepted |
 | [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted |
 | [0010](0010-android-shell-and-native-bridge.md) | Android shell and native bridge | Accepted |
+| [0011](0011-reminders-and-push.md) | Reminders, web push and the F-Droid-safe notification path | Accepted |
 
 ## Adding or changing a record
 
