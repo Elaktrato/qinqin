@@ -2029,6 +2029,8 @@
 	"scripts.mode.type": "Type",
 	"scripts.mode.typeHint": "Type the letter with your keyboard",
 	"scripts.noSystems": "This language has no writing system to practise here.",
+	"scripts.pendingDropped": "{count, plural, one {# answer waiting to be sent was discarded because too many piled up while you were offline. It will not count in your progress.} other {# answers waiting to be sent were discarded because too many piled up while you were offline. They will not count in your progress.}}",
+	"scripts.pendingDroppedDismiss": "Dismiss",
 	"scripts.practice.title": "Practice",
 	"scripts.run.again": "Another round",
 	"scripts.run.back": "Back to the chart",
