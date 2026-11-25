@@ -43,7 +43,7 @@ func byWorkspace(table string) rule {
 // to the workspace, the library books with their bookmarks and highlights,
 // the journal photos.
 func rules() []rule {
-	out := []rule{byWorkspace("study_events"), byWorkspace("keyed_rows")}
+	out := []rule{byWorkspace("study_events"), byWorkspace("keyed_rows"), byWorkspace("reminder_facts")}
 	for _, table := range study.Tables() {
 		out = append(out, byWorkspace(table))
 	}

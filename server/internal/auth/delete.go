@@ -119,6 +119,15 @@ var userTables = []UserTable{
 	// account/avatar.jpg; a restore replaces it.
 	{Name: "user_avatars", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_avatars WHERE user_id = ?1`},
 		PreviewKey: "avatar", Count: `SELECT COUNT(*) FROM user_avatars WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
+	// Reminders (migration 052, #137-#139): the facts are a derived cache and the push
+	// subscriptions and the delivery log belong to a device and a send, not to the
+	// person's study data: none is exported, a restore leaves them (the facts are
+	// published again by the next client).
+	{Name: "reminder_facts", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM reminder_facts WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: "a derived cache the clients publish again", Restore: RestoreKeep},
+	{Name: "push_subscriptions", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM push_subscriptions WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
+	{Name: "reminder_deliveries", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM reminder_deliveries WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: "a delivery log of this server", Restore: RestoreKeep},
 	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
 		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},
