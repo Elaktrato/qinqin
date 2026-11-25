@@ -39,7 +39,8 @@ export const ROW_FAMILIES: readonly RowFamily[] = [
 	{ key: 'activity-view', prefix: false, scope: 'user-global' },
 	{ key: 'widget-options', prefix: false, scope: 'user-global' },
 	{ key: 'nav-layout', prefix: false, scope: 'user-global' },
-	{ key: 'appearance', prefix: false, scope: 'user-global' }
+	{ key: 'appearance', prefix: false, scope: 'user-global' },
+	{ key: 'reminders', prefix: false, scope: 'user-global' }
 ];
 
 /** rowFamilyOf: the family of a key, or null when no family accepts it (keys are 1 to 512 bytes). */
