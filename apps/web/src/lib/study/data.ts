@@ -173,7 +173,8 @@ function copyData(data: StudyData): StudyData {
 		cards: data.cards.map((card) => ({ ...card, deckIds: [...card.deckIds] })),
 		...(data.deckSettings === undefined ? {} : { deckSettings: { ...data.deckSettings } }),
 		...(data.vacations === undefined ? {} : { vacations: [...data.vacations] }),
-		...(data.known === undefined ? {} : { known: [...data.known] })
+		...(data.known === undefined ? {} : { known: [...data.known] }),
+		...(data.knownDeclared === undefined ? {} : { knownDeclared: data.knownDeclared.map((d) => ({ ...d })) })
 	};
 }
 

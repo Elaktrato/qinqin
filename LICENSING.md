@@ -35,6 +35,14 @@ If you reuse this content, credit it as:
 
 and say if you changed it. The same credit line is used on the Sources page.
 
+### The script charts: CC0 1.0
+
+The one exception to CC BY 4.0 is the data of the writing-system trainer (kana, Hangul and Cyrillic charts, their
+example words and keyboard key hints: `apps/web/src/lib/features/scripts/data/`). The project wrote it and releases
+it under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), a public domain dedication with no
+attribution requirement, as issue #204 states (the lists are facts about writing systems). Anything else the project
+writes stays CC BY 4.0.
+
 ## Third-party data keeps its own licence
 
 The MIT licence of the code does **not** cover the bundled data. Dictionaries, frequency lists, stroke data,

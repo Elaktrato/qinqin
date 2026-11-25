@@ -27,9 +27,53 @@
     "feature": "journal",
     "distinctBy": "entryId"
    }
+  },
+  {
+   "type": "script",
+   "rule": {
+    "feature": "scripts"
+   }
   }
  ],
  "cases": [
+  {
+   "name": "script: every answer counts, right or wrong",
+   "note": "the writing-system trainer (#204): a count rule of the feature scripts; the payload is not read",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "system": "hiragana",
+      "item": "hiragana:あ",
+      "mode": "recognise",
+      "ok": true
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "script"
+    },
+    {
+     "payload": {
+      "system": "hiragana",
+      "item": "hiragana:あ",
+      "mode": "recall",
+      "ok": false
+     },
+     "ts": "2026-11-01T10:01:00Z",
+     "type": "script"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "script",
+     "points": 2,
+     "raw": 2
+    }
+   ]
+  },
   {
    "name": "read: under 30 s scores nothing",
    "note": "a measure below min (30 s) is dropped",

@@ -46,7 +46,7 @@ describe('phoneTitle', () => {
 				{ id: 'journal', enabled: true }
 			],
 			status: 'ready'
-		});
+		}, 'ja');
 		const paths = walk(routes).map(
 			(dir) =>
 				'/' +

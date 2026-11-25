@@ -31,6 +31,19 @@ describe('frameSections', () => {
 		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'stats']);
 	});
 
+	it('shows Scripts only for a language whose profile has a writing system (#204)', () => {
+		const withScripts = ready([...all.list, state('scripts')]);
+		const ids = (language: string | null) => frameSections(withScripts, language).map((s) => s.id);
+		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'stats']);
+		expect(ids('ko')).toContain('scripts');
+		expect(ids('ru-RU')).toContain('scripts');
+		expect(ids('zh')).not.toContain('scripts');
+		expect(ids('es')).not.toContain('scripts');
+		expect(ids(null)).not.toContain('scripts');
+		expect(frameSections(ready([...all.list, state('scripts', false)]), 'ja').map((s) => s.id)).not.toContain('scripts');
+		expect(frameSections(withScripts, 'ja').find((s) => s.id === 'scripts')).toMatchObject({ label: 'Scripts', href: '/scripts', icon: 'words' });
+	});
+
 	it('every id is unique', () => {
 		const ids = [homeSection(), ...frameSections(all)].map((s) => s.id);
 		expect(new Set(ids).size).toBe(ids.length);

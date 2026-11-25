@@ -169,7 +169,7 @@ plan. Native pieces only where the WebView falls short.
 - Getting started: [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test,
   [#82](https://github.com/Elaktrato/qinqin/issues/82) level check,
   [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study,
-  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer
+  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC0 data; write mode deferred, KanjiVG is CC BY-SA 3.0)
 - Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
   [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order,
   [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio
@@ -258,7 +258,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 - ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ — done (v0.3.0 stretch)
 - ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ — done (v0.3.0 stretch)
 - [#76](https://github.com/Elaktrato/qinqin/issues/76) focus sessions from weak characters and leeches
-- [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"
+- ~~[#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"~~ — built for v0.8.0 (declarations are `known:` marks with a batch, undoable; design in `docs/superpowers/specs/2026-11-26-placement-design.md`)
 - [#60](https://github.com/Elaktrato/qinqin/issues/60) Anki import
 - ~~[#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary~~ — done (v0.3.0 stretch, in-app; milestones deferred)
 - [#82](https://github.com/Elaktrato/qinqin/issues/82) level check (experimental)

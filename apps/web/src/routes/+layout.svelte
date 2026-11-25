@@ -76,7 +76,7 @@
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): Search, the core features
 	// that are switched on, Stats.
-	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }));
+	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }, session?.workspaces.current?.language ?? null));
 	const current = $derived(currentSection(path, sections));
 	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal

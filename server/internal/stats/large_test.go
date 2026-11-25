@@ -150,7 +150,8 @@ func TestActivityLargeLog(t *testing.T) {
 	}
 	for7 := n.Statements()
 	t.Logf("Activity statements: %d for 91 days, %d for 7", for91, for7)
-	if for91 != for7 || for91 > 4 {
+	// One statement per rule plus one for the zone history, whatever the days or cells.
+	if for91 != for7 || for91 > int64(len(f.rules))+1 {
 		t.Errorf("Activity ran %d statements for 91 days and %d for 7, want the same few", for91, for7)
 	}
 }
