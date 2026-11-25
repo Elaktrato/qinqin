@@ -29,13 +29,59 @@ describe('isImeKey', () => {
 		expect(isImeKey(key({ key: 'Enter', isComposing: false }))).toBe(true);
 	});
 
-	it('still ignores the Enter that Safari sends right after compositionend, then lets later Enters through', () => {
+	it('ignores the Safari Enter after compositionend (keyCode 229), but never a genuine Enter (keyCode 13) right after commit', () => {
 		document.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
 		document.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '日本' }));
-		expect(isImeKey(key({ key: 'Enter', isComposing: false }))).toBe(true);
-		vi.advanceTimersByTime(100);
-		expect(isImeKey(key({ key: 'Enter', isComposing: false }))).toBe(false);
+		expect(isImeKey(key({ key: 'Enter', isComposing: false, keyCode: 229 }))).toBe(true);
+		// Gboard commits a Latin word and sends a plain Enter within milliseconds: that Enter must act.
+		expect(isImeKey(key({ key: 'Enter', isComposing: false, keyCode: 13 }))).toBe(false);
 		expect(imeComposing()).toBe(false);
+	});
+
+	it('does not cancel the implicit submit of a genuine Enter right after compositionend', () => {
+		const input = document.createElement('input');
+		document.body.append(input);
+		input.focus();
+		input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+		input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'word' }));
+		const enter = key({ key: 'Enter', keyCode: 13 });
+		input.dispatchEvent(enter);
+		expect(enter.defaultPrevented).toBe(false);
+		input.remove();
+	});
+
+	it('drops the flag when the composing input loses focus without compositionend', () => {
+		const input = document.createElement('input');
+		document.body.append(input);
+		input.focus();
+		input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+		expect(imeComposing()).toBe(true);
+		input.blur();
+		expect(imeComposing()).toBe(false);
+		expect(isImeKey(key({ key: 'Enter', keyCode: 13 }))).toBe(false);
+		input.remove();
+	});
+
+	it('drops the flag when the composing input is removed from the document', () => {
+		const input = document.createElement('input');
+		document.body.append(input);
+		input.focus();
+		input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+		input.remove();
+		expect(imeComposing()).toBe(false);
+	});
+
+	it('drops the flag when focus moves to another element', () => {
+		const a = document.createElement('input');
+		const b = document.createElement('input');
+		document.body.append(a, b);
+		a.focus();
+		a.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+		expect(imeComposing()).toBe(true);
+		b.focus();
+		expect(imeComposing()).toBe(false);
+		a.remove();
+		b.remove();
 	});
 
 	it('cancels the default of an IME Enter in an input (no implicit form submission), not of a normal Enter', () => {
