@@ -517,6 +517,8 @@ describe('flushPendingReviews', () => {
 		const second = outbox.flush();
 		expect(second).toBe(first);
 
+		// The flush first reads the store afresh (another tab's items), then sends.
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 		release(jsonResponse({ accepted: 1, duplicates: 0 }));
 		await Promise.all([first, second]);
 		expect(fetch).toHaveBeenCalledTimes(1);
