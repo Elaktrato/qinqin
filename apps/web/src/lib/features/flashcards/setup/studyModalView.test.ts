@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSetup, type StudySetup } from '$lib/study/setup';
 import type { OptInKind } from '$lib/study/types';
-import { noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
+import { chipPatch, noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
 
 const none = new Set<OptInKind>();
 const reverseOn = new Set<OptInKind>(['reverse']);
@@ -60,5 +60,13 @@ describe('the lines', () => {
 	it('says what a repair changed', () => {
 		expect(noteText(['levelGone'])).toBe('Your level is no longer installed; studying your decks instead.');
 		expect(noteText([])).toBeNull();
+	});
+});
+
+describe('chipPatch', () => {
+	it('is only the member a click changes', () => {
+		expect(chipPatch(defaultSetup(), 'writing', none, 'ja')).toEqual({ cardTypes: ['vocab', 'writing'] });
+		expect(chipPatch(defaultSetup(), 'reverse', reverseOn, 'ja')).toEqual({ unchecked: ['reverse'] });
+		expect(chipPatch(defaultSetup(), 'vocab', none, 'ja')).toEqual({});
 	});
 });

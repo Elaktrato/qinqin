@@ -54,6 +54,18 @@ export function toggleChip(setup: StudySetup, id: StudyCardKind, enabled: Readon
 	return visibleChips(next, enabled, language).some((chip) => chip.checked) ? next : setup;
 }
 
+/** chipPatch: the members a click on `id` changes (the store writes only these). */
+export function chipPatch(
+	setup: StudySetup,
+	id: StudyCardKind,
+	enabled: ReadonlySet<OptInKind>,
+	language: string
+): Pick<StudySetup, 'cardTypes'> | Pick<StudySetup, 'unchecked'> | Record<string, never> {
+	const next = toggleChip(setup, id, enabled, language);
+	if (next === setup) return {};
+	return isOptIn(id) ? { unchecked: next.unchecked } : { cardTypes: next.cardTypes };
+}
+
 export function summaryLine(input: {
 	mode: StudySessionMode;
 	due: number;

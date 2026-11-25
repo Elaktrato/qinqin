@@ -101,13 +101,20 @@ sessionStorage copy.
 - Ruling: an opt-in chip (Reverse, Cloze) in the modal shows only when a selected deck switches it on and toggles
   only `unchecked`; the page's "applies to all decks" switch stays as it was — writing deck settings from the modal
   would make the chip vanish and change decks the learner never opened — cost: two places behave differently.
-- Ruling: a change is written as the repaired setup plus the change, merged over the stored row (unknown members
-  kept); the row is re-read before the write — 4.4b; another device's unknown members survive — cost: one GET per
-  change.
-- Ruling: a failed save keeps the value in memory and in the device cache, and the modal/page shows "Not saved"
-  under the chips; the next change or the next open retries by writing again — anti-goal "losing a choice
-  silently", and offline must work — cost: a device offline for days may later overwrite a newer change made
-  elsewhere (last write wins).
+- Ruling (revised in the fix wave): a change is a patch of the members the learner changed, written as
+  `withSetup(fresh, {...parseSetup(fresh), ...patch})` over the row read again just before the write; a repair
+  is never written by itself — a change made before the row has loaded, or while another device changed other
+  members, can then never overwrite them (the review's blocker) — cost: one GET per change; two devices changing
+  the same member still resolve by last write.
+- Ruling (revised in the fix wave): a failed save that may pass (no answer, 408, 429, 5xx) keeps its patch in
+  memory and in the device cache; the modal/page shows why (`errorText`, record 0001; offline: "Not saved yet");
+  the next change or refresh reads the server again and reapplies only the patch. A refusal (any other 4xx) drops
+  the patch, shows the stored setup again and says why — anti-goal "losing a choice silently", and offline must
+  work — cost: a member changed offline overwrites the same member changed elsewhere meanwhile (last write wins
+  per member, not per setup).
+- Ruling (fix wave): the chips and the advanced controls wait until the setup is known (the server answered or
+  the device holds a cached row) — defence in depth for the blocker — cost: on a cold start offline with no
+  cache, the chips stay disabled until a connection (Start still works with the defaults).
 - Ruling: the cache is localStorage `qinqin.study.setup.<userId>.<workspaceId>` holding the row's data; removed at
   sign-out and with the workspace — the modal opens from it without waiting — cost: a stale first paint for one
   refresh.

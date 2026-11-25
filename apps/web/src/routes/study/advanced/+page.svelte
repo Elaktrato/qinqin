@@ -34,8 +34,9 @@
 	import { decodeOrder, encodeOrder, mixedNote, sessionOrderChoices } from '$lib/study/newOrderView';
 	import { cardsInDecks } from '$lib/study/readModel';
 	import { CARD_TYPES, type StudySessionMode } from '$lib/study/session';
-	import { repairSetup, setupDeckIds, setupKinds, type StudySetup } from '$lib/study/setup';
+	import { repairSetup, setupDeckIds, setupKinds } from '$lib/study/setup';
 	import { planSetup } from '$lib/study/setupPlan';
+	import type { SetupPatch } from '$lib/study/setupStore.svelte';
 	import { deckOrdersOf } from '$lib/study/sessionOrder';
 	import { parseTypeOrder, typeOrderChoices } from '$lib/study/typeOrderView';
 	import { CARD_KINDS, GENERAL_DECK_ID, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
@@ -232,11 +233,12 @@
 	let typeError = $state('');
 	let advancedOpen = $state(false);
 
-	/** save writes the setup with `change` for the workspace shown now (captured at the call). */
-	function save(change: Partial<StudySetup>): void {
+	/** save writes `change` for the workspace shown now (captured at the call). */
+	function save(change: SetupPatch): void {
 		const ws = workspaceId;
 		if (ws === null || setup === null) return;
-		void session.setups.update(ws, { ...setup, ...change });
+		// Only the changed members: the store writes them over the row read again (another device's stay).
+		void session.setups.update(ws, change);
 	}
 
 	function saveLimit(which: 'newLimit' | 'reviewLimit', raw: string): void {
@@ -301,7 +303,6 @@
 		}
 		pendingSettings = optimistic;
 		void session.setups.update(ws, {
-			...before,
 			unchecked: next ? before.unchecked.filter((kind) => kind !== id) : OPT_IN_KINDS.filter((kind) => kind === id || before.unchecked.includes(kind))
 		});
 		typeSaving = id;
@@ -351,13 +352,15 @@
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 	{#if note !== null}<p class="hint" role="status">{note}</p>{/if}
-	{#if entry?.saveError}<p class="error" role="alert">{t('study.modal.notSaved')}</p>{/if}
+	{#if entry?.saveError}<p class="error" role="alert">{errorText(entry.saveError, t('study.modal.notSaved'))}</p>{/if}
 
 	{#if data.status === 'error'}
 		<p class="error" role="alert">{data.error}</p>
 	{:else if data.status === 'no-workspace' || setup === null || plan === null}
 		<p class="hint" role="status">{t('study.guide.noWorkspace')}</p>
-	{:else if !ready}
+	{:else if !ready || !entry?.known}
+		<!-- The controls wait for the saved setup (the server's answer or the device's copy), so a change
+		     never starts from the defaults. -->
 		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
 		<Section title={t('study.summary.title')} headingId="summary-heading">

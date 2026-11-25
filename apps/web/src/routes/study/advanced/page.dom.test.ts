@@ -49,18 +49,24 @@ let currentStudyDay!: MockInstance<StudyDays['day']>;
 let ctx: TestContext;
 let saved: StudySetup;
 let update: ReturnType<typeof vi.spyOn>;
+/** When set, the rows API answers only once it resolves (a cold start). */
+let rowsGate: Promise<void> | null = null;
 
 beforeEach(() => {
 	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
 	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
 	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
 	saved = defaultSetup();
+	rowsGate = null;
 	// The real store of the session over a fake rows API: what the page saves is what it reads back.
 	const row = (ws: number) => ({ key: 'study-setup', userId: 1, workspaceId: ws, data: saved, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null });
 	ctx = testContext({
 		user: { id: 1 },
 		routes: {
-			'GET /api/rows': (_body: unknown, path: string) => [row(Number(new URLSearchParams(path.split('?')[1]).get('workspace')))],
+			'GET /api/rows': async (_body: unknown, path: string) => {
+				if (rowsGate !== null) await rowsGate;
+				return [row(Number(new URLSearchParams(path.split('?')[1]).get('workspace')))];
+			},
 			'PUT /api/rows/study-setup': (body: unknown, path: string) => {
 				saved = body as StudySetup;
 				return row(Number(new URLSearchParams(path.split('?')[1]).get('workspace')));
@@ -111,6 +117,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 	vi.clearAllMocks();
 	sessionStorage.clear();
+	localStorage.clear();
 });
 
 const VERBS = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00Z' };
@@ -142,6 +149,21 @@ describe('the advanced study setup', () => {
 		render(Page, { context: ctx.context });
 		expect((await screen.findByRole('link', { name: 'Back to study' })).getAttribute('href')).toBe('/');
 		history.replaceState(null, '', '/');
+	});
+
+	it('waits for the saved setup on a cold start, then a change writes only its member (review blocker)', async () => {
+		let release!: () => void;
+		rowsGate = new Promise<void>((r) => (release = r));
+		saved = { ...defaultSetup(), decks: ['general'], reviewLimit: 33, typeOrder: 'grouped' };
+		render(Page, { context: ctx.context });
+		await screen.findByRole('heading', { level: 1, name: 'Advanced settings' });
+		await tick();
+		expect(screen.queryByLabelText('New cards')).toBeNull();
+		release();
+		const field = (await screen.findByLabelText('New cards')) as HTMLInputElement;
+		await fireEvent.change(field, { target: { value: '7' } });
+		expect(update).toHaveBeenLastCalledWith(1, { newLimit: 7 });
+		await waitFor(() => expect(saved).toMatchObject({ decks: ['general'], reviewLimit: 33, typeOrder: 'grouped', newLimit: 7 }));
 	});
 
 	it('saves a limit when it is changed, and refuses one out of range', async () => {

@@ -149,6 +149,7 @@ describe('DeckList', () => {
 			setup: { ...defaultSetup(), unchecked: ['reverse'] },
 			raw: null,
 			loaded: true,
+			known: true,
 			saveError: null
 		});
 		render(DeckList, { context: ctx.context });

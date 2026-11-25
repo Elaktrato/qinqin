@@ -1,15 +1,24 @@
 // The saved study setups of the session's user (record 0009: owned by the
 // Session), one per workspace: the keyed row `study-setup` (setup.ts). A
 // workspace's setup answers at once from memory or the device cache, then from
-// the server (`refresh`); a change paints at once and is written over the
-// re-read row, one write after another per workspace. A write that failed is
-// kept on the device as unsaved and written again at the next refresh, so a
-// change made offline is never silently replaced by the server's older value.
+// the server (`refresh`).
+//
+// A change is a patch: only the members the learner changed. It paints at once
+// and is written over the row read again from the server just before the write,
+// so a member another device changed meanwhile, or one this device never loaded
+// (a cold start), is never overwritten (review of 2026-11-25). Writes run one
+// after another per workspace. A write that fails for a reason that may pass
+// (offline, a busy server) keeps its patch on the device and is written again
+// at the next refresh, which reads the server first; a refusal (another 4xx)
+// drops the patch and says so.
 
 import { untrack } from 'svelte';
 import { parseSetup, withSetup, type StudySetup } from './setup';
 
 const CACHE_PREFIX = 'qinqin.study.setup.';
+
+/** A change of the setup: the members it sets. */
+export type SetupPatch = Partial<Omit<StudySetup, 'version'>>;
 
 /** The device cache key of one user's setup in one workspace. */
 export function setupCacheKey(user: number, workspaceId: number): string {
@@ -29,27 +38,53 @@ export interface StudySetupsDeps {
 	local(): Storage | null;
 	user(): number | null;
 	alive(): boolean;
+	/** False once the workspace was deleted: nothing more is cached for it. */
+	exists(workspaceId: number): boolean;
 }
 
 export interface SetupEntry {
+	/** The stored setup with the unsaved change applied. */
 	setup: StudySetup;
-	/** The stored row as last read or written (what a write merges over). */
+	/** The stored row as last read or written. */
 	raw: unknown;
 	/** True once the server answered in this session. */
 	loaded: boolean;
-	/** The error of the last write, while the change is unsaved. */
+	/** True once anything is known: the server answered, or the device holds a cached row. */
+	known: boolean;
+	/** Why the last write failed (the change is kept when it may pass, dropped on a refusal). */
 	saveError: unknown | null;
 }
 
 interface Cached {
 	raw: unknown;
-	dirty: boolean;
+	/** The change not saved yet; null when none. */
+	pending: SetupPatch | null;
+}
+
+/** cleanPatch keeps the members of a stored patch that read back as themselves (a cache is untrusted). */
+function cleanPatch(raw: unknown): SetupPatch | null {
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+	const out: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(raw)) {
+		if (key === 'version' || !(key in parseSetup(null))) continue;
+		const read = (parseSetup({ [key]: value }) as unknown as Record<string, unknown>)[key];
+		if (JSON.stringify(read) === JSON.stringify(value)) out[key] = value;
+	}
+	return out as SetupPatch;
+}
+
+/** Whether a failed write may pass later: no answer (offline), a timeout, a busy server or a server error. */
+function retryable(err: unknown): boolean {
+	const status = (err as { status?: unknown } | null)?.status;
+	if (typeof status !== 'number') return true;
+	return status === 408 || status === 429 || status >= 500;
 }
 
 export class StudySetups {
 	readonly #deps: StudySetupsDeps;
 	#entries = $state.raw<Record<number, SetupEntry>>({});
-	// Plain bookkeeping (not shown): writes begun per workspace, and each workspace's write queue.
+	// Plain bookkeeping (not shown): the unsaved patch, the writes begun and the write queue, per workspace.
+	readonly #pending = new Map<number, SetupPatch>();
 	readonly #writes = new Map<number, number>();
 	readonly #queue = new Map<number, Promise<void>>();
 
@@ -62,52 +97,71 @@ export class StudySetups {
 		const known = this.#entries[workspaceId];
 		if (known !== undefined) return known;
 		const cached = this.#readCache(workspaceId);
+		const pending = cached?.pending ?? null;
 		return {
-			setup: parseSetup(cached?.raw ?? null),
+			setup: { ...parseSetup(cached?.raw ?? null), ...(pending ?? {}) },
 			raw: cached?.raw ?? null,
 			loaded: false,
-			saveError: cached?.dirty ? 'unsaved' : null
+			known: cached !== null,
+			saveError: pending !== null ? 'unsaved' : null
 		};
 	}
 
-	/** refresh reads the row from the server; an unsaved change on this device is written instead. */
+	/** refresh reads the row from the server; an unsaved change of this device is written over it. */
 	async refresh(workspaceId: number): Promise<void> {
 		if (!this.#deps.alive()) return;
 		// Untracked: callers refresh from an effect, which must not depend on what the refresh writes.
-		const current = untrack(() => this.of(workspaceId));
-		if (current.saveError !== null) return this.update(workspaceId, current.setup);
+		const pending = this.#pendingOf(workspaceId);
+		if (pending !== null) return this.update(workspaceId, {});
 		const epoch = this.#writes.get(workspaceId) ?? 0;
 		try {
 			const raw = await this.#deps.load(workspaceId);
 			if (!this.#deps.alive() || epoch !== (this.#writes.get(workspaceId) ?? 0)) return;
-			this.#set(workspaceId, { setup: parseSetup(raw), raw, loaded: true, saveError: null });
-			this.#writeCache(workspaceId, { raw, dirty: false });
+			this.#set(workspaceId, { setup: parseSetup(raw), raw, loaded: true, known: true, saveError: null });
+			this.#writeCache(workspaceId, { raw, pending: null });
 		} catch {
 			// Offline or a failed read: keep what is shown.
 		}
 	}
 
-	/** update shows `next` at once and writes it over the re-read row (after the workspace's earlier writes). */
-	update(workspaceId: number, next: StudySetup): Promise<void> {
+	/** update shows `patch` at once and writes it over the row read again, after the workspace's earlier writes. */
+	update(workspaceId: number, patch: SetupPatch): Promise<void> {
 		if (!this.#deps.alive()) return Promise.resolve();
 		const mine = (this.#writes.get(workspaceId) ?? 0) + 1;
 		this.#writes.set(workspaceId, mine);
+		const merged = { ...(this.#pendingOf(workspaceId) ?? {}), ...patch };
+		this.#pending.set(workspaceId, merged);
 		const before = untrack(() => this.of(workspaceId));
-		const optimistic = withSetup(before.raw, next);
-		this.#set(workspaceId, { setup: next, raw: before.raw, loaded: before.loaded, saveError: null });
-		this.#writeCache(workspaceId, { raw: optimistic, dirty: true });
+		this.#set(workspaceId, { ...before, setup: { ...before.setup, ...patch }, saveError: null });
+		this.#writeCache(workspaceId, { raw: before.raw, pending: merged });
 		const run = async (): Promise<void> => {
-			if (!this.#deps.alive()) return;
+			const sending = this.#pending.get(workspaceId);
+			if (!this.#deps.alive() || sending === undefined) return;
+			let fresh: unknown = undefined;
 			try {
-				const fresh = await this.#deps.load(workspaceId);
-				const data = withSetup(fresh, next);
+				fresh = await this.#deps.load(workspaceId);
+				const data = withSetup(fresh, { ...parseSetup(fresh), ...sending });
 				await this.#deps.save(workspaceId, data);
-				if (!this.#deps.alive() || mine !== this.#writes.get(workspaceId)) return;
-				this.#set(workspaceId, { setup: next, raw: data, loaded: true, saveError: null });
-				this.#writeCache(workspaceId, { raw: data, dirty: false });
+				if (!this.#deps.alive()) return;
+				// A change made while this one was on its way stays pending for its own write.
+				const left = this.#pending.get(workspaceId);
+				const rest = left === sending ? null : (left ?? null);
+				if (rest === null) this.#pending.delete(workspaceId);
+				this.#set(workspaceId, { setup: { ...parseSetup(data), ...(rest ?? {}) }, raw: data, loaded: true, known: true, saveError: null });
+				this.#writeCache(workspaceId, { raw: data, pending: rest });
 			} catch (err) {
-				if (!this.#deps.alive() || mine !== this.#writes.get(workspaceId)) return;
-				this.#set(workspaceId, { ...untrack(() => this.of(workspaceId)), saveError: err ?? 'failed' });
+				if (!this.#deps.alive()) return;
+				const shown = untrack(() => this.of(workspaceId));
+				if (retryable(err)) {
+					if (mine === this.#writes.get(workspaceId)) this.#set(workspaceId, { ...shown, saveError: err ?? 'failed' });
+					return;
+				}
+				// Refused: the change can never be written; drop it and show the stored setup again
+				// (the row just read, when the read got that far).
+				const raw = fresh === undefined ? shown.raw : fresh;
+				this.#pending.delete(workspaceId);
+				this.#set(workspaceId, { ...shown, setup: parseSetup(raw), raw, loaded: shown.loaded || fresh !== undefined, saveError: err });
+				this.#writeCache(workspaceId, { raw, pending: null });
 			}
 		};
 		const queued = (this.#queue.get(workspaceId) ?? Promise.resolve()).then(run);
@@ -131,6 +185,15 @@ export class StudySetups {
 		}
 	}
 
+	/** The unsaved patch: this session's, else the device cache's (a reload). */
+	#pendingOf(workspaceId: number): SetupPatch | null {
+		const inMemory = this.#pending.get(workspaceId);
+		if (inMemory !== undefined) return inMemory;
+		const cached = this.#readCache(workspaceId)?.pending ?? null;
+		if (cached !== null) this.#pending.set(workspaceId, cached);
+		return cached;
+	}
+
 	#set(workspaceId: number, entry: SetupEntry): void {
 		this.#entries = { ...untrack(() => this.#entries), [workspaceId]: entry };
 	}
@@ -141,8 +204,9 @@ export class StudySetups {
 		try {
 			const text = this.#deps.local()?.getItem(setupCacheKey(user, workspaceId));
 			if (!text) return null;
-			const parsed = JSON.parse(text) as Partial<Cached>;
-			return typeof parsed === 'object' && parsed !== null ? { raw: parsed.raw ?? null, dirty: parsed.dirty === true } : null;
+			const parsed = JSON.parse(text) as Partial<Cached> | null;
+			if (typeof parsed !== 'object' || parsed === null) return null;
+			return { raw: parsed.raw ?? null, pending: cleanPatch(parsed.pending) };
 		} catch {
 			return null;
 		}
@@ -150,7 +214,7 @@ export class StudySetups {
 
 	#writeCache(workspaceId: number, value: Cached): void {
 		const user = this.#deps.user();
-		if (user === null) return;
+		if (user === null || !this.#deps.exists(workspaceId)) return;
 		try {
 			this.#deps.local()?.setItem(setupCacheKey(user, workspaceId), JSON.stringify(value));
 		} catch {

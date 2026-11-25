@@ -7,6 +7,7 @@
 	// (lib/frame/breakpoint.ts); both are on the dismiss stack, so the Android
 	// back button closes it. Opened through session.studyModal.
 	import { goto } from '$app/navigation';
+	import { errorText } from '$lib/api/apiErrors';
 	import { useSession } from '$lib/context/context';
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import { t } from '$lib/i18n';
@@ -21,7 +22,7 @@
 	import { Button, Dialog, IconButton, Sheet } from '$lib/ui';
 	import UnreadableRowsNotice from '../UnreadableRowsNotice.svelte';
 	import { createSetupData } from './setupData.svelte';
-	import { noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
+	import { chipPatch, noteText, summaryLine, todayLine, visibleChips } from './studyModalView';
 
 	const session = useSession();
 	const modal = session.studyModal;
@@ -141,7 +142,7 @@
 		// The workspace whose chips were clicked, captured now (#174).
 		const ws = workspaceId;
 		if (ws === null || setup === null) return;
-		void session.setups.update(ws, toggleChip(setup, id, enabled, language));
+		void session.setups.update(ws, chipPatch(setup, id, enabled, language));
 	}
 
 	function start(studyAll = false): void {
@@ -188,7 +189,8 @@
 				<legend class="visually-hidden">{t('study.modal.chips')}</legend>
 				{#each chips as chip (chip.id)}
 					<label class="chip" class:checked={chip.checked}>
-						<input type="checkbox" checked={chip.checked} disabled={chip.locked} onchange={() => toggle(chip.id)} />
+						<!-- Disabled until the saved setup is known (the server answered or the device holds it). -->
+						<input type="checkbox" checked={chip.checked} disabled={chip.locked || !entry?.known} onchange={() => toggle(chip.id)} />
 						<span>{chip.label}</span>
 					</label>
 				{/each}
@@ -198,7 +200,7 @@
 					{#each plan.warnings as warning (warning)}<li>{warning}</li>{/each}
 				</ul>
 			{/if}
-			{#if entry?.saveError}<p class="line error" role="alert">{t('study.modal.notSaved')}</p>{/if}
+			{#if entry?.saveError}<p class="line error" role="alert">{errorText(entry.saveError, t('study.modal.notSaved'))}</p>{/if}
 			<UnreadableRowsNotice {workspaceId} />
 
 			<div class="actions">

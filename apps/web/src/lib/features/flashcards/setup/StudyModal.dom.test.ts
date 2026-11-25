@@ -15,6 +15,8 @@ import { loadStudyHistory } from '$lib/study/data';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { defaultSetup, type StudySetup } from '$lib/study/setup';
 import { StudySetups } from '$lib/study/setupStore.svelte';
+import { ApiError } from '$lib/api/client';
+import { t } from '$lib/i18n';
 import { testContext, type TestContext } from '$lib/testing/context';
 import * as build from '$lib/testing/study';
 import { studyDay } from '$lib/time/studyDay';
@@ -40,15 +42,31 @@ async function open(): Promise<HTMLElement> {
 	return screen.findByRole('dialog', { name: 'Study' });
 }
 
+// The rows API the session's real store talks to: GET answers `saved` (after `rowsGate`, when set),
+// PUT stores the body or throws `putError`.
+let rowsGate: Promise<void> | null;
+let putError: unknown;
+
 beforeEach(() => {
-	ctx = testContext();
-	workspace('ja');
 	saved = defaultSetup();
-	vi.spyOn(StudySetups.prototype, 'of').mockImplementation(() => ({ setup: saved, raw: null, loaded: true, saveError: null }));
-	vi.spyOn(StudySetups.prototype, 'refresh').mockResolvedValue();
-	update = vi.spyOn(StudySetups.prototype, 'update').mockImplementation(async (_ws: number, next: StudySetup) => {
-		saved = next;
+	rowsGate = null;
+	putError = null;
+	const row = () => ({ key: 'study-setup', userId: 1, workspaceId: 1, data: saved, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null });
+	ctx = testContext({
+		routes: {
+			'GET /api/rows': async () => {
+				if (rowsGate !== null) await rowsGate;
+				return [row()];
+			},
+			'PUT /api/rows/study-setup': (body: unknown) => {
+				if (putError !== null) throw putError;
+				saved = body as StudySetup;
+				return row();
+			}
+		}
 	});
+	workspace('ja');
+	update = vi.spyOn(StudySetups.prototype, 'update');
 	vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [DECK], cards: [vocab(1), vocab(2, ['d1'])] }));
 });
 
@@ -57,6 +75,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	sessionStorage.clear();
+	localStorage.clear();
 });
 
 describe('the study modal', () => {
@@ -110,7 +129,21 @@ describe('the study modal', () => {
 	it('a chip saves the setup at once, for the workspace it was clicked in', async () => {
 		const dialog = await open();
 		await fireEvent.click(await within(dialog).findByRole('checkbox', { name: 'Writing' }));
-		expect(update).toHaveBeenCalledWith(1, expect.objectContaining({ cardTypes: ['vocab', 'writing'] }));
+		expect(update).toHaveBeenCalledWith(1, { cardTypes: ['vocab', 'writing'] });
+		await waitFor(() => expect(saved.cardTypes).toEqual(['vocab', 'writing']));
+	});
+
+	it('on a cold start the chips wait for the saved setup; a chip then keeps the synced members (review blocker)', async () => {
+		let release!: () => void;
+		rowsGate = new Promise<void>((r) => (release = r));
+		saved = { ...defaultSetup(), decks: ['d1'], newLimit: 7, typeOrder: 'grouped' };
+		const dialog = await open();
+		const writing = (await within(dialog).findByRole('checkbox', { name: 'Writing' })) as HTMLInputElement;
+		expect(writing.disabled).toBe(true);
+		release();
+		await waitFor(() => expect(writing.disabled).toBe(false));
+		await fireEvent.click(writing);
+		await waitFor(() => expect(saved).toMatchObject({ decks: ['d1'], newLimit: 7, typeOrder: 'grouped', cardTypes: ['vocab', 'writing'] }));
 	});
 
 	it('opening it writes nothing, even when it repaired the saved setup, and says what it fell back to', async () => {
@@ -165,10 +198,16 @@ describe('the study modal', () => {
 		expect(within(dialog).getByRole('link', { name: 'Change' }).getAttribute('href')).toBe('/settings?tab=study');
 	});
 
-	it('an unsaved change says so', async () => {
-		vi.spyOn(StudySetups.prototype, 'of').mockImplementation(() => ({ setup: saved, raw: null, loaded: true, saveError: new Error('offline') }));
+	it('an unsaved change says so: offline it is kept, a refusal says why (record 0001)', async () => {
+		putError = new TypeError('Failed to fetch');
 		const dialog = await open();
-		expect(dialog.textContent).toContain('Not saved yet');
+		await fireEvent.click(await within(dialog).findByRole('checkbox', { name: 'Writing' }));
+		expect(await within(dialog).findByText(/^Not saved yet/)).toBeTruthy();
+		putError = new ApiError(413, JSON.stringify({ error: 'too_large', message: 'x' }));
+		await fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Word Salad' }));
+		// A refusal drops the change and shows the error's own text, not the offline line.
+		await waitFor(() => expect(within(dialog).getByRole('alert').textContent).toBe(t('apiError.tooLarge')));
+		expect((within(dialog).getByRole('checkbox', { name: 'Word Salad' }) as HTMLInputElement).checked).toBe(false);
 	});
 
 	it('a level setup sums up the scheme and level', async () => {

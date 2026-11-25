@@ -120,7 +120,9 @@ export class Session {
 			save: async (ws, data) => void (await keyedData(ws, api).put(STUDY_SETUP_KEY, data)),
 			local,
 			user: () => this.#user,
-			alive: () => this.alive
+			alive: () => this.alive,
+			// A deleted workspace leaves the list; before the list loads every id counts.
+			exists: (ws) => !this.workspaces.loaded || this.workspaces.list.some((w) => w.id === ws)
 		});
 		if (deps.document !== null) this.onDispose(this.lookups.recorder.attach(deps.document));
 		this.onDispose((reason) => {

@@ -9,7 +9,7 @@ afterEach(cleanup);
 describe('StudySetups in an effect', () => {
 	it('a refresh from an effect reads once and shows the answer, never looping on its own write', async () => {
 		const load = vi.fn(async () => ({ version: 1, newLimit: 12 }));
-		const store = new StudySetups({ load, save: async () => {}, local: () => memoryStorage(), user: () => 1, alive: () => true });
+		const store = new StudySetups({ load, save: async () => {}, local: () => memoryStorage(), user: () => 1, alive: () => true, exists: () => true });
 		render(SetupRefresh, { store });
 		expect(await screen.findByText('12')).toBeTruthy();
 		await new Promise((r) => setTimeout(r, 20));
