@@ -223,11 +223,24 @@ async function main() {
 		num.apiLevel = adb(['shell', 'getprop', 'ro.build.version.sdk']);
 		adb(['reverse', `tcp:${PORT}`, `tcp:${PORT}`]);
 		adb(['install', '-r', '-t', APK], { timeout: 300_000 });
-		adb(['shell', 'pm', 'clear', PKG], { soft: true });
-		const l = launch();
-		num.coldStart_firstRun = { amStartTotalMs: l.totalTimeMs, amStartWaitMs: l.waitTimeMs };
-		cdp = await connectPage('https://localhost/', { timeout: 90_000 });
-		await waitFor('the first-run form', () => cdp.eval('!!document.getElementById("address") && document.getElementById("title").textContent.length > 0'));
+		// A busy software emulator shows "isn't responding" dialogs that swallow touches: do not show them.
+		adb(['shell', 'settings', 'put', 'global', 'hide_error_dialogs', '1'], { soft: true });
+		for (let attempt = 1; ; attempt++) {
+			try {
+				adb(['shell', 'pm', 'clear', PKG], { soft: true });
+				const l = launch();
+				num.coldStart_firstRun = { amStartTotalMs: l.totalTimeMs, amStartWaitMs: l.waitTimeMs, attempt };
+				cdp = await connectPage('https://localhost/', { timeout: 90_000 });
+				await waitFor('the first-run form', () => cdp.eval('!!document.getElementById("address") && document.getElementById("title").textContent.length > 0'), { timeout: 45_000 });
+				break;
+			} catch (err) {
+				if (attempt >= 2) throw err;
+				console.log(`first launch failed (${err.message}); retrying once`);
+				cdp?.close();
+				forceStop();
+				await sleep(5000);
+			}
+		}
 		screenshot('01-first-run');
 		return { ...num.coldStart_firstRun, bridge: await cdp.eval('typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform()') };
 	});

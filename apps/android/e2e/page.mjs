@@ -115,15 +115,22 @@ export async function collectErrors(cdp) {
  * point; the pointer's clientX/Y tell where the WebView is (status bar, display cutout) and the scale.
  */
 export async function calibrate(cdp) {
-	await cdp.eval(`(() => {
-		const d = document.createElement('div'); d.id = '__cal'; d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:transparent;touch-action:none';
-		window.__cal = null;
-		d.addEventListener('pointerdown', (e) => { window.__cal = { x: e.clientX, y: e.clientY, dpr: devicePixelRatio }; }, true);
-		document.body.appendChild(d);
-	})()`);
-	adb(['shell', 'input', 'tap', '300', '900']);
-	const c = await waitFor('the calibration tap', () => cdp.eval('window.__cal'), { timeout: 10_000, interval: 200 });
+	let c = null;
+	for (let attempt = 0; attempt < 3 && !c; attempt++) {
+		adb(['shell', 'am', 'broadcast', '-a', 'android.intent.action.CLOSE_SYSTEM_DIALOGS'], { soft: true });
+		await cdp.eval(`(() => {
+			document.getElementById('__cal')?.remove();
+			const d = document.createElement('div'); d.id = '__cal'; d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:transparent;touch-action:none';
+			window.__cal = null;
+			d.addEventListener('pointerdown', (e) => { window.__cal = { x: e.clientX, y: e.clientY, dpr: devicePixelRatio }; }, true);
+			document.body.appendChild(d);
+		})()`);
+		await sleep(500);
+		adb(['shell', 'input', 'tap', '300', '900']);
+		c = await waitFor('the calibration tap', () => cdp.eval('window.__cal'), { timeout: 5_000, interval: 200 }).catch(() => null);
+	}
 	await cdp.eval('document.getElementById("__cal")?.remove()');
+	if (!c) throw new Error('the calibration tap never reached the page (a system dialog in front?)');
 	return { dpr: c.dpr, ox: Math.round(300 - c.x * c.dpr), oy: Math.round(900 - c.y * c.dpr), size: await cdp.eval('({ w: innerWidth, h: innerHeight, sw: screen.width, sh: screen.height })') };
 }
 

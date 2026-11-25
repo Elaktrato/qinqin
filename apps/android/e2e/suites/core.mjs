@@ -169,7 +169,7 @@ export async function run(ctx) {
 		if (current !== 'Reader') throw new Error(`current item: ${current}`);
 		// More opens the sheet with the other sections.
 		await click(ctx.cdp, find.named('More', 'nav[aria-label=Main] button'));
-		await waitFor('the More sheet', () => ctx.cdp.eval(`!!(${find.css('dialog[open], [role=dialog]')}) && !!(${find.named('Stats', '[role=dialog] a')})`), { timeout: 10_000 });
+		await waitFor('the More sheet', () => ctx.cdp.eval(`!!(${find.css('dialog[open], [role=dialog]')}) && !!(${find.named('Stats', 'dialog[open] a, [role=dialog] a')})`), { timeout: 10_000 });
 		screenshot('core-07-more-sheet');
 		return { ...bar, current };
 	});
