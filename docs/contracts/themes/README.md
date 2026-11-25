@@ -265,9 +265,9 @@ Public (no session needed; a read token is allowed), the same answer for everyon
 { "themes": [ { "id": "qinqin-day", "name": "qinqin Day", "family": "qinqin", "scheme": "light",
                 "colors": { "chrome": "#e3f4fa", "...": "..." }, "accents": { "azure": "#0077b3", "...": "..." },
                 "defaultAccent": "azure", "packId": "qinqin", "builtin": true } ],
-  "packs":  [ { "packId": "qinqin", "name": "qinqin", "version": "1.0", "license": "MIT",
-                "attribution": "© 2026 qinqin", "notice": "...",
-                "licenseText": "MIT License\n\nCopyright (c) 2026 qinqin\n...", "builtin": true,
+  "packs":  [ { "packId": "qinqin", "name": "qinqin", "version": "1.0", "license": "CC-BY-4.0",
+                "attribution": "qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin)", "notice": "...",
+                "licenseText": "Applies to: ...\n\nAttribution 4.0 International\n...", "builtin": true,
                 "themes": ["qinqin-day", "qinqin-night", "qinqin-deep"] } ] }
 ```
 

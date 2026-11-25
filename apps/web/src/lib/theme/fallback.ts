@@ -3,7 +3,7 @@
 // first visit, offline without stored tokens, or when a slot's theme is gone.
 // Copied from server/internal/themes/builtin/qinqin/themes.json;
 // fallback.test.ts compares the two so they never drift. The qinqin palettes
-// are MIT (static/QINQIN-LICENSE.TXT, credited on the Sources page).
+// are CC BY 4.0 (static/QINQIN-LICENSE.TXT, credited on the Sources page).
 
 import type { Theme } from './types';
 
