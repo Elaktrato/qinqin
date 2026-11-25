@@ -5,6 +5,7 @@
 import type { ParsedGoals } from '../goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
+import type { KnownBatch } from './knownMarks';
 import type { LimitPair } from './limits';
 import type { SeenMilestone } from '../milestones/seen';
 import type { VacationPeriod } from './vacation';
@@ -123,6 +124,8 @@ export interface StudyData {
 	goals?: Exclude<ParsedGoals, null>;
 	/** Entries the learner marked known (live `known:` rows), absent without any. */
 	known?: number[];
+	/** The live marks a declaration wrote (#74), by entry; absent without any. */
+	knownDeclared?: { entryId: number; createdAt: string; batch: KnownBatch }[];
 	/** Seen milestones (live `milestone:` rows) by id, absent without any. */
 	seenMilestones?: ReadonlyMap<string, SeenMilestone>;
 	/** Tombstoned `milestone:` rows by id: their newest stamp (a re-dismiss is stamped after it). */
