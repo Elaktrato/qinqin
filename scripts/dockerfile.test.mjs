@@ -69,7 +69,7 @@ test('the image takes its build metadata from build args (#154)', () => {
 		assert.match(df, new RegExp(`^ARG ${arg}=${def}$`, 'm'), `ARG ${arg}=${def}`);
 	}
 	for (const [flag, arg] of [['version', 'VERSION'], ['commit', 'COMMIT'], ['buildDate', 'BUILD_DATE']]) {
-		assert.ok(df.includes(`-X main.${flag}=\${${arg}}`), `ldflags set main.${flag}`);
+		assert.ok(df.includes(`-X 'main.${flag}=\${${arg}}'`), `ldflags set main.${flag}`);
 	}
 	const wf = readFileSync(join(root, '.github/workflows/build.yml'), 'utf8');
 	assert.match(wf, /VERSION=\$\{\{ steps\.build\.outputs\.version \}\}/);
@@ -77,4 +77,6 @@ test('the image takes its build metadata from build args (#154)', () => {
 	assert.match(wf, /BUILD_DATE=\$\{\{ steps\.build\.outputs\.date \}\}/);
 	// A build that is not a tag reports "dev".
 	assert.match(wf, /version=dev\n\s+case "\$REF" in refs\/tags\/v\*\) version="\$\{REF_NAME#v\}"/);
+	// ...and a v* tag that is not semver fails the job instead of reporting dev.
+	assert.match(wf, /is not semver/);
 });
