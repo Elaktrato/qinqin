@@ -1,0 +1,631 @@
+{
+ "version": 1,
+ "rule": "reminders/settings",
+ "key": "reminders",
+ "scope": "user-global",
+ "cases": [
+  {
+   "name": "no row",
+   "value": null,
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "not an object",
+   "value": "yes",
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "an array",
+   "value": [
+    1
+   ],
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "missing version",
+   "value": {
+    "enabled": true
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "a version 1 row with everything",
+   "value": {
+    "version": 1,
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": false,
+     "streak": true
+    },
+    "times": [
+     "08:30",
+     "19:00"
+    ],
+    "quiet": {
+     "start": "23:00",
+     "end": "07:00"
+    },
+    "channels": {
+     "email": true,
+     "push": false,
+     "device": true
+    }
+   },
+   "expect": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": false,
+     "streak": true
+    },
+    "times": [
+     "08:30",
+     "19:00"
+    ],
+    "quiet": {
+     "start": "23:00",
+     "end": "07:00"
+    },
+    "channels": {
+     "email": true,
+     "push": false,
+     "device": true
+    }
+   }
+  },
+  {
+   "name": "enabled must be a boolean",
+   "value": {
+    "version": 1,
+    "enabled": "true"
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "a kind that is not a boolean is on",
+   "value": {
+    "version": 1,
+    "kinds": {
+     "due": "no",
+     "goal": 0
+    }
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "times sort, collapse repeats and drop invalid entries",
+   "value": {
+    "version": 1,
+    "times": [
+     "19:00",
+     "8:30",
+     "07:15",
+     "19:00",
+     "24:00",
+     "12:60",
+     "abc",
+     5
+    ]
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "07:15",
+     "19:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "at most three times, after sorting",
+   "value": {
+    "version": 1,
+    "times": [
+     "20:00",
+     "06:00",
+     "09:00",
+     "12:00",
+     "15:00"
+    ]
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "06:00",
+     "09:00",
+     "12:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "no valid time is the default time",
+   "value": {
+    "version": 1,
+    "times": [
+     "nope"
+    ]
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "times that are not an array",
+   "value": {
+    "version": 1,
+    "times": "18:00"
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "quiet null is no quiet hours",
+   "value": {
+    "version": 1,
+    "quiet": null
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": null,
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "quiet absent is the default",
+   "value": {
+    "version": 1
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "quiet with equal ends is none",
+   "value": {
+    "version": 1,
+    "quiet": {
+     "start": "22:00",
+     "end": "22:00"
+    }
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": null,
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "quiet with a bad time is the default",
+   "value": {
+    "version": 1,
+    "quiet": {
+     "start": "22:00",
+     "end": "late"
+    }
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "quiet that does not wrap",
+   "value": {
+    "version": 1,
+    "quiet": {
+     "start": "13:00",
+     "end": "15:00"
+    }
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "13:00",
+     "end": "15:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "channels that are not booleans are off",
+   "value": {
+    "version": 1,
+    "channels": {
+     "email": 1,
+     "push": "on",
+     "device": true
+    }
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   }
+  },
+  {
+   "name": "a newer version is read leniently",
+   "value": {
+    "version": 7,
+    "enabled": true,
+    "times": [
+     "09:00"
+    ],
+    "extra": {
+     "x": 1
+    }
+   },
+   "expect": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  },
+  {
+   "name": "version below 1",
+   "value": {
+    "version": 0,
+    "enabled": true
+   },
+   "expect": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": false
+    }
+   }
+  }
+ ],
+ "quietHours": [
+  {
+   "quiet": {
+    "start": "22:00",
+    "end": "08:00"
+   },
+   "at": "23:30",
+   "inside": true
+  },
+  {
+   "quiet": {
+    "start": "22:00",
+    "end": "08:00"
+   },
+   "at": "07:59",
+   "inside": true
+  },
+  {
+   "quiet": {
+    "start": "22:00",
+    "end": "08:00"
+   },
+   "at": "08:00",
+   "inside": false
+  },
+  {
+   "quiet": {
+    "start": "22:00",
+    "end": "08:00"
+   },
+   "at": "22:00",
+   "inside": true
+  },
+  {
+   "quiet": {
+    "start": "22:00",
+    "end": "08:00"
+   },
+   "at": "12:00",
+   "inside": false
+  },
+  {
+   "quiet": {
+    "start": "13:00",
+    "end": "15:00"
+   },
+   "at": "14:00",
+   "inside": true
+  },
+  {
+   "quiet": {
+    "start": "13:00",
+    "end": "15:00"
+   },
+   "at": "15:00",
+   "inside": false
+  },
+  {
+   "quiet": null,
+   "at": "03:00",
+   "inside": false
+  }
+ ],
+ "note": "cases: parse the row value to the settings (expect). quietHours: whether the local time `at` is inside the quiet hours (start inclusive, end exclusive, wrapping midnight)."
+}
