@@ -1,7 +1,12 @@
 package qinqin.shell;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.view.WindowManager;
 import android.view.Window;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -84,6 +89,36 @@ public class ShellPlugin extends Plugin {
             c.setAppearanceLightNavigationBars(darkIcons);
             call.resolve();
         });
+    }
+
+    /** `{on}`: keeps the screen on while the page asks (a study session); the flag dies with the activity. */
+    @PluginMethod
+    public void keepAwake(PluginCall call) {
+        final boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
+        final Activity activity = getActivity();
+        activity.runOnUiThread(() -> {
+            Window window = activity.getWindow();
+            if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            call.resolve();
+        });
+    }
+
+    /** `{ms}`: one short vibration (grading feedback). Bounded to 10-200 ms; resolves `{vibrated}` (false: no vibrator). */
+    @PluginMethod
+    @SuppressWarnings("deprecation")
+    public void vibrate(PluginCall call) {
+        Integer asked = call.getInt("ms", 20);
+        long ms = Math.max(10, Math.min(200, asked == null ? 20 : asked));
+        Vibrator v = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        JSObject r = new JSObject();
+        boolean ok = v != null && v.hasVibrator();
+        if (ok) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            else v.vibrate(ms);
+        }
+        r.put("vibrated", ok);
+        call.resolve(r);
     }
 
     /** The one colour form the web app sends (bars.ts): `#rrggbb`. Named colours and `#aarrggbb` are refused. */

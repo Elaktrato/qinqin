@@ -23,10 +23,39 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- "Share" > qinqin from another app: the text opens the lookup. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
             <!-- Long-press the launcher icon: "Change server" (an escape hatch when the saved server is not qinqin). -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
 
         </activity>
+
+        <!-- Text selection menu: "Look up in qinqin" (an alias, so it has its own label). -->
+        <activity-alias
+            android:name=".LookupAlias"
+            android:targetActivity=".MainActivity"
+            android:label="@string/lookup_in_qinqin"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Local notifications (Reminders): the alarm, and the re-arm after a reboot or an update. Not exported. -->
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
+        <receiver android:name=".BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -39,10 +68,24 @@
         </provider>
     </application>
 
+    <!-- Android 11+ hides other apps from this one: without this the text-to-speech engine is not found. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Without it the WebView cannot see the network state: navigator.onLine stays true and the web app's
          online/offline events never fire (found on the emulator, #35). A normal permission: no prompt. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Normal permissions (no prompt): the grading buzz and the re-arm of reminders after a reboot. The camera is
+         deliberately NOT declared: with it, the WebView file chooser would ask for it; without it the system
+         camera app takes the photo and hands it over. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android 13+: asked at run time, only when a feature that needs it asks (QinqinNotifications). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
