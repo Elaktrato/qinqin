@@ -53,4 +53,8 @@ contract 2 to 3; `SHELL_BRIDGE` in the first-run screen advertises the same; fix
 ## Licence and dependency record
 
 No new Gradle or npm dependency. Used: `androidx.core` (NotificationCompat, FileProvider; Apache-2.0, already
-present through appcompat), Android framework APIs. Verified with `./gradlew :app:dependencies` (see wiki).
+present through appcompat), Android framework APIs. Verified 2026-11-25 with `./gradlew :app:dependencies --configuration releaseRuntimeClasspath`: the tree is
+unchanged by this work (androidx, Kotlin stdlib, Capacitor 8.6.2, `@capacitor/app` 8.1.2 as before); the only
+`com.google.*` artifact is `com.google.guava:listenablefuture:1.0`, the empty Apache-2.0 placeholder androidx
+pulls in; no `com.google.android.gms`, no Firebase. The new manifest entries are normal permissions
+(`VIBRATE`, `RECEIVE_BOOT_COMPLETED`) plus `POST_NOTIFICATIONS`, asked at run time only by a feature that needs it.
