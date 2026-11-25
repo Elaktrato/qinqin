@@ -39,3 +39,16 @@ every task; small commits. Server work and web work ran in parallel against the 
 
 `go vet ./... && go test ./...`; `npm run check` and the full vitest in `apps/web`; the scripts tests; the pull
 request's CI (test and e2e).
+
+## Review fixes (stage 2)
+
+Server findings from the stage 2 review. Test-first; branch `fix/stage2-reminders-server`.
+
+- Ruling: an http public URL sends reminder mail without List-Unsubscribe and List-Unsubscribe-Post (the body link stays); `Compose` stays strict about https — RFC 8058 one-click requires https and a lenient `Compose` could let a bad header through — cost if wrong: a mail app shows no unsubscribe button on http-only installs (they should use https anyway).
+- Ruling: push TTL = min(rest of the 2 h window, time to the next quiet-hours start), floor 1 minute, and 1 minute when already inside quiet hours — a push held by the service past the window or into the night defeats both — cost if wrong: a device that is offline for a few minutes may miss a reminder it would otherwise have shown.
+- Ruling: slots earlier than the settings row's `updated_at` are ignored — enabling (or editing) at 18:30 must not fire the 18:00 slot — cost if wrong: saving any settings change inside the two-hour window skips a slot that was due before the save.
+- Ruling: a push subscription is dropped after 5 consecutive failed sends (`failures` column, reset on success; 404/410 still drop at once); each account's sends share a 45 s context deadline and the per-send HTTP timeout is 10 s (was 20 s), and a send cut off by our own deadline is not counted as a failure — a dead endpoint otherwise costs 20 s per kind forever and one slow account stalls everyone behind it — cost if wrong: a flaky endpoint failing 5 times in about two days is removed and the user must re-enable push on that device. Sends stay serial per account (no extra concurrency to reason about).
+- Ruling: a failed send is final for that day — deliberate; documented in the wiki and ADR 0011 — one claim per channel, kind and day is what stops doubles after a restart — cost if wrong: a transient outage loses that day's reminder.
+- Ruling: due counts stay in UTC-hour buckets; documented that an 18:00 slot counts through 18:59 UTC and what that means in :30 and :45 zones — the facts contract is fixed and the client publishes it — cost if wrong: a count in such a zone can be off by the zone's offset (a nudge, not a promise).
+- Ruling: no "reset push keys" admin action; documented a manual recovery instead (stop, delete `push_subscriptions` and `push_vapid`, start) — a safe route needs an admin endpoint with re-authentication, contract, UI and tests for a rare recoverable case — cost if wrong: an admin who lost the secret needs shell access to the database.
+- Ruling: rotation at start now also re-seals the push key (it was only re-sealed on first push use, so dropping `QINQIN_SECRET_PREVIOUS` right after the restart could lose it) — small, covered by a test — cost if wrong: none beyond one extra read at start.

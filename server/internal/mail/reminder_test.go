@@ -88,4 +88,22 @@ func TestSendReminderDeliversWithHeaders(t *testing.T) {
 	}
 }
 
+func TestSendReminderOverHTTPPublicURLOmitsListUnsubscribeButKeepsBodyLink(t *testing.T) {
+	fake, _ := mailtest.New(mailtest.Options{})
+	defer fake.Close()
+	svc := svcFor(t, fake, &logSink{})
+	link := "http://words.example.org/api/reminders/unsubscribe?t=T"
+	err := svc.SendReminder(context.Background(), 0, "ann@example.org", ReminderData{Items: []ReminderItem{{Kind: "due", Count: 3}}, Unsubscribe: link})
+	if err != nil {
+		t.Fatalf("an http public URL must still deliver: %v", err)
+	}
+	got := fake.Messages()
+	if len(got) != 1 || strings.Contains(got[0].Data, "List-Unsubscribe") {
+		t.Fatalf("headers must be omitted over http: %+v", got)
+	}
+	if !strings.Contains(got[0].Data, "http://words.example.org/api/reminders/unsubscribe?t=3DT") { // quoted-printable "="
+		t.Fatalf("the body keeps the unsubscribe link: %s", got[0].Data)
+	}
+}
+
 func t0() time.Time { return time.Date(2026, 11, 25, 10, 0, 0, 0, time.UTC) }
