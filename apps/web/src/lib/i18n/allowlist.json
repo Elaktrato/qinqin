@@ -103,5 +103,10 @@
 		"file": "lib/api/apiErrors.ts",
 		"text": "body?.message",
 		"reason": "packErrorDetail: the one ruled exception (spec 2026-11-23-error-contract-design.md, Ruling in section 5): the pack validator's English reason of a pack_invalid answer, shown to the administrator under the translated text as English detail."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "CC BY 4.0",
+		"reason": "An SPDX-style licence name, shown verbatim (data)."
 	}
 ]
