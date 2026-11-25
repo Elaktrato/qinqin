@@ -31,9 +31,9 @@ function envOf(over: Partial<PushEnv> & { permission?: NotificationPermission; r
 	const state = { sub };
 	const manager = {
 		getSubscription: vi.fn(async () => state.sub),
-		subscribe: vi.fn(async () => (state.sub = subscription()))
+		subscribe: vi.fn(async (_options: { userVisibleOnly: boolean; applicationServerKey: Uint8Array }) => (state.sub = subscription()))
 	};
-	const requestPermission = vi.fn(async () => over.request ?? 'granted');
+	const requestPermission = vi.fn(async (): Promise<NotificationPermission> => over.request ?? 'granted');
 	const local = memoryStorage();
 	const env: PushEnv = {
 		isShell: () => false,

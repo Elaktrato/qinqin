@@ -64,7 +64,7 @@ describe('saveReminderSettings', () => {
 				return v as never;
 			})
 		};
-		const out = await saveReminderSettings({ enabled: true }, store);
+		const out = await saveReminderSettings({ enabled: true }, store as never);
 		expect(calls).toEqual(['find', 'put']);
 		expect(store.put).toHaveBeenCalledWith(REMINDERS_KEY, { version: 1, enabled: true, keep: true });
 		expect(out.enabled).toBe(true);
@@ -80,9 +80,9 @@ describe('saveReminderSettings', () => {
 describe('loadReminderRow', () => {
 	it('reads the settings and whether the row is from a newer version', async () => {
 		const { loadReminderRow } = await import('./settings');
-		expect(await loadReminderRow({ find: async () => null })).toEqual({ settings: defaultReminderSettings(), newer: false });
-		expect((await loadReminderRow({ find: async () => ({ version: 1, enabled: true }) })).settings.enabled).toBe(true);
-		const newer = await loadReminderRow({ find: async () => ({ version: 2, enabled: true }) });
+		expect(await loadReminderRow({ find: (async () => null) as never })).toEqual({ settings: defaultReminderSettings(), newer: false });
+		expect((await loadReminderRow({ find: (async () => ({ version: 1, enabled: true })) as never })).settings.enabled).toBe(true);
+		const newer = await loadReminderRow({ find: (async () => ({ version: 2, enabled: true })) as never });
 		expect(newer).toMatchObject({ newer: true });
 		expect(newer.settings.enabled).toBe(true);
 	});

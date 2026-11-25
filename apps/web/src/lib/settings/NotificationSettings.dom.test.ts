@@ -30,7 +30,7 @@ function pushEnv(over: Partial<PushEnv> = {}, permission: NotificationPermission
 	const local = memoryStorage();
 	const sub = { endpoint: 'https://p/1', toJSON: () => ({ endpoint: 'https://p/1', keys: { p256dh: 'P', auth: 'A' } }), unsubscribe: vi.fn(async () => true) };
 	const state: { sub: typeof sub | null } = { sub: null };
-	const requestPermission = vi.fn(async () => {
+	const requestPermission = vi.fn(async (): Promise<NotificationPermission> => {
 		permission = 'granted';
 		return permission;
 	});
