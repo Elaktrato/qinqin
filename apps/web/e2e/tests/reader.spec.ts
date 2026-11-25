@@ -3,7 +3,7 @@
 
 import type { Locator } from '@playwright/test';
 import { expect, test } from '../support/fixtures';
-import { pointAt } from '../support/pointer';
+import { boxOf, centreOf, pointAt } from '../support/pointer';
 import { addBook } from '../support/study';
 
 test('pointing at a word in a Japanese book shows its dictionary entry', async ({ page, learner }) => {
@@ -79,5 +79,34 @@ test.describe('on a phone', () => {
 		await expect(sheet).toBeVisible();
 		await expect(sheet).toContainText('みず');
 		await expect(sheet).toContainText('water');
+	});
+
+	test('tapping a word opens its entry in the bottom sheet, with the word above the sheet and nothing selected', async ({ page, learner }) => {
+		const filler = Array.from({ length: 12 }, () => '私は学校に行きます。');
+		const bookId = await addBook(learner, 'ja', '水の本', [...filler, '私は水を飲みます。', ...filler]);
+		await page.goto(`/reader/book/${bookId}/0`);
+		const paragraph = page.getByText('私は水を飲みます。');
+		await expect(paragraph).toBeVisible();
+		// Low on the screen, where the sheet comes up.
+		await paragraph.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - window.innerHeight * 0.8));
+		const word = await centreOf(paragraph, '水');
+		const box = await paragraph.boundingBox();
+		expect(box, 'the paragraph is rendered').not.toBeNull();
+		await paragraph.tap({ position: { x: word.x - box!.x, y: word.y - box!.y } });
+
+		const sheet = page.getByRole('dialog', { name: /水/ });
+		await expect(sheet).toBeVisible();
+		await expect(sheet).toContainText('みず');
+		await expect(sheet).toContainText('water');
+		// Once the sheet has slid in, the word's box ends above its top edge.
+		await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+		await expect
+			.poll(async () => {
+				const top = (await sheet.boundingBox())?.y ?? 0;
+				const w = await boxOf(paragraph, '水');
+				return top - (w.y + w.height);
+			}, { message: 'space between the word and the sheet' })
+			.toBeGreaterThan(0);
+		expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
 	});
 });
