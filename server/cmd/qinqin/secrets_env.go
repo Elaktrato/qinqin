@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"qinqin/internal/auth"
 	"qinqin/internal/mail"
+	"qinqin/internal/reminders"
 	"qinqin/internal/secretbox"
 )
 
@@ -53,6 +55,14 @@ func rotateSecrets(ctx context.Context, sqlDB *sql.DB, sec secrets, svc *mail.Se
 	nMail, err := svc.Store.Rotate(ctx)
 	if err != nil {
 		logf("rotating the mail password to the new QINQIN_SECRET failed: %v", err)
+	}
+	// The web push key is otherwise re-sealed only on its first use after the
+	// restart, which may be days away; do it now so PREVIOUS can go at once.
+	var hasKey int
+	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM push_vapid`).Scan(&hasKey); err == nil && hasKey > 0 {
+		if _, err := reminders.LoadVAPID(ctx, sqlDB, sec.Current, sec.Previous, time.Now()); err != nil {
+			logf("rotating the web push key to the new QINQIN_SECRET failed: %v", err)
+		}
 	}
 	if nTOTP > 0 || nMail > 0 {
 		logf("rotated %d two-factor secrets and %d mail passwords to the new QINQIN_SECRET", nTOTP, nMail)

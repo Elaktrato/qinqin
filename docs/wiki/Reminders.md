@@ -25,7 +25,11 @@ qinqin's server stores your reviews but does not schedule cards: the schedule is
 So the app, while you use it, sends the server a small summary (how many cards are due now and by hour over the next
 two weeks, the state of today's goal and streak, your vacation days) and the server plans from it. Only accounts that
 turned reminders on send it. The summary has counts and dates, no card text. If you stop opening qinqin, the server
-keeps using the last summary for up to 30 days, assuming you studied nothing since.
+keeps using the last summary for up to 30 days, assuming you studied nothing since. Due counts are grouped **by UTC
+hour**: a reminder set for 18:00 counts the cards due until 18:59 UTC, not until 18:00 in your zone. In a zone whose
+offset is a whole number of hours that is exactly the hour you set; in a zone at :30 or :45 (India, Nepal, parts of
+Australia) the grouping is shifted by half an hour or three quarters, so a count can include cards due up to that much
+after the minute you chose, or leave out those due just before it. It is a count for a nudge, not a promise.
 
 ## Email
 
@@ -33,7 +37,9 @@ Needs a **verified email address** (Settings, Account) and an administrator who 
 [email](Admin-email-and-security). The kinds that are due at the same time arrive as **one** email. The subject never
 names your study; the body has counts, a link to qinqin and **one-click unsubscribe**: the link in every message, and
 the unsubscribe button of mail apps that show one. Unsubscribing only turns the email channel off; turn it on again in
-Settings. Nothing is retried after a failed send, so a mail server outage loses that day's reminder.
+Settings. A failed send is final for that day, by design: nothing is retried, so a mail server
+outage loses that day's reminder (a reminder that arrives hours late is worse than none, and a retry loop could send
+twice). The same holds for web push.
 
 ## Web push (browser or installed web app)
 
@@ -47,6 +53,11 @@ Every device that did so is listed there and can be removed. Limits:
 - Desktop browsers work while the browser is running.
 - The server needs `QINQIN_SECRET` (the push key is kept sealed with it). Without it the switch says push is not
   available.
+- A notification is only held by the push service while it is still useful: until two hours after its time, and never
+  across your quiet hours. A device that is off for longer does not get it later.
+- A device whose push address stops answering is removed after five failed sends in a row (and at once when the push
+  service says it is gone); turn push on again on that device to re-add it.
+- Turning reminders on does not send the slot that has already passed today; the first one is the next time you set.
 - Signing out on a device removes that device's subscription.
 - It does not run in the Android app, which uses device notifications instead.
 
@@ -75,3 +86,11 @@ subscriptions are deleted with the account; the delivery log (account, channel, 
 for 90 days. Design and rulings: [the design](https://github.com/Elaktrato/qinqin/blob/develop/docs/superpowers/specs/2026-11-25-reminders-design.md),
 [record 0011](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0011-reminders-and-push.md); the
 routes are in [API routes](API-Routes), the rules in `docs/contracts/reminders/`.
+
+**Rotating `QINQIN_SECRET`.** The push key is re-sealed with the new secret at the restart when the old one is in
+`QINQIN_SECRET_PREVIOUS` ([rotating](Admin-backup-and-recovery#rotating-qinqin_secret)). If the old secret is lost and
+was never kept as the previous one, the push key cannot be read any more: push stays unavailable and the test says so.
+There is no button for it. Recover by hand: stop the server and, in the database in `/data`, run
+`DELETE FROM push_subscriptions; DELETE FROM push_vapid;`, then start it. A new key is made on first use, and everyone
+has to turn push on again on each device (the old subscriptions belong to the old key and could not be used with the
+new one). Email and device reminders are unaffected.

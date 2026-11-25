@@ -81,7 +81,12 @@ func (s *Service) SendReminder(ctx context.Context, userID int64, to string, d R
 		s.logf("mail: failed kind=%s user=%d category=template", KindReminder, userID)
 		return err
 	}
-	msg.To, msg.ListUnsubscribe = to, d.Unsubscribe
+	msg.To = to
+	// RFC 8058 one-click needs an https URL; over an http public URL the
+	// headers are left out and the body still carries the link.
+	if strings.HasPrefix(d.Unsubscribe, "https://") {
+		msg.ListUnsubscribe = d.Unsubscribe
+	}
 	raw, err := Compose(Sender{Address: cfg.FromAddress, Name: cfg.FromName}, msg, s.clock(), rand.Reader)
 	if err != nil {
 		s.logf("mail: failed kind=%s user=%d category=compose", KindReminder, userID)

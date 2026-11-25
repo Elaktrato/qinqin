@@ -151,10 +151,10 @@ func (s *Sender) client() *http.Client {
 		return s.Client
 	}
 	return &http.Client{
-		Timeout: 20 * time.Second,
+		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			DialContext:         netguard.DialContext(s.Policy, s.Resolver),
-			TLSHandshakeTimeout: 10 * time.Second,
+			TLSHandshakeTimeout: 5 * time.Second,
 			DisableKeepAlives:   true,
 		},
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
