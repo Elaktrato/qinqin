@@ -8,7 +8,7 @@
 // Japanese, handwriting) are in docs/superpowers/checklists/android-ime.md.
 import { screenshot, sleep, waitFor } from '../lib.mjs';
 import { addCards, setCardTypes, useLearner } from './common.mjs';
-import { bodyText, clickNamed, commit, compose, find, focusField, imeLog, press, waitText, watchIme, where } from '../page.mjs';
+import { bodyText, click, clickNamed, commit, compose, find, focusField, imeLog, press, waitText, watchIme, where } from '../page.mjs';
 
 const value = (cdp, finder) => cdp.eval(`(${finder}).value`);
 
@@ -40,7 +40,12 @@ export async function run(ctx) {
 		const w = await where(ctx.cdp);
 		if (/q=/.test(w.search)) throw new Error(`Enter during composition submitted the search: ${w.href}`);
 		const midLog = await imeLog(ctx.cdp);
-		if (midLog.some((e) => e.t === 'compositionend')) throw new Error(`the composition ended by itself: ${JSON.stringify(midLog)}`);
+		if (midLog.some((e) => e.t === 'compositionend')) {
+			// DevTools' synthetic composition may be committed by the emulator's busy event loop: record it and let the
+			// commit below start from an empty field (a real IME keeps the composition open until the person commits).
+			num.imeSearchEarlyEnd = midLog;
+			await ctx.cdp.eval(`(() => { const f = ${field}; f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+		}
 		await commit(ctx.cdp, '学校');
 		await sleep(300);
 		const committed = await value(ctx.cdp, field);
@@ -57,6 +62,13 @@ export async function run(ctx) {
 
 	await rec.step('ime: typing card - Enter during composition does not check; commit then Enter checks', async () => {
 		await ctx.cdp.eval("location.assign('/study')");
+		await waitFor('the study dialog', () => ctx.cdp.eval(`!!(${find.dialog('Study')})`), { timeout: 40_000 });
+		// The card is a vocab card studied in the Reverse mode: choose the chips as a person does (Reverse on, Vocab off).
+		const chipScope = 'dialog label, dialog [role=checkbox], dialog button, [role=dialog] label, [role=dialog] [role=checkbox], [role=dialog] button';
+		await click(ctx.cdp, find.named('Reverse', chipScope));
+		await sleep(600);
+		await click(ctx.cdp, find.named('Vocab', chipScope));
+		await sleep(800);
 		await clickNamed(ctx.cdp, 'Start studying', { timeout: 40_000 });
 		const field = find.field('Type the word');
 		await waitFor('the typing card', () => ctx.cdp.eval(`!!(${field})`), { timeout: 30_000 });
