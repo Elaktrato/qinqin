@@ -29,6 +29,7 @@
 	import IconButton from './IconButton.svelte';
 	import Tooltip from './Tooltip.svelte';
 	import type { IconName } from './icons/lucide';
+	import { registerDismissable } from './dismissStack';
 	import { setMenuContext } from './menu';
 
 	let {
@@ -83,6 +84,12 @@
 	}
 
 	setMenuContext({ close, settle });
+
+	// An open menu is the innermost thing to close for the Android back button (dismissStack.ts).
+	$effect(() => {
+		if (!open) return;
+		return registerDismissable(() => close(true));
+	});
 
 	// Opens and focuses the checked item (else the first), or the first or
 	// last item (ArrowDown / ArrowUp on the trigger, APG menu button).

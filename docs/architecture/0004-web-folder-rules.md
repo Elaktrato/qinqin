@@ -29,7 +29,7 @@ Under `apps/web/src/lib/`:
   its page), `milestones`, `notes`, `pwa`, `search`, `settings`, `sources`, `stats`, `weekly`, `widgets` (the
   home and Stats overview board) and `workspace`.
 - **Logic-only folders**: the shared layers below the features, with no component: `api`, `audio`, `auth`,
-  `context`, `events`, `fonts`, `i18n`, `languages`, `packages`, `radicals`, `routing`, `session`, `study`,
+  `context`, `events`, `fonts`, `i18n`, `languages`, `native`, `packages`, `radicals`, `routing`, `session`, `study`,
   `sync`, `theme`, `time`, `writing`.
 - **The other top folders** are `ui`, `frame`, `components`, `features` (the parent of the switchable
   features, holding their switches and `FeaturePage`), `testing` (the shared test support) and `assets`

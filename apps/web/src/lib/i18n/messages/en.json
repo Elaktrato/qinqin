@@ -1500,6 +1500,7 @@
 	"milestones.titleWithDay": "{title}, {reached}",
 	"milestones.weekLine": "Milestones",
 	"nav.account.adminSettings": "Admin settings",
+	"nav.account.changeServer": "Change server",
 	"nav.account.menu": "Account menu",
 	"nav.account.theme": "Theme",
 	"nav.bar.edit": "Edit the bar",

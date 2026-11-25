@@ -23,6 +23,7 @@ export const LOGIC_FOLDERS = [
 	'fonts',
 	'i18n',
 	'languages',
+	'native',
 	'packages',
 	'radicals',
 	'routing',
