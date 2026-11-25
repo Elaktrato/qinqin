@@ -92,9 +92,12 @@ test('a mixed session: both card types interleave, Z and Back change a grade', a
 	const ws = learner.workspaces.ja;
 	const before = (await learner.api.reviews(ws)).length;
 
+	// /study opens the study modal over home (the study modal design, 4.3).
 	await page.goto('/study');
-	await expect(page.getByRole('region', { name: 'This session' })).toContainText(/0\s*due\s*·\s*8\s*new/);
-	await page.getByRole('button', { name: 'Start studying' }).click();
+	const modal = page.getByRole('dialog', { name: 'Study' });
+	await expect(modal).toContainText(/0 due · 8 new/);
+	await expect(modal.getByRole('checkbox', { name: 'Reverse' })).toBeChecked();
+	await modal.getByRole('button', { name: 'Start studying' }).click();
 	await expect(page).toHaveURL(/\/study\/session$/);
 
 	const faces: Face[] = [];
