@@ -135,7 +135,94 @@ Tracker [#166](https://github.com/Elaktrato/qinqin/issues/166). Handoff: `docs/s
 - Phase 3, web and features — done (handoff `docs/superpowers/handoffs/2026-11-24-web-architecture-handoff.md`): ~~[#193](https://github.com/Elaktrato/qinqin/issues/193) study data layer~~, ~~[#196](https://github.com/Elaktrato/qinqin/issues/196) one state model~~ (record 0009), ~~[#199](https://github.com/Elaktrato/qinqin/issues/199) retire code plugins~~ (journal and grammar are core, feature switches, language profiles; record 0006), ~~[#185](https://github.com/Elaktrato/qinqin/issues/185) AI conversation partner~~, ~~[#186](https://github.com/Elaktrato/qinqin/issues/186) AI example sentences~~, ~~[#189](https://github.com/Elaktrato/qinqin/issues/189) profile picture~~, ~~[#195](https://github.com/Elaktrato/qinqin/issues/195) folder layout~~ (record 0004)
 - Next, queued by the owner: [#211](https://github.com/Elaktrato/qinqin/issues/211) a bootstrap administrator by default on a fresh install, ~~[#42](https://github.com/Elaktrato/qinqin/issues/42) drop the local-only TBCL and curriculum level lists~~
 
-## Future (milestone)
+## Milestones ahead
+
+The GitHub milestones are the plan; this section mirrors them (checked 2026-11-25). Order inside a milestone is
+not a commitment.
+
+### v0.7.0 — Android (milestone 6)
+
+The web app in a Capacitor shell that loads the user's own server — design
+`docs/superpowers/specs/2026-11-23-android-shell-design.md` (approved 2026-11-23), replacing the native Kotlin
+plan. Native pieces only where the WebView falls short.
+
+- Tracker [#200](https://github.com/Elaktrato/qinqin/issues/200)
+- Foundations: [#217](https://github.com/Elaktrato/qinqin/issues/217) licences (MIT code, CC BY 4.0 project
+  content), [#154](https://github.com/Elaktrato/qinqin/issues/154) version, build metadata and release check
+- The shell: [#34](https://github.com/Elaktrato/qinqin/issues/34) shell and first-run server screen,
+  [#35](https://github.com/Elaktrato/qinqin/issues/35) offline and storage,
+  [#36](https://github.com/Elaktrato/qinqin/issues/36) native device features,
+  [#37](https://github.com/Elaktrato/qinqin/issues/37) testing and parity
+- Reminders: [#137](https://github.com/Elaktrato/qinqin/issues/137) due cards, goals and streaks,
+  [#138](https://github.com/Elaktrato/qinqin/issues/138) email nudges,
+  [#139](https://github.com/Elaktrato/qinqin/issues/139) web push for the installed web app
+- Release path: [#147](https://github.com/Elaktrato/qinqin/issues/147) (with
+  [#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed artifacts and
+  [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid; blocked on owner steps)
+
+### v0.8.0 — the beginner experience (milestone 7)
+
+- Study aids: [#212](https://github.com/Elaktrato/qinqin/issues/212) visual aids,
+  [#214](https://github.com/Elaktrato/qinqin/issues/214) Starter mode,
+  [#215](https://github.com/Elaktrato/qinqin/issues/215) hints on every card,
+  [#216](https://github.com/Elaktrato/qinqin/issues/216) pictures for words
+- Getting started: [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test,
+  [#82](https://github.com/Elaktrato/qinqin/issues/82) level check,
+  [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study,
+  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer
+- Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
+  [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order,
+  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio
+
+### v0.9.0 — courses (milestone 8)
+
+- Epic [#218](https://github.com/Elaktrato/qinqin/issues/218), design `docs/superpowers/specs/2026-11-24-courses-design.md`:
+  [#221](https://github.com/Elaktrato/qinqin/issues/221) pack format and progress contracts,
+  [#222](https://github.com/Elaktrato/qinqin/issues/222) roadmap and lesson player,
+  [#223](https://github.com/Elaktrato/qinqin/issues/223) skeletons and reading texts,
+  [#224](https://github.com/Elaktrato/qinqin/issues/224) unit tests and exams,
+  [#225](https://github.com/Elaktrato/qinqin/issues/225) milestones, widget, onboarding
+- Around it: [#219](https://github.com/Elaktrato/qinqin/issues/219) estimated JLPT word list,
+  [#220](https://github.com/Elaktrato/qinqin/issues/220) topic labels,
+  [#226](https://github.com/Elaktrato/qinqin/issues/226) exam target and study plan,
+  [#231](https://github.com/Elaktrato/qinqin/issues/231) graded reading library,
+  [#183](https://github.com/Elaktrato/qinqin/issues/183) "read next" suggestions
+
+### v1.0.0 — ready for daily use (milestone 9)
+
+- Study: [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling,
+  [#162](https://github.com/Elaktrato/qinqin/issues/162) multiple daily goals,
+  [#163](https://github.com/Elaktrato/qinqin/issues/163) levels on the mastery map,
+  [#227](https://github.com/Elaktrato/qinqin/issues/227) mistake notebook
+- Interface: [#95](https://github.com/Elaktrato/qinqin/issues/95) visual rework (open:
+  [#107](https://github.com/Elaktrato/qinqin/issues/107) owner drawings),
+  [#144](https://github.com/Elaktrato/qinqin/issues/144) German catalogue,
+  [#234](https://github.com/Elaktrato/qinqin/issues/234) dyslexia and low-vision settings,
+  [#18](https://github.com/Elaktrato/qinqin/issues/18) stroke player polish
+- Operations: [#153](https://github.com/Elaktrato/qinqin/issues/153) update the image from Settings,
+  [#155](https://github.com/Elaktrato/qinqin/issues/155) apply updates via a deployment provider,
+  [#233](https://github.com/Elaktrato/qinqin/issues/233) scheduled off-site backups
+
+### After v1.0 (milestone 3)
+
+Ideas, not scheduled; each issue holds the detail.
+
+- More languages: [#201](https://github.com/Elaktrato/qinqin/issues/201) (Russian #205, Lithuanian #206,
+  Spanish #207, European Portuguese #208, Korean #209, Malay #210),
+  [#202](https://github.com/Elaktrato/qinqin/issues/202) Wiktionary importer,
+  [#203](https://github.com/Elaktrato/qinqin/issues/203) frequency lists and CEFR estimates
+- Interface languages: #143, #145, #146 (Japanese, Simplified Chinese and the rest)
+- Study: #76 focus sessions, #134–#136 listening and speaking, #141/#142 deck export and shared decks,
+  #140, #178 conjugation trainer, #179 counters, #180 tone pairs, #181 grammar review, #213 pronunciation
+  feedback, #228 look-alike characters, #229 dictation, #60 Anki import
+- Reader and lookup: #69 own texts, #70 handwriting lookup, #150 vertical text, #184 sentence cards,
+  #232 read aloud, #235 comprehension questions, #230 character origins, #182 pitch accent
+- Platform and people: #58 browser add-on, #59 journal sharing, #156 passkeys, #158 metrics, #152 vertical
+  OCR, #187 class mode, #236 study together
+
+## Future (history)
+
+The list below is the earlier "Future" milestone, mostly done. Open items now live in the milestones above.
 
 - ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: ~~[#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK~~ — reworked: they became core features (v0.4.0 prep)
 - ~~[#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI~~ — done (Settings → Data: staged upload with licence review, list, uninstall; design `docs/superpowers/specs/2026-11-15-pack-management-design.md`)
@@ -148,21 +235,10 @@ Tracker [#166](https://github.com/Elaktrato/qinqin/issues/166). Handoff: `docs/s
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`). The ten-lesson demo was replaced by the HSK-aligned pack `zh-grammar` (design `docs/superpowers/specs/2026-11-18-grammar-hsk-pack-design.md`, [#111](https://github.com/Elaktrato/qinqin/issues/111)–[#118](https://github.com/Elaktrato/qinqin/issues/118)): seven levels ≈ HSK 1 to 7–9, one lesson per row of the HSK 3.0 grammar outline, used as a topic index with attribution (this supersedes #111's earlier "nothing from the grammar outline" rule); native-speaker review of the pack open. The Japanese pack `ja-grammar` (design `docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`, [#119](https://github.com/Elaktrato/qinqin/issues/119)–[#123](https://github.com/Elaktrato/qinqin/issues/123)) has five levels ≈ N5 to N1 with qinqin's own selection of points; the owner's sign-off on the point lists and the native-speaker review are open
 - ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days~~ — done in v0.3.0 (design `docs/superpowers/specs/2026-11-15-v030-study-day-design.md`; per-user zone history, Settings → Study, `docs/contracts/study-day/`)
 
-### Android app (unscheduled)
+### Android app
 
-The web app in a native shell (Capacitor, `apps/android`), loaded from the user's own qinqin server — design
-`docs/superpowers/specs/2026-11-23-android-shell-design.md` (approved 2026-11-23), which replaces the native Kotlin plan. The shell runs the same web app, so
-every feature, its switch (Settings → Features) and the language profiles come with it; native pieces only where
-the WebView falls short (secure token storage, text-to-speech, camera and files, share, back button, system bars,
-local notifications). `docs/contracts/` stay the source of truth for the server and the web app. It starts when
-the web build is satisfactory.
-
-- [#34](https://github.com/Elaktrato/qinqin/issues/34)–[#38](https://github.com/Elaktrato/qinqin/issues/38) were
-  written for the native Kotlin client; under the shell design they shrink to the shell, its first-run screen
-  ("Server address") and the native pieces above (no Kotlin store, sync engine, views or feature host)
-- [#147](https://github.com/Elaktrato/qinqin/issues/147) release path — CI, signing and store presence
-  ([#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed APK/AAB,
-  [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid)
+Scheduled as **v0.7.0** (see "Milestones ahead" above). The design stays
+`docs/superpowers/specs/2026-11-23-android-shell-design.md`.
 
 ### Ideas, not scheduled (Future)
 
