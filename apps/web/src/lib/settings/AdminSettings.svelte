@@ -5,6 +5,7 @@
 	import EmailAdmin from '$lib/admin/EmailAdmin.svelte';
 	import InvitesAdmin from '$lib/admin/InvitesAdmin.svelte';
 	import SecurityAdmin from '$lib/admin/SecurityAdmin.svelte';
+	import UpdatesAdmin from '$lib/admin/UpdatesAdmin.svelte';
 	import UsersAdmin from '$lib/admin/UsersAdmin.svelte';
 	import { ADMIN_SECTIONS, ADMIN_SECTION_LABELS, adminSectionHref, parseAdminSection } from './tabs';
 	import { Tabs } from '$lib/ui';
@@ -27,6 +28,8 @@
 	<EmailAdmin />
 {:else if section === 'backup'}
 	<ServerBackup />
+{:else if section === 'updates'}
+	<UpdatesAdmin />
 {:else}
 	<SecurityAdmin />
 {/if}
