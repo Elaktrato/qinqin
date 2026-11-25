@@ -81,7 +81,7 @@
 				ctrlKey: event.ctrlKey,
 				metaKey: event.metaKey,
 				altKey: event.altKey,
-				isComposing: event.isComposing,
+				isComposing: isImeKey(event),
 				target: event.target instanceof HTMLElement ? event.target : null
 			},
 			choices.length

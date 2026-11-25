@@ -46,6 +46,16 @@ describe('EntryNote', () => {
 		expect(saveNote).not.toHaveBeenCalled();
 	});
 
+	it('Esc that cancels an IME composition keeps the editor open', async () => {
+		vi.mocked(loadNote).mockResolvedValue(note('old text'));
+		render(EntryNote, { workspaceId: 3, entryId: 5 });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Edit note' }));
+		const box = screen.getByRole('textbox', { name: 'Your note' });
+		await fireEvent.keyDown(box, { key: 'Escape', isComposing: true });
+		await fireEvent.keyDown(box, { key: 'Escape', keyCode: 229 });
+		expect(screen.getByRole('textbox', { name: 'Your note' })).toBeTruthy();
+	});
+
 	it('disables Save above 2000 characters', async () => {
 		vi.mocked(loadNote).mockResolvedValue(null);
 		render(EntryNote, { workspaceId: 3, entryId: 5 });

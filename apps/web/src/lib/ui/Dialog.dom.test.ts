@@ -53,6 +53,15 @@ describe('Dialog', () => {
 		await waitFor(() => expect(document.activeElement).toBe(opener));
 	});
 
+	it('Escape that cancels an IME composition in a field does not close it', async () => {
+		const { onclose } = await open();
+		const input = screen.getByRole('textbox', { name: 'Type the name' });
+		await fireEvent.keyDown(input, { key: 'Escape', isComposing: true });
+		await fireEvent.keyDown(input, { key: 'Escape', keyCode: 229 });
+		expect(screen.getByRole('dialog')).toBeTruthy();
+		expect(onclose).not.toHaveBeenCalled();
+	});
+
 	it('the native cancel event closes it too (a browser Escape)', async () => {
 		const { dialog, onclose } = await open();
 		const cancel = new Event('cancel', { cancelable: true });

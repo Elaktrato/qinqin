@@ -6,6 +6,7 @@
 // and selections into text offsets. The timing (grace, aborts, stale
 // results) lives in the DOM-free HoverLookup and NestedScan, what a tap is
 // in tapGesture, and where the word scrolls to in keepAbove.
+import { isImeKey } from '$lib/ui/ime';
 import { lookupAt } from '$lib/api/lookup';
 import type { LookupResult } from '$lib/api/types';
 import { DwellCounter } from '$lib/lookups/dwell';
@@ -158,7 +159,7 @@ export class LookupController {
 	attach(): () => void {
 		const onKey = (e: KeyboardEvent) => {
 			// Escape that cancels an IME composition (or was handled) is not ours.
-			if (e.key === 'Escape' && this.info && !e.isComposing && !e.defaultPrevented) {
+			if (e.key === 'Escape' && this.info && !isImeKey(e) && !e.defaultPrevented) {
 				// Handled: the shell's back button reads this as "closed something" and does not also go back.
 				e.preventDefault();
 				this.closeTop();

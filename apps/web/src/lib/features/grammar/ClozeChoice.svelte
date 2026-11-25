@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import type { ClozePart } from '$lib/study/cloze';
 	import { t } from '$lib/i18n';
 	import { choiceForKeyEvent } from '$lib/components/clozeKeys';
@@ -42,7 +43,7 @@
 				ctrlKey: event.ctrlKey,
 				metaKey: event.metaKey,
 				altKey: event.altKey,
-				isComposing: event.isComposing,
+				isComposing: isImeKey(event),
 				target: event.target instanceof HTMLElement ? event.target : null
 			},
 			choices.length

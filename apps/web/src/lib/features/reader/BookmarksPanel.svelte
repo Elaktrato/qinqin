@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { formatDate } from '$lib/i18n/format';
@@ -102,7 +103,7 @@
 	}
 
 	function renameKey(event: KeyboardEvent, id: number): void {
-		if (event.key !== 'Escape' || event.isComposing) return;
+		if (event.key !== 'Escape' || isImeKey(event)) return;
 		event.preventDefault();
 		cancelRename(id);
 	}
@@ -132,7 +133,7 @@
 	}
 
 	function confirmKey(event: KeyboardEvent, id: number): void {
-		if (event.key !== 'Escape' || event.isComposing) return;
+		if (event.key !== 'Escape' || isImeKey(event)) return;
 		event.preventDefault();
 		cancelDelete(id);
 	}

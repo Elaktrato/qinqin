@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// "Your note" on the entry page: one plain-text note per entry in the
 	// current workspace. Rendered with text interpolation only, never as HTML.
 	import { tick } from 'svelte';
@@ -78,7 +79,7 @@
 	}
 
 	function onKey(e: KeyboardEvent): void {
-		if (e.key === 'Escape') {
+		if (e.key === 'Escape' && !isImeKey(e)) {
 			e.preventDefault();
 			cancel();
 		}
