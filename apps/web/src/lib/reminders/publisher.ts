@@ -15,8 +15,12 @@ export interface FactsPublisherDeps {
 	enabled: () => Promise<boolean>;
 	workspaces: () => number[];
 	publish: (workspaceId: number) => Promise<void>;
-	/** Runs after every run, enabled or not (the scheduler's replan notices an opt-out and cancels). */
-	after?: () => Promise<void>;
+	/**
+	 * Runs after every run, enabled or not (the scheduler's replan notices an opt-out and cancels). `published` is
+	 * false when the settings could not be read or a workspace's facts could not be sent: the server's plan is then
+	 * built from older facts.
+	 */
+	after?: (result: { published: boolean }) => Promise<void>;
 	debounceMs?: number;
 	minGapMs?: number;
 }
@@ -41,9 +45,11 @@ export function createFactsPublisher(deps: FactsPublisherDeps): FactsPublisher {
 		lastRun = deps.now();
 		try {
 			let on = false;
+			let published = true;
 			try {
 				on = await deps.enabled();
 			} catch (err) {
+				published = false;
 				console.warn('reminders: the settings could not be read', err);
 			}
 			if (on) {
@@ -52,11 +58,12 @@ export function createFactsPublisher(deps: FactsPublisherDeps): FactsPublisher {
 					try {
 						await deps.publish(workspace);
 					} catch (err) {
+						published = false;
 						console.warn('reminders: the facts could not be published', err);
 					}
 				}
 			}
-			if (!stopped) await deps.after?.().catch((err) => console.warn('reminders: after-publish step failed', err));
+			if (!stopped) await deps.after?.({ published }).catch((err) => console.warn('reminders: after-publish step failed', err));
 		} finally {
 			running = false;
 			if (again && !stopped) {

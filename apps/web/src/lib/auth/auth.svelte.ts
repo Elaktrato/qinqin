@@ -94,6 +94,10 @@ export class Auth {
 
 	/** expire: a 401 ended the session (the client already dropped the token). */
 	expire(): void {
+		// The session ended without a sign-out: on a shared browser the old account's pushes must not go on. The
+		// server DELETE needs the token that is gone (best effort: it may answer 401), but the browser's own
+		// subscription is dropped and the remembered id forgotten, so the server's row is pruned at its next push.
+		forgetThisDevice({ api: this.#deps.api, env: browserPushEnv(), user: this.user?.id ?? null });
 		this.set(SIGNED_OUT, 'expired');
 		this.#forgetOfflineCopies();
 	}

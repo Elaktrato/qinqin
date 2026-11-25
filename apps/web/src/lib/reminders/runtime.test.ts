@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeWindow, manualTimers, studyContext, type TestContext } from '$lib/testing/context';
+import { fakeDocument, fakeWindow, manualTimers, studyContext, type TestContext } from '$lib/testing/context';
 import { defaultReminderSettings } from './settings';
 import { fakePort } from './device/port';
 
@@ -26,6 +26,7 @@ function setup(enabled = true, shell = true) {
 	const clock = { ms: 1_000_000 };
 	const timers = { ...manual, advance: (ms: number) => { clock.ms += ms; manual.advance(ms); } };
 	const win = fakeWindow();
+	const doc = fakeDocument();
 	const publish = vi.fn(async (_ws: number) => undefined);
 	const port = fakePort();
 	const settings = { ...defaultReminderSettings(), enabled, channels: { email: false, push: false, device: true } };
@@ -41,6 +42,7 @@ function setup(enabled = true, shell = true) {
 		timers: manual,
 		now: () => clock.ms,
 		window: win,
+		document: doc,
 		loadSettings: async () => settings,
 		publish,
 		port,
@@ -49,7 +51,7 @@ function setup(enabled = true, shell = true) {
 		workspaces: () => [3],
 		texts: null
 	});
-	return { timers, win, publish, port, fetchPlan, stop };
+	return { timers, win, doc, publish, port, fetchPlan, stop };
 }
 
 const settle = async () => {
@@ -88,6 +90,43 @@ describe('startReminders', () => {
 		timers.advance(5000);
 		await settle();
 		expect(publish).toHaveBeenCalledTimes(3);
+	});
+	it('republishes and replans when the app comes back to the foreground, and when the network returns (7-day horizon)', async () => {
+		const { timers, win, doc, publish, fetchPlan } = setup();
+		timers.advance(5000);
+		await settle();
+		const plans = fetchPlan.mock.calls.length;
+		timers.advance(60_000);
+		doc.visibilityState = 'hidden';
+		doc.dispatch(new Event('visibilitychange'));
+		timers.advance(5000);
+		await settle();
+		expect(publish).toHaveBeenCalledTimes(1);
+		doc.visibilityState = 'visible';
+		doc.dispatch(new Event('visibilitychange'));
+		timers.advance(5000);
+		await settle();
+		expect(publish).toHaveBeenCalledTimes(2);
+		expect(fetchPlan.mock.calls.length).toBeGreaterThan(plans);
+		timers.advance(60_000);
+		win.dispatch(new Event('online'));
+		timers.advance(5000);
+		await settle();
+		expect(publish).toHaveBeenCalledTimes(3);
+	});
+	it('drops the stale notifications when a local study change cannot be published or planned (offline)', async () => {
+		const { timers, publish, port, fetchPlan } = setup();
+		timers.advance(5000);
+		await settle();
+		expect(port.scheduled.length).toBe(1);
+		publish.mockRejectedValue(new Error('offline'));
+		fetchPlan.mockRejectedValue(new Error('offline'));
+		vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		timers.advance(60_000);
+		listeners.forEach((l) => l(3));
+		timers.advance(5000);
+		await settle();
+		expect(port.scheduled).toEqual([]);
 	});
 	it('replans once a day while running', async () => {
 		const { timers, fetchPlan } = setup();

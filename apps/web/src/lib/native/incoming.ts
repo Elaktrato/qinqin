@@ -27,10 +27,16 @@ export function lookupHref(raw: unknown): string | null {
 	return s === null ? null : `/search?q=${encodeURIComponent(s)}`;
 }
 
-/** routeHref: an in-app path (one leading slash, printable ASCII, not the API); null otherwise. */
+/**
+ * routeHref: an in-app path (one leading slash, printable ASCII, not the API); null otherwise. No way out of the
+ * prefix check either: no "..", no dot segment, no %2e, no backslash (also as %5c), no "//". Same rule as
+ * IncomingText.route in the shell.
+ */
 export function routeHref(raw: unknown): string | null {
 	if (typeof raw !== 'string' || raw.length === 0 || raw.length > MAX_ROUTE) return null;
 	if (!/^\/[\x21-\x7e]*$/.test(raw) || raw.startsWith('//') || raw.includes('\\')) return null;
+	if (raw.includes('..') || /%2e|%5c/i.test(raw)) return null;
+	if (raw.split(/[?#]/, 1)[0].split('/').includes('.')) return null;
 	if (raw === '/api' || raw.startsWith('/api/') || raw.startsWith('/api?')) return null;
 	return raw;
 }

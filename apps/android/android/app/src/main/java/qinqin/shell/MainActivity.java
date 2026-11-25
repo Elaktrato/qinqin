@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void load() {
-        if (consumeChangeServer(getIntent())) ServerStore.clear(this);
+        if (consumeChangeServer(getIntent())) ServerStore.forget(this);
         server = ServerStore.get(this);
         String failure = server == null ? null : ServerStore.takeError();
         // Old WebViews lack the message listener and the document-start script: Capacitor then exposes its
@@ -79,7 +79,7 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         IncomingStore.take(intent);
         if (consumeChangeServer(intent)) {
-            ServerStore.clear(this);
+            ServerStore.forget(this);
             recreate();
         }
     }

@@ -31,7 +31,7 @@ describe('lookupHref and routeHref', () => {
 	it('accepts only in-app paths', () => {
 		expect(routeHref('/study')).toBe('/study');
 		expect(routeHref('/search?q=%E4%BD%A0')).toBe('/search?q=%E4%BD%A0');
-		for (const bad of ['//evil.example', 'https://evil.example', 'javascript:1', 'study', '/\\evil', '/a\nb', '/api/me', '/api', '', null, 7]) {
+		for (const bad of ['//evil.example', 'https://evil.example', 'javascript:1', 'study', '/\\evil', '/a\nb', '/api/me', '/api', '', null, 7, '/x/../api/me', '/..', '/%2e%2e/api', '/%2E/api', '/./api/me', '/x%5Capi', '/a\\b', '///x', ' /study']) {
 			expect(routeHref(bad as unknown as string), String(bad)).toBeNull();
 		}
 	});

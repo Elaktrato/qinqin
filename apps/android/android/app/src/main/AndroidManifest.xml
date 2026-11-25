@@ -48,6 +48,14 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- A notification tap lands here (not exported: only our PendingIntent reaches it), hands its route to the app in-process and opens MainActivity. -->
+        <activity
+            android:name=".NotificationTapActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:exported="false" />
+
         <!-- Local notifications (Reminders): the alarm, and the re-arm after a reboot or an update. Not exported. -->
         <receiver android:name=".ReminderReceiver" android:exported="false" />
         <receiver android:name=".BootReceiver" android:exported="false">

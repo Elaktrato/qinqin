@@ -72,6 +72,16 @@ final class Reminders {
         save(c, new ArrayList<>());
     }
 
+    /** Every scheduled reminder and every notification already shown (the server changed: they belong to the old account). */
+    static synchronized void clearEverything(Context c) {
+        removeAll(c);
+        try {
+            NotificationManagerCompat.from(c).cancelAll();
+        } catch (RuntimeException ignored) {
+            // nothing shown, or the service is unavailable: the alarms are gone, which is what matters
+        }
+    }
+
     /** After a reboot or an update: arm every stored reminder that is still in the future, forget the rest. */
     static synchronized void rearm(Context c, long now) {
         List<ReminderSpec> keep = ReminderSpec.upcoming(all(c), now);
@@ -101,7 +111,7 @@ final class Reminders {
     /** Posts the notification of a stored reminder (ReminderReceiver) and forgets it. */
     static void post(Context c, ReminderSpec spec) {
         ensureChannel(c, spec.channelId, spec.channelName);
-        Intent open = new Intent(c, MainActivity.class).setAction(Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        Intent open = new Intent(c, NotificationTapActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (spec.route != null) open.putExtra(IncomingStore.EXTRA_ROUTE, spec.route);
         PendingIntent tap = PendingIntent.getActivity(c, spec.id, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder b = new NotificationCompat.Builder(c, spec.channelId)

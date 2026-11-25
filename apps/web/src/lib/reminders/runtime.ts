@@ -3,10 +3,11 @@
 // stops it (and cancels the device notifications). Nothing here throws into the UI.
 //
 // Triggers: app start, a study change (a write or a sync round that brought rows), a settings change
-// (notifyRemindersChanged), once a day (the device replan). Facts go first, then the device replan.
+// (notifyRemindersChanged), the app coming back to the foreground or online, once a day (the device replan).
+// Facts go first, then the device replan.
 
 import type { Session } from '$lib/context/session.svelte';
-import type { EventSource, Timers } from '$lib/context/deps';
+import type { EventSource, Timers, VisibilitySource } from '$lib/context/deps';
 import { getFormatLocale, rawMessage, t } from '$lib/i18n';
 import { onStudyChange } from '$lib/study/data';
 import { clearPushTexts, pushTextsOf, writePushTexts } from '$lib/pwa/sw/pushTexts';
@@ -28,6 +29,8 @@ export function notifyRemindersChanged(): void {
 export interface RemindersDeps {
 	timers: Timers;
 	window: EventSource | null;
+	/** For the foreground event (a resumed app replans); null: none. */
+	document: VisibilitySource | null;
 	loadSettings: () => Promise<ReminderSettings>;
 	publish: (workspaceId: number) => Promise<void>;
 	port: DevicePort;
@@ -52,6 +55,7 @@ export function startReminders(session: Session, over: Partial<RemindersDeps> = 
 	const deps: RemindersDeps = {
 		timers: session.deps.timers,
 		window: session.deps.window,
+		document: session.deps.document,
 		loadSettings: () => loadReminderSettings(),
 		publish: (workspaceId) => publishFacts(session, workspaceId),
 		port: devicePort,
@@ -77,11 +81,22 @@ export function startReminders(session: Session, over: Partial<RemindersDeps> = 
 		enabled: async () => (await deps.loadSettings()).enabled,
 		workspaces: deps.workspaces,
 		publish: deps.publish,
-		after: () => scheduler.replan()
+		after: ({ published }) => scheduler.replan({ factsFailed: !published })
 	});
 	const request = (): void => publisher.request();
-	const offStudy = onStudyChange(session.study, request);
+	// A local study change makes the planned counts stale until the facts went out and a plan came back.
+	const offStudy = onStudyChange(session.study, () => {
+		scheduler.markStale();
+		request();
+	});
+	// The plan covers 7 days and there is no background replan (ADR 0011): every open, resume and return of the
+	// network refreshes it. The publisher debounces (5 s, one run a minute).
+	const onVisible = (): void => {
+		if (deps.document?.visibilityState === 'visible') request();
+	};
 	deps.window?.addEventListener(REMINDERS_CHANGED, request);
+	deps.window?.addEventListener('online', request);
+	deps.document?.addEventListener('visibilitychange', onVisible);
 	scheduler.start();
 	// The worker formats push texts from this map (pwa/sw/pushTexts.ts); not in the shell, which has no push.
 	if (deps.texts !== null && !deps.isShell()) {
@@ -97,6 +112,8 @@ export function startReminders(session: Session, over: Partial<RemindersDeps> = 
 		scheduler.stop();
 		offStudy();
 		deps.window?.removeEventListener(REMINDERS_CHANGED, request);
+		deps.window?.removeEventListener('online', request);
+		deps.document?.removeEventListener('visibilitychange', onVisible);
 	};
 	session.onDispose(() => {
 		stop();

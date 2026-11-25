@@ -7,12 +7,16 @@ import java.util.List;
 
 /**
  * What reached the app from outside while it ran or started: a text another app shared ("Share" > qinqin), a
- * text selected elsewhere ("Look up in qinqin"), or the route of a tapped notification. The web app drains it
+ * text selected elsewhere ("Look up in qinqin"), or the route of a tapped notification (via NotificationTapActivity). The web app drains it
  * when its session is ready (QinqinShare.takeIncoming), so nothing is lost while it loads or while the person
  * signs in. In memory only: the queue dies with the process, which is fine for a tap or a share.
  */
 final class IncomingStore {
-    /** The route a notification tap carries (an Intent extra set by this app's own PendingIntent). */
+    /**
+     * The route a notification tap carries, as an extra of the PendingIntent that opens NotificationTapActivity
+     * (not exported: only this app can start it). MainActivity is exported, so it never reads a route from an
+     * intent: any app can send it any extra. The trampoline hands the route over in-process (pushRoute).
+     */
     static final String EXTRA_ROUTE = "qinqin.shell.ROUTE";
     private static final int MAX_ITEMS = 5;
 
@@ -41,15 +45,20 @@ final class IncomingStore {
         } else if (Intent.ACTION_PROCESS_TEXT.equals(action)) {
             text = IncomingText.clean(intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT));
         }
-        String route = IncomingText.route(intent.getStringExtra(EXTRA_ROUTE));
         boolean any = false;
         if (text != null) any |= push("text", text);
-        if (route != null) any |= push("route", route);
         if (Intent.ACTION_SEND.equals(action) || Intent.ACTION_PROCESS_TEXT.equals(action)) {
             intent.setAction(Intent.ACTION_MAIN);
         }
-        intent.removeExtra(EXTRA_ROUTE);
         if (any && listener != null) listener.run();
+    }
+
+    /** A tapped notification's route, from NotificationTapActivity (in-process, so not forgeable). Checked again here. */
+    static synchronized void pushRoute(String route) {
+        String clean = IncomingText.route(route);
+        if (clean == null) return;
+        push("route", clean);
+        if (listener != null) listener.run();
     }
 
     private static boolean push(String kind, String value) {

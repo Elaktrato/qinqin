@@ -289,6 +289,16 @@ describe('auth store', () => {
 			expect(localStorage.getItem('qinqin.workspace')).toBe('3');
 		});
 
+		it('a 401 also forgets this device\'s web push subscription (shared browser: no pushes for the old account)', async () => {
+			signedIn();
+			localStorage.setItem('qinqin.push.device.1', '7');
+			vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 401 }));
+			notifyUnauthorized();
+			expect(localStorage.getItem('qinqin.push.device.1')).toBeNull();
+			await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+			expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe('/api/push/subscriptions/7');
+		});
+
 		it('the user changing under this tab (another tab, a token swap): switched, once', () => {
 			signedIn();
 			signedIn({ ...user, id: 2 }, 'other');

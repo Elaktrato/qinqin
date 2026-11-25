@@ -45,4 +45,18 @@ public class IncomingTextTest {
         assertNull(IncomingText.route(null));
         assertNull(IncomingText.route("/" + "x".repeat(600)));
     }
+
+    @Test
+    public void routeRefusesWaysOutOfItsPrefix() {
+        assertNull(IncomingText.route("/x/../api/me"));
+        assertNull(IncomingText.route("/study/.."));
+        assertNull(IncomingText.route("/%2e%2e/api"));
+        assertNull(IncomingText.route("/%2E/api"));
+        assertNull(IncomingText.route("/./api/me"));
+        assertEquals("/search?q=a.b", IncomingText.route("/search?q=a.b"));
+        assertNull(IncomingText.route("/x%5Capi"));
+        assertNull(IncomingText.route("/\\evil"));
+        assertNull(IncomingText.route("//evil.example"));
+        assertNull(IncomingText.route(""));
+    }
 }

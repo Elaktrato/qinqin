@@ -2,14 +2,20 @@
 // (GET /api/reminders/plan, 7 days) and hands them to the device port (port.ts); the shell's native module
 // (lib/native/notifications) is the port's implementation.
 //
-// INTEGRATION STEP (the one thing that wires the real port, done outside this folder):
-//   in the app's startup, call  setDevicePort(nativeNotifications)  from './port', where `nativeNotifications`
-//   is the module from lib/native/notifications. Until then the port reports 'unsupported' and nothing is scheduled.
+// The real port is installed by routes/+layout.svelte (setDevicePort(shellPort)); until then the port reports
+// 'unsupported' and nothing is scheduled.
+//
+// Limits (ADR 0011, wiki "Reminders"): the plan is 7 days, so the notifications run out a week after the app was
+// last opened (a native background replan is a follow-up); counts that another device changed cannot be known
+// offline; after a LOCAL study change whose facts or plan cannot be fetched, the notifications are cancelled
+// rather than left with old counts (markStale).
 //
 // Triggers (wired by runtime.ts): app start, a settings change, after the facts were published (facts first,
-// then replan), once a day while the app runs (start()), cancel on every session end and when reminders or the
+// then replan), the app coming to the foreground, once a day while the app runs (start()), cancel on every session end and when reminders or the
 // device channel are switched off (replan notices it). A replan is serialised: one at a time, and a request made
-// meanwhile runs once more afterwards. It never throws: a failed plan fetch keeps what is scheduled.
+// meanwhile runs once more afterwards. cancel() ends the scheduler for good: it waits for the running replan, which
+// stops at its next step, so a replan cannot schedule after sign-out. It never throws: a failed plan fetch keeps
+// what is scheduled (unless a local study change made it stale).
 
 import { isShell as shellPredicate } from '$lib/native/shell';
 import type { MessageArgs, MessageKey } from '$lib/i18n';
@@ -35,8 +41,16 @@ export interface DeviceSchedulerDeps {
 	timers?: Timers;
 }
 
+export interface ReplanOptions {
+	/** The facts could not be published just before: the server's plan is built from older ones. */
+	factsFailed?: boolean;
+}
+
 export interface DeviceScheduler {
-	replan(): Promise<void>;
+	replan(options?: ReplanOptions): Promise<void>;
+	/** The study changed on this device: scheduled counts are out of date until a replan from fresh facts succeeds. */
+	markStale(): void;
+	/** Ends the scheduler: waits for a running replan, cancels everything; later replans do nothing. */
 	cancel(): Promise<void>;
 	/** Replans once a day while running (needs `timers`). */
 	start(): void;
@@ -48,15 +62,39 @@ export function createDeviceScheduler(deps: DeviceSchedulerDeps): DeviceSchedule
 	let running: Promise<void> | null = null;
 	let again = false;
 	let daily: unknown = null;
+	let stopped = false;
+	let stale = false;
+	let factsFailed = false;
+
+	async function cancelQuietly(): Promise<void> {
+		try {
+			await deps.port.cancelAll();
+		} catch (err) {
+			console.warn('reminders: the device notifications could not be cancelled', err);
+		}
+	}
 
 	async function once(): Promise<void> {
 		const settings = await deps.settings();
+		if (stopped) return;
 		if (!settings.enabled || !settings.channels.device) {
 			await deps.port.cancelAll();
 			return;
 		}
-		if ((await deps.port.permissionStatus()) !== 'granted') return;
-		const plan = await deps.fetchPlan(PLAN_DAYS);
+		if ((await deps.port.permissionStatus()) !== 'granted' || stopped) return;
+		if (stale && factsFailed) {
+			// This device's study is not on the server: its plan would carry the old counts. Show nothing until it is.
+			await deps.port.cancelAll();
+			return;
+		}
+		let plan: ReminderPlan;
+		try {
+			plan = await deps.fetchPlan(PLAN_DAYS);
+		} catch (err) {
+			if (stale && !stopped) await cancelQuietly();
+			throw err;
+		}
+		if (stopped) return;
 		const now = deps.now();
 		const items = plan.slots
 			.filter((slot) => Date.parse(slot.at) > now)
@@ -72,6 +110,7 @@ export function createDeviceScheduler(deps: DeviceSchedulerDeps): DeviceSchedule
 			});
 		await deps.port.cancelAll();
 		if (items.length > 0) await deps.port.schedule(items);
+		if (!factsFailed) stale = false;
 	}
 
 	async function loop(): Promise<void> {
@@ -82,12 +121,13 @@ export function createDeviceScheduler(deps: DeviceSchedulerDeps): DeviceSchedule
 			} catch (err) {
 				console.warn('reminders: the device plan could not be scheduled', err);
 			}
-		} while (again);
+		} while (again && !stopped);
 	}
 
 	return {
-		replan() {
-			if (!inShell()) return Promise.resolve();
+		replan(options) {
+			if (!inShell() || stopped) return Promise.resolve();
+			factsFailed = options?.factsFailed === true;
 			if (running !== null) {
 				again = true;
 				return running;
@@ -95,13 +135,15 @@ export function createDeviceScheduler(deps: DeviceSchedulerDeps): DeviceSchedule
 			running = loop().finally(() => (running = null));
 			return running;
 		},
+		markStale() {
+			stale = true;
+		},
 		async cancel() {
 			if (!inShell()) return;
-			try {
-				await deps.port.cancelAll();
-			} catch (err) {
-				console.warn('reminders: the device notifications could not be cancelled', err);
-			}
+			stopped = true;
+			// Behind the running replan: its loop stops at the next step, and what it already scheduled goes too.
+			await running?.catch(() => undefined);
+			await cancelQuietly();
 		},
 		start() {
 			if (daily !== null || !deps.timers) return;
