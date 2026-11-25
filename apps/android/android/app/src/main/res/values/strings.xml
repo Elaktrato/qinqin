@@ -2,4 +2,5 @@
 <resources>
     <!-- app_name comes from identity.json (app/build.gradle resValue). -->
     <string name="title_activity_main">qinqin</string>
+    <string name="shortcut_change_server">Change server</string>
 </resources>

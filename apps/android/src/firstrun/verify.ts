@@ -23,7 +23,13 @@ export function bridgeCompatibility(server: Bridge, shell: Bridge): BridgeCompat
 	return { status: 'ok', missing: [] };
 }
 
-/** What this shell implements. Level 1: the back button, system bars, safe areas; `status-bar` for the bars. */
+/**
+ * What this shell implements: level 1 (back button, safe areas) and the optional feature `status-bar`
+ * (QinqinShell.setBars). The server lists the features its web app uses WHEN PRESENT (`status-bar` among them,
+ * docs/contracts/version/); the shell lists what it has; a feature the server names and the shell lacks is a
+ * warning. This copy and the web app's lib/api/version.ts are the same rule (bridge-compat.json pins both):
+ * the first-run screen is a separate bundle in the APK and cannot import the web app's code.
+ */
 export const SHELL_BRIDGE: Bridge = { level: 1, features: ['status-bar'] };
 
 export interface HttpAnswer {
@@ -31,6 +37,8 @@ export interface HttpAnswer {
 	/** The URL that finally answered (after redirects). */
 	url: string;
 	data: unknown;
+	/** Response headers (any case); only Location is read, for a redirect the stack did not follow. */
+	headers?: Record<string, string>;
 }
 export type HttpFn = (url: string) => Promise<HttpAnswer>;
 
@@ -85,6 +93,19 @@ export async function verifyServer(origin: string, http: HttpFn, shell: Bridge =
 	}
 	const finalOrigin = originOf(answer.url);
 	if (finalOrigin !== null && finalOrigin !== originOf(origin)) return { ok: false, kind: 'redirect', target: finalOrigin };
+	// http to https is not followed by the native stack (a different protocol): the 3xx and its Location arrive here.
+	if (answer.status >= 300 && answer.status < 400) {
+		const location = Object.entries(answer.headers ?? {}).find(([k]) => k.toLowerCase() === 'location')?.[1];
+		if (location) {
+			let target: string | null = null;
+			try {
+				target = new URL(location, answer.url).origin;
+			} catch {
+				// not a URL: treated as not qinqin
+			}
+			if (target !== null && target !== originOf(origin)) return { ok: false, kind: 'redirect', target };
+		}
+	}
 	const parsed = answer.status === 200 ? parseAnswer(answer.data) : null;
 	if (!parsed) return { ok: false, kind: 'notQinqin' };
 	return { ok: true, version: parsed.version, bridge: parsed.bridge, compat: bridgeCompatibility(parsed.bridge, shell) };

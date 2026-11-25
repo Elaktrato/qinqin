@@ -11,16 +11,36 @@ export interface BarStyle {
 	darkIcons: boolean;
 }
 
-const COLOR = /^#[0-9a-f]{6}([0-9a-f]{2})?$/i;
+const HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGB = /^rgba?\(\s*(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*(?:,|\/)\s*[\d.]+%?)?\s*\)$/i;
+
+const byte = (n: number): string => n.toString(16).padStart(2, '0');
+
+/** toHex6 reads `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa` and `rgb()`/`rgba()` as `#rrggbb` (alpha dropped); null otherwise. */
+export function toHex6(value: string): string | null {
+	const v = value.trim();
+	const hex = HEX.exec(v);
+	if (hex) {
+		const h = hex[1].toLowerCase();
+		if (h.length <= 4) return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+		return `#${h.slice(0, 6)}`;
+	}
+	const rgb = RGB.exec(v);
+	if (rgb) {
+		const parts = [rgb[1], rgb[2], rgb[3]].map(Number);
+		if (parts.every((n) => n <= 255)) return `#${parts.map(byte).join('')}`;
+	}
+	return null;
+}
 
 /**
- * barStyle maps the chrome colour (`#rrggbb`, a trailing alpha is dropped) to the bars: the icons are
- * whichever of near-black and white contrasts more with it. Null when the value is not a colour.
+ * barStyle maps the chrome colour to the bars (see toHex6 for the accepted forms; the shell is sent `#rrggbb`
+ * only): the icons are whichever of near-black and white contrasts more with it. Null when the value is not a
+ * colour this can read (a named colour, `color-mix()`, a variable): the caller then keeps the last style.
  */
 export function barStyle(chrome: string): BarStyle | null {
-	const value = chrome.trim();
-	if (!COLOR.test(value)) return null;
-	const background = value.slice(0, 7).toLowerCase();
+	const background = toHex6(chrome);
+	if (background === null) return null;
 	return { background, darkIcons: ratio(background, '#000000') >= ratio(background, '#ffffff') };
 }
 
@@ -36,7 +56,18 @@ export interface BarsDeps {
 export function startBars(deps: BarsDeps): () => void {
 	let last = '';
 	const sync = (): void => {
-		const style = barStyle(getComputedStyle(deps.root).getPropertyValue('--chrome'));
+		const computed = getComputedStyle(deps.root);
+		// A custom property is raw text (`red`, `color-mix(...)`): when it is not one of the forms barStyle reads,
+		// let the engine resolve it through a real property (`color` computes to rgb()).
+		const raw = computed.getPropertyValue('--chrome');
+		let style = barStyle(raw);
+		if (style === null && raw.trim() !== '') {
+			const probe = deps.root.ownerDocument.createElement('span');
+			probe.style.color = raw.trim();
+			deps.root.append(probe);
+			style = barStyle(getComputedStyle(probe).color);
+			probe.remove();
+		}
 		if (style === null) return;
 		const key = `${style.background}/${style.darkIcons}`;
 		if (key === last) return;

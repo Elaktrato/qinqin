@@ -40,6 +40,23 @@ describe('overlays on the dismiss stack', () => {
 		expect(drawerClosed).toHaveBeenCalledOnce();
 	});
 
+	it('back on a Sheet cancels an inline action first, like Escape, and only then closes the sheet', async () => {
+		const onclose = vi.fn();
+		const onescape = vi.fn();
+		render(SheetHarness, { onclose, onescape });
+		await fireEvent.click(screen.getByRole('button', { name: 'Look up' }));
+		await screen.findByRole('dialog', { name: '学习' });
+		screen.getByLabelText('Rename').focus();
+		expect(dismissTop()).toBe(true);
+		expect(onescape).toHaveBeenCalledOnce();
+		expect(onclose).not.toHaveBeenCalled();
+		expect(screen.getByRole('dialog', { name: '学习' })).toBeTruthy();
+		screen.getByLabelText('Note').focus();
+		expect(dismissTop()).toBe(true);
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+		expect(onclose).toHaveBeenCalledOnce();
+	});
+
 	it('a menu inside a dialog closes first, then the dialog', async () => {
 		const onclose = vi.fn();
 		render(MenuInDialogHarness, { onclose });

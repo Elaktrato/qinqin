@@ -30,12 +30,18 @@ UI in native code.
 - **The bridge is for one origin.** Capacitor injects its bridge with a document-start script and a message
   listener limited to the allowed origin rules, which here are the server's origin and the bundled screen's;
   `Bridge.launchIntent` sends every navigation to another host to the system browser. No other site gets
-  the bridge. (A WebView too old for these features falls back to Capacitor's all-origins interface; the
-  navigation rule still keeps other sites out of the main frame.)
+  the bridge. A WebView too old for these features (the web message listener and the document-start script) would make
+  Capacitor fall back to an interface every frame can reach, so MainActivity refuses to open a remote server there and
+  shows the first-run screen ("update Android System WebView"). Even the one origin with the bridge is limited:
+  the plugin methods setServer and retry work only while the bundled first-run screen is the page (the server's own
+  page cannot repoint the app); clearServer and `setBars` are callable from the server's page.
 - **A failed load never shows Chrome's error page for the app's own origin.** `ShellWebViewClient.java` turns a
   main-frame failure of the saved server (no connection, timeout, certificate) into the first-run screen with
   Retry and Change server. When a service worker can serve the app offline, the navigation does not fail, so the
-  web app's own offline start (#35) is untouched.
+  web app's own offline start (#35) is untouched. A saved origin that answers with something that is not qinqin
+  (an HTTP error for the first page, or on an online start a native `GET /api/version` re-check, `ServerCheck.java`,
+  that is not `"app": "qinqin"`) gets the same screen (`error=notQinqin`); a failure to reach it at all never does.
+  A launcher shortcut "Change server" (long-press the icon) forgets the address from outside the web app.
 - **`apps/web/src/lib/native` is the web app's only door to the shell.** Every function does nothing in a
   normal browser (it checks `window.Capacitor.isNativePlatform()`), and nothing else in the web app mentions
   the shell or the global. It imports **no `@capacitor/*` package**: the same build runs in browsers, and the
@@ -52,7 +58,8 @@ UI in native code.
   on a light colour) and sends it, with the colour, to `QinqinShell.setBars`, which sets the colour behind the
   bars (what shows where the WebView does not paint under them) and the icon appearance.
 - **Bridge level and features** (`docs/contracts/version/`): the shell knows what it implements (SHELL_BRIDGE in
-  `apps/android/src/firstrun/verify.ts`: level 1, feature `status-bar`) and warns on its first-run screen when
+  `apps/android/src/firstrun/verify.ts`: level 1, feature `status-bar`; the server lists the features its web app
+  uses when present, today `status-bar`, contract 2) and warns on its first-run screen when
   `bridgeCompatibility` against the server's `/api/version` says `shellOutdated` or `serverOutdated`. A server
   never refuses a shell, and the shell never refuses a server. The web app raises the level when it starts to
   rely on a shell behaviour an older shell lacks.
@@ -65,8 +72,10 @@ UI in native code.
 - **One source of screens.** No screen except the first-run one exists in native code. A feature of the web app
   is a feature of the app.
 - **Cleartext.** Android cannot restrict cleartext to address ranges, so the manifest's network security config
-  allows it and the shell enforces the rule in code: https is required, plain http only for private addresses
-  (`apps/android/src/firstrun/address.ts`), and `ServerStore.isOrigin` guards what reaches the WebView.
+  allows it and the shell enforces the rule in code, in two places: the first-run screen (`address.ts`) and the
+  native `ServerStore.isAllowedOrigin` (https, or http on a private host: the same rule in Java), which every save and
+  every read of the saved address passes. Requests the server's own page makes to other hosts are not restricted by the
+  platform.
 
 ## Consequences
 
@@ -105,7 +114,9 @@ Not allowed:
 - `apps/android/src/firstrun/address.test.ts`, `verify.test.ts` (the bridge rule against
   `docs/contracts/version/bridge-compat.json`), `main.dom.test.ts` and `style.test.ts` (the house-theme colours
   against `apps/web/src/lib/theme/fallback.ts`) cover the first-run screen;
-  `apps/android/android/app/src/test/java/qinqin/shell/ServerStoreTest.java` covers the address guard.
+  `apps/android/android/app/src/test/java/qinqin/shell/ServerStoreTest.java` covers the address guard and the cleartext
+  rule, `ServerCheckTest.java` the not-qinqin classification. The build workflow runs the first-run screen's tests; the
+  emulator job runs the Java tests.
 - Review: that no allowNavigation or a second server URL is added in MainActivity, and that a new overlay is
   reachable by the back button.
 

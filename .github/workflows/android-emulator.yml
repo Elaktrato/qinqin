@@ -3,13 +3,20 @@ name: android-emulator
 # The Android shell in a real emulator (#35): the offline start from the service worker, an airplane-mode study
 # session whose reviews sync exactly once, and the WebView's storage numbers. The emulator needs KVM, which the
 # development machine lacks, so this job is where those checks run. It is slow (build + emulator, see the run
-# time in the job summary), so it runs only for a change to the shell or the web app's door to it, or by hand.
+# time in the job summary), so it runs only for a change to the shell, to the web app's door to it, or to what
+# the offline and study checks exercise (the service worker, lib/pwa, the study logic and outbox, the back-button
+# overlay code), or by hand. It also runs the shell's Java unit tests (testDebugUnitTest).
 on:
   workflow_dispatch:
   pull_request:
     paths:
       - "apps/android/**"
       - "apps/web/src/lib/native/**"
+      - "apps/web/src/service-worker.ts"
+      - "apps/web/src/lib/pwa/**"
+      - "apps/web/src/lib/study/**"
+      - "apps/web/src/lib/ui/dismissStack*"
+      - "apps/web/src/lib/ui/modal*"
       - ".github/workflows/android-emulator.yml"
 
 permissions:
@@ -53,7 +60,7 @@ jobs:
           npm ci
           npm run sync
           cd android
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug
       - name: Locate the APK
         run: echo "APK=$(realpath apps/android/android/app/build/outputs/apk/debug/app-debug.apk)" >> "$GITHUB_ENV"
 

@@ -54,7 +54,9 @@
 	$effect(() => {
 		if (!open) return;
 		const onKey = (e: KeyboardEvent): void => {
-			if (e.key === 'Escape') hide();
+			if (e.key !== 'Escape') return;
+			e.preventDefault(); // handled: the back button must not also go back
+			hide();
 		};
 		document.addEventListener('keydown', onKey);
 		return () => document.removeEventListener('keydown', onKey);

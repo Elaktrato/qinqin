@@ -151,6 +151,8 @@
 
 	function confirmKey(event: KeyboardEvent): void {
 		if (event.key === 'Escape') {
+			// Handled: the shell's back button reads this as "closed something" and does not also go back.
+			event.preventDefault();
 			event.stopPropagation();
 			confirming = false;
 			root?.querySelector<HTMLElement>('.actions .danger')?.focus();

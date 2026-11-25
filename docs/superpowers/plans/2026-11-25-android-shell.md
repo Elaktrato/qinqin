@@ -51,6 +51,52 @@ the web app.
   it warns, never refuses.
 - Ruling: the first-run screen asks for one more tap ("Open qinqin") after a successful check — the person sees the
   version and any warning before it is saved.
+- Ruling: `setServer` and `retry` work only while the bundled first-run screen is the page (`MainActivity.isFirstRunScreen`),
+  and `ServerStore.isAllowedOrigin` repeats the cleartext rule in Java (https, or http on a private host) both when saving
+  and when reading the saved value — the saved server's own page is the one remote origin with the bridge and must not
+  repoint the app or enable public http; cost if wrong: a legitimate in-app "set server" flow would need a new method
+  (Change server uses `clearServer`, which stays callable).
+- Ruling: a saved server that answers with something that is not qinqin gets the first-run screen with `error=notQinqin`:
+  a native `GET /api/version` re-check on every online start (off the main thread; a real answer other than 200 with
+  `"app": "qinqin"` counts, redirects are not followed; any I/O failure is "unknown" and never reacts) plus
+  `onReceivedHttpError` (status >= 400) for the initial main-frame load only, plus a launcher shortcut "Change server" —
+  offline start stays served by the service worker (a 200); cost if wrong: a server behind an auth proxy that answers
+  `/api/version` with 401/302 is offered the first-run screen on every start (Retry and Change server remain; fix is to
+  let it through).
+- Ruling: a WebView without `WEB_MESSAGE_LISTENER` or `DOCUMENT_START_SCRIPT` refuses to open a remote server
+  (first-run screen, `error=webview`, "update Android System WebView") — verified in Capacitor 8.6.2's `MessageHandler`:
+  without the listener it calls `addJavascriptInterface(this, "androidBridge")`, which every frame of every page can
+  reach; cost if wrong: very old WebViews (pre-2019) cannot use the app at all.
+- Ruling: `setBars` accepts `#rrggbb` only in both Java (`ShellPlugin.isBarColor`) and `bars.ts`, which now also reads
+  short hex, `#rrggbbaa` and `rgb()`/`rgba()` (alpha dropped) and lets the engine resolve other CSS colours through a probe
+  element; an unreadable `--chrome` keeps the last style — cost if wrong: a theme with an exotic `--chrome` keeps stale
+  icon colours until the next readable one.
+- Ruling: the first-run screen also rejects host names `java.net.URI` rejects (underscore, a leading hyphen, an all-numeric
+  last label) so what it accepts the shell accepts; `setServer`'s rejection is shown as the invalid-address problem.
+- Ruling: an unfollowed 3xx with a `Location` on another origin (http to https is not followed by the native stack) is
+  the `redirect` failure with the https offer — instead of "not a qinqin server".
+- Ruling: private hosts keep single-label names (`nas`), `*.local` and `*.localhost` as they are — home-network names are
+  the point of the http exception, the first-run screen always warns and https is the default for a bare address;
+  cost if wrong: a typed `http://com` or a hostile network answering a one-word name is accepted over plain http.
+- Ruling: the server's bridge lists `status-bar` (what its web app uses when the shell has it; contract 2), and the shell
+  lists what it implements; the first-run screen's `bridgeCompatibility` copy exists because that bundle cannot import
+  the web app, `bridge-compat.json` pins both, and the web app's `getVersion`/`bridgeCompatibility` are not called by a
+  screen today (documented) — cost if wrong: a shell older than `status-bar` shows a "missing in this app" warning.
+- Ruling: the Android unit tests run in CI: `npm ci && npm test && npm run check` in the build workflow's test job,
+  `testDebugUnitTest` in the emulator job, whose path filter now covers the service worker, `lib/pwa`, `lib/study`, the
+  dismiss stack, `modal` and `apps/android` — a path-light job and a heavy one; cost if wrong: an emulator run for a change
+  that did not need one.
+- Ruling: back reaches a Sheet or Drawer's inline rename/confirm first — `modal` offers a synthetic Escape key press
+  to the focused element before the dialog's `cancel`; the Escape handlers that close something (lookup popup, deck
+  confirmations, tooltip) call `preventDefault` so the back button does not also navigate — cost if wrong: a handler
+  that forgets `preventDefault` still double-fires, which a new test per overlay would catch.
+- Ruling: licensing wording (`LICENSING.md`): documentation is CC BY 4.0, UI strings, fixtures and contracts are MIT with
+  the code, the lemma table and the qinqin themes inside the server are named as CC BY, earlier published copies keep
+  their terms, and the HSK paragraph carries the CTI wording; `check-sources` rule g requires exactly `CC-BY-4.0` (plus
+  an optional ` (` qualifier) — cost if wrong: the owner may want documentation under another licence.
+- Note (#148, release): `apps/android/package.json` version (0.6.0) and `versionCode 1` in `app/build.gradle` are
+  hard-coded and must follow the release tag; left to #148. A `v*` tag that is not semver now fails the image job in
+  `build.yml` instead of reporting `dev`.
 
 ## Tasks
 

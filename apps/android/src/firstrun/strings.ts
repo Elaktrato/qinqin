@@ -33,7 +33,9 @@ export const S = {
 	savedFailure: {
 		unreachable: (address: string) => `Could not reach ${address}. Check your connection or the server.`,
 		timeout: (address: string) => `${address} did not answer in time.`,
-		tls: (address: string) => `The certificate of ${address} is not trusted by this phone.`
+		tls: (address: string) => `The certificate of ${address} is not trusted by this phone.`,
+		notQinqin: (address: string) => `${address} answers, but not like a qinqin server (an error page, a login or parked page). Try again, or change the server.`,
+		webview: (address: string) => `Android System WebView on this phone is too old to open ${address} safely. Update Android System WebView (Play Store), then try again.`
 	},
 	compat: {
 		shellOutdated: 'This app is older than the server expects. Some features may not work until you update the app.',
