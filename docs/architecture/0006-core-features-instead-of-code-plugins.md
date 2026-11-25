@@ -34,7 +34,7 @@ on 2026-11-23 to retire the code-plugin system (#199).
 - **Order.** #199 builds on the study data layer (#193) and the state rewrite (#196): the owner's queue
   (2026-11-23) runs #193, then #196, then #199.
 - **Migration.** Owner direction (2026-11-24): no backwards compatibility; stored data need not survive. The
-  migrations copy what maps one to one and drop the rest (`docs/releases/NEXT.md` says what an upgrade wipes).
+  migrations copy what maps one to one and drop the rest (`docs/releases/v0.6.0.md` says what an upgrade wipes).
   The backup format becomes 2; format 1 archives are refused. Old routes and plugin ids are removed
   (`docs/contracts/CHANGELOG.md`).
 
