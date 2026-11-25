@@ -136,7 +136,7 @@ function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
 
 export type EnableResult =
 	| { ok: true; id: number }
-	| { ok: false; reason: PushUnsupported | 'denied' | 'serverUnavailable' | 'failed' };
+	| { ok: false; reason: PushUnsupported | 'denied' | 'serverUnavailable' | 'tooMany' | 'failed' };
 
 /**
  * enablePush: permission, the server's VAPID key, a push subscription, and the server's record of it.
@@ -179,6 +179,7 @@ export async function enablePush(deps: PushDeps): Promise<EnableResult> {
 		// A subscription the server did not take is no use to anyone: give it back.
 		await fresh?.unsubscribe().catch(() => false);
 		if (err instanceof ApiError && err.code === 'push_unavailable') return { ok: false, reason: 'serverUnavailable' };
+		if (err instanceof ApiError && err.code === 'too_many_subscriptions') return { ok: false, reason: 'tooMany' };
 		return { ok: false, reason: 'failed' };
 	}
 }

@@ -11,8 +11,9 @@ export type TestResult = { ok: true } | { ok: false; messageKey: MessageKey };
 const MESSAGES: Record<string, MessageKey> = {
 	email_unverified: 'settings.reminders.test.error.emailUnverified',
 	mail_unavailable: 'settings.reminders.test.error.mailUnavailable',
-	push_unavailable: 'settings.reminders.test.error.pushUnavailable',
-	no_subscription: 'settings.reminders.test.error.noSubscription',
+	push_unavailable: 'apiError.pushUnavailable',
+	no_subscription: 'apiError.noSubscription',
+	delivery_failed: 'apiError.deliveryFailed',
 	rate_limited: 'settings.reminders.test.error.rateLimited'
 };
 

@@ -126,10 +126,10 @@ describe('enablePush', () => {
 		const api = fakeApi({ 'GET /api/push/vapid-key': new ApiError(503, JSON.stringify({ error: 'push_unavailable', message: 'x' })) });
 		expect(await enablePush({ api, env, user: 1 })).toEqual({ ok: false, reason: 'serverUnavailable' });
 	});
-	it('reports a failure and unsubscribes a fresh subscription the server did not accept', async () => {
+	it('reports too many devices and unsubscribes a fresh subscription the server did not accept', async () => {
 		const { env, state } = envOf();
 		const api = fakeApi({ 'GET /api/push/vapid-key': { publicKey: KEY }, 'POST /api/push/subscriptions': new ApiError(409, JSON.stringify({ error: 'too_many_subscriptions', message: 'x' })) });
-		expect(await enablePush({ api, env, user: 1 })).toEqual({ ok: false, reason: 'failed' });
+		expect(await enablePush({ api, env, user: 1 })).toEqual({ ok: false, reason: 'tooMany' });
 		expect(state.sub?.unsubscribe).toHaveBeenCalled();
 	});
 	it('reports a failing subscribe', async () => {

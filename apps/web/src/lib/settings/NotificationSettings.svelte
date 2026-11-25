@@ -64,6 +64,14 @@
 		streak: 'settings.reminders.kinds.streak'
 	};
 	const SPARE_TIMES = ['09:00', '12:00', '20:00', '07:00', '15:00'];
+	const PUSH_FAILURE: Record<string, MessageKey> = {
+		denied: 'settings.reminders.push.denied',
+		serverUnavailable: 'apiError.pushUnavailable',
+		tooMany: 'apiError.tooManySubscriptions',
+		insecure: 'settings.reminders.push.insecure',
+		unsupported: 'settings.reminders.push.unsupported',
+		iosInstall: 'settings.reminders.push.iosInstall'
+	};
 	const SUPPORT_TEXT: Record<string, MessageKey> = {
 		insecure: 'settings.reminders.push.insecure',
 		unsupported: 'settings.reminders.push.unsupported',
@@ -214,7 +222,7 @@
 				// The click is the gesture the permission prompt needs: nothing is awaited before it.
 				const result = await enablePush(pushDeps);
 				if (!result.ok) {
-					pushMessage = result.reason === 'denied' ? 'settings.reminders.push.denied' : result.reason === 'serverUnavailable' ? 'settings.reminders.channels.push.serverUnavailable' : result.reason in SUPPORT_TEXT ? SUPPORT_TEXT[result.reason] : 'settings.reminders.push.failed';
+					pushMessage = PUSH_FAILURE[result.reason] ?? 'settings.reminders.push.failed';
 					return;
 				}
 				apply({ channels: { push: true } });

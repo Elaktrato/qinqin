@@ -13,8 +13,9 @@ describe('sendReminderTest', () => {
 	it.each([
 		[409, 'email_unverified', 'settings.reminders.test.error.emailUnverified'],
 		[409, 'mail_unavailable', 'settings.reminders.test.error.mailUnavailable'],
-		[409, 'push_unavailable', 'settings.reminders.test.error.pushUnavailable'],
-		[409, 'no_subscription', 'settings.reminders.test.error.noSubscription'],
+		[409, 'push_unavailable', 'apiError.pushUnavailable'],
+		[409, 'no_subscription', 'apiError.noSubscription'],
+		[502, 'delivery_failed', 'apiError.deliveryFailed'],
 		[429, 'rate_limited', 'settings.reminders.test.error.rateLimited'],
 		[500, 'internal', 'settings.reminders.test.error.other']
 	])('%i %s is a plain message', async (status, code, key) => {
