@@ -14,6 +14,7 @@ import { Notices } from '$lib/frame/notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
 import { ReviewOutbox } from '../study/events';
+import { createOutboxStore } from '../study/outboxStore';
 import { clearRecentSent, rememberSent } from '../study/recentSent';
 import { WorkspaceRecovery } from '$lib/workspace/workspaceGone';
 import { Workspaces } from '$lib/workspace/workspaces.svelte';
@@ -79,12 +80,13 @@ export class Session {
 			whenStudyDaySettled: () => this.zone.settled()
 		});
 		this.onDispose(() => this.events.dispose());
-		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive });
+		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
 		this.onDispose((reason) => this.workspaces.dispose(reason));
-		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session });
+		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
 		this.outbox = new ReviewOutbox({
 			post: (events) => this.events.post(events),
 			local,
+			store: createOutboxStore({ indexedDB: deps.indexedDB ?? null, local }),
 			now,
 			timers: deps.timers,
 			window: deps.window,

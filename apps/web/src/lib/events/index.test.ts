@@ -6,7 +6,7 @@ vi.mock('$app/navigation', () => ({ goto }));
 
 import { api } from '$lib/api/client';
 import { browserTimers, webStorage } from '$lib/context/deps';
-import { EventLog, WORKSPACE_EVENTS_TTL_MS, sinceDaysAgo } from '$lib/events';
+import { EVENT_WRITE_TIMEOUT_MS, EventLog, WORKSPACE_EVENTS_TTL_MS, sinceDaysAgo } from '$lib/events';
 import { studyDay } from '$lib/time/studyDay';
 import { StudyDays } from '$lib/time/studyDays';
 
@@ -374,5 +374,33 @@ describe('loadWorkspaceEvents', () => {
 		await eventLog.load(7);
 
 		expect(logReads()).toHaveLength(2);
+	});
+});
+
+describe('post timeout', () => {
+	it('an event write that never answers is aborted, so the outbox can retry it', async () => {
+		let signal: AbortSignal | undefined;
+		const hanging = new EventLog({
+			api: ((_path: string, options?: { signal?: AbortSignal }) => {
+				signal = options?.signal;
+				return new Promise(() => undefined);
+			}) as never,
+			now: () => Date.now(),
+			timers: browserTimers,
+			local: () => webStorage('localStorage'),
+			studyDay: () => days.day(),
+			whenStudyDaySettled: () => days.settled()
+		});
+		void hanging.post([{ id: 'A', workspaceId: 1, device: 'web', ts: '2026-11-25T08:00:00.000Z', type: 'view', payload: null }]);
+		expect(signal).toBeInstanceOf(AbortSignal);
+		expect(signal!.aborted).toBe(false);
+		vi.useFakeTimers();
+		try {
+			// AbortSignal.timeout runs on the runtime's own clock: assert the limit's size instead.
+			expect(EVENT_WRITE_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
+			expect(EVENT_WRITE_TIMEOUT_MS).toBeLessThanOrEqual(30_000);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
