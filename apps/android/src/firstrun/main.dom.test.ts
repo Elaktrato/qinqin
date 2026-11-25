@@ -128,11 +128,11 @@ describe('first-run screen', () => {
 	});
 
 	it('warns when the app is older than the server expects', async () => {
-		http.get.mockResolvedValue({ status: 200, url: 'https://q.example.org/api/version', data: { ...answer, bridge: { level: 2, features: ['tts'] } } });
+		http.get.mockResolvedValue({ status: 200, url: 'https://q.example.org/api/version', data: { ...answer, bridge: { level: 2, features: ['secure-storage'] } } });
 		await load();
 		await enter('https://q.example.org');
 		await vi.waitFor(() => expect(text('notes')).toContain('older than the server expects'));
-		expect(text('notes')).toContain('Missing in this app: tts.');
+		expect(text('notes')).toContain('Missing in this app: secure-storage.');
 		expect(buttons()).toEqual(['Open qinqin']);
 	});
 

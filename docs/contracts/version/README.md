@@ -28,9 +28,9 @@ one it was built against; it does not refuse a server for it.
 
 `bridge = {level, features}` is what this server's web app can use from a native shell. `level` goes up when
 the web app starts to rely on a shell behaviour an older shell lacks; `features` names the optional pieces the
-web app uses when the shell has them (`secure-storage`, `tts`, `share`, `files`, `status-bar`, `keep-awake`,
+web app uses when the shell has them (`secure-storage`, `tts`, `share`, `files`, `status-bar`, `keep-awake`, `haptics`,
 `local-notifications`). A server lists a feature when its web app uses it if the shell has it; a shell lists what
-it implements (the Android shell: `status-bar`, `QinqinShell.setBars`). Today: `{level: 1, features: ["status-bar"]}`. `bridge-compat.json` is the rule: `shellOutdated`
+it implements (the Android shell: every feature named above except `secure-storage`, each by a plugin of its own, see the wiki's Android page). Today: `{level: 1, features: ["files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"]}`. `bridge-compat.json` is the rule: `shellOutdated`
 (level below the server's, or features missing, sorted), `serverOutdated` (level above), else `ok`;
 `shellOutdated` wins. A missing feature is a warning: the web app also runs in a browser, which has none.
 

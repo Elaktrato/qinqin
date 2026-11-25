@@ -1,9 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { bridgeCompatibility, classifyFailure, verifyServer, type HttpFn } from './verify';
+import { bridgeCompatibility, classifyFailure, SHELL_BRIDGE, verifyServer, type HttpFn } from './verify';
 
 const fixture = JSON.parse(readFileSync(new URL('../../../../docs/contracts/version/bridge-compat.json', import.meta.url), 'utf8'));
 const answer = JSON.parse(readFileSync(new URL('../../../../docs/contracts/version/version.json', import.meta.url), 'utf8')).anonymous;
+
+const versionFixture = JSON.parse(readFileSync(new URL('../../../../docs/contracts/version/version.json', import.meta.url), 'utf8'));
+
+describe('the shell and the server agree on the bridge', () => {
+	it('this shell advertises every feature the server (docs/contracts/version/version.json) lists', () => {
+		expect(bridgeCompatibility(versionFixture.anonymous.bridge, SHELL_BRIDGE)).toEqual({ status: 'ok', missing: [] });
+		expect(SHELL_BRIDGE.features).toEqual([...SHELL_BRIDGE.features].sort());
+	});
+});
 
 describe('bridgeCompatibility matches the contract fixture', () => {
 	for (const c of fixture.cases) {

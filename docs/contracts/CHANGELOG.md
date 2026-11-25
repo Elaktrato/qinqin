@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #36 — native device features advertised on the bridge (contract 3)
+
+- **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["files", "haptics", "keep-awake",
+  "local-notifications", "share", "status-bar", "tts"]}`. The level stays 1: every new piece is optional (the web
+  app also runs in a browser). A shell without one of them gets the "missing in this app" warning only. The
+  Android shell advertises all of them (`SHELL_BRIDGE`, `apps/android/src/firstrun/verify.ts`).
+  `bridge-compat.json` is unchanged; `version.json` follows. `local-notifications` is groundwork: the reminders
+  (#137-#139) will use it, nothing in the web app schedules one yet.
+- **Settings:** the workspace-settings key `gradeHaptics` (boolean, default on): the buzz when a card is graded
+  (`settings/workspace-settings.json`: `keys` and `parse`). Readers ignore unknown keys, so older clients are
+  unaffected.
+
 ## Stage 1 review — the bridge names `status-bar` (contract 2)
 
 - **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["status-bar"]}` (was `[]`): the web
