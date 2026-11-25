@@ -1,7 +1,8 @@
 name: android-emulator
 
 # The Android shell in a real emulator (#35): the offline start from the service worker, an airplane-mode study
-# session whose reviews sync exactly once, and the WebView's storage numbers. The emulator needs KVM, which the
+# session whose reviews sync exactly once, the WebView's storage numbers, and (#36) the native device features:
+# the plugins answer, a shared or selected text opens the lookup, a local notification is posted. The emulator needs KVM, which the
 # development machine lacks, so this job is where those checks run. It is slow (build + emulator, see the run
 # time in the job summary), so it runs only for a change to the shell, to the web app's door to it, or to what
 # the offline and study checks exercise (the service worker, lib/pwa, the study logic and outbox, the back-button
@@ -12,6 +13,9 @@ on:
     paths:
       - "apps/android/**"
       - "apps/web/src/lib/native/**"
+      - "apps/web/src/lib/audio/**"
+      - "apps/web/src/routes/+layout.svelte"
+      - "docs/contracts/version/**"
       - "apps/web/src/service-worker.ts"
       - "apps/web/src/lib/pwa/**"
       - "apps/web/src/lib/study/**"

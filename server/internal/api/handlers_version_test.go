@@ -88,7 +88,13 @@ func TestVersionIsPublicAndMinimal(t *testing.T) {
 		t.Errorf("anonymous answer carries buildDate: %v", m)
 	}
 	b, _ := m["bridge"].(map[string]any)
-	if f, ok := b["features"].([]any); b["level"] != float64(1) || !ok || len(f) != 1 || f[0] != "status-bar" {
+	want := []string{"files", "haptics", "keep-awake", "local-notifications", "share", "status-bar", "tts"}
+	f, ok := b["features"].([]any)
+	same := ok && len(f) == len(want)
+	for i := 0; same && i < len(want); i++ {
+		same = f[i] == want[i]
+	}
+	if b["level"] != float64(1) || !same {
 		t.Errorf("bridge = %v", m["bridge"])
 	}
 	_, m = getMap(t, ts, "GET", "/api/version", admin, nil)

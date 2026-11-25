@@ -27,6 +27,12 @@
    "shape": "boolean",
    "default": true,
    "owner": "apps/web/src/lib/audio/settings.ts"
+  },
+  {
+   "key": "gradeHaptics",
+   "shape": "boolean",
+   "default": true,
+   "owner": "apps/web/src/lib/native/haptics.ts"
   }
  ],
  "parse": [
@@ -39,7 +45,8 @@
      "autoplay": false,
      "deviceVoice": true
     },
-    "hiddenDictionaries": []
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
    }
   },
   {
@@ -51,7 +58,8 @@
      "autoplay": false,
      "deviceVoice": true
     },
-    "hiddenDictionaries": []
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
    }
   },
   {
@@ -73,7 +81,8 @@
     "hiddenDictionaries": [
      3,
      7
-    ]
+    ],
+    "gradeHaptics": true
    }
   },
   {
@@ -88,7 +97,8 @@
      "autoplay": false,
      "deviceVoice": true
     },
-    "hiddenDictionaries": []
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
    }
   },
   {
@@ -114,7 +124,8 @@
     "hiddenDictionaries": [
      3,
      9
-    ]
+    ],
+    "gradeHaptics": true
    }
   },
   {
@@ -130,7 +141,8 @@
      "autoplay": false,
      "deviceVoice": true
     },
-    "hiddenDictionaries": []
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
    }
   },
   {
@@ -148,7 +160,38 @@
      "autoplay": true,
      "deviceVoice": true
     },
-    "hiddenDictionaries": []
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
+   }
+  },
+  {
+   "name": "gradeHaptics off",
+   "note": "the grading buzz switch; on unless stored false",
+   "settings": {
+    "gradeHaptics": false
+   },
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": [],
+    "gradeHaptics": false
+   }
+  },
+  {
+   "name": "gradeHaptics not a boolean",
+   "note": "anything but a boolean reads as on",
+   "settings": {
+    "gradeHaptics": "no"
+   },
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": [],
+    "gradeHaptics": true
    }
   }
  ],

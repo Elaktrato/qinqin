@@ -58,8 +58,9 @@ UI in native code.
   on a light colour) and sends it, with the colour, to `QinqinShell.setBars`, which sets the colour behind the
   bars (what shows where the WebView does not paint under them) and the icon appearance.
 - **Bridge level and features** (`docs/contracts/version/`): the shell knows what it implements (SHELL_BRIDGE in
-  `apps/android/src/firstrun/verify.ts`: level 1, feature `status-bar`; the server lists the features its web app
-  uses when present, today `status-bar`, contract 2) and warns on its first-run screen when
+  `apps/android/src/firstrun/verify.ts`: level 1, features `files`, `haptics`, `keep-awake`, `local-notifications`,
+  `share`, `status-bar`, `tts`; the server lists the features its web app uses when present, the same seven,
+  contract 3) and warns on its first-run screen when
   `bridgeCompatibility` against the server's `/api/version` says `shellOutdated` or `serverOutdated`. A server
   never refuses a shell, and the shell never refuses a server. The web app raises the level when it starts to
   rely on a shell behaviour an older shell lacks.
@@ -77,6 +78,23 @@ UI in native code.
   every read of the saved address passes. Requests the server's own page makes to other hosts are not restricted by the
   platform.
 
+- **Native device features (#36, plan `docs/superpowers/plans/2026-11-25-native-features.md`).** Each is a small own
+  Java plugin in `apps/android` (androidx and the Android framework only: no Play Services, no Firebase, no
+  community plugin, no new Gradle dependency) behind one module of `lib/native/`, which does nothing in a browser:
+  `QinqinSpeech` (the system text-to-speech engine: language availability, speak with a rate, the system voice settings; `speech.ts`),
+  `QinqinFiles` (Storage Access Framework save, chunked: `files.ts`), `QinqinShare` (share sheet, and the queue of
+  what arrives from outside: shared text, "Look up in qinqin" from the text selection menu through an activity alias,
+  a tapped notification's route: `share.ts`, `incoming.ts`), `QinqinNotifications` (permission, schedule and cancel
+  with AlarmManager inexact alarms and NotificationCompat, a boot receiver that arms stored ones again:
+  `notifications.ts`), and `QinqinShell.keepAwake` and `.vibrate` (`awake.ts`, `haptics.ts`). The camera and the
+  photo picker need no plugin: Capacitor's WebView file chooser serves `input[type=file]`, and the manifest does
+  **not** declare the camera permission, so the system camera app takes the picture. Things that come in from outside are
+  untrusted: cleaned in Java and again in the web app, capped, shown only as a search query or an in-app path, and
+  held until the person is signed in and the workspaces are loaded.
+- **Browsers keep what they have.** Without the shell, speech is the page's `speechSynthesis`, saving is an anchor
+  download, sharing is `navigator.share` or the clipboard, the screen stays on through the Screen Wake Lock API, the
+  grading buzz is `navigator.vibrate` on a touch device, and notifications are unsupported.
+
 ## Consequences
 
 - A web app release reaches every phone with no app release; an old shell with a new server is told so.
@@ -92,10 +110,12 @@ UI in native code.
 Allowed:
 
 - `lib/native` reading `window.Capacitor` and calling plugins; a component calling `lib/native`'s functions
-  (`canChangeServer`, `changeServer`).
+  (`canChangeServer`, `changeServer`, `saveFile`, `shareText`, `keepAwake`, ...).
 - A new overlay registering with `registerDismissable` when it is not built on `modal`, `Menu`, `Dialog`, `Sheet`
   or `Drawer`.
-- Native code in `apps/android` for what a WebView cannot do.
+- Native code in `apps/android` for what a WebView cannot do, as a small own plugin before a community one.
+- A new plugin or Gradle dependency only with its licence recorded (FOSS, F-Droid-compatible: no Google Play
+  Services, Firebase or proprietary SDK) and its transitive tree checked (`./gradlew :app:dependencies`).
 
 Not allowed:
 

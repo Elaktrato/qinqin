@@ -33,7 +33,13 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         EdgeToEdge.enable(this);
         registerPlugin(ShellPlugin.class);
+        registerPlugin(SpeechPlugin.class);
+        registerPlugin(FilesPlugin.class);
+        registerPlugin(SharePlugin.class);
+        registerPlugin(NotificationsPlugin.class);
         super.onCreate(savedInstanceState);
+        // A share, a selected text or a notification tap that started the app: queued for the web app.
+        IncomingStore.take(getIntent());
     }
 
     @Override
@@ -71,6 +77,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        IncomingStore.take(intent);
         if (consumeChangeServer(intent)) {
             ServerStore.clear(this);
             recreate();

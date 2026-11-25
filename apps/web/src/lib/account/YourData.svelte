@@ -5,6 +5,7 @@
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
 	import { t } from '$lib/i18n';
+	import { downloadUrl } from '$lib/native/files';
 	import Msg from '$lib/ui/Msg.svelte';
 	import {
 		canApply, clearLocalAfterRestore, errorText, formatBytes, needsDropAck, nextPollDelay, replaceSentence,
@@ -14,14 +15,19 @@
 	import { useApp } from '$lib/context/context';
 	const app = useApp();
 
+	/** A browser navigates to the ticket; the Android app fetches it and opens the save screen (lib/native). */
+	async function saveBackup(url: string): Promise<void> {
+		if ((await downloadUrl(url, 'qinqin-data.zip')) === 'failed') throw new Error('download failed');
+	}
+
 	// Settings -> Account -> Your data: download everything you own, or
 	// replace it all from such a download. The restore is staged (uploaded
 	// and checked first), then confirmed with the password.
 	let {
 		reload = () => location.reload(),
-		assign = (u: string) => location.assign(u),
+		assign = saveBackup,
 		storage = typeof localStorage === 'undefined' ? null : localStorage
-	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null } = $props();
+	}: { reload?: () => void; assign?: (url: string) => void | Promise<void>; storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null } = $props();
 
 	let error = $state('');
 	let busy = $state(false);
@@ -119,7 +125,7 @@
 	async function safety(): Promise<void> {
 		error = '';
 		try {
-			assign((await safetyExportTicket()).url);
+			await assign((await safetyExportTicket()).url);
 		} catch (err) {
 			const b = apiErrorBody(err);
 			error = errorText(b?.error, t('account.data.noEarlier'));

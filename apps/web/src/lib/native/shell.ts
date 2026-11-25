@@ -45,6 +45,8 @@ export function plugin<T>(name: string): T | null {
 export interface ShellPlugin {
 	clearServer(): Promise<void>;
 	setBars(options: { background: string; darkIcons: boolean }): Promise<void>;
+	keepAwake(options: { on: boolean }): Promise<void>;
+	vibrate(options: { ms: number }): Promise<{ vibrated: boolean }>;
 }
 
 export interface AppPlugin {

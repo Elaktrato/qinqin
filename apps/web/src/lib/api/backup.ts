@@ -13,9 +13,9 @@ export function requestExport(): Promise<TicketReply> {
 }
 
 /** Starts the download: the ticket URL needs no bearer token. */
-export async function downloadMyData(assign: (url: string) => void = (u) => location.assign(u)): Promise<void> {
+export async function downloadMyData(assign: (url: string) => void | Promise<void> = (u) => location.assign(u)): Promise<void> {
 	const t = await requestExport();
-	assign(t.url);
+	await assign(t.url);
 }
 
 export function uploadRestore(file: Blob, onProgress?: (p: UploadProgress) => void): Promise<{ token: string }> {

@@ -5,6 +5,8 @@
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick, untrack } from 'svelte';
+	import { keepAwake } from '$lib/native/awake';
+	import { buzzOnGrade } from '$lib/native/haptics';
 	import { goto } from '$app/navigation';
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
@@ -1083,6 +1085,7 @@ import type { Run } from '$lib/study/vacation';
 				return;
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
+			buzzOnGrade(session.workspaces.current?.settings, value);
 
 			const result = step.recorded;
 			let recorded: ReviewEvent | null = null;
@@ -1228,6 +1231,13 @@ import type { Run } from '$lib/study/vacation';
 
 	onMount(() => {
 		if (missingConfig) void goto('/study', { replaceState: true });
+	});
+
+	// The screen stays on while cards are being studied; it may sleep again at the end of the session and when
+	// the page is left (the effect's cleanup).
+	$effect(() => {
+		if (missingConfig || complete || loading || loadError !== '' || noWorkspace) return;
+		return keepAwake();
 	});
 
 	// Refetch when the active workspace changes; the header switcher makes

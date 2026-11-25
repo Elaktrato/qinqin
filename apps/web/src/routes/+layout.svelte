@@ -4,7 +4,9 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
-	import { startNative } from '$lib/native';
+	import { isShell, startIncoming, startNative, type IncomingHandle } from '$lib/native';
+	import { setDevicePort } from '$lib/reminders/device/port';
+	import { shellPort } from '$lib/reminders/device/shellPort';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
@@ -44,8 +46,21 @@
 	onMount(() => app.start());
 	// The Android shell's back button and system bars; nothing in a browser (lib/native).
 	onMount(() => startNative());
+	// Reminders on the phone: the shell's local notifications are the device channel's port (#137).
+	onMount(() => {
+		if (!isShell()) return;
+		setDevicePort(shellPort);
+		return () => setDevicePort(null);
+	});
 	onDestroy(() => {
 		if (given === null) app.dispose();
+	});
+	// A text shared to the Android app, a selected text ("Look up in qinqin") or a tapped notification waits here
+	// until the person is signed in and the workspaces are loaded, then opens (lib/native/incoming.ts).
+	let incoming: IncomingHandle | null = null;
+	onMount(() => {
+		incoming = startIncoming({ ready: () => appReady, open: (href) => void goto(href) });
+		return () => incoming?.stop();
 	});
 
 	let { children } = $props();
@@ -90,6 +105,12 @@
 		// fixed elements (--bottom-bar-space) keep clear of the bar.
 		document.documentElement.toggleAttribute('data-bottom-bar', bottomBar);
 		return () => document.documentElement.removeAttribute('data-bottom-bar');
+	});
+	const appReady = $derived(
+		booted && signedIn && !restricted && session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length > 0
+	);
+	$effect(() => {
+		if (appReady) incoming?.poke();
 	});
 	const noWorkspaces = $derived(
 		session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length === 0

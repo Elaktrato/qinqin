@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import type { AudioClip, AudioResolution } from '../api/audio';
 import type { Reading } from '../api/types';
-import { deviceVoiceFor, type Player } from './player';
+import { hasDeviceVoice, type Player } from './player';
 import type { CardAudio } from '../study/audioCue';
 
 export interface ButtonInput {
@@ -112,5 +112,5 @@ export function canSound(
 ): boolean {
 	if (!audio) return false;
 	if (audio.clips.length > 0) return true;
-	return audio.deviceVoice && audio.speakText !== '' && deviceVoiceFor(audio.lang, voices) !== null;
+	return audio.deviceVoice && audio.speakText !== '' && hasDeviceVoice(audio.lang, voices);
 }

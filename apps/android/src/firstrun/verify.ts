@@ -30,7 +30,7 @@ export function bridgeCompatibility(server: Bridge, shell: Bridge): BridgeCompat
  * warning. This copy and the web app's lib/api/version.ts are the same rule (bridge-compat.json pins both):
  * the first-run screen is a separate bundle in the APK and cannot import the web app's code.
  */
-export const SHELL_BRIDGE: Bridge = { level: 1, features: ['status-bar'] };
+export const SHELL_BRIDGE: Bridge = { level: 1, features: ['files', 'haptics', 'keep-awake', 'local-notifications', 'share', 'status-bar', 'tts'] };
 
 export interface HttpAnswer {
 	status: number;

@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #36 — native device features advertised on the bridge (contract 4)
+
+- **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["files", "haptics", "keep-awake",
+  "local-notifications", "share", "status-bar", "tts"]}`. The level stays 1: every new piece is optional (the web
+  app also runs in a browser). A shell without one of them gets the "missing in this app" warning only. The
+  Android shell advertises all of them (`SHELL_BRIDGE`, `apps/android/src/firstrun/verify.ts`).
+  `bridge-compat.json` is unchanged; `version.json` follows. `local-notifications` is groundwork: the reminders
+  (#137-#139) use it through the device port.
+- **Settings:** the workspace-settings key `gradeHaptics` (boolean, default on): the buzz when a card is graded
+  (`settings/workspace-settings.json`: `keys` and `parse`). Readers ignore unknown keys, so older clients are
+  unaffected.
+
 ## #137, #138, #139 — study reminders, email nudges and web push (contract 3)
 
 - **Settings row:** new user-global keyed row `reminders` (`keyed/families.json`; parse rules and fixture
@@ -18,7 +30,7 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Error codes:** `push_unavailable`, `no_subscription`, `too_many_subscriptions`, `delivery_failed`
   (`auth/errors.json`).
 - **Email:** reminder mails carry `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`.
-- **Version:** `version/version.json` answers `contract: 3`.
+- **Version:** `version/version.json` answers `contract: 3` (then 4 with #36).
 
 ## Study modal — the saved study setup (contract 2)
 
