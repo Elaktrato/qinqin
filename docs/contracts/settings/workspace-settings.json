@@ -33,6 +33,12 @@
    "shape": "boolean",
    "default": true,
    "owner": "apps/web/src/lib/native/haptics.ts"
+  },
+  {
+   "key": "hints",
+   "shape": "object: hint kind -> card kind -> \"always\" | \"hint\" | \"never\"",
+   "default": "see cards/hints.json (its own parse rules; not repeated here)",
+   "owner": "apps/web/src/lib/study/hints.ts"
   }
  ],
  "parse": [

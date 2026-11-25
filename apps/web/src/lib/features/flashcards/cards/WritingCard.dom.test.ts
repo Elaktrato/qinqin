@@ -40,7 +40,7 @@ afterEach(cleanup);
 async function setup(over: Record<string, unknown> = {}) {
 	const onDone = vi.fn();
 	const props = { item, entry, chars: ['你', '好'], done: false, onDone, ...over };
-	const view = render(CardHarness, { props: { card: WritingCard, cardProps: props, kindLabel: 'Write' }, context: ctx.context });
+	const view = render(CardHarness, { props: { card: WritingCard, cardProps: props, kindLabel: 'Write', hintPlan: { always: ['reading'], onRequest: [] } }, context: ctx.context });
 	await waitFor(() => expect(screen.getByRole('img')).toBeTruthy());
 	return { onDone, props, ...view };
 }
@@ -78,9 +78,9 @@ describe('WritingCard on the open page (#101)', () => {
 		expect(answer.textContent).toContain('The character is 你.');
 	});
 
-	it('Hint is a secondary button in the work area', async () => {
+	it('the stroke hint is a secondary button in the work area', async () => {
 		await setup();
-		const hint = screen.getByRole('button', { name: 'Hint' });
+		const hint = screen.getByRole('button', { name: 'Next stroke hint' });
 		expect(hint.closest('.face-work')).not.toBeNull();
 		expect(hint.classList.contains('secondary')).toBe(true);
 	});

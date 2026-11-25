@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
+import type { HintPlan } from '$lib/study/hints';
 
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 
@@ -32,12 +33,15 @@ const item: FlowItem = { cardId: 'companion:reverse:1', kind: 'reverse', entryId
 
 afterEach(cleanup);
 
+const READING_HINT: HintPlan = { always: [], onRequest: ['reading'] };
+
 function setup(over: { revealed?: boolean } = {}) {
 	const onDone = vi.fn();
 	// The card renders inside the study face (#101): the harness provides it.
 	const view = render(CardHarness, {
 		card: ReverseCard,
-		cardProps: { item, entry: entry(), revealed: over.revealed ?? false, language: 'zh', onDone }
+		cardProps: { item, entry: entry(), revealed: over.revealed ?? false, language: 'zh', onDone },
+		hintPlan: READING_HINT
 	});
 	return { onDone, ...view, component: (view.component as unknown as { cardInstance: () => unknown }).cardInstance() };
 }
@@ -101,15 +105,15 @@ describe('ReverseCard', () => {
 		expect(onDone.mock.calls[0][0].suggested).toBe(3);
 	});
 
-	it('showing the reading first turns a right answer into Hard and counts a hint', async () => {
+	it('the Hint control shows the reading; the card still suggests Good (the session lowers it, hints.ts)', async () => {
 		const { onDone } = setup();
-		await fireEvent.click(screen.getByRole('button', { name: 'Show reading' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Hint' }));
 		expect(screen.getByText(/xi/)).toBeTruthy();
 		const field = screen.getByLabelText('Type the word');
 		await fireEvent.input(field, { target: { value: '喜欢' } });
 		await fireEvent.keyDown(field, { key: 'Enter' });
-		expect(onDone.mock.calls[0][0].suggested).toBe(2);
-		expect(onDone.mock.calls[0][0].meta.hints).toBe(1);
+		expect(onDone.mock.calls[0][0].suggested).toBe(3);
+		expect(onDone.mock.calls[0][0].meta.hints).toBeUndefined();
 	});
 
 	it('a wrong word suggests Again and counts a mistake', async () => {
@@ -167,14 +171,12 @@ describe('ReverseCard', () => {
 });
 
 describe('ReverseCard.finish (the runner key path)', () => {
-	it('records the typed answer and the hint, like the Show answer button', async () => {
+	it('records the typed answer, like the Show answer button', async () => {
 		const { onDone, component } = setup();
-		await fireEvent.click(screen.getByRole('button', { name: 'Show reading' }));
 		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
 		(component as unknown as { finish: () => void }).finish();
 		expect(onDone).toHaveBeenCalledTimes(1);
-		expect(onDone.mock.calls[0][0].suggested).toBe(2);
-		expect(onDone.mock.calls[0][0].meta.hints).toBe(1);
+		expect(onDone.mock.calls[0][0].suggested).toBe(3);
 	});
 });
 
@@ -197,9 +199,9 @@ describe('ReverseCard on the open page (#101)', () => {
 		expect(field.closest('.face-work')).not.toBeNull();
 	});
 
-	it('Show reading is a plain button in the work area', () => {
+	it('Hint is a plain button in the work area', () => {
 		setup();
-		const button = screen.getByRole('button', { name: 'Show reading' });
+		const button = screen.getByRole('button', { name: 'Hint' });
 		expect(button.closest('.face-work')).not.toBeNull();
 		expect(button.classList.contains('plain')).toBe(true);
 	});

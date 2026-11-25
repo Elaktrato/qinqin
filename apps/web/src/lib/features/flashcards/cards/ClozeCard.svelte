@@ -12,6 +12,8 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 
@@ -31,7 +33,7 @@
 		onDone: (result: CardResult) => void;
 	}
 
-	let { sentence, prompt, mode, choices, accepted, language, done, onDone }: Props = $props();
+	let { entry, sentence, prompt, mode, choices, accepted, language, done, onDone }: Props = $props();
 
 	let typed = $state('');
 	let field = $state<HTMLInputElement | HTMLTextAreaElement>();
@@ -118,6 +120,7 @@
 		{#each prompt.before as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}{@render gap(undefined)}{#each prompt.after as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}
 	</p>
 	<p class="fp-sub translation">{sentence.translation}</p>
+	<HintShown {entry} />
 	<AiTag ai={sentence.ai} />
 </FacePrompt>
 
@@ -163,6 +166,7 @@
 			<Button variant="plain" onclick={() => finish('gaveUp')}>{t('flashcards.card.showAnswer')}</Button>
 		{/if}
 	{/if}
+	<HintControl />
 	<p class="feedback" class:bad={outcome === 'wrong' || outcome === 'gaveUp'} role="status" aria-live="polite">
 		{#if outcome === 'right'}
 			<Icon name="check" size="s" /><span>{t('flashcards.card.correct')}</span>

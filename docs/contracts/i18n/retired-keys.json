@@ -53,6 +53,8 @@
     "settings.tabs.plugins",
     "sources.plugins.lede",
     "sources.plugins.sources",
-    "sources.plugins.title"
+    "sources.plugins.title",
+    "flashcards.card.showReading",
+    "flashcards.writing.hint"
   ]
 }

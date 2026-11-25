@@ -22,6 +22,8 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 	import { useSession } from '$lib/context/context';
@@ -220,9 +222,11 @@
 <FacePrompt>
 	<p class="fp-word written" lang={textLang}>{entry.written}</p>
 	<p class="fp-sub prompt">{t('flashcards.tone.prompt')}</p>
+	<HintShown {entry} />
 </FacePrompt>
 
 <FaceWork>
+<HintControl />
 <ol class="syllables" aria-label={t('flashcards.tone.syllables')} data-card-input>
 	{#each syllables as syllable, index (index)}
 		{@const tone = chosen[index] ?? null}

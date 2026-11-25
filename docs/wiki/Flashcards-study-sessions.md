@@ -53,7 +53,7 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, 通用�
 | Word Salad | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, then **Check** (or **Show answer**) | an example sentence |
 | Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character; kana stay visible | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |
-| Reverse | See the meaning, recall the word; optional **Show reading** hint and typing, then **Show answer** | a word (not a character) with a meaning |
+| Reverse | See the meaning, recall the word; typing, then **Show answer**; the reading is a [hint](#hints) | a word (not a character) with a meaning |
 | Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
 
 - **Word Salad** gets harder as a card settles: new or short-memory cards (stability under 4 days) show word tiles with the translation; middle cards (under 21 days) hide the translation behind **Show translation**, which counts as a hint; long-memory cards (21 days or more) split every word into single characters. The tier is named on the card. If the sentence cannot be cut into words, each character becomes a tile.
@@ -97,7 +97,16 @@ The actions sit at the bottom of the screen. Before the answer there is one butt
 | Build the sentence | tap the tiles in order (or Tab and Enter), then **Check**; 1 to 4 grade once checked |
 | Write | draw with mouse, pen or touch; 1 to 4 grade once every character is done |
 | Tones | 1 to 5 set the highlighted syllable's tone (5 is neutral), ← and → move, Backspace clears, Enter checks; then 1 to 4 grade |
+| Every card with a hint left | H asks for the next hint (Alt+H inside a text field, where H is a letter) |
 | Every card, once one was graded | Z goes back to the card graded before (see [Changing a grade](#changing-a-grade)); there 1 to 4 change its grade and Esc returns |
+
+## Hints
+
+Every card can offer a small **Hint** button (and the H key) that shows one more piece of help each time you press it, in a fixed order: the word's **reading** (kana, pinyin or zhuyin, above the word like furigana), then its **picture**. Pictures are not available yet; they appear here once words have them. The Hint button disappears when no hint is left, and after you answer.
+
+What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
+
+Asking for a hint costs a little: the suggested grade becomes **Hard** instead of Good (a wrong answer stays Again). You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
 
 ## Your notes on the answer side
 
