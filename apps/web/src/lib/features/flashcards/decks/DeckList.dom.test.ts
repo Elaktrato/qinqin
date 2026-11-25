@@ -18,14 +18,18 @@ vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
 import { loadStudyHistory } from '$lib/study/data';
 import { createDeck } from '$lib/study/commands/decks';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { defaultSetup } from '$lib/study/setup';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
+import { StudySetups } from '$lib/study/setupStore.svelte';
 import * as build from '$lib/testing/study';
 
 let ctx: TestContext = testContext();
+let update: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
 	ctx = testContext();
+	update = vi.spyOn(StudySetups.prototype, 'update');
 });
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
@@ -118,8 +122,10 @@ describe('DeckList', () => {
 		const study = await screen.findByRole('button', { name: 'Study Verbs' });
 		await fireEvent.click(study);
 		const saved = JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string);
-		expect(saved).toMatchObject({ mode: 'decks', deckIds: ['d1'], cardTypes: ['vocab'] });
+		expect(saved).toMatchObject({ mode: 'decks', deckIds: ['d1'], cardTypes: ['vocab'], from: location.pathname });
 		expect(goto).toHaveBeenCalledWith('/study/session');
+		// A one-off start never narrows the saved setup (4.4a).
+		expect(update).not.toHaveBeenCalled();
 	});
 
 	it('includes the opt-in kinds a deck enables and says more cards appear while studying', async () => {
@@ -131,6 +137,22 @@ describe('DeckList', () => {
 		expect(row.textContent).toContain('+ reverse/cloze cards as you study');
 		await fireEvent.click(within(row).getByRole('button', { name: 'Study Verbs' }));
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string).cardTypes).toEqual(['vocab', 'reverse']);
+	});
+
+	it('studies the kinds of the saved setup: an unchecked Reverse is left out', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({ deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
+		);
+		vi.spyOn(StudySetups.prototype, 'of').mockReturnValue({
+			setup: { ...defaultSetup(), unchecked: ['reverse'] },
+			raw: null,
+			loaded: true,
+			saveError: null
+		});
+		render(DeckList, { context: ctx.context });
+		const row = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
+		await fireEvent.click(within(row).getByRole('button', { name: 'Study Verbs' }));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string).cardTypes).toEqual(['vocab']);
 	});
 
 	it('links Settings per deck', async () => {

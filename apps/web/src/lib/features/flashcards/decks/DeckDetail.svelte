@@ -10,7 +10,8 @@
 	import { WORD_STATES, type WordState } from '$lib/stats/wordStates';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import { enabledKinds } from '$lib/study/deckSettings';
-	import { loadConfig, saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
 	import {
 		deleteCards,
 		dropSiblingCards,
@@ -134,7 +135,7 @@
 		data === null || limitsLeftToday === null
 			? null
 			: deckLeftText(
-					limitsLeftToday(deckId, data, sessionKinds(data.workspaceId, [deckId], data.deckSettings))
+					limitsLeftToday(deckId, data, sessionKinds(session.setups.of(data.workspaceId).setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? ''))
 				)
 	);
 
@@ -145,7 +146,7 @@
 					...data,
 					w: data.weights,
 					deckId,
-					kinds: sessionKinds(data.workspaceId, [deckId], data.deckSettings)
+					kinds: sessionKinds(session.setups.of(data.workspaceId).setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? '')
 				})
 	);
 
@@ -263,8 +264,9 @@
 
 	function study(): void {
 		if (data === null) return;
+		const setup = session.setups.of(data.workspaceId).setup;
 		saveConfig(
-			deckSessionConfig(loadConfig(), deckId, sessionKinds(data.workspaceId, [deckId], data.deckSettings))
+			deckSessionConfig(setup, deckId, sessionKinds(setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? ''), here())
 		);
 		void goto('/study/session');
 	}

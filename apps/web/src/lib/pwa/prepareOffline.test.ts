@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
 import classifyFixtureRoutes from './sw/routes.fixture.json';
 import { classify } from './sw/classify';
+import { defaultSetup } from '../study/setup';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
@@ -138,7 +139,7 @@ describe('prepareOffline', () => {
 			active,
 			userId: 1,
 			loadHistory: async () => ({ decks: [], cards: vocab, fsrs: undefined, reviews: [], merged: 0 }) as never,
-			config: () => ({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 2, reviewLimit: 100, cardTypes: ['vocab'] }),
+			setup: async () => ({ ...defaultSetup(), decks: ['general'], newLimit: 2 }),
 			language: 'zh',
 			contextFor: () => UTC_CONTEXT,
 			weights: () => DEFAULT_W,
@@ -167,9 +168,9 @@ describe('prepareOffline', () => {
 		expect(deps.active.max).toBeLessThanOrEqual(2);
 	});
 
-	it('prepares the opt-in kinds the decks switch on, as the Study page selects them, not only the tab setup', async () => {
+	it('prepares the opt-in kinds the decks switch on, as the study modal selects them', async () => {
 		// Word 9 was learned (Easy, not due); its reverse card is new. General switches reverse on, and
-		// this tab has no setup of its own (the default: Vocab only).
+		// the saved setup is the default one (Vocab, opt-in kinds as the decks say).
 		const learned = card('c-vocab-9', 'vocab', 9, '本', '2026-01-01T00:00:00.000Z');
 		const reverse = card('c-reverse-9', 'reverse', 9, '本', '2026-01-02T00:00:00.000Z');
 		const history = build.history({
@@ -177,14 +178,25 @@ describe('prepareOffline', () => {
 			reviews: [build.review({ cardId: 'c-vocab-9', ts: '2026-02-27T10:00:00Z', grade: 4 })],
 			deckSettings: { general: { deckId: 'general', cardTypes: ['reverse'], extra: {} } }
 		});
-		const deps = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({}) });
+		const deps = makeDeps({ loadHistory: async () => history, setup: async () => defaultSetup() });
 		expect((await prepareOffline(7, deps)).status).toBe('prepared');
 		expect(deps.calls).toContain(entryPath(9));
 
-		// Unchecked on the setup page in this workspace: not prepared.
-		const off = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({ reverse: false }) });
+		// Unchecked in the saved setup: not prepared.
+		const off = makeDeps({ loadHistory: async () => history, setup: async () => ({ ...defaultSetup(), unchecked: ['reverse'] }) });
 		await prepareOffline(7, off);
 		expect(off.calls).not.toContain(entryPath(9));
+	});
+
+	it('prepares the decks of the saved setup: "all" is every deck, a list only its decks', async () => {
+		const inDeck = { ...card('c-vocab-21', 'vocab', 21, '山', '2026-01-01T00:00:00.000Z'), deckIds: ['d1'] };
+		const history = build.history({ decks: [{ id: 'd1', name: 'Hills', createdAt: '2026-01-01T00:00:00Z' }], cards: [inDeck] });
+		const all = makeDeps({ loadHistory: async () => history, setup: async () => defaultSetup() });
+		await prepareOffline(7, all);
+		expect(all.calls).toContain(entryPath(21));
+		const general = makeDeps({ loadHistory: async () => history, setup: async () => ({ ...defaultSetup(), decks: ['general'] }) });
+		await prepareOffline(7, general);
+		expect(general.calls).not.toContain(entryPath(21));
 	});
 
 	it('warms every page of the current workspace round through the study read and counts the pages', async () => {

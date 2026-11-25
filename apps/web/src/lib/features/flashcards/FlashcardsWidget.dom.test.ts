@@ -14,6 +14,7 @@ import { levelProgress, xpFromReviews } from '$lib/study/exp';
 import { loadStudyHistory } from '$lib/study/data';
 import type { ReviewEvent } from '$lib/study/types';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
+import { defaultSetup } from '$lib/study/setup';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -170,5 +171,19 @@ describe('FlashcardsWidget goal ring', () => {
 		expect(screen.queryByText(/offline/)).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
 		expect(text(container)).toContain('Level 1');
+	});
+});
+
+describe('FlashcardsWidget and the saved study setup', () => {
+	it('counts the kinds of the saved setup: a tone card counts only when the setup studies tone', async () => {
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
+		const tone = { id: 'c-tone-5', kind: 'tone', entryId: 5, written: '好', entryKind: null, sentenceId: null, skipKinds: [], deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z', extra: {} };
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [tone], reviews: [], merged: 0 } as never);
+		const container = await ready();
+		await waitFor(() => expect(text(container)).toContain('Nothing due today'));
+		cleanup();
+		ctx.session.setups.update(1, { ...defaultSetup(), cardTypes: ['vocab', 'tone'] }).catch(() => undefined);
+		const again = await ready();
+		await waitFor(() => expect(text(again)).toMatch(/1 new left today/));
 	});
 });

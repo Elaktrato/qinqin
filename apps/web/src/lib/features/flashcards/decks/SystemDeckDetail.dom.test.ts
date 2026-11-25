@@ -145,7 +145,8 @@ describe('SystemDeckDetail', () => {
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({
 			mode: 'levels',
 			schemeId: 1,
-			levelName: 'HSK 1'
+			levelName: 'HSK 1',
+			from: location.pathname
 		});
 		expect(goto).toHaveBeenCalledWith('/study/session');
 	});

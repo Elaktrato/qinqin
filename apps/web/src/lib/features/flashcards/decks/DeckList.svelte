@@ -2,7 +2,8 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { loadConfig, saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
 	import { createDeck } from '$lib/study/commands/decks';
 	import { knownEntries } from '$lib/study/known';
 	import { summarizeDecks } from './deckSummaries';
@@ -18,6 +19,7 @@
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
 	import { useSession } from '$lib/context/context';
+	import type { StudyCardKind } from '$lib/study/types';
 	const session = useSession();
 
 	const store = createDecksData(session);
@@ -26,6 +28,11 @@
 	$effect(() => {
 		void store.load(workspaceId);
 	});
+	// The saved setup's kinds count here; another device may have changed it.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+	const language = $derived(session.workspaces.current?.language ?? '');
 	// A new learner day (or zone) changes what is due and on vacation.
 	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
@@ -35,7 +42,7 @@
 		return summarizeDecks({
 			...data,
 			w: data.weights,
-			kindsFor: (ids) => sessionKinds(data.workspaceId, ids, data.deckSettings)
+			kindsFor: (ids) => sessionKinds(session.setups.of(data.workspaceId).setup, ids, data.deckSettings, language)
 		});
 	});
 
@@ -87,8 +94,9 @@
 		}
 	}
 
-	function study(deckId: string, kinds: readonly string[]): void {
-		saveConfig(deckSessionConfig(loadConfig(), deckId, kinds));
+	function study(deckId: string, kinds: readonly StudyCardKind[]): void {
+		if (workspaceId === null) return;
+		saveConfig(deckSessionConfig(session.setups.of(workspaceId).setup, deckId, kinds, here()));
 		void goto('/study/session');
 	}
 

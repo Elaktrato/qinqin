@@ -6,7 +6,8 @@
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { loadConfig, saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
 	import { PartialPushError } from '$lib/sync/push';
 	import { loadRawStudyData } from '$lib/study/data';
 	import { pushStudy } from '$lib/study/commands/write';
@@ -93,7 +94,9 @@
 
 	function study(): void {
 		if (deck === null || deck === undefined) return;
-		saveConfig(levelSessionConfig(loadConfig(), deck.schemeId, deck.level));
+		const ws = session.workspaces.current?.id ?? null;
+		if (ws === null) return;
+		saveConfig(levelSessionConfig(session.setups.of(ws).setup, deck.schemeId, deck.level, here()));
 		void goto('/study/session');
 	}
 

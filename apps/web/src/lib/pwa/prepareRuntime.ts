@@ -5,8 +5,6 @@ import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
 import type { AppContext } from '../context/app.svelte';
 import { contextForData } from '../study/currentContext';
-import { loadConfig } from '../study/session';
-import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/cardTypesMemory';
 import { studyPullPages, loadStudyHistory } from '../study/data';
 import { activeWeights } from '../study/readModel';
 import { fetchStrokeData } from '../study/strokeData';
@@ -49,10 +47,11 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		userId: me.id,
 		// A full round: the worker saves full rounds for offline study, never a delta (#193).
 		loadHistory: (id) => loadStudyHistory(session.study, id, { full: true }),
-		config: loadConfig,
-		tabTypes: () => (hasTabSetup() ? loadConfig().cardTypes : null),
-		remembered: () => loadRememberedTypes(ws.id),
-		choices: () => loadExtraChoices(ws.id),
+		// The synced setup, read again so another device's change counts (a failed read keeps the cached one).
+		setup: async () => {
+			await session.setups.refresh(ws.id);
+			return session.setups.of(ws.id).setup;
+		},
 		language: ws.language,
 		contextFor: (data, id, now) => contextForData(session.zone, data, id, now),
 		weights: (data) => activeWeights(data),

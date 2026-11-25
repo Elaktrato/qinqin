@@ -14,14 +14,7 @@
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import Mascot from './Mascot.svelte';
-	import { loadConfig } from '$lib/study/session';
-	import {
-		effectiveCardTypes,
-		effectiveKinds,
-		hasTabSetup,
-		loadExtraChoices,
-		loadRememberedTypes
-	} from '$lib/study/cardTypesMemory';
+	import { setupKinds } from '$lib/study/setup';
 	import { loadStudyHistory } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -33,10 +26,6 @@
 	import { useSession } from '$lib/context/context';
 
 	const session = useSession();
-	// The home widget mirrors the study setup for its limits and card
-	// types; it counts every deck in the workspace, so a saved deck
-	// selection cannot hide cards from the status line.
-	const config = loadConfig();
 
 	let decks = $state<Deck[]>([]);
 	let cards = $state<StudyCard[]>([]);
@@ -65,20 +54,19 @@
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
 
-	// The card types a session would study: this tab's setup, else the
-	// types last started in this workspace, else vocab.
-	// Reverse and cloze join when a deck switches them on and the learner has
-	// not unchecked them (the same rule as the setup page, effectiveKinds).
+	// The card types of the saved study setup (what the study modal starts):
+	// its kinds plus each opt-in kind a deck switches on that the learner has
+	// not unchecked. It counts every deck in the workspace, so a narrowed deck
+	// selection cannot hide cards from the status line.
 	const kinds = $derived(
-		effectiveKinds(
-			effectiveCardTypes(
-				hasTabSetup() ? config.cardTypes : null,
-				workspaceId === null ? null : loadRememberedTypes(workspaceId)
-			),
-			enabledKinds(deckSettings, deckIds),
-			workspaceId === null ? {} : loadExtraChoices(workspaceId)
-		)
+		workspaceId === null
+			? []
+			: setupKinds(session.setups.of(workspaceId).setup, enabledKinds(deckSettings, deckIds), session.workspaces.current?.language ?? '')
 	);
+	// Another device may have changed the setup.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
 
 	// What the daily limits admit right now for real cards of those types
 	// (companions not created yet are not counted): due reviews and new cards
