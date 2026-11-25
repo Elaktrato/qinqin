@@ -120,7 +120,8 @@ export async function computeFacts(session: Session, workspaceId: number, now: D
 	const index = scheduleIndex(data.cards, data.reviews, weights, ctx.clock);
 	const deckSettings = data.deckSettings ?? {};
 	const deckIds = [GENERAL_DECK_ID, ...data.decks.map((d) => d.id)];
-	const kinds = sessionKinds(workspaceId, deckIds, deckSettings);
+	const language = session.workspaces.list.find((w) => w.id === workspaceId)?.language ?? '';
+	const kinds = sessionKinds(session.setups.of(workspaceId).setup, deckIds, deckSettings, language);
 	const { due } = deckNumbers({ deckId: null, cards: data.cards, decks: data.decks, reviews: data.reviews, index, kinds, deckSettings, now, w: weights, ctx, addDays });
 	const existing = new Set(deckIds);
 	const dues: string[] = [];
