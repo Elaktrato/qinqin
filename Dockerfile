@@ -15,8 +15,6 @@ COPY scripts/prepare-strokes-pack.mjs /src/scripts/
 COPY apps/web/static/ARPHICPL.TXT ./static/ARPHICPL.TXT
 RUN node /src/scripts/prepare-strokes-pack.mjs --out /out/strokes/hanzi-writer-strokes
 COPY apps/web/ ./
-# The built-in plugin manifests ($builtin alias) live next to the server.
-COPY server/internal/plugins/builtin /src/server/internal/plugins/builtin
 RUN npm run build
 
 # Builder: Go >= 1.26 is required (modernc.org/sqlite floor). Pure Go, no CGO,
