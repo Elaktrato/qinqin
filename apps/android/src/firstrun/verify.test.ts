@@ -63,6 +63,24 @@ describe('verifyServer', () => {
 		expect(await verifyServer('http://192.168.1.2:8085', http, { level: 1, features: [] })).toMatchObject({ ok: false, kind: 'redirect', target: 'https://192.168.1.2:8443' });
 	});
 
+	it('an unfollowed 3xx with a Location on another origin is a redirect (http to https)', async () => {
+		const http: HttpFn = async (url) => ({ status: 301, url, data: '', headers: { location: 'https://192.168.1.2:8443/api/version' } });
+		expect(await verifyServer('http://192.168.1.2:8085', http, { level: 1, features: [] })).toEqual({
+			ok: false,
+			kind: 'redirect',
+			target: 'https://192.168.1.2:8443'
+		});
+		const rel: HttpFn = async (url) => ({ status: 302, url, data: '', headers: { Location: 'https://q.example.org/api/version' } });
+		expect(await verifyServer('http://q.example.org', rel, { level: 1, features: [] })).toMatchObject({ kind: 'redirect', target: 'https://q.example.org' });
+	});
+
+	it('a 3xx without a usable Location, or to the same origin, is not qinqin', async () => {
+		const none: HttpFn = async (url) => ({ status: 302, url, data: '' });
+		expect(await verifyServer('https://q.example.org', none, { level: 1, features: [] })).toEqual({ ok: false, kind: 'notQinqin' });
+		const same: HttpFn = async (url) => ({ status: 302, url, data: '', headers: { location: '/login' } });
+		expect(await verifyServer('https://q.example.org', same, { level: 1, features: [] })).toEqual({ ok: false, kind: 'notQinqin' });
+	});
+
 	it('classifies thrown errors', async () => {
 		const throwing = (e: unknown): HttpFn => async () => {
 			throw e;

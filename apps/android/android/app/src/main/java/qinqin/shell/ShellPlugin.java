@@ -26,12 +26,19 @@ public class ShellPlugin extends Plugin {
         call.resolve(r);
     }
 
-    /** Saves the address and starts the web app from it. */
+    /**
+     * Saves the address and starts the web app from it. Only the bundled first-run screen may do this: a
+     * server's own page (the one remote origin that has the bridge) must not be able to repoint the app.
+     */
     @PluginMethod
     public void setServer(PluginCall call) {
+        if (!onFirstRunScreen()) {
+            call.reject("only from the first-run screen");
+            return;
+        }
         String url = call.getString("url", "");
-        if (!ServerStore.isOrigin(url)) {
-            call.reject("not an origin");
+        if (!ServerStore.isAllowedOrigin(url)) {
+            call.reject("not an allowed origin");
             return;
         }
         ServerStore.set(getContext(), url);
@@ -50,6 +57,10 @@ public class ShellPlugin extends Plugin {
     /** Tries the saved server again (the first-run screen's Retry). */
     @PluginMethod
     public void retry(PluginCall call) {
+        if (!onFirstRunScreen()) {
+            call.reject("only from the first-run screen");
+            return;
+        }
         call.resolve();
         reload();
     }
@@ -59,14 +70,11 @@ public class ShellPlugin extends Plugin {
     public void setBars(PluginCall call) {
         String color = call.getString("background", "");
         boolean darkIcons = Boolean.TRUE.equals(call.getBoolean("darkIcons", false));
-        int parsed;
-        try {
-            parsed = Color.parseColor(color);
-        } catch (IllegalArgumentException e) {
+        if (!isBarColor(color)) {
             call.reject("background must be #rrggbb");
             return;
         }
-        final int background = parsed;
+        final int background = Color.parseColor(color);
         final Activity activity = getActivity();
         activity.runOnUiThread(() -> {
             Window window = activity.getWindow();
@@ -76,6 +84,16 @@ public class ShellPlugin extends Plugin {
             c.setAppearanceLightNavigationBars(darkIcons);
             call.resolve();
         });
+    }
+
+    /** The one colour form the web app sends (bars.ts): `#rrggbb`. Named colours and `#aarrggbb` are refused. */
+    static boolean isBarColor(String color) {
+        return color != null && color.matches("#[0-9a-fA-F]{6}");
+    }
+
+    /** True while the bundled first-run screen is the page (no server is open: only then the bridge is its). */
+    private boolean onFirstRunScreen() {
+        return getActivity() instanceof MainActivity && ((MainActivity) getActivity()).isFirstRunScreen();
     }
 
     private void reload() {

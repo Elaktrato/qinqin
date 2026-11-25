@@ -52,6 +52,18 @@ export function isPrivateHost(host: string): boolean {
 	return !h.includes('.');
 }
 
+/**
+ * Whether `host` is one the native side (java.net.URI) will accept: IPv6 in brackets, an IPv4 address, or dotted
+ * labels of letters, digits and inner hyphens whose last label starts with a letter. URL() is more lenient
+ * (an underscore passes), and a host Java rejects would be saved on this screen and then refused by the shell.
+ */
+function isNativeHost(host: string): boolean {
+	if (host.startsWith('[')) return true;
+	if (ipv4(host)) return true;
+	if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i.test(host)) return false;
+	return /^[a-z]/i.test(host.slice(host.lastIndexOf('.') + 1));
+}
+
 /** normalizeAddress turns what a person typed into the address to verify, or says why it cannot be one. */
 export function normalizeAddress(input: string): AddressResult {
 	const text = input.trim();
@@ -67,7 +79,7 @@ export function normalizeAddress(input: string): AddressResult {
 	if (u.protocol !== 'https:' && u.protocol !== 'http:') return { ok: false, reason: 'scheme' };
 	if (u.username !== '' || u.password !== '') return { ok: false, reason: 'credentials' };
 	const host = u.hostname.replace(/\.$/, '');
-	if (host === '') return { ok: false, reason: 'invalid' };
+	if (host === '' || !isNativeHost(host)) return { ok: false, reason: 'invalid' };
 	const cleartext = u.protocol === 'http:';
 	if (cleartext && !isPrivateHost(host)) return { ok: false, reason: 'insecurePublic' };
 	const port = u.port === '' ? '' : `:${u.port}`;

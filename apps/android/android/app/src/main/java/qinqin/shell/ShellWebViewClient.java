@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import com.getcapacitor.Bridge;
@@ -17,6 +18,7 @@ import com.getcapacitor.BridgeWebViewClient;
 class ShellWebViewClient extends BridgeWebViewClient {
     private final MainActivity activity;
     private final String server;
+    private boolean started = false;
 
     ShellWebViewClient(Bridge bridge, MainActivity activity, String server) {
         super(bridge);
@@ -47,6 +49,25 @@ class ShellWebViewClient extends BridgeWebViewClient {
                 // ERROR_UNKNOWN (also an aborted navigation) and the rest: leave the page alone.
                 break;
         }
+    }
+
+    /**
+     * The server answered the first page with an HTTP error (a proxy's 502, a 404 from something that is not
+     * qinqin): there is nothing to use, so offer the first-run screen. Only the initial load counts; later
+     * navigations are the web app's own. A service-worker answer (offline start) is a 200 and never lands here.
+     */
+    @Override
+    public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+        super.onReceivedHttpError(view, request, response);
+        if (!started && request.isForMainFrame() && isServerPage(request.getUrl()) && response.getStatusCode() >= 400) {
+            activity.showFirstRunError("notQinqin");
+        }
+    }
+
+    @Override
+    public void onPageFinished(WebView view, String url) {
+        super.onPageFinished(view, url);
+        started = true;
     }
 
     @Override

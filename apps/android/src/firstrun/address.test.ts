@@ -93,6 +93,16 @@ describe('normalizeAddress', () => {
 		expect(normalizeAddress('https://example.com:99999')).toEqual({ ok: false, reason: 'invalid' });
 	});
 
+	it('refuses host names the native side (java.net.URI) rejects', () => {
+		expect(normalizeAddress('https://my_nas.example.org')).toEqual({ ok: false, reason: 'invalid' });
+		expect(normalizeAddress('http://my_nas')).toEqual({ ok: false, reason: 'invalid' });
+		expect(normalizeAddress('https://-a.example.org')).toEqual({ ok: false, reason: 'invalid' });
+		expect(normalizeAddress('https://example.123')).toEqual({ ok: false, reason: 'invalid' });
+		expect(normalizeAddress('https://my-nas.example.org')).toMatchObject({ ok: true });
+		expect(normalizeAddress('http://[::1]:8085')).toMatchObject({ ok: true });
+		expect(normalizeAddress('http://10.0.2.2:8085')).toMatchObject({ ok: true });
+	});
+
 	it('does not treat a lookalike as private', () => {
 		expect(normalizeAddress('http://localhost.evil.com')).toEqual({ ok: false, reason: 'insecurePublic' });
 		expect(normalizeAddress('http://192.168.1.1.evil.com')).toEqual({ ok: false, reason: 'insecurePublic' });

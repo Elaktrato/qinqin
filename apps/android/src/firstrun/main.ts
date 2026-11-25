@@ -24,7 +24,7 @@ const http: HttpFn = async (url) => {
 		CapacitorHttp.get({ url, connectTimeout: TIMEOUT_MS, readTimeout: TIMEOUT_MS, headers: { Accept: 'application/json' } }),
 		new Promise<never>((_, reject) => setTimeout(() => reject({ code: 'SocketTimeoutException', message: 'timeout' }), TIMEOUT_MS + 2000))
 	]);
-	return { status: answer.status, url: answer.url, data: answer.data };
+	return { status: answer.status, url: answer.url, data: answer.data, headers: answer.headers };
 };
 
 const el = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -113,7 +113,20 @@ async function submit(): Promise<void> {
 	} else if (r.compat.status === 'serverOutdated') {
 		note('warn', S.compat.serverOutdated);
 	}
-	const open = button(S.open, () => void Shell.setServer({ url: a.url }), true);
+	const open = button(
+		S.open,
+		() => {
+			// The shell refuses what it does not allow (a different, native check): say so instead of doing nothing.
+			Shell.setServer({ url: a.url }).catch(() => {
+				actions.replaceChildren();
+				problem.textContent = S.problem.invalid;
+				problem.hidden = false;
+				input.setAttribute('aria-invalid', 'true');
+				input.focus();
+			});
+		},
+		true
+	);
 	actions.append(open);
 	open.focus();
 }
@@ -146,7 +159,7 @@ async function start(): Promise<void> {
 	});
 	// Back from the first-run screen leaves the app (there is nothing behind it).
 	void App.addListener('backButton', () => void App.minimizeApp());
-	if (server && (error === 'unreachable' || error === 'timeout' || error === 'tls')) {
+	if (server && (error === 'unreachable' || error === 'timeout' || error === 'tls' || error === 'notQinqin' || error === 'webview')) {
 		showForm(false);
 		const h = document.createElement('h1');
 		h.textContent = 'qinqin';

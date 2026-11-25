@@ -71,6 +71,18 @@ describe('first-run screen', () => {
 		expect(shell.setServer).toHaveBeenCalledWith({ url: 'https://q.example.org' });
 	});
 
+	it('when the shell refuses the address, the screen says it is invalid instead of staying silent', async () => {
+		http.get.mockResolvedValue({ status: 200, url: 'https://q.example.org/api/version', data: answer });
+		shell.setServer.mockRejectedValueOnce(new Error('not an allowed origin'));
+		await load();
+		await enter('q.example.org');
+		await vi.waitFor(() => expect(buttons()).toEqual(['Open qinqin']));
+		document.querySelector<HTMLButtonElement>('#actions button')!.click();
+		await vi.waitFor(() => expect(document.getElementById('problem')!.hidden).toBe(false));
+		expect(text('problem')).toBe('That is not a valid address.');
+		expect(buttons()).toEqual([]);
+	});
+
 	it('a private http address is allowed with a visible warning', async () => {
 		http.get.mockResolvedValue({ status: 200, url: 'http://10.0.2.2:8085/api/version', data: answer });
 		await load();
@@ -146,6 +158,14 @@ describe('first-run screen as the error screen of a saved server', () => {
 		expect((document.getElementById('form') as HTMLFormElement).hidden).toBe(true);
 		document.querySelectorAll<HTMLButtonElement>('#actions button')[0].click();
 		expect(shell.retry).toHaveBeenCalled();
+	});
+
+	it('a saved server that answers with something else, or a too-old WebView, gets its own message', async () => {
+		await load('?error=notQinqin&server=https%3A%2F%2Fq.example.org');
+		expect(text('notes')).toContain('not like a qinqin server');
+		expect(buttons()).toEqual(['Try again', 'Change server']);
+		await load('?error=webview&server=https%3A%2F%2Fq.example.org');
+		expect(text('notes')).toContain('Update Android System WebView');
 	});
 
 	it('Change server shows the form again, filled with the address', async () => {
