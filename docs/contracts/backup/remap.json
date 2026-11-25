@@ -860,6 +860,62 @@
    "note": "settings.hints is kept as stored; only hiddenDictionaries is remapped"
   },
   {
+   "name": "the starter setting (#214) survives a restore next to a remapped hiddenDictionaries",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {
+     "3": 8
+    }
+   },
+   "input": {
+    "hiddenDictionaries": [
+     3
+    ],
+    "starter": {
+     "enabled": true,
+     "scope": "all"
+    }
+   },
+   "expect": {
+    "hiddenDictionaries": [
+     8
+    ],
+    "starter": {
+     "enabled": true,
+     "scope": "all"
+    }
+   },
+   "note": "settings.starter is kept as stored; only hiddenDictionaries is remapped"
+  },
+  {
+   "name": "the visualAids setting (#212) survives a restore next to a remapped hiddenDictionaries",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {
+     "3": 8
+    }
+   },
+   "input": {
+    "hiddenDictionaries": [
+     3
+    ],
+    "visualAids": {
+     "pictures": false,
+     "toneColors": true
+    }
+   },
+   "expect": {
+    "hiddenDictionaries": [
+     8
+    ],
+    "visualAids": {
+     "pictures": false,
+     "toneColors": true
+    }
+   },
+   "note": "settings.visualAids is kept as stored; only hiddenDictionaries is remapped"
+  },
+  {
    "name": "note: identity map keeps the row",
    "op": "row",
    "maps": {
