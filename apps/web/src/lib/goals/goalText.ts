@@ -6,7 +6,7 @@ import type { ActivitySource } from '../api/stats';
 import { t } from '../i18n';
 import { formatNumber } from '../i18n/format';
 import { activityType, type GoalMetric } from './goals';
-import { activityLabel, activityText } from '../plugins/manifestText';
+import { activityLabel, activityText } from '../activity/sources';
 import type { GoalDay } from './progress';
 
 export interface MetricOption {
@@ -37,9 +37,9 @@ export function metricOptions(sources: readonly ActivitySource[]): MetricOption[
 }
 
 /** The activity source a metric counts; an unknown type words itself with its id ("{n} pomodoro"). */
-function sourceOf(metric: GoalMetric, sources: readonly ActivitySource[]): Pick<ActivitySource, 'plugin' | 'type' | 'describe'> {
+function sourceOf(metric: GoalMetric, sources: readonly ActivitySource[]): Pick<ActivitySource, 'type'> {
 	const type = activityType(metric) ?? metric;
-	return sources.find((s) => s.type === type) ?? { plugin: '', type, describe: { one: `{n} ${type}`, other: `{n} ${type}` } };
+	return sources.find((s) => s.type === type) ?? { type };
 }
 
 /** progressText: "32 of 50 flashcard reviews today"; the plural follows the target. */
@@ -49,7 +49,7 @@ export function progressText(day: GoalDay, sources: readonly ActivitySource[]): 
 	if (day.metric === 'flashcards:studyTime') {
 		return t('goals.progress.studyTime', { count: day.target, amount: day.amount });
 	}
-	// A source's count text: the catalogue's for a built-in plugin, else the manifest's `describe` templates.
+	// A source's count text, from the catalogue.
 	const amount = t('goals.progress.amountOfTarget', { amount: day.amount, target: day.target });
 	return t('goals.progress.today', { progress: activityText(sourceOf(day.metric, sources), day.target, amount) });
 }

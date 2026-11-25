@@ -6,9 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 const longAgo = "2020-01-01T00:00:00Z"
@@ -35,18 +36,18 @@ func newerThan2021(t *testing.T, sqlDB *sql.DB, table string) int {
 // row: nothing is tombstoned and revived, nothing re-stamped.
 func TestReimportIdenticalSchemeWritesNothing(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("first import: %v", err)
 	}
 	backdate(t, sqlDB)
 
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("second import: %v", err)
 	}
 	for _, table := range []string{"levels", "level_members"} {
@@ -61,7 +62,7 @@ func TestReimportIdenticalSchemeWritesNothing(t *testing.T) {
 // new one, and a dropped level is tombstoned with its members.
 func TestReimportTouchesOnlyChangedMembers(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	fe := seedFixture(t, sqlDB)
 	reimport := func(json string) {
 		t.Helper()
@@ -126,13 +127,13 @@ func TestReimportTouchesOnlyChangedMembers(t *testing.T) {
 // gone.
 func TestReimportChangedPackRenamesSchemeAndUpdatesMembers(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	fe := seedFixture(t, sqlDB)
 	importAs := func(name, version, json string) {
 		t.Helper()
-		pack := buildPack(t, "jlpt-kanji", json)
-		pack.Manifest.Name, pack.Manifest.Version = name, version
-		if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+		pk := buildPack(t, "jlpt-kanji", json)
+		pk.Manifest.Name, pk.Manifest.Version = name, version
+		if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 			t.Fatalf("import %s: %v", name, err)
 		}
 	}

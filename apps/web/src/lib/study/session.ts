@@ -96,9 +96,6 @@ export const DEFAULT_CONFIG: StudySessionConfig = {
 // four-digit limit is almost certainly a typo, not a study plan.
 const MAX_LIMIT = 999;
 
-/** The cap a study-all session uses in place of a person's limits. */
-export const STUDY_ALL_LIMIT = 1_000_000;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

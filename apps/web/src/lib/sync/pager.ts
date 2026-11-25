@@ -1,19 +1,10 @@
 // Paged pull client (GET /api/sync/pull?v=2), docs/contracts/sync/. A round is
 // a first page (scope set) followed by `next` pages until `more` is false; the
-// last page carries the cursor for the next round. Decoding is strict: a page
-// that does not match the contract is refused whole, never guessed at.
-import { parseRow, type StudyCollection } from '../study/rows';
-
-export const V2_STUDY_COLLECTIONS: readonly string[] = [
-	'pluginStates',
-	'pluginData',
-	'cards',
-	'decks',
-	'deckSettings',
-	'limits',
-	'fsrsSets',
-	'fsrsActive'
-];
+// last page carries the cursor for the next round. The pager checks the page
+// envelope only and refuses a page whose envelope does not match the contract;
+// it never inspects a row. Rows are the consumer's to decode (./rows.ts
+// readableRow, the typed study decode): an unreadable row is skipped by the
+// consumer and never blocks the round (docs/contracts/sync/, "Reading rows").
 
 export interface PullScope {
 	workspaces: { id: number; language: string }[];
@@ -33,24 +24,9 @@ export interface PullPage {
 	cursor: string | null;
 }
 
-const TYPED = new Set<string>(['cards', 'decks', 'deckSettings', 'limits', 'fsrsSets', 'fsrsActive']);
 const RESTARTABLE = new Set(['overlays', 'sentences']);
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;
-
-const SHAPES: Record<string, readonly string[]> = {
-	workspaces: ['id', 'language', 'name', 'settings', 'updatedAt'],
-	pluginStates: ['pluginId', 'userId', 'enabled', 'order', 'updatedAt'],
-	pluginData: ['pluginId', 'key', 'userId', 'workspaceId', 'data', 'version', 'updatedAt', 'deletedAt'],
-	books: ['id', 'workspaceId', 'language', 'title', 'author', 'source', 'sourceId', 'sourceUrl', 'attribution', 'licenseNote', 'chapterCount', 'position', 'createdAt', 'updatedAt', 'deletedAt'],
-	bookmarks: ['id', 'bookId', 'position', 'label', 'createdAt', 'updatedAt', 'deletedAt'],
-	highlights: ['id', 'bookId', 'chapter', 'paragraph', 'start', 'end', 'text', 'color', 'note', 'createdAt', 'updatedAt', 'deletedAt'],
-	overlays: ['entryId', 'written', 'readings', 'updatedAt'],
-	sentences: ['id', 'entryId', 'sourcePack', 'userId', 'hanzi', 'pinyin', 'translation', 'updatedAt', 'deletedAt'],
-	events: ['id', 'workspaceId', 'device', 'ts', 'type', 'payload', 'updatedAt']
-};
-const LIBRARY = new Set(['books', 'bookmarks', 'highlights']);
-const LIBRARY_TOMBSTONE = ['id', 'workspaceId', 'updatedAt', 'deletedAt'];
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isTime = (v: unknown): v is string => typeof v === 'string' && TIME.test(v);
@@ -58,27 +34,6 @@ const sameKeys = (o: Record<string, unknown>, keys: readonly string[]) => {
 	const have = Object.keys(o);
 	return have.length === keys.length && keys.every((k) => k in o);
 };
-
-function rowOk(collection: string, raw: unknown): boolean {
-	if (TYPED.has(collection)) return parseRow(collection as StudyCollection, raw) !== null;
-	const shape = SHAPES[collection];
-	if (shape === undefined || !isRecord(raw)) return false;
-	if (LIBRARY.has(collection) && sameKeys(raw, LIBRARY_TOMBSTONE)) return isTime(raw.updatedAt) && isTime(raw.deletedAt);
-	if (!sameKeys(raw, shape)) return false;
-	if ('updatedAt' in raw && !isTime(raw.updatedAt)) return false;
-	if ('deletedAt' in raw && raw.deletedAt !== null && !isTime(raw.deletedAt)) return false;
-	if (LIBRARY.has(collection) && raw.deletedAt !== null) return false; // a deleted library row is a tombstone
-	switch (collection) {
-		case 'pluginData':
-			return typeof raw.pluginId === 'string' && typeof raw.key === 'string' && Number.isInteger(raw.version);
-		case 'events':
-			return raw.type !== 'lookup' && typeof raw.id === 'string';
-		case 'sentences':
-			return raw.sourcePack === '' && Number.isInteger(raw.userId);
-		default:
-			return true;
-	}
-}
 
 function scopeOk(raw: unknown): raw is PullScope {
 	if (!isRecord(raw) || !sameKeys(raw, ['workspaces', 'languages', 'catalogue'])) return false;
@@ -97,7 +52,10 @@ function scopeOk(raw: unknown): raw is PullScope {
 	return true;
 }
 
-/** parsePullPage decodes one v2 answer for the requested collection set, or null if anything is off. */
+/**
+ * parsePullPage checks the envelope of one v2 answer for the requested collection
+ * set (every collection an array; rows not inspected), or null if it is off.
+ */
 export function parsePullPage(raw: unknown, requested: readonly string[]): PullPage | null {
 	if (!isRecord(raw) || !sameKeys(raw, ['format', 'instanceId', 'until', 'scope', 'restarted', 'collections', 'more', 'next', 'cursor'])) return null;
 	if (raw.format !== 2 || typeof raw.instanceId !== 'string' || !ULID.test(raw.instanceId) || !isTime(raw.until)) return null;
@@ -108,7 +66,7 @@ export function parsePullPage(raw: unknown, requested: readonly string[]): PullP
 	if (!isRecord(cols) || Object.keys(cols).length !== requested.length) return null;
 	for (const name of requested) {
 		const rows = cols[name];
-		if (!Array.isArray(rows) || !rows.every((r) => rowOk(name, r))) return null;
+		if (!Array.isArray(rows)) return null;
 	}
 	const { more, next, cursor } = raw;
 	if (typeof more !== 'boolean') return null;

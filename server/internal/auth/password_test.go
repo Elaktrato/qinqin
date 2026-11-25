@@ -3,20 +3,15 @@ package auth_test
 import (
 	"context"
 	"net/http"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestChangePasswordIsOneTransaction(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
 	keep, _ := auth.NewSession(ctx, sqlDB, u.ID, auth.LoginOptions{})
@@ -52,11 +47,7 @@ func TestChangePasswordIsOneTransaction(t *testing.T) {
 }
 
 func TestVerifyUserPassword(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
 	if ok, err := auth.VerifyUserPassword(ctx, sqlDB, u.ID, "secret-pass-1"); !ok || err != nil {
@@ -68,11 +59,7 @@ func TestVerifyUserPassword(t *testing.T) {
 }
 
 func TestForcePasswordChangeRevokesEverythingAndSetsAWatermark(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
 	admin, _ := auth.CreateUser(ctx, sqlDB, "admin1", "secret-pass-1", true)

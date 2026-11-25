@@ -8,14 +8,13 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // ErrNotFound reports a lesson (or its pack) that does not exist or was
 // removed by a re-import.
-var ErrNotFound = errors.New("grammar lesson not found")
+var ErrNotFound = pack.NotFound("grammar lesson not found")
 
 // ErrNotGrammar reports an Import of a pack whose manifest type is not
 // "grammar"; pack dispatch happens in the seed CLI, which routes by
@@ -65,19 +64,19 @@ type LessonView struct {
 // lesson the pack dropped is soft-deleted, a returning one revived, a
 // changed one updated; an identical pack writes nothing. The data is
 // validated before anything is written.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
+	m := pk.Manifest
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeGrammar {
+	if m.Type != pack.TypeGrammar {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotGrammar, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatJSON {
-		return Result{}, fmt.Errorf("%w: grammar pack format %q is not implemented (want json)", dict.ErrInvalidPack, m.Format)
+	if m.Format != pack.FormatJSON {
+		return Result{}, fmt.Errorf("%w: grammar pack format %q is not implemented (want json)", pack.ErrInvalidPack, m.Format)
 	}
-	data, err := ReadData(pack.Dir)
+	data, err := ReadData(pk.Dir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -86,12 +85,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 		return Result{}, fmt.Errorf("import grammar %s: %w", m.ID, err)
 	}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import grammar %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 
 	packRow, err := upsertPack(ctx, tx, m, string(levelsJSON), stamp)
 	if err != nil {
@@ -173,7 +172,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 // lessons in one transaction; a reinstall revives both (see Import). An
 // unknown or already uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
 	}
@@ -186,7 +185,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
 	}
-	stamp := now()
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE grammar_lessons SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`,
 		stamp, stamp, id); err != nil {
@@ -200,39 +199,11 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 
 // upsertPack inserts or updates the pack row, writing only when a stored
 // field differs (or the pack was deleted), and returns its row id.
-func upsertPack(ctx context.Context, tx *sql.Tx, m dict.Manifest, levelsJSON, stamp string) (int64, error) {
-	var (
-		id                                            int64
-		name, version, language, license, attribution string
-		notice, stored                                string
-		deleted                                       bool
-	)
-	err := tx.QueryRowContext(ctx, `
-		SELECT id, name, version, language, license, attribution, notice, levels_json, deleted_at IS NOT NULL
-		FROM grammar_packs WHERE pack_id = ?`, m.ID).
-		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &stored, &deleted)
-	if errors.Is(err, sql.ErrNoRows) {
-		res, err := tx.ExecContext(ctx, `
-			INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, notice, levels_json, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, levelsJSON, stamp)
-		if err != nil {
-			return 0, fmt.Errorf("insert grammar pack %s: %w", m.ID, err)
-		}
-		return res.LastInsertId()
-	}
+func upsertPack(ctx context.Context, tx *sql.Tx, m pack.Manifest, levelsJSON, stamp string) (int64, error) {
+	id, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "grammar_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language}, pack.Column{Name: "levels_json", Value: levelsJSON})})
 	if err != nil {
-		return 0, fmt.Errorf("read grammar pack %s: %w", m.ID, err)
-	}
-	if deleted || name != m.Name || version != m.Version || language != m.Language || license != m.License ||
-		attribution != m.Attribution || notice != m.Notice || stored != levelsJSON {
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE grammar_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
-				notice = ?, levels_json = ?, updated_at = ?, deleted_at = NULL
-			WHERE id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, levelsJSON, stamp, id); err != nil {
-			return 0, fmt.Errorf("update grammar pack %s: %w", m.ID, err)
-		}
+		return 0, fmt.Errorf("register grammar pack %s: %w", m.ID, err)
 	}
 	return id, nil
 }
@@ -350,9 +321,9 @@ func LessonByID(ctx context.Context, sqlDB *sql.DB, packID, lessonID string) (Le
 	if len(packs) == 0 {
 		return LessonView{}, ErrNotFound
 	}
-	pack := packs[0]
+	pk := packs[0]
 	idx := -1
-	for i, s := range pack.Lessons {
+	for i, s := range pk.Lessons {
 		if s.ID == lessonID {
 			idx = i
 		}
@@ -375,18 +346,12 @@ func LessonByID(ctx context.Context, sqlDB *sql.DB, packID, lessonID string) (Le
 		return LessonView{}, fmt.Errorf("decode grammar lesson %s/%s: %w", packID, lessonID, err)
 	}
 	if idx > 0 {
-		v.Prev = pack.Lessons[idx-1].ID
+		v.Prev = pk.Lessons[idx-1].ID
 	}
-	if idx < len(pack.Lessons)-1 {
-		v.Next = pack.Lessons[idx+1].ID
+	if idx < len(pk.Lessons)-1 {
+		v.Next = pk.Lessons[idx+1].ID
 	}
-	pack.Lessons = nil
-	v.Pack = pack
+	pk.Lessons = nil
+	v.Pack = pk
 	return v, nil
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

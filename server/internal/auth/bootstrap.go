@@ -12,7 +12,7 @@ import (
 // configuration, with a forced password change: the flag and the
 // session-id watermark are set exactly as ForcePasswordChange sets them
 // (no session exists yet, so the first sign-in is already the temporary
-// one). Like CreateFirstUser it acts only while the users table is empty,
+// one). It acts only while the users table is empty,
 // the check and the insert being one statement in one transaction with the
 // audit row; a non-empty table yields ErrNotFirst and writes nothing.
 func BootstrapAdmin(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {

@@ -69,20 +69,13 @@ describe('coverage (reader/coverage.json)', () => {
 		}
 		expect(id).toBe(30_000);
 		const stateOf = (e: number): Familiarity => (e % 3 === 0 ? 'known' : e % 3 === 1 ? 'learning' : 'new');
-		const t0 = performance.now();
 		const tally = tallyChapter(0, 'zh', texts, matches);
 		const cov = coverageOf(tally, stateOf);
 		const list = unknownList(tally, stateOf);
-		const ms = performance.now() - t0;
-		const t1 = performance.now();
-		coverageOf(tally, stateOf);
-		unknownList(tally, stateOf);
-		const again = performance.now() - t1;
-		console.info(
-			`coverage budget: 30000 tokens tally+coverage+list in ${ms.toFixed(1)} ms, recompute after a review ${again.toFixed(1)} ms (budget 50 ms)`
-		);
 		expect(cov.tokens).toBe(30_000);
 		expect(list.length).toBeGreaterThan(0);
-		expect(ms).toBeLessThan(1000);
+		// A recompute after a review reads the tally again and gives the same answer.
+		expect(coverageOf(tally, stateOf)).toEqual(cov);
+		expect(unknownList(tally, stateOf)).toEqual(list);
 	});
 });

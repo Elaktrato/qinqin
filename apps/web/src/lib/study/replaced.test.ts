@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StudyEvent } from '../events';
+import type { StudyEvent } from '$lib/events';
 import fixture from '../../../../../docs/contracts/events/review-replace.json';
 import { DEFAULT_W } from './fsrs/params';
 import { liveReviews } from './replaced';

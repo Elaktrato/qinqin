@@ -4,9 +4,9 @@ Settings → Account → **Your data** lets every user download all their data a
 
 ## Download my data
 
-You get a zip of JSON files (format version 1). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, words you marked as known, your lookup history, your own sentences, library books with bookmarks and highlights, journal entries with their reviews and your journal settings, grammar lesson progress, FSRS parameter sets, the settings that follow your account (appearance, home layout, heatmap layout, reader display), feature and plugin switches with the plugin order, the [milestones](Milestones) you have seen, your time-zone history and your interface language. The file is named `qinqin-<username>-<date>-<time>.zip`. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
+You get a zip of JSON files (format version 2). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, words you marked as known, your lookup history, your own sentences (with the AI examples you kept, still marked AI-written), library books with bookmarks and highlights, journal entries with their reviews, your open journal conversations and your journal settings, grammar lesson progress, FSRS parameter sets, the settings that follow your account (appearance, home layout, heatmap layout, reader display), your feature switches, the [milestones](Milestones) you have seen, your time-zone history, your interface language and your [profile picture](Accounts-and-sign-in#profile-picture) (as the 256 px picture the server keeps). The file is named `qinqin-<username>-<date>-<time>.zip`. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
 
-It never contains: your password, email, sessions, access tokens, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, deleted rows, dictionary and pack content, or data packages. After moving to another server you enter your AI keys again.
+It never contains: your password, email, sessions, access tokens, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, AI example drafts you have not kept and your reports of AI examples (both stay on the server and go with your account), deleted rows, dictionary and pack content, or data packages. After moving to another server you enter your AI keys again.
 
 The download is refused up front (`backup_too_large_to_restore`) if it could not be restored on this server: over 128 MiB zipped, 2 GiB expanded, or 64 MiB for one book.
 
@@ -16,11 +16,13 @@ The [lookup history](Searching-and-entries#lookup-history) is in the download (w
 
 ## Restore from a backup
 
-Restore **replaces all** your data with the backup's, in one transaction: if it fails, nothing changes.
+Restore **replaces all** your data with the backup's, in one transaction: if it fails, nothing changes. Only backups of format 2 restore; a backup made before the plugins were retired (#199) is refused.
 
 1. Choose the zip (at most 128 MiB). The server checks it.
 2. Read the report of what is replaced and what comes back.
 3. Confirm with your password (plus an authenticator or recovery code if you have one) and by typing your username.
+
+The profile picture is replaced too: a backup without one removes your current picture, and the backup's picture is checked and saved again like a new upload.
 
 Before anything changes the server saves your current data to a safety export (newest only, kept 7 days); the app links to it so you can undo a restore. Your other devices are signed out and reload. Your sign-in, password and two-step setup are never touched.
 

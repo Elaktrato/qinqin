@@ -1,0 +1,88 @@
+{
+ "format": "qinqin-user-backup",
+ "formatVersion": 2,
+ "appVersion": "0.3.0",
+ "schemaVersion": "035_user_time_zones",
+ "createdAt": "2026-11-15T12:00:00Z",
+ "user": {
+  "id": 4,
+  "username": "alice"
+ },
+ "counts": {
+  "workspaces": 2,
+  "events": 6,
+  "rows": 12,
+  "overlays": 1,
+  "sentences": 1,
+  "books": 1,
+  "bookmarks": 1,
+  "highlights": 1
+ },
+ "files": [
+  {
+   "name": "account.json",
+   "bytes": 234,
+   "sha256": "92e53537b02bc00ba47e038bb6ab2b1df418b413569c6202eff7d2c070b116a5"
+  },
+  {
+   "name": "events/000001.jsonl",
+   "bytes": 1202,
+   "sha256": "9eae169aea81c182b5e1e4027d166478752c381731c3cf687417d451e9c59d0b"
+  },
+  {
+   "name": "library/bookmarks/000001.jsonl",
+   "bytes": 88,
+   "sha256": "9cfa577c6419216da60b3df260e1bbdb00296b5095cded7e8f5a595c5c875650"
+  },
+  {
+   "name": "library/books.json",
+   "bytes": 295,
+   "sha256": "e76f1da87cd3cbea542f0fd95f2c45e1f2074bdf207f73ea3bdac9835ffbfa85"
+  },
+  {
+   "name": "library/books/3.json",
+   "bytes": 53,
+   "sha256": "ffad8e1bf7c99e534f9206c0e4aa883ecafa4982507440cc2c9bc667ddc62c1d"
+  },
+  {
+   "name": "library/highlights/000001.jsonl",
+   "bytes": 181,
+   "sha256": "a8e55bed617f7b68bd3e8c4e46d987529c5db47e7f300105d00b0994f0abd431"
+  },
+  {
+   "name": "overlays/000001.jsonl",
+   "bytes": 90,
+   "sha256": "e927fc1f9bcbf70a89d7088532e94531fdc0bc6774b8cf6d161ad93055866ad7"
+  },
+  {
+   "name": "refs/dictionaries.json",
+   "bytes": 45,
+   "sha256": "70ec3a7c82d07654b40701cb081af2bda7a7450c6ec019fdf89c561d4f32f6ee"
+  },
+  {
+   "name": "refs/entries.json",
+   "bytes": 107,
+   "sha256": "b9f033c0fa671c64208c5c7a3a68762d1f49bff7cdc167233428115a1c55685b"
+  },
+  {
+   "name": "refs/sentences.json",
+   "bytes": 108,
+   "sha256": "9a5e6b90b8e3ce11a040d9e4f444bce05a62c8951b4a0bcd1d0f83343806958e"
+  },
+  {
+   "name": "rows/000001.jsonl",
+   "bytes": 3120,
+   "sha256": "d07b9de53fa490121f3e004174a413082b61be1146003cbd0b34b9ce83b0d3af"
+  },
+  {
+   "name": "sentences/000001.jsonl",
+   "bytes": 150,
+   "sha256": "7fff25be9a51f008df62dc3653db99edba1a0842083ecd67a5026ba4e0a6ae82"
+  },
+  {
+   "name": "workspaces.json",
+   "bytes": 268,
+   "sha256": "72d8e66c779e3fddd9a732c361226ea94e6a9a33fadb4c4172b229d76bc482c4"
+  }
+ ]
+}

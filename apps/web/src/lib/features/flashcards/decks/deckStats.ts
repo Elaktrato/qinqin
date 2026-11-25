@@ -7,7 +7,7 @@
 // deck on the page, the due counts included.
 
 import { t } from '$lib/i18n';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import { cardScore, MASTERY_THRESHOLD } from '$lib/study/mastery';
 import { dueCounts } from '$lib/study/dueCounts';
 import { isValidReview, scheduleFor, type Schedule } from '$lib/study/scheduler';

@@ -76,6 +76,23 @@ describe('userRows', () => {
 	});
 });
 
+describe('userRows: profile pictures (#189)', () => {
+	const pic = '/api/avatars/2/0123456789abcdef0123456789abcdef';
+	it('carries each user\'s picture and offers Remove profile picture only for one who has one', () => {
+		const rows = userRows([u(1, { admin: true, avatarUrl: '/api/avatars/1/aa' }), u(2, { avatarUrl: pic }), u(3, { avatarUrl: null }), u(4)], 1, now);
+		expect(rows.map((r) => r.avatarUrl)).toEqual(['/api/avatars/1/aa', pic, null, null]);
+		expect(rows[1].actions.find((a) => a.id === 'removePicture')).toEqual({ id: 'removePicture', label: 'Remove profile picture', disabled: false });
+		expect(ids(rows[0])).toContain('removePicture'); // an administrator may remove their own here too
+		expect(ids(rows[2])).not.toContain('removePicture');
+		expect(ids(rows[3])).not.toContain('removePicture');
+	});
+
+	it('removes a picture without asking for the password (moderation, audited)', () => {
+		expect(actionNeedsReauth('removePicture', { admin: false, self: false })).toBe(false);
+		expect(actionNeedsReauth('removePicture', { admin: true, self: false })).toBe(false);
+	});
+});
+
 describe('lastSeenLabel', () => {
 	it('words the age from an injected now', () => {
 		expect(lastSeenLabel(null, now)).toBe('Never');

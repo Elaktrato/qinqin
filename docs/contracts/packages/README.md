@@ -1,7 +1,7 @@
 # Data packages
 
 Every data set a client needs (dictionaries per language, level lists, pack sentences, frequency, components,
-audio, grammar, stroke data) is a versioned, checksummed **package** the server builds from its own database
+audio, grammar, stroke data, lemmatizer rules) is a versioned, checksummed **package** the server builds from its own database
 and serves for download. A package is read-only data: it never holds user rows. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (issue #93). User data travels in the paged pull
 (`docs/contracts/sync/`).
@@ -17,6 +17,8 @@ Fixtures:
 - `manifest.json` — valid manifests (one per type) and invalid ones.
 - `versioning.json` — `server` cases (pack operations → catalogue rows) and `client` cases (`packageAction`).
 - `schemas.json` — the exact `data.sqlite` schema of format 1 per type, and the row order of each table.
+- `pack-types.json` — every data **pack** type (the manifest `type` of a pack an administrator installs) and
+  what it builds; see "Pack types" below.
 
 ## Ids and types
 
@@ -30,11 +32,29 @@ Fixtures:
 | `audio` | `audio.<packId>` | the pack's clips (index and files); `optional: true` | — |
 | `grammar` | `grammar.<packId>` | the pack's lessons and its levels | — |
 | `strokes` | `strokes.<packId>` | the pack's stroke-order data; `languages: ["ja", "zh"]` | — |
+| `lemma-rules` | `lemma-rules.<packId>` | the pack's lemmatizer rule table: one `lemma_rules` row, `rules_json` byte for byte as imported (`docs/contracts/lemma/README.md`, Rule-table packs) | — |
 
 An id matches `catalogue.json` `idPattern`. `.` separates type and pack id (pack ids and language codes have
 no dot). A lexicon package exists per language that has at least one live dictionary; installing or removing
 a dictionary of the language rebuilds it, and removing the last one makes it a tombstone. Every other package
 belongs to exactly one installed pack.
+
+## Pack types (`pack-types.json`)
+
+Packages are built from installed **packs**. `pack-types.json` lists every pack type in the server's order (the
+admin list `GET /api/admin/packs` and the seed order): its language shape (`one`: the manifest states
+`language`; `many`: `languages`; `none`: neither), whether an administrator may install it by an upload
+(`uploadable`; audio packs are seeded), the package type it builds (`package`, `null` for none; the
+dictionaries' `lexicon` is per language), and that package's `requiresLexicon` and `optionalPackage`. The
+server keeps one table of these (`server/internal/pack/types.go`) and a Go test compares it with the fixture; the web
+test `lib/settings/packTypes.contract.test.ts` checks the web knows every type. How the server adds a type:
+[architecture record 0008](../../architecture/0008-pack-types.md). A client meets a pack type it does
+not know only in admin and Sources views; it shows it by its `type` string.
+
+**Data packs are content, not features.** There are no code plugins (#199): a pack id has no feature switch
+and no rows of its own (`features/`, `keyed/`). Packs are listed by
+their own routes (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/sentence-packs`, `/api/audio-packs`, ...;
+`docs/wiki/API-Routes.md`) and, for administrators, `GET /api/admin/packs`; their data by this catalogue.
 
 ## Catalogue: `GET /api/packages[?languages=zh,ja|all]`
 

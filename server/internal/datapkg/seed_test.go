@@ -10,23 +10,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
+// jaRules is the lemma-rules pack's table, byte for byte what its package
+// must carry.
+const jaRules = `{"format": 2, "language": "ja", "version": "t", "maxDepth": 1,
+ "classes": {"v1": {"tags": ["v1"]}}, "hints": {},
+ "rules": [{"from": "た", "to": "る", "reason": "past", "out": "v1"}]}`
 
 // writePack writes a pack directory (manifest fields plus files) and loads it.
-func writePack(t *testing.T, manifest map[string]any, files map[string][]byte) dict.Pack {
+func writePack(t *testing.T, manifest map[string]any, files map[string][]byte) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	if _, ok := manifest["version"]; !ok {
@@ -46,7 +43,7 @@ func writePack(t *testing.T, manifest map[string]any, files map[string][]byte) d
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack %v: %v", manifest["id"], err)
 	}
@@ -75,12 +72,13 @@ type seeded struct {
 // seedAll installs, through packs.Import: two zh dictionaries (zh-a with
 // LICENSE and ATTRIBUTION.md, zh-b without licence files), a ja dictionary,
 // and one levels, sentences, frequency, components, grammar, audio and
-// strokes pack.
+// strokes pack, and a lemma-rules pack (ja-rules).
 func seedAll(t *testing.T) seeded {
 	t.Helper()
+	t.Cleanup(func() { lemma.SetInstalled(nil) }) // ja-rules overlays the built-in table
 	ctx := context.Background()
-	s := seeded{db: newDB(t), audioDir: t.TempDir()}
-	for _, p := range []dict.Pack{
+	s := seeded{db: dbtest.Open(t), audioDir: t.TempDir()}
+	for _, p := range []pack.Pack{
 		writePack(t, map[string]any{"id": "zh-a", "name": "Zh A", "type": "dictionary", "language": "zh", "license": "CC0-1.0", "format": "json", "notice": "Zh A notice."},
 			map[string][]byte{
 				"dictionary.json": []byte(`{"entries":[
@@ -119,6 +117,8 @@ func seedAll(t *testing.T) seeded {
 			}),
 		writePack(t, map[string]any{"id": "hw", "name": "Strokes", "type": "strokes", "languages": []string{"zh", "ja"}, "license": "Arphic Public License", "format": "hanzi-writer-jsonl-gz"},
 			map[string][]byte{"strokes.jsonl.gz": gz(`{"char":"好","data":{"strokes":["M 1 2"]}}` + "\n" + `{"char":"一","data":{"strokes":["M 3 4"]}}` + "\n"), "LICENSE": []byte("Arphic\n")}),
+		writePack(t, map[string]any{"id": "ja-rules", "name": "Ja rules", "type": "lemma-rules", "language": "ja", "license": "CC0-1.0", "format": "rules-json"},
+			map[string][]byte{"rules.json": []byte(jaRules), "LICENSE": []byte("CC0\n")}),
 	} {
 		if _, err := packs.Import(ctx, s.db, p, packs.WithAudioStore(s.audioDir)); err != nil {
 			t.Fatalf("import %s: %v", p.ID, err)

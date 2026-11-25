@@ -1,37 +1,41 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { auth } from '$lib/auth';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { workspaces } from '$lib/workspaces';
 import { PHONE_MEDIA_QUERY } from './breakpoint';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 const sections = frameSections({
 	list: [
-		{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: READER_ID, manifest: {}, enabled: true, order: 0 }
+		{ id: FLASHCARDS_ID, enabled: true },
+		{ id: READER_ID, enabled: true }
 	],
 	status: 'ready'
 });
 
 beforeEach(() => {
-	auth.set({
+	ctx.app.auth.set({
 		token: 'tok',
 		user: { id: 1, username: 'mei', admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
 	const zh = { id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' };
-	workspaces.set({ list: [zh], current: zh });
+	ctx.session.workspaces.set({ list: [zh], current: zh });
 });
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
-	auth.set({ token: null, user: null });
+	ctx.app.auth.set({ token: null, user: null });
 });
 
 describe('PhoneBar', () => {
 	it('menu button named "Open menu" with a tooltip, aria-expanded, and aria-controls the drawer while open', async () => {
-		render(PhoneHarness, { sections, current: 'reader' });
+		render(PhoneHarness, { props: { sections, current: 'reader' }, context: ctx.context });
 		const button = screen.getByRole('button', { name: 'Open menu' });
 		expect(button.getAttribute('aria-expanded')).toBe('false');
 		expect(button.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('Open menu');
@@ -42,7 +46,7 @@ describe('PhoneBar', () => {
 	});
 
 	it('the page title is plain text (pages keep their own h1): the section label', () => {
-		const { container } = render(PhoneHarness, { sections, current: 'reader' });
+		const { container } = render(PhoneHarness, { props: { sections, current: 'reader' }, context: ctx.context });
 		const title = container.querySelector('.title') as HTMLElement;
 		expect(title.textContent).toBe('Reader');
 		expect(title.tagName).not.toMatch(/^H\d$/);
@@ -50,19 +54,19 @@ describe('PhoneBar', () => {
 	});
 
 	it('the order is menu button, title, page actions, flag', async () => {
-		const { container } = render(PhoneHarness, { sections, current: 'reader', page: true });
+		const { container } = render(PhoneHarness, { props: { sections, current: 'reader', page: true }, context: ctx.context });
 		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') ?? b.textContent);
 		expect(order).toEqual(['Open menu', 'Add to deck', 'Workspace: Chinese']);
 	});
 
 	it('the flag opens the workspace menu', async () => {
-		render(PhoneHarness, { sections, current: null });
+		render(PhoneHarness, { props: { sections, current: null }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Workspace: Chinese' }));
 		expect(screen.getByRole('menu', { name: 'Workspaces' })).toBeTruthy();
 	});
 
 	it('a page sets the title and the actions; leaving the page takes both away', async () => {
-		const view = render(PhoneHarness, { sections, current: 'search', page: true, title: true });
+		const view = render(PhoneHarness, { props: { sections, current: 'search', page: true, title: true }, context: ctx.context });
 		const bar = view.container.querySelector('.phone-bar') as HTMLElement;
 		await waitFor(() => expect(bar.querySelector('.title')?.textContent).toBe('学习'));
 		expect(within(bar).getByRole('button', { name: 'Add to deck' })).toBeTruthy();
@@ -93,7 +97,7 @@ describe('PhoneBar', () => {
 		main.tabIndex = -1;
 		document.body.append(main);
 		try {
-			render(PhoneHarness, { sections, current: 'reader' });
+			render(PhoneHarness, { props: { sections, current: 'reader' }, context: ctx.context });
 			await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
 			await screen.findByRole('dialog', { name: 'Menu' });
 			expect(matchMedia).toHaveBeenCalledWith(PHONE_MEDIA_QUERY);
@@ -112,7 +116,7 @@ describe('PhoneBar', () => {
 
 	it('without matchMedia the drawer still opens', async () => {
 		vi.stubGlobal('matchMedia', undefined);
-		render(PhoneHarness, { sections, current: 'reader' });
+		render(PhoneHarness, { props: { sections, current: 'reader' }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
 		expect(await screen.findByRole('dialog', { name: 'Menu' })).toBeTruthy();
 	});
@@ -120,7 +124,7 @@ describe('PhoneBar', () => {
 
 describe('PhoneBar in bottom-bar mode (#188)', () => {
 	it('title, page actions, flag, avatar: no menu button and no drawer', async () => {
-		const { container } = render(PhoneHarness, { sections, current: 'reader', page: true, mode: 'bar' });
+		const { container } = render(PhoneHarness, { props: { sections, current: 'reader', page: true, mode: 'bar' }, context: ctx.context });
 		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
 			(b) => b.getAttribute('aria-label') ?? b.textContent
 		);
@@ -130,13 +134,13 @@ describe('PhoneBar in bottom-bar mode (#188)', () => {
 	});
 
 	it('the avatar opens the account menu (Settings within reach without the drawer)', async () => {
-		render(PhoneHarness, { sections, current: null, mode: 'bar' });
+		render(PhoneHarness, { props: { sections, current: null, mode: 'bar' }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
 		expect(screen.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 	});
 
 	it('side-menu mode is unchanged: menu button first, no avatar in the bar', () => {
-		const { container } = render(PhoneHarness, { sections, current: 'reader', mode: 'drawer' });
+		const { container } = render(PhoneHarness, { props: { sections, current: 'reader', mode: 'drawer' }, context: ctx.context });
 		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
 			(b) => b.getAttribute('aria-label') ?? b.textContent
 		);
@@ -144,7 +148,7 @@ describe('PhoneBar in bottom-bar mode (#188)', () => {
 	});
 
 	it('switching to bottom-bar mode closes an open drawer', async () => {
-		const { rerender } = render(PhoneHarness, { sections, current: 'reader', mode: 'drawer' });
+		const { rerender } = render(PhoneHarness, { props: { sections, current: 'reader', mode: 'drawer' }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
 		await screen.findByRole('dialog', { name: 'Menu' });
 		await rerender({ sections, current: 'reader', mode: 'bar' });

@@ -84,7 +84,12 @@ func DefaultAuthPolicy() AuthPolicy {
 			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 			// Personal exports per user: 6 per hour. Restore uploads per user:
 			// 5 per hour. Server backups (admin): 1 per minute.
-			"export":        {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
+			"export": {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
+			// The public lookup routes (GET /api/lookup, /api/segment/at),
+			// per client address: the reader calls them on taps and
+			// hovers, through a client cache. 300 at once, then 20 a
+			// second.
+			"lookup":        {Burst: 300, Every: 50 * time.Millisecond, MaxKeys: authTableCap},
 			"restore":       {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
 			"server-backup": {Burst: 1, Every: time.Minute, MaxKeys: authTableCap},
 			// Personal access token requests per user, shared by all of the
@@ -135,14 +140,13 @@ func newAuthLimits(p AuthPolicy) *authLimits {
 // hashers are the password-hashing entry points a handler calls; tests
 // swap them through WithAuthHooks to block or count hashes.
 type hashers struct {
-	hash            func(password string) string // a new password's digest (change password)
-	login           func(ctx context.Context, db *sql.DB, user, pass string, o auth.LoginOptions) (auth.LoginResult, error)
-	createFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
-	createUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
+	hash       func(password string) string // a new password's digest (change password)
+	login      func(ctx context.Context, db *sql.DB, user, pass string, o auth.LoginOptions) (auth.LoginResult, error)
+	createUser func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
 }
 
 func defaultHashers() hashers {
-	return hashers{hash: auth.Hash, login: auth.LoginWith, createFirstUser: auth.CreateFirstUser, createUser: auth.CreateUser}
+	return hashers{hash: auth.Hash, login: auth.LoginWith, createUser: auth.CreateUser}
 }
 
 // namedLimiter adapts a Buckets table to the limiter seam.
@@ -219,11 +223,6 @@ func waitText(sec int) string {
 	return unit((sec+59)/60, "minute")
 }
 
-// writeAuthError answers a login/register error as {"error","message"}.
-func writeAuthError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": message})
-}
-
 // writeRateLimited answers 429 rate_limited with Retry-After, worded for
 // sign-in attempts.
 func writeRateLimited(w http.ResponseWriter, retry time.Duration) {
@@ -235,7 +234,7 @@ func writeRateLimited(w http.ResponseWriter, retry time.Duration) {
 func writeRateLimitedAs(w http.ResponseWriter, retry time.Duration, subject string) {
 	sec := retrySeconds(retry)
 	w.Header().Set("Retry-After", strconv.Itoa(sec))
-	writeAuthError(w, http.StatusTooManyRequests, "rate_limited",
+	writeError(w, http.StatusTooManyRequests, "rate_limited",
 		fmt.Sprintf("Too many %s. Try again in %s.", subject, waitText(sec)))
 }
 
@@ -246,7 +245,7 @@ func writeClientGone(w http.ResponseWriter) { w.WriteHeader(499) }
 // writeBusy answers 503 busy with Retry-After: 2.
 func writeBusy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", "2")
-	writeAuthError(w, http.StatusServiceUnavailable, "busy", "The server is busy. Try again in a moment.")
+	writeError(w, http.StatusServiceUnavailable, "busy", "The server is busy. Try again in a moment.")
 }
 
 // logThrottled notes that a layer refused a request. It never names an
@@ -277,9 +276,9 @@ func readAuthBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeAuthError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
 		} else {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+			writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		}
 		return nil, false
 	}

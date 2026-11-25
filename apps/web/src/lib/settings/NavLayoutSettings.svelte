@@ -22,15 +22,18 @@
 		type NavLayoutChange,
 		type PhoneMode
 	} from '$lib/frame/navLayout';
-	import { navLayoutStore, type NavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
+	import { type NavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import { frameSections, homeSection, type FrameSection } from '$lib/frame/sections';
-	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 	import type { MessageKey } from '$lib/i18n';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { Button, Panel, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
+	const session = useSession();
 
 	let {
-		store = navLayoutStore,
+		store = app.navLayout,
 		load = loadNavLayout,
 		save = saveNavLayout
 	}: {
@@ -44,8 +47,8 @@
 		drawer: { label: 'settings.navLayout.mode.drawer', description: 'settings.navLayout.mode.drawerDescription' }
 	};
 
-	const ready = $derived($pluginStates.status === 'ready');
-	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections($pluginStates)]);
+	const ready = $derived(session.features.status === 'ready');
+	const sections = $derived<FrameSection[]>([homeSection(), ...frameSections(session.features)]);
 	const visibleIds = $derived(sections.map((s) => s.id));
 	const phone = $derived(store.phone);
 	const bar = $derived(store.bar);
@@ -63,7 +66,7 @@
 	let touched = false;
 
 	onMount(() => {
-		if ($pluginStates.status === 'idle') void loadPluginStates();
+		if (session.features.status === 'idle') void session.features.load();
 		// Fresh from the server: another device may have changed it.
 		load().then(
 			(fresh) => {

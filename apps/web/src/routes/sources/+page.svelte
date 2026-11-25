@@ -1,30 +1,31 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api/client';
 	import { Button } from '$lib/ui';
-	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
-	import { getComponentPacks } from '$lib/api/components';
+	import type { ComponentPack, Dictionary, FrequencyPack, LemmaPack, Scheme, StrokePack } from '$lib/api/types';
+	import { getComponentPacks, getLemmaPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
 	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
-	import { webPlugins } from '$lib/plugins';
-	import { listGrammar } from '$lib/plugins/grammar/api';
-	import type { PackInfo } from '$lib/plugins/grammar/types';
+	import { coreFeatures } from '$lib/features';
+	import { listGrammar } from '$lib/features/grammar/api';
+	import type { PackInfo } from '$lib/features/grammar/types';
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
 	import { getThemes, type ThemesAnswer } from '$lib/api/themes';
 	import {
 		componentsSection,
+		lemmaSection,
 		creditView,
 		fontsSection,
 		packTable,
-		pluginCredits,
+		featureCredits,
 		sentencePackSources,
 		strokesSection,
 		themesSection,
@@ -32,12 +33,9 @@
 		type PackTable
 	} from '$lib/sources/sections';
 
-	// Credits declared in code: the app's own, and each web plugin's.
+	// Credits declared in code: the app's own, and each core feature's.
 	const coreViews = coreCredits.map(creditView);
-	const plugins = pluginCredits(
-		webPlugins.map((plugin) => plugin.manifest),
-		coreCredits
-	);
+	const features = featureCredits(coreFeatures, coreCredits);
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
@@ -112,6 +110,21 @@
 	let componentPacks = $state<ComponentPack[]>([]);
 	let componentsError = $state('');
 	const components = $derived(componentsSection(componentPacks, componentsError));
+
+	// The Lemmatizer rules section exists only while a rule-table pack is installed.
+	let lemmaPacks = $state<LemmaPack[]>([]);
+	let lemmaError = $state('');
+	const lemmaRules = $derived(lemmaSection(lemmaPacks, lemmaError));
+
+	async function loadLemma(): Promise<void> {
+		lemmaError = '';
+		try {
+			lemmaPacks = await getLemmaPacks();
+		} catch (err) {
+			lemmaPacks = [];
+			lemmaError = message(err, t('sources.error.lemma'));
+		}
+	}
 
 	async function loadComponents(): Promise<void> {
 		componentsError = '';
@@ -218,6 +231,7 @@
 		loadAudio();
 		loadSchemes();
 		loadComponents();
+		loadLemma();
 		loadStrokes();
 		loadThemes();
 		loadFonts();
@@ -490,6 +504,48 @@
 			{/if}
 			<p class="notice">
 				{t('sources.components.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if lemmaRules.show}
+		<section>
+			<h2 id="sources-lemma">{t('sources.lemma.title')}</h2>
+			{#if lemmaError}
+				<p class="error" role="alert">{lemmaError}</p>
+				<Button onclick={loadLemma}>{t('sources.retry')}</Button>
+			{:else}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-lemma">
+					<table class="ui-table" aria-labelledby="sources-lemma">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(lemmaRules.table)}
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each lemmaRules.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(lemmaRules.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>{@render cell(row.license, row.language)}</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(lemmaRules.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.lemma.notice')}
 			</p>
 		</section>
 	{/if}
@@ -788,14 +844,14 @@
 		</p>
 	</section>
 
-	{#if plugins.length > 0}
+	{#if features.length > 0}
 		<section>
-			<h2 id="sources-plugins">{t('sources.plugins.title')}</h2>
-			<p class="lede">{t('sources.plugins.lede')}</p>
-			{#each plugins as plugin (plugin.id)}
-				<h3 class="plugin-name">{plugin.name}</h3>
-				<ul class="credits" aria-label={t('sources.plugins.sources', { name: plugin.name })}>
-					{#each plugin.credits as view (view.name)}
+			<h2 id="sources-features">{t('sources.features.title')}</h2>
+			<p class="lede">{t('sources.features.lede')}</p>
+			{#each features as feature (feature.id)}
+				<h3 class="feature-name">{feature.name}</h3>
+				<ul class="credits" aria-label={t('sources.features.sources', { name: feature.name })}>
+					{#each feature.credits as view (view.name)}
 						{@render credit(view, 'h4')}
 					{/each}
 				</ul>
@@ -917,7 +973,7 @@
 		margin-top: 0;
 	}
 
-	.plugin-name {
+	.feature-name {
 		margin: 1.4rem 0 0.4rem;
 	}
 

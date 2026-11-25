@@ -8,7 +8,7 @@ suffix rewrites, driven by a **rule table** per language. Every language fact li
 Owner code: `server/internal/lemma` (engine, `tables/<lang>.json` embedded in the binary),
 `server/internal/lang` (the `Deinflector` seam: `Ja` runs `ja.json`; a language with a table but no code
 pack gets a generic pack with its table), `server/internal/lookup` (probes, word-class check, compounds,
-ranking keys), `server/internal/segment` (the boundary rule). The web app does not run the engine: it reads
+ranking keys), `server/internal/segment` (the boundary rule), `server/internal/lemmapack` (rule-table packs, below). The web app does not run the engine: it reads
 `/api/segment` and `/api/lookup` (`reader/` contract).
 
 Fixtures:
@@ -17,10 +17,14 @@ Fixtures:
 - `deinflect.json` — Japanese table cases: each `expect` candidate (`form`, `class`, `reasons` in
   application order) must be among `Deinflect(surface)`, no candidate may have a form in `reject`, and
   `none: true` means no candidate at all.
+- `parse.json` — whole files a decoder must accept or refuse: one JSON object only (no trailing data), no
+  duplicate key in any object, no unknown key.
+- `budget.json` — the work budget of one Deinflect call, counted unit for unit, and where a smaller budget
+  stops it ("Bound").
 - `segment.json` — a small lexicon and texts with the tokens the server must produce (boundaries, lemma,
   reason chain, first entry).
 
-Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_lemma_test.go`.
+Go: `server/internal/lemma/contract_test.go`, `server/internal/lemma/budget_test.go`, `server/internal/segment/contract_lemma_test.go`.
 
 ## Table format (`format: 2`)
 
@@ -42,7 +46,8 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
-Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
+A table file is exactly one JSON object (whitespace around it is fine; anything after it is refused) and no
+object in it may name a key twice. Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
 an empty `from` or `reason`, an empty `keepWhole` entry, `maxDepth` outside 1..8 or a `format` outside 1..2 reject
 the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole` and the rule
 flag `chainOnly`; a format-1 table stays valid, and a format-1 table that uses either is rejected.
@@ -65,6 +70,21 @@ A rule `{from, to, reason, in?, out, match?, stem?, chainOnly?}` rewrites a form
   depth, then the order of the form it came from, then rule order. Each candidate carries `reasons`, the
   reasons of its chain in application order (the rule applied to the surface first); the server's
   single `reason` string joins them innermost first (`polite past` for `[past, polite]`).
+- **Bound:** one Deinflect call stops as soon as it has produced **64 candidates** (`MaxCandidates`), or when
+  a cost no longer fits its **work budget of 4,096 units** (`MaxWork`), and returns the candidates produced so
+  far, in the output order above. Every format; no table field. Costs:
+  - a rule is **considered** for a form only when its `from` ends in the form's last code point (other rules
+    are free); each considered (form, rule) pair costs **1**, before the class and `chainOnly` gating;
+  - a pair that passes the gating costs **ceil(runes(from) / 8)** more for its suffix comparison;
+  - a predicate leaf costs **1 + ceil(scanned / 8)**: `minRunes n` scans min(stem runes, n), `notOnly` the stem's
+    runes up to and including the first one outside the script (all of them when there is none), a `notSuffix`
+    entry its own runes. A predicate is evaluated in this order and stops early: `minRunes`, `notOnly`, each
+    `notSuffix` entry, the `allOf` children until one is false, the `anyOf` children until one is true.
+  A cost that does not fit stops the call at once (nothing of it is spent); a predicate cut short produces no
+  candidate. **Growth cap:** a candidate longer than the surface plus **64** code points (`MaxGrowth`) is dropped
+  (free, not expanded). The Japanese table produces at most 16 candidates and spends at most 884 units on the
+  fixture texts, so neither bound changes its output. `budget.json` pins the counting unit for unit (an engine
+  takes the budget as a parameter for it).
 - A candidate is a dictionary form only when an entry's sense has a POS tag of its class
   (`classes`); intermediate classes never match.
 
@@ -76,7 +96,43 @@ least one code point outside the script (so false for an empty stem). `notSuffix
 `katakana` (with `ー`), `han`, `latin`. The script list is fixed by the engine (formats 1 and 2), not by a table:
 a language needing another script (Hangul, Cyrillic) needs an engine change in every client and a format bump.
 
+## Limits
+
+A table over any limit is rejected as a whole, like an unknown key (every format; the built-in tables obey
+them too). Lengths count code points.
+
+| Item | Limit |
+| --- | --- |
+| `language` | a lowercase language code: `^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$` |
+| `version`, a rule's `reason` | 64 |
+| `rules` | 1,024 |
+| `classes` | 64; a class name, a tag or prefix 32; `tags` + `prefixes` of one class 256 |
+| `compounds` | 64 |
+| a rule's `in` | 64 classes |
+| `from`, `to`, a compound `suffix`, a `notSuffix` or `keepWhole` entry | 32 |
+| `hints.keepWhole` | 2,048 entries |
+| `hints.expressionPos`, `hints.particlePos` | 64 entries each, each 32; `readingType` 32 |
+| stem predicate | nesting 4 levels (a predicate alone is level 1); `allOf`, `anyOf` 16 children each; `notSuffix` 256 entries; `minRunes` 0..64 |
+| all predicates of a table (rules and compounds) | 4,096 predicates (each nested one counts) and 4,096 `notSuffix` entries in total |
+
+A rule-table pack's `rules.json` is at most 1 MiB ("Rule-table packs" below).
+
 ## Compounds
+
+**Lookup bounds.** One lookup window (up to 12 code points, every prefix) is bounded too: the Deinflect calls
+of its prefixes share **8,192 units** (each prefix's call gets what is left, at most `MaxWork`; once spent, the
+remaining prefixes are looked up exactly only), the compound stem checks of the window share **4,096 units**, a
+prefix gets at most one compound probe per (stem, class), and the window keeps at most **128 probes** (later ones
+are dropped). The Japanese table needs at most 45 probes and 1,966 units per window on the fixture texts.
+
+**Request budget.** All windows of one segmentation (`/api/segment`, a client segmenting a text) share **16,000,000
+units**: a window may start its two budgets with at most what is left, and its Deinflect units, compound units
+and **16 units per probe beyond the prefix itself** (a deinflected form or a compound stem: one more dictionary
+term) are then taken off. Once nothing is left, every later window of the text is matched **exactly** (no
+deinflection, no compounds): the result is deterministic and the request still succeeds. The Japanese table
+spends about 1.4 million Deinflect units on 5,000 runes of grammar-pack examples with no dictionary match at all
+(a window at every rune, its worst case). A single lookup (`/api/lookup`, `/api/segment/at`) has the window
+bounds only.
 
 For a **deinflected** candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem
 that satisfies the compound's optional `stem` predicate, the stem is looked up too, with the same class
@@ -151,7 +207,33 @@ spec's "Refinements (#177)" says how it was derived); quotation と言って / �
 食べないでください → 食べる [request, te-form, negative]; 食べなくてもいい → 食べる [permission, te-form, negative].
 Godan imperatives are deliberately not deinflected (届け, 構え are nouns far more often).
 
+## Rule-table packs (`lemma-rules`, #176)
+
+A table also ships as a data pack: manifest `type: lemma-rules`, `format: rules-json`, `language` (one), and
+`rules.json`, one table of this format whose `language` equals the manifest's, at most 1 MiB. Design:
+`docs/superpowers/specs/2026-11-23-lemma-rules-pack-design.md`.
+
+- **Precedence:** for a language, the live installed pack's table, else the built-in table, else none. A pack
+  **replaces** the built-in table wholesale (no merging). At most one live pack per language: the server refuses
+  a second pack id for a language with a live pack; the same id again replaces it.
+- **Validation:** `Parse` as above (strict keys, Limits) at upload review and import; a table for a language whose
+  code pack does not run tables (exactly `zh`; `zh-tw` is a separate data-only code) is refused. A stored table that no longer parses (an older engine) is skipped
+  and the built-in applies.
+- **Effect:** immediate. The server swaps the table set after every install or uninstall (and within 30 s of a
+  change another process, `qinqin seed`, made); segmentation and lookups read it per request. `/api/segment`, `/api/segment/at` and `/api/lookup` serve a language with a code pack or
+  with a table in effect.
+- **Package:** `lemma-rules.<packId>` (`docs/contracts/packages/`), table
+  `lemma_rules (language TEXT PRIMARY KEY, rules_json TEXT NOT NULL)`, one row with `rules.json` byte for byte.
+  A client parses `rules_json` with its engine (a `format` above its own: keep the bundled copy) and prefers it
+  to a bundled copy of the same language.
+- **Bundled:** `plugins/data/ja-lemma/rules.json` is byte-identical to `ja.rules.json` and to the embedded table
+  (tests check all three); the server installs it when absent and refreshes it from the image when it differs,
+  never after an uninstall.
+- **Credits:** `GET /api/lemma-packs` (public) lists `{packId, name, version, language, license, attribution,
+  notice}` of every live pack by pack id.
+
 ## Android notes
 
-Bundle `ja.rules.json` until a rule-table package type exists (follow-up); implement the engine and the
-two predicates exactly; check against `deinflect.json` and `segment.json`.
+Bundle `ja.rules.json` as the fallback and prefer a downloaded `lemma-rules` package of the language ("Rule-table
+packs" below); implement the engine, its limits, the candidate bound and the two predicates exactly; check against
+`deinflect.json` and `segment.json`.

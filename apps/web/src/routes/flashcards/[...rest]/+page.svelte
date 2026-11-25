@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The flashcards core feature; FeaturePage shows it or its switched-off notice.
 	import { page } from '$app/state';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import FeaturePage from '$lib/features/FeaturePage.svelte';
 	import { FLASHCARDS_ID, featureById } from '$lib/features';
 

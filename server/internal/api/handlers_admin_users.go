@@ -14,7 +14,7 @@ import (
 func userTarget(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such user.")
+		writeError(w, http.StatusNotFound, "not_found", "No such user.")
 		return 0, false
 	}
 	return id, true
@@ -25,11 +25,11 @@ func userTarget(w http.ResponseWriter, r *http.Request) (int64, bool) {
 func writeUserError(w http.ResponseWriter, err error) bool {
 	switch {
 	case errors.Is(err, auth.ErrUserNotFound):
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such user.")
+		writeError(w, http.StatusNotFound, "not_found", "No such user.")
 	case errors.Is(err, auth.ErrLastAdmin):
-		writeAuthError(w, http.StatusConflict, "last_admin", "The last administrator cannot be removed. Make someone else an administrator first.")
+		writeError(w, http.StatusConflict, "last_admin", "The last administrator cannot be removed. Make someone else an administrator first.")
 	case errors.Is(err, auth.ErrEmailTaken):
-		writeAuthError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
+		writeError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
 	default:
 		return false
 	}
@@ -64,7 +64,7 @@ func (s *server) requireAdminReauth(w http.ResponseWriter, r *http.Request, admi
 // else calls it.
 func (s *server) requireAdminPassword(w http.ResponseWriter, r *http.Request, adminID int64, password string) bool {
 	if password == "" {
-		writeAuthError(w, http.StatusUnprocessableEntity, "password_required", "Enter your own password to confirm this action.")
+		writeError(w, http.StatusUnprocessableEntity, "password_required", "Enter your own password to confirm this action.")
 		return false
 	}
 	refund, ok := s.reauth(w, adminID)
@@ -90,7 +90,7 @@ func (s *server) requireAdminPassword(w http.ResponseWriter, r *http.Request, ad
 		writeInternal(w, r)
 		return false
 	case !good:
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "Your password is wrong.")
+		writeError(w, http.StatusForbidden, "wrong_password", "Your password is wrong.")
 		return false
 	}
 	refund()
@@ -157,22 +157,22 @@ func (s *server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Username = auth.NormalizeUsername(req.Username)
 	if req.Username == "" || req.Password == "" {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
 	}
 	if err := auth.CheckNewUsername(r.Context(), s.db, req.Username); err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidUsername):
-			writeAuthError(w, http.StatusUnprocessableEntity, "invalid_username", auth.PolicyReason(err))
+			writeError(w, http.StatusUnprocessableEntity, "invalid_username", auth.PolicyReason(err))
 		case errors.Is(err, auth.ErrUsernameTaken):
-			writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+			writeError(w, http.StatusConflict, "username_taken", "That username is taken.")
 		default:
 			writeInternal(w, r)
 		}
 		return
 	}
 	if err := auth.CheckPassword(req.Username, req.Password); err != nil {
-		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		writeError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
 	if req.Admin && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
@@ -201,7 +201,7 @@ func (s *server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, errHashBusy):
 		writeBusy(w)
 	case errors.Is(err, auth.ErrUsernameTaken):
-		writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+		writeError(w, http.StatusConflict, "username_taken", "That username is taken.")
 	case err != nil && writeUserError(w, err):
 	case err != nil:
 		writeInternal(w, r)
@@ -239,11 +239,11 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	if req.MustChangePassword != nil && !*req.MustChangePassword {
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_request", "A password change can be required, not cancelled.")
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "A password change can be required, not cancelled.")
 		return
 	}
 	if req.Disabled != nil && *req.Disabled && id == admin.ID {
-		writeAuthError(w, http.StatusConflict, "self_target", "You cannot disable your own account.")
+		writeError(w, http.StatusConflict, "self_target", "You cannot disable your own account.")
 		return
 	}
 	target, err := s.users.GetUser(ctx, id, false)
@@ -265,7 +265,7 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 		if string(req.Email) != "null" {
 			given = new(string)
 			if err := json.Unmarshal(req.Email, given); err != nil {
-				writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+				writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 				return
 			}
 		}
@@ -344,7 +344,7 @@ func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id == admin.ID {
-		writeAuthError(w, http.StatusConflict, "self_target", "You cannot reset your own two-factor authentication here. Use Settings, Account.")
+		writeError(w, http.StatusConflict, "self_target", "You cannot reset your own two-factor authentication here. Use Settings, Account.")
 		return
 	}
 	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
@@ -410,11 +410,11 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id == admin.ID {
-		writeAuthError(w, http.StatusConflict, "self_target", "You cannot delete your own account here. Use Settings, Account.")
+		writeError(w, http.StatusConflict, "self_target", "You cannot delete your own account here. Use Settings, Account.")
 		return
 	}
 	if req.Confirm != target.Username {
-		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type the username exactly to confirm.")
+		writeError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type the username exactly to confirm.")
 		return
 	}
 	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {

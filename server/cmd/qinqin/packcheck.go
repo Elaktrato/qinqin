@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -15,9 +15,9 @@ import (
 // manifest's terms.
 type storedTerms struct{ license, attribution, notice string }
 
-// warnStalePackTerms logs one warning per installed dictionary,
-// frequency pack, level scheme, grammar pack or audio pack whose stored license, attribution or
-// notice differs from its manifest under roots: the Sources page shows
+// warnStalePackTerms logs one warning per installed pack of any type whose
+// stored license, attribution or notice differs from its manifest under
+// roots: the Sources page shows
 // the stored copy, which only `qinqin seed` refreshes. The typical case
 // is an upgrade past migration 024, which adds every notice empty.
 //
@@ -28,17 +28,7 @@ type storedTerms struct{ license, attribution, notice string }
 // directories).
 func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(format string, args ...any)) {
 	stored := map[string]map[string]storedTerms{}
-	for kind, table := range map[string]string{
-		dict.TypeDictionary: "dictionaries",
-		dict.TypeFrequency:  "frequency_packs",
-		dict.TypeLevels:     "schemes",
-		dict.TypeGrammar:    "grammar_packs",
-		dict.TypeAudio:      "audio_packs",
-		dict.TypeComponents: "component_packs",
-		dict.TypeStrokes:    "stroke_packs",
-		dict.TypeTheme:      "theme_packs",
-		dict.TypeFont:       "font_packs",
-	} {
+	for kind, table := range staleCheckTables() {
 		rows, err := loadStoredTerms(ctx, sqlDB, table)
 		if err != nil {
 			logf("pack notice check: read %s: %v", table, err)
@@ -66,23 +56,30 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			if _, err := os.Stat(manifest); err != nil {
 				return nil // not a pack; keep walking
 			}
-			pack, err := dict.LoadPack(path)
+			pk, err := pack.LoadPack(path)
 			if err != nil {
 				logf("pack notice check: skipped %s: %v", path, err)
 				return filepath.SkipDir
 			}
-			m := pack.Manifest
-			id, license, attribution := m.ID, m.License, m.Attribution
-			if m.Type == dict.TypeDictionary {
-				id, license, attribution = dict.RegistryTerms(m)
-			}
-			// Sentence packs store no terms; uninstalled packs have no row.
+			m := pk.Manifest
+			id, license, attribution := packs.RegistryTerms(m)
+			// Uninstalled packs have no row.
 			if got, ok := stored[m.Type][id]; ok && got != (storedTerms{license, attribution, m.Notice}) {
 				logf(`pack %s: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, m.ID, manifest)
 			}
 			return filepath.SkipDir
 		})
 	}
+}
+
+// staleCheckTables maps every pack type to its registry table (the
+// pack-type table, internal/pack): every type stores its terms.
+func staleCheckTables() map[string]string {
+	out := map[string]string{}
+	for _, d := range pack.All {
+		out[d.Type] = d.Registry
+	}
+	return out
 }
 
 // loadStoredTerms reads the installed rows of one registry table by

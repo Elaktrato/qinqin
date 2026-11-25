@@ -264,7 +264,9 @@ describe('library client', () => {
 	});
 
 	it('addHighlight surfaces an overlap (409 with existingId) as HighlightOverlapError', async () => {
-		vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: 'overlaps a highlight', existingId: 12 }, 409));
+		vi.mocked(fetch).mockResolvedValue(
+			jsonResponse({ error: 'highlight_overlap', message: 'The text is already highlighted.', existingId: 12 }, 409)
+		);
 		const err = await addHighlight(3, { chapter: 0, paragraph: 0, start: 0, end: 1, text: 'a', color: 'yellow' }).catch(
 			(e) => e
 		);
@@ -272,18 +274,18 @@ describe('library client', () => {
 		expect(err).toBeInstanceOf(ApiError);
 		expect(err.status).toBe(409);
 		expect(err.existingId).toBe(12);
-		expect(err.message).toBe('overlaps a highlight');
+		expect(err.code).toBe('highlight_overlap');
 	});
 
-	it('addHighlight surfaces the cap (409 without existingId) as a plain ApiError with the server text', async () => {
-		vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: 'too many highlights' }, 409));
+	it('addHighlight surfaces the cap (409 highlight_limit) as a plain ApiError with its code', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: 'highlight_limit', message: 'This book already has 2000 highlights.' }, 409));
 		const err = await addHighlight(3, { chapter: 0, paragraph: 0, start: 0, end: 1, text: 'a', color: 'yellow' }).catch(
 			(e) => e
 		);
 		expect(err).toBeInstanceOf(ApiError);
 		expect(err).not.toBeInstanceOf(HighlightOverlapError);
 		expect(err.status).toBe(409);
-		expect(err.message).toBe('too many highlights');
+		expect(err.code).toBe('highlight_limit');
 	});
 
 	it('addHighlight passes a plain-text 409 and other failures through unchanged', async () => {

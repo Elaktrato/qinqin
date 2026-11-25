@@ -4,7 +4,7 @@ All of this lives in **Settings → Admin** (`/settings?tab=admin`), which only 
 
 ## The first administrator
 
-The very first registration on an empty database always works and makes that person the administrator, in every registration mode. So create the admin before the port is reachable from outside your LAN: with `qinqin adduser --admin --username <name>` in the container, or automatically with `QINQIN_BOOTSTRAP_ADMIN` ([Deploying](Admin-deploying#deploying-with-portainer)), which creates the admin before the port opens. Afterwards the default mode `closed` refuses everyone but an administrator.
+Nobody becomes administrator by registering. On the first start the server creates the administrator `admin` (or the name in `QINQIN_BOOTSTRAP_ADMIN`) before it opens the port and prints a one-time password in its log; that admin must choose a new password at the first sign-in ([Deploying](Admin-deploying#the-bootstrap-administrator)). With `QINQIN_BOOTSTRAP_ADMIN=off` you create the admin with `qinqin adduser --admin --username <name>` in the container; until a user exists, registration is closed whatever the mode. The default mode `closed` refuses everyone but an administrator.
 
 ## Registration and email policy (Admin → Security)
 
@@ -30,6 +30,7 @@ Account rules the server enforces: usernames are 3 to 32 letters, digits, dots, 
 - **Reset link**: shown once, valid 24 hours by default (1 to 168), usable once, one live link per user. Using it sets the password, signs the person out of every device and signs them in on that one. **Revoke reset link** cancels a pending one. Pending links also die with every containment action: a password change, a forced change, disabling, signing out everywhere, `qinqin recover`, using a link.
 - **Require password change**, **Disable** / **Enable**, **Make admin** / **Remove admin**, **Sign out everywhere** (ends the user's sessions and revokes their [access tokens](API-Access-tokens)). Disabling deletes the account's sessions; enabling never brings them back. Forcing a password change signs the user out everywhere.
 - **Reset two-step sign-in**: for someone who lost their authenticator and recovery codes. The action appears only for another user who has a second step (an authenticator app or emailed codes); your own are in Settings → Account. The dialog says what happens: their authenticator app and all its recovery codes are removed, emailed codes are turned off, they are signed out on every device, their personal access tokens are revoked and pending reset links stop working. They then sign in with the password alone, or set up a second step again if the server requires one. Make sure the request really comes from them.
+- **Remove profile picture**: for a user who has one (the list shows each picture beside the name). It asks you to confirm (no password needed) and is recorded in the audit log ("removed the profile picture"); the user can upload a new one.
 - **Delete**: a preview lists what goes (below).
 - **The last active administrator** cannot be demoted, disabled or deleted ("The last administrator cannot be removed"); the server enforces this even when two administrators act at the same moment.
 
@@ -37,9 +38,9 @@ A disabled account answers `account_disabled` when the right password is given, 
 
 ### What deleting an account removes
 
-The same list applies when an administrator deletes someone and when people delete themselves (Settings → Account, with their password and username typed). Removed in one step: workspaces, study events, plugin data (flashcards, journal entries, reader settings), edited dictionary entries, sentences the user added, library books with their bookmarks, highlights and files, journal photo drafts and their files, AI keys and selection, AI usage records, time-zone history, sessions, reset links, and invites the account created.
+The same list applies when an administrator deletes someone and when people delete themselves (Settings → Account, with their password and username typed). Removed in one step: workspaces, study events, flashcards and decks, journal entries with their reviews, topic ideas and settings, grammar progress, settings rows (notes, lookup history, known words, goals, vacations, layouts, appearance), feature switches, edited dictionary entries, sentences the user added, library books with their bookmarks, highlights and files, journal photo drafts and their files, the profile picture and its files, AI keys and selection, AI usage records, time-zone history, sessions, reset links, and invites the account created.
 
-**Kept**: AI endpoints the account registered as administrator (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log (the name in it becomes `deleted user #<id>`). The last active administrator cannot delete themselves.
+**Kept**: AI endpoints the account registered as administrator (their creator becomes nobody), installed packs, languages and dictionaries, and the audit log (the name in it becomes `deleted user #<id>`). The last active administrator cannot delete themselves.
 
 ### Re-authentication
 

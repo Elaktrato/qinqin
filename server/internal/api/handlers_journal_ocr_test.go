@@ -123,11 +123,11 @@ func TestTranscribeRoutes(t *testing.T) {
 	if status, _ = e.transcribe(t, "", e.ws, photo, "ai"); status != 401 {
 		t.Errorf("anonymous: %d", status)
 	}
-	// Neither engine writes plugin data.
+	// Neither engine writes a journal document.
 	var n int
-	e.db.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE plugin_id = 'qinqin-journal'`).Scan(&n)
+	e.db.QueryRow(`SELECT (SELECT COUNT(*) FROM journal_entries) + (SELECT COUNT(*) FROM journal_reviews) + (SELECT COUNT(*) FROM journal_suggestions)`).Scan(&n)
 	if n != 0 {
-		t.Errorf("%d plugin data rows written by transcription", n)
+		t.Errorf("%d journal documents written by transcription", n)
 	}
 }
 

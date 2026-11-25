@@ -3,7 +3,7 @@
 import { t } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
 import type { LookupResult } from '$lib/api/types';
-import { formatReading } from '$lib/format';
+import { formatReading } from '$lib/languages/format';
 
 type Sense = LookupResult['senses'][number];
 type Frequency = LookupResult['frequencies'][number];

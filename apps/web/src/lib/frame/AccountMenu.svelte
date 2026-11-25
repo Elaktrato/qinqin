@@ -9,17 +9,18 @@
 	// change, MFA enrolment) gets Sources (an open page) and Sign out only.
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { user } from '$lib/auth';
 	import { requestSignOut } from '$lib/account/signOut';
-	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
+	import { type ThemeStore } from '$lib/theme/store.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';
 	import MenuItem from '$lib/ui/MenuItem.svelte';
 	import Avatar from './Avatar.svelte';
 	import ThemeMenuItems from './ThemeMenuItems.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
-		store = themeStore,
+		store = app.theme,
 		restricted = false,
 		align = 'end',
 		direction = 'down'
@@ -36,7 +37,9 @@
 	let error = $state('');
 	let wrapper = $state<HTMLElement>();
 
-	const name = $derived($user?.username ?? '');
+	const name = $derived(app.auth.user?.username ?? '');
+	// A restricted session may not fetch pictures (the route refuses it): the letter.
+	const picture = $derived(restricted ? null : (app.auth.user?.avatarUrl ?? null));
 	const themeName = $derived(store.themeOf(store.current.theme)?.name ?? store.current.theme);
 
 	// A closed menu opens at the first level again; opening it clears an
@@ -71,10 +74,10 @@
 
 <div class="account-menu" bind:this={wrapper}>
 	<Menu label={t('nav.account.menu')} bind:open {align} {direction} tooltipPlacement={direction === 'up' ? 'above' : align === 'end' ? 'below-end' : 'below'} triggerClass="avatar-trigger">
-		{#snippet trigger()}<Avatar {name} />{/snippet}
+		{#snippet trigger()}<Avatar {name} src={picture} />{/snippet}
 		{#if level === 'top'}
 			<div class="group" role="group" aria-labelledby="{uid}-who">
-				<div class="who"><Avatar {name} size="l" /><b id="{uid}-who">{name}</b></div>
+				<div class="who"><Avatar {name} size="l" src={picture} /><b id="{uid}-who">{name}</b></div>
 				<MenuItem separator />
 				{#if !restricted}
 					<MenuItem href="/settings" icon="settings">{t('nav.settings')}</MenuItem>
@@ -88,14 +91,14 @@
 							><span>{t('nav.account.theme')}</span> <span class="value">{themeName}<Icon name="forward" size="s" /></span></span
 						></MenuItem
 					>
-					{#if $user?.admin}
+					{#if app.auth.user?.admin}
 						<MenuItem href="/settings?tab=admin" icon="admin">{t('nav.account.adminSettings')}</MenuItem>
 					{/if}
 				{/if}
 				<!-- The open Sources page, for a restricted session too. -->
 				<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
 				<MenuItem separator />
-				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
+				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut(app)}>{t('nav.signOut')}</MenuItem>
 			</div>
 		{:else}
 			<!-- The group only listens for ArrowLeft bubbling from its items (back one level). -->

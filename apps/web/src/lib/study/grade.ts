@@ -5,10 +5,9 @@
 // the review is recorded against the real id addCard returns. A creation
 // failure must leave the queue untouched and record nothing.
 
-import { ApiError } from '../api/client';
+import { errorText } from '$lib/api/apiErrors';
 import { t } from '../i18n';
-import { GENERAL_DECK_ID } from './store';
-import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+import { GENERAL_DECK_ID, type ReviewEvent, type ReviewGrade, type ReviewMeta, type StudyCard, type StudyCardKind } from './types';
 
 /** One queue item as both session modes represent it. */
 export interface GradeableItem {
@@ -34,6 +33,7 @@ export interface GradeEntry {
 
 /** The store write a virtual item needs; injected so tests stay pure. */
 export type AddCard = (
+	workspaceId: number,
 	entryId: number,
 	opts: {
 		kind?: StudyCardKind;
@@ -81,11 +81,6 @@ export type GradeItemResult =
 	  }
 	| { ok: false; error: string };
 
-function message(err: unknown, fallback: string): string {
-	if (err instanceof ApiError && err.message) return err.message;
-	if (err instanceof Error && err.message) return err.message;
-	return fallback;
-}
 
 /**
  * gradeItem performs one grade transaction:
@@ -132,7 +127,8 @@ export async function gradeItem({
 	const isCharacter = entry.kind === 'character';
 	let card: StudyCard;
 	try {
-		card = await addCard(item.entryId, {
+		// The item's workspace (checked above), never the one selected now (#174).
+		card = await addCard(workspaceId, item.entryId, {
 			kind,
 			written: entry.written,
 			...(isCharacter ? { entryKind: 'character' as const } : {}),
@@ -147,7 +143,7 @@ export async function gradeItem({
 	} catch (err) {
 		return {
 			ok: false,
-			error: message(err, t('study.grade.addFailed'))
+			error: errorText(err, t('study.grade.addFailed'))
 		};
 	}
 

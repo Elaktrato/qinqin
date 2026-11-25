@@ -1,9 +1,11 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
-vi.mock('$lib/study/studyData', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));
@@ -14,6 +16,11 @@ import { inPopup } from './popupPointer.svelte';
 import type { HighlightActions } from './highlightUi';
 import type { PopupFrame } from './popupStackCore';
 import type { LookupController } from './useLookup.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const result = {
 	entryId: 5, kind: 'word', term: '故乡', reading: 'gù xiāng', forms: [], readings: [], matched: '故乡', start: 0, end: 2,
@@ -64,7 +71,7 @@ afterEach(() => {
 
 function mount(mode: 'hover' | 'selection' = 'selection', frames: PopupFrame[] = [root]) {
 	const lookup = fakeLookup(mode, frames);
-	render(PopupStackView, { lookup: lookup as unknown as LookupController, studyWorkspaceId: 7, highlighter });
+	render(PopupStackView, { props: { lookup: lookup as unknown as LookupController, studyWorkspaceId: 7, highlighter }, context: ctx.context });
 	return lookup;
 }
 
@@ -118,11 +125,11 @@ describe('the lookup on the phone (#102)', () => {
 	it('inside the sheet the highlight result is a status region (the page live regions are inert)', () => {
 		stubPhone(true);
 		const actions = { ...highlighter, notice: 'Highlight added: 故乡' };
-		render(PopupStackView, {
+		render(PopupStackView, { props: {
 			lookup: fakeLookup('selection', [root]) as unknown as LookupController,
 			studyWorkspaceId: 7,
 			highlighter: actions
-		});
+		}, context: ctx.context });
 		const sheet = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
 		expect(within(sheet).getByRole('status').textContent).toBe('Highlight added: 故乡');
 	});
@@ -130,11 +137,11 @@ describe('the lookup on the phone (#102)', () => {
 	it('a replaced lookup sheet does not close the lookup that replaced it', async () => {
 		stubPhone(true);
 		const lookup = fakeLookup('hover', [root]);
-		const view = render(PopupStackView, {
+		const view = render(PopupStackView, { props: {
 			lookup: lookup as unknown as LookupController,
 			studyWorkspaceId: 7,
 			highlighter
-		});
+		}, context: ctx.context });
 		const old = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
 		// A new root frame (a rotation, a replaced hover root): the old sheet unmounts.
 		await view.rerender({
@@ -168,11 +175,11 @@ describe('the lookup on the phone (#102)', () => {
 			removeEventListener() {}
 		}));
 		const lookup = fakeLookup('hover', [root, { ...root, id: 2, depth: 2, text: '乡' }]);
-		render(PopupStackView, {
+		render(PopupStackView, { props: {
 			lookup: lookup as unknown as LookupController,
 			studyWorkspaceId: 7,
 			highlighter
-		});
+		}, context: ctx.context });
 		// A narrow desktop window with a mouse: the root and its Shift+hover child.
 		expect(screen.getAllByRole('dialog')).toHaveLength(2);
 		change!({ matches: true });

@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/netip"
 	"sync"
@@ -15,17 +15,29 @@ import (
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
 	"qinqin/internal/datapkg"
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/mail"
+	"qinqin/internal/pack"
 	"qinqin/internal/secretbox"
 )
 
 // server carries the shared database handle and data directory for all
 // route handlers.
 type server struct {
+	// segmentHook runs inside POST /api/segment once its slot is taken
+	// (tests); segments counts each user's segmentations in flight.
+	segmentHook func()
+	// aiSlotHook runs inside runAI when the user's AI slot is taken
+	// ("acquired", before the provider call) and just before it is released
+	// ("releasing") (tests).
+	aiSlotHook func(kind, phase string)
+	segments   inFlight
+	// avatarHook runs in POST /api/account/avatar between the decode and
+	// the store (tests).
+	avatarHook func()
+
 	db        *sql.DB
 	dataDir   string
 	sources   []sources.Source
@@ -33,6 +45,7 @@ type server struct {
 	ocr       journal.OCR // nil: offline reading is not installed
 	ocrUse    hourlyUse   // offline reads per user and hour
 	uploadUse hourlyUse   // photo uploads per user and hour
+	avatarUse hourlyUse   // profile picture uploads per user and hour
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
@@ -49,7 +62,7 @@ type server struct {
 	stageStore *stageStore
 	clock      func() time.Time                                          // nil: time.Now (tests set it)
 	importDone chan string                                               // test hook: receives a stage token when its import job ends
-	importPack func(context.Context, *sql.DB, dict.Pack) (string, error) // nil: packs.Import
+	importPack func(context.Context, *sql.DB, pack.Pack) (string, error) // nil: packs.Import
 	// streamEvents writes the legacy GET /api/events array; nil: events.StreamSince.
 	streamEvents func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error
 	sweepCtx     context.Context
@@ -84,6 +97,56 @@ type server struct {
 	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
 	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
+	bgGroup    *Jobs            // the background goroutines (WithBackgroundGroup); nil: not counted
+}
+
+// Jobs is the group of a server's background goroutines (the stage
+// sweeper, staged pack imports, restore validations and restores), so serve
+// can wait for them before it closes the database (#170). Once Wait has
+// begun, no new job starts: a handler still running after a forced close
+// cannot add work nobody waits for. The zero value is ready to use.
+type Jobs struct {
+	mu     sync.Mutex
+	wg     sync.WaitGroup
+	closed bool
+}
+
+// start runs fn in its own goroutine, counted, unless the group is closed.
+func (j *Jobs) start(fn func()) bool {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if j.closed {
+		return false
+	}
+	j.wg.Add(1)
+	go func() {
+		defer j.wg.Done()
+		fn()
+	}()
+	return true
+}
+
+// Wait closes the group to new jobs and waits for the running ones.
+func (j *Jobs) Wait() {
+	j.mu.Lock()
+	j.closed = true
+	j.mu.Unlock()
+	j.wg.Wait()
+}
+
+// WithBackgroundGroup runs every background goroutine of the server in jobs.
+func WithBackgroundGroup(jobs *Jobs) Option { return func(s *server) { s.bgGroup = jobs } }
+
+// goBackground runs fn in its own goroutine, in the background group when
+// there is one; a closed group (shutdown) refuses it.
+func (s *server) goBackground(fn func()) {
+	if s.bgGroup == nil {
+		go fn()
+		return
+	}
+	if !s.bgGroup.start(fn) {
+		log.Printf("background job refused: the server is shutting down")
+	}
 }
 
 // Option configures optional parts of the server.
@@ -151,7 +214,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
-		go s.runStageSweeper()
+		s.goBackground(s.runStageSweeper)
 	}
 	return s
 }
@@ -165,7 +228,7 @@ func (s *server) handler() http.Handler {
 	for _, rt := range s.routes() {
 		mux.HandleFunc(rt.pattern, s.tokenGate(rt))
 	}
-	return mux
+	return recoverPanics(codedUnmatched(mux))
 }
 
 // access is the route's declared policy, checked against the handler's real
@@ -239,6 +302,12 @@ func (s *server) routes() []route {
 		{"POST /api/account/email/resend", s.handleEmailResend, accSession, []string{restrictionMFAEnrollment}, noTok},
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil, noTok},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil, noTok},
+		// Profile pictures (#189): any signed-in user of the server sees a
+		// picture, only its owner (or an administrator) changes it; no tokens.
+		{"POST /api/account/avatar", s.handleUploadAvatar, accUser, nil, noTok},
+		{"DELETE /api/account/avatar", s.handleRemoveAvatar, accUser, nil, noTok},
+		{"GET /api/avatars/{user}/{hash}", s.handleGetAvatar, accUser, nil, noTok},
+		{"DELETE /api/admin/users/{id}/avatar", s.handleAdminRemoveAvatar, accAdmin, nil, noTok},
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil, noTok},
 		{"POST /api/admin/backup", s.handleAdminBackupStart, accAdmin, nil, noTok},
 		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil, noTok},
@@ -269,6 +338,12 @@ func (s *server) routes() []route {
 		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil, noTok},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil, tokWriteAny},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil, tokWriteAny},
+		// AI example sentences (#186): the caller's own AI key; no access tokens.
+		{"GET /api/entries/{id}/examples", s.handleGetExamples, accUser, nil, noTok},
+		{"POST /api/entries/{id}/examples", s.handleGenerateExamples, accUser, nil, noTok},
+		{"POST /api/entries/{id}/examples/{draftId}/keep", s.handleKeepExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/examples/{draftId}", s.handleDiscardExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteAIExample, accUser, nil, noTok},
 		{"GET /api/search", s.handleSearch, accPublic, nil, tokReadGlobal},
 		{"GET /api/segment/at", s.handleSegmentAt, accPublic, nil, tokReadGlobal},
 		{"POST /api/segment", s.handleSegment, accUser, nil, tokReadGlobal},
@@ -294,9 +369,12 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil, noTok},
 		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/component-packs", s.handleListComponentPacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/lemma-packs", s.handleListLemmaPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},
+		{"GET /api/grammar/progress", s.handleListGrammarProgress, accUser, nil, noTok},
+		{"POST /api/grammar/progress", s.handleRecordGrammarRun, accUser, nil, noTok},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil, tokReadAny},
 		{"POST /api/audio/resolve", s.handleAudioResolve, accUser, nil, noTok},
 		{"GET /api/audio/clips/{file}", s.handleAudioClip, accUser, nil, tokReadAny},
@@ -328,7 +406,6 @@ func (s *server) routes() []route {
 		{"GET /fonts/{file}", s.handleFontFile, accPublic, nil, noTok},
 		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
 		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
-		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},
 		{"GET /api/ai/status", s.handleAIStatus, accUser, nil, noTok},
 		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil, noTok},
 		{"PUT /api/ai/keys/{provider}", s.handlePutAIKey, accUser, nil, noTok},
@@ -338,6 +415,14 @@ func (s *server) routes() []route {
 		{"POST /api/ai/custom-providers", s.handleCreateCustomProvider, accAdminSignedIn, nil, noTok},
 		{"PATCH /api/ai/custom-providers/{id}", s.handlePatchCustomProvider, accAdminSignedIn, nil, noTok},
 		{"DELETE /api/ai/custom-providers/{id}", s.handleDeleteCustomProvider, accAdminSignedIn, nil, noTok},
+		{"GET /api/journal/entries", s.handleListJournalEntries, accUser, nil, noTok},
+		{"GET /api/journal/entries/{id}", s.handleGetJournalEntry, accUser, nil, noTok},
+		{"PUT /api/journal/entries/{id}", s.handlePutJournalEntry, accUser, nil, noTok},
+		{"DELETE /api/journal/entries/{id}", s.handleDeleteJournalEntry, accUser, nil, noTok},
+		{"GET /api/journal/entries/{id}/review", s.handleGetJournalReview, accUser, nil, noTok},
+		{"GET /api/journal/suggestions", s.handleGetJournalSuggestions, accUser, nil, noTok},
+		{"GET /api/journal/settings", s.handleGetJournalSettings, accUser, nil, noTok},
+		{"PUT /api/journal/settings", s.handlePutJournalSettings, accUser, nil, noTok},
 		{"POST /api/journal/review", s.handleJournalReview, accUser, nil, noTok},
 		{"POST /api/journal/suggestions", s.handleJournalSuggestions, accUser, nil, noTok},
 		{"GET /api/journal/capabilities", s.handleJournalCapabilities, accUser, nil, noTok},
@@ -346,7 +431,13 @@ func (s *server) routes() []route {
 		{"GET /api/journal/photos/{id}", s.handleGetPhoto, accUser, nil, noTok},
 		{"PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive, accUser, nil, noTok},
 		{"DELETE /api/journal/photos/{id}", s.handleDeletePhoto, accUser, nil, noTok},
-		{"GET /api/plugins", s.handleListPlugins, accUser, nil, tokReadAny},
+		{"GET /api/journal/conversations", s.handleListConversations, accUser, nil, noTok},
+		{"POST /api/journal/conversations", s.handleStartConversation, accUser, nil, noTok},
+		{"GET /api/journal/conversations/{id}", s.handleGetConversation, accUser, nil, noTok},
+		{"DELETE /api/journal/conversations/{id}", s.handleDeleteConversation, accUser, nil, noTok},
+		{"POST /api/journal/conversations/{id}/turn", s.handleConversationTurn, accUser, nil, noTok},
+		{"POST /api/journal/conversations/{id}/save", s.handleSaveConversation, accUser, nil, noTok},
+		{"GET /api/features", s.handleListFeatures, accUser, nil, tokReadAny},
 		{"POST /api/library/upload", s.handleUploadBook, accUser, nil, tokWriteAny},
 		{"GET /api/library/books", s.handleListBooks, accUser, nil, tokReadWS},
 		{"GET /api/library/books/{id}", s.handleGetBook, accUser, nil, tokReadAny},
@@ -365,11 +456,11 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil, noTok},
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
-		{"PUT /api/plugins/{id}/state", s.handleSetPluginState, accUser, nil, tokWriteAny},
-		{"GET /api/plugins/{id}/data", s.handleListPluginData, accUser, nil, tokReadWS},
-		{"GET /api/plugins/{id}/data/{key}", s.handleGetPluginData, accUser, nil, tokReadWS},
-		{"PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData, accUser, nil, tokWriteWS},
-		{"DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData, accUser, nil, tokWriteWS},
+		{"PUT /api/features/{id}", s.handleSetFeature, accUser, nil, tokWriteAny},
+		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
+		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},
+		{"PUT /api/rows/{key}", s.handlePutRow, accUser, nil, tokWriteWS},
+		{"DELETE /api/rows/{key}", s.handleDeleteRow, accUser, nil, tokWriteWS},
 	}
 }
 
@@ -382,58 +473,20 @@ const (
 	// Small JSON bodies. Every route that reads a body caps it, so an
 	// oversized request is a 413 after at most the cap is read, never a
 	// 30 MB read (or a 30 MB row served back on every list and pull).
-	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
-	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
-	maxWorkspaceSettings  = 64 << 10 // the merged settings object stored per workspace (the web client stores audio and reader display settings)
-	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
-	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
-	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
-	// maxPluginDataValue caps one plugin data value, on PUT
-	// /api/plugins/{id}/data/{key} and per item in a sync push. Real
-	// values are far smaller: a flashcards card or deck row is under
-	// 2 KiB, reader preferences a few hundred bytes; the headroom leaves
-	// room for a plugin that keeps a list in one key.
-	maxPluginDataValue = 256 << 10
+	maxAuthBody      = 4 << 10  // POST /api/auth/login and /register: a username and a password
+	maxWorkspaceBody = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
+	maxEntryBody     = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
+	// maxRowValue caps one keyed row value, on PUT /api/rows/{key}, and
+	// per item (keyed or typed) in a sync push. Real values are far
+	// smaller: a card or deck row is under 2 KiB, a layout a few hundred
+	// bytes; the lookup history (500 items) is the largest.
+	maxRowValue = 256 << 10
 
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points
 	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
 	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
-
-// badBody answers a request body that failed to decode: 413 when it
-// exceeded its cap, 400 when it was malformed.
-func badBody(w http.ResponseWriter, err error) {
-	var tooBig *http.MaxBytesError
-	if errors.As(err, &tooBig) {
-		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
-		return
-	}
-	http.Error(w, "malformed request body", http.StatusBadRequest)
-}
-
-// writeTooLarge answers 413 with the JSON error body of the limited
-// routes.
-func writeTooLarge(w http.ResponseWriter) {
-	writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
-}
-
-// readBody reads the whole request body, at most limit bytes. Beyond
-// the cap it stops reading, answers 413 itself (writeTooLarge) and
-// reports false; another read failure is a 400.
-func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
-	body, err := readBodyErr(w, r, limit)
-	if err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			writeTooLarge(w)
-		} else {
-			http.Error(w, "malformed request body", http.StatusBadRequest)
-		}
-		return nil, false
-	}
-	return body, true
-}
 
 // readBodyErr reads the whole request body, at most limit bytes, and
 // leaves the error to the caller.
@@ -449,8 +502,8 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		// The error body is a constant: writeError itself goes through here.
+		status, body = http.StatusInternalServerError, []byte(`{"error":"internal","message":"Internal server error."}`)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

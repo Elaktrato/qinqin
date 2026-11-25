@@ -12,8 +12,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
+	"qinqin/internal/db/step032"
 	"qinqin/internal/db/step038"
-	"qinqin/internal/model"
 )
 
 // goSteps are migration work SQL cannot do. A step runs inside the
@@ -23,9 +23,11 @@ import (
 // checks every key names an embedded migration, so renumbering a file
 // cannot silently skip its step.
 var goSteps = map[string]func(*sql.Tx) error{
-	"032_accounts":   accountsStep,
-	"038_core_study": coreStudyStep,
-	"039_packages":   packagesStep,
+	"032_accounts":         accountsStep,
+	"038_core_study":       coreStudyStep,
+	"039_packages":         packagesStep,
+	"044_journal":          journalStep,
+	"045_grammar_progress": grammarProgressStep,
 }
 
 // packagesStep is the Go half of migration 039: the server's instance id, a
@@ -109,7 +111,7 @@ func fillUsernameKeys(tx *sql.Tx) error {
 	seen := map[string]bool{}
 	skipped := 0
 	for _, x := range all {
-		k := model.UsernameKey(x.name)
+		k := step032.UsernameKey(x.name)
 		if seen[k] {
 			skipped++
 			continue

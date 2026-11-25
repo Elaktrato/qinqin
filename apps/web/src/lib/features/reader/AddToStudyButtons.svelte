@@ -3,14 +3,17 @@
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
-	import { GENERAL_DECK_ID, addCard, setKnownMark } from '$lib/study/store';
-	import { getStudyData, hasCard } from '$lib/study/studyData';
+	import { addCard } from '$lib/study/commands/cards';
+	import { setKnownMark } from '$lib/study/commands/keyed';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { getStudyData, hasCard } from '$lib/study/data';
 	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
-	import { lookupRecorder } from '$lib/lookups/store';
 	import type { Deck } from '$lib/study/types';
 	import { popupWritten } from './browse';
 	import { Button, Chip, Menu, MenuItem } from '$lib/ui';
 	import { bookSentence, resolveBookSentence } from './sentence';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The study actions of one popup entry (design §9 "Reader", #102): the
 	// primary "Add to deck" adds a vocab card to General in one click; with
@@ -62,7 +65,7 @@
 	// The lookup history's hint (#72): the root popup's first result, looked
 	// up often, with no card and no "I know this" mark. The count comes from
 	// the recorder's memory (0 while recording is off); no request per popup.
-	const lookedUp = $derived(first && paragraph !== null ? lookupRecorder().countOf(workspaceId, result.entryId) : 0);
+	const lookedUp = $derived(first && paragraph !== null ? session.lookups.recorder.countOf(workspaceId, result.entryId) : 0);
 	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 	const disabled = $derived(busy || inStudy !== false);
 
@@ -72,7 +75,7 @@
 		let stale = false;
 		inStudy = null;
 		marked = null;
-		getStudyData(ws).then(
+		getStudyData(session.study, ws).then(
 			(data) => {
 				if (stale) return;
 				marked = (data.known ?? []).includes(entryId);
@@ -116,7 +119,7 @@
 		const ws = workspaceId;
 		try {
 			try {
-				if (hasCard((await getStudyData(ws)).cards, entryId)) {
+				if (hasCard((await getStudyData(session.study, ws)).cards, entryId)) {
 					inStudy = true;
 					return;
 				}
@@ -131,11 +134,10 @@
 				sentenceId = saved.sentenceId;
 				if (saved.failed) note = t('reader.study.noSentence');
 			}
-			await addCard(entryId, {
+			await addCard(session.study, ws, entryId, {
 				written: popupWritten(result),
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
-				deckIds: [deckId],
-				workspaceId: ws
+				deckIds: [deckId]
 			});
 			inStudy = true;
 			if (!note) note = t('reader.study.added');
@@ -155,7 +157,7 @@
 		markError = '';
 		marked = next;
 		try {
-			await setKnownMark(workspaceId, result.entryId, next);
+			await setKnownMark(session.study, workspaceId, result.entryId, next);
 		} catch {
 			marked = !next;
 			markError = t('reader.study.markFailed');

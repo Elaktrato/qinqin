@@ -7,11 +7,10 @@ Every signed-in page sits in the same frame. On a screen 720 px wide or more it 
 - **The logo**, on the left, is the link to the home page (its tooltip says "Home"). There is no separate Home icon.
 - **The sections**, in the middle, as icons. Hover or focus one to see its name. In order:
   1. **Search** (also the place of entries and the [lookup history](Searching-and-entries#lookup-history)),
-  2. **Decks** and **Reader**, unless you switched them off in Settings → Features,
-  3. one icon per enabled plugin page, for example **Journal** and **Grammar**, in the order set in Settings → Plugins,
-  4. **Stats**, always last.
+  2. **Decks**, **Reader**, **Journal** and **Grammar**, unless you switched them off in Settings → Features,
+  3. **Stats**, always last.
 
-  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search and Stats show, so a feature you switched off never flashes in. A plugin page brings its own icon, or a generic one.
+  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search and Stats show, so a feature you switched off never flashes in.
 - **On the right**: the flag of the current workspace and your avatar.
 
 ## On a phone (under 720 px)
@@ -63,4 +62,4 @@ A page of a feature you switched off (Decks, Reader) says "You switched this off
 
 ## Old addresses
 
-Links from older versions keep working: `/p/flashcards` opens the Decks page, `/p/reader` the Reader, and `/study/map` opens Stats → Characters.
+Links from older versions keep working: `/p/flashcards` opens the Decks page, `/p/reader` the Reader, `/p/journal` the Journal, `/p/grammar` Grammar, and `/study/map` opens Stats → Characters. Any other `/p/…` address is gone.

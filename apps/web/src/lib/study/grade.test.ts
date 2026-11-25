@@ -6,17 +6,10 @@ import { gradeItem, type GradeableItem } from './grade';
 import { planCompanions } from './companions';
 import { buildQueue } from './scheduler';
 import type { ReviewGrade, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 function card(id: string, entryId: number, written?: string): StudyCard {
-	const result: StudyCard = {
-		id,
-		kind: 'vocab',
-		entryId,
-		deckIds: ['general'],
-		createdAt: '2025-01-01T00:00:00.000Z'
-	};
-	if (written !== undefined) result.written = written;
-	return result;
+	return build.card({ id, entryId, written, createdAt: '2025-01-01T00:00:00.000Z' });
 }
 
 function item(overrides: Partial<GradeableItem> = {}): GradeableItem {
@@ -46,7 +39,7 @@ describe('gradeItem for character entries', () => {
 			recordReview
 		});
 		expect(result.ok).toBe(true);
-		expect(addCard).toHaveBeenCalledWith(11, {
+		expect(addCard).toHaveBeenCalledWith(7, 11, {
 			kind: 'writing',
 			written: '学',
 			entryKind: 'character',
@@ -66,7 +59,7 @@ describe('gradeItem for character entries', () => {
 			addCard,
 			recordReview: vi.fn(async () => {})
 		});
-		const opts = (addCard.mock.calls[0] as unknown as [number, { sentenceId?: number }])[1];
+		const opts = (addCard.mock.calls[0] as unknown as [number, number, { sentenceId?: number }])[2];
 		expect(opts.sentenceId).toBeUndefined();
 		expect(opts).toMatchObject({ entryKind: 'character' });
 	});
@@ -95,7 +88,7 @@ describe('gradeItem', () => {
 
 		expect(result).toEqual({ ok: true, card: created, created: true });
 		expect(calls).toEqual(['add', 'record']);
-		expect(addCard).toHaveBeenCalledWith(42, {
+		expect(addCard).toHaveBeenCalledWith(7, 42, {
 			kind: 'vocab',
 			written: '猫',
 			sentenceId: 9,
@@ -126,7 +119,7 @@ describe('gradeItem', () => {
 			recordReview
 		});
 
-		expect(addCard).toHaveBeenCalledWith(42, {
+		expect(addCard).toHaveBeenCalledWith(7, 42, {
 			kind: 'sentence',
 			written: '猫',
 			sentenceId: 11,
@@ -186,7 +179,7 @@ describe('gradeItem', () => {
 			recordReview
 		});
 
-		expect(result).toEqual({ ok: false, error: 'network down' });
+		expect(result).toEqual({ ok: false, error: 'Could not add this word to your study cards.' });
 		expect(recordReview).not.toHaveBeenCalled();
 	});
 
@@ -248,7 +241,7 @@ describe('gradeItem', () => {
 		});
 
 		expect(result).toEqual({ ok: true, card: created, created: true });
-		expect(addCard).toHaveBeenCalledWith(42, {
+		expect(addCard).toHaveBeenCalledWith(7, 42, {
 			kind: 'tone',
 			written: '猫',
 			sentenceId: undefined,
@@ -268,7 +261,7 @@ describe('gradeItem', () => {
 			addCard,
 			recordReview: vi.fn(async () => {})
 		});
-		expect(addCard).toHaveBeenCalledWith(42, {
+		expect(addCard).toHaveBeenCalledWith(7, 42, {
 			kind: 'writing',
 			written: '猫',
 			sentenceId: undefined,
@@ -295,7 +288,7 @@ describe('gradeItem', () => {
 			addCard,
 			recordReview: vi.fn(async () => {})
 		});
-		expect(addCard).toHaveBeenCalledWith(42, {
+		expect(addCard).toHaveBeenCalledWith(7, 42, {
 			kind: 'tone',
 			written: '猫',
 			sentenceId: undefined,
@@ -307,7 +300,7 @@ describe('gradeItem', () => {
 		const vocab = { ...card('v1', 42, '猫'), deckIds: ['deck-a'] };
 		const plan = { kinds: ['tone' as const], deckIds: ['deck-a'], newBudget: 5 };
 		const [companion] = planCompanions({ cards: [vocab], ...plan });
-		const addCard = vi.fn(async (_id: number, opts: { deckIds?: string[] }) => ({
+		const addCard = vi.fn(async (_ws: number, _id: number, opts: { deckIds?: string[] }) => ({
 			...card('real-5', 42, '猫'),
 			kind: 'tone' as const,
 			deckIds: opts.deckIds ?? []
@@ -322,7 +315,7 @@ describe('gradeItem', () => {
 			recordReview: vi.fn(async () => {})
 		});
 
-		expect(addCard.mock.calls[0][1].deckIds).toEqual(['deck-a']);
+		expect(addCard.mock.calls[0][2].deckIds).toEqual(['deck-a']);
 		if (!result.ok) throw new Error('expected ok');
 		const queue = buildQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards: [vocab, result.card],

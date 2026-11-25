@@ -11,6 +11,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // kanjidic2Fixture is the committed KANJIDIC2 sample, relative to this
@@ -21,7 +22,7 @@ const kanjidic2Fixture = "testdata/kanjidic2-sample.xml"
 // builds around the committed sample. Its own license terms are
 // overridden at import by the built-in kanjidic2 dictionary's — the
 // manifest still validates.
-var kanjidic2Manifest = dict.Manifest{
+var kanjidic2Manifest = pack.Manifest{
 	ID:          "kanjidic2-sample",
 	Name:        "KANJIDIC2 sample",
 	Version:     "1.0",
@@ -34,7 +35,7 @@ var kanjidic2Manifest = dict.Manifest{
 
 // loadKanjidic2Fixture builds the pack around the committed sample: its
 // manifest plus a kanjidic2.xml holding the fixture verbatim.
-func loadKanjidic2Fixture(t *testing.T) dict.Pack {
+func loadKanjidic2Fixture(t *testing.T) pack.Pack {
 	t.Helper()
 	data, err := os.ReadFile(kanjidic2Fixture)
 	if err != nil {
@@ -47,11 +48,11 @@ func loadKanjidic2Fixture(t *testing.T) dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "kanjidic2.xml"), string(data))
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(kanjidic2 sample): %v", err)
 	}
-	return pack
+	return pk
 }
 
 func TestKanjidic2Parse(t *testing.T) {

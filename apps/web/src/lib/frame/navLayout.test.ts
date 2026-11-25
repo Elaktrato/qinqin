@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { find, put } = vi.hoisted(() => ({ find: vi.fn(), put: vi.fn() }));
 
-vi.mock('$lib/plugins/sdk', () => ({
-	createPluginSdk: () => ({ data: { user: () => ({ find, put }) } })
+vi.mock('$lib/sync/keyed', () => ({
+	CORE_NAMESPACE: 'qinqin-core',
+	keyedData: () => ({ find, put })
 }));
 
 import {
@@ -46,7 +47,6 @@ afterEach(() => {
 
 describe('nav-layout contract', () => {
 	it('names the row, the modes, the defaults and the five-item rule', () => {
-		expect(fixture.pluginId).toBe('qinqin-core');
 		expect(fixture.scope).toBe('user-global');
 		expect(NAV_LAYOUT_KEY).toBe(fixture.key);
 		expect([...PHONE_MODES]).toEqual(fixture.phoneModes);

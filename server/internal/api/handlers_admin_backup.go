@@ -30,11 +30,11 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 	}
 	inc, err := backup.ParseInclude(req.Include)
 	if err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", `include may name "db", "books", "packs" and "audio".`)
+		writeError(w, http.StatusBadRequest, "bad_request", `include may name "db", "books", "packs" and "audio".`)
 		return
 	}
 	if s.backups.isServerRunning() {
-		writeAuthError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
+		writeError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
 		return
 	}
 	// The archive holds every password hash: password, and a code from an admin with an authenticator.
@@ -57,7 +57,7 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 
 func (s *server) writeSpaceError(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, backup.ErrInsufficientStorage) {
-		writeAuthError(w, http.StatusInsufficientStorage, "insufficient_storage",
+		writeError(w, http.StatusInsufficientStorage, "insufficient_storage",
 			"There is not enough free space on the data volume for a snapshot of the database. Free some space and try again.")
 		return
 	}
@@ -77,15 +77,14 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Cache-Control", "no-store")
 	uid, extra, ok := s.tickets.consumeExtra(r.PathValue("ticket"), ticketServerBackup, s.now())
 	notFound := func() {
-		writeAuthError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
+		writeError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
 	}
 	if !ok {
 		notFound()
 		return
 	}
-	var admin bool
-	var username string
-	if err := s.db.QueryRowContext(r.Context(), `SELECT admin, username FROM users WHERE id = ? AND disabled_at IS NULL`, uid).Scan(&admin, &username); err != nil || !admin {
+	who, err := auth.ActiveUser(r.Context(), s.db, uid)
+	if err != nil || !who.Admin {
 		notFound()
 		return
 	}
@@ -97,7 +96,7 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	s.backups.mu.Lock()
 	if s.backups.server {
 		s.backups.mu.Unlock()
-		writeAuthError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
+		writeError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
 		return
 	}
 	s.backups.server = true
@@ -119,7 +118,8 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-server", "", now, "tar.gz")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	err = backup.WriteServer(r.Context(), s.db, s.dataDir, inc, tw, backup.Meta{
-		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now})
+		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now,
+		Lock: s.users.WithUserLock}) // the pictures' files match the snapshot
 	if err != nil {
 		log.Printf("backup: server backup failed: %v", err)
 		if !tw.wrote {

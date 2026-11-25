@@ -4,67 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
-	"time"
 
 	"qinqin/internal/auth"
 	chinsync "qinqin/internal/sync"
 )
 
-// handleSyncPull serves GET /api/sync/pull: the paged form with v=2
-// (handleSyncPullV2), the legacy form otherwise.
-//
-// The legacy form, ?cursor= (deprecated, until v0.5.0): every row of the
-// caller changed at or after the RFC 3339 cursor (absent = live rows
-// only), tombstones included, plus the cursor to pull from next time,
-// streamed row by row (sync.StreamLegacy). The optional collections=
-// (comma-separated Delta collection names) limits the pull to those; the
-// others come back empty. An unknown name or a bad cursor is a plain-text
-// 400; a lexicon collection is 400 sync_collection_moved (JSON). The
-// returned cursor is valid only for the collections requested. Answers
-// carry Deprecation and a Link to the paged form. Authenticated.
+// handleSyncPull serves GET /api/sync/pull: the paged form, v=2
+// (handleSyncPullV2). The legacy streaming form (?cursor=, v0.3.x web
+// shells) was removed in #198: any request without v=2 is 404 not_found.
+// Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	p := s.requirePrincipal(w, r)
 	if p == nil {
 		return
 	}
-	u := &p.User
-	q := r.URL.Query()
-	if q.Get("v") == "2" {
-		s.handleSyncPullV2(w, r, p)
+	if r.URL.Query().Get("v") != "2" {
+		writeError(w, http.StatusNotFound, "not_found", "The pull is GET /api/sync/pull?v=2 (docs/contracts/sync/); the legacy form was removed.")
 		return
 	}
-	var cursor time.Time
-	if raw := q.Get("cursor"); raw != "" {
-		t, err := time.Parse(time.RFC3339, raw)
-		if err != nil {
-			http.Error(w, "cursor must be RFC 3339", http.StatusBadRequest)
-			return
-		}
-		cursor = t
-	}
-	only, err := chinsync.ParseCollections(q.Get("collections"))
-	if errors.Is(err, chinsync.ErrMoved) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
-			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
-		return
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	h := w.Header()
-	h.Set("Content-Type", "application/json")
-	h.Set("Deprecation", "true")
-	h.Set("Link", `</api/sync/pull?v=2>; rel="successor-version"`)
-	// A stalled client is cut one window after the last row went out.
-	out := newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)
-	if err := chinsync.StreamLegacy(r.Context(), out, s.db, u.ID, cursor, only); err != nil && r.Context().Err() == nil {
-		// The status and part of the body are out: the JSON stays truncated
-		// and the client retries, as after a network cut.
-		log.Printf("sync pull (legacy) of user %d: %v", u.ID, err)
-	}
+	s.handleSyncPullV2(w, r, p)
 }
 
 // handleSyncPullV2 serves GET /api/sync/pull?v=2: one page of the caller's
@@ -87,16 +46,13 @@ func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, p *aut
 	}
 	switch {
 	case errors.Is(err, chinsync.ErrMoved):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
-			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
 	case errors.Is(err, chinsync.ErrPageInvalid):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_page_invalid",
-			"message": "Start the round again without page. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "sync_page_invalid", "Start the round again without page. "+errDetail(err, chinsync.ErrPageInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found", "message": "No such workspace."})
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
 	case errors.Is(err, chinsync.ErrCursorExpired):
-		writeJSON(w, http.StatusGone, map[string]string{"error": "sync_cursor_expired",
-			"message": "Discard local user data and pull again without since."})
+		writeError(w, http.StatusGone, "sync_cursor_expired", "Discard local user data and pull again without since.")
 	default:
 		writeInternal(w, r)
 	}
@@ -113,10 +69,18 @@ func (s *server) syncCatalogueETag(p *auth.Principal) chinsync.CatalogueFunc {
 	}
 }
 
+// writeStoredUnreadable answers a write onto a stored study row this server
+// cannot read back (study.ErrUnreadableStored): 409 study_row_unreadable,
+// nothing applied (docs/contracts/sync/README.md, "Reading rows").
+func writeStoredUnreadable(w http.ResponseWriter) {
+	writeError(w, http.StatusConflict, "study_row_unreadable",
+		"A stored study row this write would replace was saved in a form this server version cannot read; it is kept unchanged. Update the server or leave the row alone.")
+}
+
 // handleSyncPush serves POST /api/sync/push: a client's offline events,
-// plugin data and typed study rows. Events are idempotent by id; plugin
-// data and typed rows are last-write-wins. A malformed item is 400, a
-// foreign or unknown workspace or plugin is 404, and then nothing in the
+// keyed rows and typed study rows. Events are idempotent by id; keyed and
+// typed rows are last-write-wins. A malformed item is 400, a foreign or
+// unknown workspace is 404, and then nothing in the
 // push is applied; an item above 256 KiB is 413. Authenticated.
 func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -129,16 +93,16 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
-	for _, d := range body.PluginData {
-		if len(d.Data) > maxPluginDataValue {
-			writeTooLarge(w) // the per-value cap of PUT /api/plugins/{id}/data/{key}
+	for _, d := range body.Rows {
+		if len(d.Data) > maxRowValue {
+			writeTooLarge(w) // the per-value cap of PUT /api/rows/{key}
 			return
 		}
 	}
-	// A typed study row replaces a plugin-data row: the same per-item cap.
+	// A typed study row: the same per-item cap.
 	for _, coll := range body.Typed() {
 		for _, item := range coll.Items {
-			if len(item) > maxPluginDataValue {
+			if len(item) > maxRowValue {
 				writeTooLarge(w)
 				return
 			}
@@ -147,11 +111,13 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)
 	switch {
 	case errors.Is(err, chinsync.ErrInvalid):
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
-		http.Error(w, "workspace or plugin not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
+	case errors.Is(err, chinsync.ErrStoredUnreadable):
+		writeStoredUnreadable(w)
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 	default:
 		writeJSON(w, http.StatusOK, res)
 	}

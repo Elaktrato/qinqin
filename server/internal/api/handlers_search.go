@@ -28,7 +28,7 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if raw := params.Get("limit"); raw != "" {
 		limit, err := strconv.Atoi(raw)
 		if err != nil || limit < 0 {
-			http.Error(w, "invalid limit", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Invalid limit.")
 			return
 		}
 		q.Limit = limit
@@ -36,11 +36,11 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	store := lexicon.Store{DB: s.db}
 	hits, err := store.Search(r.Context(), q)
 	if errors.Is(err, lexicon.ErrInvalidQuery) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	es := make([]lexicon.Entry, len(hits))
@@ -49,7 +49,7 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	bases, err := entryBases(r.Context(), store, es)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	ids := make([]int64, len(hits))
@@ -58,7 +58,7 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	lv, err := levels.LowestPerScheme(r.Context(), s.db, ids)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	out := make([]searchHit, len(hits))

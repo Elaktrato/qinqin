@@ -1,10 +1,11 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"qinqin/internal/auth"
 )
 
 type auditRef struct {
@@ -32,54 +33,39 @@ func (s *server) handleAdminAudit(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 || n > 100 {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "limit must be between 1 and 100.")
+			writeError(w, http.StatusBadRequest, "bad_request", "limit must be between 1 and 100.")
 			return
 		}
 		limit = n
 	}
-	before := int64(1<<62 - 1)
+	var before int64
 	if v := r.URL.Query().Get("before"); v != "" {
 		n, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || n < 1 {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "before must be an event id.")
+			writeError(w, http.StatusBadRequest, "bad_request", "before must be an event id.")
 			return
 		}
 		before = n
 	}
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT id, at, action, actor_id, actor_name, target_id, target_name, detail
-		FROM auth_audit WHERE id < ? ORDER BY id DESC LIMIT ?`, before, limit+1)
+	page, err := auth.AuditPage(r.Context(), s.db, before, limit)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	defer rows.Close()
-	events := []auditEntry{}
-	for rows.Next() {
-		var e auditEntry
-		var actorID, targetID sql.NullInt64
-		var actorName, targetName, detail string
-		if err := rows.Scan(&e.ID, &e.At, &e.Action, &actorID, &actorName, &targetID, &targetName, &detail); err != nil {
-			writeInternal(w, r)
-			return
+	events := make([]auditEntry, 0, len(page.Records))
+	for _, rec := range page.Records {
+		e := auditEntry{ID: rec.ID, At: rec.At, Action: rec.Action, Detail: rec.Detail}
+		if rec.ActorID != nil {
+			e.Actor = &auditRef{*rec.ActorID, rec.ActorName}
 		}
-		if actorID.Valid {
-			e.Actor = &auditRef{actorID.Int64, actorName}
+		if rec.TargetID != nil {
+			e.Target = &auditRef{*rec.TargetID, rec.TargetName}
 		}
-		if targetID.Valid {
-			e.Target = &auditRef{targetID.Int64, targetName}
-		}
-		e.Detail = json.RawMessage(detail)
 		events = append(events, e)
 	}
-	if rows.Err() != nil {
-		writeInternal(w, r)
-		return
-	}
 	var next any
-	if len(events) > limit {
-		events = events[:limit]
-		next = events[limit-1].ID
+	if page.Next != nil {
+		next = *page.Next
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"events": events, "next": next})
 }

@@ -9,14 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 var tzNow = time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)
@@ -24,12 +23,8 @@ var tzNow = time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)
 // timeZoneServer serves the API with a fixed clock.
 func timeZoneServer(t *testing.T, now time.Time) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
+	sqlDB := dbtest.Open(t)
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }

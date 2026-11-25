@@ -6,13 +6,14 @@ import (
 	"slices"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 )
 
 // TestOnChangeAfterCommit: WithOnChange hears (type, registry id, language)
 // after an import or an uninstall commits, and nothing after a failure.
 func TestOnChangeAfterCommit(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	var got []string
 	hear := packs.WithOnChange(func(typ, packID, language string) {

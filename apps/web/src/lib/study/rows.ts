@@ -177,9 +177,6 @@ function parseSource(raw: unknown): DeckSource | null | undefined {
 	if (raw.type === 'level' && sameKeys(raw, ['type', 'packId', 'level']) && isStr(raw.packId) && isStr(raw.level)) {
 		return { type: 'level', packId: raw.packId, level: raw.level };
 	}
-	if (raw.type === 'plugin' && sameKeys(raw, ['type', 'pluginId', 'key']) && isStr(raw.pluginId) && isStr(raw.key)) {
-		return { type: 'plugin', pluginId: raw.pluginId, key: raw.key };
-	}
 	if (raw.type === 'frequency' && sameKeys(raw, ['type', 'packId', 'size']) && isStr(raw.packId) && isId(raw.size)) {
 		return { type: 'frequency', packId: raw.packId, size: raw.size };
 	}
@@ -382,21 +379,6 @@ function jsonEqual(a: unknown, b: unknown): boolean {
  */
 export function sameBody(a: StudyRowBody, b: StudyRowBody): boolean {
 	return jsonEqual(bodyOf(a), bodyOf(b));
-}
-
-/**
- * legacyFamily: the typed collection of a legacy qinqin-flashcards key
- * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
- * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
- */
-export function legacyFamily(key: string): StudyCollection | null {
-	if (key.startsWith('card:')) return 'cards';
-	if (key.startsWith('deck:')) return 'decks';
-	if (key.startsWith('deckcfg:')) return 'deckSettings';
-	if (key === 'limits:workspace' || key.startsWith('limits:deck:')) return 'limits';
-	if (key.startsWith('fsrs:set:')) return 'fsrsSets';
-	if (key === 'fsrs:active') return 'fsrsActive';
-	return null;
 }
 
 // ---- typed rows <-> the study layer's shapes

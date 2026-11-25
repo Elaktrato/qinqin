@@ -14,7 +14,7 @@
    "key": "hiddenDictionaries",
    "shape": "array of positive integer dictionary ids",
    "default": [],
-   "owner": "apps/web/src/lib/dictionaryVisibility.ts"
+   "owner": "apps/web/src/lib/workspace/dictionaryVisibility.ts"
   },
   {
    "key": "audioAutoplay",
@@ -250,26 +250,26 @@
   },
   {
    "name": "settings must be an object",
-   "note": "an array (or a scalar) is 400 plain text; nothing changes",
+   "note": "an array (or a scalar) is 400 bad_request; nothing changes",
    "stored": {
     "audioAutoplay": true
    },
    "rawPatch": "[1]",
    "expect": {
     "status": 400,
-    "text": "settings must be an object\n"
+    "error": "bad_request"
    }
   },
   {
    "name": "settings null and no name",
-   "note": "a null settings member counts as absent: 400 plain text",
+   "note": "a null settings member counts as absent: 400 bad_request",
    "stored": {
     "audioAutoplay": true
    },
    "rawPatch": "null",
    "expect": {
     "status": 400,
-    "text": "name or settings required\n"
+    "error": "bad_request"
    }
   },
   {
@@ -284,7 +284,8 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "workspace settings too large"
+     "error": "too_large",
+     "message": "The workspace settings would be larger than 64 KiB."
     }
    }
   },

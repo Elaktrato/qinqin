@@ -6,6 +6,8 @@ import (
 	"database/sql/driver"
 	"sync/atomic"
 	"testing"
+
+	"qinqin/internal/dbtest"
 )
 
 // countingConnector opens connections of an existing driver and counts
@@ -69,7 +71,7 @@ func (c countingConn) ExecContext(ctx context.Context, query string, args []driv
 // costs a constant number of statements whatever the homographs: one
 // batched lookup per category, not one per candidate or per homograph.
 func TestQueriesBounded(t *testing.T) {
-	seeded, path := openDB(t)
+	seeded, path := dbtest.OpenPath(t)
 	importJMdict(t, seeded, jaWords+altWords)
 	importKanjidic(t, seeded)
 	// 生 has three word homographs with their own reading rows, plus a

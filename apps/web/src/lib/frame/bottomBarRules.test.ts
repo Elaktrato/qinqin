@@ -80,7 +80,7 @@ describe('pages keep clear of the bar (phone frame, bar showing)', () => {
 	});
 
 	it('fixed toasts at the bottom of a page rise above the bar', () => {
-		for (const path of ['lib/components/CardManager.svelte', 'routes/study/scheduling/+page.svelte']) {
+		for (const path of ['lib/features/flashcards/decks/CardManager.svelte', 'routes/study/scheduling/+page.svelte']) {
 			expect(read(path)).toContain('max(var(--bottom-bar-space, 0px), env(safe-area-inset-bottom, 0px))');
 		}
 	});

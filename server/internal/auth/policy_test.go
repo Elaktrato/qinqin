@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestCheckPassword(t *testing.T) {
@@ -40,11 +39,7 @@ func TestCheckPassword(t *testing.T) {
 }
 
 func TestCheckNewUsername(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false); err != nil {
 		t.Fatal(err)
@@ -89,11 +84,7 @@ func TestNormalizeUsernameIsNFC(t *testing.T) {
 
 // 'bob' and 'Bob' racing for the name: the unique index lets exactly one in.
 func TestConcurrentCreateUserCaseVariants(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	for round := 0; round < 10; round++ {
 		names := []string{fmt.Sprintf("bob%d", round), fmt.Sprintf("Bob%d", round)}
 		res := make(chan error, 2)

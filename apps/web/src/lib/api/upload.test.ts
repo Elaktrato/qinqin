@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { ApiError, setUnauthorizedHandler } from './client';
+import { ApiError, setApiObserver } from './client';
 import { uploadWithProgress } from './upload';
 import { installStaged, stagedStatus, waitForImport, type StagedStatus } from './packs';
 
@@ -54,7 +54,7 @@ describe('uploadWithProgress', () => {
 	});
 	afterEach(() => {
 		vi.unstubAllGlobals();
-		setUnauthorizedHandler(null);
+		setApiObserver(null);
 	});
 
 	it('sends the bearer token and forwards progress', async () => {
@@ -87,11 +87,36 @@ describe('uploadWithProgress', () => {
 	it('treats a 401 like api(): clears the token and runs the handler once', async () => {
 		const { x, xhr } = setup();
 		const handler = vi.fn();
-		setUnauthorizedHandler(handler);
+		setApiObserver({ unauthorized: handler });
 		const p = uploadWithProgress('/api/admin/packs', new FormData(), { xhr });
 		x.finish(401, 'unauthorized');
 		await expect(p).rejects.toMatchObject({ status: 401 });
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it('tells the workspace-gone and restriction handlers, like api() (#168 review)', async () => {
+		const gone = vi.fn();
+		const restricted = vi.fn();
+		setApiObserver({ workspaceGone: gone, restricted });
+		try {
+			let { x, xhr } = setup();
+			let p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(404, JSON.stringify({ error: 'workspace_not_found', message: 'No such workspace.' }));
+			await expect(p).rejects.toMatchObject({ status: 404, code: 'workspace_not_found' });
+			expect(gone).toHaveBeenCalledTimes(1);
+			({ x, xhr } = setup());
+			p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(403, JSON.stringify({ error: 'password_change_required', message: 'x' }));
+			await expect(p).rejects.toMatchObject({ status: 403 });
+			expect(restricted).toHaveBeenCalledTimes(1);
+			({ x, xhr } = setup());
+			p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(404, JSON.stringify({ error: 'not_found', message: 'x' }));
+			await expect(p).rejects.toMatchObject({ status: 404 });
+			expect(gone).toHaveBeenCalledTimes(1);
+		} finally {
+			setApiObserver(null);
+		}
 	});
 
 	it('aborts through the signal and rejects with AbortError', async () => {

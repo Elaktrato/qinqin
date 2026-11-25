@@ -1,8 +1,11 @@
+
 /**
  * Self-hosted stroke-order data. The server serves the installed strokes
  * package under /hanzi/ with codepoint names (U597D.json, upper-case hex), so
  * the URL is computed rather than shipped as a map. It is not in the web bundle.
  */
+import type { StrokeCache } from '../context/caches';
+
 export function strokeUrl(ch: string): string {
 	const codepoint = ch.codePointAt(0);
 	if (codepoint === undefined) throw new Error('strokeUrl needs a character');
@@ -18,14 +21,9 @@ export type StrokeResult = { kind: 'ok'; data: unknown } | { kind: 'missing' } |
 
 // One promise per character; ok and missing results are cached so a known
 // character is not refetched on every render. Transient errors are not.
-const cache = new Map<string, Promise<StrokeResult>>();
 
-export function resetStrokeDataCache(): void {
-	cache.clear();
-}
-
-export function fetchStrokeData(ch: string, fetchFn: typeof fetch = fetch): Promise<StrokeResult> {
-	const hit = cache.get(ch);
+export function fetchStrokeData(cache: StrokeCache, ch: string, fetchFn: typeof fetch = fetch): Promise<StrokeResult> {
+	const hit = cache.cache.get(ch);
 	if (hit) return hit;
 	const pending = (async (): Promise<StrokeResult> => {
 		let response: Response;
@@ -42,17 +40,18 @@ export function fetchStrokeData(ch: string, fetchFn: typeof fetch = fetch): Prom
 			return { kind: 'missing' };
 		}
 	})();
-	cache.set(ch, pending);
+	cache.cache.set(ch, pending);
 	void pending.then((result) => {
-		if (result.kind === 'error' && cache.get(ch) === pending) cache.delete(ch);
+		if (result.kind === 'error' && cache.cache.get(ch) === pending) cache.cache.delete(ch);
 	});
 	return pending;
 }
 
 export async function loadStrokeData(
+	cache: StrokeCache,
 	ch: string,
 	fetchFn: typeof fetch = fetch
 ): Promise<unknown | null> {
-	const result = await fetchStrokeData(ch, fetchFn);
+	const result = await fetchStrokeData(cache, ch, fetchFn);
 	return result.kind === 'ok' ? result.data : null;
 }

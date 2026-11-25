@@ -1,4 +1,4 @@
-// The seen state of milestones: one qinqin-flashcards row `milestone:<id>`
+// The seen state of milestones: one keyed row `milestone:<id>`
 // per seen milestone (workspace row). Seen is decided by the key alone; a
 // row is written only when its key is not live, never rewritten, never
 // deleted. Offline dismisses wait in a per-user, per-workspace pending list

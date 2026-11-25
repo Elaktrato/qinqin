@@ -6,15 +6,17 @@
 	// menu as on desktop). Following a link or switching closes the drawer
 	// (onnavigate).
 	import { t } from '$lib/i18n';
-	import { user } from '$lib/auth';
 	import Flag from '$lib/components/Flag.svelte';
 	import { workspaceDisplay } from '$lib/languages';
-	import { select, workspaces } from '$lib/workspaces';
 	import Icon from '$lib/ui/Icon.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccountMenu from './AccountMenu.svelte';
 	import { homeSection, type FrameSection } from './sections';
+	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
+	const app = useApp();
 
 	let {
 		sections,
@@ -22,8 +24,8 @@
 		onnavigate
 	}: { sections: readonly FrameSection[]; current: string | null; onnavigate: () => void } = $props();
 
-	const list = $derived($workspaces.list);
-	const active = $derived($workspaces.current);
+	const list = $derived(session.workspaces.list);
+	const active = $derived(session.workspaces.current);
 	const activeDisplay = $derived(active ? workspaceDisplay(list, active) : null);
 	const rows = $derived([homeSection(), ...sections]);
 
@@ -35,7 +37,7 @@
 	}
 
 	function choose(id: number): void {
-		select(id);
+		session.workspaces.select(id);
 		onnavigate();
 	}
 </script>
@@ -81,10 +83,10 @@
 	{/each}
 </nav>
 
-{#if $user}
+{#if app.auth.user}
 	<div class="account">
 		<AccountMenu direction="up" align="start" />
-		<span class="who">{$user.username}</span>
+		<span class="who">{app.auth.user.username}</span>
 		<IconButton href="/settings" label={t('nav.settings')} icon="settings" placement="above" onclick={onnavigate} />
 	</div>
 {/if}

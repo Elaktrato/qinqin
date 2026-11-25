@@ -4,11 +4,11 @@ import {
 	restoreSentence, stageProblem, unresolvedLines, type ApplyForm, type Report
 } from './backupView';
 
-const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
+const zero = { workspaces: 0, events: 0, cards: 0, rows: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
 const report = (o: Partial<Report> = {}): Report => ({
 	backup: { username: 'alice', createdAt: '2026-11-15T12:00:00Z', appVersion: '0.3.0' },
 	replaces: { ...zero, workspaces: 3, events: 9876, cards: 1 }, restores: { ...zero, workspaces: 2, books: 1 },
-	unresolved: { entries: [], entryCount: 0, sentences: 0, droppedRows: 0 }, pluginsNotInstalled: [], reidentifiedEvents: 0,
+	unresolved: { entries: [], entryCount: 0, sentences: 0, droppedRows: 0 }, reidentifiedEvents: 0,
 	blocking: [], warnings: [], bytes: 10, ...o
 });
 const form = (o: Partial<ApplyForm> = {}): ApplyForm => ({
@@ -84,13 +84,29 @@ describe('messages and polling', () => {
 });
 
 describe('clearLocalAfterRestore', () => {
-	it('forgets the workspace and queued reviews and counts the reviews', () => {
-		const m = new Map([['qinqin.workspace', '7'], ['qinqin.study.pending', '[{"a":1},{"a":2}]'], ['qinqin.study.session', '{}'], ['qinqin.token', 't']]);
-		const st = { getItem: (k: string) => m.get(k) ?? null, removeItem: (k: string) => void m.delete(k) };
-		expect(clearLocalAfterRestore(st)).toBe(2);
+	const item = (userId: number | null, id: string) => ({ userId, queuedAt: 't', event: { id, workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } });
+	function store(entries: [string, string][]) {
+		const m = new Map(entries);
+		return { m, st: { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) } };
+	}
+	it('forgets the workspace and the restoring user\'s queued reviews and counts them', () => {
+		const { m, st } = store([['qinqin.workspace', '7'], ['qinqin.study.pending.v2', JSON.stringify([item(1, 'a'), item(1, 'b')])], ['qinqin.study.session', '{}'], ['qinqin.token', 't']]);
+		expect(clearLocalAfterRestore(st, 1)).toBe(2);
 		expect([...m.keys()]).toEqual(['qinqin.token']);
 	});
+	// M1 (#198 review): a shared browser keeps another user's unsent reviews.
+	it('keeps another user\'s queued reviews and counts only the dropped ones', () => {
+		const { m, st } = store([['qinqin.study.pending.v2', JSON.stringify([item(1, 'a'), item(2, 'bob'), item(null, 'u'), item(1, 'c')])]]);
+		expect(clearLocalAfterRestore(st, 1)).toBe(3);
+		expect(JSON.parse(m.get('qinqin.study.pending.v2')!)).toEqual([item(2, 'bob')]);
+	});
+	it('drops nothing of the queue without a known user', () => {
+		const { m, st } = store([['qinqin.study.pending.v2', JSON.stringify([item(2, 'bob')])]]);
+		expect(clearLocalAfterRestore(st, null)).toBe(0);
+		expect(JSON.parse(m.get('qinqin.study.pending.v2')!)).toEqual([item(2, 'bob')]);
+	});
 	it('survives broken storage content', () => {
-		expect(clearLocalAfterRestore({ getItem: () => '{not json', removeItem: () => { throw new Error('x'); } })).toBe(0);
+		expect(clearLocalAfterRestore({ getItem: () => '{not json', setItem: () => {}, removeItem: () => { throw new Error('x'); } }, 1)).toBe(0);
 	});
 });
+

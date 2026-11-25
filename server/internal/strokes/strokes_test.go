@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"os"
@@ -13,20 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/strokes"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // Invented stroke data in the hanzi-writer-data shape (not its content).
 const (
@@ -42,7 +31,7 @@ func line(char, data string) string {
 
 // writePack writes a strokes pack directory with the given jsonl body
 // (gzipped) and loads it.
-func writePack(t *testing.T, id, version string, languages []string, jsonl string) dict.Pack {
+func writePack(t *testing.T, id, version string, languages []string, jsonl string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]any{
@@ -60,7 +49,7 @@ func writePack(t *testing.T, id, version string, languages []string, jsonl strin
 	if err := os.WriteFile(filepath.Join(dir, strokes.DataFile), buf.Bytes(), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -71,7 +60,7 @@ func threeChars() string { return line("⺀", dataRad) + line("一", dataYi) + l
 
 func TestImportThreeCharacters(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	r, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "2.0.1", []string{"zh", "ja"}, threeChars()))
 	if err != nil {
 		t.Fatalf("Import: %v", err)
@@ -101,7 +90,7 @@ func TestImportThreeCharacters(t *testing.T) {
 
 func TestLookupMissingChar(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, ok, err := strokes.Lookup(ctx, sqlDB, "好"); ok || err != nil {
 		t.Errorf("Lookup on an empty store = %v, %v; want false, nil", ok, err)
 	}
@@ -127,13 +116,13 @@ func TestMalformedLineFailsWholeImport(t *testing.T) {
 		"empty pack":         "",
 	} {
 		t.Run(name, func(t *testing.T) {
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			// A good pack first: a failed re-import must leave it as it was.
 			if _, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "1", []string{"zh"}, line("一", dataYi))); err != nil {
 				t.Fatal(err)
 			}
 			_, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "2", []string{"zh"}, body))
-			if !errors.Is(err, dict.ErrInvalidPack) {
+			if !errors.Is(err, pack.ErrInvalidPack) {
 				t.Fatalf("Import = %v, want ErrInvalidPack", err)
 			}
 			var n int
@@ -149,7 +138,7 @@ func TestMalformedLineFailsWholeImport(t *testing.T) {
 
 func TestTwoPacksByOrd(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "first", "1", []string{"zh"}, line("好", dataHao))); err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +170,7 @@ func TestTwoPacksByOrd(t *testing.T) {
 
 func TestUninstall(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if err := strokes.Uninstall(ctx, sqlDB, "hw"); !errors.Is(err, strokes.ErrNotFound) {
 		t.Errorf("Uninstall of an unknown pack = %v, want ErrNotFound", err)
 	}
@@ -216,7 +205,7 @@ func TestUninstall(t *testing.T) {
 
 func TestIdenticalReimportWritesNothing(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "1", []string{"zh"}, threeChars())); err != nil {
 		t.Fatal(err)
 	}
@@ -245,15 +234,15 @@ func TestIdenticalReimportWritesNothing(t *testing.T) {
 
 func TestImportRejectsOtherTypesAndFormats(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	p := writePack(t, "hw", "1", []string{"zh"}, threeChars())
-	p.Type = dict.TypeComponents
-	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	p.Type = pack.TypeComponents
+	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("components pack: Import = %v, want ErrInvalidPack", err)
 	}
 	p = writePack(t, "hw", "1", []string{"zh"}, threeChars())
 	os.Remove(filepath.Join(p.Dir, strokes.DataFile))
-	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("missing data file: Import = %v, want ErrInvalidPack", err)
 	}
 }
@@ -262,7 +251,7 @@ func TestImportRejectsOtherTypesAndFormats(t *testing.T) {
 // a fresh database has it on, and Live tells whether any pack serves.
 func TestUninstallTurnsAutoInstallOff(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	off, err := strokes.AutoInstallOff(ctx, sqlDB)
 	if err != nil || off {
 		t.Fatalf("fresh database: off = %v, %v", off, err)
@@ -295,7 +284,7 @@ func TestUninstallTurnsAutoInstallOff(t *testing.T) {
 	if off, _ := strokes.AutoInstallOff(ctx, sqlDB); !off {
 		t.Fatal("a reinstall turned auto-install back on")
 	}
-	fresh := newDB(t)
+	fresh := dbtest.Open(t)
 	if err := strokes.Uninstall(ctx, fresh, "nope"); !errors.Is(err, strokes.ErrNotFound) {
 		t.Fatalf("unknown uninstall: %v", err)
 	}

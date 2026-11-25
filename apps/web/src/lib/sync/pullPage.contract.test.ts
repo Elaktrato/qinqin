@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
 
 import pageFixture from '../../../../../docs/contracts/sync/pull-page.json';
 import roundsFixture from '../../../../../docs/contracts/sync/pull-rounds.json';
 import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
 import { normalizeUrl } from '../pwa/sw/classify';
-import { firstPageUrl, nextPageUrl, parsePullPage, pullAll, V2_STUDY_COLLECTIONS } from './pager';
+import { firstPageUrl, nextPageUrl, parsePullPage, pullAll } from './pager';
+import { readableRow } from './rows';
 
 interface PageCase {
 	name: string;
 	valid: boolean;
 	reason?: string;
+	/** "row": a bad row inside a good envelope (the reader skips the row, keeps the page). */
+	level?: 'row';
 	requested: string[];
 	position?: 'first' | 'middle' | 'last' | 'only';
 	page: unknown;
@@ -18,7 +22,7 @@ const cases = pageFixture.cases as PageCase[];
 
 describe('docs/contracts/sync/pull-page.json', () => {
 	it('keeps the study collection list of the fixture', () => {
-		expect([...V2_STUDY_COLLECTIONS]).toEqual(pageFixture.studyCollections);
+		expect([...STUDY_PULL_COLLECTIONS]).toEqual(pageFixture.studyCollections);
 	});
 	for (const c of cases) {
 		it(`${c.valid ? 'decodes' : 'refuses'}: ${c.name}${c.reason ? ` (${c.reason})` : ''}`, () => {
@@ -29,11 +33,28 @@ describe('docs/contracts/sync/pull-page.json', () => {
 				else expect(page?.scope).toBeNull();
 				if (c.position === 'last' || c.position === 'only') expect(page?.cursor).not.toBeNull();
 				else expect(page?.next).not.toBeNull();
+				for (const name of c.requested) {
+					for (const row of (c.page as { collections: Record<string, unknown[]> }).collections[name]) {
+						expect(readableRow(name, row), `${name} row`).toBe(true);
+					}
+				}
+			} else if (c.level === 'row') {
+				// The envelope is fine: the page decodes and exactly the bad rows are unreadable.
+				expect(page).not.toBeNull();
+				const rows = Object.entries((c.page as { collections: Record<string, unknown[]> }).collections).flatMap(
+					([name, list]) => list.map((row) => readableRow(name, row))
+				);
+				expect(rows.filter((ok) => !ok).length, 'one unreadable row').toBe(1);
 			} else {
 				expect(page).toBeNull();
 			}
 		});
 	}
+	it('marks every row-shape case as level row', () => {
+		const rowReasons = new Set(cases.filter((c) => c.level === 'row').map((c) => c.reason));
+		expect(rowReasons.size).toBeGreaterThan(3);
+		for (const c of cases) if (!c.valid && rowReasons.has(c.reason)) expect(c.level, c.name).toBe('row');
+	});
 });
 
 describe('pull-rounds.json requests are expressible by the client', () => {
@@ -105,8 +126,8 @@ describe('docs/contracts/events/envelope.json: pull v2 never ships lookup events
 		expect(posted.length).toBeGreaterThan(shipped.length);
 		for (const ev of posted) {
 			const page = structuredClone(template!.page) as { collections: { events: Record<string, unknown>[] } };
-			page.collections.events = [{ ...page.collections.events[0], type: ev.type }];
-			expect(parsePullPage(page, template!.requested) !== null, ev.type).toBe(shipped.includes(ev.type));
+			const row = { ...page.collections.events[0], type: ev.type };
+			expect(readableRow('events', row), ev.type).toBe(shipped.includes(ev.type));
 		}
 	});
 });

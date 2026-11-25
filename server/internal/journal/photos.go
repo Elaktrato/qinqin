@@ -39,7 +39,7 @@ type Photo struct {
 
 // Photos stores the temporary photos: a row in journal_photos and the file
 // Dir/<userId>/<id>.jpg (mode 0600). Photos are never synced or put in
-// plugin data.
+// keyed rows.
 type Photos struct {
 	DB  *sql.DB
 	Dir string

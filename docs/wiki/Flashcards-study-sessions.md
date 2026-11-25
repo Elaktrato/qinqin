@@ -6,7 +6,7 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 
 A session starts from **Study** on a deck of the Decks page, from the flashcards widget on the home page, or from the study setup (`/study`).
 
-The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and each deck's daily limit for that one session, so every due review and new card is included. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
+The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; the button is enabled when that session would hold something. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
 
 Below that:
 
@@ -28,10 +28,10 @@ Choose **Grouped by type** to drill one type at a time: reviews first, then the 
 
 ### Level sessions
 
-Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, a curriculum pack) and one of its levels; each level shows how far you are ("HSK 2 — 3 of 80 learned", by the same rule as Stats → Characters). A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
+Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, 通用规范汉字表) and one of its levels; each level shows how far you are ("HSK 2 — 3 of 80 learned", by the same rule as Stats → Characters). A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
 
 - **Word levels** study vocab cards only; the other card types apply to deck sessions.
-- **Character levels** (JLPT kanji, Jōyō grades, 通用规范汉字表) have two cards per character: **Vocab** (recognition: the glyph alone, then its readings and meanings) and **Writing** (the readings and meanings, then write the glyph). A character's writing card joins a session only from the learner day after its recognition card was first reviewed; a writing-only session has no such wait. Characters without stroke data or meanings get no writing card. The new-card limit counts cards, not characters.
+- **Character levels** (JLPT kanji, Jōyō grades, 通用规范汉字表) have two cards per character: **Vocab** (recognition: the glyph alone, then its readings and meanings) and **Writing** (the readings and meanings, then write the glyph). A character's writing card joins a session only from the learner day after its recognition card was first reviewed; a writing-only session has no such wait. Characters without stroke data or meanings get no writing card, and neither does a character whose writing card you removed (as in deck sessions). The new-card limit counts cards, not characters.
 
 ## Card types
 
@@ -49,6 +49,8 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, a curri
 - **Tone** swipes: up = 1; up-right or right = 2; down then back up = 3; down-right, down, down-left or left = 4; a tap = neutral (5). A character with several readings accepts any of them (行 can be háng or xíng).
 
 ### Companion cards
+
+An example sentence an AI wrote for you ([AI examples](Searching-and-entries#ai-examples), the ones you kept) is marked **AI-written** on every card that shows it: Word Salad, cloze and the vocab answer. Kept AI examples come after the dictionary's own examples, so a word with enough curated examples uses those first.
 
 Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session); the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
 

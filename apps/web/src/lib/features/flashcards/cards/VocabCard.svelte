@@ -1,5 +1,6 @@
 <script lang="ts">
-	import ReadingTable from '$lib/components/ReadingTable.svelte';
+	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
+	import AiTag from '$lib/components/AiTag.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import type { Entry } from '$lib/api/types';
@@ -27,14 +28,14 @@
 	// A sentence id that no longer resolves is passed as null so the card
 	// simply has no sentence block. A virtual level card previews the
 	// sentence it will be created with.
-	const faces = $derived.by(() => {
-		const sentence = item.virtual
+	const shownSentence = $derived(
+		item.virtual
 			? (entry.sentences[0] ?? null)
 			: item.card?.sentenceId === undefined
 				? null
-				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null);
-		return buildVocabFaces(entry, sentence, entry.language);
-	});
+				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null)
+	);
+	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language));
 
 	// The prompt is the word alone; its readings and example sentence belong
 	// to the answer, below the hairline (design §9, #101).
@@ -77,6 +78,7 @@
 		{#each faces.back.sentenceLines as line, lineIndex (lineIndex)}
 			<p class="sentence">{line}</p>
 		{/each}
+		{#if faces.back.sentenceLines.length > 0}<AiTag ai={shownSentence?.ai} />{/if}
 		{#if faces.back.glosses.length > 0}
 			{#each faces.back.glosses as group (group.dictionaryName)}
 				<article class="dictionary">

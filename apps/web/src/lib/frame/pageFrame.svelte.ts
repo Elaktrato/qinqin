@@ -10,6 +10,7 @@
 //
 //   <script>
 //     import { setFrameTitle, setPageActions } from '$lib/frame/pageFrame.svelte';
+//     (they read the app context's frame, so call them during component init)
 //     setFrameTitle(() => entry.written);
 //     setPageActions(actions);
 //   </script>
@@ -22,50 +23,47 @@
 // One page owns the slot at a time (the last caller wins).
 
 import type { Snippet } from 'svelte';
-import { APP_NAME } from '$lib/app';
+import { APP_NAME } from '$lib/frame/app';
+import { useApp } from '$lib/context/context';
 import { t } from '$lib/i18n';
 import type { FrameSection } from './sections';
 import { homeSection } from './sections';
 
-const slots = $state<{ title: string | null; actions: Snippet | null }>({ title: null, actions: null });
-// Which component's title is showing, so an old page's teardown never
-// clears the title the next page has already set.
-let titleOwner: object | null = null;
+/** PageFrame: the frame's slots, one per tab (the app context's `frame`, record 0009). */
+export class PageFrame {
+	title = $state<string | null>(null);
+	actions = $state.raw<Snippet | null>(null);
+	// Which component's title is showing, so an old page's teardown never
+	// clears the title the next page has already set.
+	titleOwner: object | null = null;
+}
 
 /** setFrameTitle sets the phone bar's title while the calling component is mounted. */
 export function setFrameTitle(text: string | (() => string)): void {
+	const frame = useApp().frame;
 	const read = typeof text === 'function' ? text : () => text;
 	const owner = {};
 	$effect(() => {
-		titleOwner = owner;
-		slots.title = read();
+		frame.titleOwner = owner;
+		frame.title = read();
 		return () => {
-			if (titleOwner !== owner) return;
-			titleOwner = null;
-			slots.title = null;
+			if (frame.titleOwner !== owner) return;
+			frame.titleOwner = null;
+			frame.title = null;
 		};
 	});
 }
 
 /** setPageActions puts a snippet into the phone bar while the calling component is mounted. */
 export function setPageActions(actions: Snippet): void {
+	const frame = useApp().frame;
 	$effect(() => {
-		slots.actions = actions;
+		frame.actions = actions;
 		return () => {
-			if (slots.actions === actions) slots.actions = null;
+			if (frame.actions === actions) frame.actions = null;
 		};
 	});
 }
-
-/** The frame reads the slots (lib/frame/PhoneBar.svelte). */
-export const pageFrame = {
-	get title(): string | null {
-		return slots.title;
-	},
-	get actions(): Snippet | null {
-		return slots.actions;
-	}
-};
 
 // The pages of no section (the account menu's and the account flows'):
 // the same catalogue text as their document titles. pageFrame.test.ts

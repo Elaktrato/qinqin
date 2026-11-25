@@ -5,7 +5,7 @@ Issues #88 (vacation mode) and #89 (daily limits). Rule source:
 `docs/contracts/study-day/`. Every client (web, Android) implements these rules and runs the fixtures in
 this folder. Fixtures win over code. Fixture format: see `docs/contracts/README.md`.
 
-## Storage rows (study namespace `qinqin-flashcards` plugin data, and the typed `limits` collection)
+## Storage rows (keyed rows, `keyed/`, and the typed `limits` collection)
 
 - `vacation:<ULID>` is **user-global** (no `workspace` on write, `workspaceId: null` in the sync pull):
   `{version:1, id, start, end|null, scope:"all"|{workspaces:[int,...]}, createdDay, createdAt}`. Dates are
@@ -14,9 +14,9 @@ this folder. Fixtures win over code. Fixture format: see `docs/contracts/README.
 - Daily limits are typed `limits` rows (`study/README.md`): `{deckId: null (the workspace) | "<deckId>"
   (the `general` deck included), new: null | {limit}, reviews: same}`, workspace-scoped. A limit is an
   integer 0..9999 or `null` (unlimited); a field that is `null` (not set) falls back (deck -> workspace ->
-  default 20 new / 200 reviews). Their legacy form (old shells, backups, `limits-rows.json`) is
-  `limits:workspace` / `limits:deck:<deckId>` = `{version:1, new?, reviews?}` with the same fall-back for a
-  missing or unusable field.
+  default 20 new / 200 reviews); `limits-rows.json` pins the defaults and the fall-back. Backups carry them in
+  the keyed form `limits:workspace` / `limits:deck:<deckId>` = `{version:1, new?, reviews?}`
+  (`backup/study-rows.json`).
 
 ## Vacation days and edits (`vacation-days.json`)
 
@@ -62,10 +62,9 @@ Grades map 1 Again, 2 Hard, 3 Good, 4 Easy. States: 0 New, 1 Learning, 2 Review,
   with `reason` `notNumbers` | `nonFinite` | `length` | `range` and the 1-based position. `1e999` in the file
   is Infinity: read the file with a parser that maps it so (a JSON import that makes it `null` does not test the
   rule).
-- **Parameter sets** (`paramSet` cases; `parseParamSet`): an `fsrs:set:<id>` row is valid only when the key
-  names its `id`, `createdAt` is a string, `source` is `optimized` or `imported`, `w` is exactly 21 numbers that
-  pass the weight check, and `labelled`, `logLoss`, `baselineLogLoss` are absent or finite numbers (`null` is
-  invalid). The parsed set holds the migrated weights; an invalid row is ignored.
+- **Parameter sets** are typed `fsrsSets` rows (`study/rows.json` pins their structure); a set whose `w` fails
+  the weight check is unusable (the web's `setOf` gives null). The keyed `fsrs:set:<id>` parse and its
+  `paramSet` cases went with the v0.3 layer (#198).
 - **Active set** (`resolve` cases; `resolveState`): sets are listed newest first (`createdAt` descending, then
   `id` descending). `fsrs:active {setId}` names the active set; a missing row, a `setId` that is not a string, or a
   `setId` naming no valid set means the default weights (`pointer` still reports a string `setId`).
@@ -168,7 +167,7 @@ fixture fixes the bucket and the value, not the string. Fixtures win over code.
 
 ## Android and other clients
 
-Read the user-global `vacation:*` plugin rows (they arrive with `workspaceId: null`) and the typed `limits`
+Read the user-global `vacation:*` keyed rows (they arrive with `workspaceId: null`) and the typed `limits`
 and `fsrsSets`/`fsrsActive` rows from one pull that names those collections. Use the learner's day for every date here, port
 `v` and `inverse` with whole-day shifts (`n * 86 400 000 ms`, never the run's real length), feed ts-fsrs
 `f_i = max(v(ts_i), f_{i-1})`, map the due back with `inverse`, keep the instant due rule

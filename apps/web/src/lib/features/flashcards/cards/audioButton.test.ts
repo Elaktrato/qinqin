@@ -1,11 +1,17 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
 import type { CardAudio } from '$lib/study/audioCue';
 import type { FlowItem } from '$lib/study/cardFlow';
 import ToneCard from './ToneCard.svelte';
 import VocabCard from './VocabCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const entry = {
 	id: 1,
@@ -32,30 +38,30 @@ const text = (html: string) => html.replace(/<!--[^>]*-->/g, '');
 
 describe('VocabCard audio', () => {
 	it('has no play button before the answer is revealed (it would give the answer away)', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: false, onDone: noop, audio } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: false, onDone: noop, audio } } });
 		expect(text(body)).not.toContain('Play pronunciation');
 	});
 	it('shows it after the reveal', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
 		expect(text(body)).toContain('aria-label="Play pronunciation of 你好"');
 	});
 	it('shows the credit as visible text after the reveal, not only as a tooltip', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
 		expect(text(body)).toMatch(/<p class="credit[^"]*">Audio: A · CC0<\/p>/);
-		const before = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: false, onDone: noop, audio } } });
+		const before = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: false, onDone: noop, audio } } });
 		expect(text(before.body)).not.toContain('class="credit');
 	});
 	it('keeps the play button out of the answer heading', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
 		const h2 = /<h2[^>]*>[\s\S]*?<\/h2>/.exec(text(body))?.[0] ?? '';
 		expect(h2).not.toContain('button');
 	});
 	it('names the word in the button label', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop, audio } } });
 		expect(text(body)).toContain('aria-label="Play pronunciation of 你好"');
 	});
 	it('shows none without audio', () => {
-		const { body } = render(CardHarness, { props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop } } });
+		const { body } = render(CardHarness, { context: ctx.context, props: { card: VocabCard, cardProps: { item, entry, revealed: true, onDone: noop } } });
 		expect(text(body)).not.toContain('Play pronunciation');
 	});
 });
@@ -63,9 +69,9 @@ describe('VocabCard audio', () => {
 describe('ToneCard audio', () => {
 	const toneItem = { ...item, kind: 'tone' } as unknown as FlowItem;
 	it('shows the play button only once the card is done', () => {
-		const before = render(CardHarness, { props: { card: ToneCard, cardProps: { item: toneItem, entry, done: false, onDone: noop, audio } } });
+		const before = render(CardHarness, { context: ctx.context, props: { card: ToneCard, cardProps: { item: toneItem, entry, done: false, onDone: noop, audio } } });
 		expect(text(before.body)).not.toContain('Play pronunciation');
-		const after = render(CardHarness, { props: { card: ToneCard, cardProps: { item: toneItem, entry, done: true, onDone: noop, audio } } });
+		const after = render(CardHarness, { context: ctx.context, props: { card: ToneCard, cardProps: { item: toneItem, entry, done: true, onDone: noop, audio } } });
 		expect(text(after.body)).toContain('aria-label="Play pronunciation of 你好"');
 		expect(text(after.body)).toMatch(/class="credit/);
 	});

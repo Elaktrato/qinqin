@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import GoalRing from '$lib/goals/GoalRing.svelte';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
@@ -13,7 +13,6 @@
 	import type { VacationPeriod } from '$lib/study/vacation';
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import {
@@ -23,16 +22,17 @@
 		loadExtraChoices,
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights } from '$lib/study/store';
+	import { loadStudyHistory } from '$lib/study/data';
+	import { activeWeights } from '$lib/study/readModel';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { GENERAL_DECK_ID } from '$lib/study/store';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
-	import { workspaces } from '$lib/workspaces';
+	import { useSession } from '$lib/context/context';
 
+	const session = useSession();
 	// The home widget mirrors the study setup for its limits and card
 	// types; it counts every deck in the workspace, so a saved deck
 	// selection cannot hide cards from the status line.
@@ -44,7 +44,7 @@
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	// Vacation days and the study clock of this workspace (rebuilt at midnight).
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	let loading = $state(true);
 	let error = $state('');
@@ -62,7 +62,7 @@
 			(goal.today.status !== 'none' || (goal.today.unavailable && goal.activityError === null))
 	);
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
 
 	// The card types a session would study: this tab's setup, else the
@@ -91,8 +91,8 @@
 	});
 
 	// The learner's day rule; a zone change recomputes XP and the streak.
-	let studyDay = $state.raw(currentStudyDay());
-	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+	let studyDay = $state.raw(session.zone.day());
+	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
 	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const vacationText = $derived(
@@ -124,22 +124,22 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (history.ts).
-			const data = await loadStudyHistory(workspace, { force });
+			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, workspace);
+			ctx = contextForData(session.zone, data, workspace);
 			vacations = data.vacations ?? [];
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
 			cards = [];
 			reviews = [];
-			error = errorMessage(err, t('flashcards.widget.loadError'));
+			error = errorText(err, t('flashcards.widget.loadError'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -152,7 +152,7 @@
 			return;
 		}
 		try {
-			const next = await loadGoalStatus(workspace, { force });
+			const next = await loadGoalStatus(session, workspace, { force });
 			if (seq === goalSeq) goal = next;
 		} catch {
 			if (seq === goalSeq) goal = null;
@@ -166,7 +166,7 @@
 		void loadGoal(workspaceId);
 	});
 	$effect(() =>
-		onContextStale(() => {
+		onContextStale(session.zone, () => {
 			void load(workspaceId);
 			void loadGoal(workspaceId);
 		})

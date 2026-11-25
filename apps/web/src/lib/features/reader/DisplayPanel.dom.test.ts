@@ -1,8 +1,14 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import DisplayPanel from './DisplayPanel.svelte';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
 import type { Variant } from './variants';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 afterEach(cleanup);
 
@@ -19,7 +25,7 @@ function mount(
 	const onchange = vi.fn();
 	const ontoggleAll = vi.fn();
 	const onscript = vi.fn();
-	render(DisplayPanel, {
+	render(DisplayPanel, { props: {
 		display: { ...DEFAULT_DISPLAY, ...over },
 		hasBookRuby: props.hasBookRuby ?? true,
 		showAll: props.showAll ?? false,
@@ -28,7 +34,7 @@ function mount(
 		error: props.error,
 		notice: props.notice,
 		script: props.script ? { ...props.script, onchange: onscript } : undefined
-	} as never);
+	} as never, context: ctx.context });
 	return { onchange, ontoggleAll, onscript };
 }
 

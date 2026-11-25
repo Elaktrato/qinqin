@@ -176,8 +176,8 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	[
 		'settings.home.parked',
 		{},
-		'stays in your layout while the plugin is disabled and comes back when you enable it under Plugins.',
-		'stay in your layout while the plugin is disabled and come back when you enable it under Plugins.'
+		'stays in your layout while its feature is switched off and comes back when you switch it on under Features.',
+		'stay in your layout while their feature is switched off and come back when you switch it on under Features.'
 	],
 	// settings, part 2 (Task 16)
 	['settings.tokens.expiresInDays', {}, 'Expires in 1 day', 'Expires in 2 days'],
@@ -189,10 +189,11 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['admin.delete.preview.workspaces', {}, '1 workspace', '2 workspaces'],
 	['admin.delete.preview.studyEvents', {}, '1 recorded review and study event', '2 recorded reviews and study events'],
 	['admin.delete.preview.cards', {}, '1 flashcard, with its decks and study settings', '2 flashcards, with their decks and study settings'],
-	['admin.delete.preview.pluginData', {}, '1 other saved item (journal entries, notes, known words, settings)', '2 other saved items (journal entries, notes, known words, settings)'],
+	['admin.delete.preview.keyedRows', {}, '1 other saved item (notes, known words, settings)', '2 other saved items (notes, known words, settings)'],
 	['admin.delete.preview.books', {}, '1 book in the library, with its bookmarks and highlights', '2 books in the library, with their bookmarks and highlights'],
 	['admin.delete.preview.overlays', {}, '1 edited dictionary entry', '2 edited dictionary entries'],
 	['admin.delete.preview.sentences', {}, '1 sentence they added', '2 sentences they added'],
+	['admin.delete.preview.journalEntries', {}, '1 journal entry, with its review', '2 journal entries, with their reviews'],
 	['admin.delete.preview.journalPhotos', {}, '1 journal photo draft', '2 journal photo drafts'],
 	['admin.delete.preview.aiKeys', {}, '1 stored AI key', '2 stored AI keys'],
 	['admin.delete.preview.sessions', {}, '1 signed-in session', '2 signed-in sessions'],
@@ -305,10 +306,10 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	// the rest (Task 21)
 	['stats.map.tipCards', {}, '1 card', '2 cards'],
 	['stats.wordStateSummary.text', { parts: '1 new' }, '1 word: 1 new', '2 words: 1 new'],
-	// built-in plugin manifests (Task 22)
-	['plugin.qinqinCore.activity.review.count', { n: '7' }, '7 flashcard review', '7 flashcard reviews'],
-	['plugin.qinqinCore.activity.read.count', { n: '7' }, '7 minute of reading', '7 minutes of reading'],
-	['plugin.qinqinJournal.activity.journal.count', { n: '7' }, '7 journal entry', '7 journal entries']
+	// the activity sources (#199)
+	['activity.source.review.count', { n: '7' }, '7 flashcard review', '7 flashcard reviews'],
+	['activity.source.read.count', { n: '7' }, '7 minute of reading', '7 minutes of reading'],
+	['activity.source.journal.count', { n: '7' }, '7 journal entry', '7 journal entries']
 ];
 
 describe('catalogue plurals keep their English', () => {

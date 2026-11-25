@@ -1,6 +1,6 @@
 # Grammar lessons
 
-**Grammar** (`/p/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a built-in feature plugin: it is on for everyone until you switch it off in [Settings → Plugins](Settings-tour#plugins), and the order number there sets its place in the navigation.
+**Grammar** (`/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a core feature: it is on for everyone until you switch it off in [Settings → Features](Settings-tour#features). Your best score of each lesson is kept on the server.
 
 ## What there is to learn
 

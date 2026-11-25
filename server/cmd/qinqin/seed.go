@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -94,27 +94,16 @@ func (f *rootsFlag) Set(v string) error {
 // seedPack is one pack found under the packs directory.
 type seedPack struct {
 	dir  string
-	pack dict.Pack
+	pack pack.Pack
 }
 
-// importOrder ranks pack types for seeding. Dictionaries — including the
-// character data of cedict, unihan, kanjidic2, and jmdict — come first:
-// frequency, level and sentence packs refer to existing entries and skip
-// the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences follow; grammar, audio, components, strokes,
-// theme and font packs, which refer to no entries at import time, come last.
-var importOrder = map[string]int{
-	dict.TypeDictionary: 0,
-	dict.TypeFrequency:  1,
-	dict.TypeLevels:     2,
-	dict.TypeSentences:  3,
-	dict.TypeGrammar:    4,
-	dict.TypeAudio:      5,
-	dict.TypeComponents: 6,
-	dict.TypeStrokes:    7,
-	dict.TypeTheme:      8,
-	dict.TypeFont:       9,
-}
+// importRank ranks pack types for seeding: the pack-type table's order
+// (internal/pack). Dictionaries — including the character data of
+// cedict, unihan, kanjidic2, and jmdict — come first: frequency, level and
+// sentence packs refer to existing entries and skip the unknown ones, so
+// they must follow; the types that refer to no entries at import time come
+// last.
+func importRank(typ string) int { return pack.Index(typ) }
 
 // seed imports every pack under the roots into sqlDB through
 // packs.Import, which dispatches on each manifest's type (audio clips go to
@@ -138,15 +127,12 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 	return seedPacks(ctx, sqlDB, dataDir, found, out)
 }
 
-// seedPacks imports the found packs in seed's order (see seed), warns about
-// user data first, and builds the data packages afterwards. The caller
-// decides which packs are in found.
+// seedPacks imports the found packs in seed's order (see seed) and builds
+// the data packages afterwards. The caller decides which packs are in
+// found.
 func seedPacks(ctx context.Context, sqlDB *sql.DB, dataDir string, found []seedPack, out io.Writer) error {
-	if err := warnEntryIDUsers(ctx, sqlDB, out); err != nil {
-		return err
-	}
 	sort.SliceStable(found, func(i, j int) bool {
-		ri, rj := importOrder[found[i].pack.Type], importOrder[found[j].pack.Type]
+		ri, rj := importRank(found[i].pack.Type), importRank(found[j].pack.Type)
 		if ri != rj {
 			return ri < rj
 		}
@@ -165,35 +151,6 @@ func seedPacks(ctx context.Context, sqlDB *sql.DB, dataDir string, found []seedP
 		fmt.Fprintf(out, "%-14s %-10s %s\n", p.pack.ID, p.pack.Type, line)
 	}
 	return buildPackages(ctx, builder, out)
-}
-
-// flashcardsPack is the plugin_data namespace of the study rows; its
-// card:<id> rows (leftovers since migration 038) store an entryId.
-const flashcardsPack = "qinqin-flashcards"
-
-// warnEntryIDUsers prints a WARNING line to out when the database holds
-// user edits or flashcards: both store entry ids, and a development
-// database from before the dictionary rebuild (migration 017) keeps ids
-// that now point at different entries — silently. Nothing is deleted.
-func warnEntryIDUsers(ctx context.Context, sqlDB *sql.DB, out io.Writer) error {
-	var edits, cards int
-	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM user_edits`).Scan(&edits); err != nil {
-		return fmt.Errorf("seed: count user edits: %w", err)
-	}
-	// Live typed cards (migration 038), plus leftover card rows the
-	// migration could not read: both store an entry id.
-	if err := sqlDB.QueryRowContext(ctx, `
-		SELECT (SELECT COUNT(*) FROM study_cards WHERE deleted_at IS NULL) + (SELECT COUNT(*) FROM plugin_data
-		WHERE pack_id = ? AND key LIKE 'card:%' AND deleted_at IS NULL)`, flashcardsPack).Scan(&cards); err != nil {
-		return fmt.Errorf("seed: count flashcards: %w", err)
-	}
-	if edits == 0 && cards == 0 {
-		return nil
-	}
-	fmt.Fprintf(out, "WARNING: this database has %d user edit(s) and %d flashcard(s), which refer to entries by id. "+
-		"If it predates the lexicon rebuild (migration 017), those ids now point at different entries: "+
-		"delete the data directory (or at least qinqin.db) and seed again.\n", edits, cards)
-	return nil
 }
 
 // findPacks loads every pack directory under each of roots; a root that
@@ -222,11 +179,11 @@ func findPacksIn(root string) ([]seedPack, error) {
 		if _, err := os.Stat(filepath.Join(path, "manifest.json")); err != nil {
 			return nil // not a pack; keep walking
 		}
-		pack, err := dict.LoadPack(path)
+		pk, err := pack.LoadPack(path)
 		if err != nil {
 			return fmt.Errorf("load pack %s: %w", path, err)
 		}
-		found = append(found, seedPack{dir: path, pack: pack})
+		found = append(found, seedPack{dir: path, pack: pk})
 		return filepath.SkipDir
 	})
 	if err != nil {

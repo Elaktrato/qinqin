@@ -1,49 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import type { PluginInfo } from '$lib/api/types';
-import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { webPlugins, type WebPlugin } from '$lib/plugins';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID } from '$lib/features';
+import type { FeatureSwitch } from '$lib/features/switches.svelte';
 import { currentSection, frameSections, homeSection, iconOf } from './sections';
 
-function state(id: string, order: number, enabled = true): PluginInfo {
-	return { id, manifest: {}, enabled, order };
+function state(id: string, enabled = true): FeatureSwitch {
+	return { id, enabled };
 }
-const ready = (list: PluginInfo[]) => ({ list, status: 'ready' as const });
-const all = ready([
-	state(FLASHCARDS_ID, 0),
-	state(READER_ID, 0),
-	state('qinqin-journal', 0),
-	state('qinqin-grammar', 1)
-]);
+const ready = (list: FeatureSwitch[]) => ({ list, status: 'ready' as const });
+const all = ready([state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)]);
 
 describe('frameSections', () => {
-	it('shows only Search and Stats before the plugin states are ready (nothing switched off flashes in)', () => {
+	it('shows only Search and Stats before the switches are ready (nothing switched off flashes in)', () => {
 		for (const status of ['idle', 'loading', 'error'] as const) {
 			expect(frameSections({ list: [], status }).map((s) => s.id)).toEqual(['search', 'stats']);
 		}
 	});
 
-	it('Search first, then core features and plugin pages in the user order, Stats last', () => {
+	it('Search first, then the core features in their fixed order, Stats last', () => {
 		const sections = frameSections(all);
 		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'stats']);
 		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'stats']);
 		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
-		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/p/journal', '/p/grammar', '/stats']);
-		const swapped = frameSections(ready([state('qinqin-journal', 3), state('qinqin-grammar', 1)]));
-		expect(swapped.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'grammar', 'journal', 'stats']);
+		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/stats']);
+		// A feature without a switch row is on.
+		expect(frameSections(ready([])).map((s) => s.id)).toEqual(sections.map((s) => s.id));
 	});
 
-	it('leaves out a switched-off feature and a disabled plugin', () => {
-		const sections = frameSections(ready([state(READER_ID, 0, false), state('qinqin-journal', 0, false)]));
+	it('leaves out a switched-off feature', () => {
+		const sections = frameSections(ready([state(READER_ID, false), state(JOURNAL_ID, false)]));
 		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'stats']);
 	});
 
-	it('a plugin page without an icon, or with one the app does not know, gets the generic icon', () => {
-		const bare = (id: string, icon?: string): WebPlugin => ({
-			manifest: { ...webPlugins[0].manifest, id, icon },
-			pages: [{ title: id, nav: true, component: webPlugins[0].pages![0].component }]
-		});
-		const sections = frameSections(ready([]), [bare('x-none'), bare('x-odd', 'no-such-icon'), bare('x-ok', 'map')]);
-		expect(sections.filter((s) => s.id.startsWith('x-')).map((s) => s.icon)).toEqual(['plugin', 'plugin', 'map']);
+	it('every id is unique', () => {
+		const ids = [homeSection(), ...frameSections(all)].map((s) => s.id);
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 });
 
@@ -76,8 +66,8 @@ describe('currentSection', () => {
 		expect(at('/study/session')).toBe('flashcards');
 		expect(at('/study')).toBe('flashcards');
 		expect(at('/reader/12')).toBe('reader');
-		expect(at('/p/journal')).toBe('journal');
-		expect(at('/p/journal/2026-11-17')).toBe('journal');
+		expect(at('/journal')).toBe('journal');
+		expect(at('/journal/2026-11-17')).toBe('journal');
 		expect(at('/stats/week')).toBe('stats');
 		expect(at('/entry/5')).toBe('search');
 		expect(at('/lookups')).toBe('search');
@@ -88,25 +78,11 @@ describe('currentSection', () => {
 		expect(at('/settings')).toBeNull();
 		expect(at('/sources')).toBeNull();
 		expect(at('/statsx')).toBeNull();
-		expect(at('/p/journalx')).toBeNull();
+		expect(at('/journalx')).toBeNull();
 	});
 
 	it('a switched-off section is never current', () => {
-		const without = frameSections(ready([state(FLASHCARDS_ID, 0, false)]));
+		const without = frameSections(ready([state(FLASHCARDS_ID, false)]));
 		expect(currentSection('/study/session', without)).toBeNull();
 	});
 });
-
-describe('frame ids stay unique', () => {
-	it('a plugin page never takes an id the frame uses (home, search, stats, more, a core feature)', () => {
-		const page = (slug: string) =>
-			({ manifest: { id: `qinqin-${slug}`, name: slug }, pages: [{ title: slug, nav: true }] }) as unknown as WebPlugin;
-		const plugins = ['more', 'home', 'stats', 'reader', 'notes'].map(page);
-		const states = ready(plugins.map((p) => state(p.manifest.id, 0)));
-		const ids = frameSections(states, plugins).map((s) => s.id);
-		expect(new Set(ids).size).toBe(ids.length);
-		expect(ids.filter((id) => id === 'more')).toEqual([]);
-		expect(ids).toContain('notes');
-	});
-});
-

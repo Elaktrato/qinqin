@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
-	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/statsTabs';
+	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/stats/statsTabs';
 	import Tabs from '$lib/ui/Tabs.svelte';
-	import { currentLanguage } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	let { children } = $props();
 
 	// Each view has its own URL (/stats, /stats/week, /stats/characters),
 	// so Back, Forward and deep links pick the tab. The tabs are links, not
 	// ARIA tabs: the base Tabs route form. Characters exists only for Han
 	// languages; a direct visit in another workspace keeps its own note.
-	const tabs = $derived(statsTabs($currentLanguage));
+	const tabs = $derived(statsTabs(session.workspaces.language));
 	const active = $derived(activeStatsTab(page.url.pathname));
 	const activeTab = $derived(tabs.find((tab) => tab.id === active) ?? null);
 	const panelLabel = $derived(statsPanelLabel(active));

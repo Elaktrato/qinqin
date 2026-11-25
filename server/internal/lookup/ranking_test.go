@@ -6,8 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 // altWords are words found by an alternative form or reading, and 生's
@@ -103,7 +104,7 @@ func kanji(literal, on, kun, meaning string) string {
 
 func importKanjidic(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "kanjidic2-test", Name: "KANJIDIC2 test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "kanjidic2",
 	}, "kanjidic2.xml", kanjidic)
@@ -111,7 +112,7 @@ func importKanjidic(t *testing.T, sqlDB *sql.DB) {
 
 func importFreqPack(t *testing.T, sqlDB *sql.DB, id, rows string) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: id, Name: "Freq " + id, Version: "1", Type: "frequency", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n"+rows)
@@ -121,7 +122,7 @@ func importFreqPack(t *testing.T, sqlDB *sql.DB, id, rows string) {
 // KANJIDIC; freqPacks are imported in order (id, rows pairs).
 func altService(t *testing.T, freqPacks ...string) (lookup.Service, *sql.DB) {
 	t.Helper()
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+altWords)
 	importKanjidic(t, sqlDB)
 	for i := 0; i+1 < len(freqPacks); i += 2 {
@@ -284,7 +285,7 @@ func TestFrequencyOutranksPrimaryReadingMatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sqlDB, _ := openDB(t)
+			sqlDB := dbtest.Open(t)
 			importJMdict(t, sqlDB, jaWords+altWords+yukuWord)
 			importKanjidic(t, sqlDB)
 			if tt.freq != "" {
@@ -355,7 +356,7 @@ const verbWords = `<entry>
 // one frequency pack's rows, "" for none.
 func verbService(t *testing.T, freq string) lookup.Service {
 	t.Helper()
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+altWords+verbWords)
 	if freq != "" {
 		importFreqPack(t, sqlDB, "a", freq)
@@ -519,7 +520,7 @@ func TestImperativesDoNotShadowNouns(t *testing.T) {
 // verbService2 is verbService plus the shadow words.
 func verbService2(t *testing.T, freq string) lookup.Service {
 	t.Helper()
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+altWords+verbWords+shadowWords)
 	if freq != "" {
 		importFreqPack(t, sqlDB, "a", freq)

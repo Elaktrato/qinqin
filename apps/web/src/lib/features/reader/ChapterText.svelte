@@ -2,13 +2,14 @@
 	import { onDestroy } from 'svelte';
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, fontStack, type ReaderDisplay } from './displaySettings';
-	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
 	import { createReveal, type Reveal } from './reveal';
 	import type { Piece } from './smartReadings';
 	import type { LookupController } from './useLookup.svelte';
 	import type { WordRange } from './wordRanges';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Renders the chapter as real, selectable text. The markup is the
 	// contract dom.ts maps against: <p data-p> per paragraph, one element
@@ -69,11 +70,11 @@
 		return at;
 	}
 
-	const stack = $derived(fontStack(display.font, lang, packFaces.installed));
+	const stack = $derived(fontStack(display.font, lang, app.fonts.installed));
 	// A concrete reader font needs its pack face registered (#97); default is the app's.
 	$effect(() => {
-		packFaces.need('reader', display.font === 'default' ? [] : [display.font]);
-		return () => packFaces.need('reader', []);
+		app.fonts.need('reader', display.font === 'default' ? [] : [display.font]);
+		return () => app.fonts.need('reader', []);
 	});
 
 	// A click on a highlight edits it; a click that ended a selection (a

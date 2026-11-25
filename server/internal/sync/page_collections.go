@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -17,8 +18,8 @@ import (
 // The collections of the paged pull: one or more keyset segments each, in
 // round order (V2Collections). Every query filters by the caller's user_id
 // (keysetQuery); the fragments below narrow further:
-//   - workspace= keeps a workspace's rows plus user-global ones (pluginData
-//     without a workspace, pluginStates); bookmarks and highlights follow
+//   - workspace= keeps a workspace's rows plus user-global ones (rows
+//     without a workspace, features); bookmarks and highlights follow
 //     their book's workspace, library tombstones the logged workspace_id;
 //   - overlays and own sentences ship only for entries of the round's
 //     languages (?8);
@@ -62,16 +63,16 @@ func v2Segments() []segment {
 	segs := []segment{
 		{coll: "workspaces", table: "workspaces", stamp: "updated_at", cols: "id, language, name, settings, updated_at",
 			extra: byWorkspace("id"), encode: encodeWorkspace},
-		{coll: "pluginStates", table: "plugin_states", stamp: "updated_at", cols: "pack_id, user_id, enabled, ord, updated_at",
-			encode: encodePluginState},
-		{coll: "pluginData", table: "plugin_data", stamp: "updated_at", tomb: true,
-			cols: "pack_id, key, user_id, workspace_id, data, version, updated_at, deleted_at",
+		{coll: "features", table: "feature_switches", stamp: "updated_at", cols: "feature, enabled, updated_at",
+			encode: encodeFeature},
+		{coll: "rows", table: "keyed_rows", stamp: "updated_at", tomb: true,
+			cols: "key, user_id, workspace_id, data, version, updated_at, deleted_at",
 			extra: func(ws int64) string {
 				if ws == 0 {
 					return ""
 				}
 				return " AND (workspace_id IS NULL OR workspace_id = ?7)"
-			}, encode: encodePluginData},
+			}, encode: encodeKeyedRow},
 	}
 	for _, f := range rows.Families {
 		segs = append(segs, segment{coll: string(f), table: study.TableOf(f), stamp: "updated_at", tomb: true,
@@ -92,7 +93,7 @@ func v2Segments() []segment {
 		segment{coll: "overlays", table: "user_edits", stamp: "updated_at", cols: "entry_id, written, readings, updated_at",
 			extra: byLanguage, encode: encodeOverlay},
 		segment{coll: "sentences", table: "sentences", stamp: "updated_at", tomb: true,
-			cols:  "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at",
+			cols:  "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at, ai_provider, ai_model",
 			extra: byLanguage, encode: encodeSentence},
 		segment{coll: "events", table: "study_events", stamp: "updated_at",
 			cols: "id, workspace_id, device, ts, type, payload, updated_at",
@@ -144,29 +145,28 @@ func marshalRow(stamp string, rowid int64, v any) (string, int64, []byte, error)
 	return stamp, rowid, raw, err
 }
 
-func encodePluginState(sc scanner) (string, int64, []byte, error) {
+func encodeFeature(sc scanner) (string, int64, []byte, error) {
 	var rowid int64
-	var s model.PluginState
+	var f struct {
+		ID        string `json:"id"`
+		Enabled   bool   `json:"enabled"`
+		UpdatedAt string `json:"updatedAt"`
+	}
 	var enabled int
-	var updated string
-	if err := sc.Scan(&rowid, &s.PluginID, &s.UserID, &enabled, &s.Order, &updated); err != nil {
+	if err := sc.Scan(&rowid, &f.ID, &enabled, &f.UpdatedAt); err != nil {
 		return "", 0, nil, err
 	}
-	s.Enabled = enabled != 0
-	var err error
-	if s.UpdatedAt, err = parseStamp(updated); err != nil {
-		return "", 0, nil, err
-	}
-	return marshalRow(updated, rowid, s)
+	f.Enabled = enabled != 0
+	return marshalRow(f.UpdatedAt, rowid, f)
 }
 
-func encodePluginData(sc scanner) (string, int64, []byte, error) {
+func encodeKeyedRow(sc scanner) (string, int64, []byte, error) {
 	var rowid int64
-	var d model.PluginData
+	var d model.KeyedRow
 	var ws sql.NullInt64
 	var data, updated string
 	var deleted sql.NullString
-	if err := sc.Scan(&rowid, &d.PluginID, &d.Key, &d.UserID, &ws, &data, &d.Version, &updated, &deleted); err != nil {
+	if err := sc.Scan(&rowid, &d.Key, &d.UserID, &ws, &data, &d.Version, &updated, &deleted); err != nil {
 		return "", 0, nil, err
 	}
 	if ws.Valid {
@@ -201,6 +201,10 @@ func encodeTyped(f rows.Family) func(sc scanner) (string, int64, []byte, error) 
 		var rowid int64
 		var stamp string
 		r, err := study.ScanRow(f, typedScanner{sc, &rowid, &stamp})
+		if errors.Is(err, study.ErrUnreadableStored) {
+			// walk skips it and still moves past its rowid.
+			return stamp, rowid, nil, err
+		}
 		if err != nil {
 			return "", 0, nil, err
 		}
@@ -319,8 +323,12 @@ func encodeSentence(sc scanner) (string, int64, []byte, error) {
 	var owner sql.NullInt64
 	var updated string
 	var deleted sql.NullString
-	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted); err != nil {
+	var aiProvider, aiModel string
+	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted, &aiProvider, &aiModel); err != nil {
 		return "", 0, nil, err
+	}
+	if aiProvider != "" || aiModel != "" { // an AI example (#186)
+		s.AI = &model.SentenceAI{Provider: aiProvider, Model: aiModel}
 	}
 	if owner.Valid {
 		id := owner.Int64

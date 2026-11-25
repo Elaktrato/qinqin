@@ -1,8 +1,8 @@
-// The core app's own widgets: they exist whatever plugins are enabled.
+// The core app's own widgets: they exist whatever features are switched on.
 
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import { hasCharacterMap } from '$lib/languages/profiles';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
 import { t } from '$lib/i18n';
-import { usesHan } from '$lib/languages';
 import ActivityHome from './ActivityHome.svelte';
 import CharacterMapSummary from './CharacterMapSummary.svelte';
 import DailyGoalWidget from './DailyGoalWidget.svelte';
@@ -37,7 +37,7 @@ export const coreWidgets: WidgetDef[] = [
 		},
 		owner: 'core',
 		size: 'normal',
-		appliesTo: usesHan,
+		appliesTo: hasCharacterMap,
 		surfaces: ['stats', 'home'],
 		component: CharacterMapSummary
 	},

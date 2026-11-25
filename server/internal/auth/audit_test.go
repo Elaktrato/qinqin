@@ -4,20 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestAuditCopiesNamesAndKeepsThemAfterDeletion(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	a, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", true)
 	b, _ := auth.CreateUser(ctx, sqlDB, "bobby", "secret-pass-1", false)
@@ -41,11 +36,7 @@ func TestAuditCopiesNamesAndKeepsThemAfterDeletion(t *testing.T) {
 }
 
 func TestAuditAllowsOnlyListedKeysAndSmallScalars(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	bad := []map[string]any{
 		{"password": "v"}, {"newPassword": "v"}, {"token": "v"}, {"code": "v"}, {"email": "a@b.example"},

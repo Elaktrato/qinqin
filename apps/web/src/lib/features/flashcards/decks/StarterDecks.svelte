@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { getFrequencyPacks } from '$lib/api/frequency';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { noPackHint } from '$lib/study/newOrderView';
 	import { flashcardsHref } from '../route';
 	import { Button, Section } from '$lib/ui';
@@ -17,6 +17,8 @@
 		type StarterDeck
 	} from './starterDecks';
 	import type { StarterEntry } from '$lib/api/frequency';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Starter decks (#75): Top 500/1000/2000 of each installed frequency pack
 	// of the workspace language, computed by the server, collapsed per pack.
@@ -68,7 +70,7 @@
 			},
 			(err) => {
 				// Starter decks are an extra: a failed list is a quiet line, never an alert.
-				loadError = errorMessage(err, t('flashcards.starter.loadFailed'));
+				loadError = errorText(err, t('flashcards.starter.loadFailed'));
 			}
 		);
 	});
@@ -80,7 +82,7 @@
 		}
 		expanded = [...expanded, group.packNumId];
 		if (Array.isArray(items[group.packNumId])) return;
-		loadStarterEntries(group.packNumId, 2000).then(
+		loadStarterEntries(session.caches.starters, group.packNumId, 2000).then(
 			(list) => (items = { ...items, [group.packNumId]: list }),
 			() => (items = { ...items, [group.packNumId]: 'error' })
 		);
@@ -105,7 +107,7 @@
 		notes = { ...notes, [key]: '' };
 		errors = { ...errors, [key]: '' };
 		try {
-			const plan = await addDeckFromOverview({
+			const plan = await addDeckFromOverview(session.study, {
 				workspaceId,
 				items: starterAddItems(list.slice(0, deck.size)),
 				target: starterTarget(deck),
@@ -121,7 +123,7 @@
 			};
 			onchanged();
 		} catch (err) {
-			errors = { ...errors, [key]: errorMessage(err, t('flashcards.system.addFailed')) };
+			errors = { ...errors, [key]: errorText(err, t('flashcards.system.addFailed')) };
 		} finally {
 			adding = null;
 		}

@@ -1,3 +1,4 @@
+import { SchemeCache } from '$lib/context/caches';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
@@ -5,7 +6,13 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError } from './client';
-import { clearSchemeCharactersCache, fetchSchemeCharacters } from './schemes';
+import { fetchSchemeCharacters } from './schemes';
+
+// A fresh SchemeCache per test (record 0009: the session owns one).
+let cache = new SchemeCache();
+beforeEach(() => {
+	cache = new SchemeCache();
+});
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -16,7 +23,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 describe('fetchSchemeCharacters', () => {
 	beforeEach(() => {
-		clearSchemeCharactersCache();
+		cache.clear();
 		vi.stubGlobal('fetch', vi.fn());
 		goto.mockReset();
 	});
@@ -33,7 +40,7 @@ describe('fetchSchemeCharacters', () => {
 				]
 			})
 		);
-		const levels = await fetchSchemeCharacters(3);
+		const levels = await fetchSchemeCharacters(cache, 3);
 		const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]), 'http://localhost');
 		expect(url.pathname).toBe('/api/schemes/3/characters');
 		expect(levels.map((l) => [l.levelId, l.name, [...l.chars]])).toEqual([
@@ -48,7 +55,7 @@ describe('fetchSchemeCharacters', () => {
 				levels: [{ id: 1, name: '1' }, null, { id: 'x', name: 2, chars: 5 }]
 			})
 		);
-		const levels = await fetchSchemeCharacters(1);
+		const levels = await fetchSchemeCharacters(cache, 1);
 		expect(levels).toHaveLength(1);
 		expect(levels[0].levelId).toBe(1);
 		expect(levels[0].chars.size).toBe(0);
@@ -58,11 +65,11 @@ describe('fetchSchemeCharacters', () => {
 		vi.mocked(fetch).mockImplementation(async () =>
 			jsonResponse({ levels: [{ id: 1, name: '1', chars: '一' }] })
 		);
-		const [a, b] = await Promise.all([fetchSchemeCharacters(1), fetchSchemeCharacters(1)]);
+		const [a, b] = await Promise.all([fetchSchemeCharacters(cache, 1), fetchSchemeCharacters(cache, 1)]);
 		expect(a).toBe(b);
-		expect(await fetchSchemeCharacters(1)).toBe(a);
+		expect(await fetchSchemeCharacters(cache, 1)).toBe(a);
 		expect(fetch).toHaveBeenCalledTimes(1);
-		await fetchSchemeCharacters(2);
+		await fetchSchemeCharacters(cache, 2);
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
@@ -70,8 +77,8 @@ describe('fetchSchemeCharacters', () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(new Response('scheme not found', { status: 404 }))
 			.mockResolvedValueOnce(jsonResponse({ levels: [{ id: 1, name: '1', chars: '一' }] }));
-		await expect(fetchSchemeCharacters(9)).rejects.toBeInstanceOf(ApiError);
-		const levels = await fetchSchemeCharacters(9);
+		await expect(fetchSchemeCharacters(cache, 9)).rejects.toBeInstanceOf(ApiError);
+		const levels = await fetchSchemeCharacters(cache, 9);
 		expect([...levels[0].chars]).toEqual(['一']);
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});

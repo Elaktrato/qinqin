@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// User is an authenticated account. The first user registered on a fresh
-// database becomes the instance admin.
+// User is an authenticated account. A fresh database gets its first admin
+// from the serve bootstrap or `qinqin adduser --admin`, never by registering.
 type User struct {
 	ID                 int64   `json:"id"`
 	Username           string  `json:"username"`
@@ -86,7 +86,7 @@ type SenseView struct {
 }
 
 // Scheme is the registry row one imported levels pack creates — HSK,
-// JLPT, a curriculum table: any ordered ladder of levels over one
+// JLPT, Jōyō grades: any ordered ladder of levels over one
 // language's entries — keyed by the pack's manifest id. Re-imports
 // upsert the row and replace its levels and memberships; uninstall
 // soft-deletes them. Entries survive both.
@@ -143,45 +143,11 @@ type StudyEvent struct {
 	Payload     json.RawMessage `json:"payload"`
 }
 
-// PluginInfo is one plugin as listed for a user: its manifest and the
-// user's state for it. Feature plugins carry the admin-registered
-// manifest verbatim; data plugins (dictionary, levels, sentences
-// packs) a manifest synthesized from their pack registries. Default
-// state — no plugin_states row — is enabled at order 0.
-type PluginInfo struct {
-	ID       string          `json:"id"`
-	Manifest json.RawMessage `json:"manifest"`
-	Enabled  bool            `json:"enabled"`
-	Order    int             `json:"order"`
-	// Hidden marks the app's own built-in rows that have no surface and are
-	// no feature (qinqin-core: registered only so its data is accepted).
-	// Clients leave them out of plugin lists; the routes and the state still
-	// work for them. The core features qinqin-flashcards and qinqin-reader
-	// are not hidden (old web shells show their switch from this list); new
-	// clients know those reserved ids and show them as features.
-	Hidden bool `json:"hidden"`
-}
-
-// PluginState is one user's state for one plugin: whether it is
-// enabled and its position in the Plugins list (Order, also the order
-// of the nav links). The home layout is the per-user widget layout in
-// the qinqin-core plugin data, not Order.
-type PluginState struct {
-	PluginID  string    `json:"pluginId"`
-	UserID    int64     `json:"userId"`
-	Enabled   bool      `json:"enabled"`
-	Order     int       `json:"order"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// PluginData is one plugin-owned data row — settings, decks, anything a
-// plugin stores per key. A nil WorkspaceID is user-global data shared
-// by all the user's workspaces; a non-nil one scopes the row to a
-// single workspace. Version increments on every write, so clients can
-// sync by pulling rows changed since a timestamp; DeletedAt set marks
-// a tombstone.
-type PluginData struct {
-	PluginID    string          `json:"pluginId"`
+// KeyedRow is one row of the keyed settings store (internal/keyed): a
+// small JSON document of one user under a key of an accepted family. A nil
+// WorkspaceID is user-global; a non-nil one scopes the row to a workspace.
+// Version increments on every write; DeletedAt set marks a tombstone.
+type KeyedRow struct {
 	Key         string          `json:"key"`
 	UserID      int64           `json:"userId"`
 	WorkspaceID *int64          `json:"workspaceId"`
@@ -206,4 +172,14 @@ type Sentence struct {
 	Translation string     `json:"translation"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `json:"deletedAt"`
+	// AI marks a sentence an AI wrote (#186, docs/contracts/examples/): the
+	// learner's own kept example, with the provider and model; nil for every
+	// other sentence.
+	AI *SentenceAI `json:"ai"`
+}
+
+// SentenceAI is who wrote an AI example: the provider id and the model.
+type SentenceAI struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
 }

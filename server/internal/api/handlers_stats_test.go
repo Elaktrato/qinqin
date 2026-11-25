@@ -1,19 +1,15 @@
 package api_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
-	"qinqin/internal/plugins"
+	"qinqin/internal/dbtest"
 )
 
 type activityBody struct {
@@ -21,14 +17,9 @@ type activityBody struct {
 	To       string `json:"to"`
 	TimeZone string `json:"timeZone"`
 	Sources  []struct {
-		Type     string `json:"type"`
-		Plugin   string `json:"plugin"`
-		Label    string `json:"label"`
-		Unit     string `json:"unit"`
-		Describe struct {
-			One   string `json:"one"`
-			Other string `json:"other"`
-		} `json:"describe"`
+		Type    string `json:"type"`
+		Feature string `json:"feature"`
+		Unit    string `json:"unit"`
 	} `json:"sources"`
 	Cells []struct {
 		Day       string  `json:"day"`
@@ -45,12 +36,7 @@ var statsULID int
 // one user with a zh workspace.
 func statsServer(t *testing.T) (url, token string, ws int64) {
 	t.Helper()
-	ts, sqlDB := newServer(t)
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
+	ts, _ := newServer(t)
 	token = registerUser(t, ts.URL, "owner", "")
 	return ts.URL, token, statsWorkspace(t, ts.URL, token, "zh")
 }
@@ -89,18 +75,9 @@ func getActivity(t *testing.T, url, token, query string) (*http.Response, activi
 // statsServerAt is statsServer with the server clock fixed.
 func statsServerAt(t *testing.T, now time.Time) (url, token string, ws int64) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
+	sqlDB := dbtest.Open(t)
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
 	t.Cleanup(ts.Close)
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
 	token = registerUser(t, ts.URL, "owner", "")
 	return ts.URL, token, statsWorkspace(t, ts.URL, token, "zh")
 }
@@ -129,14 +106,14 @@ func TestStatsActivityDefaults(t *testing.T) {
 	if len(body.Sources) != 3 {
 		t.Fatalf("sources = %d, want 3", len(body.Sources))
 	}
-	want := []struct{ typ, plugin, unit string }{
-		{"review", "qinqin-core", "count"},
-		{"read", "qinqin-core", "seconds"},
-		{"journal", "qinqin-journal", "count"},
+	want := []struct{ typ, feature, unit string }{
+		{"review", "flashcards", "count"},
+		{"read", "reader", "seconds"},
+		{"journal", "journal", "count"},
 	}
 	for i, w := range want {
 		s := body.Sources[i]
-		if s.Type != w.typ || s.Plugin != w.plugin || s.Unit != w.unit || s.Label == "" || !strings.Contains(s.Describe.Other, "{n}") {
+		if s.Type != w.typ || s.Feature != w.feature || s.Unit != w.unit {
 			t.Errorf("source %d = %+v, want %v", i, s, w)
 		}
 	}
@@ -230,12 +207,7 @@ func TestStatsActivityBadRequests(t *testing.T) {
 }
 
 func TestStatsActivityAuthAndOwnership(t *testing.T) {
-	ts, sqlDB := newServer(t)
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
+	ts, _ := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
 	aws := statsWorkspace(t, ts.URL, alice, "zh")

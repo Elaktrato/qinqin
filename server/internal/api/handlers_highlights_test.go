@@ -127,7 +127,7 @@ func TestHighlightOverlapRoute(t *testing.T) {
 		ExistingID int64  `json:"existingId"`
 	}
 	decodeJSON(t, resp, &conflict)
-	if conflict.ExistingID != h.ID || conflict.Error == "" {
+	if conflict.ExistingID != h.ID || conflict.Error != "highlight_overlap" {
 		t.Errorf("overlap body = %+v, want existingId %d", conflict, h.ID)
 	}
 	// Adjacent on both sides is fine; the same range in another paragraph too.
@@ -210,7 +210,7 @@ func TestHighlightValidationRoutes(t *testing.T) {
 	}
 	var tooBig map[string]any
 	decodeJSON(t, resp, &tooBig)
-	if msg, _ := tooBig["error"].(string); msg != "highlight too large" {
+	if code, _ := tooBig["error"].(string); code != "too_large" {
 		t.Errorf("oversized body = %v", tooBig)
 	}
 	// The worst valid body fits the cap: a 500-code-point astral snapshot
@@ -281,7 +281,7 @@ func TestHighlightLimitRoute(t *testing.T) {
 	}
 	var conflict map[string]any
 	decodeJSON(t, resp, &conflict)
-	if msg, _ := conflict["error"].(string); !strings.Contains(msg, "2000 highlights") {
+	if code, _ := conflict["error"].(string); code != "highlight_limit" || !strings.Contains(conflict["message"].(string), "2000 highlights") {
 		t.Errorf("cap body = %v", conflict)
 	}
 	if _, ok := conflict["existingId"]; ok {

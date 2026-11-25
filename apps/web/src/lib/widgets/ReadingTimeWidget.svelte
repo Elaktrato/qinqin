@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { listAllBooks } from '$lib/api/library';
 	import { t } from '$lib/i18n';
-	import { loadWorkspaceEvents } from '$lib/events';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
 
-	// Reading time (reader plugin): tracked time in the active workspace,
+
+	const session = useSession();
+
+	// Reading time (the reader feature): tracked time in the active workspace,
 	// all time, the last 7 and 30 days, and the five most read books.
 
 	let totals = $state.raw<ReadingTotals | null>(null);
@@ -21,7 +22,7 @@
 
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const top = $derived(totals === null ? [] : topBooks(totals.books, titles));
 	const status = $derived<WidgetStatus>(
 		noWorkspace
@@ -69,19 +70,19 @@
 			// grow large enough to make it slow, a server-side summary endpoint
 			// is the planned follow-up.
 			const [events, names] = await Promise.all([
-				loadWorkspaceEvents(workspace, { force }),
+				session.events.load(workspace, { force }),
 				loadTitles()
 			]);
 			if (seq !== requestSeq) return;
 			const own = events.filter(
 				(event) => event.workspaceId === workspace
 			);
-			totals = readingTotals(own, new Date(), currentStudyDay());
+			totals = readingTotals(own, new Date(), session.zone.day());
 			titles = names;
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			totals = null;
-			error = errorMessage(err, t('widgets.reading.loadFailed'));
+			error = errorText(err, t('widgets.reading.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -92,7 +93,7 @@
 	});
 
 	// A zone change moves the 7 and 30 day windows.
-	$effect(() => onStudyDayChange(() => void load(workspaceId)));
+	$effect(() => session.zone.onChange(() => void load(workspaceId)));
 </script>
 
 <WidgetCard

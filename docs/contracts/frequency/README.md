@@ -21,8 +21,8 @@ the frequency packs installed on the server (`GET /api/frequency-packs`).
 - Only new items are reordered (a deck session's never-reviewed cards, a level session's new bucket);
   reviews, due order, admission and daily limits are unchanged.
 - Per deck: the field `newOrder` of the deck's typed `deckSettings` row (`study/README.md`; `null` = added;
-  a value the typed shape cannot carry stays in `extra`). In the legacy row `deckcfg:<deckId>` (old shells,
-  backups, `deckcfg-new-order.json`) it is an optional field: absent or malformed (not an object, an
+  a value the typed shape cannot carry stays in `extra`). In the keyed row `deckcfg:<deckId>` (backups,
+  `deckcfg-new-order.json`; the web decodes the `newOrder` member with `parseNewOrder`) it is an optional field: absent or malformed (not an object, an
   unknown `by`, `level` without a non-empty string `packId`) = added. A readable value is normalised to the
   shape (fields beyond it are dropped); an unreadable one (a newer client's) is kept verbatim like every
   other unknown field, so saving the row keeps it, until this client sets an order of its own.
@@ -107,7 +107,7 @@ mastery map, writing companion planning) show the old snapshot until the card is
 - `POST /api/entries/frequency-ranks` `{language, ids}` (1..500 ids, body <= 16 KiB), signed in ->
   `{pack: {id, packId, name, license, attribution} | null, ranks: [{id, rank}]}` in request order; entries
   without data in the ranking pack, of another language or unknown are omitted; `pack: null` and `[]`
-  without a pack. 401, 400 `ids must be 1 to 500 entry ids` / `language is required`, 413.
+  without a pack. 401, 400 `bad_request` (ids not 1 to 500 entry ids, or no language), 413 `too_large`.
 - `GET /api/frequency-packs/{id}/top?size=500|1000|2000`, signed in -> `{packId, name, size, entries:
   [EntryBase & {rank, gloss}]}` (`gloss`: the first gloss of the entry's first sense, `""` without one; a
   list shows it next to a display form that occurs more than once, e.g. なる 成る / 生る) in deck order; 404 unknown or uninstalled pack, 400 other sizes.

@@ -10,6 +10,8 @@ import { getStarterEntries, type StarterEntry } from '$lib/api/frequency';
 import type { Deck } from '$lib/study/types';
 import type { AddItem, AddPlan } from './addToDeck';
 import { ownedStarterDeckId } from './systemDecks';
+import type { StarterCache } from '../../../context/caches';
+
 
 export const STARTER_SIZES = [500, 1000, 2000] as const;
 export type StarterSize = (typeof STARTER_SIZES)[number];
@@ -102,23 +104,20 @@ export function starterAddedText(plan: AddPlan): string {
 // The words of a starter deck, loaded on demand and kept for the session.
 // The server resolves them once per pack content; a pack re-install shows
 // after a reload. Failures are not cached.
-const cache = new Map<string, Promise<StarterEntry[]>>();
-
-/** clearStarterCache forgets every loaded starter deck (tests). */
-export function clearStarterCache(): void {
-	cache.clear();
-}
 
 /** loadStarterEntries: the words of one starter deck, in deck order. */
-export function loadStarterEntries(packNumId: number, size: number): Promise<StarterEntry[]> {
+export function loadStarterEntries(cache: StarterCache, packNumId: number, size: number): Promise<StarterEntry[]> {
 	const key = `${packNumId}/${size}`;
-	let pending = cache.get(key);
+	let pending = cache.cache.get(key);
 	if (pending === undefined) {
 		pending = getStarterEntries(packNumId, size).then((body) =>
 			Array.isArray(body?.entries) ? body.entries : []
 		);
-		cache.set(key, pending);
-		pending.catch(() => cache.delete(key));
+		cache.cache.set(key, pending);
+		const mine = pending;
+		mine.catch(() => {
+			if (cache.cache.get(key) === mine) cache.cache.delete(key);
+		});
 	}
 	return pending;
 }

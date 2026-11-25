@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { ApiError } from '$lib/api/client';
 	import {
@@ -12,20 +12,21 @@
 		searchSource
 	} from '$lib/api/library';
 	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { browseSeed, shuffleSeed } from './browse';
 	import { apiErrorMessage } from './errors';
 	import { libraryKey } from './libraryKey';
 	import { LIBRARY_HREF, bookHref } from './route';
 	import { resultCountText } from './sourceResults';
 	import { Button, Field, Tabs } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	// Imports go to the selected workspace's library, and only works in its
 	// language can be imported there.
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
 
@@ -45,7 +46,7 @@
 	let requestCounter = 0;
 
 	// The browse assortment of the active source: today's, until Shuffle.
-	let seed = $state(browseSeed(new Date(), currentStudyDay()));
+	let seed = $state(browseSeed(new Date(), session.zone.day()));
 	let suggestions = $state<SourceResult[]>([]);
 	let browsing = $state(false);
 	let browseError = $state('');
@@ -97,7 +98,7 @@
 		const match = sources.find((s) => s.languages.includes(lang));
 		if (match && match.id !== active) {
 			active = match.id;
-			seed = browseSeed(new Date(), currentStudyDay());
+			seed = browseSeed(new Date(), session.zone.day());
 			clearSearch();
 		}
 	});
@@ -165,7 +166,7 @@
 		userPicked = true;
 		if (id === active) return;
 		active = id;
-		seed = browseSeed(new Date(), currentStudyDay());
+		seed = browseSeed(new Date(), session.zone.day());
 		importError = '';
 		clearSearch();
 	}
@@ -262,7 +263,7 @@
 	<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
 	<h1 class="heading">
 		{t('reader.sources.title')}
-		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
+		{#if workspace}<WorkspaceLabel {workspace} list={session.workspaces.list} size={18} />{/if}
 	</h1>
 	{#if workspace}
 		<p class="hint">{t('reader.sources.importsGo', { language: languageLabel(language) })}</p>

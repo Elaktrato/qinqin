@@ -1,9 +1,15 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListedTheme } from '$lib/api/themes';
 import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
 import ThemeMenuHarness from './testing/ThemeMenuHarness.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
 const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
@@ -38,7 +44,7 @@ async function setup(row: unknown, opts: { saveFails?: boolean; rowFails?: boole
 	store = createThemeStore(deps);
 	await store.start();
 	await store.setUser(1);
-	render(ThemeMenuHarness, { store, onback: opts.onback });
+	render(ThemeMenuHarness, { props: { store, onback: opts.onback }, context: ctx.context });
 }
 
 beforeEach(() => root.removeAttribute('style'));

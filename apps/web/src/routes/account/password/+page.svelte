@@ -1,20 +1,21 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { api, apiErrorBody } from '$lib/api/client';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
-	import { get } from 'svelte/store';
-	import { loadMe, user } from '$lib/auth';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { Button, Field } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let current = $state('');
 	let next = $state('');
 	let confirm = $state('');
 	let error = $state('');
 	// Ask for it up front when `me` says this session must give it.
-	let needCurrent = $state(get(user)?.needsCurrentPassword ?? false);
+	let needCurrent = $state(app.auth.user?.needsCurrentPassword ?? false);
 	let busy = $state(false);
 	let heading: HTMLHeadingElement | undefined = $state();
 
@@ -25,7 +26,7 @@
 		if (busy) return;
 		error = '';
 		const problem =
-			passwordProblem($user?.username ?? '', next) ?? confirmProblem(next, confirm) ??
+			passwordProblem(app.auth.user?.username ?? '', next) ?? confirmProblem(next, confirm) ??
 			(confirm === '' ? t('auth.forced.repeatMissing') : null);
 		if (problem) {
 			error = problem;
@@ -42,7 +43,7 @@
 				}
 			});
 			// The session is a full one now; the layout guard lets it in.
-			await loadMe();
+			await app.auth.loadMe();
 			await goto('/', { replaceState: true });
 		} catch (err) {
 			const body = apiErrorBody(err);
@@ -55,7 +56,7 @@
 						: t('auth.forced.currentNeeded');
 				needCurrent = true;
 			} else {
-				error = body?.message || (err instanceof Error ? err.message : '') || t('auth.forced.failed');
+				error = errorText(err, t('auth.forced.failed'));
 			}
 		} finally {
 			busy = false;

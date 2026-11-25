@@ -1,18 +1,19 @@
 <script lang="ts">
-	import StageBar from '$lib/components/map/StageBar.svelte';
+	import { hasCharacterMap } from '$lib/languages/profiles';
+	import StageBar from '$lib/stats/map/StageBar.svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { usesHan } from '$lib/languages';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import type { SectionStats } from '$lib/study/charGroups';
 	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
 	import Button from '$lib/ui/Button.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The character map's summary tile (core, Han languages only): how
 	// many of the language's characters are learned, the stage bar and a
@@ -28,7 +29,7 @@
 
 	let requestSeq = 0;
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
 
@@ -59,7 +60,7 @@
 			loading = false;
 			return;
 		}
-		if (!usesHan(lang)) {
+		if (!hasCharacterMap(lang)) {
 			// The registry hides the tile for such languages; this is a guard.
 			stats = null;
 			notHan = true;
@@ -68,7 +69,7 @@
 		}
 
 		try {
-			const data = await loadCharacterMapData(id, lang, { force });
+			const data = await loadCharacterMapData(session, id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
 			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);
@@ -78,7 +79,7 @@
 			// Legacy cards without a written snapshot: resolve them like the
 			// map does, then count once more.
 			if (data.cards.some((card) => card.written === undefined)) {
-				const filled = await withLegacyWritten(data.cards);
+				const filled = await withLegacyWritten(session, data.cards);
 				if (seq !== requestSeq) return;
 				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock);
 				unresolved = filled.unresolved;
@@ -86,7 +87,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			stats = null;
-			error = errorMessage(err, t('widgets.characters.loadFailed'));
+			error = errorText(err, t('widgets.characters.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -95,7 +96,7 @@
 	$effect(() => {
 		void load(workspaceId, language);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId, language)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId, language)));
 </script>
 
 <div class="tile">

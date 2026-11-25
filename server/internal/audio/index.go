@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
+	"qinqin/internal/pack"
 	"qinqin/internal/pinyin"
 )
 
@@ -38,7 +38,7 @@ var (
 // ParseIndex reads an audio pack's index.tsv. Empty license and
 // attribution inherit the manifest's; a manifest licence of "per file"
 // requires every row to carry its own. Errors name the line.
-func ParseIndex(r io.Reader, m dict.Manifest) ([]Row, error) {
+func ParseIndex(r io.Reader, m pack.Manifest) ([]Row, error) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 1<<20)
 	if !sc.Scan() || strings.TrimRight(sc.Text(), "\r") != indexHeader {
@@ -75,7 +75,7 @@ func ParseIndex(r io.Reader, m dict.Manifest) ([]Row, error) {
 	return rows, nil
 }
 
-func checkRow(r Row, m dict.Manifest) error {
+func checkRow(r Row, m pack.Manifest) error {
 	if !filePattern.MatchString(r.File) || strings.Contains(r.File, "..") {
 		return fmt.Errorf("file %q must be audio/<name>.opus, .ogg or .mp3", r.File)
 	}

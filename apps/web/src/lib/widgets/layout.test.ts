@@ -8,7 +8,6 @@ vi.mock('$app/navigation', () => ({ goto }));
 import {
 	DEFAULT_LAYOUT,
 	LAYOUT_KEY,
-	LAYOUT_PLUGIN_ID,
 	loadLayout,
 	parseLayout,
 	placeWidgets,
@@ -19,9 +18,9 @@ import {
 } from './layout';
 import type { WidgetDef, WidgetSurface } from './types';
 import { allWidgets } from './registry';
-import { webPlugins } from '$lib/plugins';
 import { coreFeatures } from '$lib/features';
 import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
+import { dataRow } from '../testing/keyed';
 
 const component = null as unknown as Component;
 
@@ -227,19 +226,18 @@ describe('layout store', () => {
 	});
 
 	it('reads the user-global qinqin-core home-layout row through the list route', async () => {
-		expect(LAYOUT_PLUGIN_ID).toBe('qinqin-core');
 		expect(LAYOUT_KEY).toBe('home-layout');
 		vi.mocked(fetch).mockResolvedValue(
 			jsonResponse([
-				{ key: 'home-layout-old', data: { version: 1, widgets: ['nope'] }, version: 1, updatedAt: '' },
-				{ key: 'home-layout', data: { version: 1, widgets: ['flashcards-summary'] }, version: 2, updatedAt: '' }
+				dataRow({ key: 'home-layout-old', data: { version: 1, widgets: ['nope'] }, version: 1 }),
+				dataRow({ key: 'home-layout', data: { version: 1, widgets: ['flashcards-summary'] }, version: 2 })
 			])
 		);
 
 		expect(await loadLayout()).toEqual(['flashcards-summary']);
 		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 		expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
-			'/api/plugins/qinqin-core/data?prefix=home-layout'
+			'/api/rows?prefix=home-layout'
 		);
 	});
 
@@ -251,7 +249,7 @@ describe('layout store', () => {
 
 	it('loads no layout when the row is corrupt', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
-			jsonResponse([{ key: 'home-layout', data: { widgets: 'nope' }, version: 1, updatedAt: '' }])
+			jsonResponse([dataRow({ key: 'home-layout', data: { widgets: 'nope' }, version: 1 })])
 		);
 		expect(await loadLayout()).toBeNull();
 	});
@@ -268,7 +266,7 @@ describe('layout store', () => {
 		await saveLayout(['activity-heatmap']);
 
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
-		expect(String(url)).toBe('/api/plugins/qinqin-core/data/home-layout');
+		expect(String(url)).toBe('/api/rows/home-layout');
 		expect((init as RequestInit).method).toBe('PUT');
 		expect(JSON.parse(String((init as RequestInit).body))).toEqual({
 			version: 1,
@@ -305,12 +303,10 @@ describe('docs/contracts/settings/core-rows.json: home-layout', () => {
 	};
 	it('names the row, the default and the widget catalogue', () => {
 		expect(fixture.rule).toBe('settings/core-rows');
-		expect(LAYOUT_PLUGIN_ID).toBe(fixture.pluginId);
 		expect(LAYOUT_KEY).toBe('home-layout');
 		expect([...DEFAULT_LAYOUT]).toEqual(fixture.defaultLayout);
-		const ids = [...coreFeatures.map((f) => f.id), ...webPlugins.map((p) => p.manifest.id)];
-		const states = ids.map((id) => ({ id, manifest: {}, enabled: true, order: 0 }));
-		expect(allWidgets(webPlugins, states, null).map((w) => w.id)).toEqual(fixture.widgets);
+		const states = coreFeatures.map((f) => ({ id: f.id, enabled: true }));
+		expect(allWidgets(states, null).map((w) => w.id)).toEqual(fixture.widgets);
 	});
 	for (const c of fixture.layout) {
 		it(`parseLayout: ${c.name}`, () => expect(parseLayout(c.value)).toEqual(c.expect));

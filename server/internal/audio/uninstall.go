@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
+
+	"qinqin/internal/pack"
 )
 
 // ErrPackNotFound reports an uninstall of a pack that is not installed.
-var ErrPackNotFound = errors.New("audio pack not installed")
+var ErrPackNotFound = pack.NotFound("audio pack not installed")
 
 // UninstallResult counts what an uninstall removed.
 type UninstallResult struct{ Clips int }
@@ -20,7 +21,7 @@ type UninstallResult struct{ Clips int }
 // A blob another pack shares stays. An unknown or already removed pack is
 // ErrPackNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) (UninstallResult, error) {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}
@@ -56,7 +57,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) (Uni
 	if _, err := tx.ExecContext(ctx, `DELETE FROM audio_clips WHERE pack_id = ?`, row); err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `UPDATE audio_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, row); err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}

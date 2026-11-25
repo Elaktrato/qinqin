@@ -25,7 +25,7 @@ func (s *server) requireCustomAdmin(w http.ResponseWriter, r *http.Request) (*mo
 	// Admin-only: an access token never manages endpoints (tokenGate refuses
 	// it first; this holds even if the route row were marked).
 	if p.ViaToken() {
-		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		writeError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 		return nil, false
 	}
 	u := &p.User
@@ -97,7 +97,7 @@ func (s *server) handleCreateCustomProvider(w http.ResponseWriter, r *http.Reque
 		MaxOutputTokens *int          `json:"maxOutputTokens"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	sp, err := s.ai.Registry.Custom.Create(context.WithoutCancel(r.Context()), u.ID, ai.CustomInput{
@@ -128,7 +128,7 @@ func (s *server) handlePatchCustomProvider(w http.ResponseWriter, r *http.Reques
 	}
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(body, &fields); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	for f := range fields {
@@ -146,7 +146,7 @@ func (s *server) handlePatchCustomProvider(w http.ResponseWriter, r *http.Reques
 		MaxOutputTokens *int           `json:"maxOutputTokens"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	clear := string(bytes.TrimSpace(fields["maxOutputTokens"])) == "null" // a JSON null removes the cap
@@ -168,29 +168,13 @@ func (s *server) handleDeleteCustomProvider(w http.ResponseWriter, r *http.Reque
 	}
 	id := r.PathValue("id")
 	ctx := context.WithoutCancel(r.Context())
-	tx, err := s.db.BeginTx(ctx, nil)
+	err := ai.DeleteCustomProvider(ctx, s.db, id)
+	if errors.Is(err, ai.ErrUnknownProvider) {
+		writeAIError(w, err)
+		return
+	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `DELETE FROM ai_custom_providers WHERE id = ?`, id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		writeAIError(w, ai.ErrUnknownProvider)
-		return
-	}
-	for _, q := range []string{`DELETE FROM ai_keys WHERE provider = ?`, `DELETE FROM ai_selection WHERE provider = ?`} {
-		if _, err := tx.ExecContext(ctx, q, id); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

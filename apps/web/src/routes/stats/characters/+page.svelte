@@ -1,17 +1,18 @@
 <script lang="ts">
+	import { profileOf } from '$lib/languages/profiles';
+	import { hasCharacterMap } from '$lib/languages/profiles';
+	import { errorText } from '$lib/api/apiErrors';
 	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
-	import { ApiError } from '$lib/api/client';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 	import { levelAttributionLine } from '$lib/study/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
-	import { usesHan } from '$lib/languages';
-	import CellTip from '$lib/components/map/CellTip.svelte';
-	import CharGrid from '$lib/components/map/CharGrid.svelte';
-	import StageBar from '$lib/components/map/StageBar.svelte';
+	import CellTip from '$lib/stats/map/CellTip.svelte';
+	import CharGrid from '$lib/stats/map/CharGrid.svelte';
+	import StageBar from '$lib/stats/map/StageBar.svelte';
 	import {
 		cellStates,
 		filterCells,
@@ -51,14 +52,15 @@
 	import type { StudyContext } from '$lib/study/studyContext';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { activeWeights, loadStudyData } from '$lib/study/store';
+	import { loadStudyData } from '$lib/study/data';
+	import { activeWeights } from '$lib/study/readModel';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { workspaces } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const TIP_ID = 'map-cell-tip';
 	const SEARCH_DELAY_MS = 200;
 
@@ -81,7 +83,7 @@
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	// Cards whose legacy written snapshot could not be resolved on this
 	// visit. Reported so the map never silently under-reports.
 	let unresolvedCards = $state(0);
@@ -119,11 +121,6 @@
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let announceTimer: ReturnType<typeof setTimeout> | undefined;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	function storage(): Storage | null {
 		try {
@@ -139,7 +136,7 @@
 	 * each entry resolves. Whatever remains unresolved is reported.
 	 */
 	async function backfillWritten(initial: readonly StudyCard[], seq: number): Promise<void> {
-		const result = await fillMissingWrittenProgressively(initial, (nextCards) => {
+		const result = await fillMissingWrittenProgressively(session.caches.written, initial, (nextCards) => {
 			if (seq !== requestSeq) return;
 			cards = nextCards;
 		});
@@ -152,7 +149,7 @@
 			return await getSchemes();
 		} catch (err) {
 			// The built-in groupings work without the scheme list.
-			schemesError = message(err, t('stats.map.schemesFailed'));
+			schemesError = errorText(err, t('stats.map.schemesFailed'));
 			return [];
 		}
 	}
@@ -192,9 +189,9 @@
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed.
 			const [list, schemeList, data] = await Promise.all([
-				fetchCharacters(lang),
+				fetchCharacters(session.caches.characters, lang),
 				loadSchemeList(),
-				loadStudyData(id)
+				loadStudyData(session.study, id)
 			]);
 			if (seq !== requestSeq) return;
 			universe = list;
@@ -202,7 +199,7 @@
 			cards = data.cards;
 			reviews = data.reviews;
 			weights = activeWeights(data);
-			ctx = contextForData(data, id);
+			ctx = contextForData(session.zone, data, id);
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			levelValue = readLevelChoice(storage(), id, levelGroupsFor(lang, schemeList));
 			// A stored level from another scheme must not be grouped by that
@@ -220,7 +217,7 @@
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			loadError = message(err, t('stats.map.loadFailed'));
+			loadError = errorText(err, t('stats.map.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -233,12 +230,12 @@
 	// The map is built from Han characters; other languages get a note
 	// instead (Stats hides the tab, but the URL can still be visited).
 	const notHan = $derived(
-		$workspaces.current !== null && !usesHan($workspaces.current.language)
+		session.workspaces.current !== null && !hasCharacterMap(session.workspaces.current.language)
 	);
 
 	$effect(() => {
-		const workspace = $workspaces.current;
-		if (workspace && !usesHan(workspace.language)) {
+		const workspace = session.workspaces.current;
+		if (workspace && !hasCharacterMap(workspace.language)) {
 			// Drop any in-flight load for a previous workspace.
 			requestSeq++;
 			loading = false;
@@ -312,12 +309,12 @@
 		try {
 			// One request for every level: the server sends each level's
 			// characters as one string, lowest level first.
-			const levels = await fetchSchemeCharacters(id);
+			const levels = await fetchSchemeCharacters(session.caches.schemes, id);
 			if (seq !== membersSeq) return;
 			members = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== membersSeq) return;
-			membersError = message(err, t('stats.map.membersFailed'));
+			membersError = errorText(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === membersSeq) membersLoading = false;
 		}
@@ -328,12 +325,12 @@
 		levelLoading = true;
 		levelError = '';
 		try {
-			const levels = await fetchSchemeCharacters(id);
+			const levels = await fetchSchemeCharacters(session.caches.schemes, id);
 			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
 			levelMembers = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
-			levelError = message(err, t('stats.map.membersFailed'));
+			levelError = errorText(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === levelSeq) levelLoading = false;
 		}
@@ -832,7 +829,7 @@
 				</section>
 			{/each}
 
-			{#if language.toLowerCase().startsWith('zh')}
+			{#if profileOf(language).variants}
 				<p class="hint small foot">
 					{t('stats.map.zhFoot')}
 				</p>

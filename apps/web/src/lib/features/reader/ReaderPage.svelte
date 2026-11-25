@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import BookView from './BookView.svelte';
 	import Library from './Library.svelte';
 	import SourceBrowser from './SourceBrowser.svelte';

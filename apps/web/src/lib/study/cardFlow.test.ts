@@ -10,31 +10,27 @@ import {
 	deckSessionItems,
 	deckSessionPlan,
 	dropItem,
-	backfillLimit,
 	buryAfterAnswer,
 	clozeDistractorPool,
 	revealsOnKey,
-	isChinese,
+	languageCardKinds,
 	isEligible,
 	levelSessionItems,
-	maskWritten,
 	pickSentence,
-	pinyinReadings,
 	rememberDrop,
 	resolveSentence,
 	reviewCountFor,
 	sessionCounts,
 	shouldIgnoreGrade,
-	tierForCard,
-	tonePadLabels,
-	toneVerdict
+	tierForCard
 } from './cardFlow';
-import { parsePinyin } from './tones';
+import { backfillLimit } from './sessionQueue';
 import type { DeckSessionOptions, DeckSessionPlan, EligibilityContext, EntryLike, FlowItem } from './cardFlow';
 import type { LimitPair } from './limits';
 import type { Run } from './vacation';
 import type { LevelQueueItem } from './levelQueue';
 import type { OptInKind, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 function card(
 	id: string,
@@ -42,27 +38,19 @@ function card(
 	entryId: number,
 	opts: { written?: string; sentenceId?: number; deckIds?: string[]; createdAt?: string } = {}
 ): StudyCard {
-	const result: StudyCard = {
+	return build.card({
 		id,
 		kind,
 		entryId,
 		written: opts.written ?? '学习',
-		deckIds: opts.deckIds ?? ['general'],
-		createdAt: opts.createdAt ?? '2026-01-01T00:00:00.000Z'
-	};
-	if (opts.sentenceId !== undefined) result.sentenceId = opts.sentenceId;
-	return result;
+		deckIds: opts.deckIds,
+		createdAt: opts.createdAt,
+		sentenceId: opts.sentenceId
+	});
 }
 
 function review(cardId: string, ts: string, grade: ReviewGrade = 3, id = `${cardId}-${ts}`): ReviewEvent {
-	return {
-		id,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ cardId, ts, grade, id });
 }
 
 const zhEntry = {
@@ -138,21 +126,13 @@ describe('isEligible', () => {
 });
 
 describe('helpers', () => {
-	it('isChinese matches zh and its regional tags only', () => {
-		expect(isChinese('zh')).toBe(true);
-		expect(isChinese('ZH_tw')).toBe(true);
-		expect(isChinese('ja')).toBe(false);
-		expect(isChinese('')).toBe(false);
-	});
-
-	it('pinyinReadings keeps pinyin values only', () => {
-		expect(
-			pinyinReadings([
-				{ type: 'pinyin', value: 'háng' },
-				{ type: 'bopomofo', value: 'ㄏㄤˊ' },
-				{ type: 'pinyin', value: 'xíng' }
-			])
-		).toEqual(['háng', 'xíng']);
+	it('languageCardKinds keeps the kinds the language profile has (#199)', () => {
+		const all = ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'] as const;
+		expect(languageCardKinds(all, 'zh')).toEqual([...all]);
+		expect(languageCardKinds(all, 'ZH_tw')).toEqual([...all]);
+		expect(languageCardKinds(all, 'ja')).toEqual(['vocab', 'sentence', 'writing', 'reverse', 'cloze']);
+		expect(languageCardKinds(all, 'es')).toEqual(['vocab', 'sentence', 'reverse', 'cloze']);
+		expect(languageCardKinds(all, '')).toEqual(['vocab', 'sentence', 'reverse', 'cloze']);
 	});
 
 	it('reviewCountFor counts valid reviews of one card', () => {
@@ -179,41 +159,6 @@ describe('helpers', () => {
 		expect(tierForCard('a', reviews, now, DEFAULT_W, IDENTITY_CLOCK)).toBe(2);
 	});
 
-	it('maskWritten hides the usable characters not yet written', () => {
-		expect(maskWritten('食べ物', ['食', '物'], 0)).toBe('□べ□');
-		expect(maskWritten('食べ物', ['食', '物'], 1)).toBe('食べ□');
-		expect(maskWritten('食べ物', ['食', '物'], 2)).toBe('食べ物');
-		expect(maskWritten('好好', ['好'], 0)).toBe('□□');
-	});
-});
-
-describe('toneVerdict', () => {
-	it('marks each syllable against the best matching reading', () => {
-		const candidates = [parsePinyin('xué xí')];
-		expect(toneVerdict([2, 2], candidates)).toEqual({
-			correct: true,
-			wrong: 0,
-			marks: [true, true],
-			best: candidates[0]
-		});
-		const verdict = toneVerdict([2, 4], candidates);
-		expect(verdict.wrong).toBe(1);
-		expect(verdict.marks).toEqual([true, false]);
-	});
-
-	it('accepts any reading of a polyphone with the same length', () => {
-		const candidates = [parsePinyin('háng'), parsePinyin('xíng')];
-		expect(toneVerdict([2], candidates).correct).toBe(true);
-		const both = [parsePinyin('zhǎng'), parsePinyin('cháng')];
-		const verdict = toneVerdict([2], both);
-		expect(verdict.correct).toBe(true);
-		expect(verdict.best?.[0].text).toBe('cháng');
-	});
-
-	it('marks everything wrong when no reading has the same length', () => {
-		const verdict = toneVerdict([1, 1], [parsePinyin('hǎo')]);
-		expect(verdict).toEqual({ correct: false, wrong: 2, marks: [false, false], best: null });
-	});
 });
 
 describe('deckSessionItems', () => {
@@ -401,6 +346,48 @@ describe('deckSessionPlan and dropItem', () => {
 	});
 });
 
+describe('deckSessionPlan on the shared builder (#175)', () => {
+	const now = new Date('2026-03-01T00:00:00Z');
+	const words = (n: number) =>
+		Array.from({ length: n }, (_, i) =>
+			card(`v${String(i + 1).padStart(2, '0')}`, 'vocab', i + 1, { createdAt: `2026-01-01T00:00:${String(i).padStart(2, '0')}Z` })
+		);
+	const base = {
+		ctx: UTC_CONTEXT,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		newLimit: 5,
+		reviewLimit: 100,
+		now,
+		w: DEFAULT_W,
+		language: 'zh'
+	};
+
+	it('Study all queues every new card, past the default 20 new per deck', () => {
+		const cards = words(25);
+		const plan = deckSessionPlan({ ...base, cards, kinds: ['vocab'], studyAll: true });
+		expect(plan.queue).toHaveLength(25);
+		expect(deckSessionPlan({ ...base, cards, kinds: ['vocab'] }).queue).toHaveLength(5);
+	});
+
+	it('the reserve never holds more than a session can draw (backfillLeft)', () => {
+		const unlimited = contextFor(UTC_CONTEXT.day, [], now.getTime(), [], {
+			workspace: { new: null, reviews: null },
+			decks: {},
+			existingDecks: null
+		});
+		const plan = deckSessionPlan({ ...base, ctx: unlimited, cards: words(40), kinds: ['vocab', 'sentence'], newLimit: 0 });
+		expect(plan.queue).toEqual([]);
+		expect(plan.backfillLeft).toBe(30);
+		expect(plan.reserve).toHaveLength(30);
+	});
+
+	it('Study all backfills without a bound', () => {
+		const plan = deckSessionPlan({ ...base, cards: words(2), kinds: ['vocab'], studyAll: true });
+		expect(plan.backfillLeft).toBe(1_000_000);
+	});
+});
+
 describe('levelSessionItems', () => {
 	const cards = [card('v1', 'vocab', 1)];
 	const queue: LevelQueueItem[] = [
@@ -532,7 +519,8 @@ describe('backfill bound', () => {
 		// Two in the queue plus thirty replacements, then the session ends.
 		expect(drops).toBe(32);
 		expect(state.backfillLeft).toBe(0);
-		expect(state.reserve.length).toBe(40 - 32);
+		// The reserve held only what the bound lets a session draw (#175).
+		expect(state.reserve.length).toBe(0);
 	});
 
 	it('skips remembered ineligible companions at planning time', () => {
@@ -623,20 +611,6 @@ describe('resolveSentence', () => {
 		};
 		expect(resolveSentence(companion, sentences, new Set([1]))).toEqual({ id: 2 });
 		expect(resolveSentence(companion, sentences, new Set([1, 2, 3]))).toBeNull();
-	});
-});
-
-describe('tonePadLabels', () => {
-	it('gives one Han character per syllable', () => {
-		expect(tonePadLabels('学生', 2)).toEqual(['学', '生']);
-	});
-
-	it('falls back for erhua, where characters outnumber syllables', () => {
-		expect(tonePadLabels('花儿', 1)).toBeNull();
-	});
-
-	it('falls back when a character is not Han', () => {
-		expect(tonePadLabels('T恤', 2)).toBeNull();
 	});
 });
 

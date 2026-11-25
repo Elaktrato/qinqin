@@ -3,9 +3,9 @@
 The app's **Sources page** (`/sources`) is the live source of truth for
 credits. It is public: anyone can open it without signing in. It is built at runtime from three places: the installed packs'
 manifests (`license`, `attribution` and the optional `notice`, served by
-`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes` and
-`/api/component-packs`), the
-`sources` that a web plugin declares in its manifest, and the app's own
+`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes`,
+`/api/component-packs` and `/api/lemma-packs`), the
+`sources` that a core feature declares (`FeatureDef.sources`), and the app's own
 credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
 overview of the same material: the per-language tables and the notes on
 licences, provenance and how each pack is made. It is not generated, so keep
@@ -109,6 +109,19 @@ unverified facts marked unverified) must stay the same in both places.
   not taken from JLPT preparation books or other published lists. The levels
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
+
+## Lemmatizer rules
+
+- **Japanese lemmatizer rules** (`ja-lemma`, type `lemma-rules`; bundled): the
+  rule table that turns inflected Japanese (食べました, 勉強しています,
+  しちゃった) into dictionary forms for the Reader and lookups, **written for
+  qinqin by the project and released under CC0 1.0**
+  (`plugins/data/ja-lemma`, with `LICENSE` and `ATTRIBUTION.md`; issues #165,
+  #177, #176). The same table is built into the server
+  (`server/internal/lemma/tables/ja.json`) and is the contract fixture
+  `docs/contracts/lemma/ja.rules.json`; the pack serves it to clients as the
+  data package `lemma-rules.ja-lemma`. Installed lemma-rules packs are credited
+  on the Sources page (`GET /api/lemma-packs`).
 
 ## Example sentences (Tatoeba)
 
@@ -407,7 +420,7 @@ byte.
   https://www.gov.cn/zwgk/2013-08/19/content_2469793.htm); PRC Copyright Law
   art. 5 (https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html) excludes "法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、
   司法性质的文件". On the map a section's count also includes variant forms of listed characters (shown as "incl. N variant forms"). The map keeps its built-in "Common" grouping (GB2312 rows), a
-  different split. No 小学/初中/高中 split is bundled (see "Local-only data").
+  different split. No 小学/初中/高中 split is offered (see "Level lists considered and not offered").
   Evidence checked 2026-11-15. All 8,105 characters resolve to character
   entries at seed time (the seed line reports 0 unknown forms); that check is the
   opt-in real-pack Go test (`QINQIN_REAL_DATA_TESTS=1`, about 4 minutes), not part
@@ -674,36 +687,9 @@ terms allow it):
 - **wordfreq** (zh) and **jieba** word counts: provenance of the underlying
   counts unclear.
 
-### Local level lists (TBCL, curriculum tables)
+### Level lists considered and not offered
 
-`scripts/prepare-local-levels.mjs` turns a TSV you prepared yourself into a
-levels pack under `plugins/data-local/<id>/` (it refuses any other directory
-unless `--force-dir`, writes no `LICENSE`, and records the input's SHA-256 in
-`ATTRIBUTION.md`). Input: UTF-8, header `level<TAB>form[<TAB>reading]`; levels
-are ordered by first appearance and a form repeated keeps its first level;
-a pinyin or kana reading is kept, a zhuyin reading is dropped with a warning
-(the importer matches toneless pinyin). Nothing from these sources is ever
-committed or used as a test fixture.
-
-- **TBCL words** (`tbcl-words`) and **TBCL characters** (`tbcl-chars`): the
-  臺灣華語文能力基準 of 國家教育研究院 (NAER), the basis of the TOCFL levels
-  (3,100 characters, 14,425 words), https://bcoct.naer.edu.tw/TBCL/ . Footer
-  "Copyright © 2019 國家教育研究院 版權所有"; no licence or 授權 text, and not on
-  data.gov.tw (checked 2026-11-15); local only. Download the 詞語表 / 漢字表
-  from the site, export it to TSV with LibreOffice, keep the columns 等級,
-  詞語 (or 漢字), 漢語拼音, rename the header to `level`, `form`, `reading`,
-  then:
-  `node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" --language zh --unit word --license "NAER, all rights reserved; local use" --attribution "國家教育研究院 臺灣華語文能力基準, https://bcoct.naer.edu.tw/TBCL/" tbcl-words.tsv`
-  (`--unit character` for `tbcl-chars`). Re-check the terms before any
-  bundling.
-- **Mainland curriculum characters** (`cn-curriculum-chars`): the 识字写字教学基本字表
-  and 常用字表 of the 义务教育语文课程标准 (2022), published as a book by 北京师范大学出版社;
-  no reuse licence found, and whether PRC Copyright Law art. 5 covers a 课程标准 is
-  unverified; local only. Type or paste the appendix lists into a TSV with one level per row
-  group (`level<TAB>form`, `--unit character`).
-- **Rejected:** the old TOCFL 華語八千詞 list (withdrawn by TOCFL on 2021-06-30, no
-  licence ever stated, https://tocfl.edu.tw/assets/files/8000zhuyin_recall.pdf) and
-  grade splits copied from textbooks (publisher copyright).
+TBCL (臺灣華語文能力基準, NAER) and the mainland school curriculum character tables (小学/初中/高中) were considered and dropped (no redistribution licence; not needed); the old TOCFL 華語八千詞 list (withdrawn in 2021, no licence ever stated) and grade splits copied from textbooks (publisher copyright) were rejected.
 
 ## Stroke-order data
 
@@ -811,9 +797,9 @@ pack (Settings → Data), whose review shows the measured contrast.
 
 The Reader (see `docs/wiki/Reader.md`) imports public-domain works on user request. Nothing
 from these sources is bundled; each imported book stores its source link,
-attribution, and a licence note, which the Reader shows. The Reader plugin
-credits both sources, and `opencc-js` below, on the Sources page through the
-`sources` in its manifest (`apps/web/src/lib/features/reader/manifest.ts`).
+attribution, and a licence note, which the Reader shows. The app
+credits both sources, and `opencc-js` below, on the Sources page among its own
+credits (`apps/web/src/lib/sources/coreCredits.ts`).
 
 - **Aozora Bunko** (<https://www.aozora.gr.jp/>) — only works in the public domain
   are listed or importable: the catalog's work copyright flag **and** person
@@ -834,8 +820,8 @@ Traditional/simplified conversion in the Reader runs in the browser with
 the licence as `MIT AND Apache-2.0`: the library code is MIT, and its conversion
 dictionaries are generated from [`opencc-data`](https://github.com/nk2028/opencc-data)
 under the Apache License, Version 2.0. It is bundled in the web build and loaded
-only when a script conversion is selected. The Sources page credits it (a
-`sources` entry of the Reader plugin's manifest), and both
+only when a script conversion is selected. The Sources page credits it (an entry of
+`apps/web/src/lib/sources/coreCredits.ts`), and both
 licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
 package; a web test keeps them identical) and served by the running app at

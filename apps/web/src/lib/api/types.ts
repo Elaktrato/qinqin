@@ -32,6 +32,14 @@ export interface Sentence {
 	hanzi: string;
 	pinyin: string;
 	translation: string;
+	/** Who wrote a kept AI example (#186); null (or absent in an old cached answer) for every other sentence. Read it with `aiMark`. */
+	ai?: SentenceAi | null;
+}
+
+/** The mark of an AI example: the provider id and the model (docs/contracts/examples/). */
+export interface SentenceAi {
+	provider: string;
+	model: string;
 }
 
 // EntryBase is an entry as it appears nested inside another entry's
@@ -232,6 +240,19 @@ export interface ComponentPack {
 	notice?: string;
 }
 
+// LemmaPack is one element of GET /api/lemma-packs: an installed
+// lemmatizer rule-table pack's credit line (#176).
+export interface LemmaPack {
+	packId: string;
+	name: string;
+	version: string;
+	language: string;
+	license: string;
+	attribution: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
+}
+
 // FrequencyPack is one element of GET /api/frequency-packs: an installed
 // word-frequency pack's credit line, in priority order.
 export interface FrequencyPack {
@@ -266,18 +287,6 @@ export interface Language {
 	installed: boolean;
 	/** 'code' for a built-in code pack (zh, ja), 'data' for a data-only language. */
 	kind: 'code' | 'data';
-}
-
-// PluginInfo is one element of GET /api/plugins: the plugin manifest
-// (feature plugins verbatim, pack plugins synthesized) plus the
-// caller's home state.
-export interface PluginInfo {
-	id: string;
-	manifest: { name?: unknown; [key: string]: unknown };
-	enabled: boolean;
-	order: number;
-	/** True for the app's own surface-less built-ins (qinqin-core): not listed in Settings. */
-	hidden?: boolean;
 }
 
 // StudyEventBody is one event in POST /api/events/batch. The server

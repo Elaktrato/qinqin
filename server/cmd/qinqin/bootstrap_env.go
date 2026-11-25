@@ -7,36 +7,78 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"qinqin/internal/auth"
 )
 
-// bootstrapAdminFromEnv creates the first admin of a fresh instance from
-// the environment, so a container needs no `adduser` and no open first
-// registration. QINQIN_BOOTSTRAP_ADMIN names the admin (unset: the feature
-// is off); QINQIN_BOOTSTRAP_PASSWORD is the initial password, and when it
-// is empty a random one is generated and logged once. The admin must
-// change the password at the first sign-in. It acts only while there are
-// no users; afterwards the variables are ignored and nothing is logged.
-// An invalid name or password is an error, so serve does not start and
-// fall back to open first registration.
+// The bootstrap administrator's name when QINQIN_BOOTSTRAP_ADMIN is empty,
+// and the value that switches the bootstrap off (#211).
+const (
+	defaultBootstrapAdmin = "admin"
+	bootstrapOff          = "off"
+)
+
+// offLookalikes are values an operator may mean as "off": refused rather
+// than taken as a username, so serve never creates an admin named "false".
+var offLookalikes = map[string]bool{
+	"false": true, "none": true, "disabled": true, "disable": true, "no": true,
+	"0": true, "n": true, "nobody": true, "null": true,
+}
+
+// noActiveAdminHint is logged at every start while users exist but none of
+// them is an active administrator.
+const noActiveAdminHint = "bootstrap: users exist but no active administrator: make one with `qinqin recover --username <name> --admin` (an existing account) or `qinqin adduser --admin --username <name>` (a new one)"
+
+// bootstrapAdmin is auth.BootstrapAdmin; a test replaces it to lose the
+// race deterministically.
+var bootstrapAdmin = auth.BootstrapAdmin
+
+// bootstrapAdminFromEnv gives a fresh instance its administrator before the
+// port opens, so no registration ever decides who is admin (#211). While
+// the users table is empty it creates QINQIN_BOOTSTRAP_ADMIN (default
+// "admin") with QINQIN_BOOTSTRAP_PASSWORD, or, when that is empty, a random
+// password that is logged once; the admin must change it at the first
+// sign-in. QINQIN_BOOTSTRAP_ADMIN=off (any case) creates nothing: the
+// operator creates the admin with `qinqin adduser --admin`, and until then
+// registration stays closed. Values that look like off (false, none, no,
+// 0, ...) are refused. Once users exist the variables are ignored; a start
+// logs only when none of them is an active administrator, naming the fix. An invalid name or password is an error, so serve does
+// not start. A supplied password is never logged.
 func bootstrapAdminFromEnv(ctx context.Context, sqlDB *sql.DB, getenv func(string) string, logf func(string, ...any)) error {
-	raw := getenv("QINQIN_BOOTSTRAP_ADMIN")
-	if raw == "" {
-		return nil
-	}
-	var users int
-	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&users); err != nil {
+	users, err := auth.CountUsers(ctx, sqlDB)
+	if err != nil {
 		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: count users: %w", err)
 	}
 	if users > 0 {
+		var admins int
+		if err := sqlDB.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM users WHERE admin = 1 AND disabled_at IS NULL`).Scan(&admins); err != nil {
+			return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: count administrators: %w", err)
+		}
+		if admins == 0 {
+			logf("%s", noActiveAdminHint)
+		}
 		return nil
 	}
-	name := auth.NormalizeUsername(raw)
+	name := auth.NormalizeUsername(getenv("QINQIN_BOOTSTRAP_ADMIN"))
+	if offLookalikes[strings.ToLower(name)] {
+		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN=%q: use \"off\" to switch the bootstrap off", name)
+	}
+	password := getenv("QINQIN_BOOTSTRAP_PASSWORD")
+	if strings.EqualFold(name, bootstrapOff) {
+		logf("bootstrap: off (QINQIN_BOOTSTRAP_ADMIN=off) and no user exists: create the administrator with `qinqin adduser --admin --username <name>`; registration stays closed until then")
+		if password != "" {
+			logf("bootstrap: QINQIN_BOOTSTRAP_PASSWORD is set but ignored while the bootstrap is off; remove it")
+		}
+		return nil
+	}
+	if name == "" {
+		name = defaultBootstrapAdmin
+	}
 	if err := auth.CheckNewUsername(ctx, sqlDB, name); err != nil {
 		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: %s", reasonOr(err))
 	}
-	password := getenv("QINQIN_BOOTSTRAP_PASSWORD")
 	generated := password == ""
 	if generated {
 		password = generatePassword()
@@ -44,13 +86,13 @@ func bootstrapAdminFromEnv(ctx context.Context, sqlDB *sql.DB, getenv func(strin
 	if err := auth.CheckPassword(name, password); err != nil {
 		return fmt.Errorf("QINQIN_BOOTSTRAP_PASSWORD: %s", reasonOr(err))
 	}
-	if _, err := auth.BootstrapAdmin(ctx, sqlDB, name, password); err != nil {
+	if _, err := bootstrapAdmin(ctx, sqlDB, name, password); err != nil {
 		if errors.Is(err, auth.ErrNotFirst) {
-			return nil // another process won the race: nothing to do
+			return nil // another process won the race: it logged its own password
 		}
 		return fmt.Errorf("QINQIN_BOOTSTRAP_ADMIN: %w", err)
 	}
-	logf("bootstrap: created admin %q; the password must be changed at the first sign-in", name)
+	logf("bootstrap: created administrator %q; the password must be changed at the first sign-in", name)
 	if generated {
 		logf("bootstrap: initial password (shown once, never again): %s", password)
 	}

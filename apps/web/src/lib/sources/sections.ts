@@ -1,15 +1,13 @@
 // Pure data assembly for the Sources page: the pack tables' rows and
-// notes from the API, the plugin credits from the web plugin manifests,
+// notes from the API, the feature credits from the core features (lib/features),
 // and the app's own credits. The page only renders what this returns.
 
-import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
 import type { ThemePack } from '$lib/api/themes';
-import type { ComponentPack, StrokePack } from '$lib/api/types';
+import type { ComponentPack, LemmaPack, StrokePack } from '$lib/api/types';
 import type { FontList } from '$lib/api/fonts';
 import { t } from '$lib/i18n';
-import { licenseUrl } from '$lib/licenses';
-import type { PluginManifest } from '$lib/plugins';
+import { licenseUrl } from '$lib/sources/licenses';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
 
@@ -45,6 +43,27 @@ export function sentencePackSources(list: SentencePack[]): PackSource[] {
 export function componentsSection(list: ComponentPack[], error: string): { show: boolean; table: PackTable } {
 	const table = packTable(
 		'components',
+		list.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: p.language,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	return { show: error !== '' || list.length > 0, table };
+}
+
+/**
+ * lemmaSection is the Sources page's "Lemmatizer rules" block: the table of
+ * GET /api/lemma-packs. It shows only while a pack is installed, or on a load
+ * error (so the retry is reachable).
+ */
+export function lemmaSection(list: LemmaPack[], error: string): { show: boolean; table: PackTable } {
+	const table = packTable(
+		'lemma',
 		list.map((p, i) => ({
 			id: i,
 			name: p.name,
@@ -278,27 +297,27 @@ export function creditView(credit: SourceCredit): CreditView {
 	};
 }
 
-export interface PluginCredits {
+export interface FeatureCredits {
 	id: string;
 	name: string;
 	credits: CreditView[];
 }
 
 /**
- * pluginCredits lists, in registry order, each plugin that declares
- * sources with its credits. A credit already listed under the app's own
- * credits (same name, case-insensitive) is left out, so shared material
- * appears once; a plugin left with no credits is skipped.
+ * featureCredits lists, in the features' order, each core feature that
+ * declares sources with its credits. A credit already listed under the app's
+ * own credits (same name, case-insensitive) is left out, so shared material
+ * appears once; a feature left with no credits is skipped.
  */
-export function pluginCredits(
-	manifests: PluginManifest[],
+export function featureCredits(
+	features: readonly { id: string; title: string; def: { sources?: SourceCredit[] } }[],
 	core: SourceCredit[] = []
-): PluginCredits[] {
+): FeatureCredits[] {
 	const coreNames = new Set(core.map((credit) => credit.name.trim().toLowerCase()));
-	return manifests.flatMap((manifest) => {
-		const credits = (manifest.sources ?? [])
+	return features.flatMap((feature) => {
+		const credits = (feature.def.sources ?? [])
 			.filter((credit) => !coreNames.has(credit.name.trim().toLowerCase()))
 			.map(creditView);
-		return credits.length > 0 ? [{ id: manifest.id, name: pluginName(manifest), credits }] : [];
+		return credits.length > 0 ? [{ id: feature.id, name: feature.title, credits }] : [];
 	});
 }

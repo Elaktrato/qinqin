@@ -30,12 +30,12 @@
 		"reason": "An example URL as the placeholder of the site-address field: the same in every language."
 	},
 	{
-		"file": "lib/plugins/journal/manifest.ts",
+		"file": "lib/features/journal/manifest.ts",
 		"text": "Tesseract OCR",
 		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
 	},
 	{
-		"file": "lib/plugins/journal/manifest.ts",
+		"file": "lib/features/journal/manifest.ts",
 		"text": "Anthropic Go SDK",
 		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
 	},
@@ -83,5 +83,25 @@
 		"file": "lib/sources/coreCredits.ts",
 		"text": "MIT AND Apache-2.0",
 		"reason": "An SPDX licence expression (data)."
+	},
+	{
+		"file": "lib/i18n/catalogueCheck.ts",
+		"text": "String(e)",
+		"reason": "Catalogue machinery: a developer report of a message that does not parse (test and dev-script output); never shown in the app."
+	},
+	{
+		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"text": "e.message",
+		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
+	},
+	{
+		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"text": "String(e)",
+		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
+	},
+	{
+		"file": "lib/api/apiErrors.ts",
+		"text": "body?.message",
+		"reason": "packErrorDetail: the one ruled exception (spec 2026-11-23-error-contract-design.md, Ruling in section 5): the pack validator's English reason of a pack_invalid answer, shown to the administrator under the translated text as English detail."
 	}
 ]

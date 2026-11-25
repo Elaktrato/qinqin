@@ -1,3 +1,9 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Scheme } from '$lib/api/types';
@@ -7,14 +13,18 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({ getEntry: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
 vi.mock('$lib/api/audio', () => ({ resolveAudio: vi.fn(async () => ({})) }));
-vi.mock('$lib/study/events', () => ({
-	flushPendingReviews: vi.fn(async () => {}),
-	recordReview: vi.fn(async () => null),
-	recordReplacement: vi.fn(async () => null)
+// The session's outbox, faked (record 0009: the page records through useSession().outbox).
+const outboxFakes = vi.hoisted(() => ({
+	flush: vi.fn(async () => {}),
+	recordReview: vi.fn<import('$lib/study/events').ReviewOutbox['recordReview']>(async () => null),
+	recordReplacement: vi.fn<import('$lib/study/events').ReviewOutbox['recordReplacement']>(async () => null)
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
 	addCard: vi.fn()
 }));
 vi.mock('$lib/study/writing', async (importOriginal) => ({
@@ -40,24 +50,17 @@ vi.mock('$lib/study/sessionMix', async (importOriginal) => {
 	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
 	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
 });
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: vi.fn(),
-	currentStudyHistory: vi.fn(() => []),
-	onStudyDayChange: vi.fn(() => () => {})
-}));
 
 import { getEntry } from '$lib/api/entries';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { recordReplacement, recordReview } from '$lib/study/events';
+const { recordReplacement, recordReview } = outboxFakes;
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { mixFlowQueue } from '$lib/study/sessionMix';
-import { addCard, loadStudyData } from '$lib/study/store';
+import { addCard } from '$lib/study/commands/cards';
+import { loadStudyData } from '$lib/study/data';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
-import { offline, resetOffline } from '$lib/pwa/offlineState';
-import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -65,6 +68,21 @@ import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { shortInterval } from '$lib/study/intervalText';
 import { scheduleFor } from '$lib/study/scheduler';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+	Object.assign(ctx.session.outbox, outboxFakes);
+});
 
 // The generated preview of a new card with the default weights (#101): never adjusted to the test.
 const NEW_CARD = (
@@ -124,7 +142,7 @@ function configure(cardTypes: string[], newLimit = 20): void {
 }
 
 function history(cards: StudyCard[], reviews: ReviewEvent[]): void {
-	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards, reviews, merged: 0 });
+	vi.mocked(loadStudyData).mockResolvedValue(build.history({ cards, reviews }));
 }
 
 beforeEach(() => {
@@ -137,7 +155,7 @@ beforeEach(() => {
 	] as never);
 	vi.mocked(getEntry).mockImplementation(async (id: number) => kanji(id, GLYPHS[id] ?? '?'));
 	vi.mocked(usableChars).mockImplementation(async (written: string) => [...written]);
-	vi.mocked(addCard).mockImplementation(async (entryId, opts) => ({
+	vi.mocked(addCard).mockImplementation(async (_study, _ws, entryId, opts) => ({
 		id: `c-${opts?.kind ?? 'vocab'}-${entryId}`,
 		kind: opts?.kind ?? 'vocab',
 		entryId,
@@ -145,7 +163,7 @@ beforeEach(() => {
 		createdAt: new Date().toISOString()
 	}));
 	history([], []);
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'ja', name: 'ja' } as never],
 		current: { id: 1, language: 'ja', name: 'ja' } as never
 	});
@@ -160,7 +178,7 @@ afterEach(() => {
 describe('character level session', () => {
 	it('shows the glyph first, readings after the reveal, and grades into one card', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(screen.getByText('日')).toBeTruthy();
 		expect(screen.queryByLabelText('Readings')).toBeNull();
@@ -171,7 +189,8 @@ describe('character level session', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /Good/ }));
 		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
-		expect(addCard).toHaveBeenCalledWith(
+		expect(addCard).toHaveBeenCalledWith(expect.anything(), 
+			1,
 			11,
 			expect.objectContaining({ kind: 'vocab', written: '日', entryKind: 'character' })
 		);
@@ -204,7 +223,7 @@ describe('character level session', () => {
 				}
 			]
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 	});
 
@@ -213,7 +232,7 @@ describe('character level session', () => {
 		vi.mocked(usableChars).mockImplementation(async (written: string) =>
 			written === '日' ? [] : [...written]
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
@@ -221,7 +240,7 @@ describe('character level session', () => {
 
 	it('runs a writing-only session', async () => {
 		configure(['writing']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 	});
 
@@ -231,7 +250,7 @@ describe('character level session', () => {
 			...kanji(id, GLYPHS[id] ?? '?'),
 			senses: id === 11 ? [] : kanji(id, '?').senses
 		}));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
@@ -248,30 +267,28 @@ describe('offline start', () => {
 	}
 	const word = (id: number): StudyCard => ({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
 
-	beforeEach(() => resetOffline());
-	afterEach(() => resetOffline());
 
 	it('says the workspace is not ready when nothing was saved', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab']);
 		vi.mocked(loadStudyData).mockRejectedValue(new TypeError('Failed to fetch'));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText("This workspace isn't ready for offline study yet. Open it once while online.")).toBeTruthy();
 	});
 
 	it('a level session offline says it needs a connection', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configure(['vocab']);
 		vi.mocked(getSchemes).mockRejectedValue(new TypeError('Failed to fetch'));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText('Level sessions need a connection. Start a deck session instead.')).toBeTruthy();
 	});
 
 	it('studies saved real cards and notes that companion cards return online', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab', 'sentence']);
 		history([word(11), word(12)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(screen.getByText('Companion cards return when you are online.')).toBeTruthy();
 	});
@@ -308,8 +325,7 @@ describe('personal note on the answer side', () => {
 	const NOTE = 'Sun + root <img src=x onerror=alert(1)>';
 
 	beforeEach(() => {
-		resetOffline();
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 2, language: 'zh', name: 'zh' } as never],
 			current: { id: 2, language: 'zh', name: 'zh' } as never
 		});
@@ -318,7 +334,6 @@ describe('personal note on the answer side', () => {
 		vi.mocked(loadNotes).mockResolvedValue(new Map([[21, NOTE]]));
 		vi.mocked(loadNoteCfg).mockResolvedValue({ onAnswer: true, extra: {} });
 	});
-	afterEach(() => resetOffline());
 
 	const LABELS: Record<string, string> = {
 		vocab: 'Recognise card',
@@ -342,7 +357,7 @@ describe('personal note on the answer side', () => {
 				merged: 0,
 				deckSettings: { general: { deckId: 'general', cardTypes: ['reverse', 'cloze'], extra: {} } }
 			} as never);
-			render(Page);
+			render(Page, { context: ctx.context });
 			expect(await screen.findByLabelText(LABELS[kind])).toBeTruthy();
 			await waitFor(() => expect(loadNotes).toHaveBeenCalledWith(2));
 			await new Promise((r) => setTimeout(r, 0));
@@ -358,7 +373,7 @@ describe('personal note on the answer side', () => {
 		vi.mocked(loadNoteCfg).mockResolvedValue({ onAnswer: false, extra: {} });
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalledWith(2));
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
@@ -370,7 +385,7 @@ describe('personal note on the answer side', () => {
 		vi.mocked(loadNotes).mockRejectedValue(new Error('down'));
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await new Promise((r) => setTimeout(r, 0));
@@ -384,15 +399,15 @@ describe('personal note on the answer side', () => {
 		vi.mocked(loadNotes).mockReturnValue(new Promise(() => {}));
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 	});
 
 	it('an offline session makes no notes request', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		expect(loadNotes).not.toHaveBeenCalled();
@@ -404,8 +419,8 @@ describe('personal note on the answer side', () => {
 describe('session states keep the page outline (#101)', () => {
 	it('the no-workspace state still has an h1', async () => {
 		configure(['vocab']);
-		workspaces.set({ list: [], current: null });
-		render(Page);
+		ctx.session.workspaces.set({ list: [], current: null });
+		render(Page, { context: ctx.context });
 		const h1 = await screen.findByRole('heading', { level: 1 });
 		expect(h1.textContent).toBe('Session');
 		expect(h1.classList.contains('visually-hidden')).toBe(true);
@@ -419,7 +434,7 @@ describe('the open page (#101)', () => {
 
 	it('shows the next interval on each grade button once the card is done', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(screen.queryByRole('group', { name: 'Grade this card' })).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
@@ -438,7 +453,7 @@ describe('the open page (#101)', () => {
 			recorded = { workspaceId, cardId, grade, mode, at: new Date() };
 			return null;
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		const good = await screen.findByRole('button', { name: /^Good, next review/ });
@@ -466,7 +481,7 @@ describe('the open page (#101)', () => {
 
 	it('announces "Good. Next review in 10 minutes." in a polite status after a grade', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await fireEvent.click(await screen.findByRole('button', { name: /^Good, next review/ }));
@@ -480,7 +495,7 @@ describe('the open page (#101)', () => {
 
 	it('a re-show says practice and announces practice only', async () => {
 		configure(['vocab'], 1);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await fireEvent.click(await screen.findByRole('button', { name: /^Again, next review/ }));
@@ -497,7 +512,7 @@ describe('the open page (#101)', () => {
 
 	it("moves focus to the next card's heading after a grade", async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await fireEvent.click(await screen.findByRole('button', { name: /^Good, next review/ }));
@@ -507,7 +522,7 @@ describe('the open page (#101)', () => {
 
 	it('Space reveals and 1–4 grade (unchanged)', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
 		await screen.findByRole('group', { name: 'Grade this card' });
@@ -518,7 +533,7 @@ describe('the open page (#101)', () => {
 	it('the kind label reads Recognise and the deck · level shows the level', async () => {
 		// A level item has no deck yet: the level alone.
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		const head = document.querySelector('.face-head')!;
 		expect(head.querySelector('.kind')?.textContent).toBe('Recognise');
@@ -542,7 +557,7 @@ describe('deck · level in a deck session (#101)', () => {
 			reviews: [],
 			merged: 0
 		} as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		await waitFor(() => expect(document.querySelector('.face-head .deck')?.textContent).toBe('Kanji · JLPT kanji N5'));
 	});
@@ -581,7 +596,7 @@ describe('kana display forms on the faces (#101, prep-run item 1)', () => {
 	// its face is checked with the real card in ReverseCard.dom.test.ts.
 	it('Recognise shows の, not 乃, in the prompt and the answer', async () => {
 		decks('vocab');
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		expect(document.querySelector('.face-prompt')?.textContent).toContain('の');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
@@ -594,15 +609,14 @@ describe('kana display forms on the faces (#101, prep-run item 1)', () => {
 describe('the session loads once (#101, found in the real-app check)', () => {
 	it('a change of the offline state (a flushed outbox, a cached answer) does not reload the session', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
-		offline.update((s) => ({ ...s, allSentAt: Date.now() }));
-		offline.update((s) => ({ ...s, queued: 3 }));
+		ctx.app.offline.allSentAt = Date.now();
+		ctx.app.offline.setQueued(3);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
 		expect(screen.getByLabelText('Recognise card')).toBeTruthy();
-		resetOffline();
 	});
 });
 
@@ -640,7 +654,7 @@ describe('order of card types (#132)', () => {
 
 	it('grouped by type shows the vocab cards first', async () => {
 		start({ typeOrder: 'grouped', seed: 1 });
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 	});
 
@@ -656,14 +670,14 @@ describe('order of card types (#132)', () => {
 		expect(moonSeed).toBeDefined();
 
 		start({ seed: sunSeed });
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(await screen.findByText('日')).toBeTruthy();
 		expect(vi.mocked(mixFlowQueue).mock.calls[0][2]).toEqual({ seed: sunSeed, order: 'mixed', vocabFirst: true });
 		cleanup();
 
 		start({ seed: moonSeed });
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(await screen.findByText('月')).toBeTruthy();
 	});
@@ -676,7 +690,7 @@ describe('the mix on the page (#132 review)', () => {
 		configure(['vocab']);
 		// Reverse the queue: the page must show what the mix returns.
 		vi.mocked(mixFlowQueue).mockImplementationOnce((queue) => [...queue].reverse());
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		const call = vi.mocked(mixFlowQueue).mock.calls[0];
 		expect(ids(call)).toEqual(['level:11', 'level:12', 'level:13']);
@@ -688,10 +702,10 @@ describe('the mix on the page (#132 review)', () => {
 			SESSION_CONFIG_KEY,
 			JSON.stringify({ mode: 'levels', schemeId: 3, levelName: 'N5', deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], seed: 4321 })
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		cleanup();
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		const calls = vi.mocked(mixFlowQueue).mock.calls;
 		expect(calls).toHaveLength(2);
@@ -705,10 +719,10 @@ describe('the mix on the page (#132 review)', () => {
 
 	it('a setup without a seed keeps one seed across reloads', async () => {
 		configure(['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		cleanup();
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		const calls = vi.mocked(mixFlowQueue).mock.calls;
 		expect(calls).toHaveLength(2);
@@ -762,7 +776,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('goes back to the card graded Again and changes it to Good: one replacement, no re-show', async () => {
 		configureDecks();
 		history([word(11), word(12), word(13)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText('日')).toBeTruthy();
 		await gradeShown(/^Again/);
 		expect(await screen.findByText('月')).toBeTruthy();
@@ -788,7 +802,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('choosing the same grade records nothing', async () => {
 		configureDecks();
 		history([word(11), word(12)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Good/);
 		expect(await screen.findByText('月')).toBeTruthy();
 		await fireEvent.keyDown(window, { key: 'z' });
@@ -802,7 +816,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('Z goes further back, Escape returns without a change', async () => {
 		configureDecks();
 		history([word(11), word(12), word(13)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Good/);
 		expect(await screen.findByText('月')).toBeTruthy();
 		await gradeShown(/^Hard/);
@@ -821,7 +835,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('from the summary: the last card changed to Again comes back as a re-show', async () => {
 		configureDecks();
 		history([word(11)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Good/);
 		expect(await screen.findByText('Session complete')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Change the last grade' }));
@@ -835,7 +849,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('Z typed into a field or a card input never goes back (review fix 3)', async () => {
 		configureDecks();
 		history([word(11), word(12)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Good/);
 		expect(await screen.findByText('月')).toBeTruthy();
 		const field = document.createElement('input');
@@ -863,7 +877,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('the summary counts the changed grade: XP and reviews (review fix 4)', async () => {
 		configureDecks();
 		history([word(11), word(12)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Good/);
 		expect(await screen.findByText('月')).toBeTruthy();
 		await gradeShown(/^Good/);
@@ -884,7 +898,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 		vi.mocked(recordReview).mockResolvedValueOnce(null);
 		configureDecks();
 		history([word(11), word(12), word(13)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await gradeShown(/^Again/);
 		expect(await screen.findByText('2 / 3, 1 to repeat')).toBeTruthy();
 		await fireEvent.keyDown(window, { key: 'z' });
@@ -897,7 +911,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 	it('no Back before the first grade', async () => {
 		configureDecks();
 		history([word(11)], []);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText('日')).toBeTruthy();
 		expect(screen.queryByRole('button', { name: /^Back to the card graded before/ })).toBeNull();
 		await fireEvent.keyDown(window, { key: 'z' });

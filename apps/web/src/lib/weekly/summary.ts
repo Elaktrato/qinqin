@@ -14,6 +14,7 @@ import { isVacationDay, type Run } from '../study/vacation';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { reviewsKey } from './replay';
 import { isSkippedDate, isoWeekday, weekDates, weekOf } from './week';
+import { activityLabel } from '../activity/sources';
 
 export type DayState = 'active' | 'inactive' | 'vacation' | 'upcoming' | 'skipped';
 
@@ -110,7 +111,7 @@ export function weekCutoffs(monday: string, today: string, day: StudyDay): WeekC
 	};
 }
 
-interface LocalPass {
+export interface LocalPass {
 	flash: Map<string, FlashcardDay>;
 	/** Learner days with a valid local review. */
 	localDays: Set<string>;
@@ -123,9 +124,11 @@ export const summaryStats = { logPasses: 0 };
 // a history reloaded after its TTL is a new, equal array) and study day
 // (a cached object), so browsing weeks does not repeat it.
 const MAX_PASSES = 4;
-const passes = new Map<string, { day: StudyDay; pass: LocalPass }>();
 
-function localPass(reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
+/** The session's passes (context/caches.ts), by log content. */
+export type WeekPasses = Map<string, { day: StudyDay; pass: LocalPass }>;
+
+function localPass(passes: WeekPasses, reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
 	const key = reviewsKey(reviews);
 	const hit = passes.get(key);
 	if (hit !== undefined && hit.day === day) return hit.pass;
@@ -140,7 +143,7 @@ function localPass(reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
 	return pass;
 }
 
-export function weekSummary(input: WeekInputs): WeekSummary {
+export function weekSummary(passes: WeekPasses, input: WeekInputs): WeekSummary {
 	const { monday, day, workspaceId, reviews, vacation, activity } = input;
 	const today = day.today(input.now);
 	if (isoWeekday(monday) !== 1) throw new RangeError(`weekSummary: ${monday} is not a Monday`);
@@ -155,7 +158,7 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 	const week = datesBetween(monday, last);
 	const prev = datesBetween(prevMonday, compareThrough);
 
-	const { flash, localDays } = localPass(reviews, day);
+	const { flash, localDays } = localPass(passes, reviews, day);
 	const act = activity === null ? null : activityAmounts(activity.cells, workspaceId);
 	const points = new Map<string, number>();
 	for (const cell of activity?.cells ?? []) {
@@ -176,7 +179,7 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 
 	const others = (activity?.sources ?? [])
 		.filter((s) => !BUILT_IN_TYPES.has(s.type))
-		.sort((a, b) => a.label.localeCompare(b.label) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+		.sort((a, b) => activityLabel(a).localeCompare(activityLabel(b)) || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
 		.map((s) => activityRow(`activity:${s.type}`, s.type, s.unit))
 		.filter((row) => (row.value ?? 0) > 0 || (row.previous ?? 0) > 0);
 

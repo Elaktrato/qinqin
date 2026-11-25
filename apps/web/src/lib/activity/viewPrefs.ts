@@ -1,9 +1,8 @@
 // The heatmap's view (scope and hidden activity types), remembered per
-// user across devices in qinqin-core plugin data. Last write wins; a
+// user across devices in a keyed row (docs/contracts/keyed/). Last write wins; a
 // corrupt stored value reads as the default.
 
-import { createPluginSdk } from '../plugins/sdk';
-import { coreManifest } from '../plugins/core/manifest';
+import { keyedData } from '../sync/keyed';
 
 export const ACTIVITY_VIEW_KEY = 'activity-view';
 
@@ -35,7 +34,7 @@ export function parseActivityView(value: unknown): StoredActivityView {
 export async function loadActivityView(): Promise<StoredActivityView> {
 	try {
 		return parseActivityView(
-			await createPluginSdk(coreManifest).data.user().find(ACTIVITY_VIEW_KEY)
+			await keyedData(null).find(ACTIVITY_VIEW_KEY)
 		);
 	} catch {
 		return { ...DEFAULT_ACTIVITY_VIEW, hidden: [] };
@@ -44,7 +43,5 @@ export async function loadActivityView(): Promise<StoredActivityView> {
 
 /** saveActivityView stores the view for every device. */
 export async function saveActivityView(view: StoredActivityView): Promise<void> {
-	await createPluginSdk(coreManifest)
-		.data.user()
-		.put(ACTIVITY_VIEW_KEY, { version: 1, scope: view.scope, hidden: view.hidden });
+	await keyedData(null).put(ACTIVITY_VIEW_KEY, { version: 1, scope: view.scope, hidden: view.hidden });
 }

@@ -19,8 +19,6 @@ import (
 	"qinqin/internal/library"
 )
 
-var deleteTestPlugin = validManifest("qinqin-flashcards", "")
-
 // eventID returns a valid, distinct ULID for test events.
 func eventID(n int) string {
 	return fmt.Sprintf("01J%023d", n)
@@ -59,7 +57,7 @@ func populateWorkspace(t *testing.T, tsURL, token string, store library.Store, u
 	}
 	// A keyed row of the study namespace (plugin data). Typed study rows
 	// (card:, deck:, ...) live in the study tables since migration 038.
-	if resp := doRaw(t, http.MethodPut, tsURL, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+ws, token, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
+	if resp := doRaw(t, http.MethodPut, tsURL, "/api/rows/known:1?workspace="+ws, token, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
 		t.Fatalf("plugin data for %s: status = %d", ws, resp.StatusCode)
 	}
 	// One typed study row of each family (migration 038), as a client pushes them.
@@ -120,7 +118,7 @@ func workspaceRows(t *testing.T, sqlDB *sql.DB, wsID int64) map[string]int {
 	for k, v := range map[string]int{
 		"workspaces":         countWhere(t, sqlDB, `SELECT COUNT(*) FROM workspaces WHERE id = ?`, wsID),
 		"study_events":       countWhere(t, sqlDB, `SELECT COUNT(*) FROM study_events WHERE workspace_id = ?`, wsID),
-		"plugin_data":        countWhere(t, sqlDB, `SELECT COUNT(*) FROM plugin_data WHERE workspace_id = ?`, wsID),
+		"keyed_rows":         countWhere(t, sqlDB, `SELECT COUNT(*) FROM keyed_rows WHERE workspace_id = ?`, wsID),
 		"library_books":      countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_books WHERE workspace_id = ?`, wsID),
 		"library_bookmarks":  countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_bookmarks WHERE book_id IN (SELECT id FROM library_books WHERE workspace_id = ?)`, wsID),
 		"library_highlights": countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_highlights WHERE book_id IN (SELECT id FROM library_books WHERE workspace_id = ?)`, wsID),
@@ -135,7 +133,6 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	var aliceID, bobID int64
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'bob'`).Scan(&bobID)
@@ -147,7 +144,7 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	keptBook := populateWorkspace(t, ts.URL, alice, store, aliceID, kept, 2)
 	populateWorkspace(t, ts.URL, bob, store, bobID, bobs, 3)
 	// A user-global row is not the workspace's and stays.
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/settings", alice, `{"a":1}`); resp.StatusCode != http.StatusOK {
+	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/rows/home-layout", alice, `{"a":1}`); resp.StatusCode != http.StatusOK {
 		t.Fatalf("user-global plugin data: status = %d", resp.StatusCode)
 	}
 	keptBefore := workspaceRows(t, sqlDB, kept)
@@ -213,7 +210,7 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/library/books/"+strconv.FormatInt(keptBook, 10)+"/chapters/0", alice, nil); resp.StatusCode != http.StatusOK {
 		t.Errorf("GET kept book chapter: status = %d, want 200", resp.StatusCode)
 	}
-	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM plugin_data WHERE workspace_id IS NULL AND user_id = ?`, aliceID); n != 1 {
+	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM keyed_rows WHERE workspace_id IS NULL AND user_id = ?`, aliceID); n != 1 {
 		t.Errorf("user-global plugin rows = %d, want 1", n)
 	}
 
@@ -265,11 +262,10 @@ func TestDeleteLastWorkspaceRefused(t *testing.T) {
 func TestDeletedWorkspaceSync(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")
 	kept := createWorkspace(t, ts.URL, alice, "zh", "")
 	for _, ws := range []int64{gone, kept} {
-		if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+strconv.FormatInt(ws, 10), alice, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
+		if resp := doRaw(t, http.MethodPut, ts.URL, "/api/rows/known:1?workspace="+strconv.FormatInt(ws, 10), alice, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
 			t.Fatalf("plugin data: status = %d", resp.StatusCode)
 		}
 		if resp := doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", alice, studyPush(ws)); resp.StatusCode != http.StatusOK {
@@ -281,21 +277,20 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 	}
 
 	// A pull lists nothing of the deleted workspace.
-	pull := doJSON(t, http.MethodGet, ts.URL, "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData", alice, nil)
-	if pull.StatusCode != http.StatusOK {
-		t.Fatalf("pull: status = %d", pull.StatusCode)
+	backdate(t, sqlDB.Exec)
+	status, _, body := get(t, ts.URL, "/api/sync/pull?v=2&tombstones=1&collections=rows,cards,decks,deckSettings,limits,fsrsSets,fsrsActive", alice)
+	var page v2Page
+	if status != http.StatusOK || json.Unmarshal(body, &page) != nil {
+		t.Fatalf("pull: status = %d %s", status, body)
 	}
-	var delta struct {
-		PluginData []struct {
+	if len(page.Collections["rows"]) != 1 {
+		t.Errorf("pulled %d plugin rows, want the kept workspace's keyed row", len(page.Collections["rows"]))
+	}
+	for _, raw := range page.Collections["rows"] {
+		var r struct {
 			WorkspaceID *int64 `json:"workspaceId"`
-		} `json:"pluginData"`
-	}
-	decodeJSON(t, pull, &delta)
-	// The keyed row and, through the legacy view, the six typed rows.
-	if len(delta.PluginData) != 7 {
-		t.Errorf("pulled %d plugin rows, want the kept workspace's 7", len(delta.PluginData))
-	}
-	for _, r := range delta.PluginData {
+		}
+		json.Unmarshal(raw, &r)
 		if r.WorkspaceID == nil || *r.WorkspaceID != kept {
 			t.Errorf("pulled a plugin row of workspace %v, want only the kept workspace's rows", r.WorkspaceID)
 		}
@@ -303,8 +298,8 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 
 	// A device still holding the deleted workspace's data cannot push it
 	// back: plugin data, events, and the direct routes are all 404.
-	push := map[string]any{"pluginData": []map[string]any{{
-		"pluginId": "qinqin-flashcards", "key": "card:y", "workspaceId": gone,
+	push := map[string]any{"rows": []map[string]any{{
+		"key": "notecfg", "workspaceId": gone,
 		"data": map[string]string{"id": "y"}, "updatedAt": "2026-11-14T10:00:00Z",
 	}}}
 	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/sync/push", alice, push); resp.StatusCode != http.StatusNotFound {
@@ -319,25 +314,23 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/events/batch", alice, push); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("event batch of deleted workspace: status = %d, want 404", resp.StatusCode)
 	}
-	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/card:y?workspace="+strconv.FormatInt(gone, 10), alice, `{"id":"y"}`); resp.StatusCode != http.StatusNotFound {
+	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/rows/notecfg?workspace="+strconv.FormatInt(gone, 10), alice, `{"id":"y"}`); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("PUT plugin data of deleted workspace: status = %d, want 404", resp.StatusCode)
 	}
 	if resp := doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", alice, studyPush(gone)); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("push typed study rows of deleted workspace: status = %d, want 404", resp.StatusCode)
 	}
 	// The typed pull lists only the kept workspace's rows.
-	tpull := doJSON(t, http.MethodGet, ts.URL, "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=cards,decks,deckSettings,limits,fsrsSets,fsrsActive", alice, nil)
-	var typedRaw map[string]json.RawMessage
-	decodeJSON(t, tpull, &typedRaw)
 	for _, name := range []string{"cards", "decks", "deckSettings", "limits", "fsrsSets", "fsrsActive"} {
-		var list []struct {
+		list := page.Collections[name]
+		var row struct {
 			WorkspaceID int64 `json:"workspaceId"`
 		}
-		if err := json.Unmarshal(typedRaw[name], &list); err != nil {
-			t.Fatalf("%s: %v", name, err)
+		if len(list) == 1 {
+			json.Unmarshal(list[0], &row)
 		}
-		if len(list) != 1 || list[0].WorkspaceID != kept {
-			t.Errorf("pulled %s %+v, want only the kept workspace's row", name, list)
+		if len(list) != 1 || row.WorkspaceID != kept {
+			t.Errorf("pulled %s %s, want only the kept workspace's row", name, list)
 		}
 	}
 	for table, n := range workspaceRows(t, sqlDB, gone) {
@@ -528,7 +521,6 @@ func TestDeleteWorkspaceFailureRollsBack(t *testing.T) {
 	ts, sqlDB, dataDir := newServerWithDir(t)
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	alice := registerUser(t, ts.URL, "alice", "")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	var aliceID int64
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
 	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")

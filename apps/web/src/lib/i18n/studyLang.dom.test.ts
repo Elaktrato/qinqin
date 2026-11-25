@@ -1,14 +1,19 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cleanup, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeEach } from 'vitest';
 import type { Entry, Workspace } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
 import type { StudyCard } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
-import CardManager from '$lib/components/CardManager.svelte';
+import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 import ToneCard from '$lib/features/flashcards/cards/ToneCard.svelte';
 import CardHarness from '$lib/features/flashcards/face/testing/CardHarness.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 // Study text carries the study language, interface text the document's (spec "lang and dir attributes"): the
 // closest [lang] of a written form is the workspace's; interface text has none of its own.
@@ -22,16 +27,16 @@ function workspace(language: string): Workspace {
 
 afterEach(() => {
 	cleanup();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 describe('CardManager (the lang="zh" bug)', () => {
 	it('a Japanese workspace tags its words ja, and the interface text has no lang of its own', async () => {
-		workspaces.set({ list: [workspace('ja')], current: workspace('ja') });
+		ctx.session.workspaces.set({ list: [workspace('ja')], current: workspace('ja') });
 		const cards: StudyCard[] = [
 			{ id: 'c-vocab-1', kind: 'vocab', entryId: 1, written: '食べる', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' }
 		];
-		render(CardManager, { cards, decks: [], onchanged: async () => {} });
+		render(CardManager, { props: { workspaceId: 1, cards, decks: [], onchanged: async () => {} }, context: ctx.context });
 		const word = screen.getByText('食べる');
 		expect(word.closest('[lang]')?.getAttribute('lang')).toBe('ja');
 		expect(screen.getByText(/Manage cards/).closest('[lang]')).toBeNull();
@@ -51,41 +56,41 @@ describe('ToneCard', () => {
 	const item = { cardId: 'c', entryId: 1, kind: 'tone', virtual: true } as unknown as FlowItem;
 
 	it('follows a traditional-script workspace (zh-Hant), not a fixed zh', () => {
-		workspaces.set({ list: [workspace('zh-Hant')], current: workspace('zh-Hant') });
+		ctx.session.workspaces.set({ list: [workspace('zh-Hant')], current: workspace('zh-Hant') });
 		// A card renders inside the study face (#101).
-		render(CardHarness, { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } });
+		render(CardHarness, { props: { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } }, context: ctx.context });
 		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hant');
 	});
 
 	it('a simplified workspace reads zh-Hans', () => {
-		workspaces.set({ list: [workspace('zh')], current: workspace('zh') });
+		ctx.session.workspaces.set({ list: [workspace('zh')], current: workspace('zh') });
 		// A card renders inside the study face (#101).
-		render(CardHarness, { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } });
+		render(CardHarness, { props: { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } }, context: ctx.context });
 		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hans');
 	});
 });
 
 // Every audited component of study text takes its `lang` from lib/i18n/lang.ts (no third source).
 const AUDITED = [
-	'lib/components/CardManager.svelte',
+	'lib/features/flashcards/decks/CardManager.svelte',
 	'lib/features/flashcards/cards/ToneCard.svelte',
 	'lib/features/flashcards/cards/VocabCard.svelte',
 	'lib/features/flashcards/cards/ReverseCard.svelte',
 	'lib/features/flashcards/cards/WritingCard.svelte',
-	'lib/components/Readings.svelte',
-	'lib/components/Senses.svelte',
-	'lib/components/Sentences.svelte',
+	'lib/entry/Readings.svelte',
+	'lib/entry/Senses.svelte',
+	'lib/entry/Sentences.svelte',
 	'lib/components/ReadingText.svelte',
 	'lib/entry/EntryView.svelte',
 	'routes/stats/characters/+page.svelte',
-	'lib/components/map/CellTip.svelte',
+	'lib/stats/map/CellTip.svelte',
 	'lib/features/flashcards/decks/DeckDetail.svelte',
 	'lib/features/flashcards/decks/StarterDeckDetail.svelte',
 	'lib/features/flashcards/decks/SystemDeckDetail.svelte',
 	'routes/lookups/+page.svelte',
 	'routes/search/ResultRow.svelte',
 	'lib/features/reader/BookView.svelte',
-	'lib/plugins/grammar/lessonData.ts'
+	'lib/features/grammar/lessonData.ts'
 ];
 
 describe('the audited components', () => {

@@ -1,20 +1,23 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
-	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
-	import { GENERAL_DECK_ID, deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/store';
+	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
+	import { deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { FrequencyPack, Scheme } from '$lib/api/types';
 	import { decodeOrder, deckOrderControl } from '$lib/study/newOrderView';
-	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '../route';
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteDeckText } from './deleteText';
 	import { createDecksData } from './decksData.svelte';
 	import { deckLimitsEditor, type DeckLimitsEditorProps } from './DeckLimitsSlot';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// `limitsEditor` is 4b's per-deck limits control (DeckLimitsSlot.ts); a test passes a stub.
 	let {
@@ -22,8 +25,8 @@
 		limitsEditor = deckLimitsEditor
 	}: { deckId: string; limitsEditor?: Component<DeckLimitsEditorProps> | null } = $props();
 
-	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const store = createDecksData(session);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
@@ -62,7 +65,7 @@
 			.then((list) => (schemes = Array.isArray(list) ? list : []))
 			.catch(() => (listsFailed = true));
 	});
-	const language = $derived($workspaces.current?.language ?? '');
+	const language = $derived(session.workspaces.current?.language ?? '');
 	const orderControl = $derived(
 		deckOrderControl({
 			stored: data?.deckSettings[deckId]?.newOrder ?? null,
@@ -75,13 +78,15 @@
 		message = '';
 		error = '';
 		const order = decodeOrder(value);
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await saveDeckNewOrder(deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
+			await saveDeckNewOrder(session.study, ws, deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
 			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.orderFailed');
+			error = errorText(err, t('flashcards.settings.orderFailed'));
 		} finally {
 			busy = false;
 		}
@@ -102,13 +107,15 @@
 			error = t('flashcards.list.nameMissing');
 			return;
 		}
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await renameDeck(deckId, next);
+			await renameDeck(session.study, ws, deckId, next);
 			message = t('flashcards.settings.renamed');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.renameFailed');
+			error = errorText(err, t('flashcards.settings.renameFailed'));
 		} finally {
 			busy = false;
 		}
@@ -122,12 +129,14 @@
 	async function remove(): Promise<void> {
 		message = '';
 		error = '';
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await deleteDeck(deckId);
+			await deleteDeck(session.study, ws, deckId);
 			await goto(flashcardsHref({ view: 'list' }));
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.deleteFailed');
+			error = errorText(err, t('flashcards.settings.deleteFailed'));
 			confirming = false;
 		} finally {
 			busy = false;
@@ -176,6 +185,7 @@
 		<Section title={t('flashcards.settings.cardTypes')}>
 			<p class="hint">{t('flashcards.settings.cardTypesHint')}</p>
 			<DeckCardTypes
+				workspaceId={data.workspaceId}
 				{deckId}
 				deckName={deck.name}
 				cardTypes={data.deckSettings[deckId]?.cardTypes ?? []}

@@ -1,0 +1,1359 @@
+{
+  "version": 1,
+  "rule": "cards/session-queue",
+  "noLimit": 1000000,
+  "cases": [
+    {
+      "name": "the session caps admit in order; the new items the daily limits still allow are the reserve",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 2,
+        "reviewLimit": 1
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "r2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n3",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n4",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "r1",
+          "n1",
+          "n2"
+        ],
+        "inAllowance": [
+          "r1",
+          "n1",
+          "n2",
+          "n3",
+          "n4"
+        ],
+        "reserve": [
+          "n3",
+          "n4"
+        ],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 2,
+          "new": 4,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "a deck's daily new limit refuses a card; a later card of another deck still fits",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 10,
+        "reviewLimit": 10
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {
+          "d1": {
+            "new": 1
+          }
+        },
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "d1"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "d1"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n3",
+          "deckIds": [
+            "d2"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1",
+          "n3"
+        ],
+        "inAllowance": [
+          "n1",
+          "n3"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 2,
+          "unlimited": false,
+          "limitedOut": 1
+        }
+      }
+    },
+    {
+      "name": "what today already used counts against the deck's allowance",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 10,
+        "reviewLimit": 10
+      },
+      "limits": {
+        "workspace": {
+          "new": 3,
+          "reviews": 5
+        },
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {
+          "general": 2
+        },
+        "reviewDone": {
+          "general": 4
+        }
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "r2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1",
+          "r1"
+        ],
+        "inAllowance": [
+          "n1",
+          "r1"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 1,
+          "new": 1,
+          "unlimited": false,
+          "limitedOut": 2
+        }
+      }
+    },
+    {
+      "name": "continuing cards skip the daily limits but take the session review cap",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 10,
+        "reviewLimit": 1
+      },
+      "limits": {
+        "workspace": {
+          "new": 20,
+          "reviews": 0
+        },
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "c1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "continuing"
+        },
+        {
+          "cardId": "c2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "continuing"
+        },
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "c1"
+        ],
+        "inAllowance": [
+          "c1"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 2,
+          "new": 0,
+          "unlimited": false,
+          "limitedOut": 1
+        }
+      }
+    },
+    {
+      "name": "a card in two decks needs room in both and uses a slot of each",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 10,
+        "reviewLimit": 10
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {
+          "d1": {
+            "new": 5
+          },
+          "d2": {
+            "new": 0
+          },
+          "d3": {
+            "new": 1
+          }
+        },
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "d1",
+            "d2"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "d1"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n3",
+          "deckIds": [
+            "d1",
+            "d3"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n4",
+          "deckIds": [
+            "d3"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n2",
+          "n3"
+        ],
+        "inAllowance": [
+          "n2",
+          "n3"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 2,
+          "unlimited": false,
+          "limitedOut": 2
+        }
+      }
+    },
+    {
+      "name": "a deck that no longer exists is ignored",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 10,
+        "reviewLimit": 10
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {
+          "gone": {
+            "new": 0
+          }
+        },
+        "existingDecks": [
+          "general"
+        ]
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "gone"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "gone",
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1",
+          "n2"
+        ],
+        "inAllowance": [
+          "n1",
+          "n2"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 2,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "caps are floored and a negative cap is zero",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 1.7,
+        "reviewLimit": -2
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n2",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1"
+        ],
+        "inAllowance": [
+          "n1",
+          "n2"
+        ],
+        "reserve": [
+          "n2"
+        ],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 1,
+          "new": 2,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "backfillLeft is twice the session new cap, at least 30",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 20,
+        "reviewLimit": 200
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1"
+        ],
+        "inAllowance": [
+          "n1"
+        ],
+        "reserve": [],
+        "backfillLeft": 40,
+        "left": {
+          "reviews": 0,
+          "new": 1,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "the reserve stops at backfillLeft",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 0,
+        "reviewLimit": 10
+      },
+      "limits": {
+        "workspace": {
+          "new": null,
+          "reviews": null
+        },
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n01",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n02",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n03",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n04",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n05",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n06",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n07",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n08",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n09",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n10",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n11",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n12",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n13",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n14",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n15",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n16",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n17",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n18",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n19",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n20",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n21",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n22",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n23",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n24",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n25",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n26",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n27",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n28",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n29",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n30",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n31",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n32",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n33",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n34",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n35",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [],
+        "inAllowance": [
+          "n01",
+          "n02",
+          "n03",
+          "n04",
+          "n05",
+          "n06",
+          "n07",
+          "n08",
+          "n09",
+          "n10",
+          "n11",
+          "n12",
+          "n13",
+          "n14",
+          "n15",
+          "n16",
+          "n17",
+          "n18",
+          "n19",
+          "n20",
+          "n21",
+          "n22",
+          "n23",
+          "n24",
+          "n25",
+          "n26",
+          "n27",
+          "n28",
+          "n29",
+          "n30",
+          "n31",
+          "n32",
+          "n33",
+          "n34",
+          "n35"
+        ],
+        "reserve": [
+          "n01",
+          "n02",
+          "n03",
+          "n04",
+          "n05",
+          "n06",
+          "n07",
+          "n08",
+          "n09",
+          "n10",
+          "n11",
+          "n12",
+          "n13",
+          "n14",
+          "n15",
+          "n16",
+          "n17",
+          "n18",
+          "n19",
+          "n20",
+          "n21",
+          "n22",
+          "n23",
+          "n24",
+          "n25",
+          "n26",
+          "n27",
+          "n28",
+          "n29",
+          "n30"
+        ],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 35,
+          "unlimited": true,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "unlimited is true when every involved deck is unlimited in both fields",
+      "vacationToday": false,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 5,
+        "reviewLimit": 5
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {
+          "d1": {
+            "new": null,
+            "reviews": null
+          }
+        },
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "d1"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n1"
+        ],
+        "inAllowance": [
+          "n1"
+        ],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 1,
+          "unlimited": true,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "Study all: the session caps, today's counts and the default 20 new per deck do not apply",
+      "vacationToday": false,
+      "studyAll": true,
+      "caps": {
+        "newLimit": 0,
+        "reviewLimit": 0
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {
+          "general": 20
+        },
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "n01",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n02",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n03",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n04",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n05",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n06",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n07",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n08",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n09",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n10",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n11",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n12",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n13",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n14",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n15",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n16",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n17",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n18",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n19",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n20",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n21",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n22",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n23",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n24",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        },
+        {
+          "cardId": "n25",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "n01",
+          "n02",
+          "n03",
+          "n04",
+          "n05",
+          "n06",
+          "n07",
+          "n08",
+          "n09",
+          "n10",
+          "n11",
+          "n12",
+          "n13",
+          "n14",
+          "n15",
+          "n16",
+          "n17",
+          "n18",
+          "n19",
+          "n20",
+          "n21",
+          "n22",
+          "n23",
+          "n24",
+          "n25"
+        ],
+        "inAllowance": [
+          "n01",
+          "n02",
+          "n03",
+          "n04",
+          "n05",
+          "n06",
+          "n07",
+          "n08",
+          "n09",
+          "n10",
+          "n11",
+          "n12",
+          "n13",
+          "n14",
+          "n15",
+          "n16",
+          "n17",
+          "n18",
+          "n19",
+          "n20",
+          "n21",
+          "n22",
+          "n23",
+          "n24",
+          "n25"
+        ],
+        "reserve": [],
+        "backfillLeft": 1000000,
+        "left": {
+          "reviews": 0,
+          "new": 25,
+          "unlimited": true,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "Study all: limit rows set to zero do not apply either",
+      "vacationToday": false,
+      "studyAll": true,
+      "caps": {
+        "newLimit": 0,
+        "reviewLimit": 0
+      },
+      "limits": {
+        "workspace": {
+          "new": 0,
+          "reviews": 0
+        },
+        "decks": {
+          "d1": {
+            "new": 0,
+            "reviews": 0
+          },
+          "general": {
+            "new": 0,
+            "reviews": 0
+          }
+        },
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "c1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "continuing"
+        },
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "d1"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "d1",
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [
+          "c1",
+          "r1",
+          "n1"
+        ],
+        "inAllowance": [
+          "c1",
+          "r1",
+          "n1"
+        ],
+        "reserve": [],
+        "backfillLeft": 1000000,
+        "left": {
+          "reviews": 2,
+          "new": 1,
+          "unlimited": true,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "a vacation day admits nothing",
+      "vacationToday": true,
+      "studyAll": false,
+      "caps": {
+        "newLimit": 5,
+        "reviewLimit": 5
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "c1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "continuing"
+        },
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [],
+        "inAllowance": [],
+        "reserve": [],
+        "backfillLeft": 30,
+        "left": {
+          "reviews": 0,
+          "new": 0,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    },
+    {
+      "name": "a vacation day admits nothing, Study all included",
+      "vacationToday": true,
+      "studyAll": true,
+      "caps": {
+        "newLimit": 5,
+        "reviewLimit": 5
+      },
+      "limits": {
+        "workspace": null,
+        "decks": {},
+        "existingDecks": null
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "candidates": [
+        {
+          "cardId": "r1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "review"
+        },
+        {
+          "cardId": "n1",
+          "deckIds": [
+            "general"
+          ],
+          "bucket": "new"
+        }
+      ],
+      "expect": {
+        "queue": [],
+        "inAllowance": [],
+        "reserve": [],
+        "backfillLeft": 1000000,
+        "left": {
+          "reviews": 0,
+          "new": 0,
+          "unlimited": false,
+          "limitedOut": 0
+        }
+      }
+    }
+  ]
+}

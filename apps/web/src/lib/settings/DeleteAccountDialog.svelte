@@ -8,9 +8,10 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
-	import { user } from '$lib/auth';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { previewLines } from '$lib/admin/deleteView';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Deleting your own account: what goes (the server's counts), your
 	// password, and your username typed. The last administrator is refused
@@ -103,7 +104,7 @@
 			bind:value={typed}
 			autocomplete="off"
 		/>
-		{#if $user?.mfa?.totp}
+		{#if app.auth.user?.mfa?.totp}
 			<label>
 				{t('settings.account.email.code')}
 				<input name="code" autocomplete="one-time-code" bind:value={code} />

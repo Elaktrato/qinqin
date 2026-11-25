@@ -1,33 +1,43 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn(), invalidateStudyHistory: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadRawStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn(),
+	invalidateStudyHistory: vi.fn(),
+	loadRawStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
-import { loadStudyHistory } from '$lib/study/history';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
-import { toLegacy } from '$lib/study/testing/legacyCodec';
-import type { StudyWrite } from '$lib/study/store';
+import { PartialPushError } from '$lib/sync/push';
+import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
+import { toLegacy } from '$lib/testing/legacyCodec';
+import { type StudyWrite } from '$lib/study/plan';
 
 /** The typed writes as the legacy rows they stand for (test codec). */
 function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; knownAt?: string }[] {
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
-import { clearLevelItemsCache } from './systemDeckItems';
+
 import { primaryActions } from '$lib/ui/testing/primary';
 import SystemDeckDetail from './SystemDeckDetail.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const SCHEME: Scheme = {
 	id: 1,
@@ -64,8 +74,7 @@ function apply(rows: readonly { key: string; data: unknown }[]): void {
 }
 
 beforeEach(() => {
-	clearLevelItemsCache();
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -88,9 +97,10 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		knownAt: new Map(knownAt),
-		stored: new Map()
+		stored: new Map(),
+		unreadable: new Set<string>()
 	}));
-	vi.mocked(pushStudy).mockImplementation(async (_ws, rows, opts) => {
+	vi.mocked(pushStudy).mockImplementation(async (_study, _ws, rows, opts) => {
 		if (failAfter !== null) {
 			const part = keyed(rows).slice(0, failAfter);
 			apply(part);
@@ -107,13 +117,13 @@ afterEach(() => {
 });
 
 async function open(): Promise<void> {
-	render(SystemDeckDetail, { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } });
+	render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } }, context: ctx.context });
 	await screen.findByRole('heading', { level: 1, name: 'HSK words · HSK 1' });
 }
 
 describe('SystemDeckDetail', () => {
 	it('has one primary Add to my decks; the target deck is a Select', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } });
+		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } }, context: ctx.context });
 		await screen.findByRole('heading', { level: 1 });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Add to my decks' }).className).toContain('primary');
@@ -144,7 +154,7 @@ describe('SystemDeckDetail', () => {
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to HSK words · HSK 1');
-		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][1]);
+		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][2]);
 		expect(rows.map((r) => r.key)).toEqual([
 			`deck:${DECK_ID}`,
 			'card:c-vocab-1',
@@ -168,7 +178,7 @@ describe('SystemDeckDetail', () => {
 		await fireEvent.change(await screen.findByLabelText('Add to'), { target: { value: 'd1' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to Verbs');
-		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][1]).map((r) => r.key);
+		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][2]).map((r) => r.key);
 		expect(keys.some((k) => k.startsWith('deck:'))).toBe(false);
 		expect(decks).toHaveLength(1);
 	});
@@ -181,7 +191,7 @@ describe('SystemDeckDetail', () => {
 		expect(alert.textContent).toContain('Added 1; try again to add the rest');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await screen.findByText(/^Added 2 words to HSK words · HSK 1/);
-		const retryRows = keyed(vi.mocked(pushStudy).mock.calls[1][1]).map((r) => r.key);
+		const retryRows = keyed(vi.mocked(pushStudy).mock.calls[1][2]).map((r) => r.key);
 		expect(retryRows).toEqual(['card:c-vocab-2', 'card:c-vocab-3']);
 	});
 
@@ -212,7 +222,7 @@ describe('SystemDeckDetail', () => {
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to HSK words · HSK 1');
-		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][1]);
+		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][2]);
 		expect(rows.find((r) => r.key === 'card:c-vocab-1')?.knownAt).toBe('2026-03-10T12:00:09.000Z');
 		expect(rows.find((r) => r.key === 'card:c-vocab-2')?.knownAt).toBeUndefined();
 	});
@@ -234,14 +244,14 @@ describe('SystemDeckDetail', () => {
 		expect(option).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to My HSK 1');
-		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][1]).map((r) => r.key);
+		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][2]).map((r) => r.key);
 		expect(keys.some((k) => k.startsWith('deck:'))).toBe(false);
 		expect(decks.find((d) => d.id === DECK_ID)?.name).toBe('My HSK 1');
 	});
 
 	it('shows progress while adding', async () => {
 		let release: () => void = () => {};
-		vi.mocked(pushStudy).mockImplementationOnce(async (_ws, rows, opts) => {
+		vi.mocked(pushStudy).mockImplementationOnce(async (_study, _ws, rows, opts) => {
 			opts?.onProgress?.(2, rows.length);
 			await new Promise<void>((resolve) => (release = resolve));
 			apply(keyed(rows));
@@ -261,13 +271,7 @@ describe('SystemDeckDetail', () => {
 	});
 
 	it('says when the level does not exist', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-level', packId: 'nope', level: 'x' } });
+		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'nope', level: 'x' } }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
-	});
-
-	it('a plugin deck nobody ships is not found', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-plugin', plugin: 'starter', key: 'k' } });
-		expect(await screen.findByText('Deck not found.')).toBeTruthy();
-		await waitFor(() => expect(getSchemeEntries).not.toHaveBeenCalled());
 	});
 });

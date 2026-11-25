@@ -4,9 +4,9 @@
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
+	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import { loadStrokeData } from '$lib/study/strokeData';
-	import { suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
+	import { suggestWritingGrade, type CharOutcome, maskWritten } from '$lib/study/writing';
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
 	import WritingPad from './WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -14,6 +14,8 @@
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Props {
 		item: FlowItem;
@@ -72,13 +74,13 @@
 		current = null;
 		try {
 			const ch = chars[index];
-			const parsed = parseStrokeData(ch, await loadStrokeData(ch));
+			const parsed = parseStrokeData(ch, await loadStrokeData(session.caches.strokes, ch));
 			if (!alive) return;
 			if (parsed === null) throw new Error(`No stroke data for ${ch}`);
 			current = parsed;
 			busy = false;
 			// Warm the cache for the next character of the word.
-			if (index + 1 < chars.length) void loadStrokeData(chars[index + 1]);
+			if (index + 1 < chars.length) void loadStrokeData(session.caches.strokes, chars[index + 1]);
 		} catch {
 			fail();
 		}

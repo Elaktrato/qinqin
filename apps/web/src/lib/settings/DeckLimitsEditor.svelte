@@ -2,9 +2,8 @@
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { DEFAULT_LIMITS, type LimitPair } from '$lib/study/limits';
-	import { saveDeckLimits } from '$lib/study/store';
-	import { getStudyData } from '$lib/study/studyData';
-	import { workspaces } from '$lib/workspaces';
+	import { saveDeckLimits } from '$lib/study/commands/settings';
+	import { getStudyData } from '$lib/study/data';
 	import LimitField from './LimitField.svelte';
 	import {
 		deckFieldFrom,
@@ -13,6 +12,8 @@
 		type FieldState
 	} from './limitsForm';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The per-deck daily limit control (deck settings page, General included):
 	// each field follows the workspace, has its own number, or is unlimited.
@@ -26,16 +27,23 @@
 	let message = $state('');
 	let error = $state('');
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const newWorkspace = $derived(workspaceRow?.new === undefined ? DEFAULT_LIMITS.new : workspaceRow.new);
 	const reviewsWorkspace = $derived(
 		workspaceRow?.reviews === undefined ? DEFAULT_LIMITS.reviews : workspaceRow.reviews
 	);
 
+	/** The workspace whose limits the form holds: set together with them, and the one Save writes (#174). */
+	let loadedWorkspace = $state<number | null>(null);
+
 	async function load(force = false): Promise<void> {
-		if (workspaceId === null) return;
+		const ws = loadedWorkspace ?? workspaceId;
+		if (ws === null) return;
 		try {
-			const data = await getStudyData(workspaceId, { force });
+			const data = await getStudyData(session.study, ws, { force });
+			// A late answer for a workspace no longer the form's is dropped.
+			if (loadedWorkspace !== null && ws !== loadedWorkspace) return;
+			loadedWorkspace = ws;
 			workspaceRow = data.limits?.workspace ?? null;
 			const row = data.limits?.decks[deckId] ?? null;
 			newState = deckFieldFrom(row, 'new');
@@ -51,6 +59,9 @@
 		event.preventDefault();
 		message = '';
 		error = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = loadedWorkspace;
+		if (ws === null) return;
 		const plan = deckRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			error = plan.error;
@@ -58,7 +69,7 @@
 		}
 		busy = true;
 		try {
-			await saveDeckLimits(deckId, plan.row);
+			await saveDeckLimits(session.study, ws, deckId, plan.row);
 			message = t('common.state.saved');
 			await load(true);
 		} catch {

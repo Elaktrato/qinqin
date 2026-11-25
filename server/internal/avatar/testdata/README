@@ -1,0 +1,3 @@
+still.webp is blue-purple-pink.lossy.webp from golang.org/x/image v0.48.0
+(testdata/, BSD-3-Clause, Copyright The Go Authors), a 150x100 lossy WebP
+(the journal's photo.webp). It is only a test fixture for Normalize.

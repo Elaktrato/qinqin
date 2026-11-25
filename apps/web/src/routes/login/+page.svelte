@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { apiErrorBody } from '$lib/api/client';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { emailLoginStart, mfaSendEmail } from '$lib/api/mfa';
-	import { completeEmailLogin, completeMfa, signIn, type SignInResult } from '$lib/auth';
 	import { firstMethod, otherMethods, type MfaChallenge, type MfaMethod } from '$lib/account/loginFlow';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from '$lib/account/otpInput';
 	import { Button, Field } from '$lib/ui';
+	import type { SignInResult } from '$lib/auth/auth.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	type View = 'password' | 'mfa' | 'emailStart' | 'emailCode';
 
@@ -103,13 +105,13 @@
 	function submitPassword(event: SubmitEvent) {
 		event.preventDefault();
 		notice = '';
-		void run(async () => settled(await signIn(username.trim(), password)), t('auth.signIn.failed'));
+		void run(async () => settled(await app.auth.signIn(username.trim(), password)), t('auth.signIn.failed'));
 	}
 
 	function submitCode(event: SubmitEvent) {
 		event.preventDefault();
 		if (!mfa || !otpComplete(code, method)) return;
-		void run(async () => settled(await completeMfa(mfa!.challenge, method, code)), t('account.verify.checkFailed'));
+		void run(async () => settled(await app.auth.completeMfa(mfa!.challenge, method, code)), t('account.verify.checkFailed'));
 	}
 
 	function pick(next: MfaMethod) {
@@ -144,7 +146,7 @@
 	function submitEmailLogin(event: SubmitEvent) {
 		event.preventDefault();
 		if (!otpComplete(code, 'email')) return;
-		void run(async () => settled(await completeEmailLogin(codeChallenge, code)), t('account.verify.checkFailed'));
+		void run(async () => settled(await app.auth.completeEmailLogin(codeChallenge, code)), t('account.verify.checkFailed'));
 	}
 
 	function oninput(event: Event, as: MfaMethod) {
@@ -294,7 +296,7 @@
 	{/if}
 
 	{#if view === 'password' && options}
-		{#if options.bootstrap || options.registration === 'open'}
+		{#if options.registration === 'open'}
 			<p class="hint">
 				<Msg key="auth.signIn.noAccount">{#snippet link(text: string)}<a href="/register">{text}</a>{/snippet}</Msg>
 			</p>

@@ -3,12 +3,13 @@
 	import { tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { resetUserMfa } from '$lib/api/adminUsers';
-	import { user as me } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
 	import { resetError, resetLines, type MfaFactors } from './mfaResetView';
 	import { reauthBody, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Confirmation for resetting someone else's two-step sign-in: says what
 	// goes and asks for the acting administrator's own password (and code,
@@ -31,7 +32,7 @@
 
 	const uid = $props.id();
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let password = $state('');
 	let code = $state('');

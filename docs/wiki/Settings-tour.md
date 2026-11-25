@@ -1,6 +1,6 @@
 # Settings tour
 
-Settings is in the account menu (the avatar at the top right; in the menu drawer's account area on a phone, which also has a Settings button). Administrators also find **Admin settings** there. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Home, Appearance, Study, Features, Plugins, AI and Account for everyone, and Data and Admin for administrators. The tabs wrap onto a second line on narrow screens, so all of them stay visible.
+Settings is in the account menu (the avatar at the top right, your profile picture or your initial; in the menu drawer's account area on a phone, which also has a Settings button). Administrators also find **Admin settings** there. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Layout, Appearance, Study, Features, AI and Account for everyone, and Data and Admin for administrators. The tabs wrap onto a second line on narrow screens, so all of them stay visible.
 
 ## Workspaces
 
@@ -30,11 +30,7 @@ Your colour theme and adjustments (`/settings?tab=appearance`), saved to your ac
 
 ## Features
 
-Switch **Decks** (flashcards) or the **Reader** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
-
-## Plugins
-
-Switch feature plugins on or off (Journal, Grammar and others). Each plugin lists the permissions it declared and the third-party material it uses. Switching a plugin off hides its pages and widgets everywhere; nothing is deleted. **Order** (a whole number, 0 or more) sets the plugins' place in the navigation. Installed data packs are not listed here; they are on the Sources page.
+Switch **Decks** (flashcards), the **Reader**, the **Journal** or **Grammar** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
 
 ## AI
 
@@ -44,7 +40,7 @@ Providers, keys and model per provider, the active provider, and this hour's usa
 
 **Language** → **Interface language**: the language of menus, buttons and messages, and of the mails the server sends you. "Browser default" follows your browser's language settings; choosing a language and pressing **Save language** stores it on the server for every device, and reloads the page. A browser that blocks site storage keeps its current language on that page until you reload; your other devices and the mails already use the new one. English is the only interface language today ([Translating qinqin](Translating-qinqin)). Chinese and Japanese study text keeps its own language whatever the interface language, so screen readers pronounce it and the hanzi and kanji font picks the right forms. Dates and numbers follow your device's region (an English interface without a region shows "16 Nov 2026").
 
-Profile (email, if the server asks for one), password, two-step sign-in, signed-in devices, access tokens for scripts ([API access tokens](API-Access-tokens)), "Your data" (export and restore, and a link to the lookup history), the app and offline section, and Delete account. See [Accounts and sign-in](Accounts-and-sign-in), [Your data](Your-data) and [Install as an app and study offline](Install-and-offline).
+Profile (your [profile picture](Accounts-and-sign-in#profile-picture), and email if the server asks for one), password, two-step sign-in, signed-in devices, access tokens for scripts ([API access tokens](API-Access-tokens)), "Your data" (export and restore, and a link to the lookup history), the app and offline section, and Delete account. See [Accounts and sign-in](Accounts-and-sign-in), [Your data](Your-data) and [Install as an app and study offline](Install-and-offline).
 
 ## Data (administrators)
 

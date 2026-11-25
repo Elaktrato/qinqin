@@ -1,6 +1,6 @@
 # Install as an app and study offline
 
-qinqin is an installable web app (PWA). It is a stopgap for phones; a native Android client is planned.
+qinqin is an installable web app (PWA). An Android app is planned as this same web app in a native shell.
 
 ## Requirements
 
@@ -14,11 +14,11 @@ HTTPS, or `http://localhost` on the same machine. Over plain HTTP (including a L
 
 ## What works offline
 
-The app opens. Your decks and today's study queue (the cards a session started now would hold, plus the next 50 new cards, within your daily limits and vacation days) are saved on the device whenever you use the app online. Offline you study those real cards and grade them; the reviews wait on the device. The day, vacation and limits follow the same rules offline: the time zone you set is saved with your data, and "today" is computed on the device.
+The app opens. Your decks and today's study queue (the cards a session started now would hold, plus the next 50 new cards, within your daily limits and vacation days) are saved on the device whenever you use the app online, and then up to 200 more of the cards **Study all** would add (due reviews first), so a Study all session offline has its words too; a larger Study all session offline shows only the saved ones (500 words at most in all). Offline you study those real cards and grade them; the reviews wait on the device. The day, vacation and limits follow the same rules offline: the time zone you set is saved with your data, and "today" is computed on the device.
 
 A line at the top says what is happening: "You're offline. Study works with saved cards.", "You're offline. 3 reviews are saved on this device and will be sent when you're back online.", "Can't reach the server. Showing saved data from …", and "All reviews sent." once they have left. Your theme is remembered on the device too, so the app starts in your colours ([Appearance and themes](Appearance-and-themes)).
 
-Your study data is read page by page (the paged sync pull), and each page is saved as its own copy, so offline study reads the same pages in the same order; preparing for offline use reads them all. The stroke-order animations of characters you have opened online are saved too: the server now serves them from its stroke data pack, one file per character, so a character never opened online has no animation offline. Font pack slices (the pieces of an installed hanzi or kanji face) are saved the same way, once the page has shown their characters online. The web app does not download data packages (dictionaries stay online); a native client will.
+Your study data is read page by page (the paged sync pull), and each page is saved as its own copy, so offline study reads the same pages in the same order; preparing for offline use reads them all. Online, the app keeps your study data in memory and asks the server only for what changed since (one small request), so the saved pages are refreshed when the app first opens a workspace, when it prepares for offline use, and at least every five minutes while you use it: a card you added online in the last few minutes of a long session may be missing from an offline reload until you are online again. The stroke-order animations of characters you have opened online are saved too: the server now serves them from its stroke data pack, one file per character, so a character never opened online has no animation offline. Font pack slices (the pieces of an installed hanzi or kanji face) are saved the same way, once the page has shown their characters online. The web app does not download data packages (dictionaries stay online); a native client will.
 
 ## What does not work offline
 
@@ -48,4 +48,4 @@ Shows the install button (or "qinqin is installed on this device"; on iPhone and
 
 Safari may delete a site's saved data after about a week without use (installed home-screen apps are treated more kindly) or under storage pressure. A review that has not been sent is only as safe as the device: open the app online to send them. Safari has no install prompt and no background sync. There are no push notifications. Private browsing windows keep nothing.
 
-**Not verified in a browser by the developers:** installation on Android, iOS and desktop, offline behaviour on real devices and the update flow. These are covered by unit and component tests and by checks of the served files and headers.
+**Tested in a browser:** CI studies offline in Chromium after the service worker has cached the app and today's cards, and checks that each review reaches the server exactly once when the browser is back online. **Not verified in a browser by the developers:** installation on Android, iOS and desktop, offline behaviour on real devices, other browsers and the update flow. These are covered by unit and component tests and by checks of the served files and headers.

@@ -12,13 +12,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/auth"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
@@ -44,42 +44,23 @@ type batchResult struct {
 	Duplicates int `json:"duplicates"`
 }
 
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
-
 // newServer opens a fresh migrated database and serves the API on it.
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }
 
-// registerFirstUser creates the first user — the instance admin —
-// through the API and returns its id and bearer token.
-func registerFirstUser(t *testing.T, tsURL, username string) (int64, string) {
+// registerFirstUser creates the first user — the instance admin — in the
+// database, as `qinqin adduser --admin` and the serve bootstrap do (no
+// registration makes an admin, #211), and returns its id and bearer token.
+func registerFirstUser(t *testing.T, sqlDB *sql.DB, tsURL, username string) (int64, string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
-	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(body))
+	u, err := auth.CreateUser(context.Background(), sqlDB, username, "secret-pass-"+username, true)
 	if err != nil {
-		t.Fatalf("register %s: %v", username, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register %s: status = %d, want %d", username, resp.StatusCode, http.StatusCreated)
-	}
-	var u model.User
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		t.Fatalf("decode register response: %v", err)
+		t.Fatalf("create admin %s: %v", username, err)
 	}
 	return u.ID, login(t, tsURL, username)
 }
@@ -205,7 +186,7 @@ func TestEventAppendAndSince(t *testing.T) {
 	lang.Register(lang.Zh{})
 
 	ts, sqlDB := newServer(t)
-	aliceID, alice := registerFirstUser(t, ts.URL, "alice")
+	aliceID, alice := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	bobID, bob := registerUser(t, ts.URL, "bob", alice)
 	zhWS := createWorkspace(t, ts.URL, alice, "zh")
 	esWS := createWorkspace(t, ts.URL, alice, "es")
@@ -398,7 +379,7 @@ func TestEventBatchIdempotent(t *testing.T) {
 	lang.Register(lang.Zh{})
 
 	ts, sqlDB := newServer(t)
-	aliceID, alice := registerFirstUser(t, ts.URL, "alice")
+	aliceID, alice := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	_, bob := registerUser(t, ts.URL, "bob", alice)
 	zhWS := createWorkspace(t, ts.URL, alice, "zh")
 	esWS := createWorkspace(t, ts.URL, alice, "es")
@@ -563,7 +544,7 @@ func idsOfBodies(evs []eventBody) []string {
 func TestEventBatchWorkspaceRequiredAndInBatchDuplicates(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	_, alice := registerFirstUser(t, ts.URL, "alice")
+	_, alice := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	zhWS := createWorkspace(t, ts.URL, alice, "zh")
 	ts0 := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC).Format(time.RFC3339)
 

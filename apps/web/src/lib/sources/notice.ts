@@ -1,4 +1,4 @@
-// A pack or plugin notice is plain text in a tiny markup: paragraphs are
+// A pack or credit notice is plain text in a tiny markup: paragraphs are
 // separated by a blank line, and the only markup is a link written as
 // `[text](https://…)`. parseNotice turns it into nodes the Sources page
 // renders with Svelte elements, so no notice is ever parsed as HTML.

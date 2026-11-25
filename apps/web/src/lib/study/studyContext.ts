@@ -1,6 +1,6 @@
 // What every queue, count and preview needs to know about "now" for one
 // workspace: the learner's day, the study clock (vacation days removed) and
-// whether today is a vacation day. Built by history.ts; rebuilt when the
+// whether today is a vacation day. Built from the study history (study/data.ts); rebuilt when the
 // date changes. Required everywhere (no silent default outside tests).
 
 import { IDENTITY_CLOCK, type StudyClock } from './studyClock';

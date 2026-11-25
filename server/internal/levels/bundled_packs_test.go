@@ -9,8 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // bundledPacks is the committed default seed root (the JLPT vocabulary is
@@ -56,12 +57,12 @@ func TestBundledLevelPacks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {
 			dir := filepath.Join(bundledPacks, c.id)
-			p, err := dict.LoadPack(dir)
+			p, err := pack.LoadPack(dir)
 			if err != nil {
 				t.Fatalf("LoadPack: %v", err)
 			}
 			m := p.Manifest
-			if m.ID != c.id || m.Name != c.name || m.Language != c.language || m.Type != dict.TypeLevels {
+			if m.ID != c.id || m.Name != c.name || m.Language != c.language || m.Type != pack.TypeLevels {
 				t.Errorf("manifest = %+v, want id %s, name %q, language %s, type levels", m, c.id, c.name, c.language)
 			}
 			if m.License != c.license || m.Attribution == "" {
@@ -70,7 +71,7 @@ func TestBundledLevelPacks(t *testing.T) {
 			if m.Notice == "" {
 				t.Error("manifest has no notice")
 			}
-			if err := dict.ValidateNotice(m.Notice); err != nil {
+			if err := pack.ValidateNotice(m.Notice); err != nil {
 				t.Errorf("notice: %v", err)
 			}
 			for _, want := range c.notice {
@@ -129,7 +130,7 @@ func TestBundledLevelPacks(t *testing.T) {
 				t.Errorf("%d forms, want %d", total, c.total)
 			}
 
-			res, err := levels.Import(context.Background(), newDB(t), p)
+			res, err := levels.Import(context.Background(), dbtest.Open(t), p)
 			if err != nil {
 				t.Fatalf("Import into an empty lexicon: %v", err)
 			}

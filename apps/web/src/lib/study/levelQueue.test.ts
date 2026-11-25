@@ -20,10 +20,9 @@ import {
 } from './levelQueue';
 import type { StudyCardKind } from './types';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
-function eventId(n: number): string {
-	return `01JTEST${String(n).padStart(19, '0')}`;
-}
+const eventId = (n: number): string => build.eventId(n);
 
 function review(
 	cardId: string,
@@ -31,18 +30,11 @@ function review(
 	ts: string,
 	id = eventId(1)
 ): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id, cardId, grade, ts, workspaceId: 7 });
 }
 
 function card(id: string, entryId: number, createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
-	return { id, kind: 'vocab', entryId, deckIds: ['general'], createdAt };
+	return build.card({ id, entryId, createdAt });
 }
 
 function entry(id: number, kind = 'word'): LevelEntry {
@@ -288,7 +280,7 @@ interface FixtureCase {
 	history: ZoneChange[];
 	now: string;
 	entries: { id: number; kind: string; written?: string; strokeData?: boolean }[];
-	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string }[];
+	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string; skipKinds?: StudyCardKind[] }[];
 	reviews: { cardId: string; grade: ReviewGrade; ts: string }[];
 	newLimit: number;
 	reviewLimit: number;
@@ -300,7 +292,7 @@ describe('character level queue fixtures', () => {
 	const cases = (fixtures as { cases: FixtureCase[] }).cases;
 
 	it('has the spec case list', () => {
-		expect(cases.map((c) => c.name)).toHaveLength(13);
+		expect(cases.map((c) => c.name)).toHaveLength(14);
 	});
 
 	for (const c of cases) {
@@ -512,7 +504,7 @@ describe('level queues with a new-item key (#75)', () => {
 		expect(buildLevelQueue(base).map((i) => i.cardId)).toEqual(['c3', 'level:1', 'level:2']);
 		expect(buildLevelQueue({ ...base, newKey }).map((i) => i.cardId)).toEqual(['level:4', 'level:2', 'c3']);
 		// The reserve continues in key order; unranked last.
-		const plan = buildLevelPlan({ ...base, newKey, newLimit: 1, reserve: 10 });
+		const plan = buildLevelPlan({ ...base, newKey, newLimit: 1 });
 		expect(plan.reserve.map((i) => i.entryId)).toEqual([2, 3, 1, 5]);
 	});
 
@@ -579,5 +571,85 @@ describe('buildLevelQueue study all', () => {
 		};
 		expect(buildLevelQueue(options)).toHaveLength(0);
 		expect(buildLevelQueue({ ...options, studyAll: true })).toHaveLength(2);
+	});
+});
+
+describe('level sessions on the shared builder (#175)', () => {
+	const words = Array.from({ length: 25 }, (_, i) => entry(i + 1));
+	const base = { ctx: UTC_CONTEXT, w: DEFAULT_W, entries: words, cards: [], reviews: [], now: NOW };
+
+	it('the plan carries backfillLeft: backfillLimit, or no bound for Study all', () => {
+		expect(buildLevelPlan({ ...base, newLimit: 5, reviewLimit: 5 }).backfillLeft).toBe(30);
+		expect(buildLevelPlan({ ...base, newLimit: 20, reviewLimit: 5 }).backfillLeft).toBe(40);
+		expect(buildLevelPlan({ ...base, newLimit: 5, reviewLimit: 5, studyAll: true }).backfillLeft).toBe(1_000_000);
+	});
+
+	it('levelPlanCounts with Study all counts what the Study all session holds', () => {
+		const counts = levelPlanCounts({ ...base, studyAll: true });
+		expect(counts).toMatchObject({ due: 0, fresh: 25, items: 25 });
+		expect(buildLevelPlan({ ...base, newLimit: 1, reviewLimit: 1, studyAll: true }).queue).toHaveLength(25);
+		// Without Study all the default 20 new per deck applies, as in the session.
+		expect(levelPlanCounts(base)).toMatchObject({ due: 0, fresh: 20 });
+	});
+
+	it("a character level plans no writing item for a character whose writing the learner removed", () => {
+		const glyphs = [
+			{ id: 1, kind: 'character', written: '学' },
+			{ id: 2, kind: 'character', written: '习' }
+		];
+		const removed: StudyCard = { ...card('c-vocab-1', 1), entryKind: 'character', skipKinds: ['writing'] };
+		const kept: StudyCard = { ...card('c-vocab-2', 2), entryKind: 'character' };
+		const writing: StudyCard = { ...card('c-writing-1', 1), kind: 'writing' };
+		const plan = buildLevelPlan({
+			...base,
+			entries: glyphs,
+			cards: [removed, kept, writing],
+			unit: 'character',
+			kinds: ['writing'],
+			newLimit: 10,
+			reviewLimit: 10
+		});
+		expect(plan.queue.map((item) => item.cardId)).toEqual(['level:writing:2']);
+	});
+});
+
+describe('character levels leave excluded (buried) entries out (#175 review)', () => {
+	const glyphs = [1, 2, 3].map((id) => ({ id, kind: 'character', written: String.fromCodePoint(0x4e00 + id) }));
+	const base = {
+		ctx: UTC_CONTEXT,
+		w: DEFAULT_W,
+		entries: glyphs,
+		cards: [],
+		reviews: [],
+		now: NOW,
+		unit: 'character' as LevelUnit,
+		kinds: ['vocab'] as StudyCardKind[],
+		excludeEntries: new Set([1])
+	};
+
+	it('the next character takes the slot of an excluded one', () => {
+		const plan = buildLevelPlan({ ...base, newLimit: 1, reviewLimit: 10 });
+		expect(plan.queue.map((item) => item.cardId)).toEqual(['level:2']);
+		expect(plan.reserve.map((item) => item.cardId)).toEqual(['level:3']);
+	});
+
+	it('the setup counts leave it out too', () => {
+		expect(levelPlanCounts(base)).toMatchObject({ due: 0, fresh: 2, items: 2 });
+	});
+});
+
+describe('the level plan has no reserve-size option (#175 review)', () => {
+	it('the reserve is always bounded by backfillLeft', () => {
+		const entries = Array.from({ length: 40 }, (_, i) => entry(i + 1));
+		const ctx = contextFor(UTC_CONTEXT.day, [], NOW.getTime(), [], {
+			workspace: { new: null, reviews: null },
+			decks: {},
+			existingDecks: null
+		});
+		const options = { ctx, w: DEFAULT_W, entries, cards: [], reviews: [], now: NOW, newLimit: 0, reviewLimit: 0 };
+		// @ts-expect-error -- `reserve` was removed: nothing outside the builder sizes the reserve.
+		const plan = buildLevelPlan({ ...options, reserve: 1 });
+		expect(plan.backfillLeft).toBe(30);
+		expect(plan.reserve).toHaveLength(30);
 	});
 });

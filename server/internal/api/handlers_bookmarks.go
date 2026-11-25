@@ -50,7 +50,7 @@ func decodeStrictJSON(w http.ResponseWriter, r *http.Request, v any, limit int64
 func bookmarkID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("bid"), 10, 64)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Not found.")
 		return 0, false
 	}
 	return id, true
@@ -130,7 +130,7 @@ func (s *server) handleRenameBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Label == nil {
-		http.Error(w, "label required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "label required.")
 		return
 	}
 	m, err := s.library().RenameBookmark(r.Context(), u.ID, id, bid, *in.Label)

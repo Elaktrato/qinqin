@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/ratelimit"
 )
 
@@ -171,12 +170,8 @@ func reauthPolicy(burst int) api.Option {
 
 func newPolicyServer(t *testing.T, opts ...api.Option) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
+	sqlDB := dbtest.Open(t)
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }

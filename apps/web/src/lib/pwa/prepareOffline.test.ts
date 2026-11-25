@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
+import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
 import classifyFixtureRoutes from './sw/routes.fixture.json';
 import { classify } from './sw/classify';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
 import { STUDY_COLLECTIONS } from '../study/rows';
-import { V2_STUDY_COLLECTIONS, firstPageUrl, nextPageUrl } from '../sync/pager';
-import { fullLogPath } from '../events';
+import { firstPageUrl, nextPageUrl } from '../sync/pager';
+import { fullLogPath } from '$lib/events';
 import { entryPath } from '../api/entries';
 import { strokeUrl } from '../study/strokeData';
 import {
@@ -19,15 +20,15 @@ import {
 	receiptKey,
 	type PrepareDeps
 } from './prepareOffline';
+import * as build from '$lib/testing/study';
 
-// The legacy study pull an old shell made (still cacheable); the web itself pages with v=2.
-const SYNC_PULL_PATH =
-	'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,' + STUDY_COLLECTIONS.join(',');
+// The first page of the study pull the web makes (v=2, store.ts).
+const SYNC_PULL_PATH = firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: 3, tombstones: true });
 
 const now = new Date('2026-03-01T12:00:00Z');
 
 function card(id: string, kind: StudyCardKind, entryId: number, written = '学习', createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
-	return { id, kind, entryId, written, deckIds: ['general'], createdAt };
+	return build.card({ id, kind, entryId, written, createdAt });
 }
 
 const vocab = [1, 2, 3, 4, 5, 6].map((n) => card(`v${n}`, 'vocab', n, '学习', `2026-01-0${n}T00:00:00.000Z`));
@@ -47,18 +48,25 @@ const base = {
 
 describe('planOffline', () => {
 	it("is today's queue plus the next new cards, unique", () => {
-		const plan = planOffline(base, { extraNew: 2, maxEntries: 500 });
+		const plan = planOffline(base, { extraNew: 2, maxEntries: 500, studyAllExtra: 0 });
 		expect(plan.entryIds).toEqual([1, 2, 3, 4]);
 	});
 
 	it('daily limits apply to the extra new cards too (the same rule as online)', () => {
 		const limited: StudyContext = { ...UTC_CONTEXT, limits: { workspace: { new: 1 }, decks: {}, existingDecks: null } };
-		expect(planOffline({ ...base, ctx: limited }, { extraNew: 50, maxEntries: 500 }).entryIds).toEqual([1]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 50, maxEntries: 500, studyAllExtra: 0 }).entryIds).toEqual([1]);
 	});
 
 	it('a vacation day prepares nothing', () => {
 		const vacation: StudyContext = { ...UTC_CONTEXT, vacationToday: true };
 		expect(planOffline({ ...base, ctx: vacation }).entryIds).toEqual([]);
+	});
+
+	it('then prepares what Study all would add, past the daily limits, at most studyAllExtra entries (#175 review)', () => {
+		const limited: StudyContext = { ...UTC_CONTEXT, limits: { workspace: { new: 1 }, decks: {}, existingDecks: null } };
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 500 }).entryIds).toEqual([1, 2, 3, 4, 5, 6]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 500, studyAllExtra: 2 }).entryIds).toEqual([1, 2, 3]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 2, studyAllExtra: 50 }).entryIds).toEqual([1, 2]);
 	});
 
 	it('caps the entries', () => {
@@ -88,7 +96,7 @@ describe('the URLs prepared are the URLs the pages request', () => {
 		expect(classify({ method: 'GET', url: `https://x.test${SYNC_PULL_PATH}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		// The study pull the offline copy holds names every typed study collection.
 		const named = new URL(SYNC_PULL_PATH, 'https://x.test').searchParams.get('collections')?.split(',') ?? [];
-		expect(named).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
+		expect([...named].sort()).toEqual(['rows', ...STUDY_COLLECTIONS].sort());
 		expect(classify({ method: 'GET', url: `https://x.test${fullLogPath(3)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${entryPath(12)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${strokeUrl('猫')}`, mode: 'cors', headers: { get: () => null } }, ctx)).toBe('hanzi');
@@ -144,6 +152,7 @@ describe('prepareOffline', () => {
 			isCached: async () => false,
 			pullPages: () => 1,
 			extraNew: 2,
+			studyAllExtra: 0,
 			onPrepared: () => {},
 			...over
 		};
@@ -156,6 +165,26 @@ describe('prepareOffline', () => {
 		for (const path of OFFLINE_API_PATHS) expect(deps.calls).toContain(path);
 		expect(deps.calls.filter((c) => c.startsWith('/api/entries/')).sort()).toEqual([1, 2, 3, 4].map((n) => entryPath(n)).sort());
 		expect(deps.active.max).toBeLessThanOrEqual(2);
+	});
+
+	it('prepares the opt-in kinds the decks switch on, as the Study page selects them, not only the tab setup', async () => {
+		// Word 9 was learned (Easy, not due); its reverse card is new. General switches reverse on, and
+		// this tab has no setup of its own (the default: Vocab only).
+		const learned = card('c-vocab-9', 'vocab', 9, '本', '2026-01-01T00:00:00.000Z');
+		const reverse = card('c-reverse-9', 'reverse', 9, '本', '2026-01-02T00:00:00.000Z');
+		const history = build.history({
+			cards: [learned, reverse],
+			reviews: [build.review({ cardId: 'c-vocab-9', ts: '2026-02-27T10:00:00Z', grade: 4 })],
+			deckSettings: { general: { deckId: 'general', cardTypes: ['reverse'], extra: {} } }
+		});
+		const deps = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({}) });
+		expect((await prepareOffline(7, deps)).status).toBe('prepared');
+		expect(deps.calls).toContain(entryPath(9));
+
+		// Unchecked on the setup page in this workspace: not prepared.
+		const off = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({ reverse: false }) });
+		await prepareOffline(7, off);
+		expect(off.calls).not.toContain(entryPath(9));
 	});
 
 	it('warms every page of the current workspace round through the study read and counts the pages', async () => {
@@ -173,7 +202,7 @@ describe('prepareOffline', () => {
 	it('the v2 first page and its continuation of a workspace round are what the worker keeps', () => {
 		const ctx = { origin: 'https://x.test', shellUrls: new Set<string>() };
 		const headers = { get: () => 'Bearer t' };
-		for (const url of [firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 7 }), nextPageUrl('p2.abc')]) {
+		for (const url of [firstPageUrl({ collections: STUDY_PULL_COLLECTIONS, workspace: 7 }), nextPageUrl('p2.abc')]) {
 			expect(classify({ method: 'GET', url: `https://x.test${url}`, mode: 'cors', headers }, ctx), url).toBe('api');
 		}
 	});

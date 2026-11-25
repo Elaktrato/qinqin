@@ -1,4 +1,5 @@
 import { apiBlob } from '../api/client';
+import type { ClipCache } from '../context/caches';
 
 // The clip route needs the bearer token, which an <audio src> cannot send,
 // so clips are fetched with the API client and played from object URLs. The
@@ -6,16 +7,16 @@ import { apiBlob } from '../api/client';
 // ones are revoked.
 const MAX_CLIPS = 40;
 
-interface Slot {
+export interface Slot {
 	promise: Promise<string>;
 	url?: string;
 }
-const cache = new Map<string, Slot>();
+
 
 // trim keeps the MAX_CLIPS most recently used clips that have finished loading:
 // a clip still being fetched is never dropped, so no object URL is created for
 // an entry that is already gone (it would leak), and none is revoked in use.
-function trim(): void {
+function trim(cache: Map<string, Slot>): void {
 	for (const [key, slot] of cache) {
 		if (cache.size <= MAX_CLIPS) return;
 		if (slot.url === undefined) continue;
@@ -25,12 +26,13 @@ function trim(): void {
 }
 
 /** readyClipUrl is the object URL of a clip that has already been fetched, else null; it never waits. */
-export function readyClipUrl(clipUrl: string): string | null {
-	return cache.get(clipUrl)?.url ?? null;
+export function readyClipUrl(clips: ClipCache, clipUrl: string): string | null {
+	return clips.slots.get(clipUrl)?.url ?? null;
 }
 
 /** clipObjectUrl returns a playable object URL for a clip URL, fetching it once. */
-export function clipObjectUrl(clipUrl: string): Promise<string> {
+export function clipObjectUrl(clips: ClipCache, clipUrl: string): Promise<string> {
+	const cache = clips.slots;
 	const hit = cache.get(clipUrl);
 	if (hit) {
 		// Refresh its place so the least recently used goes first.
@@ -41,7 +43,7 @@ export function clipObjectUrl(clipUrl: string): Promise<string> {
 	const slot: Slot = {
 		promise: apiBlob(clipUrl).then((blob) => {
 			slot.url = URL.createObjectURL(blob);
-			trim();
+			trim(cache);
 			return slot.url;
 		})
 	};
@@ -49,12 +51,6 @@ export function clipObjectUrl(clipUrl: string): Promise<string> {
 		if (cache.get(clipUrl) === slot) cache.delete(clipUrl);
 	});
 	cache.set(clipUrl, slot);
-	trim();
+	trim(cache);
 	return slot.promise;
-}
-
-/** clearClipCache revokes and forgets every clip (sign-out, tests). */
-export function clearClipCache(): void {
-	for (const slot of cache.values()) if (slot.url) URL.revokeObjectURL(slot.url);
-	cache.clear();
 }

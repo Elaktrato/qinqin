@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { errorText } from '$lib/api/apiErrors';
+	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { ApiError } from '$lib/api/client';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { fetchCharacters } from '$lib/api/characters';
 	import type { CharRow } from '$lib/api/types';
@@ -10,9 +11,9 @@
 	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
-	import CardManager from '$lib/components/CardManager.svelte';
-	import { workspaces } from '$lib/workspaces';
-	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
+	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
+	import { deckSessionItems, sessionCounts } from '$lib/study/cardFlow';
+	import { profileOf } from '$lib/languages/profiles';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
 		defaultExtraTypes,
@@ -23,7 +24,7 @@
 		rememberExtraChoice,
 		type ExtraChoices
 	} from '$lib/study/cardTypesMemory';
-	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -40,8 +41,6 @@ import type { VacationPeriod } from '$lib/study/vacation';
 import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
-	import { currentStudyDay } from '$lib/time/zone';
-	import { STUDY_ALL_LIMIT } from '$lib/study/session';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -62,16 +61,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudySessionConfig,
 		type StudySessionMode
 	} from '$lib/study/session';
-	import {
-		GENERAL_DECK_ID,
-		cardsInDecks,
-		createDeck,
-		activeWeights,
-		deleteDeck,
-		loadStudyData,
-		renameDeck,
-		saveDeckCardTypesForDecks
-	} from '$lib/study/store';
+	import { createDeck, deleteDeck, renameDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+	import { loadStudyData, onStudyChange, touches } from '$lib/study/data';
+	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
 	import {
 		CARD_KINDS,
 		OPT_IN_KINDS,
@@ -79,8 +71,12 @@ import { limitsOf } from '$lib/study/scheduler';
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
-		type StudyCardKind
+		type StudyCardKind,
+		GENERAL_DECK_ID
 	} from '$lib/study/types';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
 		const active = data.fsrs?.active;
@@ -112,7 +108,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// Vacation days and the study clock of the active workspace.
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
@@ -173,11 +169,6 @@ import { limitsOf } from '$lib/study/scheduler';
 	// the data of the one now selected.
 	let requestSeq = 0;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	/**
 	 * keepKnownDecks drops decks deleted since the setup was saved (or
@@ -230,14 +221,14 @@ import { limitsOf } from '$lib/study/scheduler';
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(workspaceId);
+			const data = await loadStudyData(session.study, workspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, workspaceId);
+			ctx = contextForData(session.zone, data, workspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
@@ -246,7 +237,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = [];
 			cards = [];
 			reviews = [];
-			loadError = message(err, t('study.setup.decksFailed'));
+			loadError = errorText(err, t('study.setup.decksFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -261,23 +252,32 @@ import { limitsOf } from '$lib/study/scheduler';
 		if (activeWorkspaceId === null) return;
 		const seq = requestSeq;
 		try {
-			const data = await loadStudyData(activeWorkspaceId);
+			const data = await loadStudyData(session.study, activeWorkspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, activeWorkspaceId);
+			ctx = contextForData(session.zone, data, activeWorkspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
-			if (seq === requestSeq) deckError = message(err, t('study.setup.reloadFailed'));
+			if (seq === requestSeq) deckError = errorText(err, t('study.setup.reloadFailed'));
 		}
 	}
 
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void refreshData()));
+	$effect(() => onContextStale(session.zone, () => void refreshData()));
+
+	// A change of the workspace's study rows (a write elsewhere on the page, or a
+	// row another device wrote in the second of the load, which the cache's
+	// follow-up round brings, #193) reloads the counts without a new visit.
+	$effect(() =>
+		onStudyChange(session.study, (changed) => {
+			if (touches(changed, activeWorkspaceId)) void refreshData();
+		})
+	);
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
@@ -287,7 +287,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			schemes = [];
-			schemeError = message(err, t('study.setup.schemesFailed'));
+			schemeError = errorText(err, t('study.setup.schemesFailed'));
 		} finally {
 			if (seq === requestSeq) schemesLoaded = true;
 		}
@@ -304,7 +304,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
 	$effect(() => {
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 
@@ -378,7 +378,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			levelEntries = list;
 		} catch (err) {
 			if (seq !== levelEntriesSeq) return;
-			levelEntriesError = message(err, t('study.setup.levelFailed'));
+			levelEntriesError = errorText(err, t('study.setup.levelFailed'));
 		} finally {
 			if (seq === levelEntriesSeq) levelEntriesLoading = false;
 		}
@@ -407,7 +407,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			schemeCharacters = [];
 			return;
 		}
-		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+		Promise.all([fetchSchemeCharacters(session.caches.schemes, scheme.id), fetchCharacters(session.caches.characters, scheme.language)]).then(
 			([levels, list]) => {
 				if (seq !== schemeCharactersSeq) return;
 				schemeCharacters = levels;
@@ -440,7 +440,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	const visibleTypes = $derived(
 		CARD_TYPES.filter(
 			(type) =>
-				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
+				profileOf(workspaceLanguage ?? '').cardKinds.includes(type.id) &&
 				(mode === 'decks' || !isOptIn(type.id))
 		)
 	);
@@ -492,11 +492,8 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
 
-	// What Study all would contain: the same plan without any daily limits.
-	const noLimitCtx = $derived({
-		...ctx,
-		limits: { ...ctx.limits, workspace: null, decks: {} }
-	});
+	// What Study all would contain: the same plan with Study all, which ignores the
+	// session caps and every daily limit (sessionQueue.ts), exactly as the session does.
 	const deckAllPlan = $derived.by(() => {
 		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
 		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
@@ -505,13 +502,14 @@ import { limitsOf } from '$lib/study/scheduler';
 			reviews,
 			deckIds: selectedDeckIds,
 			kinds: selectedKinds,
-			newLimit: STUDY_ALL_LIMIT,
-			reviewLimit: STUDY_ALL_LIMIT,
+			newLimit: COUNT_CAP,
+			reviewLimit: COUNT_CAP,
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',
 			deckSettings,
-			ctx: noLimitCtx,
+			ctx,
+			studyAll: true,
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
 		return sessionCounts(items, reviews);
@@ -573,7 +571,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			w: weights,
 			unit: levelUnit,
 			kinds: levelKinds,
-			ctx: noLimitCtx,
+			ctx,
+			studyAll: true,
 			hasStrokes: hasStrokeData,
 			excludeEntries: buriedLevelEntries(
 				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
@@ -682,6 +681,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		errors = [];
 		typeError = '';
 		if (isOptIn(id)) {
+			// The workspace whose decks are shown, captured at the click (#174).
+			const ws = activeWorkspaceId;
+			if (ws === null) return;
 			const kind = id as OptInKind;
 			const next = !extraKinds.includes(kind);
 			const previousSettings = deckSettings;
@@ -700,20 +702,32 @@ import { limitsOf } from '$lib/study/scheduler';
 			}
 			deckSettings = optimistic;
 			extraChoices = { ...extraChoices, [kind]: next };
-			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, next);
+			rememberExtraChoice(ws, kind, next);
 			typeSaving = id;
 			try {
-				const saved = await saveDeckCardTypesForDecks(
+				const saved = await saveDeckCardTypesForDecks(session.study, 
+					ws,
 					allDecks.map((deck) => deck.id),
 					kind,
 					next
 				);
-				deckSettings = { ...deckSettings, ...saved };
+				// A switch while it saved: the page shows another workspace now.
+				if (activeWorkspaceId === ws) {
+					const next = { ...deckSettings, ...saved.saved };
+					// Decks whose stored switches this version cannot read keep them (#167).
+					for (const deckId of saved.unreadable) {
+						if (previousSettings[deckId] === undefined) delete next[deckId];
+						else next[deckId] = previousSettings[deckId];
+					}
+					deckSettings = next;
+					if (saved.unreadable.length > 0) typeError = t('study.store.unreadableRow');
+				}
 			} catch (err) {
+				rememberExtraChoice(ws, kind, !next);
+				if (activeWorkspaceId !== ws) return;
 				deckSettings = previousSettings;
 				extraChoices = previousChoices;
-				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, !next);
-				typeError = message(err, t('study.types.saveFailed'));
+				typeError = errorText(err, t('study.types.saveFailed'));
 			} finally {
 				typeSaving = null;
 			}
@@ -740,19 +754,21 @@ import { limitsOf } from '$lib/study/scheduler';
 	async function addDeck(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		const name = deckName.trim();
-		if (!name || creating) return;
+		const ws = activeWorkspaceId;
+		if (!name || creating || ws === null) return;
 
 		creating = true;
 		deckError = '';
 		try {
-			const deck = await createDeck(name);
+			const deck = await createDeck(session.study, ws, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = [...decks, deck];
 			// A deck the user just made is almost certainly one they want
 			// to study from, so select it instead of leaving it unticked.
 			selectedDeckIds = [...selectedDeckIds, deck.id];
 			deckName = '';
 		} catch (err) {
-			deckError = message(err, t('study.decks.createFailed'));
+			deckError = errorText(err, t('study.decks.createFailed'));
 		} finally {
 			creating = false;
 		}
@@ -777,18 +793,22 @@ import { limitsOf } from '$lib/study/scheduler';
 			return;
 		}
 
+		const ws = activeWorkspaceId;
+		if (ws === null) return;
 		deckError = '';
 		try {
-			const renamed = await renameDeck(id, name);
+			const renamed = await renameDeck(session.study, ws, id, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
 		} catch (err) {
-			deckError = message(err, t('study.decks.renameFailed'));
+			deckError = errorText(err, t('study.decks.renameFailed'));
 		}
 	}
 
 	async function removeDeck(deck: Deck): Promise<void> {
-		if (deletingId !== null) return;
+		const ws = activeWorkspaceId;
+		if (deletingId !== null || ws === null) return;
 		if (
 			!confirm(t('study.decks.confirmDelete', { deck: deck.name }))
 		) {
@@ -798,7 +818,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		deletingId = deck.id;
 		deckError = '';
 		try {
-			await deleteDeck(deck.id);
+			await deleteDeck(session.study, ws, deck.id);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.filter((item) => item.id !== deck.id);
 			// Mirror the store's reassignment locally so the counts do not
 			// keep counting cards of a deck that is gone.
@@ -812,7 +833,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			});
 			selectedDeckIds = selectedDeckIds.filter((id) => id !== deck.id);
 		} catch (err) {
-			deckError = message(err, t('study.decks.deleteFailed'));
+			deckError = errorText(err, t('study.decks.deleteFailed'));
 		} finally {
 			deletingId = null;
 		}
@@ -890,7 +911,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">{t('study.setup.change')}</a></p>
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
-	{#if $workspaces.current && usesHan($workspaces.current.language)}
+	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
+	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 
@@ -1118,7 +1140,10 @@ import { limitsOf } from '$lib/study/scheduler';
 				{/if}
 			</Section>
 
-			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
+			{#if activeWorkspaceId !== null}
+				<!-- Its writes reach the page through onStudyChange (one reload each). -->
+				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} />
+			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">
 				<p class="hint">{t('study.level.intro')}</p>
@@ -1195,6 +1220,7 @@ import { limitsOf } from '$lib/study/scheduler';
 							<li>
 								<span class="advanced-name">{deck.name}</span>
 								<DeckCardTypes
+									workspaceId={activeWorkspaceId}
 									deckId={deck.id}
 									deckName={deck.name}
 									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}

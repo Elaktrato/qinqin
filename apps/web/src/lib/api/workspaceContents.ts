@@ -4,8 +4,9 @@
 // loadStudyData, so duplicates of one word (added on two devices before
 // card ids were deterministic) count once. Nothing here is cached.
 
+import type { StudyState } from '$lib/study/data';
 import { listBooks } from './library';
-import { loadStudyData } from '../study/store';
+import { loadStudyData } from '../study/data';
 
 export interface WorkspaceContents {
 	books: number;
@@ -15,8 +16,8 @@ export interface WorkspaceContents {
 }
 
 /** fetchWorkspaceContents counts what deleting workspace `id` removes. */
-export async function fetchWorkspaceContents(id: number): Promise<WorkspaceContents> {
-	const [books, study] = await Promise.all([listBooks(id), loadStudyData(id)]);
+export async function fetchWorkspaceContents(state: StudyState, id: number): Promise<WorkspaceContents> {
+	const [books, study] = await Promise.all([listBooks(id), loadStudyData(state, id)]);
 	return {
 		books: books.length,
 		cards: study.cards.length,

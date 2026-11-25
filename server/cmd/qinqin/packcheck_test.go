@@ -140,7 +140,7 @@ func TestStalePackTermsSkipsInvalidManifest(t *testing.T) {
 	}
 }
 
-func TestStalePackTermsIgnoresUninstalledAndSentencePacks(t *testing.T) {
+func TestStalePackTermsIgnoresUninstalledPacks(t *testing.T) {
 	sqlDB, root := seededPacks(t)
 	// Uninstalled: a soft-deleted scheme is not compared.
 	if _, err := sqlDB.Exec(`UPDATE schemes SET deleted_at = '2026-01-01T00:00:00Z' WHERE pack_id = 'hsk-mini'`); err != nil {
@@ -174,6 +174,31 @@ func TestStalePackTermsChecksComponentsPacks(t *testing.T) {
 	warnStalePackTerms(context.Background(), sqlDB, []string{root}, rec.logf)
 	if len(rec.lines) != 1 || !strings.HasPrefix(rec.lines[0], "pack comp-x: stored license/attribution/notice differs from ") {
 		t.Errorf("got %q, want one warning for comp-x", rec.lines)
+	}
+}
+
+// Sentence packs store their terms since migration 027 (sentence_packs);
+// a changed licence text on disk is reported like any other pack's (#172).
+func TestStalePackTermsChecksSentencePacks(t *testing.T) {
+	sqlDB, root := seededPacks(t)
+	dir := filepath.Join(root, "sent-x")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(`{
+		"id": "sent-x", "name": "X", "version": "1", "type": "sentences", "language": "ja",
+		"license": "CC BY 2.0 FR", "attribution": "Tatoeba", "notice": "", "format": "json"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sqlDB.Exec(`
+		INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, updated_at)
+		VALUES ('sent-x', 'X', '1', 'ja', 'CC BY 2.0', 'Tatoeba', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	var rec logRecorder
+	warnStalePackTerms(context.Background(), sqlDB, []string{root}, rec.logf)
+	if len(rec.lines) != 1 || !strings.HasPrefix(rec.lines[0], "pack sent-x: stored license/attribution/notice differs from ") {
+		t.Errorf("got %q, want one warning for sent-x", rec.lines)
 	}
 }
 

@@ -2,7 +2,7 @@
  "version": 1,
  "rule": "packages/catalogue",
  "_doc": "GET /api/packages answers one catalogue. valid cases decode; invalid ones must be refused for the reason given (a strict decoder: every key of rowKeys present, no other key except error, types as in README.md). error appears only in an administrator's catalogue, on a row whose last build failed. Decoded by server/internal/api (A7) and apps/web/src/lib/api/packages.ts (C5).",
- "idPattern": "^(lexicon\\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes)\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$",
+ "idPattern": "^(lexicon\\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules)\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$",
  "types": [
   "lexicon",
   "levels",
@@ -11,7 +11,8 @@
   "components",
   "audio",
   "grammar",
-  "strokes"
+  "strokes",
+  "lemma-rules"
  ],
  "states": [
   "building",
@@ -507,6 +508,51 @@
         "version": "2.0.1",
         "license": "Arphic Public License",
         "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a ja user's catalogue with the lemmatizer rule table (lemma-rules)",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "ja"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lemma-rules.ja-lemma",
+      "type": "lemma-rules",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bytes": 40960,
+      "url": "/api/packages/lemma-rules.ja-lemma/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "lemma-rules",
+        "packId": "ja-lemma",
+        "name": "Japanese lemmatizer rules",
+        "version": "2026-11-22",
+        "license": "CC0-1.0",
+        "attribution": "Japanese lemmatizer rule table written for qinqin by the project; CC0 1.0.",
         "notice": ""
        }
       ],

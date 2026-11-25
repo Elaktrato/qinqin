@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // grammarFixture is the shared grammar pack fixture.
@@ -37,8 +37,8 @@ func TestSeedImportsGrammarAfterSentences(t *testing.T) {
 	if !strings.HasPrefix(last, "zh-grammar-mini") || !strings.Contains(last, "grammar") || !strings.Contains(last, "3 lessons") {
 		t.Errorf("last seed line = %q, want the grammar pack with its lesson count", last)
 	}
-	if importOrder[dict.TypeGrammar] != 4 || importOrder[dict.TypeGrammar] <= importOrder[dict.TypeSentences] {
-		t.Errorf("importOrder[grammar] = %d, want 4, after sentences %d", importOrder[dict.TypeGrammar], importOrder[dict.TypeSentences])
+	if importRank(pack.TypeGrammar) != 4 || importRank(pack.TypeGrammar) <= importRank(pack.TypeSentences) {
+		t.Errorf("importRank(grammar) = %d, want 4, after sentences %d", importRank(pack.TypeGrammar), importRank(pack.TypeSentences))
 	}
 	// Seeding again is safe.
 	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &strings.Builder{}); err != nil {

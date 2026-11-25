@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
@@ -33,13 +34,8 @@ const samplePacks = "../../../plugins/samples"
 func openTestDB(t *testing.T) (*sql.DB, string) {
 	t.Helper()
 	registerLanguages()
-	dir := t.TempDir()
-	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB, dir
+	sqlDB, path := dbtest.OpenPath(t)
+	return sqlDB, filepath.Dir(path)
 }
 
 // smallPacks copies the hand-written sample packs (es-demo from the
@@ -178,80 +174,6 @@ func TestSeedIdempotent(t *testing.T) {
 	}
 }
 
-// TestSeedWarnsAboutUserDataOnEntryIDs: a database with user edits or
-// flashcards (which store entry ids) gets a WARNING line, since a
-// database from before the dictionary rebuild keeps ids that now point at
-// different entries. A database without them gets none.
-func TestSeedWarnsAboutUserDataOnEntryIDs(t *testing.T) {
-	ctx := context.Background()
-	packs := smallPacks(t)
-	seedOut := func(sqlDB *sql.DB) string {
-		t.Helper()
-		var out bytes.Buffer
-		if err := seed(ctx, sqlDB, t.TempDir(), []string{packs}, &out); err != nil {
-			t.Fatalf("seed: %v", err)
-		}
-		return out.String()
-	}
-	newDB := func() (*sql.DB, int64) {
-		t.Helper()
-		sqlDB, _ := openTestDB(t)
-		if out := seedOut(sqlDB); strings.Contains(out, "WARNING") {
-			t.Errorf("seed of an empty database warned:\n%s", out)
-		}
-		u, err := auth.CreateUser(ctx, sqlDB, "erik", "s3cret-pw-1234", true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return sqlDB, u.ID
-	}
-
-	sqlDB, uid := newDB()
-	if out := seedOut(sqlDB); strings.Contains(out, "WARNING") {
-		t.Errorf("seed with a user but no edits or cards warned:\n%s", out)
-	}
-	if _, err := sqlDB.Exec(`INSERT INTO user_edits (user_id, entry_id, written, updated_at)
-		VALUES (?, (SELECT MIN(id) FROM entries), '猫', '2026-11-13T00:00:00Z')`, uid); err != nil {
-		t.Fatal(err)
-	}
-	if out := seedOut(sqlDB); !strings.Contains(out, "WARNING") || !strings.Contains(out, "1 user edit") {
-		t.Errorf("seed with a user edit = %q, want a WARNING naming 1 user edit", out)
-	}
-
-	sqlDB, uid = newDB()
-	if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, key, data, version, updated_at)
-		VALUES ('qinqin-flashcards', ?, 'card:c1', '{"entryId":1}', 1, '2026-11-13T00:00:00Z'),
-		       ('qinqin-flashcards', ?, 'deck:d1', '{}', 1, '2026-11-13T00:00:00Z')`, uid, uid); err != nil {
-		t.Fatal(err)
-	}
-	if out := seedOut(sqlDB); !strings.Contains(out, "WARNING") || !strings.Contains(out, "1 flashcard") {
-		t.Errorf("seed with a flashcard = %q, want a WARNING naming 1 flashcard", out)
-	}
-
-	// Cards are typed study rows since migration 038: a live one counts, a
-	// tombstone does not, and a leftover plugin row adds to them.
-	sqlDB, uid = newDB()
-	var ws int64
-	if err := sqlDB.QueryRow(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', '', 't') RETURNING id`, uid).Scan(&ws); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := sqlDB.Exec(`INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, created_at, version, updated_at, modified_at, deleted_at)
-		VALUES (?1, ?2, 'c1', 'vocab', 1, 't', 1, '2026-11-13T00:00:00Z', '2026-11-13T00:00:00Z', NULL),
-		       (?1, ?2, 'c2', 'vocab', 2, 't', 2, '2026-11-13T00:00:00Z', '2026-11-13T00:00:00Z', '2026-11-13T00:00:00Z')`, uid, ws); err != nil {
-		t.Fatal(err)
-	}
-	if out := seedOut(sqlDB); !strings.Contains(out, "WARNING") || !strings.Contains(out, "and 1 flashcard") {
-		t.Errorf("seed with a typed card = %q, want a WARNING naming 1 flashcard", out)
-	}
-	if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, key, data, version, updated_at)
-		VALUES ('qinqin-flashcards', ?, 'card:old', '{"entryId":1}', 1, '2026-11-13T00:00:00Z')`, uid); err != nil {
-		t.Fatal(err)
-	}
-	if out := seedOut(sqlDB); !strings.Contains(out, "and 2 flashcard") {
-		t.Errorf("seed with a typed card and a leftover = %q, want 2 flashcard(s)", out)
-	}
-}
-
 // Each pack prints exactly one line, and a dictionary's line carries its
 // lexicon counts.
 func TestSeedPrintsEachPackOnce(t *testing.T) {
@@ -356,6 +278,7 @@ func TestAddUser(t *testing.T) {
 	if err := adduserCmd(args, strings.NewReader("s3cret-pw-1234\n"), io.Discard); err != nil {
 		t.Fatalf("adduser: %v", err)
 	}
+	// reopen: adduser created it
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatalf("reopen db: %v", err)

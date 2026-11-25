@@ -10,9 +10,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/levels"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 // importLevels imports a word-unit zh levels pack named name with the
@@ -20,8 +21,8 @@ import (
 func importLevels(t *testing.T, sqlDB *sql.DB, id, name, levelsJSON string) {
 	t.Helper()
 	dir := t.TempDir()
-	manifest, err := json.Marshal(dict.Manifest{
-		ID: id, Name: name, Version: "1", Type: dict.TypeLevels, Language: "zh",
+	manifest, err := json.Marshal(pack.Manifest{
+		ID: id, Name: name, Version: "1", Type: pack.TypeLevels, Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "json",
 	})
 	if err != nil {
@@ -32,7 +33,7 @@ func importLevels(t *testing.T, sqlDB *sql.DB, id, name, levelsJSON string) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", id, err)
 	}
@@ -63,7 +64,7 @@ func levelsOf(r *lookup.Result) []string {
 }
 
 func TestLookupLevelsLowestPerScheme(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importLevels(t, sqlDB, "hsk-test", "HSK", hskLevels)
 	s := service(sqlDB)
@@ -85,7 +86,7 @@ func TestLookupLevelsLowestPerScheme(t *testing.T) {
 }
 
 func TestLookupLevelsEmptyArray(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importLevels(t, sqlDB, "hsk-test", "HSK", hskLevels)
 	s := service(sqlDB)
@@ -104,7 +105,7 @@ func TestLookupLevelsEmptyArray(t *testing.T) {
 // TestLookupLevelsOneQuery: the levels of every result come from one
 // batched statement, however many results there are.
 func TestLookupLevelsOneQuery(t *testing.T) {
-	seeded, path := openDB(t)
+	seeded, path := dbtest.OpenPath(t)
 	importCedict(t, seeded)
 	importLevels(t, seeded, "hsk-test", "HSK", hskLevels)
 
@@ -134,7 +135,7 @@ func TestLookupLevelsOneQuery(t *testing.T) {
 // TestLookupWithoutLevelsRunsNoLevelsQuery: the segmenter's lookups (one
 // per token) do not ask for levels and pay nothing for them.
 func TestLookupWithoutLevelsRunsNoLevelsQuery(t *testing.T) {
-	seeded, path := openDB(t)
+	seeded, path := dbtest.OpenPath(t)
 	importCedict(t, seeded)
 	importLevels(t, seeded, "hsk-test", "HSK", hskLevels)
 	var count, levelQueries atomic.Int64

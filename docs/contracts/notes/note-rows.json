@@ -1,7 +1,7 @@
 {
   "version": 1,
   "rule": "notes/rows",
-  "_doc": "Parse rules of qinqin-core note:<entryId> and notecfg rows (docs/contracts/notes/README.md). op note: input {key, data, deletedAt} -> expect null (absent) or {entryId, text, extra}; op cfg: -> {onAnswer, extra}. Web: lib/notes/notes.test.ts. restoreKeeps (note cases whose key starts with note:): whether a backup restore remaps the row to the target entry (key note:<canonical id>, data a JSON object whose integer entryId equals it); every other note: row is dropped on restore. Go: backup/notes_test.go.",
+  "_doc": "Parse rules of the keyed note:<entryId> and notecfg rows (docs/contracts/notes/README.md). op note: input {key, data, deletedAt} -> expect null (absent) or {entryId, text, extra}; op cfg: -> {onAnswer, extra}. Web: lib/notes/notes.test.ts. restoreKeeps (note cases whose key starts with note:): whether a backup restore remaps the row to the target entry (key note:<canonical id>, data a JSON object whose integer entryId equals it); every other note: row is dropped on restore. Go: backup/notes_test.go.",
   "cases": [
     {
       "name": "valid note",

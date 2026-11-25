@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -5,24 +6,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces } from '$lib/workspaces';
 import Layout from './+layout.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const view = createRawSnippet(() => ({ render: () => '<p>the view</p>' }));
 
 function mount(path: string, language: string | null) {
 	setUrl(path);
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: language === null ? null : ({ id: 1, language, name: 'w1' } as never)
 	});
-	return render(Layout, { children: view });
+	return render(Layout, { props: { children: view }, context: ctx.context });
 }
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {
 	cleanup();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 describe('Stats layout tabs', () => {

@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
@@ -116,7 +117,7 @@ func packCSV(r resolution, name string) string {
 // installed packs by fixture name.
 func seedResolution(t *testing.T) (*sql.DB, resolution, map[string]int64, map[string]freq.PackInfo) {
 	t.Helper()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	r := loadResolution(t)
 	ids := seedLexicon(t, sqlDB, r)
 	for name := range r.Packs {

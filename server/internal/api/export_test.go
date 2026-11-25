@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // Test hooks: the clock the stage store reads, the channel a finished
@@ -27,17 +27,16 @@ func WithPackLock(lock, unlock *func()) Option {
 }
 
 // WithImporter replaces packs.Import in background import jobs.
-func WithImporter(f func(context.Context, *sql.DB, dict.Pack) (string, error)) Option {
+func WithImporter(f func(context.Context, *sql.DB, pack.Pack) (string, error)) Option {
 	return func(s *server) { s.importPack = f }
 }
 
 // AuthHooks replaces the password-hashing entry points of the auth
 // handlers; a nil field keeps the real function.
 type AuthHooks struct {
-	Login           func(ctx context.Context, db *sql.DB, user, pass string) (string, error)
-	CreateFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
-	CreateUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
-	Hash            func(password string) string
+	Login      func(ctx context.Context, db *sql.DB, user, pass string) (string, error)
+	CreateUser func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
+	Hash       func(password string) string
 }
 
 func WithAuthHooks(h AuthHooks) Option {
@@ -47,9 +46,6 @@ func WithAuthHooks(h AuthHooks) Option {
 				tok, err := h.Login(ctx, d, user, pass)
 				return auth.LoginResult{Token: tok, User: model.User{Username: user}}, err
 			}
-		}
-		if h.CreateFirstUser != nil {
-			s.hash.createFirstUser = h.CreateFirstUser
 		}
 		if h.Hash != nil {
 			s.hash.hash = h.Hash
@@ -81,3 +77,17 @@ func WithExportCap(n int64) Option { return func(s *server) { s.exportCap = n } 
 func WithEventStream(f func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error) Option {
 	return func(s *server) { s.streamEvents = f }
 }
+
+// WithSegmentHook runs hook inside every POST /api/segment, after its
+// concurrency slot is taken (tests hold requests in flight with it).
+func WithSegmentHook(hook func()) Option { return func(s *server) { s.segmentHook = hook } }
+
+// WithAISlotHook runs hook(kind, phase) inside runAI: "acquired" once the
+// user's AI slot is taken, "releasing" just before it is given back.
+func WithAISlotHook(hook func(kind, phase string)) Option {
+	return func(s *server) { s.aiSlotHook = hook }
+}
+
+// WithAvatarHook runs inside POST /api/account/avatar once the picture is
+// decoded, before it is stored (tests).
+func WithAvatarHook(hook func()) Option { return func(s *server) { s.avatarHook = hook } }

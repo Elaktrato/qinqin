@@ -26,14 +26,14 @@ func (s *server) handlePutInterfaceLanguage(w http.ResponseWriter, r *http.Reque
 	if err := decodeStrictJSON(w, r, &req, maxInterfaceLanguageBody); err != nil || req.Language == nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeAuthError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
 			return
 		}
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Invalid request body: send {\"language\": string}.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Invalid request body: send {\"language\": string}.")
 		return
 	}
 	if !i18n.IsLanguageSetting(*req.Language) {
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_language", "The interface language must be empty or a language tag such as en, zh-Hant or pt-BR.")
+		writeError(w, http.StatusUnprocessableEntity, "invalid_language", "The interface language must be empty or a language tag such as en, zh-Hant or pt-BR.")
 		return
 	}
 	if err := auth.SetInterfaceLanguage(r.Context(), s.db, u.ID, *req.Language); err != nil {

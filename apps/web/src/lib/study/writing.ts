@@ -1,4 +1,3 @@
-import { loadStrokeData } from './strokeData';
 import type { ReviewGrade } from './types';
 
 // Script=Han also admits 々 〆 〇; usableChars drops them (no stroke files).
@@ -36,9 +35,23 @@ export function suggestWritingGrade(outcomes: CharOutcome[]): ReviewGrade {
 /** Writable characters for which stroke data is available. */
 export async function usableChars(
 	written: string,
-	load: (ch: string) => Promise<unknown | null> = (ch) => loadStrokeData(ch)
+	load: (ch: string) => Promise<unknown | null>
 ): Promise<string[]> {
 	const chars = writableChars(written);
 	const data = await Promise.all(chars.map((ch) => load(ch)));
 	return chars.filter((_, i) => data[i] !== null);
+}
+
+/**
+ * maskWritten shows the word with every usable character that is not yet
+ * written replaced by a box; `done` counts the characters completed in
+ * order. Kana and other characters stay visible as context.
+ */
+export function maskWritten(written: string, chars: readonly string[], done: number): string {
+	let out = '';
+	for (const ch of written) {
+		const at = chars.indexOf(ch);
+		out += at >= 0 && at >= done ? '□' : ch;
+	}
+	return out;
 }

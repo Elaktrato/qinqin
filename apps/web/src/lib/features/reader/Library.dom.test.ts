@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,8 +12,12 @@ vi.mock('$lib/api/library', () => ({
 import { listAllBooks, listBooks } from '$lib/api/library';
 import type { Book } from '$lib/api/types';
 import { primaryActions } from '$lib/ui/testing/primary';
-import { workspaces } from '$lib/workspaces';
 import Library from './Library.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const book = (id: number): Book => ({
 	id,
@@ -31,7 +36,7 @@ const book = (id: number): Book => ({
 });
 
 beforeEach(() => {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'Chinese' } as never],
 		current: { id: 1, language: 'zh', name: 'Chinese' } as never
 	});
@@ -45,7 +50,7 @@ afterEach(() => {
 
 describe('Library in the lighter look (#106)', () => {
 	it('has one primary upload; books are hairline rows with secondary actions', async () => {
-		render(Library);
+		render(Library, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Book 1' });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Add an epub' }).className).toContain('primary');

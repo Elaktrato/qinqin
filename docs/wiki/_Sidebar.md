@@ -41,8 +41,7 @@
 - [API routes](API-Routes)
 - [API errors](API-Errors)
 - [API access tokens](API-Access-tokens)
-- [Plugin data API](Plugin-data-api)
-- [Plugin format](Plugin-format)
+- [Core data API](Core-data-api)
 - [Data pack format](Data-pack-format)
 
 **Reference**

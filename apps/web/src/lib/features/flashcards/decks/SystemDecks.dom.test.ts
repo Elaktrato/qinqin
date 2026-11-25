@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,8 +9,13 @@ import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
 import { addDeckFromOverview } from './addDeckFromOverview';
 import { ownedLevelDeckId } from './systemDecks';
-import { clearLevelItemsCache } from './systemDeckItems';
+
 import SystemDecks from './SystemDecks.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const SCHEMES: Scheme[] = [
 	{
@@ -35,7 +41,6 @@ let active = 0;
 let maxActive = 0;
 
 beforeEach(() => {
-	clearLevelItemsCache();
 	active = 0;
 	maxActive = 0;
 	vi.mocked(getSchemes).mockResolvedValue(SCHEMES);
@@ -54,7 +59,7 @@ afterEach(() => {
 
 describe('SystemDecks', () => {
 	it('lists the schemes of the workspace language, collapsed, without loading levels', async () => {
-		render(SystemDecks, { language: 'zh', ownedEntryIds: new Set([1]) });
+		render(SystemDecks, { props: { language: 'zh', ownedEntryIds: new Set([1]) }, context: ctx.context });
 		const toggle = await screen.findByRole('button', { name: /HSK words/ });
 		expect(toggle.getAttribute('aria-expanded')).toBe('false');
 		expect(screen.queryByRole('button', { name: /JLPT/ })).toBeNull();
@@ -62,7 +67,7 @@ describe('SystemDecks', () => {
 	});
 
 	it('expanding loads each level once, two at a time, and counts what is already yours', async () => {
-		render(SystemDecks, { language: 'zh', ownedEntryIds: new Set([1, 3, 4]) });
+		render(SystemDecks, { props: { language: 'zh', ownedEntryIds: new Set([1, 3, 4]) }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /HSK words/ }));
 		const level1 = (await screen.findByRole('link', { name: 'HSK 1' })).closest('li') as HTMLElement;
 		await waitFor(() => expect(within(level1).getByText('1 of 2 in your decks')).toBeTruthy());
@@ -78,7 +83,7 @@ describe('SystemDecks', () => {
 	});
 
 	it('collapsing and expanding again does not load again', async () => {
-		render(SystemDecks, { language: 'zh', ownedEntryIds: new Set<number>() });
+		render(SystemDecks, { props: { language: 'zh', ownedEntryIds: new Set<number>() }, context: ctx.context });
 		const toggle = await screen.findByRole('button', { name: /HSK words/ });
 		await fireEvent.click(toggle);
 		await screen.findByText('0 of 2 in your decks');
@@ -91,18 +96,18 @@ describe('SystemDecks', () => {
 
 	it('shows an error for a level that could not load', async () => {
 		vi.mocked(getSchemeEntries).mockRejectedValue(new Error('offline'));
-		render(SystemDecks, { language: 'zh', ownedEntryIds: new Set<number>() });
+		render(SystemDecks, { props: { language: 'zh', ownedEntryIds: new Set<number>() }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /HSK words/ }));
 		expect((await screen.findAllByText('Could not load')).length).toBeGreaterThan(0);
 	});
 
 	it('says so when no level pack is installed for the language', async () => {
-		render(SystemDecks, { language: 'ko', ownedEntryIds: new Set<number>() });
+		render(SystemDecks, { props: { language: 'ko', ownedEntryIds: new Set<number>() }, context: ctx.context });
 		expect(await screen.findByText(/No level decks/)).toBeTruthy();
 	});
 
 	it('has no edit controls', async () => {
-		render(SystemDecks, { language: 'zh', ownedEntryIds: new Set<number>() });
+		render(SystemDecks, { props: { language: 'zh', ownedEntryIds: new Set<number>() }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /HSK words/ }));
 		await screen.findByRole('link', { name: 'HSK 1' });
 		expect(screen.queryByRole('textbox')).toBeNull();
@@ -118,18 +123,18 @@ describe('SystemDecks', () => {
 			joined: 0,
 			skipped: 0
 		});
-		render(SystemDecks, {
+		render(SystemDecks, { props: {
 			language: 'zh',
 			ownedEntryIds: new Set<number>(),
 			workspaceId: 2,
 			deckIds: new Set<string>(),
 			onchanged
-		});
+		}, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /HSK words/ }));
 		const row = (await screen.findByRole('link', { name: 'HSK 1' })).closest('li')!;
 		await fireEvent.click(await within(row).findByRole('button', { name: /^Add/ }));
 		await waitFor(() => expect(addDeckFromOverview).toHaveBeenCalledOnce());
-		expect(addDeckFromOverview).toHaveBeenCalledWith({
+		expect(addDeckFromOverview).toHaveBeenCalledWith(expect.anything(), {
 			workspaceId: 2,
 			items: [
 				{ entryId: 1, written: 'w1' },

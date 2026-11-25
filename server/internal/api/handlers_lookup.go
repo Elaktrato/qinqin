@@ -8,7 +8,6 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/freq"
-	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
 )
@@ -117,26 +116,29 @@ func toLookupResult(r lookup.Result) lookupResult {
 // optional, otherwise 400; text over maxLookupRunes is 413. An offset
 // outside the text is not an error: it finds nothing.
 func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
+	if !s.allowLookup(w, r) {
+		return
+	}
 	params := r.URL.Query()
 	language, text := params.Get("lang"), params.Get("text")
 	offset, err := strconv.Atoi(params.Get("offset"))
 	if language == "" || text == "" || err != nil {
-		http.Error(w, "lang, text and integer offset required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Lang, text and integer offset required.")
 		return
 	}
-	if !lang.Registered(language) {
-		http.Error(w, "unsupported language", http.StatusBadRequest)
+	if !segmentable(language) {
+		writeError(w, http.StatusBadRequest, "bad_request", "Unsupported language.")
 		return
 	}
 	kinds := params["kind"]
 	for _, k := range kinds {
 		if !slices.Contains(lookupKinds, k) {
-			http.Error(w, "kind must be word or character", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "kind must be word or character.")
 			return
 		}
 	}
 	if utf8.RuneCountInString(text) > maxLookupRunes {
-		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "text too long.")
 		return
 	}
 	svc := s.lookupService()
@@ -144,7 +146,7 @@ func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
 	found, err := svc.Lookup(r.Context(), language, text, offset, kinds)
 	if err != nil {
 		log.Printf("lookup %s: %v", language, err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	results := make([]lookupResult, 0, len(found))

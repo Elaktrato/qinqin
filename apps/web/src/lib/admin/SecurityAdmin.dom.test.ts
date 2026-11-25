@@ -1,12 +1,8 @@
+import { testContext, testUser, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-const me = await vi.hoisted(async () => {
-	const { writable } = await import('svelte/store');
-	return writable<unknown>({ username: 'owner', mfa: { totp: false } });
-});
-vi.mock('$lib/auth', () => ({ user: me }));
 vi.mock('$lib/api/adminSettings', () => ({
 	getAuthSettings: vi.fn(),
 	patchAuthSettings: vi.fn(),
@@ -15,6 +11,14 @@ vi.mock('$lib/api/adminSettings', () => ({
 
 import * as api from '$lib/api/adminSettings';
 import SecurityAdmin from './SecurityAdmin.svelte';
+
+const initial = { username: 'owner', mfa: { totp: false } };
+let ctx: TestContext = testContext({ user: initial as never });
+beforeEach(() => {
+	ctx = testContext({ user: initial as never });
+});
+/** The signed-in user, as `me` answered it. */
+const me = { set: (user: Record<string, unknown>) => ctx.app.auth.set({ token: 'test-token', user: testUser(user as never) }) };
 
 const settings = (o: object = {}) => ({
 	registration: 'closed', emailPolicy: 'off', mfaEnforced: false, emailCodeLogin: false, mail: { configured: false }, ...o
@@ -34,7 +38,7 @@ describe('SecurityAdmin', () => {
 	it('sends the registration choice and announces it', async () => {
 		vi.mocked(api.getAuthSettings).mockResolvedValue(settings({ registration: 'open' }) as never);
 		vi.mocked(api.patchAuthSettings).mockResolvedValue(settings({ registration: 'invite' }) as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('radio', { name: /By invite/ }));
 		// closing down from open tightens: no password
 		await waitFor(() => expect(api.patchAuthSettings).toHaveBeenCalledWith({ registration: 'invite' }));
@@ -42,7 +46,7 @@ describe('SecurityAdmin', () => {
 	});
 
 	it('hides the MFA and email-code switches behind the needs-email sentence', async () => {
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		await screen.findByRole('radio', { name: /Closed/ });
 		expect(screen.queryByRole('checkbox')).toBeNull();
 		expect(screen.getByText(/Needs email/)).toBeTruthy();
@@ -50,14 +54,14 @@ describe('SecurityAdmin', () => {
 
 	it('shows the switches when mail is configured', async () => {
 		vi.mocked(api.getAuthSettings).mockResolvedValue(settings({ mail: { configured: true } }) as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		expect(await screen.findByRole('checkbox', { name: /Require two-factor/ })).toBeTruthy();
 	});
 
 	it('pages the audit list with Load older', async () => {
 		vi.mocked(api.listAudit).mockResolvedValueOnce({ events: [ev(9), ev(8)], next: 8 } as never);
 		vi.mocked(api.listAudit).mockResolvedValueOnce({ events: [ev(7)], next: null } as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Recent activity' });
 		expect(list.querySelectorAll('li')).toHaveLength(2);
 		await fireEvent.click(screen.getByRole('button', { name: 'Load older' }));
@@ -71,7 +75,7 @@ describe('SecurityAdmin: lowering a protection re-authenticates', () => {
 	it('asks for the password (and code) before opening registration, and sends them', async () => {
 		me.set({ username: 'owner', mfa: { totp: true } });
 		vi.mocked(api.patchAuthSettings).mockResolvedValue(settings({ registration: 'open' }) as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('radio', { name: /Open/ }));
 		expect(api.patchAuthSettings).not.toHaveBeenCalled();
 		const form = await screen.findByRole('form', { name: 'Confirm with your password' });
@@ -86,7 +90,7 @@ describe('SecurityAdmin: lowering a protection re-authenticates', () => {
 	});
 	it('keeps the form on a wrong password and Cancel changes nothing', async () => {
 		vi.mocked(api.getAuthSettings).mockResolvedValue(settings({ mail: { configured: true }, emailCodeLogin: false }) as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('checkbox', { name: /Allow signing in with an emailed code/ }));
 		const form = await screen.findByRole('form', { name: 'Confirm with your password' });
 		await fireEvent.input(within(form).getByLabelText(/Your own password/), { target: { value: 'bad' } });
@@ -102,7 +106,7 @@ describe('SecurityAdmin: lowering a protection re-authenticates', () => {
 	it('turns enforcement on without a password, but signing everyone out asks', async () => {
 		vi.mocked(api.getAuthSettings).mockResolvedValue(settings({ mail: { configured: true } }) as never);
 		vi.mocked(api.patchAuthSettings).mockResolvedValue(settings({ mail: { configured: true }, mfaEnforced: true }) as never);
-		render(SecurityAdmin);
+		render(SecurityAdmin, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('checkbox', { name: /Require two-factor/ }));
 		await waitFor(() => expect(api.patchAuthSettings).toHaveBeenCalledWith({ mfaEnforced: true }));
 	});

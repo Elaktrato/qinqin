@@ -16,7 +16,8 @@ import (
 
 	"qinqin/internal/datapkg"
 	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -103,25 +104,25 @@ func (e *pkgEnv) onChange() packs.Option { return packs.WithOnChange(e.b.PackCha
 
 // versionPack is the test pack named by (type, pack, data): the same names
 // give the same content.
-func versionPack(t *testing.T, typ, pack, language, data string) dict.Pack {
+func versionPack(t *testing.T, typ, pk, language, data string) pack.Pack {
 	t.Helper()
 	switch typ {
 	case "dictionary":
-		gloss := map[string]string{"cedict/v1": "good", "cedict/v2": "good; fine", "unihan/v1": "water"}[pack+"/"+data]
-		written := map[string]string{"cedict": "好", "unihan": "水"}[pack]
+		gloss := map[string]string{"cedict/v1": "good", "cedict/v2": "good; fine", "unihan/v1": "water"}[pk+"/"+data]
+		written := map[string]string{"cedict": "好", "unihan": "水"}[pk]
 		if gloss == "" || written == "" {
-			t.Fatalf("no test pack %s/%s", pack, data)
+			t.Fatalf("no test pack %s/%s", pk, data)
 		}
 		body := `{"entries":[{"written":"` + written + `","kind":"character","readings":[{"type":"pinyin","value":"x"}],"glosses":["` + gloss + `"]},
  {"written":"你好","kind":"word","readings":[{"type":"pinyin","value":"nǐ hǎo"}],"glosses":["hello"]}]}`
-		return writePack(t, map[string]any{"id": pack, "name": pack, "type": typ, "language": language, "license": "CC0-1.0", "format": "json"},
-			map[string][]byte{"dictionary.json": []byte(body), "LICENSE": []byte("licence of " + pack + "\n")})
+		return writePack(t, map[string]any{"id": pk, "name": pk, "type": typ, "language": language, "license": "CC0-1.0", "format": "json"},
+			map[string][]byte{"dictionary.json": []byte(body), "LICENSE": []byte("licence of " + pk + "\n")})
 	case "levels":
-		return writePack(t, map[string]any{"id": pack, "name": pack, "type": typ, "language": language, "license": "CC0-1.0", "format": "json"},
+		return writePack(t, map[string]any{"id": pk, "name": pk, "type": typ, "language": language, "license": "CC0-1.0", "format": "json"},
 			map[string][]byte{"levels.json": []byte(`{"unit":"word","levels":[{"name":"1","entries":["你好"]}]}`)})
 	}
 	t.Fatalf("no test pack of type %s", typ)
-	return dict.Pack{}
+	return pack.Pack{}
 }
 
 func TestVersioningServerCases(t *testing.T) {
@@ -155,7 +156,7 @@ func TestVersioningServerCases(t *testing.T) {
 func runVersioningCase(t *testing.T, c versioningCase) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	labels := map[string]string{"": ""}
 	for i, st := range c.Steps {
 		clock.Add(time.Minute)

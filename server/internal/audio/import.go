@@ -8,10 +8,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
-	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // ImportResult counts what an import stored. Skipped rows are term rows
@@ -22,22 +22,22 @@ type ImportResult struct{ Clips, Skipped int }
 // validated and hashed before anything is written; blobs are then copied
 // into storeDir, the pack's rows replaced in one transaction, and blobs
 // the pack no longer uses (and no other pack references) removed.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string) (ImportResult, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, storeDir string) (ImportResult, error) {
+	m := pk.Manifest
 	if err := m.Validate(); err != nil {
-		return ImportResult{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return ImportResult{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeAudio || m.Format != dict.FormatAudioIndex {
-		return ImportResult{}, fmt.Errorf("%w: %q is not an audio-index audio pack", dict.ErrInvalidPack, m.ID)
+	if m.Type != pack.TypeAudio || m.Format != pack.FormatAudioIndex {
+		return ImportResult{}, fmt.Errorf("%w: %q is not an audio-index audio pack", pack.ErrInvalidPack, m.ID)
 	}
-	f, err := os.Open(filepath.Join(pack.Dir, "index.tsv"))
+	f, err := os.Open(filepath.Join(pk.Dir, "index.tsv"))
 	if err != nil {
-		return ImportResult{}, fmt.Errorf("%w: open index of %s: %v", dict.ErrInvalidPack, m.ID, err)
+		return ImportResult{}, fmt.Errorf("%w: open index of %s: %v", pack.ErrInvalidPack, m.ID, err)
 	}
 	rows, err := ParseIndex(f, m)
 	f.Close()
 	if err != nil {
-		return ImportResult{}, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, m.ID, err)
+		return ImportResult{}, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, m.ID, err)
 	}
 
 	type clip struct {
@@ -62,9 +62,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 		cf, ok := seen[r.File]
 		if !ok {
 			ext := strings.TrimPrefix(path.Ext(r.File), ".")
-			cf, err = inspect(filepath.Join(pack.Dir, filepath.FromSlash(r.File)), ext)
+			cf, err = inspect(filepath.Join(pk.Dir, filepath.FromSlash(r.File)), ext)
 			if err != nil {
-				return ImportResult{}, fmt.Errorf("%w: %s: index row %d: %s: %v", dict.ErrInvalidPack, m.ID, i+1, r.File, err)
+				return ImportResult{}, fmt.Errorf("%w: %s: index row %d: %s: %v", pack.ErrInvalidPack, m.ID, i+1, r.File, err)
 			}
 			seen[r.File] = cf
 		}
@@ -78,24 +78,32 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 	}
 
 	old := map[blobKey]bool{}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, notice, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET language = excluded.language, name = excluded.name,
-			version = excluded.version, license = excluded.license, attribution = excluded.attribution,
-			notice = excluded.notice, updated_at = excluded.updated_at, deleted_at = NULL`,
-		m.ID, m.Language, m.Name, m.Version, m.License, m.Attribution, m.Notice, stamp, stamp); err != nil {
+	want := make([]clipRow, len(clips))
+	for i, c := range clips {
+		want[i] = clipRow{c.row.Kind, c.row.Form, c.key, c.cf.sha, c.cf.ext, c.cf.size, c.row.License, c.row.Attribution, c.row.Source}
+	}
+	have, err := packClips(ctx, tx, m.ID)
+	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}
-	var packRow int64
-	if err := tx.QueryRowContext(ctx, `SELECT id FROM audio_packs WHERE pack_id = ?`, m.ID).Scan(&packRow); err != nil {
+	stamp := pack.Now()
+	// The registry row holds no fingerprint of the clips, so a change of
+	// them alone writes it too (Force): its updated_at says the pack changed.
+	packRow, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "audio_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
+			pack.Column{Name: "created_at", Value: stamp, InsertOnly: true}),
+		Force: !slices.Equal(have, want)})
+	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
+	}
+	if !changed {
+		res.Clips = len(clips) // the clips are the stored ones: nothing to write
+		return res, nil
 	}
 	cur, err := tx.QueryContext(ctx, `SELECT DISTINCT sha256, ext FROM audio_clips WHERE pack_id = ?`, packRow)
 	if err != nil {
@@ -135,6 +143,33 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 		return res, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}
 	return res, nil
+}
+
+// clipRow is one audio_clips row of a pack, without its ids.
+type clipRow struct {
+	kind, form, readingKey, sha, ext string
+	bytes                            int64
+	license, attribution, source     string
+}
+
+// packClips returns the stored clip rows of the pack packID in id order
+// (the order an import inserts them).
+func packClips(ctx context.Context, tx *sql.Tx, packID string) ([]clipRow, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT c.kind, c.form, c.reading_key, c.sha256, c.ext, c.bytes, c.license, c.attribution, c.source
+		FROM audio_clips c JOIN audio_packs p ON p.id = c.pack_id WHERE p.pack_id = ? ORDER BY c.id`, packID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []clipRow{}
+	for rows.Next() {
+		var r clipRow
+		if err := rows.Scan(&r.kind, &r.form, &r.readingKey, &r.sha, &r.ext, &r.bytes, &r.license, &r.attribution, &r.source); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
 }
 
 // blobKey names a stored clip file: its hash and extension.

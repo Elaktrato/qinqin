@@ -318,9 +318,10 @@
    }
   },
   {
-   "name": "copy of a plugin deck",
+   "name": "a plugin deck source is refused (the code plugins are retired, #199)",
    "collection": "decks",
-   "valid": true,
+   "valid": false,
+   "member": "source",
    "row": {
     "workspaceId": 7,
     "id": "d-plg-x",

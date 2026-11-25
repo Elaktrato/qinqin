@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import DeckDetail from './decks/DeckDetail.svelte';
 	import DeckSettingsView from './decks/DeckSettingsView.svelte';
 	import SystemDeckDetail from './decks/SystemDeckDetail.svelte';
@@ -23,7 +23,7 @@
 			<DeckDetail deckId={route.deckId} />
 		{:else if route.view === 'settings'}
 			<DeckSettingsView deckId={route.deckId} />
-		{:else if route.view === 'system-level' || route.view === 'system-plugin'}
+		{:else if route.view === 'system-level'}
 			<SystemDeckDetail {route} />
 		{:else if route.view === 'system-frequency'}
 			<StarterDeckDetail {route} />

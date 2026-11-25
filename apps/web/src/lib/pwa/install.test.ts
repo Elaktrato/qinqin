@@ -1,14 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
-import {
-	captureInstallPrompt,
-	formatBytes,
-	installPrompt,
-	isIos,
-	isStandalone,
-	promptInstall,
-	requestPersistOnce
-} from './install';
+import { formatBytes, isIos, isStandalone, requestPersistOnce } from './install';
+import { InstallPrompt } from './installPrompt.svelte';
 
 describe('isIos', () => {
 	it('recognises iPhone, iPad and the iPad that calls itself a Mac', () => {
@@ -43,7 +35,8 @@ describe('formatBytes', () => {
 describe('install prompt', () => {
 	it('captures beforeinstallprompt, defers it, and promptInstall shows it once', async () => {
 		const target = new EventTarget();
-		const off = captureInstallPrompt(target);
+		const install = new InstallPrompt();
+		const off = install.capture(target);
 		const prompt = vi.fn(async () => {});
 		const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
 			prompt,
@@ -51,21 +44,22 @@ describe('install prompt', () => {
 		});
 		target.dispatchEvent(event);
 		expect(event.defaultPrevented).toBe(true);
-		expect(get(installPrompt)).not.toBeNull();
-		expect(await promptInstall()).toBe('accepted');
+		expect(install.available).toBe(true);
+		expect(await install.prompt()).toBe('accepted');
 		expect(prompt).toHaveBeenCalledTimes(1);
-		expect(get(installPrompt)).toBeNull();
-		expect(await promptInstall()).toBe('unavailable');
+		expect(install.available).toBe(false);
+		expect(await install.prompt()).toBe('unavailable');
 		off();
 	});
 
 	it('appinstalled clears a captured prompt', () => {
 		const target = new EventTarget();
-		captureInstallPrompt(target);
+		const install = new InstallPrompt();
+		install.capture(target);
 		target.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt: async () => {}, userChoice: Promise.resolve({ outcome: 'dismissed' as const }) }));
-		expect(get(installPrompt)).not.toBeNull();
+		expect(install.available).toBe(true);
 		target.dispatchEvent(new Event('appinstalled'));
-		expect(get(installPrompt)).toBeNull();
+		expect(install.available).toBe(false);
 	});
 });
 

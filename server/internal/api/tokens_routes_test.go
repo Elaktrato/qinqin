@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 // populated too. Tokens are minted directly in the store.
 type tokenWorld struct {
 	url                 string
+	db                  *sql.DB
 	alice, bob          string // sessions
 	aliceID, bobID      int64
 	wsA, wsB, wsC       int64
@@ -31,10 +33,9 @@ func newTokenWorld(t *testing.T) tokenWorld {
 	t.Helper()
 	ts, sqlDB, dataDir := newServerWithDir(t)
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
-	w := tokenWorld{url: ts.URL}
+	w := tokenWorld{url: ts.URL, db: sqlDB}
 	w.alice = registerUser(t, ts.URL, "alice", "")
 	w.bob = registerUser(t, ts.URL, "bob", w.alice)
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	w.aliceID, w.bobID = userID(t, sqlDB, "alice"), userID(t, sqlDB, "bob")
 	w.wsA = createWorkspace(t, ts.URL, w.alice, "zh", "A")
 	w.wsB = createWorkspace(t, ts.URL, w.alice, "zh", "B")
@@ -84,14 +85,13 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 		t.Errorf("books: %d %s", st, b)
 	}
 	// plugin data list and single row: A's row only.
-	st, b = get("/api/plugins/qinqin-flashcards/data?workspace=" + A)
+	st, b = get("/api/rows?workspace=" + A)
 	var rows []struct {
 		WorkspaceID *int64 `json:"workspaceId"`
 	}
 	json.Unmarshal([]byte(b), &rows)
-	// populateWorkspace: one keyed row plus one typed study row of each of
-	// the six families, which the legacy view lists as plugin rows.
-	if st != 200 || len(rows) != 7 {
+	// populateWorkspace: one keyed row (its typed study rows are no plugin data)
+	if st != 200 || len(rows) != 1 {
 		t.Errorf("plugin data list: %d %s", st, b)
 	}
 	for _, r := range rows {
@@ -99,7 +99,7 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 			t.Errorf("plugin data list row of another workspace: %s", b)
 		}
 	}
-	if st, b = get("/api/plugins/qinqin-flashcards/data/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
+	if st, b = get("/api/rows/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
 		t.Errorf("plugin data row: %d %s", st, b)
 	}
 	// stats: the handler is reached with A (no activity rule is installed
@@ -109,21 +109,21 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 	}
 	// The other own workspace, a missing parameter and bob's are refused.
 	for _, path := range []string{"/api/events?workspace=" + B, "/api/events", "/api/library/books?workspace=" + strconv.FormatInt(w.wsC, 10),
-		"/api/plugins/qinqin-flashcards/data", "/api/stats/activity?workspace=" + B} {
+		"/api/rows", "/api/stats/activity?workspace=" + B} {
 		if st, b := get(path); st != 403 || !strings.Contains(b, "token_workspace") {
 			t.Errorf("%s: %d %s, want 403 token_workspace", path, st, b)
 		}
 	}
 	// Writes: A's row changes, B's not; B and user-global are refused.
-	if resp := doRaw(t, http.MethodPut, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
+	if resp := doRaw(t, http.MethodPut, w.url, "/api/rows/known:1?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
 		t.Errorf("put A: %d %s", resp.StatusCode, body(t, resp))
 	}
-	for _, path := range []string{"/api/plugins/qinqin-flashcards/data/known:1?workspace=" + B, "/api/plugins/qinqin-flashcards/data/settings"} {
+	for _, path := range []string{"/api/rows/known:1?workspace=" + B, "/api/rows/home-layout"} {
 		if resp := doRaw(t, http.MethodPut, w.url, path, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 403 {
 			t.Errorf("put %s: %d, want 403", path, resp.StatusCode)
 		}
 	}
-	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+B, w.alice)
+	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/rows/known:1?workspace="+B, w.alice)
 	if strings.Contains(bRow, "changed") {
 		t.Error("B's row changed")
 	}
@@ -152,8 +152,8 @@ func TestTokenCannotReachAnotherUsersData(t *testing.T) {
 		{"GET", bookC + "/chapters/0"},
 		{"GET", "/api/events?workspace=" + C},
 		{"GET", "/api/library/books?workspace=" + C},
-		{"GET", "/api/plugins/qinqin-flashcards/data?workspace=" + C},
-		{"GET", "/api/plugins/qinqin-flashcards/data/known:1?workspace=" + C},
+		{"GET", "/api/rows?workspace=" + C},
+		{"GET", "/api/rows/known:1?workspace=" + C},
 		{"DELETE", bookC},
 	} {
 		tokSt, _ := doJSONBody(t, c.method, w.url, c.path, w.writeAll)
@@ -166,7 +166,8 @@ func TestTokenCannotReachAnotherUsersData(t *testing.T) {
 		t.Errorf("bob's book with bob's token: %d", st)
 	}
 	// alice's pull with her token carries none of bob's rows.
-	_, pull := doJSONBody(t, "GET", w.url, "/api/sync/pull?cursor=1970-01-01T00:00:00Z", w.writeAll)
+	backdate(t, w.db.Exec)
+	_, pull := doJSONBody(t, "GET", w.url, "/api/sync/pull?v=2&tombstones=1", w.writeAll)
 	if strings.Contains(pull, `"workspaceId":`+C) || strings.Contains(pull, `"userId":`+strconv.FormatInt(w.bobID, 10)) {
 		t.Errorf("alice's pull carries bob's rows: %s", pull)
 	}

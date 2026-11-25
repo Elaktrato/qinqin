@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { checkReset, getAuthOptions, useReset } from '$lib/api/account';
 	import { resetRequest } from '$lib/api/mfa';
 	import { readFragment } from '$lib/account/fragment';
 	import { hasSession, stepFor } from '$lib/account/loginFlow';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
-	import { signInWithToken } from '$lib/auth';
 	import { Button, Field } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let token = $state('');
 	let username = $state('');
@@ -78,7 +79,7 @@
 			}
 			if (!hasSession(step) || !res.token) throw new Error('This sign-in step is not supported by this app version.');
 			// A successful reset replaces whatever session this browser had.
-			await signInWithToken(res.token);
+			await app.auth.signInWithToken(res.token);
 			await goto('/');
 		} catch (err) {
 			error = authErrorMessage(err, t('auth.reset.failed'), 'reset');

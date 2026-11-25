@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -14,7 +13,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/journal"
-	"qinqin/internal/plugins"
+	"qinqin/internal/workspaces"
 )
 
 const (
@@ -36,26 +35,21 @@ type aiTarget struct {
 // journalTarget resolves the owned workspace, its language and the journal
 // settings. A foreign or unknown workspace is a 404.
 func (s *server) journalTarget(w http.ResponseWriter, r *http.Request, userID, workspaceID int64) (aiTarget, bool) {
-	var lang string
-	err := s.db.QueryRowContext(r.Context(), `SELECT language FROM workspaces WHERE id = ? AND user_id = ?`, workspaceID, userID).Scan(&lang)
-	if errors.Is(err, sql.ErrNoRows) {
-		http.Error(w, "workspace not found", http.StatusNotFound)
+	lang, err := workspaces.Language(r.Context(), s.db, userID, workspaceID)
+	if errors.Is(err, workspaces.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return aiTarget{}, false
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return aiTarget{}, false
 	}
-	t := aiTarget{userID: userID, ws: workspaceID, language: lang, settings: journal.ParseSettings(nil)}
-	d, err := plugins.GetData(r.Context(), s.db, userID, &workspaceID, journal.PluginID, journal.SettingsKey)
-	switch {
-	case err == nil:
-		t.settings = journal.ParseSettings(d.Data)
-	case !errors.Is(err, plugins.ErrNotFound):
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	settings, err := journal.GetSettings(r.Context(), s.db, userID, workspaceID)
+	if err != nil {
+		writeInternal(w, r)
 		return aiTarget{}, false
 	}
-	return t, true
+	return aiTarget{userID: userID, ws: workspaceID, language: lang, settings: settings}, true
 }
 
 // aiRun is what a finished provider call used.
@@ -79,6 +73,10 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 		return aiRun{}, err
 	}
 	defer release()
+	if s.aiSlotHook != nil {
+		s.aiSlotHook(kind, "acquired")
+		defer s.aiSlotHook(kind, "releasing")
+	}
 	// Only a call that may run decrypts the key and stamps last_used_at.
 	provider, spec, creds, err := s.ai.For(r.Context(), userID)
 	if err != nil {
@@ -87,6 +85,9 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), aiProviderTimeout)
 	defer cancel()
 	res, err := call(ctx, provider, spec, creds)
+	if errors.Is(err, errNoProviderCall) {
+		return aiRun{Creds: creds, Spec: spec}, err // nothing was sent: nothing to record or log
+	}
 	s.recordAICalls(ctx, userID, kind, spec.ID, creds.Model, res, err)
 	run := aiRun{Creds: creds, Spec: spec}
 	if err != nil {
@@ -115,15 +116,6 @@ func (s *server) recordAICalls(ctx context.Context, userID int64, kind, provider
 	}
 }
 
-func (s *server) putJournalDoc(ctx context.Context, userID, ws int64, key string, v any) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	_, err = plugins.PutData(ctx, s.db, userID, &ws, journal.PluginID, key, b)
-	return err
-}
-
 // handleJournalReview serves POST /api/journal/review.
 func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -139,25 +131,20 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 		EntryID     string `json:"entryId"`
 	}
 	if json.Unmarshal(body, &req) != nil || req.EntryID == "" || len(req.EntryID) > 200 {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	t, ok := s.journalTarget(w, r, u.ID, req.WorkspaceID)
 	if !ok {
 		return
 	}
-	d, err := plugins.GetData(r.Context(), s.db, u.ID, &t.ws, journal.PluginID, journal.EntryKey(req.EntryID))
-	if errors.Is(err, plugins.ErrNotFound) {
-		http.Error(w, "entry not found", http.StatusNotFound)
+	entry, err := journal.GetEntry(r.Context(), s.db, u.ID, t.ws, req.EntryID)
+	if errors.Is(err, journal.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	entry, err := journal.ParseEntry(d.Data)
-	if err != nil || entry.ID != req.EntryID {
-		http.Error(w, "entry not found", http.StatusNotFound)
+		writeInternal(w, r)
 		return
 	}
 	text := entry.Text
@@ -196,19 +183,14 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	}
 	rev.FallbackFrom = reply.FallbackFrom
 	wctx := context.WithoutCancel(r.Context())
-	// The entry may have been deleted while the provider worked: do not leave
-	// an orphaned review behind. (A delete in the instant between this check
-	// and the write is rare and harmless: the review is swept with its entry.)
-	if _, err := plugins.GetData(wctx, s.db, u.ID, &t.ws, journal.PluginID, journal.EntryKey(entry.ID)); errors.Is(err, plugins.ErrNotFound) {
-		http.Error(w, "entry not found", http.StatusNotFound)
+	// The entry may have been deleted while the provider worked: PutReview
+	// writes nothing then, so no orphaned review is left behind.
+	if err := journal.PutReview(wctx, s.db, u.ID, t.ws, rev); errors.Is(err, journal.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	} else if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if err := s.putJournalDoc(wctx, u.ID, t.ws, journal.ReviewKey(entry.ID), rev); err != nil {
 		log.Printf("journal: store review: %v", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, rev)
@@ -228,7 +210,7 @@ func (s *server) handleJournalSuggestions(w http.ResponseWriter, r *http.Request
 		WorkspaceID int64 `json:"workspaceId"`
 	}
 	if json.Unmarshal(body, &req) != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	t, ok := s.journalTarget(w, r, u.ID, req.WorkspaceID)
@@ -237,7 +219,7 @@ func (s *server) handleJournalSuggestions(w http.ResponseWriter, r *http.Request
 	}
 	words, recent, err := journal.SuggestionInput(r.Context(), s.db, u.ID, t.ws, time.Now())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	var reply ai.SuggestReply
@@ -259,9 +241,9 @@ func (s *server) handleJournalSuggestions(w http.ResponseWriter, r *http.Request
 	if doc.Items == nil {
 		doc.Items = []ai.SuggestionItem{}
 	}
-	if err := s.putJournalDoc(context.WithoutCancel(r.Context()), u.ID, t.ws, journal.SuggestionsKey, doc); err != nil {
+	if err := journal.PutSuggestions(context.WithoutCancel(r.Context()), s.db, u.ID, t.ws, doc); err != nil {
 		log.Printf("journal: store suggestions: %v", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, doc)
@@ -275,7 +257,7 @@ func (s *server) handleJournalCapabilities(w http.ResponseWriter, r *http.Reques
 	}
 	id, err := strconv.ParseInt(r.URL.Query().Get("workspace"), 10, 64)
 	if err != nil {
-		http.Error(w, "workspace must be an integer", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 		return
 	}
 	t, ok := s.journalTarget(w, r, u.ID, id)
@@ -284,7 +266,7 @@ func (s *server) handleJournalCapabilities(w http.ResponseWriter, r *http.Reques
 	}
 	st, err := s.ai.Status(r.Context(), u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{

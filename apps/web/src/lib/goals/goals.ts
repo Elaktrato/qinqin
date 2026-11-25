@@ -1,4 +1,4 @@
-// The daily goal row `goals:workspace` (plugin `qinqin-flashcards`,
+// The daily goal row `goals:workspace` (a keyed row,
 // workspace-scoped): parse, the goal in effect on a learner day, and the
 // row an edit writes. Pure. Rule and fixtures: docs/contracts/goals/.
 

@@ -10,7 +10,7 @@ This page is for people writing a client or a script (the web app is the referen
 ## Conventions
 
 - JSON over HTTP, base path `/api`. A health check is `GET /healthz`.
-- Errors are JSON `{"error": code, "message": "English sentence"}`. Branch on `error`, never on `message`: the `message` stays English for developers and logs, and clients show text translated by code from their catalogue ([API errors](API-Errors)). Some older routes answer plain-text 413s.
+- Errors are JSON `{"error": code, "message": "English sentence"}`. Branch on `error`, never on `message`: the `message` stays English for developers and logs, and clients show text translated by code from their catalogue ([API errors](API-Errors)). Every error of every route has this shape, unknown API paths (404 `not_found`) and wrong methods (405 `method_not_allowed`) included.
 - Offsets in text routes count Unicode code points, not bytes.
 - Most routes are scoped by the signed-in user; workspace-scoped routes take a `workspace` id and answer 404 for a foreign one.
 
@@ -18,7 +18,7 @@ This page is for people writing a client or a script (the web app is the referen
 
 Send `Authorization: Bearer <token>`.
 
-1. `GET /api/auth/options` (public, never cached) tells the client what the sign-in page may offer: bootstrap state, registration mode, email policy, whether password reset and emailed-code sign-in exist, and the minimum password length.
+1. `GET /api/auth/options` (public, never cached) tells the client what the sign-in page may offer: registration mode, email policy, whether password reset and emailed-code sign-in exist, and the minimum password length.
 2. `POST /api/auth/login` with `{username, password, deviceName?}` answers `{"status": "ok" | "password_change_required", "token", "user"}`. Both statuses carry a usable token. The token is 64 hex characters, shown once; store it in secure storage and never log it. `deviceName` (max 64 characters) names the session in the session list.
 3. If two-step sign-in applies, login answers `mfa_required` instead and the client completes the second step (contract `auth/mfa-login.json`).
 4. `POST /api/auth/logout` ends exactly that session (204).
@@ -48,7 +48,7 @@ Login and register are rate-limited per client, pair and username; limited answe
 
 ## Sync
 
-Study data is an event log, typed study rows and plugin-data rows. `POST /api/events/batch` and `POST /api/sync/push` accept offline events idempotently by event id; cards, decks, deck settings, limits and FSRS sets travel as the typed collections `cards`, `decks`, `deckSettings`, `limits`, `fsrsSets` and `fsrsActive` of the push and the pull, last write wins like plugin data (`docs/contracts/study/`). `GET /api/sync/pull?v=2` pages the caller's own data (workspaces, plugin data and states, the typed rows, library books, bookmarks and highlights, overlays, own sentences, events) in rounds: at most `limit` rows (default 500) and 4 MiB per page, a `next` token per page and a `cursor` on the last page for the next round's `since`; the first page's `scope` lists the workspaces, the languages and the catalogue ETag (`docs/contracts/sync/`). The legacy form `GET /api/sync/pull?cursor=` (deprecated until v0.5.0, for cached v0.3 web shells) streams changes since a cursor; a pull naming only `pluginData` (and `pluginStates`) also gets the typed rows under their old plugin keys. Row-key conventions (`vacation:*`, `known:*`, `goals:workspace`, the typed rows) are in `docs/contracts/overview.md`.
+Study data is an event log, typed study rows and keyed rows ([Core data API](Core-data-api)). `POST /api/events/batch` and `POST /api/sync/push` accept offline events idempotently by event id; cards, decks, deck settings, limits and FSRS sets travel as the typed collections `cards`, `decks`, `deckSettings`, `limits`, `fsrsSets` and `fsrsActive` of the push and the pull, last write wins like the keyed rows (`docs/contracts/study/`). `GET /api/sync/pull?v=2` pages the caller's own data (workspaces, the feature switches, the keyed rows, the typed rows, library books, bookmarks and highlights, overlays, own sentences, events) in rounds: at most `limit` rows (default 500) and 4 MiB per page, a `next` token per page and a `cursor` on the last page for the next round's `since`; the first page's `scope` lists the workspaces, the languages and the catalogue ETag (`docs/contracts/sync/`). There is no other pull form: `GET /api/sync/pull` without `v=2` answers 404. Row-key conventions (`vacation:*`, `known:*`, `goals:workspace`, the typed rows) are in `docs/contracts/overview.md`.
 
 ## Search hits and entries
 
@@ -69,7 +69,7 @@ Start with `docs/contracts/overview.md` (the read order, device-local state and 
 
 | Area | Folders |
 |---|---|
-| Sign-in and accounts | `auth/` (sessions, errors, two-step sign-in, invites, reset links, access tokens, throttling) |
+| Sign-in and accounts | `auth/` (sessions, errors, two-step sign-in, invites, reset links, access tokens, throttling, profile pictures) |
 | Sync and shared data | `sync/` (the paged pull and the push answer), `packages/` (data packages), `events/` (the event envelope and payloads), `study/` (typed study rows), `settings/`, `overlays/` (a user's edits of entries) |
 | Studying | `study-day/` (the learner's day and time zone), `scheduler/` (FSRS, vacation, limits), `cards/`, `decks/`, `levels/`, `frequency/`, `goals/`, `milestones/`, `weekly/`, `stats/`, `radicals/` |
 | Reading and writing | `reader/` (display settings, furigana), `library/` (books, bookmarks, highlights), `journal/`, `notes/`, `lookups/` |

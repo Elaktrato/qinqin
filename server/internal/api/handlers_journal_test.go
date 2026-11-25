@@ -5,12 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/anthropics/anthropic-sdk-go/v2/option"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,11 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/anthropic-sdk-go/v2/option"
+
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/journal"
-	"qinqin/internal/plugins"
 )
 
 // spyProvider wraps the fake: it records requests and can block a Review.
@@ -73,22 +72,15 @@ func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Op
 // newJournalEnvSvc is newJournalEnvOpts with the AI service built by the test.
 func newJournalEnvSvc(t *testing.T, mk func(*sql.DB) *ai.Service, withKey bool, opts ...api.Option) journalEnv {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	svc := mk(sqlDB)
 	dataDir := t.TempDir()
-	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
+	ts := newTestServer(sqlDB, api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
 	env := journalEnv{url: ts.URL, token: tok, dataDir: dataDir, db: sqlDB,
 		ws:    createWorkspace(t, ts.URL, tok, "zh", ""),
 		other: createWorkspace(t, ts.URL, tok, "zh", "v")}
-	if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, []byte(validManifest("qinqin-journal", `"surfaces":["page"]`))); err != nil {
-		t.Fatal(err)
-	}
 	if withKey {
 		if r := doJSON(t, http.MethodPut, ts.URL, "/api/ai/keys/anthropic", tok, map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {
 			t.Fatalf("PUT key: %d", r.StatusCode)
@@ -99,8 +91,8 @@ func newJournalEnvSvc(t *testing.T, mk func(*sql.DB) *ai.Service, withKey bool, 
 
 func (e journalEnv) putEntry(t *testing.T, ws int64, id, text string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]any{"id": id, "date": "2026-11-15", "title": "T", "text": text, "source": "typed"})
-	path := "/api/plugins/qinqin-journal/data/entry:" + id + "?workspace=" + strconv.FormatInt(ws, 10)
+	body, _ := json.Marshal(map[string]any{"date": "2026-11-15", "title": "T", "text": text, "source": "typed"})
+	path := "/api/journal/entries/" + id + "?workspace=" + strconv.FormatInt(ws, 10)
 	if r := doRaw(t, http.MethodPut, e.url, path, e.token, string(body)); r.StatusCode != 200 {
 		t.Fatalf("put entry: %d", r.StatusCode)
 	}
@@ -111,17 +103,25 @@ func (e journalEnv) post(t *testing.T, path string, body any) *http.Response {
 	return doJSON(t, http.MethodPost, e.url, path, e.token, body)
 }
 
+// doc reads a stored journal document through its route ("review:<entryId>"
+// or "suggestions"); a missing one is 404, like a missing entry.
 func (e journalEnv) doc(t *testing.T, ws int64, key string) (json.RawMessage, int) {
 	t.Helper()
-	r := doJSON(t, http.MethodGet, e.url, "/api/plugins/qinqin-journal/data/"+key+"?workspace="+strconv.FormatInt(ws, 10), e.token, nil)
+	q := "?workspace=" + strconv.FormatInt(ws, 10)
+	path, member := "/api/journal/suggestions"+q, "suggestions"
+	if id, ok := strings.CutPrefix(key, "review:"); ok {
+		path, member = "/api/journal/entries/"+id+"/review"+q, "review"
+	}
+	r := doJSON(t, http.MethodGet, e.url, path, e.token, nil)
 	if r.StatusCode != 200 {
 		return nil, r.StatusCode
 	}
-	var d struct {
-		Data json.RawMessage `json:"data"`
-	}
+	var d map[string]json.RawMessage
 	decodeJSON(t, r, &d)
-	return d.Data, 200
+	if string(d[member]) == "null" {
+		return nil, 404
+	}
+	return d[member], 200
 }
 
 func TestReviewWritesDocument(t *testing.T) {
@@ -266,7 +266,7 @@ func TestReviewUsesSettingsAndLanguage(t *testing.T) {
 	spy := &spyProvider{}
 	e := newJournalEnv(t, spy, true)
 	ws := strconv.FormatInt(e.ws, 10)
-	doRaw(t, http.MethodPut, e.url, "/api/plugins/qinqin-journal/data/settings?workspace="+ws, e.token,
+	doRaw(t, http.MethodPut, e.url, "/api/journal/settings?workspace="+ws, e.token,
 		`{"guidance":"be kind","explanationLanguage":"de"}`)
 	e.putEntry(t, e.ws, "e1", "你好。")
 	e.post(t, "/api/journal/review", map[string]any{"workspaceId": e.ws, "entryId": "e1"})
@@ -431,7 +431,7 @@ func TestReviewOfAnEntryDeletedMeanwhileStoresNothing(t *testing.T) {
 		status <- e.post(t, "/api/journal/review", map[string]any{"workspaceId": e.ws, "entryId": "e1"}).StatusCode
 	}()
 	<-spy.started
-	path := "/api/plugins/qinqin-journal/data/entry:e1?workspace=" + strconv.FormatInt(e.ws, 10)
+	path := "/api/journal/entries/e1?workspace=" + strconv.FormatInt(e.ws, 10)
 	if r := doJSON(t, http.MethodDelete, e.url, path, e.token, nil); r.StatusCode >= 300 {
 		t.Fatalf("delete entry: %d", r.StatusCode)
 	}

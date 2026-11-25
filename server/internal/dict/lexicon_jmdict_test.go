@@ -9,8 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // lexiconJMdict is a tiny JMdict in the real file's shape: a DOCTYPE
@@ -63,7 +65,7 @@ const lexiconJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 // lexiconPack writes the pack's jmdict.xml and manifest and loads it.
-func lexiconPack(t *testing.T, xml string) *dict.Pack {
+func lexiconPack(t *testing.T, xml string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(jmdictManifest)
@@ -72,11 +74,11 @@ func lexiconPack(t *testing.T, xml string) *dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "jmdict.xml"), xml)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return &pack
+	return &pk
 }
 
 // lexiconEntry loads the active ja word entry with the given ent_seq.
@@ -103,7 +105,7 @@ func importLexicon(t *testing.T, sqlDB *sql.DB, xml string) dict.Result {
 }
 
 func TestLexiconJMdictOneEntryPerWord(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexicon(t, sqlDB, lexiconJMdict)
 	if res.Entries != 5 || res.Senses != 8 {
 		t.Errorf("result = %+v, want 5 entries and 8 senses", res)
@@ -131,7 +133,7 @@ func TestLexiconJMdictOneEntryPerWord(t *testing.T) {
 }
 
 func TestLexiconJMdictSensesFormsAndReadings(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexicon(t, sqlDB, lexiconJMdict)
 
 	suru := lexiconEntry(t, sqlDB, "1157170")
@@ -188,7 +190,7 @@ func TestLexiconJMdictSensesFormsAndReadings(t *testing.T) {
 }
 
 func TestLexiconJMdictKanaOnlyWord(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexicon(t, sqlDB, lexiconJMdict)
 	kore := lexiconEntry(t, sqlDB, "1528300")
 	if len(kore.Forms) != 0 {
@@ -205,7 +207,7 @@ func TestLexiconJMdictKanaOnlyWord(t *testing.T) {
 }
 
 func TestLexiconJMdictPri(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexicon(t, sqlDB, lexiconJMdict)
 
 	// する: the kana reading is nf01 (100). 為る is rK and 爲る is oK, with no
@@ -232,7 +234,7 @@ func TestLexiconJMdictPri(t *testing.T) {
 }
 
 func TestJmdictImportRollsBackOnError(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	// Two good entries, then one with no reading: the import fails after
 	// writing the first two, and nothing — not even the dictionary row —
 	// may persist.
@@ -251,7 +253,7 @@ func TestJmdictImportRollsBackOnError(t *testing.T) {
 }
 
 func TestLexiconJMdictReimportWritesNothing(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexicon(t, sqlDB, lexiconJMdict)
 	tables := []string{"entries", "forms", "readings", "senses"}
 	for _, table := range tables {

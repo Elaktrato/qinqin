@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -35,6 +36,36 @@ const (
 	argonKeyLen    = 32
 )
 
+// hashCost is the memory and passes Hash uses: the production parameters,
+// lowered only by SetHashCostForTests inside a test binary.
+var hashCost atomic.Pointer[[2]uint32]
+
+func currentHashCost() (memoryKiB, passes uint32) {
+	if c := hashCost.Load(); c != nil {
+		return c[0], c[1]
+	}
+	return argonMemoryKiB, argonTime
+}
+
+// SetHashCostForTests makes Hash use memoryKiB and passes (0, 0: the
+// production parameters) and returns a function that restores the previous
+// cost. It exists for test suites that create hundreds of users (the api
+// tests), where argon2id dominates the run; Verify reads the parameters
+// from each hash, so low-cost hashes verify as usual. It panics outside a
+// test binary (testing.Testing), so serving code cannot lower the cost.
+func SetHashCostForTests(memoryKiB, passes uint32) (restore func()) {
+	if !testing.Testing() {
+		panic("auth: SetHashCostForTests outside a test binary")
+	}
+	prev := hashCost.Load()
+	if memoryKiB == 0 && passes == 0 {
+		hashCost.Store(nil)
+	} else {
+		hashCost.Store(&[2]uint32{memoryKiB, passes})
+	}
+	return func() { hashCost.Store(prev) }
+}
+
 // ErrBadCredentials reports an unknown username or wrong password from Login.
 var ErrBadCredentials = errors.New("bad credentials")
 
@@ -44,7 +75,7 @@ var ErrAccountDisabled = errors.New("account disabled")
 // ErrUsernameTaken reports a CreateUser attempt on an existing username.
 var ErrUsernameTaken = errors.New("username taken")
 
-// ErrNotFirst reports a CreateFirstUser attempt on a database that
+// ErrNotFirst reports a BootstrapAdmin attempt on a database that
 // already has users.
 var ErrNotFirst = errors.New("users already exist")
 
@@ -78,9 +109,10 @@ func resetDummyForTest() {
 // hashes carry their own parameters and are verifiable without config.
 func Hash(password string) string {
 	salt := randomBytes(argonSaltLen)
-	key := argon2.IDKey([]byte(password), salt, argonTime, argonMemoryKiB, argonThreads, argonKeyLen)
+	memoryKiB, passes := currentHashCost()
+	key := argon2.IDKey([]byte(password), salt, passes, memoryKiB, argonThreads, argonKeyLen)
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemoryKiB, argonTime, argonThreads,
+		argon2.Version, memoryKiB, passes, argonThreads,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key))
 }
@@ -157,33 +189,6 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 		return model.User{}, fmt.Errorf("insert user %q: last insert id: %w", username, err)
 	}
 	return model.User{ID: id, Username: username, Admin: admin, CreatedAt: created}, nil
-}
-
-// CreateFirstUser inserts the instance admin, but only while the users
-// table is empty: the emptiness check and the insert are one statement,
-// so two concurrent first registrations cannot both win. A non-empty
-// table yields ErrNotFirst and writes nothing.
-func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {
-	created := now()
-	res, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO users (username, hash, admin, updated_at, created_at, username_key)
-		SELECT ?, ?, 1, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
-		username, Hash(password), created, created, model.UsernameKey(username))
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: %w", username, err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: rows affected: %w", username, err)
-	}
-	if n == 0 {
-		return model.User{}, ErrNotFirst
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: last insert id: %w", username, err)
-	}
-	return model.User{ID: id, Username: username, Admin: true, CreatedAt: created}, nil
 }
 
 // LoginResult is a successful sign-in: the bearer token (shown once) and

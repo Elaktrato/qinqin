@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
 // fontPack writes a one-face, one-slice font pack (a synthetic WOFF2).
-func fontPack(t *testing.T) (dict.Pack, string) {
+func fontPack(t *testing.T) (pack.Pack, string) {
 	t.Helper()
 	dir := t.TempDir()
 	slice := []byte("wOF2\x00\x01\x00\x00test")
@@ -36,7 +37,7 @@ func fontPack(t *testing.T) (dict.Pack, string) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -44,7 +45,7 @@ func fontPack(t *testing.T) (dict.Pack, string) {
 }
 
 func TestFontPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	store := t.TempDir()

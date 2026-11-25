@@ -5,10 +5,12 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { loadConfig, saveConfig } from '$lib/study/session';
-	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
-	import { workspaces } from '$lib/workspaces';
+	import { PartialPushError } from '$lib/sync/push';
+	import { loadRawStudyData } from '$lib/study/data';
+	import { pushStudy } from '$lib/study/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -17,14 +19,15 @@
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
 	import { levelSessionConfig } from './studyStart';
 	import { Button, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// A read-only level deck: its items with the learner's state, a level
-	// session, and "Add to my decks" (idempotent, see addToDeck.ts). Plugin
-	// decks (providers.ts) are wired here when a plugin ships one.
-	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
+	// session, and "Add to my decks" (idempotent, see addToDeck.ts).
+	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' }> } = $props();
 
-	const store = createDecksData();
-	const workspace = $derived($workspaces.current);
+	const store = createDecksData(session);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
@@ -49,10 +52,10 @@
 				const found =
 					levelDecks(schemes, language).find((d) => d.packId === wanted.packId && d.level === wanted.level) ?? null;
 				deck = found;
-				if (found !== null) items = await loadLevelItems(found);
+				if (found !== null) items = await loadLevelItems(session.caches.levelItems, found);
 			})
 			.catch((err) => {
-				loadError = errorMessage(err, t('flashcards.system.loadDeckFailed'));
+				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));
 			});
 	});
 
@@ -111,7 +114,7 @@
 		let deckRows = 0;
 		try {
 			// Planned from the stored rows right now, so a retry adds only the rest.
-			const raw = await loadRawStudyData(workspaceId);
+			const raw = await loadRawStudyData(session.study, workspaceId);
 			const id = ownedLevelDeckId(deck.packId, deck.level);
 			let target: { id: string; name: string; source?: { type: 'level'; packId: string; level: string } };
 			if (targetChoice === 'new') {
@@ -143,6 +146,7 @@
 				target,
 				existingDeck: raw.decks.find((d) => d.id === target.id) ?? null,
 				rawCards: raw.cards,
+				unreadable: raw.unreadable,
 				now: new Date()
 			});
 			const rows = addPlanRows(plan, raw);
@@ -153,7 +157,7 @@
 			deckRows = plan.deck === null ? 0 : 1;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudy(workspaceId, rows, {
+			await pushStudy(session.study, workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
 			result = t('flashcards.system.added', { items: words(plan.created + plan.joined), name: target.name });
@@ -165,14 +169,14 @@
 					retryable = !retrying;
 					error = retrying
 						? t('flashcards.system.serverNewer', { count: err.skipped })
-						: err.message;
+						: err.text;
 				} else {
 					skippedBefore = false;
 					error = t('flashcards.system.addedPartial', { count: Math.max(0, err.done - deckRows) });
 				}
 			} else {
 				skippedBefore = false;
-				error = errorMessage(err, t('flashcards.system.addFailed'));
+				error = errorText(err, t('flashcards.system.addFailed'));
 			}
 		} finally {
 			busy = false;

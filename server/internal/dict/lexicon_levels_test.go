@@ -9,7 +9,9 @@ import (
 	"reflect"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Grade, level, frequency and stroke attrs of character entries: what
@@ -20,7 +22,7 @@ import (
 var fixtureHaoAttrs = map[string]string{"strokes": "6", "tghz": "1", "gb": "1", "hkgrade": "1"}
 
 func TestLexiconKanjidic2LevelAttrs(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 	for ch, want := range map[string]map[string]string{
 		"日": {"strokes": "4", "grade": "1", "freq": "2", "src": "kd2"},
@@ -37,7 +39,7 @@ func TestLexiconKanjidic2LevelAttrs(t *testing.T) {
 }
 
 func TestLexiconUnihanLevelAttrs(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, unihanLexPack(t))
 	if got := lexByKey(t, sqlDB, "zh", "character", "好").Attrs; !reflect.DeepEqual(got, fixtureHaoAttrs) {
 		t.Errorf("好 attrs = %v, want %v", got, fixtureHaoAttrs)
@@ -72,7 +74,7 @@ func writeUnihanZip(t *testing.T, dir string, members map[string]string) {
 	}
 }
 
-func unihanZipPack(t *testing.T, members map[string]string) *dict.Pack {
+func unihanZipPack(t *testing.T, members map[string]string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(unihanManifest)
@@ -81,11 +83,11 @@ func unihanZipPack(t *testing.T, members map[string]string) *dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	writeUnihanZip(t, dir, members)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return &pack
+	return &pk
 }
 
 var unihanZipCore = map[string]string{
@@ -103,7 +105,7 @@ func TestLexiconUnihanZipReadsLevelMembers(t *testing.T) {
 	for k, v := range unihanZipCore {
 		members[k] = v
 	}
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, unihanZipPack(t, members))
 	if got := lexByKey(t, sqlDB, "zh", "character", "好").Attrs; !reflect.DeepEqual(got, fixtureHaoAttrs) {
 		t.Errorf("好 attrs = %v, want %v", got, fixtureHaoAttrs)
@@ -116,7 +118,7 @@ func TestLexiconUnihanZipReadsLevelMembers(t *testing.T) {
 // An older Unihan.zip without the OtherMappings and DictionaryLikeData
 // members still imports, with the attrs its other members carry.
 func TestLexiconUnihanZipToleratesMissingLevelMembers(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, unihanZipPack(t, unihanZipCore))
 	if got, want := lexByKey(t, sqlDB, "zh", "character", "好").Attrs, map[string]string{"strokes": "6", "tghz": "1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("好 attrs = %v, want %v", got, want)
@@ -131,7 +133,7 @@ func TestLexiconUnihanZipRequiresCoreMembers(t *testing.T) {
 			members[k] = v
 		}
 	}
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := dict.ImportLexicon(t.Context(), sqlDB, unihanZipPack(t, members)); err == nil {
 		t.Fatal("ImportLexicon of a Unihan.zip without its variants member succeeded")
 	}
@@ -140,18 +142,18 @@ func TestLexiconUnihanZipRequiresCoreMembers(t *testing.T) {
 // CEDICT owns no character attrs: whichever of CEDICT and Unihan imports
 // first, the Unihan attrs stay on the shared character.
 func TestLexiconCedictAndUnihanKeepUnihanAttrsInEitherOrder(t *testing.T) {
-	for name, order := range map[string][]func(*testing.T) *dict.Pack{
+	for name, order := range map[string][]func(*testing.T) *pack.Pack{
 		"cedict then unihan": {
-			func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedictChars) },
+			func(t *testing.T) *pack.Pack { return cedictLexPack(t, lexCedictChars) },
 			unihanLexPack,
 		},
 		"unihan then cedict": {
 			unihanLexPack,
-			func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedictChars) },
+			func(t *testing.T) *pack.Pack { return cedictLexPack(t, lexCedictChars) },
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			for _, p := range order {
 				importLexiconPack(t, sqlDB, p(t))
 			}
@@ -198,7 +200,7 @@ func entryStamp(t *testing.T, sqlDB *sql.DB, language, key string) string {
 // importers own, and stamps only the entries whose attrs changed.
 func TestLexiconReimportUpdatesOldAttrs(t *testing.T) {
 	t.Run("kanjidic2", func(t *testing.T) {
-		sqlDB := newDB(t)
+		sqlDB := dbtest.Open(t)
 		importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 		setAttrs(t, sqlDB, "ja", "日", map[string]string{"strokes": "4", "jlpt": "4"})
 		setAttrs(t, sqlDB, "ja", "学", map[string]string{"strokes": "8", "grade": "9", "jlpt": "3", "freq": "175", "src": "kd2", "other": "kept"})
@@ -222,7 +224,7 @@ func TestLexiconReimportUpdatesOldAttrs(t *testing.T) {
 		}
 	})
 	t.Run("unihan", func(t *testing.T) {
-		sqlDB := newDB(t)
+		sqlDB := dbtest.Open(t)
 		importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedictChars))
 		importLexiconPack(t, sqlDB, unihanLexPack(t))
 		setAttrs(t, sqlDB, "zh", "好", map[string]string{"strokes": "5", "gb": "2", "other": "kept"})

@@ -1,6 +1,6 @@
 // One card per thing studied, even across devices. New cards get an id
 // derived from what they teach (`newCardId`), so two devices that add the
-// same card at the same moment write the same plugin-data key and sync's
+// same card at the same moment write the same row key and sync's
 // last-write-wins leaves one row. Cards created before that (ULID ids)
 // can still exist twice; `canonicalCards` merges them at read time:
 // per `cardKey` the earliest-created card survives and the reviews of the
@@ -14,7 +14,7 @@ import { CARD_KINDS, type ReviewEvent, type StudyCard, type StudyCardKind } from
  * Sentence cards use `c-sentence-<entryId>` too (one sentence card per
  * word); addCard picks another id if that one is already taken by a card
  * about a different sentence. Only [a-z0-9-] appear, so the id is safe in
- * a plugin-data key and in the URL path segment that carries it.
+ * a row key and in the URL path segment that carries it.
  */
 export function newCardId(kind: StudyCardKind, entryId: number): string {
 	return `c-${kind}-${entryId}`;

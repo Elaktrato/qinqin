@@ -1,4 +1,4 @@
-// Package levels stores level schemes — HSK, JLPT, curriculum tables,
+// Package levels stores level schemes — HSK, JLPT, Jōyō grades,
 // any ordered ladder of levels over a language's lexicon entries — imported
 // from levels packs, and derives character levels for word-based
 // schemes: each character joins the lowest level whose member words are
@@ -19,14 +19,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // ErrNotFound reports an uninstall or level lookup for an unknown (or
 // already uninstalled) scheme or level.
-var ErrNotFound = errors.New("level scheme not found")
+var ErrNotFound = pack.NotFound("level scheme not found")
 
 // ErrNotLevels reports an Import of a pack whose manifest type is not
 // "levels". Pack dispatch happens in the seed CLI and admin layer, which
@@ -88,21 +88,21 @@ type member struct {
 // characters and the iteration mark 々 derive nothing; a Han character
 // without an entry is skipped and reported. Character-unit schemes rank
 // their members directly and derive nothing.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
+	m := pk.Manifest
 	// LoadPack normalizes the manifest; Import re-applies the one part
 	// its own lookups key on, in case the pack arrived by another route.
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeLevels {
+	if m.Type != pack.TypeLevels {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotLevels, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatJSON {
-		return Result{}, fmt.Errorf("%w: levels pack format %q is not implemented (want json)", dict.ErrInvalidPack, m.Format)
+	if m.Format != pack.FormatJSON {
+		return Result{}, fmt.Errorf("%w: levels pack format %q is not implemented (want json)", pack.ErrInvalidPack, m.Format)
 	}
-	unit, lvls, err := readLevelsPack(pack.Dir)
+	unit, lvls, err := readLevelsPack(pk.Dir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -199,12 +199,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 // reference them — and re-importing the pack revives the scheme. An
 // unknown or already-uninstalled scheme returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall scheme %d: %w", id, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE level_members SET deleted_at = ?, updated_at = ?
 		WHERE deleted_at IS NULL AND level_id IN (
@@ -460,11 +460,11 @@ func (p *packEntry) UnmarshalJSON(data []byte) error {
 func readLevelsPack(dir string) (string, []packLevel, error) {
 	data, err := os.ReadFile(filepath.Join(dir, levelsFile))
 	if err != nil {
-		return "", nil, fmt.Errorf("%w: read %s of %s: %v", dict.ErrInvalidPack, levelsFile, dir, err)
+		return "", nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, levelsFile, dir, err)
 	}
 	var p levelsPack
 	if err := json.Unmarshal(data, &p); err != nil {
-		return "", nil, fmt.Errorf("%w: parse %s of %s: %v", dict.ErrInvalidPack, levelsFile, dir, err)
+		return "", nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, levelsFile, dir, err)
 	}
 
 	unit := strings.ToLower(strings.TrimSpace(p.Unit))
@@ -473,10 +473,10 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 	case "hanzi", UnitCharacter:
 		unit = UnitCharacter
 	default:
-		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word, hanzi or character", dict.ErrInvalidPack, levelsFile, dir, p.Unit)
+		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word, hanzi or character", pack.ErrInvalidPack, levelsFile, dir, p.Unit)
 	}
 	if len(p.Levels) == 0 {
-		return "", nil, fmt.Errorf("%w: %s of %s: at least one level is required", dict.ErrInvalidPack, levelsFile, dir)
+		return "", nil, fmt.Errorf("%w: %s of %s: at least one level is required", pack.ErrInvalidPack, levelsFile, dir)
 	}
 	// Names, forms and readings are stored and compared trimmed, so
 	// "1" and " 1" are one level name and " 你好" finds 你好.
@@ -489,15 +489,15 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 			lv.Entries[j].Reading = strings.TrimSpace(lv.Entries[j].Reading)
 		}
 		if lv.Name == "" {
-			return "", nil, fmt.Errorf("%w: %s of %s: level %d needs a name", dict.ErrInvalidPack, levelsFile, dir, i)
+			return "", nil, fmt.Errorf("%w: %s of %s: level %d needs a name", pack.ErrInvalidPack, levelsFile, dir, i)
 		}
 		if names[lv.Name] {
-			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", dict.ErrInvalidPack, levelsFile, dir, lv.Name)
+			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", pack.ErrInvalidPack, levelsFile, dir, lv.Name)
 		}
 		names[lv.Name] = true
 		for j, pe := range lv.Entries {
 			if strings.TrimSpace(pe.Form) == "" {
-				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", dict.ErrInvalidPack, levelsFile, dir, j, lv.Name)
+				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", pack.ErrInvalidPack, levelsFile, dir, j, lv.Name)
 			}
 		}
 	}
@@ -508,42 +508,19 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 // its levels and memberships in one transaction: the previous rows are
 // tombstoned and the pack's list then upserted, reviving the rows this
 // scheme used before — level ids stay stable across re-imports.
-func writeScheme(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, unit string, lvls []packLevel, ms []member) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+func writeScheme(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, unit string, lvls []packLevel, ms []member) error {
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("import scheme %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 
 	// The scheme row is written only when a manifest field (the notice
 	// included) or the unit changed, or the scheme returns from an
 	// uninstall: an identical re-import does not restamp it.
-	var schemeID int64
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET
-			name = excluded.name,
-			unit = excluded.unit,
-			language = excluded.language,
-			version = excluded.version,
-			license = excluded.license,
-			attribution = excluded.attribution,
-			notice = excluded.notice,
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		WHERE schemes.name IS NOT excluded.name OR schemes.unit IS NOT excluded.unit
-		   OR schemes.language IS NOT excluded.language OR schemes.version IS NOT excluded.version
-		   OR schemes.license IS NOT excluded.license OR schemes.attribution IS NOT excluded.attribution
-		   OR schemes.notice IS NOT excluded.notice
-		   OR schemes.deleted_at IS NOT NULL
-		RETURNING id`,
-		m.ID, m.Name, unit, m.Language, m.Version, m.License, m.Attribution, m.Notice, stamp).Scan(&schemeID)
-	if errors.Is(err, sql.ErrNoRows) {
-		// Unchanged: the conflict update's WHERE skipped the write.
-		err = tx.QueryRowContext(ctx, `SELECT id FROM schemes WHERE pack_id = ?`, m.ID).Scan(&schemeID)
-	}
+	schemeID, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "schemes", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "unit", Value: unit}, pack.Column{Name: "language", Value: m.Language})})
 	if err != nil {
 		return fmt.Errorf("register scheme %s: %w", m.ID, err)
 	}
@@ -753,10 +730,4 @@ func distinctHan(written string) []rune {
 		rs = append(rs, r)
 	}
 	return rs
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

@@ -4,6 +4,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/account/avatar",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/account/mfa/totp",
 		"access": "user"
 	},
@@ -60,6 +64,10 @@
 		"access": "admin"
 	},
 	{
+		"pattern": "DELETE /api/admin/users/{id}/avatar",
+		"access": "admin"
+	},
+	{
 		"pattern": "DELETE /api/admin/users/{id}/reset-link",
 		"access": "admin"
 	},
@@ -72,7 +80,23 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/entries/{id}/examples/{draftId}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/entries/{id}/sentences/{sentenceId}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/events/lookups",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/journal/conversations/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/journal/entries/{id}",
 		"access": "user"
 	},
 	{
@@ -92,7 +116,7 @@
 		"access": "user"
 	},
 	{
-		"pattern": "DELETE /api/plugins/{id}/data/{key}",
+		"pattern": "DELETE /api/rows/{key}",
 		"access": "user"
 	},
 	{
@@ -200,6 +224,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/avatars/{user}/{hash}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/characters",
 		"access": "public"
 	},
@@ -224,7 +252,15 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/entries/{id}/examples",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/events",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/features",
 		"access": "user"
 	},
 	{
@@ -244,6 +280,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/grammar/progress",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/grammar/{pack}/{lesson}",
 		"access": "public"
 	},
@@ -252,11 +292,43 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/journal/conversations",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/conversations/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/entries",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/entries/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/entries/{id}/review",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/journal/photos/{id}",
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/journal/settings",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/suggestions",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/languages",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/lemma-packs",
 		"access": "public"
 	},
 	{
@@ -308,15 +380,11 @@
 		"access": "user"
 	},
 	{
-		"pattern": "GET /api/plugins",
+		"pattern": "GET /api/rows",
 		"access": "user"
 	},
 	{
-		"pattern": "GET /api/plugins/{id}/data",
-		"access": "user"
-	},
-	{
-		"pattern": "GET /api/plugins/{id}/data/{key}",
+		"pattern": "GET /api/rows/{key}",
 		"access": "user"
 	},
 	{
@@ -386,6 +454,10 @@
 	{
 		"pattern": "PATCH /api/ai/custom-providers/{id}",
 		"access": "admin-signed-in"
+	},
+	{
+		"pattern": "POST /api/account/avatar",
+		"access": "user"
 	},
 	{
 		"pattern": "POST /api/account/email/resend",
@@ -465,10 +537,6 @@
 	},
 	{
 		"pattern": "POST /api/admin/packs/staged/{token}",
-		"access": "admin"
-	},
-	{
-		"pattern": "POST /api/admin/plugins",
 		"access": "admin"
 	},
 	{
@@ -556,11 +624,35 @@
 		"access": "user"
 	},
 	{
+		"pattern": "POST /api/entries/{id}/examples",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/{id}/examples/{draftId}/keep",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/entries/{id}/sentences",
 		"access": "user"
 	},
 	{
 		"pattern": "POST /api/events/batch",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/grammar/progress",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations/{id}/save",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/conversations/{id}/turn",
 		"access": "user"
 	},
 	{
@@ -628,7 +720,19 @@
 		"access": "user"
 	},
 	{
+		"pattern": "PUT /api/features/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/journal/entries/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "PUT /api/journal/photos/{id}/keepalive",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/journal/settings",
 		"access": "user"
 	},
 	{
@@ -652,11 +756,7 @@
 		"access": "user"
 	},
 	{
-		"pattern": "PUT /api/plugins/{id}/data/{key}",
-		"access": "user"
-	},
-	{
-		"pattern": "PUT /api/plugins/{id}/state",
+		"pattern": "PUT /api/rows/{key}",
 		"access": "user"
 	},
 	{

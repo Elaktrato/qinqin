@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 const { invalidate } = vi.hoisted(() => ({ invalidate: vi.fn() }));
-vi.mock('../events', async (orig) => ({ ...(await orig<typeof import('../events')>()), invalidateWorkspaceEvents: invalidate }));
 
 import { FakeCacheStorage } from '../testing/fakeCaches';
 import { ownPartition } from '../pwa/partitions';
@@ -13,13 +12,15 @@ import {
 	scrubOfflineLookups,
 	loadHistory,
 	loadLookupCfg,
-	lookupRecorder,
-	recorderIO,
 	removeFromHistory,
 	repairAfterClear,
-	resetLookupRecorder,
 	saveLookupCfg
 } from './store';
+import { LookupsState, recorderIO } from './state';
+
+// A fresh recorder state per test (record 0009: the session's).
+let lookups: LookupsState;
+import { dataRow } from '../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -28,12 +29,13 @@ const calls = () =>
 	vi.mocked(fetch).mock.calls.map(([url, init]) => [String(url), (init as RequestInit | undefined)?.method ?? 'GET', (init as RequestInit | undefined)?.body] as const);
 const T = '2026-11-15T09:00:00.000Z';
 const item = (entryId: number) => ({ entryId, count: 1, firstAt: T, lastAt: T, sources: { reader: 1 }, books: [] });
-const listOf = (data: unknown) => json([{ pluginId: 'qinqin-core', key: 'lookups', data, version: 1, updatedAt: T }]);
+const listOf = (data: unknown) => json([dataRow({ key: 'lookups', data, version: 1, updatedAt: T })]);
 
 beforeEach(() => {
 	vi.stubGlobal('localStorage', { getItem: () => 'tok', setItem: () => {}, removeItem: () => {} });
 	vi.stubGlobal('fetch', vi.fn());
 	invalidate.mockReset();
+	lookups = new LookupsState();
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -43,7 +45,7 @@ describe('lookups store', () => {
 		const h = await loadHistory(3);
 		expect(h.items.map((i) => i.entryId)).toEqual([5]);
 		expect(h.extra).toEqual({ x: 1 });
-		expect(calls()[0].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data?workspace=3&prefix=lookups', 'GET']);
+		expect(calls()[0].slice(0, 2)).toEqual(['/api/rows?workspace=3&prefix=lookups', 'GET']);
 	});
 
 	it('a missing row is an empty history', async () => {
@@ -54,10 +56,10 @@ describe('lookups store', () => {
 	it('removes by reading, then writing the row without the ids', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5), item(6), item(7)] }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		const h = await removeFromHistory(3, [5, 7]);
+		const h = await removeFromHistory(lookups, 3, [5, 7]);
 		expect(h.items.map((i) => i.entryId)).toEqual([6]);
 		const [, put] = calls();
-		expect(put.slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
+		expect(put.slice(0, 2)).toEqual(['/api/rows/lookups?workspace=3', 'PUT']);
 		expect(JSON.parse(String(put[2])).items.map((i: { entryId: number }) => i.entryId)).toEqual([6]);
 	});
 
@@ -65,25 +67,38 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)], x: 1 }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 4 }));
-		const out = await clearHistory(3, new Date('2026-11-16T12:00:00.000Z'));
+		const out = await clearHistory(lookups, 3, new Date('2026-11-16T12:00:00.000Z'), { invalidateEvents: invalidate });
 		expect(out.eventsDeleted).toBe(4);
 		expect(out.history).toEqual({ clearedAt: '2026-11-16T12:00:00.000Z', items: [], extra: { x: 1 } });
 		const c = calls();
 		expect(c.map((x) => x.slice(0, 2))).toEqual([
-			['/api/plugins/qinqin-core/data?workspace=3&prefix=lookups', 'GET'],
-			['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT'],
+			['/api/rows?workspace=3&prefix=lookups', 'GET'],
+			['/api/rows/lookups?workspace=3', 'PUT'],
 			['/api/events/lookups?workspace=3', 'DELETE']
 		]);
 		expect(JSON.parse(String(c[1][2]))).toEqual({ x: 1, version: 1, clearedAt: '2026-11-16T12:00:00.000Z', items: [] });
-		expect(c.some(([url, method]) => method === 'DELETE' && url.includes('/api/plugins/'))).toBe(false);
+		expect(c.some(([url, method]) => method === 'DELETE' && url.includes('/api/rows/'))).toBe(false);
 		expect(invalidate).toHaveBeenCalledWith(3);
+	});
+
+	it('a session that ends during the clear schedules no repair and deletes nothing with the next token', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+		vi.mocked(fetch).mockImplementationOnce(async () => {
+			// The session ends while its row is being written.
+			lookups.dispose();
+			return json({});
+		});
+		const out = await clearHistory(lookups, 3);
+		expect(out.eventsDeleted).toBe(0);
+		expect(calls().some(([, method]) => method === 'DELETE')).toBe(false);
+		expect(lookups.repairs.size).toBe(0);
 	});
 
 	it('a failed event delete after the row was cleared says what remains', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		const err = await clearHistory(3).catch((e: unknown) => e);
+		const err = await clearHistory(lookups, 3).catch((e: unknown) => e);
 		expect(err).toBeInstanceOf(LookupEventsNotDeletedError);
 		expect(String((err as Error).message)).toMatch(/history is cleared/i);
 		expect(String((err as Error).message)).toMatch(/old search records/i);
@@ -92,16 +107,16 @@ describe('lookups store', () => {
 	it('a failed row write stops before the event delete', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		await expect(clearHistory(3)).rejects.toBeTruthy();
+		await expect(clearHistory(lookups, 3)).rejects.toBeTruthy();
 		expect(calls()).toHaveLength(2);
 	});
 
 	it('the clear uses the server time of its write as clearedAt (clock skew)', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
-		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:58Z' }));
-		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:59Z' }));
+		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:58Z' })));
+		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:59Z' })));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 0 }));
-		const out = await clearHistory(3, new Date('2026-11-16T12:00:07.000Z'));
+		const out = await clearHistory(lookups, 3, new Date('2026-11-16T12:00:07.000Z'));
 		expect(out.history.clearedAt).toBe('2026-11-16T11:59:58Z');
 		const c = calls();
 		expect(c.map((x) => x[1])).toEqual(['GET', 'PUT', 'PUT', 'DELETE']);
@@ -113,22 +128,22 @@ describe('lookups store', () => {
 		const mine = '2026-11-16T12:00:00Z';
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)] }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		expect(await repairAfterClear(3, mine)).toBe(true);
-		expect(calls()[1].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
+		expect(await repairAfterClear(lookups, 3, mine)).toBe(true);
+		expect(calls()[1].slice(0, 2)).toEqual(['/api/rows/lookups?workspace=3', 'PUT']);
 		expect(JSON.parse(String(calls()[1][2]))).toEqual({ version: 1, clearedAt: mine, items: [] });
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: mine, items: [{ ...item(6), lastAt: '2026-11-16T12:00:05Z' }] }));
-		expect(await repairAfterClear(3, mine)).toBe(false);
+		expect(await repairAfterClear(lookups, 3, mine)).toBe(false);
 		expect(calls()).toHaveLength(3);
 	});
 	it('reads and writes the user-global switch, keeping unknown members', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } }]));
+		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } })]));
 		expect(await loadLookupCfg()).toEqual({ record: false, extra: { k: 2 } });
-		expect(calls()[0][0]).toBe('/api/plugins/qinqin-core/data?prefix=lookupcfg');
-		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } }]));
+		expect(calls()[0][0]).toBe('/api/rows?prefix=lookupcfg');
+		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } })]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		await saveLookupCfg(true);
+		await saveLookupCfg(lookups, true);
 		const [url, method, body] = calls()[2];
-		expect([url, method]).toEqual(['/api/plugins/qinqin-core/data/lookupcfg', 'PUT']);
+		expect([url, method]).toEqual(['/api/rows/lookupcfg', 'PUT']);
 		expect(JSON.parse(String(body))).toEqual({ k: 2, version: 1, record: true });
 	});
 
@@ -140,21 +155,21 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		expect(await recorderIO.readCfg()).toBeNull();
 		expect(calls().map((c) => c.slice(0, 2))).toEqual([
-			['/api/plugins/qinqin-core/data?workspace=4&prefix=lookups', 'GET'],
-			['/api/plugins/qinqin-core/data/lookups?workspace=4', 'PUT'],
-			['/api/plugins/qinqin-core/data?prefix=lookupcfg', 'GET']
+			['/api/rows?workspace=4&prefix=lookups', 'GET'],
+			['/api/rows/lookups?workspace=4', 'PUT'],
+			['/api/rows?prefix=lookupcfg', 'GET']
 		]);
 	});
 
-	it('lookupRecorder is one recorder per tab', () => {
-		expect(lookupRecorder()).toBe(lookupRecorder());
+	it('a session has one recorder', () => {
+		expect(lookups.recorder).toBe(lookups.recorder);
 	});
 });
 
 describe('scrubOfflineLookups', () => {
-	const pullUrl = 'https://app.test/api/sync/pull?collections=pluginData%2CpluginStates&cursor=1970-01-01T00%3A00%3A00Z';
+	const pullUrl = 'https://app.test/api/sync/pull?collections=rows&v=2&cursor=1970-01-01T00%3A00%3A00Z';
 	const eventsUrl = 'https://app.test/api/events?since=1970-01-01T00%3A00%3A00Z&workspace=3';
-	const noteUrl = 'https://app.test/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A';
+	const noteUrl = 'https://app.test/api/rows?workspace=3&prefix=note%3A';
 	const savedAt = { 'content-type': 'application/json', 'x-qinqin-saved-at': '2026-11-16T10:00:00.000Z' };
 
 	it("filters the own partition's saved pull and event logs in place; offline study stays ready", async () => {
@@ -165,7 +180,7 @@ describe('scrubOfflineLookups', () => {
 		const caches = new FakeCacheStorage();
 		const own = await caches.open(await ownPartition('tok'));
 		const other = await caches.open('qinqin-api-v1-someoneelse');
-		const pull = { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-core', key: 'note:5', data: { text: 'n' } }] };
+		const pull = { format: 2, collections: { rows: [dataRow({ key: 'lookups', data: { items: [{ entryId: 5 }] } }), dataRow({ key: 'note:5', data: { text: 'n' } })] } };
 		await own.put(pullUrl, new Response(JSON.stringify(pull), { headers: savedAt }));
 		await own.put(eventsUrl, new Response(JSON.stringify([{ id: '1', type: 'lookup', payload: { query: 'ma' } }, { id: '2', type: 'review' }]), { headers: savedAt }));
 		await own.put(noteUrl, new Response('[]', { headers: savedAt }));
@@ -174,7 +189,7 @@ describe('scrubOfflineLookups', () => {
 		await scrubOfflineLookups(caches);
 		expect([...own.entries.keys()].sort()).toEqual([pullUrl, eventsUrl, noteUrl, 'https://app.test/api/workspaces'].sort());
 		const savedPull = await (await own.match(pullUrl))!.json();
-		expect(savedPull.pluginData.map((r: { key: string }) => r.key)).toEqual(['note:5']);
+		expect(savedPull.collections.rows.map((r: { key: string }) => r.key)).toEqual(['note:5']);
 		expect((await own.match(pullUrl))!.headers.get('x-qinqin-saved-at')).toBe('2026-11-16T10:00:00.000Z');
 		expect((await (await own.match(eventsUrl))!.json()).map((e: { id: string }) => e.id)).toEqual(['2']);
 		expect(other.entries.size).toBe(1);
@@ -189,7 +204,7 @@ describe('scrubOfflineLookups', () => {
 		const caches = new FakeCacheStorage();
 		const own = await caches.open(await ownPartition('tok'));
 		await own.put(pullUrl, new Response('{broken'));
-		await own.put('https://app.test/api/plugins/qinqin-core/data?workspace=3', new Response('[]'));
+		await own.put('https://app.test/api/rows?workspace=3', new Response('[]'));
 		await scrubOfflineLookups(caches);
 		expect(own.entries.size).toBe(0);
 		expect(removed).toEqual(['qinqin.pwa.prepared.1.3']);
@@ -220,11 +235,11 @@ describe('Clear against another device that read the row before it (the real rac
 			if (url.pathname === '/api/events/lookups') return json({ deleted: 1 });
 			if (method === 'GET') {
 				const r = server.get(ws);
-				return json(r ? [{ key: 'lookups', data: r.data, updatedAt: r.updatedAt }] : []);
+				return json(r ? [dataRow({ key: 'lookups', data: r.data, updatedAt: r.updatedAt })] : []);
 			}
 			if (method === 'PUT') {
 				server.set(ws, { data: JSON.parse(String((init as RequestInit).body)), updatedAt: serverNow });
-				return json({ key: 'lookups', updatedAt: serverNow });
+				return json(dataRow({ key: 'lookups', workspaceId: ws, updatedAt: serverNow }));
 			}
 			return json({});
 		});
@@ -236,7 +251,7 @@ describe('Clear against another device that read the row before it (the real rac
 		server.set(3, { data: old, updatedAt: T });
 		const deviceBRead = structuredClone(old); // B reads before the Clear
 		const repaired = vi.fn();
-		await clearHistory(3, new Date(), { onRepaired: repaired });
+		await clearHistory(lookups, 3, new Date(), { onRepaired: repaired });
 		expect(server.get(3)!.data).toEqual({ version: 1, clearedAt: '2026-11-16T12:00:00Z', items: [] });
 		// B writes back its merge of the stale copy: its own (old) clearedAt
 		serverNow = '2026-11-16T12:00:03Z';
@@ -252,12 +267,12 @@ describe('Clear against another device that read the row before it (the real rac
 		expect(server.get(3)!.data).toEqual(old);
 	});
 
-	it('sign-out cancels a pending repair', async () => {
+	it('the end of the session cancels a pending repair', async () => {
 		server.set(3, { data: { version: 1, clearedAt: null, items: [item(5)] }, updatedAt: T });
-		await clearHistory(3, new Date());
+		await clearHistory(lookups, 3, new Date());
 		const stale = { version: 1, clearedAt: null, items: [item(5)] };
 		server.set(3, { data: stale, updatedAt: T });
-		resetLookupRecorder();
+		lookups.dispose();
 		await vi.advanceTimersByTimeAsync(60_000);
 		expect(server.get(3)!.data).toEqual(stale);
 	});

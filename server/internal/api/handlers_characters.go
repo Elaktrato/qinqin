@@ -203,12 +203,12 @@ func encodePayload(body any, version, etag string) (*charactersPayload, error) {
 func (s *server) handleListCharacters(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
 	if language == "" || !validLanguageParam(language) {
-		http.Error(w, "invalid language", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Invalid language.")
 		return
 	}
 	p, err := s.chars.get(r.Context(), lexicon.Store{DB: s.db}, language)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	servePayload(w, r, p)

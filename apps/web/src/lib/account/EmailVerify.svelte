@@ -4,7 +4,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { resendEmailCode, verifyEmailCode } from '$lib/api/mfa';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { Button } from '$lib/ui';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
 

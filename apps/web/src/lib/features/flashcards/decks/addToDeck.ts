@@ -16,12 +16,19 @@
 // Starter decks (#75): `exclude` leaves known words out before planning
 // (counted as `known`, never written), and `settings` writes the copy's
 // deck settings row with its new-card order only when no live row exists.
+//
+// Rows this version cannot read (#167, docs/contracts/sync/README.md "Reading
+// rows"; `unreadable`) are never written: a new card whose id one of them
+// holds takes the next free id (freshCardId), and the deck or settings row of
+// an unreadable identity is left alone and counted in `unreadable`. Cards
+// still join the target (its deck row exists on the server).
 
 import { newCardId } from '$lib/study/canonical';
 import type { DeckSettings } from '$lib/study/deckSettings';
 import type { NewOrder } from '$lib/study/newOrder';
-import { cardRow, deckRow, settingsRow } from '$lib/study/rows';
-import { GENERAL_DECK_ID, extraOf, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/store';
+import { cardRow, deckRow, settingsRow, studyKey } from '$lib/study/rows';
+import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/plan';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { Deck, StudyCard } from '$lib/study/types';
 
 export interface AddItem {
@@ -42,6 +49,8 @@ export interface AddPlan {
 	known?: number;
 	/** The deck settings row to write (only with `settings` and no live row). */
 	settings?: DeckSettings;
+	/** Deck or settings rows left alone because this version cannot read the stored row (set when > 0). */
+	unreadable?: number;
 }
 
 export interface AddInput {
@@ -56,10 +65,14 @@ export interface AddInput {
 	exclude?: ReadonlySet<number>;
 	/** The copy's new-card order; written only when `exists` is false. */
 	settings?: { newOrder: NewOrder; exists: boolean };
+	/** Keys of stored rows this version cannot read (StudySnapshot.unreadable): never written. */
+	unreadable?: ReadonlySet<string>;
 }
 
 export function planAddToDeck(input: AddInput): AddPlan {
 	const { target, existingDeck, rawCards, now, exclude } = input;
+	const unreadable = input.unreadable ?? new Set<string>();
+	let leftAlone = 0;
 	const items = exclude === undefined ? input.items : input.items.filter((item) => !exclude.has(item.entryId));
 	const base = now.getTime();
 	const byEntry = new Map<number, StudyCard[]>();
@@ -78,7 +91,9 @@ export function planAddToDeck(input: AddInput): AddPlan {
 		const vocab = rows.filter((row) => row.kind === 'vocab');
 		if (vocab.length === 0) {
 			const card: StudyCard = {
-				id: newCardId('vocab', item.entryId),
+				id: unreadable.has(studyKey('cards', newCardId('vocab', item.entryId)))
+					? freshCardId(rawCards, unreadable, 'vocab', item.entryId)
+					: newCardId('vocab', item.entryId),
 				kind: 'vocab',
 				entryId: item.entryId,
 				written: item.written,
@@ -102,7 +117,9 @@ export function planAddToDeck(input: AddInput): AddPlan {
 		joined += 1;
 	});
 
-	const needsDeck = existingDeck === null && target.id !== GENERAL_DECK_ID;
+	const deckUnreadable = unreadable.has(studyKey('decks', target.id));
+	if (existingDeck === null && target.id !== GENERAL_DECK_ID && deckUnreadable) leftAlone += 1;
+	const needsDeck = existingDeck === null && target.id !== GENERAL_DECK_ID && !deckUnreadable;
 	const deck: Deck | null = needsDeck
 		? {
 				id: target.id,
@@ -114,13 +131,15 @@ export function planAddToDeck(input: AddInput): AddPlan {
 	const plan: AddPlan = { deck, writes, created, joined, skipped };
 	if (exclude !== undefined) plan.known = input.items.length - items.length;
 	if (input.settings !== undefined && !input.settings.exists && target.id !== GENERAL_DECK_ID) {
-		plan.settings = {
+		if (unreadable.has(studyKey('deckSettings', target.id))) leftAlone += 1;
+		else plan.settings = {
 			deckId: target.id,
 			cardTypes: [],
 			newOrder: input.settings.newOrder,
 			extra: {}
 		};
 	}
+	if (leftAlone > 0) plan.unreadable = leftAlone;
 	return plan;
 }
 

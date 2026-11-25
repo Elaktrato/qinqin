@@ -7,10 +7,12 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
-func kanjidicLexPack(t *testing.T, xml string) *dict.Pack {
+func kanjidicLexPack(t *testing.T, xml string) *pack.Pack {
 	t.Helper()
 	if xml == "" {
 		data, err := os.ReadFile(kanjidic2Fixture)
@@ -23,7 +25,7 @@ func kanjidicLexPack(t *testing.T, xml string) *dict.Pack {
 }
 
 func TestLexiconKanjidic2Entries(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 	// 日 and 学; the bare radical 子 is not counted.
 	if res.Entries != 2 || res.Senses != 2 {
@@ -54,7 +56,7 @@ func TestLexiconKanjidic2Entries(t *testing.T) {
 }
 
 func TestLexiconKanjidic2RadicalLink(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 	gaku := lexByKey(t, sqlDB, "ja", "character", "学")
 	if got := lexLinks(t, sqlDB, gaku, "radical"); !reflect.DeepEqual(got, []string{"子"}) {
@@ -71,7 +73,7 @@ func TestLexiconKanjidic2RadicalLink(t *testing.T) {
 }
 
 func TestLexiconKanjidic2RadicalOutsideKangxiAbortsWholePack(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	data, err := os.ReadFile(kanjidic2Fixture)
 	if err != nil {
 		t.Fatal(err)

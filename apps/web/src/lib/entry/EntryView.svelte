@@ -1,5 +1,8 @@
 <script lang="ts">
-	import Msg from '$lib/i18n/Msg.svelte';
+	import { tick } from 'svelte';
+	import { profileOf } from '$lib/languages/profiles';
+	import { errorText } from '$lib/api/apiErrors';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
 	import { goto } from '$app/navigation';
@@ -8,25 +11,22 @@
 	import { getEntryAudio, type AudioResolution } from '$lib/api/audio';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
-	import AddToStudy from '$lib/components/AddToStudy.svelte';
-	import Badges from '$lib/components/Badges.svelte';
-	import EntryEditor from '$lib/components/EntryEditor.svelte';
-	import Readings from '$lib/components/Readings.svelte';
-	import Senses from '$lib/components/Senses.svelte';
-	import Sentences from '$lib/components/Sentences.svelte';
-	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
-	import { token } from '$lib/auth';
+	import AddToStudy from '$lib/entry/AddToStudy.svelte';
+	import Badges from '$lib/entry/Badges.svelte';
+	import EntryEditForm from '$lib/entry/EntryEditForm.svelte';
+	import Readings from '$lib/entry/Readings.svelte';
+	import Senses from '$lib/entry/Senses.svelte';
+	import Sentences from '$lib/entry/Sentences.svelte';
+	import StrokePlayer from '$lib/entry/StrokePlayer.svelte';
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
-	import { record } from '$lib/events';
-	import { viewPayload } from '$lib/eventPayloads';
+	import { viewPayload } from '$lib/events/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
-	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
 	import { joinForms, otherForms } from '$lib/features/reader/entryDisplay';
 	import Chip from '$lib/ui/Chip.svelte';
@@ -36,8 +36,19 @@
 	import { variantLabel } from './variant';
 	import { characterMeta } from './characterMeta';
 	import { getEntryRanks } from '$lib/api/frequency';
-	import { getStudyData } from '$lib/study/studyData';
+	import { getStudyData } from '$lib/study/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
+	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	import AiExamples from './examples/AiExamples.svelte';
+	import ExampleActions from './examples/ExampleActions.svelte';
+	import { aiLabel, generateErrorText } from './examples/examples';
+	import { aiMark, deleteAiSentence, type ReportReason } from '$lib/api/examples';
+	import type { Sentence } from '$lib/api/types';
+	import { loadProviderNames } from '$lib/features/journal/providerNames';
+
+	const session = useSession();
+	const app = useApp();
 
 	let {
 		entryId: requestedId,
@@ -85,6 +96,50 @@
 	// The entry's recordings (signed-in users only; the device voice needs none).
 	let audio = $state<AudioResolution | null>(null);
 
+	// AI examples (#186): provider names for the "AI-written" label, and the
+	// last delete or report failure of a kept one.
+	let providerNames = $state<ReadonlyMap<string, string>>(new Map());
+	let exampleError = $state('');
+	$effect(() => {
+		if (entry?.sentences.some((s) => aiMark(s.ai) !== null)) {
+			void loadProviderNames(session.caches.providerNames).then((m) => (providerNames = m));
+		}
+	});
+
+	// After a kept or deleted AI example the entry is fetched again in the
+	// background: the service worker's offline copy of the answer follows.
+	function refreshOfflineCopy(id: number): void {
+		void getEntry(id).catch(() => {});
+	}
+
+	function addSentence(sentence: Sentence): void {
+		if (entry && sentence.entryId === entry.id) {
+			entry = { ...entry, sentences: [...entry.sentences, sentence] };
+			refreshOfflineCopy(entry.id);
+		}
+	}
+
+	async function removeAiSentence(sentence: Sentence, reason?: ReportReason): Promise<void> {
+		if (!entry) return;
+		exampleError = '';
+		try {
+			await deleteAiSentence(entry.id, sentence.id, reason);
+			const aiIds = entry.sentences.filter((s) => aiMark(s.ai) !== null).map((s) => s.id);
+			const index = aiIds.indexOf(sentence.id);
+			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
+			refreshOfflineCopy(entry.id);
+			// The focus stays in the examples: the next AI example's first button,
+			// else the AI examples heading, the examples heading or the word.
+			await tick();
+			const left = aiIds.filter((id) => id !== sentence.id);
+			const next = left[Math.min(Math.max(index, 0), left.length - 1)];
+			const button = next === undefined ? null : document.querySelector<HTMLElement>(`[aria-describedby="sentence-${next}"]`);
+			(button ?? document.getElementById('ai-examples-heading') ?? document.getElementById('sentences-heading') ?? headingEl)?.focus();
+		} catch (err) {
+			exampleError = generateErrorText(err);
+		}
+	}
+
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
 
@@ -97,12 +152,6 @@
 
 	// The phone bar's Add to deck is the first action the entry offers there.
 	setPageActions(phoneActions);
-
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	async function load(id: number): Promise<void> {
 		const seq = ++requestSeq;
@@ -129,7 +178,7 @@
 				notFound = true;
 				onstate?.('notfound');
 			} else {
-				error = message(err, t('entry.page.loadFailed'));
+				error = errorText(err, t('entry.page.loadFailed'));
 				onstate?.('error');
 			}
 		} finally {
@@ -187,7 +236,7 @@
 	const lookupLinks = $derived(
 		entry === null ? {} : entryRadicalLinks(entry.written, entry.kind, radicalWritten)
 	);
-	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const audioSettings = $derived(readAudioSettings(session.workspaces.current?.settings));
 	const headClips = $derived(headwordClips(audio));
 	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
 	// The credit of every recording this page can play.
@@ -203,8 +252,8 @@
 	$effect(() => {
 		const id = entry?.id ?? null;
 		audio = null;
-		if (id === null || !$token) return;
-		void getEntryAudio(id).then(
+		if (id === null || !app.auth.token) return;
+		void getEntryAudio(session.caches.audio, id).then(
 			(r) => {
 				if (entry?.id === id) audio = r;
 			},
@@ -216,7 +265,7 @@
 	$effect(() => {
 		const current = entry;
 		rank = null;
-		if (!current || !$token) return;
+		if (!current || !app.auth.token) return;
 		void getEntryRanks(current.language, [current.id]).then(
 			(r) => {
 				if (entry?.id === current.id) rank = r.ranks.find((x) => x.id === current.id)?.rank ?? null;
@@ -227,9 +276,9 @@
 
 	function refreshDecks(): void {
 		const current = entry;
-		const workspace = $workspaces.current?.id;
+		const workspace = session.workspaces.current?.id;
 		if (!current || workspace === undefined) return;
-		void getStudyData(workspace, { force: true }).then(
+		void getStudyData(session.study, workspace, { force: true }).then(
 			(data) => {
 				if (entry?.id === current.id) inDecks = decksContaining(data, current.id);
 			},
@@ -239,10 +288,10 @@
 
 	$effect(() => {
 		const current = entry;
-		const workspace = $workspaces.current?.id;
+		const workspace = session.workspaces.current?.id;
 		inDecks = 0;
 		if (!current || workspace === undefined) return;
-		void getStudyData(workspace).then(
+		void getStudyData(session.study, workspace).then(
 			(data) => {
 				if (entry?.id === current.id) inDecks = decksContaining(data, current.id);
 			},
@@ -255,10 +304,10 @@
 	$effect(() => {
 		if (!recordView) return;
 		const viewed = entry?.id ?? null;
-		const workspace = $workspaces.current?.id ?? null;
+		const workspace = session.workspaces.current?.id ?? null;
 		if (viewed === null || workspace === null || viewedEntry === viewed) return;
 		viewedEntry = viewed;
-		void record('view', workspace, viewPayload(viewed));
+		void session.events.record('view', workspace, viewPayload(viewed));
 	});
 
 	function variantText(variant: EntryBase): string {
@@ -330,7 +379,7 @@
 				{#if rank !== null}<Chip>#{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
 				<Chip>{t(entry.kind === 'character' ? 'entry.chips.character' : 'entry.chips.word')}</Chip>
 				{#if inDecks > 0}<Chip tone="good">{t('entry.chips.inDecks', { count: inDecks })}</Chip>{/if}
-				{#if entry.language !== $workspaces.current?.language}
+				{#if entry.language !== session.workspaces.current?.language}
 					<Chip>{languageLabel(entry.language)}</Chip>
 				{/if}
 			</div>
@@ -352,13 +401,19 @@
 
 		{#if editing}
 		{#key entry.id}
-			<EntryEditor entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
+			<EntryEditForm entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
 		{/key}
 	{:else}
 		<div class="columns">
 			<div class="main">
 				{#key entry.id}<Senses senses={entry.senses} senseGroups={entry.senseGroups} />{/key}
-				<Sentences sentences={entry.sentences} language={entry.language} term={entry.written} />
+				<Sentences sentences={entry.sentences} language={entry.language} term={entry.written} aiLabelOf={(mark) => aiLabel(mark, providerNames)}>
+					{#snippet actions(sentence: Sentence, id: string)}
+						<ExampleActions describedBy={id} onremove={(reason) => removeAiSentence(sentence, reason)} />
+					{/snippet}
+				</Sentences>
+				{#if exampleError}<p class="example-error" role="alert">{exampleError}</p>{/if}
+				{#key entry.id}<AiExamples entry={entry} onkept={addSentence} />{/key}
 				{#if related.length > 0}
 					<section class="section related" aria-labelledby="related-heading">
 						<h2 id="related-heading">{t('entry.page.related')}</h2>
@@ -391,7 +446,7 @@
 						</ul>
 					</section>
 				{/if}
-				{#if entry.language === 'zh' && strokeChar !== null}
+				{#if profileOf(entry.language).strokes && strokeChar !== null}
 					<section class="section" aria-labelledby="stroke-heading">
 						<h2 id="stroke-heading">{t('entry.page.strokeOrder')}</h2>
 						{#if entry.kind === 'word' && entry.characters && entry.characters.length > 1}
@@ -410,9 +465,9 @@
 						<StrokePlayer char={strokeChar} />
 					</section>
 				{/if}
-				{#if !editing && $workspaces.current}
-					{#key `${$workspaces.current.id}:${entry.id}`}
-						<EntryNote workspaceId={$workspaces.current.id} entryId={entry.id} />
+				{#if !editing && session.workspaces.current}
+					{#key `${session.workspaces.current.id}:${entry.id}`}
+						<EntryNote workspaceId={session.workspaces.current.id} entryId={entry.id} />
 					{/key}
 				{/if}
 				{#if entry.radicalId !== null}
@@ -557,6 +612,11 @@
 		gap: var(--space-5);
 		align-items: start;
 		margin-top: var(--space-4);
+	}
+
+	.example-error {
+		margin: 0;
+		color: var(--readable-bad);
 	}
 
 	.main,

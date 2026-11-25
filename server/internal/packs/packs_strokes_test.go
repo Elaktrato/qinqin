@@ -11,11 +11,12 @@ import (
 	"slices"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
-func strokesPack(t *testing.T) dict.Pack {
+func strokesPack(t *testing.T) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]any{
@@ -37,7 +38,7 @@ func strokesPack(t *testing.T) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -45,7 +46,7 @@ func strokesPack(t *testing.T) dict.Pack {
 }
 
 func TestStrokesPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	got, err := packs.Import(ctx, sqlDB, strokesPack(t))

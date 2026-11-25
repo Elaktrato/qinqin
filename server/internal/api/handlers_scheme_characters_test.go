@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // schemeCharsBody mirrors GET /api/schemes/{id}/characters.
@@ -60,11 +60,11 @@ func TestSchemeCharactersRoute(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
 	importSchemeCedict(t, sqlDB)
-	pack, err := dict.LoadPack(levelsFixture)
+	pk, err := pack.LoadPack(levelsFixture)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	s := listSchemes(t, ts.URL)[0]
@@ -117,7 +117,7 @@ func TestSchemeCharactersRoute(t *testing.T) {
 
 	// A change to the memberships moves the ETag: dropping 银行 empties
 	// level 2.
-	smaller, err := dict.LoadPack(writeLevelsPack(t, "hsk-mini",
+	smaller, err := pack.LoadPack(writeLevelsPack(t, "hsk-mini",
 		`{"unit":"word","levels":[{"name":"1","entries":["你好","谢谢"]},{"name":"2","entries":[]}]}`))
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestSchemeCharactersLargeWordScheme(t *testing.T) {
 		words[i] = string([]rune{a, b})
 		fmt.Fprintf(&cedict, "%s %s [ma1 ma1] /w%d/\n", words[i], words[i], i)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-big", Name: "big", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", cedict.String())
@@ -187,7 +187,7 @@ func TestSchemeCharactersLargeWordScheme(t *testing.T) {
 		Name    string   `json:"name"`
 		Entries []string `json:"entries"`
 	}
-	pack := struct {
+	pk := struct {
 		Unit   string `json:"unit"`
 		Levels []lv   `json:"levels"`
 	}{Unit: "word"}
@@ -197,13 +197,13 @@ func TestSchemeCharactersLargeWordScheme(t *testing.T) {
 		if l == nLevels-1 {
 			end = nWords
 		}
-		pack.Levels = append(pack.Levels, lv{Name: strconv.Itoa(l + 1), Entries: words[l*per : end]})
+		pk.Levels = append(pk.Levels, lv{Name: strconv.Itoa(l + 1), Entries: words[l*per : end]})
 	}
-	levelsJSON, err := json.Marshal(pack)
+	levelsJSON, err := json.Marshal(pk)
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(writeLevelsPack(t, "big-words", string(levelsJSON)))
+	p, err := pack.LoadPack(writeLevelsPack(t, "big-words", string(levelsJSON)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestSchemeCharactersLargeWordScheme(t *testing.T) {
 	// first, each character once.
 	seen := map[rune]bool{}
 	want := make([]string, nLevels)
-	for l, level := range pack.Levels {
+	for l, level := range pk.Levels {
 		var sb strings.Builder
 		for _, w := range level.Entries {
 			for _, r := range w {

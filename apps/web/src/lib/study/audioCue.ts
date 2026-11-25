@@ -2,6 +2,7 @@ import type { AudioResolution } from '../api/audio';
 import type { Entry } from '../api/types';
 import { headwordClips } from '../audio/button';
 import { clipObjectUrl } from '../audio/source';
+import type { ClipCache } from '../context/caches';
 import type { AudioSettings } from '../audio/settings';
 import type { AudioClip } from '../api/audio';
 
@@ -40,6 +41,6 @@ export function isPlayKey(e: { key: string; ctrlKey?: boolean; metaKey?: boolean
 }
 
 /** preloadClips warms the clip cache of a card that is about to be shown. */
-export function preloadClips(audio: CardAudio | null | undefined): void {
-	for (const clip of audio?.clips ?? []) void clipObjectUrl(clip.url).catch(() => {});
+export function preloadClips(clips: ClipCache, audio: CardAudio | null | undefined): void {
+	for (const clip of audio?.clips ?? []) void clipObjectUrl(clips, clip.url).catch(() => {});
 }

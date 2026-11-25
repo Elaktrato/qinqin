@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
 // noticePack is a freq-csv pack whose manifest carries notice.
-func noticePack(t *testing.T, notice string) *dict.Pack {
+func noticePack(t *testing.T, notice string) *pack.Pack {
 	t.Helper()
 	m := fmt.Sprintf(`{"id":"p","name":"Pack p","version":"1","type":"frequency","language":"ja","license":"CC0-1.0","attribution":"test","notice":%q,"format":"freq-csv"}`, notice)
 	return loadPack(t, writeFiles(t, map[string]string{
@@ -30,7 +31,7 @@ func packRow(t *testing.T, sqlDB *sql.DB) (notice, updated string) {
 }
 
 func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
 	if notice, _ := packRow(t, sqlDB); notice != "" {
 		t.Errorf("pack without notice: notice = %q, want ''", notice)
@@ -64,10 +65,10 @@ func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
 }
 
 func TestImportRejectsInvalidNotice(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	p := csvPack(t, "p", "猫,,3\n")
 	p.Manifest.Notice = "[x](http://example.com)"
-	if _, err := freq.Import(context.Background(), sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := freq.Import(context.Background(), sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("Import with an http: link = %v, want ErrInvalidPack", err)
 	}
 	if n := count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {

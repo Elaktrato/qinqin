@@ -1,8 +1,8 @@
 # Journal and AI providers
 
-The **Journal** (`/p/journal`, the journal icon in the top bar or the phone menu) is a built-in feature plugin where you write dated entries per workspace, in the language you are learning. It is on until you switch it off in [Settings → Plugins](Settings-tour#plugins).
+The **Journal** (`/journal`, the journal icon in the top bar or the phone menu) is a core feature where you write dated entries per workspace, in the language you are learning. It is on until you switch it off in [Settings → Features](Settings-tour#features).
 
-The AI features (a review with corrections in the margin, topic ideas, and turning a photo of a page into an entry) are optional. They use **your own API key** for a provider you choose; qinqin ships no key and sends nothing to any provider on its own. Reading a photo **offline** needs no AI at all.
+The AI features (a review with corrections in the margin, topic ideas, a [conversation partner](#conversation-partner), turning a photo of a page into an entry, and [AI example sentences](Searching-and-entries#ai-examples) on a dictionary entry) are optional. They use **your own API key** for a provider you choose; qinqin ships no key and sends nothing to any provider on its own. Reading a photo **offline** needs no AI at all.
 
 > **Status.** The AI provider integrations are covered by tests against fake providers. They have **not yet been tested with real keys** by the project owner. Some provider details are marked unverified in the code (see "Provider notes" below). Expect rough edges until a real key has been tried.
 
@@ -10,7 +10,7 @@ The AI features (a review with corrections in the margin, topic ideas, and turni
 
 On a wide screen the journal is three columns: your entries on the left (date, title, a small dot when an entry has been reviewed), the page in the middle (date, title, text), and the margin on the right (topic ideas while you write; corrections after a review, like comments in a document). From 720 px the page and margin stay side by side and the entries move behind an **All entries** link; on a phone the list is its own view and the entry shows one column.
 
-- **New entry** starts one; the text saves by itself as you type ("Saving…", "Saved"; "Not saved. Retrying when you keep typing, or press Save."). An entry holds up to 80,000 characters; a review reads at most 5,000 ("Longer than 5,000 characters: you can save it, but shorten it to get a review"). **Delete** removes an entry and its review (asked first).
+- **New entry** starts one; the text saves by itself as you type ("Saving…", "Saved"; "Not saved. Retrying when you keep typing, or press Save."). An entry holds up to 50,000 characters; a review reads at most 5,000 ("Longer than 5,000 characters: you can save it, but shorten it to get a review"). **Delete** removes an entry and its review (asked first).
 - **Upload photo** starts a photo draft ([Photo to entry](#photo-to-entry)); **Resume photo draft** comes back to an open one.
 - **Journal settings** (per workspace): **Correction guidance** (up to 2,000 characters, for example "I am a beginner, keep explanations short"; it cannot change the languages or the format of the review) and the **Explanation language** the AI explains in (English, German, French, Spanish, Italian, Portuguese, Dutch, Russian, Japanese, Chinese (Simplified), Chinese (Traditional) or Korean).
 
@@ -30,6 +30,18 @@ The review is stored with the entry. Editing the text afterwards marks it as **W
 
 **Get ideas** (in the margin, and **Ideas for today** in the list) asks for writing prompts based on your recently studied words and the openings of your last entries, with **Words to try**. **Start an entry** begins an entry from an idea.
 
+## Conversation partner
+
+**Talk with the AI** (in the entries column, `/journal/talk`) is a chat in the workspace's language with the AI at your level, on your own key like the rest of the journal.
+
+- **Start a conversation** with an optional **Topic** (type one, or take one of the **Topic ideas**; empty lets the partner pick an everyday topic) and **Your level**: Beginner, Elementary, Intermediate or Advanced. A new conversation starts at the level of your latest one. **Let the partner begin**, then write your answers under **Your message** and **Send** (Ctrl+Enter or ⌘+Enter on a keyboard).
+- Your messages get the journal's corrections: mistakes and suggestions are underlined in your message and listed in the margin, or on a phone behind **Show corrections** in the same bottom sheet as a review. The explanations use the explanation language of the Journal settings, and the correction guidance applies.
+- The partner's replies are lookup text like a book in the [reader](Reader): hover or tap a word to see its entry, and **+** adds it to a deck of this workspace.
+- The line under the title names the provider and model of the latest reply ("Answered by …").
+- **Save as journal entry** turns the conversation into an entry titled with the topic (every line of the partner starts with "> "; a line of yours that starts with ">" gets a backslash in front) and opens it; you can review it like any entry. **Discard** deletes the conversation (asked first). Open conversations are listed on the Talk page until you save or discard them.
+
+The partner always answers in the workspace's language and script; a reply mostly in another language is refused ("The AI did not answer in this workspace's language. Nothing was saved; send your message again.") and nothing is stored. A failed reply keeps your text in the box. When the answer is lost on the way (a weak connection), the page says "Still waiting for the partner's answer…" and picks it up when it arrives; sending the same message again never asks the AI twice. While another AI request of yours is still running, the message is sent again by itself after a few seconds (for about half a minute). A conversation holds up to 50 messages, a message up to 1,000 characters (replies are cut at 800), and a workspace up to 20 open conversations.
+
 ## Photo to entry
 
 Choose a photo of a handwritten or printed page (JPEG, PNG or WebP, up to 10 MiB and 25 megapixels). On the server it is stripped of metadata including GPS, rotated upright and shrunk, and kept only while the draft is open. Then:
@@ -45,7 +57,7 @@ There is no automatic fallback between the two. The transcription is a draft: ch
 2. Open **Settings → AI** and **Add a provider**: pick one, enter your API key (**Get a key from <provider>** links to its page), optionally a model, and save. The key is checked with the provider (one call counts toward your hourly limit), stored encrypted, and the first stored key becomes **Active**. Only the last four characters are shown afterwards ("key …abcd").
 3. You can store one key per provider, **Make active** another, **Change model**, **Test key** and **Remove** a key. You may type any model id; the list only suggests. The defaults are the providers' flagship models, which are also the most expensive: choose a cheaper model if cost matters.
 
-Settings → AI shows, where you type a key, "Your journal text, guidance and the photos you choose to read with AI are sent to <provider> when you press a button. <provider>'s terms apply.", and below the list the calls and tokens used this hour. It links to the Journal settings. A key the server can no longer read (after the server secret changed) says "Enter the key again"; a provider the server turned off says "Turned off by the server" and offers only Remove.
+Settings → AI shows, where you type a key, "Your journal text, conversation messages, guidance, the photos you choose to read with AI and the words you ask examples for, with their examples (your own saved sentences among them), are sent to <provider> when you press a button. <provider>'s terms apply.", and below the list the calls and tokens used this hour. It links to the Journal settings. A key the server can no longer read (after the server secret changed) says "Enter the key again"; a provider the server turned off says "Turned off by the server" and offers only Remove.
 
 | Provider | Default model (also suggested) | Reads photos |
 |---|---|---|
@@ -63,11 +75,11 @@ A custom endpoint shows "Added by your admin · <host>" wherever you type a key 
 
 ## What is sent, and when
 
-Only when you press an AI button, and only to the active provider: the entry text (up to 5,000 characters) with your guidance for a review; recently studied words and the openings of your last entries for topic ideas; or one re-encoded photo for a transcription. Nothing is sent when you open the page or pick a photo. If a reply is not valid in the expected shape, the server asks once more (a second counted call), and otherwise reports a bad reply; nothing from a malformed reply reaches the page.
+Only when you press an AI button, and only to the active provider: the entry text (up to 5,000 characters) with your guidance for a review; recently studied words and the openings of your last entries for topic ideas; for each conversation turn your new message, the last 12 messages, the topic, your level, your guidance and up to 40 of your most recently studied words (never your whole deck); one re-encoded photo for a transcription; or, for [AI examples](Searching-and-entries#ai-examples), the word, its first reading, up to five of its meanings, up to ten of its existing examples (your own saved sentences among them) and your level. Nothing is sent when you open the page or pick a photo. If a reply is not valid in the expected shape, the server asks once more (a second counted call), and otherwise reports a bad reply; nothing from a malformed reply reaches the page.
 
 ## Limits
 
-30 provider calls per user and rolling hour across all providers (checking a key and a repeated request count), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, 60 offline reads per user and hour, replies capped at 8 MiB and 150 seconds per call. When the hourly limit is used up the page says "You have used all AI calls for this hour. Try again in …".
+30 provider calls per user and rolling hour across all providers (checking a key, a repeated request, every conversation turn and every generation of AI examples count), one AI call in flight per user, 5,000 characters per review, 1,000 characters per conversation message, 50 messages per conversation, 20 open conversations per workspace, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, 60 offline reads per user and hour, replies capped at 8 MiB and 150 seconds per call. When the hourly limit is used up the page says "You have used all AI calls for this hour. Try again in …".
 
 ## Provider notes
 

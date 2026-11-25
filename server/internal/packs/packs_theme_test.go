@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -16,7 +17,7 @@ const oneTheme = `[{"id":"test-dark","name":"Test dark","scheme":"dark",
   "good":"#a6e3a1","warn":"#f9e2af","bad":"#f38ba8","gradeAgain":"#f38ba8","gradeHard":"#fab387","gradeGood":"#a6e3a1","gradeEasy":"#89b4fa"},
  "accents":{"mauve":"#cba6f7"},"defaultAccent":"mauve"}]`
 
-func themePack(t *testing.T) dict.Pack {
+func themePack(t *testing.T) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	for name, body := range map[string]string{
@@ -29,7 +30,7 @@ func themePack(t *testing.T) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -37,7 +38,7 @@ func themePack(t *testing.T) dict.Pack {
 }
 
 func TestThemePacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	var changed []string

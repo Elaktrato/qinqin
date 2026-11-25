@@ -1,5 +1,5 @@
 import { t } from '$lib/i18n';
-import { licenseUrl } from '$lib/licenses';
+import { licenseUrl } from '$lib/sources/licenses';
 import { packTable, type PackTable } from './sections';
 
 /** One element of GET /api/audio-packs. */
@@ -23,12 +23,12 @@ export interface AudioSection {
 	table: PackTable;
 	/** Row key to the per-recording credit pages (500 recordings each), for packs whose licence is "per file". */
 	creditsPages: Record<number, CreditsLink[]>;
-	/** Row key to the licence text, for recognised licences ($lib/licenses). */
+	/** Row key to the licence text, for recognised licences ($lib/sources/licenses). */
 	licenseHref: Record<number, string>;
 }
 
 const PAGE = 500;
-/** licenseHref is the licence text URL of a recognised licence name ($lib/licenses). */
+/** licenseHref is the licence text URL of a recognised licence name ($lib/sources/licenses). */
 export function licenseHref(license: string): string | undefined {
 	return licenseUrl(license) ?? undefined;
 }

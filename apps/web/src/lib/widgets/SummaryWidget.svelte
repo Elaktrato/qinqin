@@ -4,22 +4,23 @@
 	// days and time studied this month. Every number is computed by
 	// lib/stats/summary.ts from the shared study history; the widget only
 	// formats and lays them out (design §9, §5).
-	import { onEventLogChange } from '$lib/events';
 	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { RETENTION_MIN_REVIEWS } from '$lib/features/flashcards/decks/deckStats';
 	import { t } from '$lib/i18n';
 	import { formatNumber, formatPercent } from '$lib/i18n/format';
-	import { pluginStates } from '$lib/plugins/states';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration } from '$lib/stats/readingTime';
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights, ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
+	import { activeWeights } from '$lib/study/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+
+
+	const session = useSession();
 
 	let summary = $state.raw<SummaryNumbers | null>(null);
 	let loading = $state(true);
@@ -29,11 +30,11 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
-		$pluginStates.status === 'ready'
-			? featureEnabled(FLASHCARDS_ID, $pluginStates.list)
+		session.features.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, session.features.list)
 			: true
 	);
 
@@ -64,10 +65,10 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (history.ts).
-			const data = await loadStudyHistory(workspace, { force });
+			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
-			const ctx = contextForData(data, workspace);
+			const ctx = contextForData(session.zone, data, workspace);
 			summary = summaryNumbers({
 				workspaceId: workspace,
 				now: Date.now(),
@@ -84,7 +85,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			summary = null;
-			error = errorMessage(err, t('widgets.summary.loadFailed'));
+			error = errorText(err, t('widgets.summary.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -102,7 +103,7 @@
 		}
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 
 	// A posted review or a study-data write changes the numbers; the history
 	// cache is dropped by both. Only this workspace (or all) triggers a load.
@@ -111,8 +112,8 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
-		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();

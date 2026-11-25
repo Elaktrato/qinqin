@@ -8,15 +8,16 @@
 	import { metricOptions, type MetricOption } from '$lib/goals/goalText';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { effectiveLimits } from '$lib/study/limits';
-	import { saveGoals } from '$lib/study/store';
-	import { getStudyData } from '$lib/study/studyData';
-	import { currentStudyDay } from '$lib/time/zone';
-	import { workspaces } from '$lib/workspaces';
+	import { saveGoals } from '$lib/study/commands/keyed';
+	import { getStudyData } from '$lib/study/data';
 	import { formFrom, limitHint, planForm, type GoalFormState } from './goalForm';
 	import { Button, Field, Section, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
 
-	let day = $state.raw(currentStudyDay());
-	$effect(() => onContextStale(() => (day = currentStudyDay())));
+	const session = useSession();
+
+	let day = $state.raw(session.zone.day());
+	$effect(() => onContextStale(session.zone, () => (day = session.zone.day())));
 	const today = $derived(day.today());
 
 	let row = $state.raw<GoalsRow | null>(null);
@@ -36,7 +37,7 @@
 	let seq = 0;
 	let sourcesSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// A goal whose activity is no longer a source stays selectable, so the
 	// form can still save the streak switch or remove it.
 	const options = $derived.by<MetricOption[]>(() => {
@@ -69,7 +70,7 @@
 		// flashcards goal needs, so the form also works offline.
 		void loadSources(workspace);
 		try {
-			const data = await getStudyData(workspace, { force });
+			const data = await getStudyData(session.study, workspace, { force });
 			if (mine !== seq) return;
 			const goals = data.goals ?? null;
 			newer = goals === 'newer';
@@ -115,7 +116,7 @@
 		}
 		busy = true;
 		try {
-			await saveGoals(target, next);
+			await saveGoals(session.study, target, next);
 			await load(target, true);
 			message = t('common.state.saved');
 		} catch {

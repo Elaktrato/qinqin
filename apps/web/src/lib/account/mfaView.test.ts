@@ -3,7 +3,6 @@ import type { AuthOptions } from '$lib/api/account';
 import { emailUnavailableText, totpUnavailableText, groupSecret, mailAvailable, recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
 
 const base: AuthOptions = {
-	bootstrap: false,
 	registration: 'closed',
 	emailPolicy: 'optional',
 	passwordReset: true,

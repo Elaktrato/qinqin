@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import type { StudyEvent } from '../events';
+import type { StudyEvent } from '$lib/events';
 import { cardKey, parseReview } from './reviewParse';
 
 // Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the

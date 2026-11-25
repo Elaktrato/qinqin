@@ -9,15 +9,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // credentials is the request body of /api/auth/register and /api/auth/login.
@@ -33,16 +31,16 @@ type userJSON struct {
 	Admin    bool   `json:"admin"`
 }
 
+// testDBs maps a test server's URL to its database (see mustRegister).
+var testDBs sync.Map
+
 // newServer opens a fresh migrated database and serves the API on it.
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
+	testDBs.Store(ts.URL, sqlDB)
 	return ts, sqlDB
 }
 
@@ -77,8 +75,26 @@ func register(t *testing.T, ts *httptest.Server, bearer, username, password stri
 }
 
 // mustRegister registers a user and fails the test unless it answers 201.
+// On an empty instance without a token it creates the administrator in the
+// database instead, as `qinqin adduser --admin` and the serve bootstrap do:
+// registration never makes an admin (#211).
 func mustRegister(t *testing.T, ts *httptest.Server, bearer, username, password string) {
 	t.Helper()
+	if bearer == "" {
+		v, ok := testDBs.Load(ts.URL)
+		if !ok {
+			t.Fatalf("register %q: %s was not started with newServer", username, ts.URL)
+		}
+		sqlDB := v.(*sql.DB)
+		if n, err := auth.CountUsers(context.Background(), sqlDB); err != nil {
+			t.Fatal(err)
+		} else if n == 0 {
+			if _, err := auth.CreateUser(context.Background(), sqlDB, username, password, true); err != nil {
+				t.Fatalf("create admin %q: %v", username, err)
+			}
+			return
+		}
+	}
 	if resp := register(t, ts, bearer, username, password); resp.StatusCode != http.StatusCreated {
 		t.Fatalf("register %q: status = %d, want %d", username, resp.StatusCode, http.StatusCreated)
 	}
@@ -128,25 +144,43 @@ func me(t *testing.T, ts *httptest.Server, bearer string) *http.Response {
 	return resp
 }
 
-func TestFirstUserBecomesAdminNoAuth(t *testing.T) {
-	ts, _ := newServer(t)
-
-	resp := register(t, ts, "", "alice", "secret-pass-1")
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register first user: status = %d, want %d", resp.StatusCode, http.StatusCreated)
+// Registering never makes the first administrator (#211): on an empty
+// instance an anonymous registration meets the default mode, closed, and
+// creates nobody, however many race.
+func TestFirstRegisterOnEmptyInstanceIsClosed(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	const racers = 4
+	statuses := make([]int, racers)
+	var wg sync.WaitGroup
+	for i := 0; i < racers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			encoded, _ := json.Marshal(credentials{Username: fmt.Sprintf("user%d", i), Password: "secret-pass-1"})
+			req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/auth/register", bytes.NewReader(encoded))
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return
+			}
+			var e struct{ Error string }
+			json.NewDecoder(resp.Body).Decode(&e)
+			resp.Body.Close()
+			if e.Error != "registration_closed" {
+				statuses[i] = resp.StatusCode
+			} else {
+				statuses[i] = -1
+			}
+		}()
 	}
-	var u userJSON
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		t.Fatalf("decode register response: %v", err)
+	wg.Wait()
+	for i, s := range statuses {
+		if s != -1 {
+			t.Errorf("racer %d: status %d, want 403 registration_closed", i, s)
+		}
 	}
-	if u.Username != "alice" {
-		t.Errorf("username = %q, want %q", u.Username, "alice")
-	}
-	if !u.Admin {
-		t.Error("first user is not admin, want admin")
-	}
-	if u.ID != 1 {
-		t.Errorf("id = %d, want 1", u.ID)
+	var users int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&users); err != nil || users != 0 {
+		t.Errorf("users = %d (%v), want 0", users, err)
 	}
 }
 
@@ -266,9 +300,7 @@ func TestHashVerify(t *testing.T) {
 func TestRegisterDuplicateUsername(t *testing.T) {
 	ts, sqlDB := newServer(t)
 
-	if resp := register(t, ts, "", "alice", "secret-pass-1"); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register alice: status = %d, want %d", resp.StatusCode, http.StatusCreated)
-	}
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
 	token := loginToken(t, ts, "alice", "secret-pass-1")
 	resp := register(t, ts, token, "alice", "other")
 	if resp.StatusCode != http.StatusConflict {
@@ -277,75 +309,6 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 	var count int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil || count != 1 {
 		t.Errorf("users = %d (err %v) after duplicate, want 1", count, err)
-	}
-}
-
-func TestCreateFirstUserOnlyWhenEmpty(t *testing.T) {
-	_, sqlDB := newServer(t)
-	ctx := context.Background()
-
-	u, err := auth.CreateFirstUser(ctx, sqlDB, "alice", "secret-pass-1")
-	if err != nil || !u.Admin || u.Username != "alice" {
-		t.Fatalf("first CreateFirstUser = %+v, %v; want admin alice", u, err)
-	}
-	if _, err := auth.CreateFirstUser(ctx, sqlDB, "bob", "secret-pass-1"); !errors.Is(err, auth.ErrNotFirst) {
-		t.Errorf("second CreateFirstUser err = %v, want ErrNotFirst", err)
-	}
-	var count int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil || count != 1 {
-		t.Errorf("users = %d (err %v), want 1", count, err)
-	}
-}
-
-// TestConcurrentFirstRegisterCreatesOneAdmin races first-ever
-// registrations: exactly one wins and becomes the only admin.
-func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
-	// Eight racers all hash: give the gate room so none answers 503.
-	p := api.DefaultAuthPolicy()
-	p.Hashes, p.HashWait = 8, 30*time.Second
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAuthPolicy(p)))
-	t.Cleanup(ts.Close)
-
-	const racers = 8
-	statuses := make([]int, racers)
-	var wg sync.WaitGroup
-	for i := 0; i < racers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			encoded, _ := json.Marshal(credentials{Username: fmt.Sprintf("user%d", i), Password: "secret-pass-1"})
-			resp, err := http.Post(ts.URL+"/api/auth/register", "application/json", bytes.NewReader(encoded))
-			if err != nil {
-				return
-			}
-			resp.Body.Close()
-			statuses[i] = resp.StatusCode
-		}()
-	}
-	wg.Wait()
-
-	created := 0
-	for _, s := range statuses {
-		if s == http.StatusCreated {
-			created++
-		} else if s != http.StatusForbidden {
-			t.Errorf("racer status = %d, want 201 or 403", s)
-		}
-	}
-	if created != 1 {
-		t.Errorf("%d registrations created users, want exactly 1 (statuses %v)", created, statuses)
-	}
-	var users, admins int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*), COALESCE(SUM(admin), 0) FROM users`).Scan(&users, &admins); err != nil {
-		t.Fatalf("count users: %v", err)
-	}
-	if users != 1 || admins != 1 {
-		t.Errorf("users = %d, admins = %d, want 1 and 1", users, admins)
 	}
 }
 
@@ -378,6 +341,10 @@ func TestLoginUnknownUserStillVerifies(t *testing.T) {
 
 func TestRegisterAppliesPolicy(t *testing.T) {
 	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "owner", "owner-pass-123") // an empty instance refuses every registration
+	if _, err := sqlDB.Exec(`UPDATE auth_settings SET registration = 'open'`); err != nil {
+		t.Fatal(err)
+	}
 	cases := []struct {
 		user, pw string
 		status   int
@@ -402,8 +369,8 @@ func TestRegisterAppliesPolicy(t *testing.T) {
 	}
 	var n int
 	sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&n)
-	if n != 0 {
-		t.Errorf("users = %d after rejected registrations", n)
+	if n != 1 {
+		t.Errorf("users = %d after rejected registrations, want only the owner", n)
 	}
 	if resp := register(t, ts, "", "alice", "long-enough-pw"); resp.StatusCode != 201 {
 		t.Fatalf("valid register: %d", resp.StatusCode)

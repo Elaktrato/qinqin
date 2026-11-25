@@ -26,7 +26,6 @@ export function revokeSessions(scope: 'others' | 'all'): Promise<{ revoked: numb
 }
 
 export interface AuthOptions {
-	bootstrap: boolean;
 	registration: 'closed' | 'invite' | 'open';
 	emailPolicy: 'off' | 'optional' | 'required';
 	passwordReset: boolean;
@@ -71,17 +70,25 @@ export function putEmail(email: string | null, currentPassword?: string, code?: 
 export interface SelfDeletionPreview {
 	workspaces: number;
 	studyEvents: number;
-	pluginData: number;
+	keyedRows: number;
 	/** Live flashcards (typed study rows; absent from servers before v0.4.0). */
 	cards?: number;
 	books: number;
+	/** Journal entries (typed storage since #199). */
+	journalEntries?: number;
+	/** Open conversations of the partner (#185). */
+	journalConversations?: number;
 	journalPhotos: number;
 	aiKeys: number;
 	sessions: number;
 	overlays: number;
 	sentences: number;
+	/** Reports of AI example sentences (#186). */
+	exampleReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
+	/** 1 when the account has a profile picture (#189). */
+	avatar?: number;
 }
 
 export function accountDeletionPreview(): Promise<SelfDeletionPreview> {

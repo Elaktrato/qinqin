@@ -11,7 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -20,7 +21,7 @@ var cedictRoot = filepath.Join("..", "..", "..", "plugins", "data", "cedict")
 
 // smallCedict copies the bundled cedict pack's manifest and licence files
 // next to a two-line dictionary, so the import is quick and the texts real.
-func smallCedict(t *testing.T) dict.Pack {
+func smallCedict(t *testing.T) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	for _, name := range []string{"manifest.json", "LICENSE", "ATTRIBUTION.md"} {
@@ -39,7 +40,7 @@ func smallCedict(t *testing.T) dict.Pack {
 	if err := os.WriteFile(filepath.Join(dir, "dictionary.txt.gz"), gz.Bytes(), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,11 +68,11 @@ func texts(t *testing.T, sqlDB *sql.DB, typ, id string) map[string]string {
 }
 
 func TestImportKeepsTheLicenceTextsVerbatim(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := packs.Import(context.Background(), sqlDB, smallCedict(t)); err != nil {
 		t.Fatal(err)
 	}
-	got := texts(t, sqlDB, dict.TypeDictionary, "cedict")
+	got := texts(t, sqlDB, pack.TypeDictionary, "cedict")
 	if len(got) != 2 {
 		t.Fatalf("texts = %v, want LICENSE and ATTRIBUTION.md", keys(got))
 	}
@@ -81,7 +82,7 @@ func TestImportKeepsTheLicenceTextsVerbatim(t *testing.T) {
 			t.Errorf("%s differs from the pack's file (%d vs %d bytes)", name, len(got[name]), len(want))
 		}
 	}
-	if ok, err := packs.TextsStored(context.Background(), sqlDB, dict.TypeDictionary, "cedict"); err != nil || !ok {
+	if ok, err := packs.TextsStored(context.Background(), sqlDB, pack.TypeDictionary, "cedict"); err != nil || !ok {
 		t.Errorf("TextsStored = %v, %v; want true", ok, err)
 	}
 }
@@ -124,7 +125,7 @@ func storeTexts(t *testing.T, sqlDB *sql.DB, typ, id, dir string) int {
 // LICENSE, LICENCE, ATTRIBUTION, NOTICE or COPYING (any case) are kept, at
 // most 8 per pack in name order; every skipped candidate is logged.
 func TestStoreTextsSkipsWhatItMustNotKeep(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	var logged []string
 	defer packs.SetLogfForTest(func(f string, a ...any) { logged = append(logged, fmt.Sprintf(f, a...)) })()
 
@@ -190,7 +191,7 @@ func anyContains(list []string, s string) bool {
 }
 
 func TestReimportReplacesAndUninstallDeletesTexts(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	p := dictPack(t)
 	writeFiles(t, p.Dir, map[string][]byte{"LICENSE": []byte("v1"), "ATTRIBUTION.md": []byte("by us")})
@@ -233,7 +234,7 @@ func TestReimportReplacesAndUninstallDeletesTexts(t *testing.T) {
 // A pack that ships no licence file is recorded as collected (nothing to
 // keep), unlike a pack imported before texts were kept.
 func TestTextsStoredTellsEmptyFromNeverCollected(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if _, err := packs.Import(ctx, sqlDB, levelsPackAfterDict(t, sqlDB)); err != nil {
 		t.Fatal(err)
@@ -253,7 +254,7 @@ func TestTextsStoredTellsEmptyFromNeverCollected(t *testing.T) {
 	}
 }
 
-func levelsPackAfterDict(t *testing.T, sqlDB *sql.DB) dict.Pack {
+func levelsPackAfterDict(t *testing.T, sqlDB *sql.DB) pack.Pack {
 	t.Helper()
 	if _, err := packs.Import(context.Background(), sqlDB, dictPack(t)); err != nil {
 		t.Fatal(err)
@@ -264,11 +265,11 @@ func levelsPackAfterDict(t *testing.T, sqlDB *sql.DB) dict.Pack {
 // The registry id decides: kanjidic2 and unihan register fixed ids
 // whatever the manifest id is, and their texts follow the registry row.
 func TestTextsUseTheRegistryPackID(t *testing.T) {
-	m := dict.Manifest{ID: "my-unihan", Type: dict.TypeDictionary, Format: dict.FormatUnihan}
+	m := pack.Manifest{ID: "my-unihan", Type: pack.TypeDictionary, Format: pack.FormatUnihan}
 	if got := packs.RegistryID(m); got != "unihan" {
 		t.Errorf("RegistryID(unihan format) = %q, want unihan", got)
 	}
-	m = dict.Manifest{ID: "es-freq", Type: dict.TypeFrequency}
+	m = pack.Manifest{ID: "es-freq", Type: pack.TypeFrequency}
 	if got := packs.RegistryID(m); got != "es-freq" {
 		t.Errorf("RegistryID(frequency) = %q, want the manifest id", got)
 	}

@@ -3,7 +3,8 @@
 // docs/contracts/auth/errors.json has a key (apiErrors.test.ts reads the file); a code this version does not know
 // (a newer server) shows `apiError.unknown` with the code.
 import { t, type MessageKey } from '$lib/i18n';
-import { apiErrorBody } from './client';
+import { ApiError } from './client';
+import { ShownError, UserError } from './userError';
 
 export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	bad_request: 'apiError.badRequest',
@@ -76,7 +77,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	token_not_allowed: 'apiError.tokenNotAllowed',
 	token_read_only: 'apiError.tokenReadOnly',
 	token_workspace: 'apiError.tokenWorkspace',
-	study_row_invalid: 'apiError.studyRowInvalid',
+	study_row_unreadable: 'apiError.studyRowUnreadable',
 	sync_collection_moved: 'apiError.syncCollectionMoved',
 	sync_page_invalid: 'apiError.syncPageInvalid',
 	events_page_invalid: 'apiError.eventsPageInvalid',
@@ -109,11 +110,43 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	empty: 'apiError.empty',
 	photo_too_large: 'apiError.photoTooLarge',
 	unsupported_image: 'apiError.unsupportedImage',
+	animated_image: 'apiError.animatedImage',
 	image_too_large: 'apiError.imageTooLarge',
 	too_many_photos: 'apiError.tooManyPhotos',
+	conversation_full: 'apiError.conversationFull',
+	conversation_limit: 'apiError.conversationLimit',
+	wrong_language: 'apiError.wrongLanguage',
+	examples_full: 'apiError.examplesFull',
 	ocr_unavailable: 'apiError.ocrUnavailable',
 	ocr_language_missing: 'apiError.ocrLanguageMissing',
-	ocr_failed: 'apiError.ocrFailed'
+	ocr_failed: 'apiError.ocrFailed',
+	conflict: 'apiError.conflict',
+	method_not_allowed: 'apiError.methodNotAllowed',
+	range_not_satisfiable: 'apiError.rangeNotSatisfiable',
+	precondition_failed: 'apiError.preconditionFailed',
+	not_implemented: 'apiError.notImplemented',
+	workspace_not_found: 'apiError.workspaceNotFound',
+	workspace_exists: 'apiError.workspaceExists',
+	last_workspace: 'apiError.lastWorkspace',
+	language_unknown: 'apiError.languageUnknown',
+	language_built_in: 'apiError.languageBuiltIn',
+	language_in_use: 'apiError.languageInUse',
+	pack_invalid: 'apiError.packInvalid',
+	pack_type_unsupported: 'apiError.packTypeUnsupported',
+	pack_staged: 'apiError.packStaged',
+	pack_import_running: 'apiError.packImportRunning',
+	import_busy: 'apiError.importBusy',
+	book_exists: 'apiError.bookExists',
+	bookmark_limit: 'apiError.bookmarkLimit',
+	highlight_limit: 'apiError.highlightLimit',
+	highlight_overlap: 'apiError.highlightOverlap',
+	epub_unreadable: 'apiError.epubUnreadable',
+	language_mismatch: 'apiError.languageMismatch',
+	source_unavailable: 'apiError.sourceUnavailable',
+	source_language_unavailable: 'apiError.sourceLanguageUnavailable',
+	unknown_time_zone: 'apiError.unknownTimeZone',
+	too_many_changes: 'apiError.tooManyChanges',
+	licence_mismatch: 'apiError.licenceMismatch'
 };
 
 /** The interface text of an API error code; an unknown code gives "Something went wrong (<code>)." */
@@ -122,10 +155,24 @@ export function apiErrorText(code: string): string {
 }
 
 /**
- * What a screen shows for a failed request: the catalogue text of a known error code, otherwise the screen's own
- * `fallback` ("Could not save the email address.") — never the server's English `message`.
+ * What a screen shows for a failed operation: the catalogue text of a known API error code, the translated text of
+ * a UserError, otherwise the screen's own `fallback` ("Could not save the email address.") — never the server's
+ * English `message` and never an `Error`'s developer text (#168; the i18n lint's `errmsg` rule).
  */
 export function errorText(err: unknown, fallback: string): string {
-	const code = apiErrorBody(err)?.error;
+	if (err instanceof UserError) return t(err.key, err.args);
+	if (err instanceof ShownError) return err.text;
+	const code = err instanceof ApiError ? err.code : undefined;
 	return code !== undefined && Object.hasOwn(API_ERROR_KEYS, code) ? t(API_ERROR_KEYS[code]) : fallback;
+}
+
+/**
+ * The one place a server sentence reaches the interface (spec Ruling, #168): the English reason of a 400
+ * `pack_invalid` (the pack validator names the rule a pack breaks, never a server path), shown to the administrator
+ * under the translated text, marked as English detail. '' for anything else.
+ */
+export function packErrorDetail(err: unknown): string {
+	if (!(err instanceof ApiError) || err.code !== 'pack_invalid') return '';
+	const detail = err.body?.message;
+	return typeof detail === 'string' ? detail.trim() : '';
 }

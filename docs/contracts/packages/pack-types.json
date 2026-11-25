@@ -1,0 +1,106 @@
+{
+ "version": 1,
+ "rule": "packages/pack-types",
+ "note": "Every data pack type (the manifest type), in the server's list and seed order. languages: the manifest states language (one), languages (many) or neither (none). uploadable: an administrator may install it by an upload. package: the data package type built from it (null: none; the dictionary's lexicon is per language). requiresLexicon / optionalPackage: the package's requires and optional. registry is the server's table (informative).",
+ "types": [
+  {
+   "type": "dictionary",
+   "registry": "dictionaries",
+   "languages": "one",
+   "uploadable": true,
+   "package": "lexicon",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "frequency",
+   "registry": "frequency_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": "frequency",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "levels",
+   "registry": "schemes",
+   "languages": "one",
+   "uploadable": true,
+   "package": "levels",
+   "requiresLexicon": true,
+   "optionalPackage": false
+  },
+  {
+   "type": "sentences",
+   "registry": "sentence_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": "sentences",
+   "requiresLexicon": true,
+   "optionalPackage": false
+  },
+  {
+   "type": "grammar",
+   "registry": "grammar_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": "grammar",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "audio",
+   "registry": "audio_packs",
+   "languages": "one",
+   "uploadable": false,
+   "package": "audio",
+   "requiresLexicon": false,
+   "optionalPackage": true
+  },
+  {
+   "type": "components",
+   "registry": "component_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": "components",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "strokes",
+   "registry": "stroke_packs",
+   "languages": "many",
+   "uploadable": true,
+   "package": "strokes",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "lemma-rules",
+   "registry": "lemma_rule_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": "lemma-rules",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "theme",
+   "registry": "theme_packs",
+   "languages": "none",
+   "uploadable": true,
+   "package": null,
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "font",
+   "registry": "font_packs",
+   "languages": "none",
+   "uploadable": true,
+   "package": null,
+   "requiresLexicon": false,
+   "optionalPackage": false
+  }
+ ]
+}

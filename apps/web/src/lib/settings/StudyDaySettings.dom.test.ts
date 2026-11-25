@@ -1,31 +1,44 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/time/zone', () => ({
-	browserZone: vi.fn(),
-	changeZone: vi.fn(),
-	currentHistory: vi.fn(),
-	currentStudyDay: vi.fn(),
-	onStudyDayChange: vi.fn(() => () => {})
+vi.mock('$lib/time/zone', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/time/zone')>()),
+	browserZone: vi.fn()
 }));
 
 import { ApiError } from '$lib/api/client';
 import { studyDay } from '$lib/time/studyDay';
 import * as zone from '$lib/time/zone';
+import { testContext, type TestContext } from '$lib/testing/context';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StudyDaySettings from './StudyDaySettings.svelte';
 
-const z = vi.mocked(zone);
+let ctx: TestContext;
+/** The session's StudyDays, spied (record 0009), and the mocked browser zone. */
+let z: {
+	browserZone: ReturnType<typeof vi.mocked<typeof zone.browserZone>>;
+	currentHistory: ReturnType<typeof vi.spyOn>;
+	currentStudyDay: ReturnType<typeof vi.spyOn>;
+	changeZone: ReturnType<typeof vi.spyOn>;
+};
 const realSupported = Intl.supportedValuesOf;
 
 function setup(history: { zone: string; from: string | null }[], device: string | null) {
 	z.currentHistory.mockReturnValue(history);
 	z.currentStudyDay.mockReturnValue(studyDay(history));
 	z.browserZone.mockReturnValue(device);
-	return render(StudyDaySettings);
+	return render(StudyDaySettings, { context: ctx.context });
 }
 
 beforeEach(() => {
+	ctx = testContext();
+	const days = ctx.session.zone;
+	z = {
+		browserZone: vi.mocked(zone.browserZone),
+		currentHistory: vi.spyOn(days, 'known'),
+		currentStudyDay: vi.spyOn(days, 'day'),
+		changeZone: vi.spyOn(days, 'change')
+	};
 	vi.spyOn(Intl, 'supportedValuesOf').mockReturnValue(['Asia/Tokyo', 'Europe/Berlin', 'America/New_York']);
 });
 afterEach(() => {

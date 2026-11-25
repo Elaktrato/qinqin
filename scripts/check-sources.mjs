@@ -40,9 +40,6 @@ export const LOCAL_ONLY_PACKS = [
 	'jlpt-words',
 	'hsk30-chars',
 	'hsk30-words',
-	'tbcl-words',
-	'tbcl-chars',
-	'cn-curriculum-chars',
 	'commons-audio-zh',
 	'commons-audio-ja',
 	'zh-components'

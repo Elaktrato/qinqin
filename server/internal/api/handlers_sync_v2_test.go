@@ -18,8 +18,8 @@ import (
 )
 
 // The paged pull over HTTP (GET /api/sync/pull?v=2, B3): the handler maps
-// the sync package's errors to JSON codes, keeps the token rule of the
-// legacy pull and serves exactly what sync.PullPage answers.
+// the sync package's errors to JSON codes, keeps the route's token rule
+// and serves exactly what sync.PullPage answers.
 
 type v2Page struct {
 	Format      int                          `json:"format"`
@@ -70,13 +70,13 @@ func jsonError(t *testing.T, body []byte) (string, string) {
 	return e.Error, e.Message
 }
 
-// seedPluginRows writes n plugin data rows of size bytes each for user in ws.
+// seedPluginRows writes n keyed rows of size bytes each for user in ws.
 func seedPluginRows(t *testing.T, ctx context.Context, exec func(string, ...any), user, ws int64, n, size int) {
 	t.Helper()
 	data := `"` + strings.Repeat("x", size) + `"`
 	for i := range n {
-		exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-			VALUES ('qinqin-core', ?, ?, ?, ?, 1, ?, ?)`, user, ws, fmt.Sprintf("k%04d", i), data,
+		exec(`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES (?, ?, ?, ?, 1, ?, ?)`, user, ws, fmt.Sprintf("note:%d", i+1), data,
 			fmt.Sprintf("2026-01-01T00:%02d:%02dZ", i/60, i%60), "2026-01-01T00:00:00Z")
 	}
 }
@@ -101,7 +101,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 	// workspaces made in the second of the round would miss it.
 	exec(`UPDATE workspaces SET updated_at = '2026-01-01T00:00:00Z'`)
 
-	t.Run("v=2 selects the paged form, without v the legacy form", func(t *testing.T) {
+	t.Run("v=2 selects the paged form; without it the answer is 404", func(t *testing.T) {
 		st, h, body := get(t, ts.URL, "/api/sync/pull?v=2", alice)
 		if st != http.StatusOK {
 			t.Fatalf("v=2: %d %s", st, body)
@@ -117,11 +117,9 @@ func TestSyncPullV2Handler(t *testing.T) {
 		if ct := h.Get("Content-Type"); ct != "application/json" {
 			t.Errorf("Content-Type %q", ct)
 		}
-		st, _, body = get(t, ts.URL, "/api/sync/pull", alice)
-		top = nil
-		json.Unmarshal(body, &top)
-		if st != http.StatusOK || top["format"] != nil || top["pluginData"] == nil {
-			t.Errorf("legacy answer: %d %s", st, body[:min(len(body), 200)])
+		// without v=2: the removed legacy form (legacy_removed_test.go)
+		if st, _, body = get(t, ts.URL, "/api/sync/pull", alice); st != http.StatusNotFound {
+			t.Errorf("legacy form: %d %s, want 404", st, body[:min(len(body), 200)])
 		}
 	})
 
@@ -137,15 +135,15 @@ func TestSyncPullV2Handler(t *testing.T) {
 			status            int
 		}{
 			{"page with since", "page=" + next + "&since=c2.x", "sync_page_invalid", 400},
-			{"page with collections", "page=" + next + "&collections=pluginData", "sync_page_invalid", 400},
+			{"page with collections", "page=" + next + "&collections=rows", "sync_page_invalid", 400},
 			{"page with workspace", "page=" + next + "&workspace=" + strconv.FormatInt(wsZh, 10), "sync_page_invalid", 400},
 			{"page with limit", "page=" + next + "&limit=5", "sync_page_invalid", 400},
 			{"garbled page", "page=p2.garbage", "sync_page_invalid", 400},
 			{"limit 0", "limit=0", "sync_page_invalid", 400},
 			{"limit 2001", "limit=2001", "sync_page_invalid", 400},
 			{"limit abc", "limit=abc", "sync_page_invalid", 400},
-			{"unknown collection", "collections=pluginData,flashcards", "sync_page_invalid", 400},
-			{"moved collection", "collections=pluginData,entries", "sync_collection_moved", 400},
+			{"unknown collection", "collections=rows,flashcards", "sync_page_invalid", 400},
+			{"moved collection", "collections=rows,entries", "sync_collection_moved", 400},
 			{"foreign workspace", "workspace=" + strconv.FormatInt(bobWS, 10), "not_found", 404},
 			{"unknown workspace", "workspace=999999", "not_found", 404},
 		}
@@ -185,7 +183,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 		}
 		st, _, body := get(t, ts.URL, "/api/sync/pull?v=2&workspace="+strconv.FormatInt(wsZh, 10), limited)
 		if st != http.StatusForbidden {
-			t.Errorf("workspace-limited token: %d %s, want 403 (as the legacy pull)", st, body)
+			t.Errorf("workspace-limited token: %d %s, want 403 (the route's token rule)", st, body)
 		}
 		carol := registerUser(t, ts.URL, "carol", alice)
 		restrict(t, sqlDB, "carol")
@@ -257,8 +255,8 @@ func TestSyncPullV2Handler(t *testing.T) {
 				t.Errorf("%s over HTTP %v, direct %v", c, httpRows[c], direct[c])
 			}
 		}
-		if len(httpRows["pluginData"]) != 7 || len(httpRows["workspaces"]) != 2 {
-			t.Errorf("round rows: %d plugin rows, %d workspaces", len(httpRows["pluginData"]), len(httpRows["workspaces"]))
+		if len(httpRows["rows"]) != 7 || len(httpRows["workspaces"]) != 2 {
+			t.Errorf("round rows: %d plugin rows, %d workspaces", len(httpRows["rows"]), len(httpRows["workspaces"]))
 		}
 		got, _ := json.Marshal(scope)
 		want, _ := json.Marshal(first.Scope)
@@ -276,7 +274,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 		ws := createWorkspace(t, ts.URL, dave, "zh", "Chinese")
 		const rowBytes = 300 << 10
 		seedPluginRows(t, ctx, exec, daveID, ws, 30, rowBytes) // about 9 MiB
-		path := "/api/sync/pull?v=2&collections=pluginData&limit=2000"
+		path := "/api/sync/pull?v=2&collections=rows&limit=2000"
 		total := 0
 		for pages := 0; ; pages++ {
 			st, _, body := get(t, ts.URL, path, dave)
@@ -285,7 +283,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 				t.Fatalf("page %d: %d", pages, st)
 			}
 			n := 0
-			for _, r := range p.Collections["pluginData"] {
+			for _, r := range p.Collections["rows"] {
 				n += len(r)
 			}
 			if n > chinsync.MaxPageBytes+rowBytes+1024 {
@@ -294,10 +292,10 @@ func TestSyncPullV2Handler(t *testing.T) {
 			if len(body) > chinsync.MaxPageBytes+rowBytes+64<<10 {
 				t.Errorf("page %d is %d bytes", pages, len(body))
 			}
-			if len(p.Collections["pluginData"]) == 0 {
+			if len(p.Collections["rows"]) == 0 {
 				t.Errorf("page %d is empty", pages)
 			}
-			total += len(p.Collections["pluginData"])
+			total += len(p.Collections["rows"])
 			if !p.More {
 				if pages == 0 {
 					t.Error("9 MiB in one page")

@@ -12,8 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // unihanFixture is the committed Unihan database sample, relative to this
@@ -22,7 +24,7 @@ const unihanFixture = "testdata/unihan-sample.txt"
 
 // unihanManifest is the manifest of the packs the unihan tests build
 // around the committed sample: the Unihan database's own terms.
-var unihanManifest = dict.Manifest{
+var unihanManifest = pack.Manifest{
 	ID:          "unihan",
 	Name:        "Unihan database",
 	Version:     "1.0",
@@ -35,7 +37,7 @@ var unihanManifest = dict.Manifest{
 
 // loadUnihanFixture builds the pack around the committed sample: its
 // manifest plus a dictionary.txt holding the fixture's lines verbatim.
-func loadUnihanFixture(t *testing.T) dict.Pack {
+func loadUnihanFixture(t *testing.T) pack.Pack {
 	t.Helper()
 	data, err := os.ReadFile(unihanFixture)
 	if err != nil {
@@ -48,16 +50,16 @@ func loadUnihanFixture(t *testing.T) dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"), string(data))
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(unihan sample): %v", err)
 	}
-	return pack
+	return pk
 }
 
 // importUnihanPack builds a unihan pack around lines with manifest m and
 // imports it, returning the import's result or its error.
-func importUnihanPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifest, lines ...string) (dict.Result, error) {
+func importUnihanPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m pack.Manifest, lines ...string) (dict.Result, error) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -66,11 +68,11 @@ func importUnihanPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.M
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"), strings.Join(lines, "\n")+"\n")
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(unihan pack): %v", err)
 	}
-	return dict.ImportLexicon(ctx, sqlDB, &pack)
+	return dict.ImportLexicon(ctx, sqlDB, &pk)
 }
 
 func TestUnihanParse(t *testing.T) {
@@ -236,7 +238,7 @@ func TestUnihanParseRejectsMalformedLines(t *testing.T) {
 // through the table, and reject numbers outside it.
 func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	lines := make([]string, 0, 214)
 	for n := 1; n <= 214; n++ {
 		lines = append(lines, fmt.Sprintf("U+%04X\tkRSUnicode\t%d.0", 0x4E00+n-1, n))
@@ -250,7 +252,7 @@ func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 	}
 
 	for _, n := range []int{0, 215} {
-		sqlDB := newDB(t)
+		sqlDB := dbtest.Open(t)
 		_, err := importUnihanPack(t, ctx, sqlDB, unihanManifest, fmt.Sprintf("U+4E00\tkRSUnicode\t%d.0", n))
 		if err == nil || !strings.Contains(err.Error(), "Kangxi") {
 			t.Errorf("radical %d: ImportLexicon = %v, want an error naming the Kangxi radicals", n, err)
@@ -271,7 +273,7 @@ func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 // must be its own.
 func TestKangxiRadicalCharacters(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	anchors := []struct {
 		n   int
 		chr string

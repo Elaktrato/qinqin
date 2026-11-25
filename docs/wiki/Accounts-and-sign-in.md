@@ -12,11 +12,11 @@ The sign-in page asks for your **Username** and password. Depending on the serve
 
 Usernames are matched exactly at sign-in; for new names, `Bob`, `bob` and a fullwidth `Ｂob` count as the same name ([Getting started](Getting-started#signing-in)). A disabled account gets "This account is disabled. Ask an administrator to enable it." with the right password, and the usual refusal with a wrong one.
 
-If an administrator gave you a temporary password, or the server requires two-step sign-in and you have no second step yet, your first page is **Choose a new password** or **Two-step sign-in is required**. Until you have done that, only that page, the Sources page and **Sign out instead** are open.
+On a new server the administrator signs in as `admin` (or the name the server owner chose) with the one-time password from the server's log ([Deploying](Admin-deploying#the-bootstrap-administrator)) and must choose a new password first. If an administrator gave you a temporary password, or the server requires two-step sign-in and you have no second step yet, your first page is **Choose a new password** or **Two-step sign-in is required**. Until you have done that, only that page, the Sources page and **Sign out instead** are open.
 
 ## Sessions
 
-Signing in gives your browser a random token (64 hex characters). The server stores only a hash of it, so a copy of the database or a backup hands out no live session. A session you have not used for 90 days stops working. **Sign out** ends the session on the server too.
+Signing in gives your browser a random token (64 hex characters). The server stores only a hash of it, so a copy of the database or a backup hands out no live session. A session you have not used for 90 days stops working. **Sign out** ends the session on the server too, and the app forgets everything it kept in memory for you (cards, decks, entries, audio, the journal, offline copies), so the next person who signs in on the same device sees none of it. The same happens when a session expires or another tab signs in as someone else; only an explicit sign-out also forgets the chosen workspace.
 
 Settings → Account → Sessions lists your signed-in devices with a coarse label such as "Firefox on Linux" (never the raw User-Agent, never an address), when each signed in and when it was last active. You can end one, **Log out everywhere else**, or **Log out everywhere**.
 
@@ -38,13 +38,19 @@ Use a recovery code at the second step. If you have none, ask an administrator t
 
 ## Changing your password
 
-Settings → Account → Password. You enter the current password and a new one twice (10 to 256 characters, not your username). **Sign out my other sessions** is ticked by default. If an administrator gave you a temporary password, the app takes you to this page first and nothing else works until you change it.
+Settings → Account → Password. You enter the current password and a new one twice (10 to 256 characters, not your username). **Sign out my other sessions** is ticked by default. On a new server the administrator signs in as `admin` (or the name the server owner chose) with the one-time password from the server's log ([Deploying](Admin-deploying#the-bootstrap-administrator)) and must choose a new password first. If an administrator gave you a temporary password, the app takes you to this page first and nothing else works until you change it.
 
 Changing your password also revokes all your [access tokens](API-Access-tokens), so scripts that use one stop working until you give them a new token.
 
 ## Access tokens
 
 Settings, Account, Access tokens: personal access tokens for your own scripts (read only or read and write, all workspaces or one, 7 to 365 days). Creating one asks for your password; the token is shown once. Logging out other devices, a password change or reset, and the administrator's security actions revoke them. See [API access tokens](API-Access-tokens).
+
+## Profile picture
+
+Settings → Account → Profile: **Choose a picture** opens your device's picker; on a phone or tablet **Take a photo** opens the front camera. A JPEG, PNG or WebP works; other files (GIF, SVG, HEIC, AVIF, BMP) and animated pictures do not. Crop it to the circle: drag the picture (mouse or finger), zoom with the slider, the mouse wheel or two fingers, or focus the crop area and use the arrow keys to move and `+` / `−` to zoom (Escape cancels). **Save picture** uploads the square you chose. **Replace picture** starts again, **Remove picture** goes back to the letter.
+
+The picture shows on the account button of the top bar and the phone bar, in the account menu and in the administrators' user list; wherever there is no picture, or it cannot load (offline, for example), the first letter of your username stays. Everyone signed in to this server can see it; it is never public. The server decodes every upload and stores new square files (256 and 64 pixels), so nothing of the original file is kept: no location, camera data or other metadata. Limits: 5 MB per upload, 25 megapixels (half that for 16-bit pictures), 10 changes an hour. An administrator can remove a picture (recorded in the audit log). The picture is in [your data](Your-data) downloads and is deleted with your account.
 
 ## Email address
 
@@ -60,7 +66,7 @@ If the server has email, the sign-in page links "Forgot password?" and sends a o
 
 ## Deleting your account
 
-Settings, Account, Delete account. The dialog shows what is removed: workspaces, study history, flashcards, journal entries, reader settings, your dictionary edits and sentences, library books with bookmarks and highlights and their files, photo drafts, AI keys and usage, time-zone history, sessions, reset links and invites you created. Confirm with your password and by typing your username. Kept: admin-registered AI endpoints, installed packs and languages, and the audit log (your name becomes `deleted user #id`). The last active administrator cannot delete themselves. The full list, also for an administrator deleting someone else's account, is on [Users, registration and invites](Admin-users-and-registration#what-deleting-an-account-removes). Consider downloading [your data](Your-data) first.
+Settings, Account, Delete account. The dialog shows what is removed: workspaces, study history, flashcards, journal entries, reader settings, your dictionary edits and sentences, library books with bookmarks and highlights and their files, your profile picture, photo drafts, AI keys and usage, time-zone history, sessions, reset links and invites you created. Confirm with your password and by typing your username. Kept: admin-registered AI endpoints, installed packs and languages, and the audit log (your name becomes `deleted user #id`). The last active administrator cannot delete themselves. The full list, also for an administrator deleting someone else's account, is on [Users, registration and invites](Admin-users-and-registration#what-deleting-an-account-removes). Consider downloading [your data](Your-data) first.
 
 ## Sign-in throttling
 

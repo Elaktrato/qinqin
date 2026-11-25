@@ -3,12 +3,13 @@
 import { API_ERROR_KEYS, apiErrorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
+import { PENDING_REVIEWS_KEY } from '$lib/study/events';
 
 export interface Counts {
 	workspaces: number;
 	events: number;
 	cards: number;
-	pluginData: number;
+	rows: number;
 	overlays: number;
 	sentences: number;
 	books: number;
@@ -30,7 +31,6 @@ export interface Report {
 	replaces: Counts;
 	restores: Counts;
 	unresolved: { entries: UnresolvedEntry[]; entryCount: number; sentences: number; droppedRows: number };
-	pluginsNotInstalled: string[];
 	reidentifiedEvents: number;
 	blocking: string[];
 	warnings: string[];
@@ -151,23 +151,38 @@ export function formatBytes(n: number): string {
 	return t('account.backup.sizeMib', { n: formatNumber(n / 1048576, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
-export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.session', 'qinqin.study.pending'] as const;
+export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.session'] as const;
 
 /**
  * After a restore the workspace ids are new: forget the selected workspace,
- * the running session and the queued reviews of the old ids. Returns how
- * many queued reviews were dropped (so the page can say so).
+ * the running session and the queued reviews of the old ids. Only the
+ * restoring user's items and unowned ones (which that user would adopt) are
+ * dropped: on a shared browser another user's unsent reviews stay (#198
+ * review, M1). Returns how many queued reviews were dropped (so the page can
+ * say so). Without a known user the queue is left alone.
  */
-export function clearLocalAfterRestore(storage: Pick<Storage, 'getItem' | 'removeItem'>): number {
+export function clearLocalAfterRestore(
+	storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>,
+	userId: number | null
+): number {
 	let dropped = 0;
-	try {
-		const raw = storage.getItem('qinqin.study.pending');
-		if (raw) {
-			const v = JSON.parse(raw) as unknown;
-			dropped = Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0;
+	if (userId !== null) {
+		try {
+			const raw = storage.getItem(PENDING_REVIEWS_KEY);
+			const v = raw ? (JSON.parse(raw) as unknown) : null;
+			if (Array.isArray(v)) {
+				const mine = (item: unknown): boolean => {
+					const owner = (item as { userId?: unknown } | null)?.userId;
+					return owner === userId || owner === null || owner === undefined;
+				};
+				const kept = v.filter((item) => !mine(item));
+				dropped = v.length - kept.length;
+				if (kept.length === 0) storage.removeItem(PENDING_REVIEWS_KEY);
+				else if (dropped > 0) storage.setItem(PENDING_REVIEWS_KEY, JSON.stringify(kept));
+			}
+		} catch {
+			dropped = 0;
 		}
-	} catch {
-		dropped = 0;
 	}
 	for (const k of LOCAL_KEYS_AFTER_RESTORE) {
 		try {

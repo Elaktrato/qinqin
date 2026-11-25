@@ -1,6 +1,7 @@
 # Auth: sessions, sign-in states, errors (contract)
 
-For the web app and the future Kotlin client. Fixtures in this folder are decoded and compared
+For the server and the web app, which is also the Android app (the web app in a Capacitor shell,
+`docs/superpowers/specs/2026-11-23-android-shell-design.md`). Fixtures in this folder are decoded and compared
 with real server responses by `server/internal/api/contract_auth_test.go`; run it with
 `go test -count=1` after editing a fixture (Go does not track files outside the module in its test
 cache). Sign-in throttling has its own page: `throttling.md` and `throttle-responses.json`.
@@ -9,13 +10,14 @@ examples of its throttling subset and a test checks that both agree on every cod
 
 | File | What it fixes |
 |---|---|
-| `errors.json` | Every auth error code, its status and meaning. Bodies are always `{"error","message"}` |
+| `errors.json` | Every API error code (all routes, not only auth), its status and meaning. Bodies are always `{"error","message"}`, plus the extra members a meaning names |
 | `login-responses.json` | The three answers of `POST /api/auth/login` that carry no throttle code |
-| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` and the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) |
+| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction`, the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) and `avatarUrl` (`avatar.json`) |
+| `avatar.json` | Profile pictures (#189): upload, remove, the picture files (sizes, headers), an administrator's removal and every refusal (decoded by Go and web tests) |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
-| `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
+| `options.json` | `GET /api/auth/options` in the three modes (closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |
-| `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
+| `admin-users.json` | `AdminUser` (with `avatarUrl`), create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
 | `admin-settings.json` | Re-authentication of the Security and Email settings routes (PATCH settings/auth, PUT and DELETE settings/smtp) |
 | `admin-reauth.json` | The rule for when PATCH users/{id} and PATCH settings/auth need re-authentication, as cases (decoded by Go and web tests) |
 | `mfa-login.json` | `mfa_required`, the second step, `mfa_enrollment_required`, sign-in by emailed code |
@@ -99,16 +101,18 @@ first, never a token or hash. `DELETE /api/account/sessions/{id}` (204; another 
 too, so clear local state afterwards.
 
 ## Registration (`POST /api/auth/register`)
-Read `GET /api/auth/options` first (public, uncached): `bootstrap`, `registration` (`closed` | `invite` |
+Read `GET /api/auth/options` first (public, uncached): `registration` (`closed` | `invite` |
 `open`), `emailPolicy` (`off` | `optional` | `required`), `passwordReset`, `emailCodeLogin` (the last two
 are false while the server has no mail), `passwordMinLength`. Body `{username, password, email?, invite?}`
 answers `201` with the user; then sign in as usual. `403 registration_closed` (mode closed),
 `403 invite_invalid` (one code and one body for an unknown, expired, used up or revoked invite, and for a
 missing one in invite mode), `422 email_required | email_disabled | invalid_email`, `409 email_taken |
 username_taken`, `422 weak_password | invalid_username`. An invite supplied in `open` mode is spent too and
-must be valid. The first user on an empty instance registers in every mode and becomes administrator.
-An invite arrives as a link `https://host/register#invite=<token>`: the Kotlin client opens it as a deep
-link, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
+must be valid. Registering never makes an administrator: the server creates the first one before it listens
+(`QINQIN_BOOTSTRAP_ADMIN`, default `admin`), or the operator does with `qinqin adduser --admin`; an instance
+with no users answers `403 registration_closed` whatever its mode, invite or not.
+An invite arrives as a link `https://host/register#invite=<token>`: the web app (in the Android shell too) opens
+it, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
 the token. The token is in the fragment so it never reaches a server log.
 
 ## Reset links
@@ -140,7 +144,7 @@ only second step is the emailed code gives the password alone. Exactly these act
 
 The conditional rules are pinned as cases in `admin-reauth.json`.
 `/api/admin/users`, `/api/admin/invites`, `/api/admin/settings/auth`, `/api/admin/audit` are used by the web
-admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
+admin screens; an account's own settings use the routes above, `PUT /api/account/email`,
 `GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409
 `last_admin` for the last active administrator). Deleting an account removes its data in one transaction (the
 exact list is on the wiki page `docs/wiki/Admin-users-and-registration.md`, "What deleting an account removes").
@@ -187,3 +191,25 @@ credentials -> [mfa] -> [password change] -> [enrolment] -> full.
   `POST /api/account/mfa/email/confirm {code}` finishes it (and only then ends the restriction).
 - `POST /api/auth/login` may answer 503 `mail_outage` (second step by email while mail is down): retry later.
 - `PUT /api/account/email` also takes `code` (authenticator or recovery code) for accounts with an authenticator.
+
+## Changelog
+
+- **#168 (pre-Android hardening):** every error answer of every route is `{"error", "message"}` with a code from
+  `errors.json`, `Content-Type: application/json` and `X-Content-Type-Options: nosniff`; no route answers text
+  any more. Status codes are unchanged, with one correction: a pack import that fails for a reason other than
+  the pack is 500 `internal` (was 400 with a text). New codes: `conflict`, `method_not_allowed` (a known path
+  with another method), `range_not_satisfiable`, `precondition_failed`, `not_implemented`,
+  `workspace_not_found` (every workspace 404 that answered text; sync and token creation keep `not_found`),
+  `workspace_exists`, `last_workspace`, `language_unknown`, `language_built_in`, `language_in_use`,
+  `pack_invalid`, `pack_type_unsupported`, `pack_staged`, `pack_import_running`, `import_busy`, `book_exists`,
+  `bookmark_limit`, `highlight_limit`, `highlight_overlap` (with `existingId`), `epub_unreadable`,
+  `language_mismatch` (with `workspaceLanguage`, `bookLanguage`), `source_unavailable`,
+  `source_language_unavailable`, `licence_mismatch` (installing a staged pack with another
+  licence than the review showed), and the existing time-zone codes `unknown_time_zone` and
+  `too_many_changes` joined the catalogue. `language_in_use` carries `usage` counts. A handler panic answers 500
+  `internal` in the same shape. `invalid_language` now also covers a malformed workspace or admin
+  language code. `bad_request` (400) and `invalid_request` (422) are the generic codes of a malformed and an
+  out-of-range request. An unknown API path is 404 `not_found`. Existing codes, the access-token refusals and
+  the administrator re-authentication answers are unchanged. Server checks: `api/errors_static_test.go` (no
+  other writer, every literal code catalogued with its status), `api/errors_walk_test.go` (every route as
+  anonymous, user and admin with bad bodies, ids and queries answers this shape).

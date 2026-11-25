@@ -1,51 +1,6 @@
-// Installing the app: the Chromium install prompt, iOS and standalone
-// detection, byte formatting, and the one-time storage persistence request.
-
-import { writable } from 'svelte/store';
-
-interface InstallPromptEvent extends Event {
-	prompt(): Promise<void>;
-	userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-/** The deferred `beforeinstallprompt` (Chromium); null when none is waiting. */
-export const installPrompt = writable<InstallPromptEvent | null>(null);
-
-let captured: InstallPromptEvent | null = null;
-
-/** captureInstallPrompt listens on `target` (the window) for the install events; returns the unsubscribe. */
-export function captureInstallPrompt(target: EventTarget = window): () => void {
-	const onPrompt = (event: Event): void => {
-		// Keep the browser from showing its own bar: the Settings button asks.
-		event.preventDefault();
-		captured = event as InstallPromptEvent;
-		installPrompt.set(captured);
-	};
-	const onInstalled = (): void => {
-		captured = null;
-		installPrompt.set(null);
-	};
-	target.addEventListener('beforeinstallprompt', onPrompt);
-	target.addEventListener('appinstalled', onInstalled);
-	return () => {
-		target.removeEventListener('beforeinstallprompt', onPrompt);
-		target.removeEventListener('appinstalled', onInstalled);
-	};
-}
-
-/** promptInstall shows the browser's install dialog once per captured prompt. */
-export async function promptInstall(): Promise<'accepted' | 'dismissed' | 'unavailable'> {
-	const event = captured;
-	if (event === null) return 'unavailable';
-	captured = null;
-	installPrompt.set(null);
-	try {
-		await event.prompt();
-		return (await event.userChoice).outcome;
-	} catch {
-		return 'dismissed';
-	}
-}
+// Installing the app: iOS and standalone detection, byte formatting, and the
+// one-time storage persistence request (the install prompt itself is the app
+// context's InstallPrompt, installPrompt.svelte.ts).
 
 /** isIos: iPhone/iPad, including the iPad that reports itself as a Mac (touch points). */
 export function isIos(userAgent: string, maxTouchPoints: number): boolean {

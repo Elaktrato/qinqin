@@ -12,12 +12,13 @@
 		type AuditEvent,
 		type AuthSettings
 	} from '$lib/api/adminSettings';
-	import { user } from '$lib/auth';
 	import { EMAIL_CHOICES, REGISTRATION_CHOICES, auditLine, switchStates } from './securityView';
 	import ReauthFields from './ReauthFields.svelte';
 	import { settingsPatchNeedsReauth, type SettingsPatch } from './adminReauthRules';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
 	import { Button, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let settings = $state<AuthSettings | null>(null);
 	let error = $state('');
@@ -37,7 +38,7 @@
 	let ownPassword = $state('');
 	let ownCode = $state('');
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($user?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	// Bumped to redraw the controls from the stored settings (after Cancel or a refusal).
 	let shown = $state(0);
@@ -196,7 +197,7 @@
 					<input type="checkbox" bind:checked={signOutOthers} />
 					<span>{t('admin.security.signOutOthers')}</span>
 				</label>
-				{#if !$user?.mfa?.totp}
+				{#if !app.auth.user?.mfa?.totp}
 					<p class="hint">{t('admin.security.noOwnAuthenticator')}</p>
 				{/if}
 				{#if settings.mfaEnforced && settings.mfaEnforcedEffective === false}

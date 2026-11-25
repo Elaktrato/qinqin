@@ -1,16 +1,15 @@
 // The phone navigation (#188, design 2026-11-22-phone-bottom-bar): the
-// user-global plugin data row `qinqin-core` / `nav-layout`. `phone` is the
+// user-global keyed row `nav-layout`. `phone` is the
 // phone frame's navigation (the bottom bar or the side menu), `bar` the
 // sections pinned to the bottom bar, in order. Ids of sections that are not
-// visible right now (switched off, a removed plugin) stay stored, so they
+// visible right now (switched off) stay stored, so they
 // come back when the section does. Unknown keys are never dropped and a
 // newer version is kept on write; a write re-reads the row first, so keys
 // another device wrote meanwhile survive.
 // Contract: docs/contracts/settings/README.md, nav-layout.json.
 
 import { moveWidgetTo } from '$lib/widgets/editor';
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { keyedData } from '$lib/sync/keyed';
 
 export const NAV_LAYOUT_KEY = 'nav-layout';
 export const PHONE_MODES = ['bar', 'drawer'] as const;
@@ -81,7 +80,7 @@ export function withNavLayout(stored: unknown, change: NavLayoutChange): Record<
 }
 
 function store() {
-	return createPluginSdk(coreManifest).data.user();
+	return keyedData(null);
 }
 
 /** loadNavLayout reads the row (find: no 404 for a never-saved row). Errors reject. */

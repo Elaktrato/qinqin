@@ -1,23 +1,34 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The real study history (sync pull, event log, canonical merge); only the
 // network, the zone and navigation are faked.
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('../time/zone', async () => {
-	const { studyDay } = await import('../time/studyDay');
-	return { currentStudyDay: () => studyDay([]) };
+
+import { loadGoalStatus } from './loadGoal';
+import { pagedPull } from '$lib/testing/legacyCodec';
+import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
 });
 
-import { invalidateStudyHistory } from '../study/history';
-import { loadGoalStatus } from './loadGoal';
-import { pagedPull } from '../study/testing/legacyCodec';
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
 	new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
 const row = (key: string, data: unknown) => ({
-	pluginId: 'qinqin-flashcards',
 	key,
 	userId: 1,
 	workspaceId: 3,
@@ -26,14 +37,7 @@ const row = (key: string, data: unknown) => ({
 	updatedAt: '2026-01-01T00:00:00Z',
 	deletedAt: null
 });
-const review = (id: string, ts: string, cardId: string) => ({
-	id,
-	workspaceId: 3,
-	device: 'web',
-	ts,
-	type: 'review',
-	payload: { cardId, mode: 'vocab', grade: 3 }
-});
+const review = (id: string, ts: string, cardId: string) => build.review({ id, ts, cardId, workspaceId: 3 });
 
 beforeEach(() => {
 	const store = new Map<string, string>();
@@ -45,11 +49,11 @@ beforeEach(() => {
 		key: () => null,
 		length: 0
 	});
-	invalidateStudyHistory();
+	newSession(ctx);
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
-	invalidateStudyHistory();
+	newSession(ctx);
 });
 
 describe('loadGoalStatus through the canonical merge', () => {
@@ -60,7 +64,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 				const url = String(input);
 				if (url.startsWith('/api/sync/pull')) {
 					return json(pagedPull({
-						pluginData: [
+						rows: [
 							row('goals:workspace', {
 								version: 1,
 								showStreak: false,
@@ -81,7 +85,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 				throw new Error(`unexpected ${url}`);
 			})
 		);
-		const view = await loadGoalStatus(3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(view.today.status).toBe('open');
 		expect(view.today.amount).toBe(1);
 	});

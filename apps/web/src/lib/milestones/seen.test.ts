@@ -84,7 +84,7 @@ describe('milestones/seen-merge.json', () => {
 		expect(readPending(1, 7).map((m) => m.id)).toEqual(c.expect);
 		vi.unstubAllGlobals();
 	});
-	// The push cases are decoded by study/store.test.ts (saveSeenMilestones).
+	// The push cases are decoded by study/commands/keyed.test.ts (saveSeenMilestones).
 });
 
 describe('seen rows', () => {

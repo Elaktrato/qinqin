@@ -1,17 +1,17 @@
 // The one I/O of daily goals: a workspace's study history (goal row,
-// reviews, vacations, limits; cached and shared, study/history.ts) plus one
+// reviews, vacations, limits; cached and shared, study/data.ts loadStudyHistory) plus one
 // activity window of that workspace. Both rings (home widget, flashcards
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
+import type { Session } from '$lib/context/session.svelte';
+import { errorText } from '$lib/api/apiErrors';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
-import { loadStudyHistory } from '../study/history';
-import { outboxUser } from '../study/outboxUser';
+import { loadStudyHistory } from '../study/data';
 import { effectiveLimits } from '../study/limits';
 import { vacationRuns } from '../study/vacation';
 import { addDays } from '../time/studyDay';
-import { currentStudyDay } from '../time/zone';
 import { NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
 import { activityType, goalOn, metricsBetween, type GoalsRow } from './goals';
 import { goalDay, goalStreak, type GoalDay, type GoalStreak, type UnitOf } from './progress';
@@ -35,12 +35,10 @@ export interface GoalView {
 	activityError: string | null;
 }
 
-const inflight = new Map<string, Promise<GoalView>>();
-
-async function load(workspaceId: number, now: number, force: boolean): Promise<GoalView> {
-	const day = currentStudyDay();
+async function load(session: Session, workspaceId: number, now: number, force: boolean): Promise<GoalView> {
+	const day = session.zone.day();
 	const today = day.today(now);
-	const data = await loadStudyHistory(workspaceId, { force });
+	const data = await loadStudyHistory(session.study, workspaceId, { force });
 	const parsed = data.goals ?? null;
 	const limitsNew = effectiveLimits(data.limits?.workspace ?? null, null).new;
 	const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
@@ -66,7 +64,7 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 		try {
 			activity = await fetchActivity(windowStart, today, workspaceId);
 		} catch (err) {
-			activityError = err instanceof Error && err.message ? err.message : t('goals.activityFailed');
+			activityError = errorText(err, t('goals.activityFailed'));
 		}
 	}
 	const sources = activity.sources ?? [];
@@ -84,16 +82,18 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 }
 
 export function loadGoalStatus(
+	session: Session,
 	workspaceId: number,
 	opts?: { force?: boolean; now?: number }
 ): Promise<GoalView> {
 	const now = opts?.now ?? Date.now();
 	const force = opts?.force === true;
-	// Keyed by the signed-in user too: a load in flight never serves the next account.
-	const key = `${outboxUser() ?? 0}|${workspaceId}|${currentStudyDay().today(now)}|${force ? 1 : 0}`;
-	const pending = inflight.get(key);
+	// Loads in flight are the session's (a new session never joins one).
+	const inflight = session.caches.goals;
+	const key = `${workspaceId}|${session.zone.day().today(now)}|${force ? 1 : 0}`;
+	const pending = inflight.get(key) as Promise<GoalView> | undefined;
 	if (pending !== undefined) return pending;
-	const promise = load(workspaceId, now, force).finally(() => {
+	const promise = load(session, workspaceId, now, force).finally(() => {
 		if (inflight.get(key) === promise) inflight.delete(key);
 	});
 	inflight.set(key, promise);

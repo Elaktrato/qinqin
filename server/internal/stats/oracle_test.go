@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
@@ -84,7 +84,7 @@ func oracle(evs []model.StudyEvent, h studyday.History, from, to time.Time) []st
 }
 
 func TestActivityMatchesOracle(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	rng := rand.New(rand.NewSource(48))
@@ -122,7 +122,7 @@ func TestActivityMatchesOracle(t *testing.T) {
 	}
 }
 
-func checkOracle(t *testing.T, sqlDB *sql.DB, rules []plugins.RuleOf, u int64, all []model.StudyEvent, h studyday.History, from, to time.Time) {
+func checkOracle(t *testing.T, sqlDB *sql.DB, rules []stats.Rule, u int64, all []model.StudyEvent, h studyday.History, from, to time.Time) {
 	t.Helper()
 	for _, ws := range []*int64{nil, ptr(2)} {
 		var evs []model.StudyEvent

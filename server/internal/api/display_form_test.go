@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
+	"qinqin/internal/pack"
 )
 
 // displayJMdict holds の (both written forms search-only), 為る (usually
@@ -46,7 +46,7 @@ const displayJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 func TestEntryShowsTheDisplayForm(t *testing.T) {
 	lang.Register(lang.Ja{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", displayJMdict)
@@ -85,7 +85,7 @@ func TestEntryShowsTheDisplayForm(t *testing.T) {
 func TestFrequencyTopShowsTheListKana(t *testing.T) {
 	lang.Register(lang.Ja{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", displayJMdict)
@@ -108,7 +108,7 @@ func TestFrequencyTopShowsTheListKana(t *testing.T) {
 func TestSearchShowsTheMatchedForm(t *testing.T) {
 	lang.Register(lang.Ja{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", displayJMdict)
@@ -134,7 +134,7 @@ func TestSearchShowsTheMatchedForm(t *testing.T) {
 func TestFrequencyTopServesAGloss(t *testing.T) {
 	lang.Register(lang.Ja{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", displayJMdict)

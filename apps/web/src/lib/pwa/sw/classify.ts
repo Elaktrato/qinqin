@@ -26,12 +26,11 @@ export function normalizeUrl(url: string): string {
 }
 
 /**
- * The pull collections an offline copy may hold: the plugin rows and switches
- * and the typed study rows (docs/contracts/study/); never the dictionary.
+ * The pull collections an offline copy may hold: the keyed rows and the typed
+ * study rows (docs/contracts/study/); never the dictionary.
  */
 export const CACHEABLE_PULL_COLLECTIONS: readonly string[] = [
-	'pluginData',
-	'pluginStates',
+	'rows',
 	'cards',
 	'decks',
 	'deckSettings',
@@ -44,40 +43,40 @@ const SEGMENT = '[^/]+';
 const API_PATTERNS: RegExp[] = [
 	/^\/api\/auth\/me$/,
 	/^\/api\/workspaces$/,
-	/^\/api\/plugins$/,
+	/^\/api\/features$/,
 	/^\/api\/languages$/,
 	/^\/api\/me\/time-zone$/,
-	new RegExp(`^/api/plugins/${SEGMENT}/data$`),
-	new RegExp(`^/api/plugins/${SEGMENT}/data/${SEGMENT}$`),
+	/^\/api\/rows$/,
+	new RegExp(`^/api/rows/${SEGMENT}$`),
 	/^\/api\/entries\/[0-9]+$/,
 	/^\/api\/themes$/,
 	// The installed font faces (#97): kept so the pack faces stay registered offline.
 	/^\/api\/fonts$/
 ];
 
-const CORE_DATA = '/api/plugins/qinqin-core/data';
+const ROWS = '/api/rows';
 
 /**
- * holdsLookups: a qinqin-core plugin data read that can return the lookup
- * history rows (`lookups`, `lookupcfg`, #72): the key route of such a key,
- * or a list whose prefix can match one. Never saved offline, so a Clear
- * leaves no copy in Cache Storage.
+ * holdsLookups: a keyed row read that can return the lookup history rows
+ * (`lookups`, `lookupcfg`, #72): the key route of such a key, or a list whose
+ * prefix can match one. Never saved offline, so a Clear leaves no copy in
+ * Cache Storage.
  */
 export function holdsLookups(url: URL): boolean {
 	const { searchParams } = url;
 	let pathname: string;
 	try {
-		// An encoded path (qinqin%2Dcore, %6Cookups) names the same route.
+		// An encoded path (%72ows, %6Cookups) names the same route.
 		pathname = decodeURIComponent(url.pathname);
 	} catch {
 		return true;
 	}
-	if (pathname === CORE_DATA) {
+	if (pathname === ROWS) {
 		const p = searchParams.get('prefix') ?? '';
 		return 'lookups'.startsWith(p) || 'lookupcfg'.startsWith(p) || p.startsWith('lookup');
 	}
-	if (!pathname.startsWith(`${CORE_DATA}/`)) return false;
-	return pathname.slice(CORE_DATA.length + 1).startsWith('lookup');
+	if (!pathname.startsWith(`${ROWS}/`)) return false;
+	return pathname.slice(ROWS.length + 1).startsWith('lookup');
 }
 
 /**
@@ -104,14 +103,8 @@ function apiAllowed(url: URL): boolean {
 	const { pathname, searchParams } = url;
 	if (holdsLookups(url)) return false;
 	if (API_PATTERNS.some((re) => re.test(pathname))) return true;
-	if (pathname === '/api/sync/pull') {
-		if (searchParams.has('v')) return v2PullAllowed(searchParams);
-		// Without `collections` a pull is the whole dictionary delta: never stored.
-		const all = searchParams.getAll('collections');
-		if (all.length !== 1) return false;
-		const list = all[0].split(',');
-		return list.length > 0 && list.every((c) => PULL_COLLECTIONS.has(c));
-	}
+	// Only the paged pull: the legacy form (no v=2) is gone (#198).
+	if (pathname === '/api/sync/pull') return v2PullAllowed(searchParams);
 	if (pathname === '/api/events') return eventsAllowed(searchParams);
 	return false;
 }

@@ -16,7 +16,7 @@ import (
 func TestDeleteLookups(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	aliceID, alice := registerFirstUser(t, ts.URL, "alice")
+	aliceID, alice := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	bobID, bob := registerUser(t, ts.URL, "bob", alice)
 	ws1 := createWorkspace(t, ts.URL, alice, "zh")
 	ws2 := createWorkspace(t, ts.URL, alice, "es")

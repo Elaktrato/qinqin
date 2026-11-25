@@ -18,7 +18,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/datapkg"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -47,7 +47,7 @@ func importJSONDict(t *testing.T, s *server, id, language string) {
 	if err := os.WriteFile(filepath.Join(dir, "dictionary.json"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

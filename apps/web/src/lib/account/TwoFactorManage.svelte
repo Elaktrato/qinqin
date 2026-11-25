@@ -3,12 +3,13 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import type { AuthOptions } from '$lib/api/account';
 	import { newRecoveryCodes, setEmailMethod, totpDisable } from '$lib/api/mfa';
-	import { loadMe, user } from '$lib/auth';
 	import { t } from '$lib/i18n';
 	import { recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
 	import RecoveryCodes from './RecoveryCodes.svelte';
 	import TwoFactorSetup from './TwoFactorSetup.svelte';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Settings, Account: the two-factor state and its changes.
 	let { options }: { options: AuthOptions | null } = $props();
@@ -21,7 +22,7 @@
 	let busy = $state(false);
 	let fresh = $state<string[] | null>(null);
 
-	const mfa = $derived($user?.mfa);
+	const mfa = $derived(app.auth.user?.mfa);
 	const choices = $derived(twoFactorChoices(options));
 	const warning = $derived(recoveryWarning(mfa));
 	const nothingToOffer = $derived(!choices.totp && !choices.email && !mfa?.totp && !mfa?.email);
@@ -41,7 +42,7 @@
 			else if (action === 'regen') fresh = (await newRecoveryCodes(password, code)).recoveryCodes;
 			else if (action === 'emailOff') await setEmailMethod(false, password);
 			action = 'none';
-			await loadMe();
+			await app.auth.loadMe();
 		} catch (err) {
 			const body = apiErrorBody(err);
 			error =
@@ -100,7 +101,7 @@
 			{/if}
 			{#if mfa?.email}
 				<Button tone="danger" onclick={() => open('emailOff')}>{t('account.mfa.turnOffEmail')}</Button>
-			{:else if mfa?.totp && choices.email && $user?.emailVerified}
+			{:else if mfa?.totp && choices.email && app.auth.user?.emailVerified}
 				<Button onclick={() => open('setup')}>{t('account.mfa.addEmail')}</Button>
 			{/if}
 		</div>

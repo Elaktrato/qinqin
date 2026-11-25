@@ -4,6 +4,9 @@ import {
 	cleanReadings,
 	eligibleForTone,
 	parsePinyin,
+	pinyinReadings,
+	tonePadLabels,
+	toneVerdict,
 	suggestToneGrade,
 	toneFromGesture,
 	type Syllable
@@ -215,5 +218,60 @@ describe('eligibleForTone', () => {
 		expect(eligibleForTone('zh', ['xue2 xi2'])).toBe(false);
 		expect(eligibleForTone('zh', ['qqq9'])).toBe(false);
 		expect(eligibleForTone('zh', ['xue2 xi2', 'xué xí'])).toBe(true);
+	});
+});
+
+describe('pinyinReadings', () => {
+	it('pinyinReadings keeps pinyin values only', () => {
+		expect(
+			pinyinReadings([
+				{ type: 'pinyin', value: 'háng' },
+				{ type: 'bopomofo', value: 'ㄏㄤˊ' },
+				{ type: 'pinyin', value: 'xíng' }
+			])
+		).toEqual(['háng', 'xíng']);
+	});
+});
+
+describe('toneVerdict', () => {
+	it('marks each syllable against the best matching reading', () => {
+		const candidates = [parsePinyin('xué xí')];
+		expect(toneVerdict([2, 2], candidates)).toEqual({
+			correct: true,
+			wrong: 0,
+			marks: [true, true],
+			best: candidates[0]
+		});
+		const verdict = toneVerdict([2, 4], candidates);
+		expect(verdict.wrong).toBe(1);
+		expect(verdict.marks).toEqual([true, false]);
+	});
+
+	it('accepts any reading of a polyphone with the same length', () => {
+		const candidates = [parsePinyin('háng'), parsePinyin('xíng')];
+		expect(toneVerdict([2], candidates).correct).toBe(true);
+		const both = [parsePinyin('zhǎng'), parsePinyin('cháng')];
+		const verdict = toneVerdict([2], both);
+		expect(verdict.correct).toBe(true);
+		expect(verdict.best?.[0].text).toBe('cháng');
+	});
+
+	it('marks everything wrong when no reading has the same length', () => {
+		const verdict = toneVerdict([1, 1], [parsePinyin('hǎo')]);
+		expect(verdict).toEqual({ correct: false, wrong: 2, marks: [false, false], best: null });
+	});
+});
+
+describe('tonePadLabels', () => {
+	it('gives one Han character per syllable', () => {
+		expect(tonePadLabels('学生', 2)).toEqual(['学', '生']);
+	});
+
+	it('falls back for erhua, where characters outnumber syllables', () => {
+		expect(tonePadLabels('花儿', 1)).toBeNull();
+	});
+
+	it('falls back when a character is not Han', () => {
+		expect(tonePadLabels('T恤', 2)).toBeNull();
 	});
 });

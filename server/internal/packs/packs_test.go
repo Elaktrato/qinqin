@@ -9,23 +9,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
-
 // buildPack writes a pack directory from strings and loads it.
-func buildPack(t *testing.T, typ, id, name, license, format string, files map[string]string) dict.Pack {
+func buildPack(t *testing.T, typ, id, name, license, format string, files map[string]string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]string{
@@ -39,7 +29,7 @@ func buildPack(t *testing.T, typ, id, name, license, format string, files map[st
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -52,23 +42,23 @@ const esDict = `{"entries":[
  {"written":"agua","kind":"word","readings":[{"type":"latin","value":"agua"}],"glosses":["water"]},
  {"written":"casa","kind":"word","readings":[{"type":"latin","value":"casa"}],"glosses":["house"]}]}`
 
-func dictPack(t *testing.T) dict.Pack {
+func dictPack(t *testing.T) pack.Pack {
 	return buildPack(t, "dictionary", "es-test", "Zeta dictionary", "CC0-1.0", "json", map[string]string{"dictionary.json": esDict})
 }
-func freqPack(t *testing.T) dict.Pack {
+func freqPack(t *testing.T) pack.Pack {
 	return buildPack(t, "frequency", "es-freq", "Alpha frequency", "MIT", "freq-csv",
 		map[string]string{"freq.csv": "term,reading,rank\nhola,,1\nagua,,2\ncasa,,3\n"})
 }
-func levelsPack(t *testing.T) dict.Pack {
+func levelsPack(t *testing.T) pack.Pack {
 	return buildPack(t, "levels", "es-levels", "Levels", "CC BY 4.0", "json",
 		map[string]string{"levels.json": `{"unit":"word","levels":[{"name":"1","entries":["hola","agua"]}]}`})
 }
-func sentencesPack(t *testing.T) dict.Pack {
+func sentencesPack(t *testing.T) pack.Pack {
 	return buildPack(t, "sentences", "es-sent", "Sentences", "CC BY-SA 4.0", "json",
 		map[string]string{"sentences.json": `{"entries":[{"word":"hola","sentences":[{"hanzi":"Hola, amigo.","pinyin":"hola","translation":"Hello, friend."}]}]}`})
 }
 
-func grammarPack(t *testing.T) dict.Pack {
+func grammarPack(t *testing.T) pack.Pack {
 	return buildPack(t, "grammar", "es-grammar", "Grammar", "CC0-1.0", "json", map[string]string{"lessons.json": `{
   "levels": [{"id": "a1", "name": "A1"}],
   "lessons": [{"id": "ser", "level": "a1", "title": "ser", "summary": "To be.", "pattern": ["A + ser + B"], "body": ["ser links nouns."],
@@ -76,7 +66,7 @@ func grammarPack(t *testing.T) dict.Pack {
 }
 
 func TestGrammarPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	got, err := packs.Import(ctx, sqlDB, grammarPack(t))
 	if err != nil || got != "1 lessons" {
@@ -98,10 +88,10 @@ func TestGrammarPacks(t *testing.T) {
 }
 
 func TestImportDispatchesByType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, tc := range []struct {
-		pack dict.Pack
+		pack pack.Pack
 		want string
 	}{
 		{dictPack(t), "4 entries, 4 senses"},
@@ -123,7 +113,7 @@ func TestImportDispatchesByType(t *testing.T) {
 
 func importAll(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	for _, p := range []dict.Pack{dictPack(t), freqPack(t), levelsPack(t), sentencesPack(t)} {
+	for _, p := range []pack.Pack{dictPack(t), freqPack(t), levelsPack(t), sentencesPack(t)} {
 		if _, err := packs.Import(context.Background(), sqlDB, p); err != nil {
 			t.Fatalf("import %s: %v", p.ID, err)
 		}
@@ -131,9 +121,9 @@ func importAll(t *testing.T, sqlDB *sql.DB) {
 }
 
 func TestListAllTypes(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importAll(t, sqlDB)
-	// A sentence pack imported before the registry existed: sentences, no row.
+	// Sentences without a registry row (a pre-v0.2.0 import) are no pack (#198).
 	var entryID int64
 	if err := sqlDB.QueryRow(`SELECT id FROM entries LIMIT 1`).Scan(&entryID); err != nil {
 		t.Fatal(err)
@@ -153,7 +143,7 @@ func TestListAllTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	order := []string{"dictionary/es-test", "frequency/es-freq", "levels/es-levels", "sentences/es-sent", "sentences/legacy-pack"}
+	order := []string{"dictionary/es-test", "frequency/es-freq", "levels/es-levels", "sentences/es-sent"}
 	if len(got) != len(order) {
 		t.Fatalf("list = %+v", got)
 	}
@@ -172,9 +162,6 @@ func TestListAllTypes(t *testing.T) {
 			t.Errorf("%s/%s missing fields: %+v", p.Type, p.PackID, p)
 		}
 	}
-	if l := got[4]; l.Name != "" || l.License != "" || l.Attribution != "" || l.UpdatedAt != "" {
-		t.Errorf("legacy row = %+v, want only type and pack id", l)
-	}
 	raw, _ := json.Marshal(got[0])
 	var m map[string]any
 	json.Unmarshal(raw, &m)
@@ -186,7 +173,7 @@ func TestListAllTypes(t *testing.T) {
 }
 
 func TestListSortsByNameWithinType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, id := range []string{"b-dict", "a-dict"} {
 		p := buildPack(t, "dictionary", id, "Same name", "CC0-1.0", "json", map[string]string{"dictionary.json": esDict})
@@ -201,7 +188,7 @@ func TestListSortsByNameWithinType(t *testing.T) {
 }
 
 func TestUninstallEachType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	for _, k := range [][2]string{
@@ -229,7 +216,7 @@ func TestUninstallEachType(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importAll(t, sqlDB)
 	p, err := packs.Find(context.Background(), sqlDB, "levels", "es-levels")
 	if err != nil || p.Name != "Levels" || p.License != "CC BY 4.0" {
@@ -240,13 +227,13 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func componentsPack(t *testing.T) dict.Pack {
+func componentsPack(t *testing.T) pack.Pack {
 	return buildPack(t, "components", "es-comp", "Components", "CC BY-SA 3.0", "components-tsv",
 		map[string]string{"components.tsv": "語\t言 口 吾\n話\t言 舌\n", "parts.tsv": "言\t7\n"})
 }
 
 func TestComponentsPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	got, err := packs.Import(ctx, sqlDB, componentsPack(t))

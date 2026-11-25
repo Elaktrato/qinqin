@@ -1,23 +1,25 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 vi.mock('$lib/api/client', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/api/client')>()),
 	api: vi.fn()
 }));
 vi.mock('$lib/i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
-vi.mock('$lib/auth', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/auth')>()),
-	logout: vi.fn()
-}));
 
 import { ApiError, api } from '$lib/api/client';
-import { auth, logout } from '$lib/auth';
 import { primaryActions } from '$lib/ui/testing/primary';
 import AccountSettings from './AccountSettings.svelte';
 import { reloadPage } from '$lib/i18n/reloadPage';
 import { MIRROR_KEY } from '$lib/i18n/interfaceLanguage';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+	vi.spyOn(ctx.app.auth, 'logout').mockImplementation(() => undefined);
+	vi.spyOn(ctx.app.auth, 'loadMe').mockResolvedValue(null);
+});
 
 const me = {
 	id: 1,
@@ -41,7 +43,7 @@ beforeEach(() => {
 	list = sessions();
 	tokens = [];
 	localStorage.setItem('qinqin.token', 'tok');
-	auth.set({ token: 'tok', user: me });
+	ctx.app.auth.set({ token: 'tok', user: me });
 	vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
 		if (url === '/api/account/sessions' && !opts?.method) return list;
 		if (url === '/api/account/password') return { status: 'ok' };
@@ -66,11 +68,12 @@ async function fillPassword(current: string, next: string, confirm: string) {
 
 describe('Settings → Account: password', () => {
 	it('signs out other sessions by default', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		expect((screen.getByLabelText('Sign out my other sessions') as HTMLInputElement).checked).toBe(true);
 		await fillPassword('secret-pass-alice', 'a-new-long-password', 'a-new-long-password');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
-		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Password changed'));
+		// The profile picture has a status line of its own: find the password's.
+		await waitFor(() => expect(screen.getAllByRole('status').some((s) => s.textContent?.includes('Password changed'))).toBe(true));
 		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/password');
 		expect(call?.[1]).toMatchObject({
 			method: 'POST',
@@ -79,11 +82,11 @@ describe('Settings → Account: password', () => {
 	});
 
 	it('can keep the other sessions', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.click(screen.getByLabelText('Sign out my other sessions'));
 		await fillPassword('secret-pass-alice', 'a-new-long-password', 'a-new-long-password');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
-		await waitFor(() => screen.getByRole('status'));
+		await waitFor(() => expect(vi.mocked(api).mock.calls.some(([u]) => u === '/api/account/password')).toBe(true));
 		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/password');
 		expect(call?.[1]).toMatchObject({ body: { signOutOthers: false } });
 	});
@@ -94,16 +97,16 @@ describe('Settings → Account: password', () => {
 			if (url === '/api/account/tokens') return { accessTokens: [] };
 			throw new ApiError(403, JSON.stringify({ error: 'wrong_password', message: 'x' }));
 		}) as never);
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fillPassword('nope', 'a-new-long-password', 'a-new-long-password');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('The current password is wrong.');
-		expect(get(auth).token).toBe('tok');
-		expect(logout).not.toHaveBeenCalled();
+		expect(ctx.app.auth.state.token).toBe('tok');
+		expect(ctx.app.auth.logout).not.toHaveBeenCalled();
 	});
 
 	it('checks the new password locally and sends nothing', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fillPassword('secret-pass-alice', 'short', 'short');
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('Use at least 10 characters.');
@@ -113,7 +116,7 @@ describe('Settings → Account: password', () => {
 
 describe('Settings → Account: sections in the lighter look (#106)', () => {
 	it('has one primary per saving section and underline fields', () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		const password = screen.getByRole('region', { name: 'Password' });
 		expect(primaryActions(password)).toHaveLength(1);
 		expect(within(password).getByRole('button', { name: 'Change password' }).className).toContain('primary');
@@ -129,7 +132,7 @@ describe('Settings → Account: sections in the lighter look (#106)', () => {
 	});
 
 	it('renders the session list as a .ui-table', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		const table = await screen.findByRole('table', { name: 'Signed-in devices' });
 		expect(table.className).toContain('ui-table');
 	});
@@ -137,7 +140,7 @@ describe('Settings → Account: sections in the lighter look (#106)', () => {
 
 describe('Settings → Account: sessions', () => {
 	it('lists sessions in an accessible table and hides revoke on this device', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		const table = await screen.findByRole('table', { name: 'Signed-in devices' });
 		for (const h of ['Device', 'Signed in', 'Last active']) {
 			expect(within(table).getByRole('columnheader', { name: h }).getAttribute('scope')).toBe('col');
@@ -149,7 +152,7 @@ describe('Settings → Account: sessions', () => {
 	});
 
 	it('revoking a row removes it', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Revoke Safari on iOS' }));
 		await waitFor(() => expect(screen.queryByText('Safari on iOS')).toBeNull());
 		const del = vi.mocked(api).mock.calls.find(([u, o]) => u === '/api/account/sessions/3' && (o as { method?: string })?.method === 'DELETE');
@@ -157,7 +160,7 @@ describe('Settings → Account: sessions', () => {
 	});
 
 	it('"Log out everywhere else" asks the server for the others', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Log out everywhere else' }));
 		await waitFor(() => {
 			const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/sessions/revoke');
@@ -166,22 +169,22 @@ describe('Settings → Account: sessions', () => {
 	});
 
 	it('"Log out everywhere" confirms first, then signs this device out too', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Log out everywhere' }));
 		expect(screen.getByText('Log out everywhere? Every device, including this one, will need to sign in again.')).toBeTruthy();
 		expect(vi.mocked(api).mock.calls.some(([u]) => u === '/api/account/sessions/revoke')).toBe(false);
 		await fireEvent.click(screen.getByRole('button', { name: 'Yes, log out everywhere' }));
-		await waitFor(() => expect(logout).toHaveBeenCalled());
+		await waitFor(() => expect(ctx.app.auth.logout).toHaveBeenCalled());
 		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/sessions/revoke');
 		expect(call?.[1]).toMatchObject({ body: { scope: 'all' } });
 	});
 
 	it('can back out of logging out everywhere', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Log out everywhere' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 		expect(screen.queryByText(/will need to sign in again/)).toBeNull();
-		expect(logout).not.toHaveBeenCalled();
+		expect(ctx.app.auth.logout).not.toHaveBeenCalled();
 	});
 });
 
@@ -192,14 +195,14 @@ describe('Settings → Account: access tokens and containment', () => {
 	};
 
 	it('shows the Access tokens section', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		expect(await screen.findByRole('heading', { name: 'Access tokens' })).toBeTruthy();
 		await screen.findByText('No access tokens yet.');
 	});
 
 	it('says tokens are revoked too, where the user has any', async () => {
 		tokens = [token];
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await screen.findByRole('table', { name: 'Access tokens' });
 		const pw = screen.getByRole('region', { name: 'Password' });
 		expect(pw.textContent).toContain('Your access tokens are revoked too.');
@@ -211,7 +214,7 @@ describe('Settings → Account: access tokens and containment', () => {
 	});
 
 	it('says nothing about tokens when there are none', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await screen.findByText('No access tokens yet.');
 		expect(document.body.textContent).not.toContain('Your access tokens are revoked too.');
 	});
@@ -219,20 +222,20 @@ describe('Settings → Account: access tokens and containment', () => {
 
 describe('Settings → Account: interface language', () => {
 	it('offers the browser default and each supported language by its own name', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		const select = screen.getByLabelText('Interface language') as HTMLSelectElement;
 		expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Browser default (English)', 'English']);
 		expect(select.value).toBe('');
 	});
 
 	it('shows the stored setting', async () => {
-		auth.set({ token: 'tok', user: { ...me, interfaceLanguage: 'en' } });
-		render(AccountSettings);
+		ctx.app.auth.set({ token: 'tok', user: { ...me, interfaceLanguage: 'en' } });
+		render(AccountSettings, { context: ctx.context });
 		expect((screen.getByLabelText('Interface language') as HTMLSelectElement).value).toBe('en');
 	});
 
 	it('saving stores the setting on the server, mirrors it and reloads', async () => {
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
 		await waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(1));
@@ -246,7 +249,7 @@ describe('Settings → Account: interface language', () => {
 			throw new Error('denied');
 		});
 		try {
-			render(AccountSettings);
+			render(AccountSettings, { context: ctx.context });
 			await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
 			await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
 			expect((await screen.findByText(/This browser blocks site storage/)).textContent).toBeTruthy();
@@ -266,7 +269,7 @@ describe('Settings → Account: interface language', () => {
 			void opts;
 			throw new Error(`unexpected ${url}`);
 		}) as never);
-		render(AccountSettings);
+		render(AccountSettings, { context: ctx.context });
 		await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
 		expect((await screen.findByText(/interface language must be empty/)).textContent).toBeTruthy();

@@ -1,4 +1,4 @@
-// The person's appearance: the user-global plugin data row `qinqin-core` /
+// The person's appearance: the user-global keyed row
 // `appearance` (docs/contracts/themes/README.md, "The appearance row";
 // fixtures in docs/contracts/themes/appearance.json). Pure: parse a stored
 // value, resolve which theme and accent are painted, write a change while

@@ -4,6 +4,7 @@ import { DEFAULT_W } from './fsrs/params';
 import { scheduleAt, scheduleFor, scheduleTimeline } from './scheduler';
 import { clockFromRuns, IDENTITY_CLOCK, type StudyClock } from './studyClock';
 import type { ReviewEvent } from './types';
+import * as build from '$lib/testing/study';
 
 const DAY = 86_400_000;
 const T0 = Date.parse('2026-01-05T08:00:00Z');
@@ -18,14 +19,7 @@ function rng(seed: number): () => number {
 }
 
 function ev(id: number, cardId: string, grade: number, ms: number): ReviewEvent {
-	return {
-		id: `01JTL${String(id).padStart(21, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts: new Date(ms).toISOString(),
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	} as unknown as ReviewEvent;
+	return build.review({ id: build.eventId(id, '01JTL'), cardId, grade, ts: new Date(ms).toISOString() });
 }
 
 /** A seeded history of two cards: ties on ts, invalid grades and other cards mixed in. */

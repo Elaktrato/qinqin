@@ -1,0 +1,913 @@
+{
+ "_doc": "AI example sentences on demand (#186, examples/README.md). A string written as {\"repeat\": s, \"times\": n} is s repeated n times. Decoded by server/internal/sentences/examples_contract_test.go and apps/web/src/lib/entry/examples/examples.contract.test.ts.",
+ "levels": [
+  "beginner",
+  "elementary",
+  "intermediate",
+  "advanced"
+ ],
+ "reasons": [
+  "missing_word",
+  "wrong_translation",
+  "wrong_reading",
+  "unnatural",
+  "too_hard",
+  "inappropriate",
+  "other"
+ ],
+ "limits": {
+  "perGeneration": 5,
+  "keptPerEntry": 10,
+  "textRunes": 200,
+  "readingRunes": 400,
+  "translationRunes": 400,
+  "fewExamples": 3,
+  "reportsPerUser": 500,
+  "requestIdLength": 64
+ },
+ "draft": {
+  "id": 41,
+  "entryId": 1201,
+  "hanzi": "我喜欢学习。",
+  "pinyin": "wǒ xǐhuan xuéxí",
+  "translation": "I like studying.",
+  "level": "elementary",
+  "provider": "anthropic",
+  "model": "claude-opus-5-5",
+  "requestId": "r-01",
+  "createdAt": "2026-11-24T10:00:00Z"
+ },
+ "examples": {
+  "drafts": [],
+  "defaultLevel": "beginner",
+  "lastRequest": null
+ },
+ "generated": {
+  "drafts": [],
+  "dropped": 1,
+  "provider": "anthropic",
+  "model": "claude-opus-5-5",
+  "requestId": "r-01"
+ },
+ "kept": {
+  "id": 9002,
+  "entryId": 1201,
+  "sourcePack": "",
+  "userId": 1,
+  "hanzi": "我喜欢学习。",
+  "pinyin": "wǒ xǐhuan xuéxí",
+  "translation": "I like studying.",
+  "updatedAt": "2026-11-24T10:01:00Z",
+  "deletedAt": null,
+  "ai": {
+   "provider": "anthropic",
+   "model": "claude-opus-5-5"
+  }
+ },
+ "plain": {
+  "id": 9001,
+  "entryId": 1201,
+  "sourcePack": "",
+  "userId": 1,
+  "hanzi": "你好，世界。",
+  "pinyin": "",
+  "translation": "Hello, world.",
+  "updatedAt": "2026-11-12T09:45:00Z",
+  "deletedAt": null,
+  "ai": null
+ },
+ "generate": {
+  "accept": [
+   {
+    "level": "beginner",
+    "requestId": "r-01"
+   },
+   {
+    "level": "advanced",
+    "requestId": {
+     "repeat": "a",
+     "times": 64
+    }
+   }
+  ],
+  "refuse": [
+   {
+    "level": "expert",
+    "requestId": "r-01",
+    "why": "unknown level"
+   },
+   {
+    "level": "beginner",
+    "why": "no request id"
+   },
+   {
+    "level": "beginner",
+    "requestId": "",
+    "why": "an empty request id"
+   },
+   {
+    "level": "beginner",
+    "requestId": "r 01",
+    "why": "a space in the request id"
+   },
+   {
+    "level": "beginner",
+    "requestId": {
+     "repeat": "a",
+     "times": 65
+    },
+    "why": "a request id over 64 characters"
+   }
+  ]
+ },
+ "reports": {
+  "accept": [
+   "missing_word",
+   "other"
+  ],
+  "refuse": [
+   "",
+   "spam",
+   "Missing_word"
+  ]
+ },
+ "checks": [
+  {
+   "name": "Chinese: the segmenter finds the entry",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 1,
+     "entries": [
+      {
+       "id": 3
+      }
+     ]
+    },
+    {
+     "start": 1,
+     "end": 3,
+     "entries": [
+      {
+       "id": 50
+      }
+     ]
+    },
+    {
+     "start": 3,
+     "end": 5,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "我喜欢学习。",
+    "reading": "wǒ xǐhuan xuéxí",
+    "translation": "I like studying."
+   },
+   "want": {
+    "keep": true,
+    "text": "我喜欢学习。",
+    "reading": "wǒ xǐhuan xuéxí",
+    "translation": "I like studying."
+   }
+  },
+  {
+   "name": "Japanese: an inflected verb resolves to the entry through the lemmatizer",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5001,
+    "written": "食べる",
+    "forms": [
+     "食べる"
+    ]
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 4,
+     "end": 7,
+     "entries": [
+      {
+       "id": 5001
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "りんごを食べた。",
+    "reading": "りんごをたべた",
+    "translation": "I ate an apple."
+   },
+   "want": {
+    "keep": true,
+    "text": "りんごを食べた。",
+    "reading": "りんごをたべた",
+    "translation": "I ate an apple."
+   }
+  },
+  {
+   "name": "Japanese: an inflected form the segmenter did not resolve is missing the word",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5001,
+    "written": "食べる"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 4,
+     "end": 7,
+     "entries": [
+      {
+       "id": 6000
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "りんごを食べた。",
+    "reading": "",
+    "translation": "I ate an apple."
+   },
+   "want": {
+    "keep": false,
+    "reason": "missing_word"
+   }
+  },
+  {
+   "name": "the literal word inside a longer match of another entry is not the word",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 7,
+    "written": "中国"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 2,
+     "end": 5,
+     "entries": [
+      {
+       "id": 70
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "他是中国人。",
+    "reading": "",
+    "translation": "He is Chinese."
+   },
+   "want": {
+    "keep": false,
+    "reason": "missing_word"
+   }
+  },
+  {
+   "name": "no matches: a literal occurrence of a form counts",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5001,
+    "written": "食べる",
+    "forms": [
+     "食べます"
+    ]
+   },
+   "segmented": true,
+   "matches": [],
+   "sentence": {
+    "text": "毎日食べます。",
+    "reading": "まいにちたべます",
+    "translation": "I eat every day."
+   },
+   "want": {
+    "keep": true,
+    "text": "毎日食べます。",
+    "reading": "まいにちたべます",
+    "translation": "I eat every day."
+   }
+  },
+  {
+   "name": "a language without segmentation: the literal word",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": "I like to eat."
+   },
+   "want": {
+    "keep": true,
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": "I like to eat."
+   }
+  },
+  {
+   "name": "a language without segmentation: an inflected form is missing the word",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Comí pan ayer.",
+    "reading": "",
+    "translation": "I ate bread yesterday."
+   },
+   "want": {
+    "keep": false,
+    "reason": "missing_word"
+   }
+  },
+  {
+   "name": "mostly another script is the wrong script (before the word check)",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 7,
+     "end": 9,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "I like 学习 a lot.",
+    "reading": "",
+    "translation": "I like studying a lot."
+   },
+   "want": {
+    "keep": false,
+    "reason": "wrong_script"
+   }
+  },
+  {
+   "name": "a reading with a Han character is emptied, the sentence kept",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "学习很好。",
+    "reading": "学习 hěn hǎo",
+    "translation": "Studying is good."
+   },
+   "want": {
+    "keep": true,
+    "text": "学习很好。",
+    "reading": "",
+    "translation": "Studying is good."
+   }
+  },
+  {
+   "name": "a reading for a language without a reading system is emptied",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Vamos a comer.",
+    "reading": "ba-mos",
+    "translation": "Let's eat."
+   },
+   "want": {
+    "keep": true,
+    "text": "Vamos a comer.",
+    "reading": "",
+    "translation": "Let's eat."
+   }
+  },
+  {
+   "name": "line breaks and runs of white space become one space; the ends are trimmed",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "  Me gusta\n\tcomer.  ",
+    "reading": "",
+    "translation": " I like\nto eat. "
+   },
+   "want": {
+    "keep": true,
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": "I like to eat."
+   }
+  },
+  {
+   "name": "a text over 200 code points is too long",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": {
+     "repeat": "学",
+     "times": 201
+    },
+    "reading": "",
+    "translation": "Study."
+   },
+   "want": {
+    "keep": false,
+    "reason": "too_long"
+   }
+  },
+  {
+   "name": "a translation over 400 code points is too long",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": {
+     "repeat": "a",
+     "times": 401
+    }
+   },
+   "want": {
+    "keep": false,
+    "reason": "too_long"
+   }
+  },
+  {
+   "name": "a reading over 400 code points is emptied",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Me gusta comer.",
+    "reading": {
+     "repeat": "a",
+     "times": 401
+    },
+    "translation": "I like to eat."
+   },
+   "want": {
+    "keep": true,
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": "I like to eat."
+   }
+  },
+  {
+   "name": "an empty translation is empty",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "Me gusta comer.",
+    "reading": "",
+    "translation": "  "
+   },
+   "want": {
+    "keep": false,
+    "reason": "empty"
+   }
+  },
+  {
+   "name": "an empty text is empty",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "sentence": {
+    "text": "\n",
+    "reading": "",
+    "translation": "x"
+   },
+   "want": {
+    "keep": false,
+    "reason": "empty"
+   }
+  },
+  {
+   "name": "a sentence the entry already has is a duplicate (after cleaning)",
+   "language": "es",
+   "readingSystem": "",
+   "word": {
+    "id": 900,
+    "written": "comer"
+   },
+   "segmented": false,
+   "existing": [
+    "Me gusta comer."
+   ],
+   "sentence": {
+    "text": "Me  gusta comer.",
+    "reading": "",
+    "translation": "I like to eat."
+   },
+   "want": {
+    "keep": false,
+    "reason": "duplicate"
+   }
+  },
+  {
+   "name": "a romaji reading for a kana reading system is emptied",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5001,
+    "written": "食べる"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 2,
+     "end": 5,
+     "entries": [
+      {
+       "id": 5001
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "毎日食べる。",
+    "reading": "mainichi taberu",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "毎日食べる。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana reading may hold katakana, the long-vowel mark, punctuation and spaces",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5002,
+    "written": "コーヒー"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 4,
+     "entries": [
+      {
+       "id": 5002
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "コーヒーを飲む。",
+    "reading": "コーヒーを のむ。",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "コーヒーを飲む。",
+    "reading": "コーヒーを のむ。",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a hiragana reading for pinyin is emptied",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "学习很好。",
+    "reading": "がくしゅう",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "学习很好。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "pinyin with tone numbers, an apostrophe and punctuation is kept",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "学习很好。",
+    "reading": "xue2xi2 hen3 hao3, xi'an.",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "学习很好。",
+    "reading": "xue2xi2 hen3 hao3, xi'an.",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana-only match for a word written with Han counts when the entry is the segmenter's first candidate",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 8001,
+    "written": "橋"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 8001
+      },
+      {
+       "id": 8002
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "はしを渡る。",
+    "reading": "",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "はしを渡る。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana homophone does not count: the entry is not the first candidate of a kana-only match",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 8001,
+    "written": "橋"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 8002
+      },
+      {
+       "id": 8001
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "はしで食べる。",
+    "reading": "",
+    "translation": "t"
+   },
+   "want": {
+    "keep": false,
+    "reason": "missing_word"
+   }
+  }
+ ],
+ "reads": [
+  {
+   "name": "a draft with an unknown member is read",
+   "raw": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "pinyin": "",
+    "translation": "b",
+    "level": "beginner",
+    "provider": "openai",
+    "model": "m",
+    "requestId": "r",
+    "createdAt": "2026-11-24T10:00:00Z",
+    "extra": 1
+   },
+   "want": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "pinyin": "",
+    "translation": "b",
+    "level": "beginner",
+    "provider": "openai",
+    "model": "m",
+    "requestId": "r"
+   }
+  },
+  {
+   "name": "a draft without a reading, level, provider or model gets the defaults",
+   "raw": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "translation": "b"
+   },
+   "want": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "pinyin": "",
+    "translation": "b",
+    "level": "beginner",
+    "provider": "",
+    "model": "",
+    "requestId": ""
+   }
+  },
+  {
+   "name": "a draft without an id is skipped",
+   "raw": {
+    "entryId": 2,
+    "hanzi": "a",
+    "translation": "b"
+   },
+   "want": null
+  },
+  {
+   "name": "a draft with an empty text is skipped",
+   "raw": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "",
+    "translation": "b"
+   },
+   "want": null
+  },
+  {
+   "name": "a draft with an unknown level reads as beginner",
+   "raw": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "translation": "b",
+    "level": "expert"
+   },
+   "want": {
+    "id": 1,
+    "entryId": 2,
+    "hanzi": "a",
+    "pinyin": "",
+    "translation": "b",
+    "level": "beginner",
+    "provider": "",
+    "model": "",
+    "requestId": ""
+   }
+  }
+ ],
+ "marks": [
+  {
+   "name": "null is not AI-written",
+   "ai": null,
+   "want": null
+  },
+  {
+   "name": "absent is not AI-written",
+   "want": null
+  },
+  {
+   "name": "provider and model",
+   "ai": {
+    "provider": "openai",
+    "model": "gpt-6"
+   },
+   "want": {
+    "provider": "openai",
+    "model": "gpt-6"
+   }
+  },
+  {
+   "name": "a malformed mark still marks the sentence as AI-written",
+   "ai": {
+    "provider": 3
+   },
+   "want": {
+    "provider": "",
+    "model": ""
+   }
+  },
+  {
+   "name": "any non-null value marks it",
+   "ai": true,
+   "want": {
+    "provider": "",
+    "model": ""
+   }
+  }
+ ],
+ "examplesWithRequest": {
+  "drafts": [],
+  "defaultLevel": "advanced",
+  "lastRequest": {
+   "requestId": "r-02",
+   "dropped": 5,
+   "provider": "anthropic",
+   "model": "claude-opus-5-5"
+  }
+ }
+}

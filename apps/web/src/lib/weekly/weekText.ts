@@ -7,7 +7,7 @@ import type { ActivitySource } from '../api/stats';
 import { t, type MessageKey } from '../i18n';
 import { formatDay, formatDayRange, formatWeekday } from '../i18n/format';
 import { formatDuration } from '../stats/readingTime';
-import { activityLabel } from '../plugins/manifestText';
+import { activityLabel } from '../activity/sources';
 import { addDays } from '../time/studyDay';
 import type { CountRow, WeekDay, WeekSummary } from './summary';
 import { previousWeek, weekOf } from './week';

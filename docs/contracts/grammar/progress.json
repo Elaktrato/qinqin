@@ -1,0 +1,27 @@
+{
+ "version": 1,
+ "rule": "grammar/progress",
+ "note": "Lesson progress (#199): POST /api/grammar/progress records a finished run and answers the stored progress; the server keeps the best score unless the number of exercises changed.",
+ "row": {"packId": "zh-grammar", "lessonId": "le-change", "completedAt": "2026-11-19T08:00:00Z", "best": 3, "total": 4},
+ "runs": [
+  {"name": "a first run is stored as it is", "previous": null, "run": {"score": 3, "total": 4}, "expect": {"best": 3, "total": 4}},
+  {"name": "a lower score keeps the best", "previous": {"best": 3, "total": 4}, "run": {"score": 1, "total": 4}, "expect": {"best": 3, "total": 4}},
+  {"name": "a higher score is the new best", "previous": {"best": 3, "total": 4}, "run": {"score": 4, "total": 4}, "expect": {"best": 4, "total": 4}},
+  {"name": "another number of exercises starts over", "previous": {"best": 4, "total": 4}, "run": {"score": 1, "total": 5}, "expect": {"best": 1, "total": 5}},
+  {"name": "a lesson without exercises", "previous": null, "run": {"score": 0, "total": 0}, "expect": {"best": 0, "total": 0}}
+ ],
+ "invalid": [
+  {"name": "a score above the total", "packId": "zh-grammar", "lessonId": "le", "score": 5, "total": 4},
+  {"name": "a negative score", "packId": "zh-grammar", "lessonId": "le", "score": -1, "total": 4},
+  {"name": "more than 1000 exercises", "packId": "zh-grammar", "lessonId": "le", "score": 1, "total": 1001},
+  {"name": "a lesson id that is no lesson id", "packId": "zh-grammar", "lessonId": "Le Change", "score": 1, "total": 1},
+  {"name": "an empty pack id", "packId": "", "lessonId": "le", "score": 1, "total": 1}
+ ],
+ "reads": [
+  {"name": "a stored row", "value": {"packId": "p", "lessonId": "l", "completedAt": "2026-11-19T08:00:00Z", "best": 1, "total": 2}, "ok": true},
+  {"name": "best above total", "value": {"packId": "p", "lessonId": "l", "completedAt": "2026-11-19T08:00:00Z", "best": 3, "total": 2}, "ok": false},
+  {"name": "no completedAt", "value": {"packId": "p", "lessonId": "l", "best": 1, "total": 2}, "ok": false},
+  {"name": "a fractional score", "value": {"packId": "p", "lessonId": "l", "completedAt": "2026-11-19T08:00:00Z", "best": 1.5, "total": 2}, "ok": false},
+  {"name": "no pack", "value": {"lessonId": "l", "completedAt": "2026-11-19T08:00:00Z", "best": 1, "total": 2}, "ok": false}
+ ]
+}

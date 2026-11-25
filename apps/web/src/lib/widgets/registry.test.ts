@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
-import type { PluginInfo } from '$lib/api/types';
-import type { WebPlugin } from '$lib/plugins';
-import { webPlugins } from '$lib/plugins';
-import { fixtureManifest } from '$lib/plugins/fixtures';
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import type { FeatureSwitch } from '$lib/features/switches.svelte';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
 import ActivityHome from './ActivityHome.svelte';
 import { DEFAULT_LAYOUT } from './layout';
 import { allWidgets } from './registry';
@@ -25,79 +22,29 @@ function widget(id: string, owner: string, extra: Partial<WidgetDef> = {}): Widg
 	};
 }
 
-function plugin(id: string, widgets: WidgetDef[]): WebPlugin {
-	return { manifest: fixtureManifest({ id, name: id, widgets }) };
+function state(id: string, enabled = true): FeatureSwitch {
+	return { id, enabled };
 }
 
-function state(id: string, enabled = true): PluginInfo {
-	return { id, manifest: {}, enabled, order: 0 };
-}
-
-const core = [widget('core-a', 'core'), widget('core-han', 'core', { appliesTo: (l) => l === 'zh' })];
-const registry = [
-	plugin('qinqin-b', [widget('b-1', 'qinqin-b'), widget('b-2', 'qinqin-b')]),
-	plugin('qinqin-c', [widget('c-1', 'qinqin-c')])
-];
+const core = [widget('core-a', 'core'), widget('core-han', 'core', { appliesTo: (l) => l === 'zh' }), widget('core-a', 'other')];
 
 const ids = (list: WidgetDef[]) => list.map((w) => w.id);
 
 describe('allWidgets', () => {
-	it('lists core widgets first, then plugin widgets in registry order', () => {
-		const states = [state('qinqin-c'), state('qinqin-b')];
-
-		expect(ids(allWidgets(registry, states, null, core))).toEqual([
-			'core-a',
-			'core-han',
-			'b-1',
-			'b-2',
-			'c-1'
-		]);
-	});
-
-	it('drops the widgets of a disabled plugin', () => {
-		const states = [state('qinqin-b', false), state('qinqin-c')];
-
-		expect(ids(allWidgets(registry, states, null, core))).toEqual(['core-a', 'core-han', 'c-1']);
-	});
-
-	it('drops the widgets of a plugin the server does not list (not installed)', () => {
-		expect(ids(allWidgets(registry, [state('qinqin-c')], null, core))).toEqual([
-			'core-a',
-			'core-han',
-			'c-1'
-		]);
-	});
-
-	it('shows only core widgets while no plugin states are known', () => {
-		expect(ids(allWidgets(registry, [], null, core))).toEqual(['core-a', 'core-han']);
-	});
-
-	it('resolves a short web plugin id through the server qinqin- alias', () => {
-		const short = [plugin('e', [widget('e-1', 'e')])];
-
-		expect(ids(allWidgets(short, [state('qinqin-e')], null, core))).toContain('e-1');
-		expect(ids(allWidgets(short, [state('qinqin-e', false)], null, core))).not.toContain('e-1');
-	});
-
 	it('applies appliesTo for a set language and skips the filter without one', () => {
-		const states = [state('qinqin-b'), state('qinqin-c')];
-
-		expect(ids(allWidgets(registry, states, 'es', core))).not.toContain('core-han');
-		expect(ids(allWidgets(registry, states, 'zh', core))).toContain('core-han');
-		expect(ids(allWidgets(registry, states, null, core))).toContain('core-han');
+		expect(ids(allWidgets([], 'es', core))).not.toContain('core-han');
+		expect(ids(allWidgets([], 'zh', core))).toContain('core-han');
+		expect(ids(allWidgets([], null, core))).toContain('core-han');
 	});
 
 	it('keeps the first widget of a duplicated id', () => {
-		const dup = [plugin('qinqin-d', [widget('core-a', 'qinqin-d'), widget('d-1', 'qinqin-d')])];
-
-		const list = allWidgets(dup, [state('qinqin-d')], null, core);
-
-		expect(ids(list)).toEqual(['core-a', 'core-han', 'd-1']);
+		const list = allWidgets([], null, core);
+		expect(ids(list)).toEqual(['core-a', 'core-han']);
 		expect(list[0].owner).toBe('core');
 	});
 
-	it('registers the shipped core and plugin widgets', () => {
-		const list = allWidgets(webPlugins, [state('qinqin-flashcards'), state('qinqin-reader')], 'zh');
+	it('registers the shipped core and feature widgets', () => {
+		const list = allWidgets([state('flashcards'), state('reader')], 'zh');
 
 		expect(ids(list)).toEqual([
 			'activity-heatmap',
@@ -117,12 +64,12 @@ describe('allWidgets', () => {
 			['core', 'wide'],
 			['core', 'wide'],
 			['core', 'normal'],
-			['qinqin-flashcards', 'normal'],
-			['qinqin-flashcards', 'normal'],
-			['qinqin-reader', 'normal']
+			['flashcards', 'normal'],
+			['flashcards', 'normal'],
+			['reader', 'normal']
 		]);
 		// The reader has no state row here: its widget stays away, as in v0.3.0.
-		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
+		expect(ids(allWidgets([state('flashcards', false)], 'zh'))).toEqual([
 			'activity-heatmap',
 			'character-map-summary',
 			'daily-goal',
@@ -133,7 +80,7 @@ describe('allWidgets', () => {
 	});
 
 	it('summary-numbers is core, wide, on Stats and Home, not in the default home layout', () => {
-		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		const list = allWidgets([state('flashcards')], 'zh');
 		const summary = list.find((w) => w.id === 'summary-numbers')!;
 		expect(summary).toMatchObject({
 			title: 'Summary',
@@ -145,7 +92,7 @@ describe('allWidgets', () => {
 	});
 
 	it('reviews-per-day is core, wide, on Stats and Home, not in the default home layout', () => {
-		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		const list = allWidgets([state('flashcards')], 'zh');
 		const reviews = list.find((w) => w.id === 'reviews-per-day')!;
 		expect(reviews).toMatchObject({
 			title: 'Reviews per day',
@@ -157,7 +104,7 @@ describe('allWidgets', () => {
 	});
 
 	it('offers this week on the home page only (Stats has the Week tab)', () => {
-		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'es');
+		const list = allWidgets([state('flashcards')], 'es');
 		expect(list.find((w) => w.id === 'weekly-summary')).toMatchObject({
 			title: 'This week',
 			owner: 'core',
@@ -167,22 +114,22 @@ describe('allWidgets', () => {
 	});
 
 	it('the activity heatmap has a home component (the chosen layout); Stats keeps the garden', () => {
-		const heatmap = allWidgets(webPlugins, [], 'zh').find((w) => w.id === 'activity-heatmap')!;
+		const heatmap = allWidgets([], 'zh').find((w) => w.id === 'activity-heatmap')!;
 		expect(heatmap.homeComponent).toBe(ActivityHome);
 		expect(heatmap.component).toBe(ActivityHeatmap);
 		expect(heatmap.homeComponent).not.toBe(heatmap.component);
 	});
 
 	it('offers the daily goal on the home page only (not Stats)', () => {
-		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		const list = allWidgets([state('flashcards')], 'zh');
 		expect(list.find((w) => w.id === 'daily-goal')?.surfaces).toEqual(['home']);
 	});
 
 	it('shows the character map tile for Han languages only', () => {
-		const states = [state('qinqin-flashcards'), state('qinqin-reader')];
+		const states = [state('flashcards'), state('reader')];
 
-		expect(ids(allWidgets(webPlugins, states, 'ja'))).toContain('character-map-summary');
-		expect(ids(allWidgets(webPlugins, states, 'zh-TW'))).toContain('character-map-summary');
-		expect(ids(allWidgets(webPlugins, states, 'es'))).not.toContain('character-map-summary');
+		expect(ids(allWidgets(states, 'ja'))).toContain('character-map-summary');
+		expect(ids(allWidgets(states, 'zh-TW'))).toContain('character-map-summary');
+		expect(ids(allWidgets(states, 'es'))).not.toContain('character-map-summary');
 	});
 });

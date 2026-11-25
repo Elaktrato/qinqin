@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "sync/push-result",
- "_doc": "POST /api/sync/push as built (server/internal/sync/sync.go Push, api/handlers_sync.go handleSyncPush), re-derived from the code, plus item 4's typed counting. Each case runs on a fresh server: user alice with workspace $ws, bob with $bobWs, the built-in plugins registered; setup rows are stored first with their stamps. A 200 answer is JSON with exactly keys (every one always present); json is the whole body. Other statuses: text is the whole plain-text body (http.Error appends a newline), textPrefix its start, json a JSON body. stored: what must hold afterwards (events: count of alice's events; pluginData: alice's live plugin keys besides the setup rows; cards: alice's live typed card ids; pluginDataValue: stored data by key; cardVersionUnchanged: the setup card kept its version). \"$string:n\" is a JSON string of n 'x' characters; \"$jsonPadded:n\" a valid JSON body of n bytes. Decoded by server/internal/sync and api contract_push_test.go (B5) and the web's PushResult (C2).",
+ "_doc": "POST /api/sync/push as built (server/internal/sync/sync.go Push, api/handlers_sync.go handleSyncPush), re-derived from the code, plus item 4's typed counting. Each case runs on a fresh server: user alice with workspace $ws, bob with $bobWs, setup rows are stored first with their stamps. A 200 answer is JSON with exactly keys (every one always present); json is the whole body. Other statuses: text is the whole plain-text body (http.Error appends a newline), textPrefix its start, json a JSON body. stored: what must hold afterwards (events: count of alice's events; rows: alice's live keyed row keys besides the setup rows; cards: alice's live typed card ids; rowsValue: stored data by key; cardVersionUnchanged: the setup card kept its version). \"$string:n\" is a JSON string of n 'x' characters; \"$jsonPadded:n\" a valid JSON body of n bytes. Decoded by server/internal/sync and api contract_push_test.go (B5) and the web's PushResult (C2).",
  "keys": [
   "eventsAccepted",
   "eventDuplicates",
@@ -15,7 +15,7 @@
  },
  "cases": [
   {
-   "name": "events, a plugin row and a typed card are accepted",
+   "name": "events, a keyed row and a typed card are accepted",
    "body": {
     "events": [
      {
@@ -27,9 +27,8 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -70,7 +69,7 @@
    },
    "stored": {
     "events": 1,
-    "pluginData": [
+    "rows": [
      "notecfg"
     ],
     "cards": [
@@ -126,9 +125,8 @@
   {
    "name": "an older edit than the stored row is skipped (last-write-wins on the edit time)",
    "setup": {
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -139,9 +137,8 @@
     ]
    },
    "body": {
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -162,7 +159,7 @@
     }
    },
    "stored": {
-    "pluginDataValue": {
+    "rowsValue": {
      "notecfg": {
       "v": 2
      }
@@ -172,9 +169,8 @@
   {
    "name": "a same-second edit wins",
    "setup": {
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -185,9 +181,8 @@
     ]
    },
    "body": {
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -208,7 +203,7 @@
     }
    },
    "stored": {
-    "pluginDataValue": {
+    "rowsValue": {
      "notecfg": {
       "v": 3
      }
@@ -218,10 +213,9 @@
   {
    "name": "deleting an absent row is skipped",
    "body": {
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
-      "key": "gone",
+      "key": "note:999",
       "workspaceId": "$ws",
       "data": {
        "v": 1
@@ -301,7 +295,7 @@
    }
   },
   {
-   "name": "a row of a plugin that does not declare owns-data is refused alone; the rest applies",
+   "name": "a row of a key no family accepts is refused alone; the rest applies",
    "body": {
     "events": [
      {
@@ -313,18 +307,16 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-reader",
-      "key": "x",
-      "workspaceId": null,
+      "key": "knownfilter",
+      "workspaceId": "$ws",
       "data": {
        "v": 1
       },
       "updatedAt": "2026-11-12T09:00:00Z"
      },
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -346,17 +338,65 @@
    },
    "stored": {
     "events": 1,
-    "pluginData": [
+    "rows": [
      "notecfg"
     ]
    }
   },
   {
-   "name": "a legacy qinqin-flashcards card row goes to the typed table (old shell)",
+   "name": "a row in the wrong scope is refused alone; the rest applies",
    "body": {
-    "pluginData": [
+    "events": [
      {
-      "pluginId": "qinqin-flashcards",
+      "id": "01JD9A00000000000000000004",
+      "workspaceId": "$ws",
+      "device": "phone",
+      "ts": "2026-11-12T09:50:00Z",
+      "type": "review",
+      "payload": {}
+     }
+    ],
+    "rows": [
+     {
+      "key": "home-layout",
+      "workspaceId": "$ws",
+      "data": {
+       "v": 1
+      },
+      "updatedAt": "2026-11-12T09:00:00Z"
+     },
+     {
+      "key": "notecfg",
+      "workspaceId": "$ws",
+      "data": {
+       "v": 1
+      },
+      "updatedAt": "2026-11-12T09:00:00Z"
+     }
+    ]
+   },
+   "expect": {
+    "status": 200,
+    "json": {
+     "eventsAccepted": 1,
+     "eventDuplicates": 0,
+     "dataAccepted": 1,
+     "dataSkipped": 0,
+     "dataRefused": 1
+    }
+   },
+   "stored": {
+    "events": 1,
+    "rows": [
+     "notecfg"
+    ]
+   }
+  },
+  {
+   "name": "a row of a typed study family is refused alone: typed rows travel as typed collections only (#198)",
+   "body": {
+    "rows": [
+     {
       "key": "card:c-vocab-1201",
       "workspaceId": "$ws",
       "data": {
@@ -369,41 +409,8 @@
        "createdAt": "2026-11-10T08:00:00Z"
       },
       "updatedAt": "2026-11-12T09:00:00Z"
-     }
-    ]
-   },
-   "expect": {
-    "status": 200,
-    "json": {
-     "eventsAccepted": 0,
-     "eventDuplicates": 0,
-     "dataAccepted": 1,
-     "dataSkipped": 0,
-     "dataRefused": 0
-    }
-   },
-   "stored": {
-    "cards": [
-     "c-vocab-1201"
-    ],
-    "pluginData": []
-   }
-  },
-  {
-   "name": "a legacy typed row the codec cannot read is refused alone",
-   "body": {
-    "pluginData": [
-     {
-      "pluginId": "qinqin-flashcards",
-      "key": "card:broken",
-      "workspaceId": "$ws",
-      "data": {
-       "kind": "vocab"
-      },
-      "updatedAt": "2026-11-12T09:00:00Z"
      },
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -422,6 +429,9 @@
      "dataSkipped": 0,
      "dataRefused": 1
     }
+   },
+   "stored": {
+    "cards": []
    }
   },
   {
@@ -437,9 +447,8 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$ws",
       "data": {
@@ -451,15 +460,16 @@
    },
    "expect": {
     "status": 400,
-    "text": "sync: invalid: event 0 needs a ULID id and a ts"
+    "error": "bad_request",
+    "messageContains": "event 0 needs a ULID id and a ts"
    },
    "stored": {
     "events": 0,
-    "pluginData": []
+    "rows": []
    }
   },
   {
-   "name": "a plugin row without an edit time is 400 and nothing is applied",
+   "name": "a row without an edit time is 400 and nothing is applied",
    "body": {
     "events": [
      {
@@ -471,10 +481,9 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
-      "key": "k",
+      "key": "notecfg",
       "workspaceId": "$ws",
       "data": {}
      }
@@ -482,7 +491,8 @@
    },
    "expect": {
     "status": 400,
-    "textPrefix": "sync: invalid: plugin data 0"
+    "error": "bad_request",
+    "messageContains": "row 0"
    },
    "stored": {
     "events": 0
@@ -524,7 +534,8 @@
    },
    "expect": {
     "status": 400,
-    "textPrefix": "sync: invalid: cards 0"
+    "error": "bad_request",
+    "messageContains": "cards 0"
    },
    "stored": {
     "events": 0,
@@ -544,9 +555,8 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
       "key": "notecfg",
       "workspaceId": "$bobWs",
       "data": {
@@ -558,48 +568,16 @@
    },
    "expect": {
     "status": 404,
-    "text": "workspace or plugin not found"
+    "error": "not_found",
+    "messageContains": "No such workspace"
    },
    "stored": {
     "events": 0,
-    "pluginData": []
+    "rows": []
    }
   },
   {
-   "name": "an unknown plugin is 404 and nothing is applied",
-   "body": {
-    "events": [
-     {
-      "id": "01JD9A00000000000000000008",
-      "workspaceId": "$ws",
-      "device": "phone",
-      "ts": "2026-11-12T09:50:00Z",
-      "type": "review",
-      "payload": {}
-     }
-    ],
-    "pluginData": [
-     {
-      "pluginId": "no-such-plugin",
-      "key": "k",
-      "workspaceId": null,
-      "data": {
-       "v": 1
-      },
-      "updatedAt": "2026-11-12T09:00:00Z"
-     }
-    ]
-   },
-   "expect": {
-    "status": 404,
-    "text": "workspace or plugin not found"
-   },
-   "stored": {
-    "events": 0
-   }
-  },
-  {
-   "name": "a plugin value above 256 KiB is 413 (JSON body) and nothing is applied",
+   "name": "a row value above 256 KiB is 413 (JSON body) and nothing is applied",
    "body": {
     "events": [
      {
@@ -611,10 +589,9 @@
       "payload": {}
      }
     ],
-    "pluginData": [
+    "rows": [
      {
-      "pluginId": "qinqin-core",
-      "key": "big",
+      "key": "notecfg",
       "workspaceId": "$ws",
       "data": "$string:262145",
       "updatedAt": "2026-11-12T09:00:00Z"
@@ -624,7 +601,8 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    },
    "stored": {
@@ -659,24 +637,31 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    }
   },
   {
-   "name": "a body above 8 MiB is 413 (plain text)",
+   "name": "a body above 8 MiB is 413 too_large",
    "rawBody": "$jsonPadded:8388609",
    "expect": {
     "status": 413,
-    "text": "request body too large"
+    "json": {
+     "error": "too_large",
+     "message": "Request body too large."
+    }
    }
   },
   {
-   "name": "a body that is not JSON is 400 (plain text)",
+   "name": "a body that is not JSON is 400 bad_request",
    "rawBody": "{\"events\": [",
    "expect": {
     "status": 400,
-    "text": "malformed request body"
+    "json": {
+     "error": "bad_request",
+     "message": "Malformed request body."
+    }
    }
   }
  ]

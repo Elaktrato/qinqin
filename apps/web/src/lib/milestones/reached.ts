@@ -160,7 +160,6 @@ function compute(input: LogInputs): Reached[] {
 // A few answers kept by content, so a reloaded history (a new array with the
 // same reviews) and the same event log do not walk the log again.
 const MAX_MEMO = 4;
-const memo = new Map<string, Reached[]>();
 const identities = new WeakMap<object, number>();
 let nextIdentity = 1;
 
@@ -188,10 +187,11 @@ export function cardsKey(cards: readonly StudyCard[], deckIds: ReadonlySet<strin
 
 /**
  * reachedFromLog: the reached milestones of the enabled log families,
- * ordered by instant then catalogue order. Memoised by the reviews' content
+ * ordered by instant then catalogue order. Memoised in `memo` (the session's,
+ * context/caches.ts) by the reviews' content
  * (reviewsKey), the event log array, now's learner day and the scope.
  */
-export function reachedFromLog(input: LogInputs): Reached[] {
+export function reachedFromLog(memo: Map<string, Reached[]>, input: LogInputs): Reached[] {
 	const key = [
 		reviewsKey(input.reviews),
 		eventsKey(input.events),

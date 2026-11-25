@@ -25,7 +25,7 @@ export const KEY_AREAS = [
 	'packs',
 	'pwa',
 	'widgets',
-	'plugin',
+	'activity',
 	'apiError',
 	'format',
 	'features',

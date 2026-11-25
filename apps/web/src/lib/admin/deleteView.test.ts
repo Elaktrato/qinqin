@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { previewLines } from './deleteView';
 
-const zero = { workspaces: 0, studyEvents: 0, pluginData: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 0, overlays: 0, sentences: 0 };
+const zero = { workspaces: 0, studyEvents: 0, keyedRows: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 0, overlays: 0, sentences: 0 };
 
 describe('previewLines', () => {
 	it('words only what exists, singular and plural', () => {
@@ -14,15 +14,26 @@ describe('previewLines', () => {
 		]);
 	});
 	it('counts flashcards apart from the other saved items', () => {
-		expect(previewLines({ ...zero, cards: 1, pluginData: 2 })).toEqual([
+		expect(previewLines({ ...zero, cards: 1, keyedRows: 2 })).toEqual([
 			'1 flashcard, with its decks and study settings',
-			'2 other saved items (journal entries, notes, known words, settings)'
+			'2 other saved items (notes, known words, settings)'
 		]);
 		expect(previewLines({ ...zero, cards: 3 })).toEqual(['3 flashcards, with their decks and study settings']);
+	});
+	it('counts the journal conversations', () => {
+		expect(previewLines({ ...zero, journalEntries: 2, journalConversations: 1 })).toEqual(['2 journal entries, with their reviews', '1 journal conversation']);
+	});
+	it('counts the reports of AI examples (#186)', () => {
+		expect(previewLines({ ...zero, sentences: 2, exampleReports: 3 })).toEqual(['2 sentences they added', '3 reports of AI example sentences']);
+		expect(previewLines({ ...zero, exampleReports: 1 })).toEqual(['1 report of an AI example sentence']);
 	});
 	it('counts access tokens', () => {
 		expect(previewLines({ ...zero, accessTokens: 1 })).toEqual(['1 personal access token']);
 		expect(previewLines({ ...zero, accessTokens: 3 })).toEqual(['3 personal access tokens']);
+	});
+	it('counts the profile picture (#189)', () => {
+		expect(previewLines({ ...zero, avatar: 1 })).toEqual(['The profile picture']);
+		expect(previewLines({ ...zero, avatar: 0 })).toEqual(['Nothing else: there is no data in this account yet.']);
 	});
 	it('says so when there is nothing', () => {
 		expect(previewLines(zero)).toEqual(['Nothing else: there is no data in this account yet.']);

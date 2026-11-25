@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onDestroy, tick } from 'svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import {
 		PAGE_SIZE,
@@ -15,17 +16,18 @@
 	import { promptItems } from '$lib/lookups/lookups';
 	import { addEntries, loadPage, type PageData } from '$lib/lookups/pageData';
 	import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
-	import { GENERAL_DECK_ID } from '$lib/study/store';
-	import { currentStudyDay } from '$lib/time/zone';
-	import { workspaces } from '$lib/workspaces';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { Button, Section, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+
+	const session = useSession();
 
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
 	// rules live in $lib/lookups; nothing here is kept in browser storage.
 
-	const ws = $derived($workspaces.current);
+	const ws = $derived(session.workspaces.current);
 	const wsId = $derived(ws?.id ?? null);
 	const wsName = $derived(ws ? ws.name || ws.language : '');
 
@@ -48,7 +50,7 @@
 		const mine = ++seq;
 		loadError = '';
 		try {
-			const next = await loadPage(id);
+			const next = await loadPage(session, id);
 			if (mine !== seq) return;
 			data = next;
 			record = next.record;
@@ -71,7 +73,7 @@
 
 	onDestroy(() => (mounted = false));
 
-	const day = currentStudyDay();
+	const day = session.zone.day();
 	const today = day.today();
 	const dayOf = (iso: string) => day.dayOf(Date.parse(iso));
 	const rows = $derived(data ? historyRows(data.history, data.bases, data.books, data.stateOf, dayOf, filter) : []);
@@ -104,7 +106,7 @@
 		try {
 			await work();
 		} catch (err) {
-			actionError = err instanceof Error && err.message ? err.message : t('lookups.actionFailed');
+			actionError = errorText(err, t('lookups.actionFailed'));
 		} finally {
 			busy = false;
 		}
@@ -114,7 +116,7 @@
 		return act(async () => {
 			const id = wsId as number;
 			const target = deck;
-			const result = await addEntries(id, ids, target);
+			const result = await addEntries(session, id, ids, target);
 			status = addResultText(result, target.name);
 			selected = [];
 			await load(id);
@@ -123,7 +125,7 @@
 
 	function remove(ids: number[]): Promise<void> {
 		return act(async () => {
-			const history = await removeFromHistory(wsId as number, ids);
+			const history = await removeFromHistory(session.lookups, wsId as number, ids);
 			if (data) data = { ...data, history };
 			selected = selected.filter((x) => !ids.includes(x));
 			status = t('lookups.removed', { count: ids.length });
@@ -138,7 +140,8 @@
 			try {
 				// The store checks the row again 30 s later (another device's stale
 				// write-back); reload when it had to clear again and the page is open.
-				const out = await clearHistory(id, new Date(), {
+				const out = await clearHistory(session.lookups, id, new Date(), {
+					invalidateEvents: (w) => session.events.invalidate(w),
 					onRepaired: (w) => {
 						if (mounted && w === wsId) void load(w);
 					}
@@ -157,7 +160,7 @@
 
 	function setRecord(on: boolean): Promise<void> {
 		return act(async () => {
-			await saveLookupCfg(on);
+			await saveLookupCfg(session.lookups, on);
 			record = on;
 			offerClear = !on && (data?.history.items.length ?? 0) > 0;
 		});

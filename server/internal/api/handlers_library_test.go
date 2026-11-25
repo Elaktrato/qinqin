@@ -224,7 +224,7 @@ func TestLibraryUploadWorkspace(t *testing.T) {
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("zh book into ja workspace: status = %d, want 422", resp.StatusCode)
 	}
-	if body, _ := io.ReadAll(resp.Body); !strings.Contains(string(body), "workspace language is ja, book is zh") {
+	if body, _ := io.ReadAll(resp.Body); errorCode(t, body) != "language_mismatch" || !strings.Contains(string(body), "workspace language is ja, book is zh") {
 		t.Errorf("mismatch message = %q", body)
 	}
 	// A form language that disagrees with the workspace is rejected too.

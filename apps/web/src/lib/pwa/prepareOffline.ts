@@ -8,15 +8,17 @@ import { entryPath } from '../api/entries';
 import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
 import { writableChars } from '../study/writing';
 import type { StudyContext } from '../study/studyContext';
-import { CARD_KINDS, type StudyHistory } from '../study/types';
+import { type StudyCardKind, type StudyHistory } from '../study/types';
+import { effectiveCardTypes, effectiveKinds, type ExtraChoices } from '../study/cardTypesMemory';
+import { enabledKinds } from '../study/deckSettings';
 import type { StudySessionConfig } from '../study/session';
-import type { OfflineState } from './offlineState';
+import type { OfflineState } from './offlineState.svelte';
 
 /** The API reads every page of the app shell needs, besides the study data. */
 export const OFFLINE_API_PATHS: readonly string[] = [
 	'/api/auth/me',
 	'/api/workspaces',
-	'/api/plugins',
+	'/api/features',
 	'/api/languages',
 	'/api/me/time-zone'
 ];
@@ -24,6 +26,8 @@ export const OFFLINE_API_PATHS: readonly string[] = [
 export const PREPARE_THROTTLE_MS = 30 * 60 * 1000;
 const MAX_ENTRIES = 500;
 const EXTRA_NEW = 50;
+/** At most this many more entries for an offline Study all session (spec Ruling, #175 review). */
+const STUDY_ALL_EXTRA = 200;
 const CONCURRENCY = 2;
 
 export interface OfflinePlan {
@@ -37,21 +41,30 @@ type PlanInput = Omit<DeckSessionOptions, 'skip'>;
 /**
  * planOffline: the real cards of the session a user would start now, plus the
  * next `extraNew` new cards. Both plans go through the daily limits, so what
- * is saved is what could be studied today. Companion (virtual) items are not
- * studied offline and are left out.
+ * is saved is what could be studied today. Then what a Study all session
+ * would add (no limits), at most `studyAllExtra` more entries, due cards
+ * first. Companion (virtual) items are not studied offline and are left out.
+ * Never more than `maxEntries` in all.
  */
 export function planOffline(
 	input: PlanInput,
-	opts: { extraNew?: number; maxEntries?: number } = {}
+	opts: { extraNew?: number; maxEntries?: number; studyAllExtra?: number } = {}
 ): OfflinePlan {
 	const extraNew = opts.extraNew ?? EXTRA_NEW;
 	const maxEntries = opts.maxEntries ?? MAX_ENTRIES;
+	const studyAllExtra = opts.studyAllExtra ?? STUDY_ALL_EXTRA;
 	const entryIds: number[] = [];
 	const chars = new Set<string>();
 	const seen = new Set<number>();
-	for (const options of [input, { ...input, newLimit: input.newLimit + extraNew }]) {
-		for (const item of deckSessionPlan(options).queue) {
-			if (item.virtual || seen.has(item.entryId) || entryIds.length >= maxEntries) continue;
+	const passes: { options: PlanInput; extra: number }[] = [
+		{ options: input, extra: maxEntries },
+		{ options: { ...input, newLimit: input.newLimit + extraNew }, extra: maxEntries },
+		{ options: { ...input, studyAll: true }, extra: studyAllExtra }
+	];
+	for (const pass of passes) {
+		const max = Math.min(maxEntries, entryIds.length + pass.extra);
+		for (const item of deckSessionPlan(pass.options).queue) {
+			if (item.virtual || seen.has(item.entryId) || entryIds.length >= max) continue;
 			seen.add(item.entryId);
 			entryIds.push(item.entryId);
 			if (item.kind === 'writing') {
@@ -84,6 +97,12 @@ export interface PrepareDeps {
 	userId: number;
 	loadHistory: (workspaceId: number) => Promise<StudyHistory>;
 	config: () => StudySessionConfig;
+	/** This tab's own setup kinds, or null when the tab has none (absent: the config's). */
+	tabTypes?: () => readonly string[] | null;
+	/** The kinds last started in the workspace (cardTypesMemory), or null. */
+	remembered?: () => StudyCardKind[] | null;
+	/** The learner's opt-in checkbox choices in the workspace (cardTypesMemory). */
+	choices?: () => ExtraChoices;
 	language: string;
 	contextFor: (data: StudyHistory, workspaceId: number, now: number) => StudyContext;
 	weights: (data: StudyHistory) => readonly number[];
@@ -101,6 +120,8 @@ export interface PrepareDeps {
 	/** True when the worker already holds this API path for the current partition. */
 	isCached: (path: string) => Promise<boolean>;
 	extraNew?: number;
+	/** Entries prepared for an offline Study all session beyond the others (planOffline). */
+	studyAllExtra?: number;
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
@@ -186,7 +207,16 @@ export async function prepareOffline(
 		// A levels session cannot run offline (its entries come from the scheme
 		// API); prepare the plain deck session instead.
 		const deckIds = config.mode === 'decks' && config.deckIds.length > 0 ? config.deckIds : ['general'];
-		const kinds = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
+		// The kinds a session started now would study: the tab's setup (else the
+		// kinds last started in the workspace, else vocab) plus each opt-in kind
+		// a deck in scope switches on and the learner has not unchecked — the
+		// rule of the Study page, the home widget and the deck start (effectiveKinds).
+		const tabTypes = d.tabTypes ? d.tabTypes() : config.cardTypes;
+		const kinds = effectiveKinds(
+			effectiveCardTypes(tabTypes, d.remembered?.() ?? null),
+			enabledKinds(data.deckSettings, deckIds),
+			d.choices?.() ?? {}
+		);
 		const plan = planOffline(
 			{
 				cards: data.cards,
@@ -201,7 +231,7 @@ export async function prepareOffline(
 				deckSettings: data.deckSettings,
 				language: d.language
 			},
-			{ extraNew: d.extraNew }
+			{ extraNew: d.extraNew, studyAllExtra: d.studyAllExtra }
 		);
 		for (const path of OFFLINE_API_PATHS) await d.fetchApi(path);
 		await pool(plan.entryIds, async (id) => {

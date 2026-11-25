@@ -6,14 +6,15 @@ import (
 	"slices"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 func importFreqCSV(t *testing.T, sqlDB *sql.DB, id, language, body string) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: id, Name: "Pack " + id, Version: "1", Type: "frequency", Language: language,
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n"+body)
@@ -30,21 +31,21 @@ func bestWord(t *testing.T, s lookup.Service, form string) lexicon.Entry {
 
 func entryRanks(t *testing.T, s lookup.Service, language string, es ...lexicon.Entry) (string, []int) {
 	t.Helper()
-	pack, ranks, err := s.EntryRanks(context.Background(), language, es)
+	pk, ranks, err := s.EntryRanks(context.Background(), language, es)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pack == nil {
+	if pk == nil {
 		return "", ranks
 	}
-	return pack.PackID, ranks
+	return pk.PackID, ranks
 }
 
 // TestEntryRanksUseTheFirstPackOnly: the ranking pack is the first pack
 // of the language, whatever data the later ones have, so a batch's
 // answer never depends on which entries are in it.
 func TestEntryRanksUseTheFirstPackOnly(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords)
 	importFreqCSV(t, sqlDB, "first", "ja", "為る,する,15\n")
 	importFreqCSV(t, sqlDB, "second", "ja", "為る,する,3\n事,こと,30\n")
@@ -52,9 +53,9 @@ func TestEntryRanksUseTheFirstPackOnly(t *testing.T) {
 	s := service(sqlDB)
 	suru, koto := bestWord(t, s, "為る"), bestWord(t, s, "事")
 
-	pack, ranks := entryRanks(t, s, "ja", suru, koto)
-	if pack != "first" || !slices.Equal(ranks, []int{15, 0}) {
-		t.Errorf("EntryRanks = %s %v, want first [15 0]", pack, ranks)
+	pk, ranks := entryRanks(t, s, "ja", suru, koto)
+	if pk != "first" || !slices.Equal(ranks, []int{15, 0}) {
+		t.Errorf("EntryRanks = %s %v, want first [15 0]", pk, ranks)
 	}
 	// Split in two calls: the same answers.
 	if _, r := entryRanks(t, s, "ja", koto); !slices.Equal(r, []int{0}) {
@@ -71,20 +72,20 @@ func TestEntryRanksUseTheFirstPackOnly(t *testing.T) {
 }
 
 func TestEntryRanksWithoutAPackIsNil(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords)
 	importFreqCSV(t, sqlDB, "ja-only", "ja", "為る,する,15\n")
 	s := service(sqlDB)
-	pack, ranks, err := s.EntryRanks(context.Background(), "zh", []lexicon.Entry{bestWord(t, s, "為る")})
-	if err != nil || pack != nil || !slices.Equal(ranks, []int{0}) {
-		t.Errorf("EntryRanks(zh) = %v, %v, %v; want nil pack, [0]", pack, ranks, err)
+	pk, ranks, err := s.EntryRanks(context.Background(), "zh", []lexicon.Entry{bestWord(t, s, "為る")})
+	if err != nil || pk != nil || !slices.Equal(ranks, []int{0}) {
+		t.Errorf("EntryRanks(zh) = %v, %v, %v; want nil pack, [0]", pk, ranks, err)
 	}
 }
 
 // TestEntryRanksUsuallyKanaByKanaRow: a usually-kana word with no row
 // for its kanji form is ranked by its kana row.
 func TestEntryRanksUsuallyKanaByKanaRow(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords)
 	importFreqCSV(t, sqlDB, "kana", "ja", "ある,,7\n")
 	s := service(sqlDB)

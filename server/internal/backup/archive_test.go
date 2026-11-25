@@ -117,7 +117,7 @@ func TestOpenAcceptsTheSampleArchive(t *testing.T) {
 	n := 0
 	a.Events(func(Event) error { n++; return nil })
 	rows := 0
-	a.PluginRows(func(r PluginRow) error {
+	a.Rows(func(r Row) error {
 		if r.WorkspaceID == nil {
 			rows++
 		}
@@ -159,11 +159,14 @@ var builders = map[string]func(t *testing.T) string{
 	"version_0": func(t *testing.T) string {
 		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = 0 }})
 	},
-	"version_2": func(t *testing.T) string {
-		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = 2 }})
+	"version_1": func(t *testing.T) string {
+		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = 1 }})
+	},
+	"version_3": func(t *testing.T) string {
+		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = 3 }})
 	},
 	"version_string": func(t *testing.T) string {
-		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = "1" }})
+		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["formatVersion"] = "2" }})
 	},
 	"wrong_format_name": func(t *testing.T) string {
 		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["format"] = "something-else" }})
@@ -282,20 +285,20 @@ var builders = map[string]func(t *testing.T) string{
 		}, zopts{})
 	},
 	"plugin_value_too_big": func(t *testing.T) string {
-		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
-			row := `{"pluginId":"p","workspaceId":null,"key":"big","data":"` + strings.Repeat("a", MaxPluginValue+10) +
+		return mut(t, PartName(NameRows, 1), func(b []byte) []byte {
+			row := `{"workspaceId":null,"key":"big","data":"` + strings.Repeat("a", MaxRowValue+10) +
 				`","version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
 			return append(b, row...)
-		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["pluginData"] = 5 }})
+		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["rows"] = 5 }})
 	},
 	"plugin_row_twice": func(t *testing.T) string {
-		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
+		return mut(t, PartName(NameRows, 1), func(b []byte) []byte {
 			l := strings.SplitN(string(b), "\n", 2)[0] + "\n"
 			return append(b, l...)
-		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["pluginData"] = 5 }})
+		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["rows"] = 5 }})
 	},
 	"plugin_row_unknown_workspace": func(t *testing.T) string {
-		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
+		return mut(t, PartName(NameRows, 1), func(b []byte) []byte {
 			return []byte(strings.Replace(string(b), `"workspaceId":7`, `"workspaceId":77`, 1))
 		}, zopts{})
 	},

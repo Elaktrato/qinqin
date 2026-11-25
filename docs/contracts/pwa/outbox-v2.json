@@ -1,14 +1,16 @@
 {
- "description": "Review outbox v2 (localStorage 'qinqin.study.pending.v2'): items {userId, queuedAt, event}. settle(state, user, now) adopts the legacy queue ('qinqin.study.pending') and unowned items for `user`, removes other users' items older than 30 days, and flushes only `user`'s items. Events keep their original ids and the unchanged review event format.",
+ "description": "Review outbox v2 (localStorage 'qinqin.study.pending.v2'): items {userId, queuedAt, event}. settle(items, user, now) adopts unowned items for `user`, removes other users' items older than 30 days, and flushes only `user`'s items. Events keep their original ids and the unchanged review event format. The pre-v2 queue ('qinqin.study.pending', v0.3.x) is no longer read (#198).",
  "expiryDays": 30,
  "cases": [
   {
-   "name": "the legacy queue is adopted by the first signed-in user",
+   "name": "another user never flushes the first user's items",
    "now": "2026-11-12T00:00:00Z",
-   "user": 1,
-   "state": {
-    "legacy": [
-     {
+   "user": 2,
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
       "id": "A1",
       "workspaceId": 7,
       "device": "web",
@@ -19,9 +21,13 @@
        "mode": "vocab",
        "grade": 3
       }
-     },
-     {
-      "id": "A2",
+     }
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B1",
       "workspaceId": 7,
       "device": "web",
       "ts": "2026-11-10T08:00:00.000Z",
@@ -32,92 +38,8 @@
        "grade": 3
       }
      }
-    ],
-    "items": []
-   },
-   "expect": {
-    "items": [
-     {
-      "userId": 1,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "A1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     },
-     {
-      "userId": 1,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "A2",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     }
-    ],
-    "legacy": [],
-    "flush": [
-     "A1",
-     "A2"
-    ]
-   }
-  },
-  {
-   "name": "another user never flushes the first user's items",
-   "now": "2026-11-12T00:00:00Z",
-   "user": 2,
-   "state": {
-    "legacy": [],
-    "items": [
-     {
-      "userId": 1,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "A1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     },
-     {
-      "userId": 2,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "B1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     }
-    ]
-   },
+    }
+   ],
    "expect": {
     "items": [
      {
@@ -153,7 +75,6 @@
       }
      }
     ],
-    "legacy": [],
     "flush": [
      "B1"
     ]
@@ -163,43 +84,40 @@
    "name": "the first user's next sign-in flushes what survived the other session",
    "now": "2026-11-13T00:00:00Z",
    "user": 1,
-   "state": {
-    "legacy": [],
-    "items": [
-     {
-      "userId": 1,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "A1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     },
-     {
-      "userId": 2,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "B1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
       }
      }
-    ]
-   },
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "B1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
    "expect": {
     "items": [
      {
@@ -235,7 +153,6 @@
       }
      }
     ],
-    "legacy": [],
     "flush": [
      "A1"
     ]
@@ -245,59 +162,56 @@
    "name": "items of another user older than 30 days are removed, newer ones kept",
    "now": "2026-12-20T00:00:00Z",
    "user": 2,
-   "state": {
-    "legacy": [],
-    "items": [
-     {
-      "userId": 1,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "A-old",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     },
-     {
-      "userId": 1,
-      "queuedAt": "2026-12-01T08:00:00.000Z",
-      "event": {
-       "id": "A-new",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
-      }
-     },
-     {
-      "userId": 2,
-      "queuedAt": "2026-11-01T08:00:00.000Z",
-      "event": {
-       "id": "B-old",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
+   "state": [
+    {
+     "userId": 1,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "A-old",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
       }
      }
-    ]
-   },
+    },
+    {
+     "userId": 1,
+     "queuedAt": "2026-12-01T08:00:00.000Z",
+     "event": {
+      "id": "A-new",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    },
+    {
+     "userId": 2,
+     "queuedAt": "2026-11-01T08:00:00.000Z",
+     "event": {
+      "id": "B-old",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    }
+   ],
    "expect": {
     "items": [
      {
@@ -333,7 +247,6 @@
       }
      }
     ],
-    "legacy": [],
     "flush": [
      "B-old"
     ]
@@ -343,27 +256,24 @@
    "name": "unowned items (recorded before the user was known) go to the next user",
    "now": "2026-11-12T00:00:00Z",
    "user": 3,
-   "state": {
-    "legacy": [],
-    "items": [
-     {
-      "userId": null,
-      "queuedAt": "2026-11-10T08:00:00.000Z",
-      "event": {
-       "id": "U1",
-       "workspaceId": 7,
-       "device": "web",
-       "ts": "2026-11-10T08:00:00.000Z",
-       "type": "review",
-       "payload": {
-        "cardId": "c",
-        "mode": "vocab",
-        "grade": 3
-       }
+   "state": [
+    {
+     "userId": null,
+     "queuedAt": "2026-11-10T08:00:00.000Z",
+     "event": {
+      "id": "U1",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-10T08:00:00.000Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c",
+       "mode": "vocab",
+       "grade": 3
       }
      }
-    ]
-   },
+    }
+   ],
    "expect": {
     "items": [
      {
@@ -383,7 +293,6 @@
       }
      }
     ],
-    "legacy": [],
     "flush": [
      "U1"
     ]

@@ -2,16 +2,17 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { Field } from '$lib/ui';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { deleteUser, deletionPreview, type DeletionPreview } from '$lib/api/adminUsers';
 	import { previewLines } from './deleteView';
-	import { user as me } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Confirmation for deleting someone else's account: says exactly what
 	// goes (the server's own counts) and asks for the username to be typed.
@@ -29,7 +30,7 @@
 	let password = $state('');
 	let code = $state('');
 	let sawCodeInvalid = $state(false);
-	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
+	const needsCode = $derived(reauthNeedsCode(app.auth.user?.mfa?.totp, sawCodeInvalid));
 	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let preview = $state<DeletionPreview | null>(null);
 	let previewFailed = $state(false);

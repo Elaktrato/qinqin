@@ -20,16 +20,14 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
-	"time"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // Format is the one strokes pack format.
-const Format = dict.FormatStrokesJSONLGz
+const Format = pack.FormatStrokesJSONLGz
 
 // DataFile is the data file of a strokes pack: gzipped JSON lines
 // {"char": <one code point>, "data": <a JSON object>}.
@@ -50,7 +48,7 @@ const insertBatch = 300
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // strokes pack.
-var ErrNotFound = errors.New("strokes: pack not found")
+var ErrNotFound = pack.NotFound("strokes: pack not found")
 
 // Result counts an import.
 type Result struct{ Chars int }
@@ -73,22 +71,22 @@ type line struct {
 // uninstall) and replaces the pack's rows. A malformed line — not JSON, a
 // char that is not exactly one code point, data that is not a JSON object,
 // a repeated char, a line over MaxLineBytes, an unknown key — is
-// dict.ErrInvalidPack naming the line and leaves nothing behind. An
+// pack.ErrInvalidPack naming the line and leaves nothing behind. An
 // identical re-import (same rows and manifest fields) writes nothing.
 //
 // ord, the pack's priority in Lookup (the first live pack with data for a
 // character wins), is assigned at the pack's first registration and kept on
 // re-import and reinstall.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeStrokes {
-		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a strokes pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeStrokes {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a strokes pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
 	if m.Format != Format {
-		return Result{}, fmt.Errorf("%w: strokes pack %s: format %q is not a strokes format (want %s)", dict.ErrInvalidPack, m.ID, m.Format, Format)
+		return Result{}, fmt.Errorf("%w: strokes pack %s: format %q is not a strokes format (want %s)", pack.ErrInvalidPack, m.ID, m.Format, Format)
 	}
 	path := filepath.Join(p.Dir, DataFile)
 	h := sha256.New()
@@ -97,52 +95,31 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 		return nil
 	})
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: strokes pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: strokes pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	hash := hex.EncodeToString(h.Sum(nil))
 	langs := slices.Clone(m.Languages)
 	slices.Sort(langs)
 	langsJSON, _ := json.Marshal(langs)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	var (
-		name, version, languages, license, attribution, notice, oldHash string
-		deleted                                                         sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT name, version, languages, license, attribution, notice, content_hash, deleted_at
-		FROM stroke_packs WHERE pack_id = ?`, m.ID).
-		Scan(&name, &version, &languages, &license, &attribution, &notice, &oldHash, &deleted)
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO stroke_packs (pack_id, name, version, languages, license, attribution, notice, content_hash, ord, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM stroke_packs), ?)`,
-			m.ID, m.Name, m.Version, string(langsJSON), m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
-			return Result{}, fmt.Errorf("register strokes pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version && languages == string(langsJSON) &&
-			license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return Result{Chars: n}, nil // identical: nothing to write
-		}
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE stroke_packs SET name = ?, version = ?, languages = ?, license = ?, attribution = ?, notice = ?,
-				content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE pack_id = ?`,
-			m.Name, m.Version, string(langsJSON), m.License, m.Attribution, m.Notice, hash, stamp, m.ID); err != nil {
-			return Result{}, fmt.Errorf("update strokes pack %s: %w", m.ID, err)
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM strokes WHERE pack_id = ?`, m.ID); err != nil {
-			return Result{}, fmt.Errorf("replace strokes of %s: %w", m.ID, err)
-		}
+	stamp := pack.Now()
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "stroke_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "languages", Value: string(langsJSON)},
+			pack.Column{Name: "content_hash", Value: hash},
+			pack.Column{Name: "ord", Expr: "(SELECT COALESCE(MAX(ord), 0) + 1 FROM stroke_packs)", InsertOnly: true})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register strokes pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return Result{Chars: n}, nil // identical: nothing to write
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM strokes WHERE pack_id = ?`, m.ID); err != nil {
+		return Result{}, fmt.Errorf("replace strokes of %s: %w", m.ID, err)
 	}
 
 	batch := make([]any, 0, 3*insertBatch)
@@ -150,7 +127,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 		if len(batch) == 0 {
 			return nil
 		}
-		q := "INSERT INTO strokes (pack_id, char, data) VALUES " + strings.TrimSuffix(strings.Repeat("(?, ?, ?), ", len(batch)/3), ", ")
+		q := "INSERT INTO strokes (pack_id, char, data) VALUES " + pack.Tuples(len(batch)/3, 3)
 		_, err := tx.ExecContext(ctx, q, batch...)
 		batch = batch[:0]
 		return err
@@ -275,12 +252,12 @@ func parseLine(raw []byte) (line, error) {
 // off (AutoInstallOff). An unknown or already uninstalled pack returns
 // ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE stroke_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

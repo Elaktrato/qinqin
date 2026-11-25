@@ -12,6 +12,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/datapkg"
+	"qinqin/internal/workspaces"
 )
 
 // Data packages (docs/contracts/packages/): the catalogue and the files.
@@ -87,12 +88,12 @@ func (s *server) handlePackageCatalogue(w http.ResponseWriter, r *http.Request) 
 	if r.URL.Query().Has("languages") {
 		var ok bool
 		if languages, ok = parseCatalogueLanguages(r.URL.Query().Get("languages")); !ok {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "languages must be all or a comma-separated list of language codes.")
+			writeError(w, http.StatusBadRequest, "bad_request", "languages must be all or a comma-separated list of language codes.")
 			return
 		}
 	} else {
 		var err error
-		if languages, err = s.workspaceLanguages(r, p.User.ID); err != nil {
+		if languages, err = workspaces.Languages(r.Context(), s.db, p.User.ID); err != nil {
 			writeInternal(w, r)
 			return
 		}
@@ -138,24 +139,6 @@ func parseCatalogueLanguages(v string) ([]string, bool) {
 	return parts, true
 }
 
-// workspaceLanguages lists the distinct languages of the user's workspaces.
-func (s *server) workspaceLanguages(r *http.Request, userID int64) ([]string, error) {
-	rows, err := s.db.QueryContext(r.Context(), `SELECT DISTINCT language FROM workspaces WHERE user_id = ? ORDER BY language`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	langs := []string{}
-	for rows.Next() {
-		var l string
-		if err := rows.Scan(&l); err != nil {
-			return nil, err
-		}
-		langs = append(langs, l)
-	}
-	return langs, rows.Err()
-}
-
 // etagListed reports whether an If-None-Match header names etag (or *).
 func etagListed(header, etag string) bool {
 	for _, t := range strings.Split(header, ",") {
@@ -177,7 +160,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notFound := func() {
-		writeAuthError(w, http.StatusNotFound, "package_not_found", "No data package with that id and revision.")
+		writeError(w, http.StatusNotFound, "package_not_found", "No data package with that id and revision.")
 	}
 	rev := r.PathValue("revision")
 	if !packageRevision.MatchString(rev) {
@@ -195,7 +178,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 		notFound()
 		return
 	case errors.Is(err, datapkg.ErrGone):
-		writeAuthError(w, http.StatusGone, "package_revision_gone", "That package revision was replaced. Read the catalogue and download the current one.")
+		writeError(w, http.StatusGone, "package_revision_gone", "That package revision was replaced. Read the catalogue and download the current one.")
 		return
 	case err != nil:
 		writeInternal(w, r)
@@ -204,7 +187,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	if !s.downloads.acquire(u.ID) {
 		w.Header().Set("Retry-After", "5")
-		writeAuthError(w, http.StatusTooManyRequests, "download_busy",
+		writeError(w, http.StatusTooManyRequests, "download_busy",
 			"Two package downloads are already running for this account. Try again when one has finished.")
 		return
 	}
@@ -220,5 +203,5 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	// The zero modification time: the ETag alone validates (a rebuilt file
 	// of the same revision after a restore has a new time, not new bytes
 	// that matter to the client rule).
-	http.ServeContent(w, r, "", time.Time{}, f)
+	serveContent(w, r, time.Time{}, f)
 }

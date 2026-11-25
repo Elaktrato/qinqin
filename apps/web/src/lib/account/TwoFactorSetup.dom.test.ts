@@ -1,15 +1,8 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { writable } from 'svelte/store';
 import { ApiError } from '$lib/api/client';
 
-const { me } = vi.hoisted(() => ({ me: { current: null as unknown } }));
-vi.mock('$lib/auth', async () => {
-	const { writable } = await import('svelte/store');
-	const user = writable<unknown>({ id: 1, username: 'bobby', email: null, emailVerified: false });
-	me.current = user;
-	return { user, loadMe: vi.fn(async () => undefined) };
-});
 vi.mock('$lib/api/mfa', () => ({
 	totpSetup: vi.fn(),
 	totpConfirm: vi.fn(),
@@ -22,13 +15,19 @@ vi.mock('$lib/api/account', () => ({ putEmail: vi.fn() }));
 
 import { putEmail, type AuthOptions } from '$lib/api/account';
 import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup } from '$lib/api/mfa';
-import { loadMe } from '$lib/auth';
 import { encode } from 'uqr';
 import { primaryActions } from '$lib/ui/testing/primary';
 import TwoFactorSetup from './TwoFactorSetup.svelte';
 
+const bobby = { id: 1, username: 'bobby', email: null, emailVerified: false };
+let ctx: TestContext = testContext({ user: bobby });
+beforeEach(() => {
+	ctx = testContext({ user: bobby });
+	vi.spyOn(ctx.app.auth, 'loadMe').mockResolvedValue(null);
+});
+const setMe = (user: Record<string, unknown>) => ctx.app.auth.set({ token: 'test-token', user: { ...ctx.app.auth.user!, ...user } });
+
 const options = (o: Partial<AuthOptions> = {}): AuthOptions => ({
-	bootstrap: false,
 	registration: 'closed',
 	emailPolicy: 'optional',
 	passwordReset: true,
@@ -42,7 +41,7 @@ const URI = 'otpauth://totp/qinqin:bobby?secret=JBSWY3DPEHPK3PXP&issuer=qinqin&a
 const setup = { secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP', otpauthUri: URI, expiresAt: 'x' };
 
 beforeEach(() => {
-	(me.current as ReturnType<typeof writable>).set({ id: 1, username: 'bobby', email: null, emailVerified: false });
+	setMe({ id: 1, username: 'bobby', email: null, emailVerified: false });
 	Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
 });
 afterEach(() => {
@@ -55,7 +54,7 @@ describe('forced enrolment with an authenticator app', () => {
 		vi.mocked(totpSetup).mockResolvedValue(setup);
 		vi.mocked(totpConfirm).mockResolvedValue({ recoveryCodes: ['AAAA-BBBB-CCCC-DDDD', 'EEEE-FFFF-GGGG-HHHH'] });
 		const onfinished = vi.fn();
-		render(TwoFactorSetup, { options: options(), forced: true, site: 'words.example.org', onfinished });
+		render(TwoFactorSetup, { props: { options: options(), forced: true, site: 'words.example.org', onfinished }, context: ctx.context });
 		// choosing a method has no primary action: both choices are equal
 		expect(primaryActions(document.body)).toHaveLength(0);
 		await fireEvent.click(screen.getByRole('button', { name: 'Authenticator app' }));
@@ -89,17 +88,17 @@ describe('forced enrolment with an authenticator app', () => {
 		expect(cont.disabled).toBe(false);
 		await fireEvent.click(cont);
 		await waitFor(() => expect(onfinished).toHaveBeenCalled());
-		expect(loadMe).toHaveBeenCalled();
+		expect(ctx.app.auth.loadMe).toHaveBeenCalled();
 	});
 
 	it('hides the secret and says why when the server has no usable secret', async () => {
-		render(TwoFactorSetup, { options: options({ totpAvailable: false }), forced: true, onfinished: vi.fn() });
+		render(TwoFactorSetup, { props: { options: options({ totpAvailable: false }), forced: true, onfinished: vi.fn() }, context: ctx.context });
 		expect(screen.queryByRole('button', { name: 'Authenticator app' })).toBeNull();
 		expect(screen.getByText(/need QINQIN_SECRET/)).toBeTruthy();
 	});
 
 	it('hides email codes without mail', async () => {
-		render(TwoFactorSetup, { options: options({ passwordReset: false }), forced: true, onfinished: vi.fn() });
+		render(TwoFactorSetup, { props: { options: options({ passwordReset: false }), forced: true, onfinished: vi.fn() }, context: ctx.context });
 		expect(screen.queryByRole('button', { name: 'Email codes' })).toBeNull();
 		expect(screen.getByText(/Emailed codes need email to be set up/)).toBeTruthy();
 	});
@@ -108,7 +107,7 @@ describe('forced enrolment with an authenticator app', () => {
 describe('settings enrolment', () => {
 	it('asks for the password first and sends it', async () => {
 		vi.mocked(totpSetup).mockResolvedValue(setup);
-		render(TwoFactorSetup, { options: options(), onfinished: vi.fn() });
+		render(TwoFactorSetup, { props: { options: options(), onfinished: vi.fn() }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Authenticator app' }));
 		const password = await screen.findByLabelText('Password');
 		expect(password.closest('.field')).not.toBeNull();
@@ -122,7 +121,7 @@ describe('settings enrolment', () => {
 
 	it('shows a wrong password sentence', async () => {
 		vi.mocked(totpSetup).mockRejectedValue(new ApiError(403, JSON.stringify({ error: 'wrong_password', message: 'x' })));
-		render(TwoFactorSetup, { options: options(), onfinished: vi.fn() });
+		render(TwoFactorSetup, { props: { options: options(), onfinished: vi.fn() }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Authenticator app' }));
 		await fireEvent.input(await screen.findByLabelText('Password'), { target: { value: 'nope-nope-nope' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -137,7 +136,7 @@ describe('email method path', () => {
 		vi.mocked(verifyEmailCode).mockResolvedValue({ emailVerified: true });
 		vi.mocked(setEmailMethod).mockResolvedValue({ email: true });
 		const onfinished = vi.fn();
-		render(TwoFactorSetup, { options: options(), forced: true, onfinished });
+		render(TwoFactorSetup, { props: { options: options(), forced: true, onfinished }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
 		const address = await screen.findByLabelText('Email address');
 		expect(address.closest('.field')).not.toBeNull();
@@ -150,15 +149,15 @@ describe('email method path', () => {
 		await fireEvent.input(await screen.findByLabelText('Code from the email'), { target: { value: '123456' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Confirm address' }));
 		await waitFor(() => expect(verifyEmailCode).toHaveBeenCalledWith('123456'));
-		(me.current as ReturnType<typeof writable>).set({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
+		setMe({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Turn on email codes' }));
 		await waitFor(() => expect(setEmailMethod).toHaveBeenCalledWith(true, undefined));
 		await waitFor(() => expect(onfinished).toHaveBeenCalled());
 	});
 
 	it('goes straight to enabling when the address is already confirmed', async () => {
-		(me.current as ReturnType<typeof writable>).set({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
-		render(TwoFactorSetup, { options: options(), onfinished: vi.fn() });
+		setMe({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
+		render(TwoFactorSetup, { props: { options: options(), onfinished: vi.fn() }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
 		expect(await screen.findByText('b@example.org')).toBeTruthy();
 		expect(putEmail).not.toHaveBeenCalled();
@@ -167,11 +166,11 @@ describe('email method path', () => {
 
 describe('email method in an enrolment session', () => {
 	it('is finished only after the mailed code was confirmed', async () => {
-		(me.current as ReturnType<typeof writable>).set({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
+		setMe({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
 		vi.mocked(setEmailMethod).mockResolvedValue({ confirm: true, resendAfter: 60 });
 		vi.mocked(confirmEmailMethod).mockResolvedValue({ email: true });
 		const onfinished = vi.fn();
-		render(TwoFactorSetup, { options: options(), forced: true, onfinished });
+		render(TwoFactorSetup, { props: { options: options(), forced: true, onfinished }, context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
 		await fireEvent.click(await screen.findByRole('button', { name: 'Turn on email codes' }));
 		await fireEvent.input(await screen.findByLabelText('Code from the email'), { target: { value: '123456' } });

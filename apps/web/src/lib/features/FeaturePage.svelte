@@ -4,19 +4,20 @@
 	// hides the page only; nothing is refused or deleted. The route sets the
 	// fallback title; the feature's own views set theirs.
 	import { onMount } from 'svelte';
-	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { featureEnabled, switchedOffTitle, type CoreFeature } from './index';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { feature, rest }: { feature: Pick<CoreFeature, 'id' | 'title' | 'component'>; rest: string } =
 		$props();
 
-	const on = $derived($pluginStates.status === 'ready' && featureEnabled(feature.id, $pluginStates.list));
+	const on = $derived(session.features.status === 'ready' && featureEnabled(feature.id, session.features.list));
 
 	// A direct page load can mount before the shell has loaded the states.
 	onMount(() => {
-		if ($pluginStates.status === 'idle') void loadPluginStates();
+		if (session.features.status === 'idle') void session.features.load();
 	});
 </script>
 
@@ -25,9 +26,9 @@
 	<Page {rest} />
 {:else}
 	<div class="page-body">
-		{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
+		{#if session.features.status === 'idle' || session.features.status === 'loading'}
 			<p class="notice" role="status">{t('app.loading')}</p>
-		{:else if $pluginStates.status === 'error'}
+		{:else if session.features.status === 'error'}
 			<p class="notice" role="alert">{t('features.switchedOff.loadFailed')}</p>
 		{:else}
 			<h1>{switchedOffTitle(feature.id)}</h1>

@@ -1,35 +1,39 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { auth } from '$lib/auth';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { workspaces } from '$lib/workspaces';
 import { currentSection, frameSections } from './sections';
 import TopBar from './TopBar.svelte';
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 const sections = frameSections({
 	list: [
-		{ id: FLASHCARDS_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: READER_ID, manifest: {}, enabled: true, order: 0 },
-		{ id: 'qinqin-journal', manifest: {}, enabled: true, order: 0 },
-		{ id: 'qinqin-grammar', manifest: {}, enabled: true, order: 1 }
+		{ id: FLASHCARDS_ID, enabled: true },
+		{ id: READER_ID, enabled: true },
+		{ id: 'journal', enabled: true },
+		{ id: 'grammar', enabled: true }
 	],
 	status: 'ready'
 });
 
 function mount(path: string) {
-	return render(TopBar, { sections, current: currentSection(path, sections) });
+	return render(TopBar, { props: { sections, current: currentSection(path, sections) }, context: ctx.context });
 }
 
 beforeEach(() => {
-	auth.set({
+	ctx.app.auth.set({
 		token: 'tok',
 		user: { id: 1, username: 'mei', admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
-	workspaces.set({ list: [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }], current: null });
+	ctx.session.workspaces.set({ list: [{ id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' }], current: null });
 });
 afterEach(() => {
 	cleanup();
-	auth.set({ token: null, user: null });
+	ctx.app.auth.set({ token: null, user: null });
 });
 
 describe('TopBar', () => {
@@ -49,7 +53,7 @@ describe('TopBar', () => {
 		const nav = screen.getByRole('navigation', { name: 'Main' });
 		const links = within(nav).getAllByRole('link');
 		expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
-		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/search', '/flashcards', '/reader', '/p/journal', '/p/grammar', '/stats']);
+		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/stats']);
 		for (const link of links) {
 			expect(link.textContent?.trim()).toBe('');
 			expect(link.querySelector('svg')).not.toBeNull();

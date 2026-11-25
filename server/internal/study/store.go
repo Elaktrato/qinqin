@@ -2,6 +2,7 @@ package study
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,20 +12,6 @@ import (
 
 // now is the store clock (tests swap it).
 var now = time.Now
-
-// Now is the store clock in UTC: the edit time of a write made on this
-// server (the legacy plugin-data routes).
-func Now() time.Time { return now().UTC() }
-
-// Delta is the typed study rows of one pull; every slice is non-nil.
-type Delta struct {
-	Cards        []rows.Card
-	Decks        []rows.Deck
-	DeckSettings []rows.DeckSettingsRow
-	Limits       []rows.LimitsRow
-	FsrsSets     []rows.FsrsSet
-	FsrsActive   []rows.FsrsActiveRow
-}
 
 // EditTime is when a pushed edit was made: its updatedAt, or its deletedAt
 // when later (a tombstone may set only deletedAt).
@@ -36,7 +23,7 @@ func EditTime(updatedAt time.Time, deletedAt *time.Time) time.Time {
 	return t.UTC()
 }
 
-// Apply writes r for userID under last-write-wins (the plugin-data rule):
+// Apply writes r for userID under last-write-wins (the keyed-row rule):
 // edited, clamped to the server clock, wins unless the stored edit time
 // (modified_at, second precision) is after it. A deletion tombstones a live
 // row and keeps its data; deleting an absent or deleted row is skipped. A
@@ -135,68 +122,6 @@ func orderBy(f rows.Family) string {
 	return o
 }
 
-// PullRows returns the user's rows of family f written at or after since
-// (inclusive second), tombstones included — except from the zero time,
-// where only live rows ship.
-func PullRows(ctx context.Context, q Querier, userID int64, f rows.Family, since time.Time) ([]rows.Row, error) {
-	out := []rows.Row{}
-	err := PullEach(ctx, q, userID, f, since, false, func(r rows.Row) error {
-		out = append(out, r)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// legacyKeySQL is rows.LegacyKey of a stored row, per family.
-var legacyKeySQL = map[rows.Family]string{
-	rows.Cards:        `'card:' || id`,
-	rows.Decks:        `'deck:' || id`,
-	rows.DeckSettings: `'deckcfg:' || deck_id`,
-	rows.Limits:       `CASE WHEN deck_id = '' THEN 'limits:workspace' ELSE 'limits:deck:' || deck_id END`,
-	rows.FsrsSets:     `'fsrs:set:' || id`,
-	rows.FsrsActive:   `'fsrs:active'`,
-}
-
-// PullEach streams the rows PullRows returns to fn, one at a time. With
-// byLegacyKey the order is (updated_at, legacy key, workspace), the order
-// the legacy view merges typed rows with plugin rows in; otherwise it is
-// PullRows' order.
-func PullEach(ctx context.Context, q Querier, userID int64, f rows.Family, since time.Time, byLegacyKey bool, fn func(rows.Row) error) error {
-	t, ok := tables[f]
-	if !ok {
-		return fmt.Errorf("study: unknown family %q", f)
-	}
-	query := `SELECT ` + selectCols(f) + ` FROM ` + t.name + ` WHERE user_id = ? AND updated_at >= ?`
-	if since.IsZero() {
-		query += ` AND deleted_at IS NULL`
-	}
-	order := orderBy(f)
-	if byLegacyKey {
-		order = "updated_at, " + legacyKeySQL[f] + ", workspace_id"
-	}
-	rs, err := q.QueryContext(ctx, query+` ORDER BY `+order, userID, since.UTC().Format(time.RFC3339))
-	if err != nil {
-		return fmt.Errorf("study: pull %s: %w", f, err)
-	}
-	defer rs.Close()
-	for rs.Next() {
-		r, err := scanRow(f, rs)
-		if err != nil {
-			return fmt.Errorf("study: pull %s: %w", f, err)
-		}
-		if err := fn(r); err != nil {
-			return err
-		}
-	}
-	if err := rs.Err(); err != nil {
-		return fmt.Errorf("study: pull %s: %w", f, err)
-	}
-	return nil
-}
-
 // ForEach streams the user's live rows of family f (every workspace) in
 // pull order to fn, without holding them all (the backup export).
 func ForEach(ctx context.Context, q Querier, userID int64, f rows.Family, fn func(rows.Row) error) error {
@@ -221,39 +146,6 @@ func ForEach(ctx context.Context, q Querier, userID int64, f rows.Family, fn fun
 	return rs.Err()
 }
 
-// Pull returns the families in only (nil: all) changed since since, as
-// PullRows. Every slice of the result is non-nil.
-func Pull(ctx context.Context, q Querier, userID int64, since time.Time, only map[rows.Family]bool) (Delta, error) {
-	d := Delta{Cards: []rows.Card{}, Decks: []rows.Deck{}, DeckSettings: []rows.DeckSettingsRow{},
-		Limits: []rows.LimitsRow{}, FsrsSets: []rows.FsrsSet{}, FsrsActive: []rows.FsrsActiveRow{}}
-	for _, f := range rows.Families {
-		if only != nil && !only[f] {
-			continue
-		}
-		list, err := PullRows(ctx, q, userID, f, since)
-		if err != nil {
-			return Delta{}, err
-		}
-		for _, r := range list {
-			switch x := r.(type) {
-			case *rows.Card:
-				d.Cards = append(d.Cards, *x)
-			case *rows.Deck:
-				d.Decks = append(d.Decks, *x)
-			case *rows.DeckSettingsRow:
-				d.DeckSettings = append(d.DeckSettings, *x)
-			case *rows.LimitsRow:
-				d.Limits = append(d.Limits, *x)
-			case *rows.FsrsSet:
-				d.FsrsSets = append(d.FsrsSets, *x)
-			case *rows.FsrsActiveRow:
-				d.FsrsActive = append(d.FsrsActive, *x)
-			}
-		}
-	}
-	return d, nil
-}
-
 // Get returns one live row of the user; false when absent or tombstoned.
 func Get(ctx context.Context, q Querier, userID, workspaceID int64, f rows.Family, identity string) (rows.Row, bool, error) {
 	r, ok, err := Load(ctx, q, userID, workspaceID, f, identity)
@@ -274,6 +166,10 @@ func ListCards(ctx context.Context, q Querier, userID, workspaceID int64) ([]row
 	out := []rows.Card{}
 	for rs.Next() {
 		r, err := scanRow(rows.Cards, rs)
+		if errors.Is(err, ErrUnreadableStored) {
+			LogUnreadable("study: list cards", err)
+			continue
+		}
 		if err != nil {
 			return nil, fmt.Errorf("study: list cards: %w", err)
 		}

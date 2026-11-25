@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -16,7 +17,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"qinqin/internal/ai"
+	"qinqin/internal/avatar"
 	"qinqin/internal/events"
+	"qinqin/internal/sentences"
 )
 
 // Error codes of an invalid archive (docs/contracts/auth/errors.json).
@@ -76,8 +80,11 @@ type Archive struct {
 	Entries    []EntryRef
 	Dicts      []DictRef
 	SentRefs   []SentenceRef
-	bookFiles  map[int64]bool
-	parts      map[string][]string // family -> part names in order
+	// Avatar is the archive's profile picture, decoded and encoded again
+	// like an upload (nil: the archive has none).
+	Avatar    *avatar.Images
+	bookFiles map[int64]bool
+	parts     map[string][]string // family -> part names in order
 	// Counted during validation.
 	Total int64
 }
@@ -325,17 +332,17 @@ func (a *Archive) validate() error {
 	}
 	counts["events"] = evCount
 	seenRows := map[string]struct{}{}
-	n, err := a.countLines(read, NamePluginData, func(b []byte) error {
-		var r PluginRow
+	n, err := a.countLines(read, NameRows, func(b []byte) error {
+		var r Row
 		if err := decodeStrict(b, &r); err != nil {
-			return invalid("%s holds a malformed line", NamePluginData)
+			return invalid("%s holds a malformed line", NameRows)
 		}
-		return checkPluginRow(r, wsIDs, seenRows)
+		return checkRow(r, wsIDs, seenRows)
 	})
 	if err != nil {
 		return err
 	}
-	counts["pluginData"] = n
+	counts["rows"] = n
 	seenEdit := map[int64]struct{}{}
 	if counts["overlays"], err = a.countLines(read, NameOverlays, func(b []byte) error {
 		var o Overlay
@@ -351,16 +358,21 @@ func (a *Archive) validate() error {
 		return err
 	}
 	seenSent := map[int64]struct{}{}
+	aiPerEntry := map[int64]int{}
 	if counts["sentences"], err = a.countLines(read, NameSentences, func(b []byte) error {
 		var s OwnSentence
-		if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
-			len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		if !ownSentenceLineOK(b) || decodeStrict(b, &s) != nil {
 			return invalid("%s holds a malformed line", NameSentences)
 		}
 		if _, dup := seenSent[s.ID]; dup {
 			return invalid("%s names a sentence twice", NameSentences)
 		}
 		seenSent[s.ID] = struct{}{}
+		if s.AI != nil {
+			if aiPerEntry[s.EntryID]++; aiPerEntry[s.EntryID] > sentences.MaxKeptPerEntry {
+				return invalid("%s holds more than %d AI examples of one entry", NameSentences, sentences.MaxKeptPerEntry)
+			}
+		}
 		return nil
 	}); err != nil {
 		return err
@@ -404,6 +416,26 @@ func (a *Archive) validate() error {
 		}
 		a.bookFiles[id] = true
 	}
+	// the profile picture: read within its cap and checked exactly like an
+	// upload; only the re-encoded files are ever written
+	counts["avatar"] = 0
+	if _, ok := a.files[NameAvatar]; ok {
+		var pic []byte
+		if err := read(NameAvatar, func(r io.Reader) error {
+			b, err := io.ReadAll(r)
+			pic = b
+			return err
+		}); err != nil {
+			return err
+		}
+		// Decoded in one of the server's shared decode slots, like an upload.
+		img, err := avatar.Normalize(context.Background(), pic)
+		if err != nil {
+			return invalid("%s is not a usable picture", NameAvatar)
+		}
+		a.Avatar = &img
+		counts["avatar"] = 1
+	}
 	// counts of the manifest must equal what was read
 	for k, v := range counts {
 		if a.Manifest.Counts[k] != v {
@@ -422,6 +454,8 @@ func (a *Archive) validate() error {
 func perEntryCap(name string) int64 {
 	kind, _, _ := KnownName(name)
 	switch {
+	case name == NameAvatar:
+		return avatar.MaxBytes
 	case kind == KindBook:
 		return capBook
 	case strings.HasSuffix(name, ".json"):
@@ -548,7 +582,7 @@ func okText(s string, max int) bool {
 }
 
 func (a *Archive) checkAccount() error {
-	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.PluginStates) > 1000 {
+	if !okText(a.Account.Username, 200) || len(a.Account.TimeZones) > 200 || len(a.Account.Features) > 1000 {
 		return invalid("account.json is malformed")
 	}
 	for _, tz := range a.Account.TimeZones {
@@ -562,11 +596,11 @@ func (a *Archive) checkAccount() error {
 		}
 	}
 	seen := map[string]bool{}
-	for _, ps := range a.Account.PluginStates {
-		if ps.PluginID == "" || !okText(ps.PluginID, 128) || seen[ps.PluginID] {
-			return invalid("account.json has a bad plugin state")
+	for _, f := range a.Account.Features {
+		if f.ID == "" || !okText(f.ID, 128) || seen[f.ID] {
+			return invalid("account.json has a bad feature switch")
 		}
-		seen[ps.PluginID] = true
+		seen[f.ID] = true
 	}
 	return nil
 }
@@ -648,24 +682,24 @@ func checkEvent(e Event, ws map[int64]bool) error {
 	return nil
 }
 
-func checkPluginRow(r PluginRow, ws map[int64]bool, seen map[string]struct{}) error {
-	if r.PluginID == "" || !okText(r.PluginID, 128) || r.Key == "" || !okText(r.Key, 512) || r.Version < 0 ||
+func checkRow(r Row, ws map[int64]bool, seen map[string]struct{}) error {
+	if r.Key == "" || !okText(r.Key, 512) || r.Version < 0 ||
 		len(r.Data) == 0 || !json.Valid(r.Data) || r.UpdatedAt == "" || len(r.UpdatedAt) > 64 {
-		return invalid("a plugin data row is malformed")
+		return invalid("a row is malformed")
 	}
-	if len(r.Data) > MaxPluginValue {
-		return tooLarge("a plugin data value is larger than %d bytes", MaxPluginValue)
+	if len(r.Data) > MaxRowValue {
+		return tooLarge("a row value is larger than %d bytes", MaxRowValue)
 	}
 	var wsKey int64
 	if r.WorkspaceID != nil {
 		if !ws[*r.WorkspaceID] {
-			return invalid("a plugin data row names an unknown workspace")
+			return invalid("a row names an unknown workspace")
 		}
 		wsKey = *r.WorkspaceID
 	}
-	k := r.PluginID + "\x00" + strconv.FormatInt(wsKey, 10) + "\x00" + r.Key
+	k := strconv.FormatInt(wsKey, 10) + "\x00" + r.Key
 	if _, dup := seen[k]; dup {
-		return invalid("plugin-data.jsonl holds a row twice")
+		return invalid("rows holds a row twice")
 	}
 	seen[k] = struct{}{}
 	return nil
@@ -710,13 +744,33 @@ func eachFamily[T any](a *Archive, family string, fn func(T) error) error {
 // Events streams every event, files in name order.
 func (a *Archive) Events(fn func(Event) error) error { return eachFamily(a, FamEvents, fn) }
 
-// PluginRows streams plugin-data.jsonl.
-func (a *Archive) PluginRows(fn func(PluginRow) error) error {
-	return eachFamily(a, NamePluginData, fn)
+// Rows streams the rows family.
+func (a *Archive) Rows(fn func(Row) error) error {
+	return eachFamily(a, NameRows, fn)
 }
 
 // Overlays streams overlays.jsonl.
 func (a *Archive) Overlays(fn func(Overlay) error) error { return eachFamily(a, NameOverlays, fn) }
+
+// ownSentenceLineOK is the live rule of an own sentences line: an id, an
+// entry and a text within the caps, and a well-formed AI mark when there is
+// one (#186).
+func ownSentenceLineOK(b []byte) bool {
+	var s OwnSentence
+	if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
+		len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		return false
+	}
+	if s.AI == nil {
+		return true
+	}
+	// A kept AI example: the live rules of the examples (#186, docs/contracts/examples/).
+	return s.AI.Provider != "" && s.AI.Model != "" && len(s.AI.Provider) <= 64 && len(s.AI.Model) <= 200 && ai.ValidLevel(s.AI.Level) &&
+		strings.TrimSpace(s.Translation) != "" &&
+		utf8.RuneCountInString(s.Hanzi) <= sentences.MaxExampleTextRunes &&
+		utf8.RuneCountInString(s.Translation) <= sentences.MaxExampleTranslationRunes &&
+		utf8.RuneCountInString(s.Pinyin) <= sentences.MaxExampleReadingRunes
+}
 
 // OwnSentences streams sentences.jsonl.
 func (a *Archive) OwnSentences(fn func(OwnSentence) error) error {

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // packEnv is a server with a controllable clock and import hook.
@@ -46,15 +46,11 @@ func newPackEnv(t *testing.T, opts ...api.Option) *packEnv {
 func newPackEnvWith(t *testing.T, done chan string, opts ...api.Option) *packEnv {
 	t.Helper()
 	e := &packEnv{now: time.Now(), done: done, dataDir: t.TempDir()}
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	e.db = sqlDB
 	clock := func() time.Time { e.mu.Lock(); defer e.mu.Unlock(); return e.now }
 	opts = append([]api.Option{api.WithClock(clock), api.WithImportDone(e.done), api.WithPackLock(&e.lock, &e.unlock)}, opts...)
-	e.ts = httptest.NewServer(api.New(sqlDB, e.dataDir, nil, opts...))
+	e.ts = newTestServer(sqlDB, api.New(sqlDB, e.dataDir, nil, opts...))
 	t.Cleanup(e.ts.Close)
 	e.admin = registerUser(t, e.ts.URL, "admin", "")
 	return e
@@ -113,7 +109,7 @@ func stageZip(t *testing.T, e *packEnv, zipBytes []byte) stagedBody {
 
 func bodyText(resp *http.Response) string {
 	b, _ := io.ReadAll(resp.Body)
-	return string(b)
+	return errorText(b)
 }
 
 func esPackZip(t *testing.T, manifest string) []byte {
@@ -177,7 +173,7 @@ func TestStageUploadTooLarge(t *testing.T) {
 	body := io.MultiReader(&prefix, io.LimitReader(zeroReader{}, 129<<20))
 	resp := uploadPack(t, e, e.admin, body, mw.FormDataContentType())
 	text := bodyText(resp)
-	if resp.StatusCode != http.StatusRequestEntityTooLarge || !strings.Contains(text, "pack zip larger than 128 MiB — use qinqin seed for larger packs") {
+	if resp.StatusCode != http.StatusRequestEntityTooLarge || !strings.HasPrefix(text, "too_large: ") || !strings.Contains(text, "128 MiB — use qinqin seed for larger packs") {
 		t.Errorf("status = %d %q", resp.StatusCode, text)
 	}
 	if d := stageDirs(t, e.dataDir); len(d) != 0 {
@@ -194,7 +190,7 @@ func TestStageUploadInvalidPackLeaksNoPath(t *testing.T) {
 	noLicense := strings.Replace(packTestDictManifest, `"license":"CC0-1.0",`, "", 1)
 	resp := uploadZip(t, e, e.admin, esPackZip(t, noLicense))
 	text := bodyText(resp)
-	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(text, "license is required") {
+	if resp.StatusCode != http.StatusBadRequest || !strings.HasPrefix(text, "pack_invalid: ") || !strings.Contains(text, "license is required") {
 		t.Errorf("status = %d %q", resp.StatusCode, text)
 	}
 	if strings.Contains(text, e.dataDir) || strings.Contains(text, os.TempDir()) {
@@ -228,7 +224,7 @@ func TestStageLimitAndDiscard(t *testing.T) {
 		tokens = append(tokens, stageZip(t, e, esPackZip(t, packTestDictManifest)).Token)
 	}
 	resp := uploadZip(t, e, e.admin, esPackZip(t, packTestDictManifest))
-	if text := bodyText(resp); resp.StatusCode != http.StatusTooManyRequests || !strings.Contains(text, "finish or discard a staged pack first") {
+	if text := bodyText(resp); resp.StatusCode != http.StatusTooManyRequests || !strings.HasPrefix(text, "pack_staged: ") {
 		t.Errorf("4th stage = %d %q", resp.StatusCode, text)
 	}
 	if d := stageDirs(t, e.dataDir); len(d) != 3 {

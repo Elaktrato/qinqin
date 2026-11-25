@@ -16,6 +16,7 @@ import (
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 const lookupJMdict = `<?xml version="1.0" encoding="UTF-8"?>
@@ -46,7 +47,7 @@ const lookupCedict = "學習 学习 [xue2 xi2] /to learn/to study/\n學 学 [xue
 
 // lookupImport writes a pack into a temp directory and imports it with the
 // real importer of its type.
-func lookupImport(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
+func lookupImport(t *testing.T, sqlDB *sql.DB, m pack.Manifest, file, content string) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -58,11 +59,11 @@ func lookupImport(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content st
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", m.ID, err)
 	}
-	if m.Type == dict.TypeFrequency {
+	if m.Type == pack.TypeFrequency {
 		_, err = freq.Import(context.Background(), sqlDB, &p)
 	} else {
 		_, err = dict.ImportLexicon(context.Background(), sqlDB, &p)
@@ -79,15 +80,15 @@ func seedLookup(t *testing.T) string {
 	lang.Register(lang.Ja{})
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", lookupJMdict)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
 	}, "dictionary.txt", lookupCedict)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "freq-test", Name: "Freq test", Version: "1", Type: "frequency", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n為る,する,15\n下,した,600\n")
@@ -215,12 +216,12 @@ func TestLookupArraysNeverNull(t *testing.T) {
 func TestLookupLevels(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
 	}, "dictionary.txt", lookupCedict+"行 行 [xing2] /to walk/\n")
 	dir := t.TempDir()
-	m, _ := json.Marshal(dict.Manifest{ID: "hsk-test", Name: "HSK", Version: "1", Type: dict.TypeLevels,
+	m, _ := json.Marshal(pack.Manifest{ID: "hsk-test", Name: "HSK", Version: "1", Type: pack.TypeLevels,
 		Language: "zh", License: "CC BY-SA 4.0", Attribution: "test", Format: "json"})
 	for name, body := range map[string]string{"manifest.json": string(m),
 		"levels.json": `{"unit": "word", "levels": [{"name": "3", "entries": ["学习"]}]}`} {
@@ -228,7 +229,7 @@ func TestLookupLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -64,6 +64,7 @@ const ACTION_TEXT: Record<string, MessageKey> = {
 	settings_changed: 'admin.audit.action.settingsChanged',
 	sessions_revoked: 'admin.audit.action.sessionsRevoked',
 	mfa_reset: 'admin.audit.action.mfaReset',
+	avatar_removed: 'admin.audit.action.avatarRemoved',
 	data_exported: 'admin.audit.action.dataExported',
 	data_restored: 'admin.audit.action.dataRestored',
 	server_backup_created: 'admin.audit.action.serverBackupCreated'

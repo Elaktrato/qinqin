@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/milestones/reached.json';
 import type { CharRow } from '$lib/api/types';
 import { classifySchedule } from '$lib/stats/wordStates';
 import { cellStates, masteryGlyphs } from '$lib/study/charGroups';
 import { MASTERY_THRESHOLD, masteryFromSchedules } from '$lib/study/mastery';
 import { scheduleAt } from '$lib/study/scheduler';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import { studyClock } from '$lib/study/studyClock';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
@@ -14,6 +14,12 @@ import { givenTimelines, replayStats, timelinesFor, type Timelines } from '$lib/
 import { enabledFamilies } from './catalogue';
 import { reachedFromReplay, sweep, type LevelInput, type ReplayInputs } from './replayReached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
+
+// A fresh memo per test (record 0009: the session owns one).
+let timelineMemo = new Map<string, Timelines>();
+beforeEach(() => {
+	timelineMemo = new Map<string, Timelines>();
+});
 
 const cases = fixture.cases as unknown as ReachedCase[];
 
@@ -197,7 +203,7 @@ describe('reachedFromReplay', () => {
 		}));
 		const cards = ten().map((c, i) => ({ ...c, written: '一二三四五六七八九十'[i] }));
 		const clock = studyClock([], UTC);
-		const t = timelinesFor(reviews, DEFAULT_W, clock);
+		const t = timelinesFor(timelineMemo, reviews, DEFAULT_W, clock);
 		for (const card of cards) t.of(card.id);
 		const built = replayStats.timelines;
 		const chars = Array.from('一二三四五六七八九十').map((c, i) => ({ i, c }) as CharRow);

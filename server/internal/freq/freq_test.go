@@ -12,24 +12,14 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
-func openDB(t *testing.T) *sql.DB {
+func loadPack(t *testing.T, dir string) *pack.Pack {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "qinqin.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
-
-func loadPack(t *testing.T, dir string) *dict.Pack {
-	t.Helper()
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", dir, err)
 	}
@@ -52,14 +42,14 @@ func writeFiles(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-func csvPack(t *testing.T, id, body string) *dict.Pack {
+func csvPack(t *testing.T, id, body string) *pack.Pack {
 	return loadPack(t, writeFiles(t, map[string]string{
 		"manifest.json": manifest(id, "freq-csv"),
 		"freq.csv":      "term,reading,rank\n" + body,
 	}))
 }
 
-func mustImport(t *testing.T, sqlDB *sql.DB, p *dict.Pack) dict.Result {
+func mustImport(t *testing.T, sqlDB *sql.DB, p *pack.Pack) freq.Result {
 	t.Helper()
 	r, err := freq.Import(context.Background(), sqlDB, p)
 	if err != nil {
@@ -95,7 +85,7 @@ func wantRank(t *testing.T, got map[string][]freq.Hit, term string, rank int, di
 }
 
 func TestImportYomitanDirectory(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	r := mustImport(t, sqlDB, loadPack(t, "testdata/yomitan-dir"))
 	if r.Entries != 5 {
 		t.Errorf("Entries = %d, want 5 freq rows (the pitch row is skipped)", r.Entries)
@@ -113,7 +103,7 @@ func TestImportYomitanDirectory(t *testing.T) {
 	}
 }
 
-func yomitanZipPack(t *testing.T, index, bank string) *dict.Pack {
+func yomitanZipPack(t *testing.T, index, bank string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	f, err := os.Create(filepath.Join(dir, "dictionary.zip"))
@@ -139,7 +129,7 @@ func yomitanZipPack(t *testing.T, index, bank string) *dict.Pack {
 }
 
 func TestImportYomitanZip(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	p := yomitanZipPack(t, `{"title":"z"}`, `[["日本","freq",5],["本","freq",{"value":9,"displayValue":"9x"}]]`)
 	if r := mustImport(t, sqlDB, p); r.Entries != 2 {
 		t.Errorf("Entries = %d, want 2", r.Entries)
@@ -150,7 +140,7 @@ func TestImportYomitanZip(t *testing.T) {
 }
 
 func TestOccurrenceBasedBecomesDenseRanks(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	p := yomitanZipPack(t, `{"title":"o","frequencyMode":"occurrence-based"}`,
 		`[["d","freq",20],["b","freq",{"value":"500","displayValue":"500x"}],["c","freq",100],["a","freq",500]]`)
 	mustImport(t, sqlDB, p)
@@ -162,7 +152,7 @@ func TestOccurrenceBasedBecomesDenseRanks(t *testing.T) {
 }
 
 func TestImportCSV(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	if r := mustImport(t, sqlDB, loadPack(t, "testdata/csv")); r.Entries != 5 {
 		t.Errorf("Entries = %d, want 5", r.Entries)
 	}
@@ -182,13 +172,13 @@ func TestImportCSVGzip(t *testing.T) {
 	zw.Write([]byte("term,reading,rank\n猫,,3\n"))
 	zw.Close()
 	f.Close()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, loadPack(t, dir))
 	wantRank(t, lookup(t, sqlDB, []string{"猫"}, nil), "猫", 3, "")
 }
 
 func TestLookupReadingPreference(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "橋,はし,50\n橋,きょう,900\n日,,8\n日,ひ,12\n月,つき,4\n方,ほう,224\n方,かた,322\n"))
 	for _, tc := range []struct {
 		name     string
@@ -223,7 +213,7 @@ func TestLookupReadingPreference(t *testing.T) {
 }
 
 func TestLookupOneBestHitPerPackInPackOrder(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "first", "猫,,30\n猫,ねこ,20\n"))
 	mustImport(t, sqlDB, csvPack(t, "second", "猫,,5\n"))
 	hits := lookup(t, sqlDB, []string{"猫", "猫"}, nil)["猫"] // duplicate terms are harmless
@@ -233,7 +223,7 @@ func TestLookupOneBestHitPerPackInPackOrder(t *testing.T) {
 }
 
 func TestLookupChunksLargeTermLists(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	var body strings.Builder
 	terms := make([]string, 1200)
 	for i := range terms {
@@ -250,7 +240,7 @@ func TestLookupChunksLargeTermLists(t *testing.T) {
 }
 
 func TestPacksAreOrderedByFirstRegistration(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	a, b := csvPack(t, "a", "x,,1\n"), csvPack(t, "b", "x,,2\n")
 	mustImport(t, sqlDB, a)
 	mustImport(t, sqlDB, b)
@@ -268,7 +258,7 @@ func TestPacksAreOrderedByFirstRegistration(t *testing.T) {
 }
 
 func TestReimportReplacesRowsAndIdenticalWritesNothing(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n犬,,4\n"))
 	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET updated_at = 'sentinel'`); err != nil {
 		t.Fatal(err)
@@ -299,45 +289,45 @@ func TestReimportReplacesRowsAndIdenticalWritesNothing(t *testing.T) {
 func TestMalformedPackWritesNothing(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		pack func() *dict.Pack
+		pack func() *pack.Pack
 		want string
 	}{
-		{"csv bad rank on the last row", func() *dict.Pack { return csvPack(t, "bad", "猫,,3\n犬,,x\n") }, "freq.csv row 1"},
-		{"csv zero rank", func() *dict.Pack { return csvPack(t, "bad", "猫,,0\n") }, "freq.csv row 0"},
-		{"csv rank beyond 2^53", func() *dict.Pack { return csvPack(t, "bad", "猫,,3\n犬,,99999999999999999999\n") }, "freq.csv row 1"},
-		{"csv empty term", func() *dict.Pack { return csvPack(t, "bad", ",,3\n") }, "freq.csv row 0"},
-		{"csv wrong header", func() *dict.Pack {
+		{"csv bad rank on the last row", func() *pack.Pack { return csvPack(t, "bad", "猫,,3\n犬,,x\n") }, "freq.csv row 1"},
+		{"csv zero rank", func() *pack.Pack { return csvPack(t, "bad", "猫,,0\n") }, "freq.csv row 0"},
+		{"csv rank beyond 2^53", func() *pack.Pack { return csvPack(t, "bad", "猫,,3\n犬,,99999999999999999999\n") }, "freq.csv row 1"},
+		{"csv empty term", func() *pack.Pack { return csvPack(t, "bad", ",,3\n") }, "freq.csv row 0"},
+		{"csv wrong header", func() *pack.Pack {
 			return loadPack(t, writeFiles(t, map[string]string{"manifest.json": manifest("bad", "freq-csv"), "freq.csv": "word,rank\nx,1\n"}))
 		}, "header"},
-		{"csv missing file", func() *dict.Pack {
+		{"csv missing file", func() *pack.Pack {
 			return loadPack(t, writeFiles(t, map[string]string{"manifest.json": manifest("bad", "freq-csv")}))
 		}, "freq.csv"},
-		{"yomitan row not an array of three", func() *dict.Pack {
+		{"yomitan row not an array of three", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],["b","freq"]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan unusable value", func() *dict.Pack {
+		{"yomitan unusable value", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],["b","freq",{"frequency":[]}]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan value beyond 2^53", func() *dict.Pack {
+		{"yomitan value beyond 2^53", func() *pack.Pack {
 			return yomitanZipPack(t, `{"frequencyMode":"occurrence-based"}`, `[["a","freq",1],["b","freq",1e300]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan non-integer rank", func() *dict.Pack {
+		{"yomitan non-integer rank", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1.5]]`)
 		}, "term_meta_bank_1.json row 0"},
-		{"yomitan unknown mode", func() *dict.Pack {
+		{"yomitan unknown mode", func() *pack.Pack {
 			return yomitanZipPack(t, `{"frequencyMode":"weird"}`, `[["a","freq",1]]`)
 		}, "frequencyMode"},
-		{"yomitan broken json", func() *dict.Pack {
+		{"yomitan broken json", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],`)
 		}, "term_meta_bank_1.json"},
 	} {
-		sqlDB := openDB(t)
+		sqlDB := dbtest.Open(t)
 		_, err := freq.Import(context.Background(), sqlDB, tc.pack())
 		if err == nil || !strings.Contains(err.Error(), tc.want) {
 			t.Errorf("%s: err = %v, want it to mention %q", tc.name, err, tc.want)
 		}
-		if !errors.Is(err, dict.ErrInvalidPack) {
-			t.Errorf("%s: err = %v, want it to wrap dict.ErrInvalidPack", tc.name, err)
+		if !errors.Is(err, pack.ErrInvalidPack) {
+			t.Errorf("%s: err = %v, want it to wrap pack.ErrInvalidPack", tc.name, err)
 		}
 		if n := count(t, sqlDB, `SELECT count(*) FROM frequency`) + count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {
 			t.Errorf("%s: %d rows written by a failed import", tc.name, n)
@@ -346,7 +336,7 @@ func TestMalformedPackWritesNothing(t *testing.T) {
 }
 
 func TestFailedReimportKeepsThePreviousRows(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
 	if _, err := freq.Import(context.Background(), sqlDB, csvPack(t, "p", "犬,,4\n猫,,oops\n")); err == nil {
 		t.Fatal("malformed re-import succeeded")
@@ -355,16 +345,16 @@ func TestFailedReimportKeepsThePreviousRows(t *testing.T) {
 }
 
 func TestImportRejectsOtherPackTypes(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	p := csvPack(t, "x", "猫,,3\n")
-	p.Type = dict.TypeDictionary
+	p.Type = pack.TypeDictionary
 	if _, err := freq.Import(context.Background(), sqlDB, p); err == nil {
 		t.Error("Import of a dictionary pack succeeded")
 	}
 }
 
 func TestCSVWithBOMAndCRLF(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, loadPack(t, writeFiles(t, map[string]string{
 		"manifest.json": manifest("bom", "freq-csv"),
 		"freq.csv":      "\xef\xbb\xbfterm,reading,rank\r\n猫,ねこ,3\r\n\"a,b\",,4\r\n",
@@ -375,7 +365,7 @@ func TestCSVWithBOMAndCRLF(t *testing.T) {
 }
 
 func TestMetadataOnlyChangeIsRegistered(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
 	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET updated_at = 'sentinel'`); err != nil {
 		t.Fatal(err)
@@ -396,7 +386,7 @@ func TestMetadataOnlyChangeIsRegistered(t *testing.T) {
 }
 
 func TestSoftDeletedPackIsRevived(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
 	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET deleted_at = '2020-01-01T00:00:00Z'`); err != nil {
 		t.Fatal(err)
@@ -426,7 +416,7 @@ func TestPackZipFoundDespiteGlobMetacharactersInPath(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, loadPack(t, root))
 	wantRank(t, lookup(t, sqlDB, []string{"a"}, nil), "a", 1, "")
 }

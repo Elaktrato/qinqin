@@ -2,14 +2,23 @@
 // workspace with per-deck overrides, counted from the review log by the
 // learner's day. Pure. Rule and fixtures: docs/contracts/scheduler/.
 
-import { isValidReview, sortedReviews } from './scheduler';
+import { isValidReview, sortedReviews } from './reviewOrder';
 import type { StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
 
-export const LIMITS_WORKSPACE_KEY = 'limits:workspace';
-export const LIMITS_DECK_PREFIX = 'limits:deck:';
-
 export const MAX_LIMIT = 9999;
+
+/**
+ * NO_LIMIT stands for "no limit" wherever a number is needed: Study all's
+ * session caps, and counts taken before any cap. Larger than any session.
+ */
+export const NO_LIMIT = 1_000_000;
+
+/** cap reads a session cap: a finite number floored, at least 0; anything else is 0. */
+export function cap(limit: number): number {
+	if (!Number.isFinite(limit)) return 0;
+	return Math.max(0, Math.floor(limit));
+}
 
 /** `null` = unlimited. */
 export interface LimitPair {
@@ -19,31 +28,6 @@ export interface LimitPair {
 
 export const DEFAULT_LIMITS: LimitPair = { new: 20, reviews: 200 };
 
-export function limitsDeckKey(deckId: string): string {
-	return `${LIMITS_DECK_PREFIX}${deckId}`;
-}
-
-function isLimit(value: unknown): value is number | null {
-	return value === null || (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_LIMIT);
-}
-
-/**
- * parseLimitRow reads a `limits:workspace` or `limits:deck:<id>` row: the
- * fields that are present and usable (a field that is not is ignored, so it
- * follows the workspace or the default). null for an unusable row.
- */
-export function parseLimitRow(key: string, raw: unknown): Partial<LimitPair> | null {
-	const deck = key.startsWith(LIMITS_DECK_PREFIX) && key.length > LIMITS_DECK_PREFIX.length;
-	if (key !== LIMITS_WORKSPACE_KEY && !deck) return null;
-	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-	const row = raw as Record<string, unknown>;
-	if (row.version !== 1) return null;
-	const out: Partial<LimitPair> = {};
-	if ('new' in row && isLimit(row.new)) out.new = row.new;
-	if ('reviews' in row && isLimit(row.reviews)) out.reviews = row.reviews;
-	return out;
-}
-
 /** effectiveLimits: the deck's field if present, else the workspace's, else the default. */
 export function effectiveLimits(
 	workspace: Partial<LimitPair> | null,
@@ -51,6 +35,20 @@ export function effectiveLimits(
 ): LimitPair {
 	const base = { ...DEFAULT_LIMITS, ...(workspace ?? {}) };
 	return { ...base, ...(deck ?? {}) };
+}
+
+/** The limits of one deck in a context: its row over the workspace's over the defaults. */
+export function limitsOf(ctx: Pick<StudyContext, 'limits'>, deckId: string): LimitPair {
+	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
+}
+
+/** The decks that exist: the context's list, else every deck the candidates name. */
+export function existingDecksOf(
+	ctx: Pick<StudyContext, 'limits'>,
+	candidates: readonly { deckIds: readonly string[] }[]
+): ReadonlySet<string> {
+	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
+	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
 }
 
 export interface DayCounts {
@@ -207,8 +205,11 @@ export function admit(
 }
 
 // Many queues of one workspace (the decks view builds one per deck) share one
-// count: remembered for the last cards/reviews arrays and learner day.
-let memo: { cards: readonly StudyCard[]; reviews: readonly ReviewEvent[]; today: string; counts: DayCounts } | null = null;
+// count: remembered per cards array (with its reviews array and learner day).
+// A WeakMap keyed by the arrays the caller holds (the session's study data or
+// a page's copy): it keeps nothing once they are dropped, so no count outlives
+// the session that loaded the arrays (record 0009).
+const memo = new WeakMap<readonly StudyCard[], { reviews: readonly ReviewEvent[]; today: string; counts: DayCounts }>();
 
 /** dayCountsCached is dayCounts, reused while the same arrays and learner day are asked again. */
 export function dayCountsCached(
@@ -218,10 +219,9 @@ export function dayCountsCached(
 	now: Date
 ): DayCounts {
 	const today = ctx.day.dayOf(now.getTime());
-	if (memo !== null && memo.cards === cards && memo.reviews === reviews && memo.today === today) {
-		return memo.counts;
-	}
+	const hit = memo.get(cards);
+	if (hit !== undefined && hit.reviews === reviews && hit.today === today) return hit.counts;
 	const counts = dayCounts(cards, reviews, ctx, now);
-	memo = { cards, reviews, today, counts };
+	memo.set(cards, { reviews, today, counts });
 	return counts;
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"qinqin/internal/datapkg"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 )
 
@@ -19,7 +20,7 @@ import (
 func TestManifestFieldsChangeMakeANewRevision(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	pack := writePack(t, map[string]any{"id": "hw", "name": "Strokes", "type": "strokes", "languages": []string{"zh"}, "license": "Arphic Public License", "format": "hanzi-writer-jsonl-gz"},
 		map[string][]byte{"strokes.jsonl.gz": gz(`{"char":"好","data":{"strokes":["M 1 2"]}}` + "\n"), "LICENSE": []byte("Arphic\n")})
 	if _, err := packs.Import(ctx, e.db, pack, e.onChange()); err != nil {

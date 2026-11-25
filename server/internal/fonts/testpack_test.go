@@ -2,7 +2,6 @@ package fonts_test
 
 import (
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,8 +10,7 @@ import (
 	"sort"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Synthetic slices: the WOFF2 magic plus a distinguishing tail. They are
@@ -37,7 +35,7 @@ type faceSpec struct {
 }
 
 // writePack writes a font pack directory with the given faces and loads it.
-func writePack(t *testing.T, id string, faces ...faceSpec) dict.Pack {
+func writePack(t *testing.T, id string, faces ...faceSpec) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest := fmt.Sprintf(`{"id":%q,"name":"Test %s","version":"1","type":"font","license":"OFL-1.1",
@@ -77,7 +75,7 @@ func writePack(t *testing.T, id string, faces ...faceSpec) dict.Pack {
 	}
 	raw, _ := json.Marshal(doc)
 	write(t, filepath.Join(dir, "faces.json"), raw)
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,16 +90,6 @@ func write(t *testing.T, path string, data []byte) {
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // blobs lists every file under the store, relative and sorted.

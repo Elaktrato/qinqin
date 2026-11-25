@@ -10,6 +10,7 @@ import (
 	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 )
 
@@ -33,7 +34,7 @@ const gakkouXML = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 // jmdictPack writes a JMdict pack with xml as its data and loads it.
-func jmdictPack(t *testing.T, xml string) dict.Pack {
+func jmdictPack(t *testing.T, xml string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest := `{"id":"jm-mini","name":"JMdict mini","version":"1","type":"dictionary","language":"ja","license":"CC BY-SA 4.0","attribution":"test","format":"jmdict"}`
@@ -42,7 +43,7 @@ func jmdictPack(t *testing.T, xml string) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("load jmdict fixture: %v", err)
 	}
@@ -56,7 +57,7 @@ func jmdictPack(t *testing.T, xml string) dict.Pack {
 func seedWorld(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
 	ctx := context.Background()
-	zh, err := dict.LoadPack("../dict/testdata/mkgloss")
+	zh, err := pack.LoadPack("../dict/testdata/mkgloss")
 	if err != nil {
 		t.Fatalf("load dictionary fixture: %v", err)
 	}
@@ -70,14 +71,14 @@ func seedWorld(t *testing.T, sqlDB *sql.DB) {
 	if err := (lexicon.Store{DB: sqlDB}).Link(ctx, lexID(t, sqlDB, "zh", "word", "你好"), lexID(t, sqlDB, "zh", "character", "好"), lexicon.LinkVariant); err != nil {
 		t.Fatalf("link: %v", err)
 	}
-	levelsPack, err := dict.LoadPack("../levels/testdata/hsk-mini")
+	levelsPack, err := pack.LoadPack("../levels/testdata/hsk-mini")
 	if err != nil {
 		t.Fatalf("load levels fixture: %v", err)
 	}
 	if _, err := levels.Import(ctx, sqlDB, levelsPack); err != nil {
 		t.Fatalf("import levels fixture: %v", err)
 	}
-	sentencePack, err := dict.LoadPack("../sentences/testdata/zh-mini")
+	sentencePack, err := pack.LoadPack("../sentences/testdata/zh-mini")
 	if err != nil {
 		t.Fatalf("load sentences fixture: %v", err)
 	}
@@ -107,7 +108,7 @@ func lexID(t *testing.T, sqlDB *sql.DB, language, kind, form string) int64 {
 func backdate(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
 	for _, table := range []string{"entries", "forms", "readings", "senses", "entry_links",
-		"level_members", "sentences", "plugin_data", "plugin_states", "dictionaries", "schemes", "levels"} {
+		"level_members", "sentences", "keyed_rows", "feature_switches", "dictionaries", "schemes", "levels"} {
 		if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '2020-01-01T00:00:00Z'`); err != nil {
 			t.Fatalf("backdate %s: %v", table, err)
 		}

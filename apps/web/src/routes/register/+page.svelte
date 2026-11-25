@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { checkInvite, getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { readFragment } from '$lib/account/fragment';
-	import { register } from '$lib/auth';
 	import { passwordHint } from '$lib/account/passwordRules';
 	import { Button, Field } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let username = $state('');
 	let password = $state('');
@@ -48,10 +49,9 @@
 		emailPolicy === 'required' ? t('account.email.label') : t('account.email.labelOptional')
 	);
 
-	// Who may see the form: the bootstrap, an invite holder, or anyone when open.
-	const closed = $derived(
-		loaded && options !== null && !options.bootstrap && !invite && options.registration !== 'open'
-	);
+	// Who may see the form: an invite holder, or anyone when open. Registering
+	// never makes an administrator (#211).
+	const closed = $derived(loaded && options !== null && !invite && options.registration !== 'open');
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -60,7 +60,7 @@
 		error = '';
 		busy = true;
 		try {
-			await register(username.trim(), password, { email: email.trim(), invite });
+			await app.auth.register(username.trim(), password, { email: email.trim(), invite });
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
 			error = authErrorMessage(err, t('auth.register.failed'), 'register');
@@ -92,9 +92,6 @@
 		</p>
 		<p class="hint"><a href="/login">{t('auth.register.signIn')}</a></p>
 	{:else}
-		{#if options?.bootstrap}
-			<p class="hint">{t('auth.register.bootstrap')}</p>
-		{/if}
 		<form onsubmit={submit}>
 			<Field
 				label={t('auth.signIn.username')}
@@ -105,7 +102,7 @@
 				required
 			/>
 
-			{#if emailPolicy !== 'off' && !options?.bootstrap}
+			{#if emailPolicy !== 'off'}
 				<Field
 					label={emailLabel}
 					name="email"

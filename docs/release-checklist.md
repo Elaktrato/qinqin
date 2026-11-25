@@ -1,7 +1,8 @@
 # Pre-release browser checklist
 
 CI proves the embed is servable and the stroke data is reachable
-(`scripts/smoke-embed.sh`), but it does not look at pixels. Before tagging a
+(`scripts/smoke-embed.sh`) and drives the main flows in Chromium (the `e2e`
+job), but it does not look at pixels. Before tagging a
 release, run the built image or `go run ./cmd/qinqin serve` with a fresh build
 and walk through this in a real browser (desktop Chrome or Firefox, plus one
 phone-width window):
@@ -19,10 +20,10 @@ phone-width window):
 7. A hard reload after the previous release picks up the new UI (index is
    `no-store`; hashed assets are cached for a year).
 
-## Why not an automated browser job
+## What the browser suite already covers
 
-A Playwright job would need a browser download (about 150 MB) per run and
-canvas/SVG animation assertions that are timing-sensitive, for little beyond
-what the HTTP smoke already guards (the data path and the embed). The cost is
-not justified yet; revisit if the stroke or heatmap rendering regresses
-unnoticed.
+The `e2e` CI job (`apps/web/e2e`, [Development](wiki/Development.md#browser-end-to-end-tests)) drives
+Chromium through signing in, a study session (grade changes, mixed card types), the reader popup, offline
+study and its sync, and the phone bottom bar. It does not look at pixels, stroke animations, the heatmap or
+licence texts, and runs no other browser, so the walk-through above stays; the wiki page lists everything the
+suite leaves to a person.

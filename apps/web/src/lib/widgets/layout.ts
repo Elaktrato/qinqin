@@ -1,13 +1,11 @@
 // The user's home layout: an ordered list of widget ids, stored once per
-// user (not per workspace) as the user-global plugin data row
-// `qinqin-core` / `home-layout`, so every device shares it and sync
+// user (not per workspace) as the user-global keyed row `home-layout`
+// (docs/contracts/keyed/), so every device shares it and sync
 // carries it. A missing row means the default layout; last write wins.
 
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { keyedData } from '$lib/sync/keyed';
 import type { WidgetDef, WidgetSurface } from './types';
 
-export const LAYOUT_PLUGIN_ID = coreManifest.id;
 export const LAYOUT_KEY = 'home-layout';
 const LAYOUT_VERSION = 1;
 
@@ -51,7 +49,7 @@ export function serializeLayout(ids: readonly string[]): StoredLayout {
 
 /**
  * resolveLayout turns stored ids into the widgets to render on a
- * surface: unknown and unavailable ids (a disabled plugin, another
+ * surface: unknown and unavailable ids (a switched-off feature, another
  * language) are dropped but stay stored, duplicates keep their first
  * position, the order is kept. No stored layout means DEFAULT_LAYOUT; an
  * empty stored layout stays empty.
@@ -76,7 +74,7 @@ export function resolveLayout(
 /**
  * homeEmptyReason says why the home page shows no widget: the stored
  * layout chose none ('none-chosen'), or it chose some that cannot be
- * shown in this workspace (another language, a disabled plugin:
+ * shown in this workspace (another language, a switched-off feature:
  * 'none-available'). Null while at least one widget is shown.
  */
 export function homeEmptyReason(
@@ -124,10 +122,10 @@ export function placeWidgets(widgets: readonly WidgetDef[]): PlacedWidget[] {
 export async function loadLayout(): Promise<string[] | null> {
 	// find() reads through the list route: a never-saved layout is a 200
 	// with no rows, where a single-key GET would log a 404 on every visit.
-	return parseLayout(await createPluginSdk(coreManifest).data.user().find(LAYOUT_KEY));
+	return parseLayout(await keyedData(null).find(LAYOUT_KEY));
 }
 
 /** saveLayout stores the user's layout for every device. */
 export async function saveLayout(ids: readonly string[]): Promise<void> {
-	await createPluginSdk(coreManifest).data.user().put(LAYOUT_KEY, serializeLayout(ids));
+	await keyedData(null).put(LAYOUT_KEY, serializeLayout(ids));
 }

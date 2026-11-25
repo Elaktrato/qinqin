@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Test harness: renders the page's phone-bar actions, as PhoneBar does.
-	import { pageFrame } from '$lib/frame/pageFrame.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 </script>
 
-{#if pageFrame.actions}{@render pageFrame.actions()}{/if}
+{#if app.frame.actions}{@render app.frame.actions()}{/if}

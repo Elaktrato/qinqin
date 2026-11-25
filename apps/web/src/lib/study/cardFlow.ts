@@ -2,20 +2,29 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
+import { profileOf } from '$lib/languages/profiles';
 import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, existingDecksOf, limitsOf, scheduleFor } from './scheduler';
-import { STUDY_ALL_LIMIT } from './session';
-import { admit, dayCountsCached, type Candidate } from './limits';
+import { queueCandidates, scheduleFor } from './scheduler';
+import { dayCountsCached } from './limits';
 import type { ClozeMode } from './cloze';
+import {
+	admitSession,
+	buildSessionQueue,
+	sessionBackfill,
+	skipKindsByEntry,
+	type QueueEntry
+} from './sessionQueue';
+
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
-import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
+import { eligibleForTone, pinyinReadings } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
-import { isHan, writableChars } from './writing';
+import { writableChars } from './writing';
 import {
+	GENERAL_DECK_ID,
 	OPT_IN_KINDS,
 	type OptInKind,
 	type ReviewEvent,
@@ -81,14 +90,10 @@ export interface EligibilityContext {
 	hasCloze?: boolean;
 }
 
-/** zh and its regional tags (zh-Hant, zh_TW, ...). */
-export function isChinese(language: string): boolean {
-	return language.toLowerCase().split(/[-_]/)[0] === 'zh';
-}
-
-/** The pinyin reading values of an entry, in order. */
-export function pinyinReadings(readings: readonly { type: string; value: string }[]): string[] {
-	return readings.filter((reading) => reading.type === 'pinyin').map((reading) => reading.value);
+/** languageCardKinds keeps the kinds the language's profile has (tone only for a tonal language, #199). */
+export function languageCardKinds(kinds: readonly StudyCardKind[], language: string): StudyCardKind[] {
+	const own = profileOf(language).cardKinds;
+	return kinds.filter((kind) => own.includes(kind));
 }
 
 /** The first sentence that has no sentence card yet, or null. */
@@ -168,7 +173,7 @@ function reviewedIds(reviews: readonly ReviewEvent[]): Set<string> {
 }
 
 function sessionKinds(kinds: readonly StudyCardKind[], language: string): StudyCardKind[] {
-	return kinds.filter((kind) => kind !== 'tone' || isChinese(language));
+	return languageCardKinds(kinds, language);
 }
 
 export interface DeckSessionOptions {
@@ -197,41 +202,20 @@ export interface DeckSessionOptions {
 	studyAll?: boolean;
 }
 
-/**
- * How many dropped companions one session replaces from the reserve. A
- * deck of mostly unsuitable words would otherwise fetch every entry one
- * by one before the session could end.
- */
-export function backfillLimit(newLimit: number): number {
-	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
-	return Math.max(30, 2 * limit);
-}
-
-/** A deck session: the queue, plus companions held back beyond the budget. */
+/** A deck session: the queue, plus new items held back beyond the budget. */
 export interface DeckSessionPlan {
 	queue: FlowItem[];
 	/**
-	 * Companions planned beyond the new-card budget, in planning order.
-	 * Eligibility is only known once an entry is loaded, so when the runner
-	 * drops an ineligible companion the next reserve item takes its place
-	 * (see dropItem); otherwise sentence-less old words would use up the
-	 * budget in every session and starve the newer ones.
+	 * New items (real cards, then companions) the daily limits allow beyond
+	 * the session's new-card cap, in queue order, at most backfillLeft
+	 * (sessionQueue.ts). Eligibility is only known once an entry is loaded,
+	 * so when the runner drops an ineligible companion the next reserve item
+	 * takes its place (see dropItem); otherwise sentence-less old words would
+	 * use up the budget in every session and starve the newer ones.
 	 */
 	reserve: FlowItem[];
 	/** Replacements left this session (see backfillLimit). */
 	backfillLeft: number;
-}
-
-/** Non-vocab kinds each word's vocab row says to skip. */
-export function skipKindsByEntry(cards: readonly StudyCard[]): Map<number, Set<StudyCardKind>> {
-	const out = new Map<number, Set<StudyCardKind>>();
-	for (const card of cards) {
-		if (card.kind !== 'vocab' || card.skipKinds === undefined) continue;
-		const set = out.get(card.entryId) ?? new Set<StudyCardKind>();
-		for (const kind of card.skipKinds) set.add(kind);
-		out.set(card.entryId, set);
-	}
-	return out;
 }
 
 /** The entries that have a stored vocab card. */
@@ -293,9 +277,7 @@ export function deckSessionPlan({
 	newKey,
 	studyAll = false
 }: DeckSessionOptions): DeckSessionPlan {
-	const capNew = studyAll ? STUDY_ALL_LIMIT : newLimit;
-	const capReview = studyAll ? STUDY_ALL_LIMIT : reviewLimit;
-	const backfillLeft = backfillLimit(capNew);
+	const backfillLeft = sessionBackfill(newLimit, studyAll);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
 
@@ -309,25 +291,28 @@ export function deckSessionPlan({
 			!buried.cardIds.has(card.id) &&
 			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
-	const buildCtx = studyAll
-		? { ...ctx, limits: { ...ctx.limits, workspace: null, decks: {} } }
-		: ctx;
-	const real = buildQueue({
+	// Reviews of cards that are not shown (buried, kind switched off) still
+	// use the day's allowance: count over every card.
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const admission = { ctx, counts, caps: { newLimit, reviewLimit }, studyAll };
+	const { candidates, byId } = queueCandidates({
 		cards: allowed,
 		reviews,
 		deckIds,
-		newLimit: capNew,
-		reviewLimit: capReview,
+		newLimit,
+		reviewLimit,
 		now,
 		kinds: wanted,
 		w,
-		ctx: buildCtx,
-		// Reviews of cards that are not shown (buried, kind switched off) still
-		// use the day's allowance: count over every card.
-		counts: dayCountsCached(cards, reviews, ctx, now),
+		ctx,
+		counts,
 		newKey
 	});
-	const reviewed = reviewedIds(reviews);
+	const real = candidates.map(
+		(candidate): QueueEntry<FlowItem> => ({ ...candidate, item: fromCard(byId.get(candidate.cardId) as StudyCard) })
+	);
+	// Words with a queued real card get no opt-in companion (planCompanions).
+	const queuedReal = admitSession({ ...admission, candidates }).inSession;
 
 	const companions = planCompanions({
 		cards,
@@ -339,7 +324,7 @@ export function deckSessionPlan({
 		now: now.getTime(),
 		studyDay: ctx.day,
 		deckSettings,
-		exclude: new Set(real.map((card) => card.entryId)),
+		exclude: new Set(real.filter((entry) => queuedReal.has(entry.cardId)).map((entry) => entry.item.entryId)),
 		skip,
 		offline
 	})
@@ -354,51 +339,25 @@ export function deckSessionPlan({
 				writableChars(item.written).length > 0
 		)
 		.map(
-			(item): FlowItem => ({
+			(item): QueueEntry<FlowItem> => ({
 				cardId: item.cardId,
-				kind: item.kind,
-				entryId: item.entryId,
-				virtual: true,
-				card: null,
-				...(item.written === undefined ? {} : { written: item.written }),
-				deckIds: [...item.deckIds]
+				deckIds: item.deckIds,
+				// Companions are new cards: they share the new allowance (the
+				// session limit and each deck's daily limit) with the real ones.
+				bucket: 'new',
+				item: {
+					cardId: item.cardId,
+					kind: item.kind,
+					entryId: item.entryId,
+					virtual: true,
+					card: null,
+					...(item.written === undefined ? {} : { written: item.written }),
+					deckIds: [...item.deckIds]
+				}
 			})
 		);
 
-	// Companions are new cards: they share the new allowance (the session
-	// limit and each deck's daily limit) with the real new cards. The ones
-	// the daily limits still allow beyond the session limit are the reserve.
-	const counts = dayCountsCached(cards, reviews, ctx, now);
-	const caps = {
-		newLimit: Number.isFinite(capNew) ? Math.max(0, Math.floor(capNew)) : 0,
-		reviewLimit: Number.isFinite(capReview) ? Math.max(0, Math.floor(capReview)) : 0
-	};
-	const asCandidates: Candidate[] = [
-		...real.map((card) => ({
-			cardId: card.id,
-			deckIds: card.deckIds,
-			bucket: counts.reviewedToday.has(card.id)
-				? ('continuing' as const)
-				: reviewed.has(card.id)
-					? ('review' as const)
-					: ('new' as const)
-		})),
-		...companions.map((item) => ({ cardId: item.cardId, deckIds: item.deckIds ?? [], bucket: 'new' as const }))
-	];
-	const limitsFor = studyAll
-		? () => ({ new: null, reviews: null })
-		: (deckId: string) => limitsOf(ctx, deckId);
-	const existing = existingDecksOf(ctx, asCandidates);
-	const inSession = new Set(admit(asCandidates, limitsFor, counts, caps, existing).admitted);
-	const inAllowance = new Set(
-		admit(asCandidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
-	);
-
-	return {
-		queue: [...real.map(fromCard), ...companions.filter((item) => inSession.has(item.cardId))],
-		reserve: companions.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId)),
-		backfillLeft
-	};
+	return buildSessionQueue({ ...admission, entries: [...real, ...companions] });
 }
 
 /** deckSessionItems is the queue of deckSessionPlan (no reserve). */
@@ -517,7 +476,7 @@ export function levelSessionItems(
 			entryId: item.entryId,
 			virtual: item.virtual,
 			card: null,
-			...(item.kind === 'vocab' ? {} : { deckIds: ['general'] })
+			...(item.kind === 'vocab' ? {} : { deckIds: [GENERAL_DECK_ID] })
 		});
 	}
 	return out;
@@ -566,76 +525,6 @@ export function tierForCard(
 ): SaladTier {
 	if (cardId === null) return 0;
 	return tierFor(scheduleFor(cardId, reviews, now, w, clock)?.stability ?? null);
-}
-
-/**
- * maskWritten shows the word with every usable character that is not yet
- * written replaced by a box; `done` counts the characters completed in
- * order. Kana and other characters stay visible as context.
- */
-export function maskWritten(written: string, chars: readonly string[], done: number): string {
-	let out = '';
-	for (const ch of written) {
-		const at = chars.indexOf(ch);
-		out += at >= 0 && at >= done ? '□' : ch;
-	}
-	return out;
-}
-
-export interface ToneVerdict {
-	correct: boolean;
-	wrong: number;
-	/** Per syllable: right against the best matching reading. */
-	marks: boolean[];
-	/** The reading the answer was checked against, null when none fits. */
-	best: Syllable[] | null;
-}
-
-/**
- * toneVerdict checks chosen tones against every reading with the same
- * syllable count (cleanReadings output) and keeps the closest one, so a
- * polyphone answer for any of its readings is right. Ties keep the first.
- */
-export function toneVerdict(
-	chosen: readonly Tone[],
-	candidates: readonly (readonly Syllable[])[]
-): ToneVerdict {
-	let best: readonly Syllable[] | null = null;
-	let bestWrong = chosen.length;
-	for (const candidate of candidates) {
-		if (candidate.length !== chosen.length) continue;
-		const wrong = candidate.reduce((sum, syllable, i) => sum + (syllable.tone === chosen[i] ? 0 : 1), 0);
-		if (best === null || wrong < bestWrong) {
-			best = candidate;
-			bestWrong = wrong;
-		}
-	}
-	if (best === null) {
-		return { correct: false, wrong: chosen.length, marks: chosen.map(() => false), best: null };
-	}
-	const reading = best;
-	return {
-		correct: bestWrong === 0,
-		wrong: bestWrong,
-		marks: chosen.map((tone, i) => reading[i].tone === tone),
-		best: [...reading]
-	};
-}
-
-/**
- * The Han characters of `written` when every character is Han and their
- * count equals the syllable count; otherwise null (erhua such as 花儿,
- * mixed scripts), and the pads show toneless pinyin instead.
- */
-export function tonePadLabels(written: string, syllableCount: number): string[] | null {
-	const chars = [...written.trim()];
-	if (chars.length === 0 || chars.length !== syllableCount) return null;
-	return chars.every(isHan) ? chars : null;
-}
-
-/** The tone check candidates of an entry: its clean pinyin readings. */
-export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
-	return cleanReadings(pinyinReadings(readings));
 }
 
 /** Whether Space/Enter outside a field reveals the answer of this kind of card. */

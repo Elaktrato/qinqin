@@ -7,7 +7,7 @@
 
 ### Server backup in the app
 
-Under **Include** choose the database, books, packs and audio, enter **Your password** (and an authenticator or recovery code if you use one), and **Create server backup**: a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent `VACUUM INTO` snapshot taken while the server runs), `books/`, `packs/` and `audio/`. It never holds `journal/`, `cache/`, `tmp/`, `backups/`, `packages/` or `fonts/`.
+Under **Include** choose the database, books, packs and audio, enter **Your password** (and an authenticator or recovery code if you use one), and **Create server backup**: a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent `VACUUM INTO` snapshot taken while the server runs) with `avatars/` (the profile pictures, which travel with the database), `books/`, `packs/` and `audio/`. It never holds `journal/`, `cache/`, `tmp/`, `backups/`, `packages/` or `fonts/`.
 
 - **Data packages are rebuilt, not backed up**: after a restore the server builds them again at start, to the same revisions and content hashes, so clients keep the files they have.
 - **Font packs**: their slices live in `/data/fonts`, which the archive does not include. Copy that folder yourself, or install the font packs again after a restore ([Data packs on the server](Admin-data-packs)).
@@ -59,4 +59,4 @@ Run these inside the container: `docker compose exec qinqin qinqin <command>`, o
 | `qinqin recover --username <name> [--enable] [--admin] [--reset-mfa]` | For a locked-out account: sets a new temporary password, which must be changed at the next sign-in, and ends every session of the account. The password comes from `QINQIN_PASSWORD` or one line of standard input; a terminal echoes what you type, so prefer the variable or a pipe. `--enable` re-enables a disabled account; `--admin` makes it an administrator (on a disabled account it needs `--enable`); `--reset-mfa` also removes the authenticator, the recovery codes and the email-code method. Pending reset links are cancelled |
 | `qinqin backup --out <file or -> [--only db,books,packs,audio]` | The server archive, as above |
 
-Example: `docker compose exec -e QINQIN_PASSWORD='a new temporary one' qinqin qinqin recover --username alice --reset-mfa`. An administrator without a prompt (a script or provisioning): `docker compose exec -e QINQIN_PASSWORD='at least ten characters' qinqin qinqin adduser --admin --username you`.
+Example: `docker compose exec -e QINQIN_PASSWORD='a new temporary one' qinqin qinqin recover --username alice --reset-mfa`. An administrator without a prompt (a script or provisioning, with `QINQIN_BOOTSTRAP_ADMIN=off` so the server does not also create `admin`): `docker compose exec -e QINQIN_PASSWORD='at least ten characters' qinqin qinqin adduser --admin --username you`.

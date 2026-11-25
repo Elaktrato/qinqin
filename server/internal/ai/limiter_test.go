@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"qinqin/internal/dbtest"
 )
 
 type clock struct{ t time.Time }
@@ -15,7 +17,7 @@ func (c *clock) now() time.Time { return c.t }
 
 func newLimiter(t *testing.T) (*Limiter, *clock) {
 	t.Helper()
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	c := &clock{t: time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)}
 	return &Limiter{DB: sqlDB, PerHour: 30, Now: c.now}, c
 }
@@ -143,7 +145,7 @@ func TestLimiterCallsLastHourAndPrune(t *testing.T) {
 }
 
 func TestRecordStoresProviderAndCountsAcrossProviders(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	l := &Limiter{DB: sqlDB, PerHour: 3}
 	ctx := context.Background()
 	for _, p := range []string{"anthropic", "openai", ""} {

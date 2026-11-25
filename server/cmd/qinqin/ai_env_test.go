@@ -5,25 +5,19 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/ai"
-	"qinqin/internal/db"
-	"qinqin/internal/plugins"
+	"qinqin/internal/dbtest"
 )
 
 func b64(b byte) string { return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{b}, 32)) }
 
 func newEnvSvc(t *testing.T, env map[string]string) (*ai.Service, string) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	var logs strings.Builder
 	svc := aiFromEnv(sqlDB, func(k string) string { return env[k] }, func(f string, a ...any) { fmt.Fprintf(&logs, f+"\n", a...) })
 	return svc, logs.String()
@@ -157,11 +151,7 @@ func TestAIEnvLogsNoSecret(t *testing.T) {
 }
 
 func TestAIFromEnvRotates(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	a, _ := ai.ParseSecret(b64(1))
 	old := &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(a)}
@@ -192,11 +182,7 @@ func TestAIFromEnvRotates(t *testing.T) {
 }
 
 func TestAIJanitorPrunesOldCalls(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	old := time.Now().UTC().Add(-8 * 24 * time.Hour).Format(time.RFC3339)
 	fresh := time.Now().UTC().Format(time.RFC3339)
 	for _, at := range []string{old, fresh} {
@@ -222,23 +208,4 @@ func TestAIJanitorPrunesOldCalls(t *testing.T) {
 	}
 	cancel()
 	<-done
-}
-
-func TestBuiltinJournalManifest(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
-	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
-		t.Fatal(err)
-	}
-	var m string
-	if err := sqlDB.QueryRow(`SELECT manifest_json FROM plugin_registry WHERE pack_id = 'qinqin-journal'`).Scan(&m); err != nil {
-		t.Fatalf("journal not registered: %v", err)
-	}
-	parsed, err := plugins.ParseManifest([]byte(m))
-	if err != nil || parsed.Name != "Journal" || len(parsed.Surfaces) != 1 || parsed.Surfaces[0] != "page" {
-		t.Errorf("manifest = %s (err %v)", m, err)
-	}
 }

@@ -6,17 +6,18 @@
 	// The menu behaviour is lib/ui Menu's.
 	import { t } from '$lib/i18n';
 	import Flag from '$lib/components/Flag.svelte';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { workspaceDisplay } from '$lib/languages';
-	import { select, workspaces } from '$lib/workspaces';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';
 	import MenuItem from '$lib/ui/MenuItem.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { align = 'end', direction = 'down' }: { align?: 'start' | 'end'; direction?: 'down' | 'up' } = $props();
 
-	const list = $derived($workspaces.list);
-	const current = $derived($workspaces.current);
+	const list = $derived(session.workspaces.list);
+	const current = $derived(session.workspaces.current);
 	const display = $derived(current ? workspaceDisplay(list, current) : null);
 	const label = $derived(
 		display
@@ -32,7 +33,7 @@
 		{#if current}<Flag code={current.language} size={20} decorative />{:else}<Icon name="flag" />{/if}
 	{/snippet}
 	{#each list as workspace (workspace.id)}
-		<MenuItem checked={workspace.id === current?.id} onselect={() => select(workspace.id)}
+		<MenuItem checked={workspace.id === current?.id} onselect={() => session.workspaces.select(workspace.id)}
 			><WorkspaceLabel {workspace} {list} withLanguage /></MenuItem
 		>
 	{/each}

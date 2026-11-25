@@ -2,13 +2,18 @@ package api_test
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
+	"qinqin/internal/auth"
 	"qinqin/internal/lang"
 )
 
@@ -21,11 +26,41 @@ type workspaceBody struct {
 	UpdatedAt string          `json:"updatedAt"`
 }
 
-// registerUser creates a user through the API — without a token for the
-// first user (the instance admin), with an admin token afterwards — and
-// returns the new user's bearer token.
+// testDBs maps a test server's URL to its database, so registerUser can
+// create the first administrator the way an operator does (#211).
+var testDBs sync.Map
+
+// newTestServer starts h (built on sqlDB) and remembers the database.
+func newTestServer(sqlDB *sql.DB, h http.Handler) *httptest.Server {
+	ts := httptest.NewServer(h)
+	testDBs.Store(ts.URL, sqlDB)
+	return ts
+}
+
+// registerUser creates a user and returns the new user's bearer token. On
+// an empty instance without a token the user is the instance administrator,
+// created in the database as `qinqin adduser --admin` and the serve
+// bootstrap do: registration never makes an admin (#211). Otherwise it
+// registers through the API, with the admin token when one is given.
 func registerUser(t *testing.T, tsURL, username, adminToken string) string {
 	t.Helper()
+	if adminToken == "" {
+		v, ok := testDBs.Load(tsURL)
+		if !ok {
+			t.Fatalf("register %s: %s was not started with newTestServer", username, tsURL)
+		}
+		sqlDB := v.(*sql.DB)
+		n, err := auth.CountUsers(context.Background(), sqlDB)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n == 0 {
+			if _, err := auth.CreateUser(context.Background(), sqlDB, username, "secret-pass-"+username, true); err != nil {
+				t.Fatalf("create admin %s: %v", username, err)
+			}
+			return login(t, tsURL, username)
+		}
+	}
 	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 	req, err := http.NewRequest(http.MethodPost, tsURL+"/api/auth/register", bytes.NewReader(body))
 	if err != nil {
@@ -436,7 +471,7 @@ func TestWorkspaceLanguageCodes(t *testing.T) {
 		resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", token, map[string]string{"language": code})
 		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return resp.StatusCode, strings.TrimSpace(string(b))
+		return resp.StatusCode, errorCode(t, b)
 	}
 	if st, _ := create(admin, "pt"); st != http.StatusCreated {
 		t.Fatalf("admin pt = %d, want 201", st)
@@ -445,13 +480,13 @@ func TestWorkspaceLanguageCodes(t *testing.T) {
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'pt'`).Scan(&n); err != nil || n != 1 {
 		t.Errorf("languages row for pt: n=%d err=%v, want 1", n, err)
 	}
-	if st, msg := create(user, "de"); st != http.StatusUnprocessableEntity || msg != "unknown language — ask the administrator to add it" {
+	if st, msg := create(user, "de"); st != http.StatusUnprocessableEntity || msg != "language_unknown" {
 		t.Errorf("learner unknown = %d %q", st, msg)
 	}
-	if st, msg := create(user, "Hello!"); st != http.StatusUnprocessableEntity || msg != "language must be a code like es or pt-br" {
+	if st, msg := create(user, "Hello!"); st != http.StatusUnprocessableEntity || msg != "invalid_language" {
 		t.Errorf("learner invalid = %d %q", st, msg)
 	}
-	if st, msg := create(admin, "Hello!"); st != http.StatusUnprocessableEntity || msg != "language must be a code like es or pt-br" {
+	if st, msg := create(admin, "Hello!"); st != http.StatusUnprocessableEntity || msg != "invalid_language" {
 		t.Errorf("admin invalid = %d %q", st, msg)
 	}
 	if st, _ := create(user, "pt"); st != http.StatusCreated {

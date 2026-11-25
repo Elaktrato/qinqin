@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 )
 
@@ -27,12 +27,8 @@ const dictFixture = "../dict/testdata/mkgloss"
 func newServerWithDir(t *testing.T) (*httptest.Server, *sql.DB, string) {
 	t.Helper()
 	dataDir := t.TempDir()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil))
+	sqlDB := dbtest.Open(t)
+	ts := newTestServer(sqlDB, api.New(sqlDB, dataDir, nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }

@@ -3,19 +3,19 @@
 	// one bar for each of the last 30 learner days, today emphasised. The
 	// bars are decorative; the visible summary and a visually hidden list
 	// carry every number (design §9, "never colour alone").
-	import { onEventLogChange } from '$lib/events';
 	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
-	import { pluginStates } from '$lib/plugins/states';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
-	import { workspaces } from '$lib/workspaces';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+
+
+	const session = useSession();
 
 	let series = $state.raw<ReviewDay[] | null>(null);
 	let loading = $state(true);
@@ -24,11 +24,11 @@
 
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
-		$pluginStates.status === 'ready'
-			? featureEnabled(FLASHCARDS_ID, $pluginStates.list)
+		session.features.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, session.features.list)
 			: true
 	);
 	const total = $derived(series?.reduce((sum, day) => sum + day.count, 0) ?? 0);
@@ -76,9 +76,9 @@
 		}
 
 		try {
-			const data = await loadStudyHistory(workspace, { force });
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
-			const ctx = contextForData(data, workspace);
+			const ctx = contextForData(session.zone, data, workspace);
 			series = reviewsPerDay({
 				workspaceId: workspace,
 				now: Date.now(),
@@ -88,7 +88,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			series = null;
-			error = errorMessage(err, t('widgets.reviewsPerDay.loadFailed'));
+			error = errorText(err, t('widgets.reviewsPerDay.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -106,7 +106,7 @@
 		}
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 
 	// A posted review or a study-data write changes the chart; the history
 	// cache is dropped by both. Only this workspace (or all) triggers a load.
@@ -115,8 +115,8 @@
 		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
-		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();

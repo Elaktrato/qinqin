@@ -20,6 +20,7 @@ describe('security view', () => {
 		expect(auditLine(e({ actor: null, action: 'settings_changed', target: null, detail: { field: 'registration' } }))).toBe('System changed a setting: registration');
 		expect(auditLine(e({ action: 'password_changed', target: { id: 1, name: 'alice' } }))).toBe('alice changed their password');
 		expect(auditLine(e({ action: 'mfa_reset' }))).toBe('alice reset the two-step sign-in (bobby)');
+		expect(auditLine(e({ action: 'avatar_removed' }))).toBe('alice removed the profile picture (bobby)');
 		expect(auditLine(e({ action: 'something_new' }))).toContain('something new');
 	});
 });

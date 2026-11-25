@@ -11,7 +11,6 @@ import (
 type codecFixture struct {
 	Version    int    `json:"version"`
 	Rule       string `json:"rule"`
-	Namespace  string `json:"namespace"`
 	ModifiedAt string `json:"modifiedAt"`
 	Families   []struct {
 		Key        string  `json:"key"`
@@ -28,10 +27,7 @@ type codecFixture struct {
 
 func TestLegacyCodecFixture(t *testing.T) {
 	var fx codecFixture
-	readFixture(t, "legacy-codec.json", &fx)
-	if fx.Namespace != Namespace {
-		t.Fatalf("namespace %q, want %q", fx.Namespace, Namespace)
-	}
+	readFixture(t, "../backup/study-rows.json", &fx)
 	mod, err := time.Parse(time.RFC3339, fx.ModifiedAt)
 	if err != nil {
 		t.Fatal(err)

@@ -15,9 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
+	"qinqin/internal/pack"
 )
 
 // The zh and ja packs register for these tests the same way main.go
@@ -32,7 +33,7 @@ func init() {
 const fixturePack = "testdata/mkgloss"
 
 // fixtureManifest mirrors testdata/mkgloss/manifest.json.
-var fixtureManifest = dict.Manifest{
+var fixtureManifest = pack.Manifest{
 	ID:          "mkgloss",
 	Name:        "Mkgloss demo dictionary",
 	Version:     "1.0",
@@ -41,17 +42,6 @@ var fixtureManifest = dict.Manifest{
 	License:     "CC BY-SA 4.0",
 	Attribution: "Qinqin test fixtures",
 	Format:      "json",
-}
-
-// newDB opens a fresh migrated database for import tests.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // mustWriteFile writes data to path, creating parent directories.
@@ -67,7 +57,7 @@ func mustWriteFile(t *testing.T, path, data string) {
 
 // writePack writes manifest.json and dictionary.json into a fresh temp
 // directory and returns its path, for packs built inline in tests.
-func writePack(t *testing.T, m dict.Manifest, dictionary string) string {
+func writePack(t *testing.T, m pack.Manifest, dictionary string) string {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -126,20 +116,20 @@ func zipDir(t *testing.T, dir string) string {
 }
 
 // loadFixture loads the on-disk fixture pack.
-func loadFixture(t *testing.T) dict.Pack {
+func loadFixture(t *testing.T) pack.Pack {
 	t.Helper()
-	pack, err := dict.LoadPack(fixturePack)
+	pk, err := pack.LoadPack(fixturePack)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", fixturePack, err)
 	}
-	return pack
+	return pk
 }
 
 // importFixture loads and imports the on-disk fixture pack.
 func importFixture(t *testing.T, ctx context.Context, sqlDB *sql.DB) dict.Result {
 	t.Helper()
-	pack := loadFixture(t)
-	res, err := dict.ImportLexicon(ctx, sqlDB, &pack)
+	pk := loadFixture(t)
+	res, err := dict.ImportLexicon(ctx, sqlDB, &pk)
 	if err != nil {
 		t.Fatalf("import fixture pack: %v", err)
 	}
@@ -207,18 +197,18 @@ func TestManifestRequiresLicense(t *testing.T) {
 	}
 	for _, tc := range []struct {
 		name   string
-		mutate func(*dict.Manifest)
+		mutate func(*pack.Manifest)
 		want   string
 	}{
-		{"no license", func(m *dict.Manifest) { m.License = "" }, "license"},
-		{"blank license", func(m *dict.Manifest) { m.License = "   " }, "license"},
-		{"no attribution", func(m *dict.Manifest) { m.Attribution = "" }, "attribution"},
-		{"no language", func(m *dict.Manifest) { m.Language = "" }, "language"},
-		{"no id", func(m *dict.Manifest) { m.ID = "" }, "id"},
-		{"no name", func(m *dict.Manifest) { m.Name = "" }, "name"},
-		{"no version", func(m *dict.Manifest) { m.Version = "" }, "version"},
-		{"unknown type", func(m *dict.Manifest) { m.Type = "plugin" }, "type"},
-		{"unknown format", func(m *dict.Manifest) { m.Format = "yaml" }, "format"},
+		{"no license", func(m *pack.Manifest) { m.License = "" }, "license"},
+		{"blank license", func(m *pack.Manifest) { m.License = "   " }, "license"},
+		{"no attribution", func(m *pack.Manifest) { m.Attribution = "" }, "attribution"},
+		{"no language", func(m *pack.Manifest) { m.Language = "" }, "language"},
+		{"no id", func(m *pack.Manifest) { m.ID = "" }, "id"},
+		{"no name", func(m *pack.Manifest) { m.Name = "" }, "name"},
+		{"no version", func(m *pack.Manifest) { m.Version = "" }, "version"},
+		{"unknown type", func(m *pack.Manifest) { m.Type = "plugin" }, "type"},
+		{"unknown format", func(m *pack.Manifest) { m.Format = "yaml" }, "format"},
 	} {
 		m := valid
 		tc.mutate(&m)
@@ -230,34 +220,34 @@ func TestManifestRequiresLicense(t *testing.T) {
 }
 
 func TestLoadPackDirectory(t *testing.T) {
-	pack := loadFixture(t)
-	if !reflect.DeepEqual(pack.Manifest, fixtureManifest) {
-		t.Errorf("manifest = %+v, want %+v", pack.Manifest, fixtureManifest)
+	pk := loadFixture(t)
+	if !reflect.DeepEqual(pk.Manifest, fixtureManifest) {
+		t.Errorf("manifest = %+v, want %+v", pk.Manifest, fixtureManifest)
 	}
-	if pack.Dir != fixturePack {
-		t.Errorf("pack dir = %q, want %q", pack.Dir, fixturePack)
+	if pk.Dir != fixturePack {
+		t.Errorf("pack dir = %q, want %q", pk.Dir, fixturePack)
 	}
 }
 
 func TestLoadPackZip(t *testing.T) {
-	pack, err := dict.LoadPack(zipDir(t, fixturePack))
+	pk, err := pack.LoadPack(zipDir(t, fixturePack))
 	if err != nil {
 		t.Fatalf("LoadPack(zip of fixture): %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(pack.Dir) }) // a zip's extraction is the caller's to clean up
-	if !reflect.DeepEqual(pack.Manifest, fixtureManifest) {
-		t.Errorf("manifest = %+v, want %+v", pack.Manifest, fixtureManifest)
+	t.Cleanup(func() { os.RemoveAll(pk.Dir) }) // a zip's extraction is the caller's to clean up
+	if !reflect.DeepEqual(pk.Manifest, fixtureManifest) {
+		t.Errorf("manifest = %+v, want %+v", pk.Manifest, fixtureManifest)
 	}
-	if pack.Dir == fixturePack {
+	if pk.Dir == fixturePack {
 		t.Fatal("zip pack kept the zip's path as its dir, want an extraction directory")
 	}
-	if _, err := os.Stat(filepath.Join(pack.Dir, "dictionary.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(pk.Dir, "dictionary.json")); err != nil {
 		t.Errorf("dictionary.json not extracted: %v", err)
 	}
 
 	// A zip-sourced pack imports like a directory-sourced one.
-	sqlDB := newDB(t)
-	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
+	sqlDB := dbtest.Open(t)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
 	if err != nil {
 		t.Fatalf("ImportLexicon(zip-sourced pack): %v", err)
 	}
@@ -285,7 +275,7 @@ func TestLoadPackErrors(t *testing.T) {
 		{"malformed manifest.json", badJSON},
 		{"manifest without license", noLicense},
 	} {
-		if _, err := dict.LoadPack(tc.path); err == nil {
+		if _, err := pack.LoadPack(tc.path); err == nil {
 			t.Errorf("%s: LoadPack succeeded, want error", tc.name)
 		}
 	}
@@ -293,7 +283,7 @@ func TestLoadPackErrors(t *testing.T) {
 	// A zip without a manifest is rejected too.
 	dataOnly := t.TempDir()
 	mustWriteFile(t, filepath.Join(dataOnly, "dictionary.json"), "{}")
-	if _, err := dict.LoadPack(zipDir(t, dataOnly)); err == nil {
+	if _, err := pack.LoadPack(zipDir(t, dataOnly)); err == nil {
 		t.Error("LoadPack(zip without manifest.json) succeeded, want error")
 	}
 }
@@ -312,7 +302,7 @@ func TestExtractZipRejectsUnsafeNames(t *testing.T) {
 		if err := zw.Close(); err != nil {
 			t.Fatalf("close zip: %v", err)
 		}
-		if err := dict.ExtractZip(bytes.NewReader(buf.Bytes()), t.TempDir()); err == nil {
+		if err := pack.ExtractZip(bytes.NewReader(buf.Bytes()), t.TempDir()); err == nil {
 			t.Errorf("ExtractZip of entry %q succeeded, want rejection", name)
 		}
 	}
@@ -337,7 +327,7 @@ func TestExtractZipRejectsUnsafeNames(t *testing.T) {
 		t.Fatalf("close zip: %v", err)
 	}
 	dir := t.TempDir()
-	if err := dict.ExtractZip(bytes.NewReader(buf.Bytes()), dir); err != nil {
+	if err := pack.ExtractZip(bytes.NewReader(buf.Bytes()), dir); err != nil {
 		t.Fatalf("ExtractZip of valid entries: %v", err)
 	}
 	for _, name := range []string{"manifest.json", "dictionary.json", "nested/file.txt"} {
@@ -349,7 +339,7 @@ func TestExtractZipRejectsUnsafeNames(t *testing.T) {
 
 func TestUninstallSoftDeletesSenses(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importFixture(t, ctx, sqlDB)
 	dictID := dictionaryID(t, sqlDB, "mkgloss")
 
@@ -402,16 +392,16 @@ func TestUninstallSoftDeletesSenses(t *testing.T) {
 
 func TestImportRejectsNonDictionaryType(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, typ := range []string{"levels", "sentences"} {
 		m := fixtureManifest
 		m.Type = typ
 		dir := writePack(t, m, `{}`)
-		pack, err := dict.LoadPack(dir)
+		pk, err := pack.LoadPack(dir)
 		if err != nil {
 			t.Fatalf("LoadPack(%s pack): %v", typ, err)
 		}
-		if _, err := dict.ImportLexicon(ctx, sqlDB, &pack); !errors.Is(err, dict.ErrNotDictionary) {
+		if _, err := dict.ImportLexicon(ctx, sqlDB, &pk); !errors.Is(err, dict.ErrNotDictionary) {
 			t.Errorf("ImportLexicon of %s pack = %v, want ErrNotDictionary", typ, err)
 		}
 	}
@@ -426,18 +416,18 @@ func TestImportRejectsNonDictionaryType(t *testing.T) {
 
 func TestImportRejectsMissingDataFile(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, format := range []string{"jmdict", "kanjidic2"} {
 		m := fixtureManifest
 		m.Format = format
 		m.Language = "ja"
 		dir := writePack(t, m, "{}")
-		pack, err := dict.LoadPack(dir)
+		pk, err := pack.LoadPack(dir)
 		if err != nil {
 			t.Fatalf("LoadPack(%s pack): %v", format, err)
 		}
-		_, err = dict.ImportLexicon(ctx, sqlDB, &pack)
-		if !errors.Is(err, dict.ErrInvalidPack) {
+		_, err = dict.ImportLexicon(ctx, sqlDB, &pk)
+		if !errors.Is(err, pack.ErrInvalidPack) {
 			t.Fatalf("ImportLexicon of %s pack = %v, want ErrInvalidPack", format, err)
 		}
 		if !strings.Contains(err.Error(), format) {
@@ -457,10 +447,10 @@ func TestImportRejectsMissingDataFile(t *testing.T) {
 // manifest's language (migration 027), for a code-pack language and a
 // data-only one.
 func TestImportSetsDictionaryLanguage(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importFixture(t, ctx, sqlDB)
-	es, err := dict.LoadPack("../../../plugins/data/es-demo")
+	es, err := pack.LoadPack("../../../plugins/data/es-demo")
 	if err != nil {
 		t.Fatalf("load es-demo: %v", err)
 	}

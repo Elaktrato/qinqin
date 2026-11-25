@@ -68,7 +68,7 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 	decodeJSON(t, r, &sent)
 	put := func(ws int64, key, body string) {
 		t.Helper()
-		path := "/api/plugins/qinqin-flashcards/data/" + key
+		path := "/api/rows/" + key
 		if ws != 0 {
 			path += "?workspace=" + itoa(ws)
 		}
@@ -76,10 +76,20 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 			t.Fatalf("PUT %s = %d", key, r.StatusCode)
 		}
 	}
-	put(w.wsZh, fmt.Sprintf("card:c-vocab-%d", w.e1), fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, w.e1))
-	put(w.wsZh, fmt.Sprintf("card:c-reverse-%d", w.e1), fmt.Sprintf(`{"id":"c-reverse-%d","kind":"reverse","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, w.e1))
-	put(w.wsZh, "card:SENT0000000000000000000001", fmt.Sprintf(`{"id":"SENT0000000000000000000001","kind":"sentence","entryId":%d,"sentenceId":%d,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, sent.ID))
-	put(w.wsJa, "deck:kana", `{"id":"kana","name":"Kana","createdAt":"2026-11-10T08:00:00Z"}`)
+	card := func(ws int64, id, kind string, sentenceID any, decks []string) map[string]any {
+		return map[string]any{"workspaceId": ws, "id": id, "kind": kind, "entryId": w.e1, "written": nil, "entryKind": nil,
+			"sentenceId": sentenceID, "skipKinds": []string{}, "deckIds": decks, "createdAt": "2026-11-10T08:00:00Z", "extra": map[string]any{},
+			"updatedAt": "2026-11-10T08:00:00Z"}
+	}
+	pushTyped(t, e, w.alice, map[string]any{
+		"cards": []any{
+			card(w.wsZh, fmt.Sprintf("c-vocab-%d", w.e1), "vocab", nil, []string{"general"}),
+			card(w.wsZh, fmt.Sprintf("c-reverse-%d", w.e1), "reverse", nil, []string{"general"}),
+			card(w.wsZh, "SENT0000000000000000000001", "sentence", sent.ID, []string{}),
+		},
+		"decks": []any{map[string]any{"workspaceId": w.wsJa, "id": "kana", "name": "Kana", "createdAt": "2026-11-10T08:00:00Z",
+			"source": nil, "extra": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z"}},
+	})
 	put(0, "vacation:V0000000000000000000000001", fmt.Sprintf(`{"version":1,"id":"V0000000000000000000000001","start":"2026-12-20","end":null,"scope":{"workspaces":[%d]},"createdDay":"2026-11-15","createdAt":"2026-11-15T10:00:00Z"}`, w.wsZh))
 	evs := []map[string]any{
 		{"id": "01JD0000000000000000000001", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T09:00:00Z", "type": "review", "payload": map[string]any{"cardId": fmt.Sprintf("c-vocab-%d", w.e1), "mode": "vocab", "grade": 3}},
@@ -108,9 +118,24 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 	// a read event for the book (reads follow the NEW book id)
 	doJSON(t, "POST", e.ts.URL, "/api/events/batch", w.alice, map[string]any{"events": []map[string]any{
 		{"id": "01JD0000000000000000000004", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T10:00:00Z", "type": "read", "payload": map[string]any{"bookId": b.ID, "seconds": 90}}}})
+	// a journal entry and the journal settings (#199: typed storage, keyed form in the archive)
+	if r := doJSON(t, "PUT", e.ts.URL, "/api/journal/entries/J1?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"date": "2026-11-10", "title": "Day", "text": "今天很好。", "source": "typed", "createdAt": "2026-11-10T08:00:00Z"}); r.StatusCode != 200 {
+		t.Fatalf("journal entry = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "PUT", e.ts.URL, "/api/journal/settings?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"guidance": "short", "explanationLanguage": "de"}); r.StatusCode != 200 {
+		t.Fatalf("journal settings = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, "/api/grammar/progress?workspace="+itoa(w.wsZh), w.alice,
+		map[string]any{"packId": "zh-grammar", "lessonId": "le-change", "score": 2, "total": 3}); r.StatusCode != 200 {
+		t.Fatalf("grammar progress = %d", r.StatusCode)
+	}
 	// bob has data of his own
 	wsB := createWorkspace(t, e.ts.URL, w.bob, "zh", "")
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:bobs?workspace="+itoa(wsB), w.bob, `{"id":"bobs","kind":"vocab","entryId":1,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`)
+	pushTyped(t, e, w.bob, map[string]any{"cards": []any{map[string]any{"workspaceId": wsB, "id": "bobs", "kind": "vocab", "entryId": 1,
+		"written": nil, "entryKind": nil, "sentenceId": nil, "skipKinds": []string{}, "deckIds": []string{}, "createdAt": "2026-11-10T08:00:00Z",
+		"extra": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z"}}})
 }
 
 func getJSON(t *testing.T, base, path, token string) any {
@@ -148,12 +173,33 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		scopes = append(scopes, fmt.Sprintf("?workspace=%d", int64(id)))
 	}
 	for _, sc := range scopes {
-		rows := getJSON(t, e.ts.URL, "/api/plugins/qinqin-flashcards/data"+sc, w.alice).([]any)
+		rows := getJSON(t, e.ts.URL, "/api/rows"+sc, w.alice).([]any)
 		for _, x := range rows {
 			m := x.(map[string]any)
 			b, _ := json.Marshal(m["data"])
 			out = append(out, fmt.Sprintf("PD %q %v %s", sc2name(sc, name), m["key"], mapEntryIDs(sub(string(b)), mapEntry)))
 		}
+	}
+	for id, n := range name {
+		q := fmt.Sprintf("?workspace=%d", int64(id))
+		for _, x := range getJSON(t, e.ts.URL, "/api/journal/entries"+q, w.alice).([]any) {
+			m := x.(map[string]any)
+			delete(m, "updatedAt") // the restore's write stamp
+			b, _ := json.Marshal(m)
+			out = append(out, fmt.Sprintf("JE ws=%s %s", n, b))
+		}
+		b, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/journal/settings"+q, w.alice))
+		out = append(out, fmt.Sprintf("JS ws=%s %s", n, b))
+		gp, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/grammar/progress"+q, w.alice))
+		out = append(out, fmt.Sprintf("GP ws=%s %s", n, gp))
+	}
+	for _, r := range typedRows(t, e, w.alice) {
+		ws := name[r.row["workspaceId"].(float64)]
+		for _, meta := range []string{"workspaceId", "version", "updatedAt", "deletedAt"} {
+			delete(r.row, meta)
+		}
+		b, _ := json.Marshal(r.row)
+		out = append(out, fmt.Sprintf("TY %s ws=%s %s", r.coll, ws, mapEntryIDs(string(b), mapEntry)))
 	}
 	evs := getJSON(t, e.ts.URL, "/api/events", w.alice).([]any)
 	books := getJSON(t, e.ts.URL, "/api/library/books", w.alice).([]any)
@@ -187,6 +233,46 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 	out = append(out, "TZ "+string(tz))
 	sort.Strings(out)
 	return strings.Join(out, "\n")
+}
+
+// pushTyped pushes typed study rows (POST /api/sync/push).
+func pushTyped(t *testing.T, e *backupEnv, token string, body map[string]any) {
+	t.Helper()
+	r := doJSON(t, "POST", e.ts.URL, "/api/sync/push", token, body)
+	var res struct{ DataAccepted, DataRefused int }
+	decodeJSON(t, r, &res)
+	if r.StatusCode != 200 || res.DataRefused != 0 {
+		t.Fatalf("typed push = %d %+v", r.StatusCode, res)
+	}
+}
+
+type typedRow struct {
+	coll string
+	row  map[string]any
+}
+
+// typedRows is the caller's live typed study rows from a paged pull, by
+// collection (the rows are backdated a minute first: a pull ships rows
+// stamped before the current second only).
+func typedRows(t *testing.T, e *backupEnv, token string) []typedRow {
+	t.Helper()
+	backdate(t, e.db.Exec)
+	status, _, body := get(t, e.ts.URL, "/api/sync/pull?v=2&collections=cards,decks,deckSettings,limits,fsrsSets,fsrsActive", token)
+	var page v2Page
+	if status != 200 || json.Unmarshal(body, &page) != nil || page.More {
+		t.Fatalf("typed pull = %d %s", status, body)
+	}
+	var out []typedRow
+	for coll, list := range page.Collections {
+		for _, raw := range list {
+			var m map[string]any
+			if err := json.Unmarshal(raw, &m); err != nil {
+				t.Fatal(err)
+			}
+			out = append(out, typedRow{coll, m})
+		}
+	}
+	return out
 }
 
 func sc2name(sc string, name map[float64]string) string {
@@ -239,7 +325,9 @@ func TestRoundTripOnTheSameServer(t *testing.T) {
 	bobBefore := getJSON(t, w.ts.URL, "/api/workspaces", w.bob)
 	archive := w.export(t, w.alice)
 	// change everything afterwards
-	doRaw(t, "DELETE", w.ts.URL, fmt.Sprintf("/api/plugins/qinqin-flashcards/data/card:c-vocab-%d?workspace=%d", w.e1, w.wsZh), w.alice, "")
+	pushTyped(t, w.backupEnv, w.alice, map[string]any{"cards": []any{map[string]any{"workspaceId": w.wsZh, "id": fmt.Sprintf("c-vocab-%d", w.e1),
+		"kind": "vocab", "entryId": w.e1, "written": nil, "entryKind": nil, "sentenceId": nil, "skipKinds": []string{}, "deckIds": []string{"general"},
+		"createdAt": "2026-11-10T08:00:00Z", "extra": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z", "deletedAt": "2026-11-11T08:00:00Z"}}})
 	doJSON(t, "PUT", w.ts.URL, fmt.Sprintf("/api/entries/%d", w.e1), w.alice, map[string]any{"written": "ÄNDERUNG"})
 	createWorkspace(t, w.ts.URL, w.alice, "zh", "later")
 	doJSON(t, "DELETE", w.ts.URL, fmt.Sprintf("/api/workspaces/%d", w.wsJa), w.alice, nil)
@@ -314,11 +402,11 @@ func TestRestoreOntoAnotherServerWithShiftedEntryIds(t *testing.T) {
 			zh.ID = int64(m["id"].(float64))
 		}
 	}
-	rows := getJSON(t, b.ts.URL, "/api/plugins/qinqin-flashcards/data?workspace="+itoa(zh.ID)+"&prefix=card:", b.alice).([]any)
 	keys := map[string]map[string]any{}
-	for _, x := range rows {
-		m := x.(map[string]any)
-		keys[m["key"].(string)] = m["data"].(map[string]any)
+	for _, r := range typedRows(t, b.backupEnv, b.alice) {
+		if r.coll == "cards" && int64(r.row["workspaceId"].(float64)) == zh.ID {
+			keys["card:"+r.row["id"].(string)] = r.row
+		}
 	}
 	wantKeys := []string{fmt.Sprintf("card:c-vocab-%d", b.e1), fmt.Sprintf("card:c-reverse-%d", b.e1), "card:SENT0000000000000000000001"}
 	for _, k := range wantKeys {

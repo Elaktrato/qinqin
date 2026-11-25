@@ -6,19 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // searchHitBody mirrors one element of GET /api/search.
@@ -38,12 +37,12 @@ type searchHitBody struct {
 func TestSearchEndpoint(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	seedEntries(t, sqlDB)
-	pack, err := dict.LoadPack(writeLevelsPack(t, "chars",
+	pk, err := pack.LoadPack(writeLevelsPack(t, "chars",
 		`{"unit":"hanzi","levels":[{"name":"1","entries":["好"]},{"name":"2","entries":["行"]}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := levels.Import(context.Background(), sqlDB, pack); err != nil {
+	if _, err := levels.Import(context.Background(), sqlDB, pk); err != nil {
 		t.Fatal(err)
 	}
 	hao := lexID(t, sqlDB, "zh", "character", "好")
@@ -154,12 +153,12 @@ func TestSearchHitGlosses(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	glosses := []string{"good one", "good two", "good three"}
 	for i, gloss := range glosses {
-		lookupImport(t, sqlDB, dict.Manifest{
+		lookupImport(t, sqlDB, pack.Manifest{
 			ID: fmt.Sprintf("gloss-%d", i), Name: fmt.Sprintf("Gloss %d", i), Version: "1",
 			Type: "dictionary", Language: "zh", License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 		}, "dictionary.txt", fmt.Sprintf("好 好 [hao3] /%s/\n", gloss))
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "gloss-gone", Name: "Gone", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", "坏 坏 [huai4] /bad/\n")
@@ -200,11 +199,11 @@ func TestSearchHitLevels(t *testing.T) {
 	low := writeLevelsPack(t, "low", `{"unit":"character","levels":[{"name":"3","entries":["好"]},{"name":"5","entries":["好"]}]}`)
 	other := writeLevelsPack(t, "other", `{"unit":"character","levels":[{"name":"N5","entries":["好"]}]}`)
 	for _, name := range []string{low, other} {
-		pack, err := dict.LoadPack(name)
+		pk, err := pack.LoadPack(name)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := levels.Import(context.Background(), sqlDB, pack); err != nil {
+		if _, err := levels.Import(context.Background(), sqlDB, pk); err != nil {
 			t.Fatalf("import %s: %v", name, err)
 		}
 	}
@@ -231,18 +230,13 @@ func TestSearchHitLevels(t *testing.T) {
 // number of hits (a counting driver, 1 hit against 50).
 func TestSearchQueriesBounded(t *testing.T) {
 	lang.Register(lang.Zh{})
-	path := filepath.Join(t.TempDir(), "test.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB, path := dbtest.OpenPath(t)
 	var lines strings.Builder
 	for i := 0; i < 50; i++ {
 		r := rune(0x4e00 + i)
 		fmt.Fprintf(&lines, "%c %c [ma3] /horse/\n", r, r)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "many", Name: "Many", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", lines.String())
@@ -254,7 +248,7 @@ func TestSearchQueriesBounded(t *testing.T) {
 		count: &count,
 	})
 	t.Cleanup(func() { counted.Close() })
-	ts := httptest.NewServer(api.New(counted, t.TempDir(), nil))
+	ts := newTestServer(counted, api.New(counted, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 
 	search := func(limit int) []searchHitBody {

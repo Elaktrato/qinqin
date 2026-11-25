@@ -1,18 +1,25 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('$lib/auth', () => ({ signInWithToken: vi.fn() }));
+const fakes = vi.hoisted(() => ({ signInWithToken: vi.fn() }));
 vi.mock('$lib/api/account', () => ({ checkReset: vi.fn(), useReset: vi.fn(), getAuthOptions: vi.fn() }));
 vi.mock('$lib/api/mfa', () => ({ resetRequest: vi.fn() }));
 
-import { signInWithToken } from '$lib/auth';
+const { signInWithToken } = fakes;
 import { checkReset, getAuthOptions, useReset } from '$lib/api/account';
 import { resetRequest } from '$lib/api/mfa';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
+
+let ctx: TestContext = testContext({ user: null });
+beforeEach(() => {
+	ctx = testContext({ user: null });
+	Object.assign(ctx.app.auth, fakes);
+});
 
 beforeEach(() => {
 	vi.mocked(getAuthOptions).mockResolvedValue({ passwordReset: false } as never);
@@ -30,7 +37,7 @@ describe('reset page', () => {
 		location.hash = '#t=reset-token';
 		vi.mocked(checkReset).mockResolvedValue({ username: 'bobby', expiresAt: 'x' });
 		vi.mocked(useReset).mockResolvedValue({ status: 'ok', token: 'new-session' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('bobby');
 		expect(history.replaceState).toHaveBeenCalled();
 		// the set-password view: one primary action, both passwords Field underlines (#106)
@@ -50,7 +57,7 @@ describe('reset page', () => {
 	it('refuses a mismatching confirmation without a request', async () => {
 		location.hash = '#t=reset-token';
 		vi.mocked(checkReset).mockResolvedValue({ username: 'bobby', expiresAt: 'x' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('bobby');
 		await fireEvent.input(screen.getByLabelText('New password'), { target: { value: 'brand-new-password' } });
 		await fireEvent.input(screen.getByLabelText('Repeat the new password'), { target: { value: 'different-password' } });
@@ -62,12 +69,12 @@ describe('reset page', () => {
 	it('shows the one sentence for a bad link', async () => {
 		location.hash = '#t=dead';
 		vi.mocked(checkReset).mockRejectedValue(new ApiError(400, JSON.stringify({ error: 'token_invalid', message: 'x' })));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect((await screen.findByRole('alert')).textContent).toContain('not valid any more');
 	});
 
 	it('without a link: ask the administrator', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/Ask your administrator for a reset link/)).toBeTruthy();
 		expect(checkReset).not.toHaveBeenCalled();
 	});
@@ -75,7 +82,7 @@ describe('reset page', () => {
 	it('without a link and with mail: asks for the account and always shows the same sentence', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue({ passwordReset: true } as never);
 		vi.mocked(resetRequest).mockResolvedValue({});
-		render(Page);
+		render(Page, { context: ctx.context });
 		const login = await screen.findByLabelText('Username or email address');
 		expect(login.closest('.field')).not.toBeNull();
 		// the request view: one primary action (#106)
@@ -90,7 +97,7 @@ describe('reset page', () => {
 	it('shows a rate limit instead of the sentence', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue({ passwordReset: true } as never);
 		vi.mocked(resetRequest).mockRejectedValue(new ApiError(429, JSON.stringify({ error: 'rate_limited', message: 'Too many requests. Try again in 5 minutes.' }), 300));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await fireEvent.input(await screen.findByLabelText('Username or email address'), { target: { value: 'bobby' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 		expect((await screen.findByRole('alert')).textContent).toContain('Try again in');
@@ -100,7 +107,7 @@ describe('reset page', () => {
 		location.hash = '#t=reset-token';
 		vi.mocked(checkReset).mockResolvedValue({ username: 'bobby', expiresAt: 'x' });
 		vi.mocked(useReset).mockResolvedValue({ status: 'mfa_required', challenge: 'c', methods: ['totp', 'recovery'], emailHint: null, expiresAt: 'x' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('bobby');
 		await fireEvent.input(screen.getByLabelText('New password'), { target: { value: 'brand-new-password' } });
 		await fireEvent.input(screen.getByLabelText('Repeat the new password'), { target: { value: 'brand-new-password' } });
@@ -114,7 +121,7 @@ describe('reset page', () => {
 		location.hash = '#t=reset-token';
 		vi.mocked(checkReset).mockResolvedValue({ username: 'bobby', expiresAt: 'x' });
 		vi.mocked(useReset).mockResolvedValue({ status: 'password_changed' });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText('bobby');
 		await fireEvent.input(screen.getByLabelText('New password'), { target: { value: 'brand-new-password' } });
 		await fireEvent.input(screen.getByLabelText('Repeat the new password'), { target: { value: 'brand-new-password' } });

@@ -20,7 +20,11 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/avatar"
+	"qinqin/internal/features"
+	"qinqin/internal/grammar"
 	"qinqin/internal/i18n"
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -210,6 +214,21 @@ func Restore(ctx context.Context, d RestoreDeps, userID, keepSessionID int64, a 
 				}
 			}
 		}
+		// The picture's files are written before the transaction (named by
+		// their content, so the current ones stay); Prune keeps whatever the
+		// row names once the transaction has ended, either way.
+		pics := avatar.Store{DB: d.DB, Dir: avatar.Dir(d.DataDir)}
+		var picHash string
+		if a.Avatar != nil {
+			if picHash, err = pics.WriteFiles(userID, *a.Avatar); err != nil {
+				return err
+			}
+		}
+		defer func() {
+			if err := pics.Prune(context.WithoutCancel(ctx), userID); err != nil {
+				log.Printf("restore of user %d: prune profile pictures: %v", userID, err)
+			}
+		}()
 		tx, err := d.DB.BeginTx(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("backup: begin restore: %w", err)
@@ -220,6 +239,13 @@ func Restore(ctx context.Context, d RestoreDeps, userID, keepSessionID int64, a 
 			return err
 		}
 		oldBooks = ob
+		// The registry cleared user_avatars (RestoreReplace); the archive's
+		// picture, if any, takes its place.
+		if picHash != "" {
+			if err := avatar.SetTx(ctx, tx, userID, picHash, d.now().UTC().Format(time.RFC3339)); err != nil {
+				return fmt.Errorf("backup: profile picture: %w", err)
+			}
+		}
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("backup: commit restore: %w", err)
 		}
@@ -305,15 +331,19 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 			}
 		}
 	}
-	// 3. account state: plugin states and the time zone history
-	for _, ps := range a.Account.PluginStates {
+	// 3. account state: feature switches (an id this build does not know is
+	// skipped) and the time zone history
+	for _, f := range a.Account.Features {
+		if !slices.Contains(features.IDs, f.ID) {
+			continue
+		}
 		en := 0
-		if ps.Enabled {
+		if f.Enabled {
 			en = 1
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, ?, ?, ?, ?)`,
-			userID, ps.PluginID, en, ps.Order, now); err != nil {
-			return nil, fmt.Errorf("backup: plugin state: %w", err)
+		if _, err := tx.ExecContext(ctx, `INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?, ?, ?, ?)`,
+			userID, f.ID, en, now); err != nil {
+			return nil, fmt.Errorf("backup: feature switch: %w", err)
 		}
 	}
 	if l := a.Account.InterfaceLanguage; l != nil && i18n.IsLanguageSetting(*l) {
@@ -352,7 +382,7 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		return nil, err
 	}
 	// 5. own sentences (new ids), overlays
-	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, '', ?, ?, ?, ?, ?)`)
+	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level) VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +400,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 			res.DroppedRows++
 			return nil
 		}
-		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt)
+		var aiProvider, aiModel, aiLevel string
+		if s.AI != nil {
+			aiProvider, aiModel, aiLevel = s.AI.Provider, s.AI.Model, s.AI.Level
+		}
+		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt, aiProvider, aiModel, aiLevel)
 		if err != nil {
 			return fmt.Errorf("backup: sentence: %w", err)
 		}
@@ -400,7 +434,7 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}
 	// 6. library. Every restored library row is a new row of this server:
 	// updated_at = the restore time (a delta pull from an earlier cursor ships
-	// it, like a restored plugin row); createdAt is the archive's.
+	// it, like a restored keyed row); createdAt is the archive's.
 	for _, b := range a.Books {
 		r, err := tx.ExecContext(ctx, `INSERT INTO library_books (user_id, workspace_id, language, title, author, source, source_id, source_url,
 			attribution, license_note, chapter_count, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -434,11 +468,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	// 7. plugin rows: decide every card id and note winner first (one pass over the OLD ids), then insert
+	// 7. rows: decide every card id and note winner first (one pass over the OLD ids), then insert
 	m.Cards = map[string]string{}
 	m.noteWinner = map[string]noteCandidate{}
-	if err := a.PluginRows(func(r PluginRow) error {
-		if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix) {
+	if err := a.Rows(func(r Row) error {
+		if strings.HasPrefix(r.Key, cardKeyPrefix) {
 			m.RegisterCard(r.Key, r.Data)
 		}
 		m.RegisterNote(r)
@@ -446,45 +480,63 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	insRow, err := tx.PrepareContext(ctx, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+	insRow, err := tx.PrepareContext(ctx, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return nil, err
 	}
 	defer insRow.Close()
-	if err := a.PluginRows(func(r PluginRow) error {
-		nr, drop := m.PluginRow(r)
+	if err := a.Rows(func(r Row) error {
+		nr, drop := m.Row(r)
 		if drop {
 			res.DroppedRows++
 			return nil
 		}
-		// A typed study family goes to its typed table through the codec
-		// (one storage); updated_at = now as below, version and edit time kept.
-		if row, typed, ok := typedRow(nr); typed {
-			if !ok {
-				res.DroppedRows++
-				return nil
+		ok := true
+		switch kindOf(nr) {
+		case kindTyped:
+			// A typed study family goes to its typed table through the codec;
+			// updated_at = now as below, version and edit time kept.
+			row, _, decoded := typedRow(nr)
+			if ok = decoded; ok {
+				if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
+					return fmt.Errorf("backup: study row: %w", err)
+				}
+				if row.Family() == rows.Cards {
+					res.Restored.Cards++
+				}
 			}
-			if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
-				return fmt.Errorf("backup: study row: %w", err)
+		case kindJournal:
+			// The journal's documents go to their tables (journal/keyed.go).
+			if ok = nr.WorkspaceID != nil; ok {
+				var err error
+				if ok, err = journal.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+					return fmt.Errorf("backup: journal document: %w", err)
+				}
 			}
-			res.Restored.PluginData++
-			if row.Family() == rows.Cards {
-				res.Restored.Cards++
+		case kindGrammar:
+			if ok = nr.WorkspaceID != nil; ok {
+				var err error
+				if ok, err = grammar.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+					return fmt.Errorf("backup: grammar progress: %w", err)
+				}
 			}
+		case kindKeyed:
+			var ws any
+			if nr.WorkspaceID != nil {
+				ws = *nr.WorkspaceID
+			}
+			// updated_at = now, so every client's delta pull sees the restored row.
+			if _, err := insRow.ExecContext(ctx, userID, ws, nr.Key, string(nr.Data), nr.Version, now, restoredModified(nr, now)); err != nil {
+				return fmt.Errorf("backup: row: %w", err)
+			}
+		default:
+			ok = false
+		}
+		if !ok {
+			res.DroppedRows++
 			return nil
 		}
-		var ws any
-		if nr.WorkspaceID != nil {
-			ws = *nr.WorkspaceID
-		}
-		// updated_at = now, so every client's delta pull sees the restored row.
-		if _, err := insRow.ExecContext(ctx, nr.PluginID, userID, ws, nr.Key, string(nr.Data), nr.Version, now, nr.ModifiedAt); err != nil {
-			return fmt.Errorf("backup: plugin row: %w", err)
-		}
-		res.Restored.PluginData++
-		if nr.PluginID == FlashcardsPlugin && strings.HasPrefix(nr.Key, cardKeyPrefix) {
-			res.Restored.Cards++
-		}
+		res.Restored.Rows++
 		return nil
 	}); err != nil {
 		return nil, err

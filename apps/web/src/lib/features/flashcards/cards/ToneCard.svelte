@@ -1,28 +1,31 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { readingLang, studyLang } from '$lib/i18n/lang';
-	import { workspaces } from '$lib/workspaces';
-	import ReadingTable from '$lib/components/ReadingTable.svelte';
+	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
+	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import {
+		suggestToneGrade,
+		toneFromGesture,
+		type GesturePoint,
+		type Tone,
 		pinyinReadings,
 		tonePadLabels,
 		toneCandidates,
 		toneVerdict,
-		type CardResult,
-		type FlowItem,
 		type ToneVerdict
-	} from '$lib/study/cardFlow';
-	import { suggestToneGrade, toneFromGesture, type GesturePoint, type Tone } from '$lib/study/tones';
+	} from '$lib/study/tones';
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Props {
 		item: FlowItem;
@@ -36,7 +39,7 @@
 	let { item, entry, done, onDone, audio }: Props = $props();
 
 	// The workspace's script (a zh-Hant workspace shows traditional forms), else the entry's language.
-	const textLang = $derived(studyLang($workspaces.current?.language ?? entry.language));
+	const textLang = $derived(studyLang(session.workspaces.current?.language ?? entry.language));
 
 	const TONES: { tone: Tone; glyph: string; name: string }[] = [
 		{ tone: 1, glyph: 'ˉ', name: t('flashcards.tone.name1') },

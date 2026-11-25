@@ -1,5 +1,5 @@
 // Package backup writes and restores a user's personal data archive
-// (format v1, docs/contracts/backup/) and the admin whole-server backup.
+// (format v2, docs/contracts/backup/) and the admin whole-server backup.
 package backup
 
 import (
@@ -13,7 +13,7 @@ import (
 // accepts exactly the versions it knows and rejects the rest.
 const (
 	FormatName    = "qinqin-user-backup"
-	FormatVersion = 1
+	FormatVersion = 2
 )
 
 // Caps, enforced on the bytes actually read (declared sizes are ignored).
@@ -24,7 +24,7 @@ const (
 	MaxJSONFile      = 64 << 20 // a book file or a JSON array file
 	MaxTotal         = 2 << 30  // all entries uncompressed together
 	MaxEntries       = 10000
-	MaxPluginValue   = 256 << 10 // like PUT /api/plugins/{id}/data/{key}
+	MaxRowValue      = 256 << 10 // like PUT /api/rows/{key}
 	EventsPerFile    = 100000
 	MaxEvents        = 2000000 // events per restore: a restore holds the write lock about 30 s per million
 	maxBooksJSONSize = 8 << 20
@@ -39,6 +39,8 @@ const (
 	NameRefSentences = "refs/sentences.json"
 	NameWorkspaces   = "workspaces.json"
 	NameBooks        = "library/books.json"
+	// NameAvatar is the profile picture (#189): the 256 px JPEG, optional.
+	NameAvatar = "account/avatar.jpg"
 )
 
 // The JSONL collections are "families": numbered parts <family>/NNNNNN.jsonl,
@@ -46,7 +48,7 @@ const (
 // entry can outgrow the per-entry cap a reader enforces.
 const (
 	FamEvents      = "events"
-	NamePluginData = "plugin-data"
+	NameRows       = "rows"
 	NameOverlays   = "overlays"
 	NameSentences  = "sentences"
 	NameBookmarks  = "library/bookmarks"
@@ -54,7 +56,7 @@ const (
 )
 
 // Families lists every JSONL family.
-var Families = []string{FamEvents, NamePluginData, NameOverlays, NameSentences, NameBookmarks, NameHighlights}
+var Families = []string{FamEvents, NameRows, NameOverlays, NameSentences, NameBookmarks, NameHighlights}
 
 // Kinds of a known archive entry name.
 const (
@@ -67,9 +69,9 @@ var (
 	bookName   = regexp.MustCompile(`^library/books/(0|[1-9]\d{0,17})\.json$`)
 	fixedNames = map[string]bool{
 		NameManifest: true, NameAccount: true, NameRefEntries: true, NameRefDicts: true,
-		NameRefSentences: true, NameWorkspaces: true, NameBooks: true,
+		NameRefSentences: true, NameWorkspaces: true, NameBooks: true, NameAvatar: true,
 	}
-	partName = regexp.MustCompile(`^(events|plugin-data|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
+	partName = regexp.MustCompile(`^(events|rows|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
 )
 
 // KnownName classifies an archive entry name. Only the names of format v1
@@ -150,18 +152,17 @@ type TimeZone struct {
 	CreatedAt string  `json:"createdAt"`
 }
 
-// PluginState is one plugin's switch and order for the user.
-type PluginState struct {
-	PluginID string `json:"pluginId"`
-	Enabled  bool   `json:"enabled"`
-	Order    int    `json:"order"`
+// FeatureSwitch is the user's switch of one core feature (features/).
+type FeatureSwitch struct {
+	ID      string `json:"id"`
+	Enabled bool   `json:"enabled"`
 }
 
 // Account is account.json: no identity, only the user's own settings.
 type Account struct {
-	Username     string        `json:"username"`
-	TimeZones    []TimeZone    `json:"timeZones"`
-	PluginStates []PluginState `json:"pluginStates"`
+	Username  string          `json:"username"`
+	TimeZones []TimeZone      `json:"timeZones"`
+	Features  []FeatureSwitch `json:"features"`
 	// InterfaceLanguage is the stored interface language ('' = follow the
 	// browser; docs/contracts/i18n/). Optional: an archive without it (every
 	// v1 archive before #73) leaves the setting unchanged on restore, and an
@@ -214,9 +215,9 @@ type Event struct {
 	UpdatedAt   string          `json:"updatedAt"`
 }
 
-// PluginRow is a live plugin_data row; WorkspaceID nil is a user-global row.
-type PluginRow struct {
-	PluginID    string          `json:"pluginId"`
+// Row is a live keyed row of the archive (a keyed settings row, or a typed
+// row in its keyed form); WorkspaceID nil is a user-global row.
+type Row struct {
 	WorkspaceID *int64          `json:"workspaceId"`
 	Key         string          `json:"key"`
 	Data        json.RawMessage `json:"data"`
@@ -233,14 +234,25 @@ type Overlay struct {
 	UpdatedAt string  `json:"updatedAt"`
 }
 
-// OwnSentence is a sentence the user added.
+// OwnSentence is a sentence the user added, or a kept AI example (#186)
+// with its mark.
 type OwnSentence struct {
-	ID          int64  `json:"id"`
-	EntryID     int64  `json:"entryId"`
-	Hanzi       string `json:"hanzi"`
-	Pinyin      string `json:"pinyin"`
-	Translation string `json:"translation"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID          int64       `json:"id"`
+	EntryID     int64       `json:"entryId"`
+	Hanzi       string      `json:"hanzi"`
+	Pinyin      string      `json:"pinyin"`
+	Translation string      `json:"translation"`
+	UpdatedAt   string      `json:"updatedAt"`
+	AI          *SentenceAI `json:"ai,omitempty"`
+}
+
+// SentenceAI is the mark of a kept AI example: the provider id and the
+// model that wrote it (both required; at most 64 and 200 bytes) and the
+// level it was written for (one of ai.Levels).
+type SentenceAI struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	Level    string `json:"level"`
 }
 
 // Book is a library book's metadata; its chapters are library/books/<id>.json.
@@ -301,11 +313,3 @@ func ParseDerivedCardID(id string) (kind string, entryID int64, ok bool) {
 	}
 	return m[1], n, true
 }
-
-// FlashcardsPlugin is the plugin whose rows hold cards (card:<id>) and
-// vacation periods (vacation:<ULID>, user-global).
-const FlashcardsPlugin = "qinqin-flashcards"
-
-// CorePlugin is the built-in plugin whose workspace rows hold personal
-// notes on entries (note:<entryId>, docs/contracts/notes/).
-const CorePlugin = "qinqin-core"

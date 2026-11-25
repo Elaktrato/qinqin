@@ -20,6 +20,7 @@ const pack = {
 };
 
 let components: () => Response;
+let lemmaPacks: () => Response;
 let strokes: () => Response;
 let themesAnswer: () => Response;
 let fonts: () => Response;
@@ -67,6 +68,8 @@ function json(body: unknown, status = 200): Response {
 
 beforeEach(() => {
 	components = () => json([pack]);
+	lemmaPacks = () =>
+		json([{ packId: 'ja-lemma', name: 'Japanese lemmatizer rules', version: '2026-11-22', language: 'ja', license: 'CC0-1.0', attribution: 'Rule table written for qinqin', notice: '' }]);
 	strokes = () => json([strokePack]);
 	themesAnswer = () =>
 		json({
@@ -83,6 +86,7 @@ beforeEach(() => {
 		vi.fn(async (input: RequestInfo | URL) => {
 			const path = new URL(String(input), 'http://localhost').pathname;
 			if (path === '/api/component-packs') return components();
+			if (path === '/api/lemma-packs') return lemmaPacks();
 			if (path === '/api/stroke-packs') return strokes();
 			if (path === '/api/themes') return themesAnswer();
 			if (path === '/api/fonts') {
@@ -172,6 +176,36 @@ describe('sources page: character components', () => {
 		await screen.findByRole('heading', { name: 'Frequency lists' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('heading', { name: 'Character components' })).toBeNull();
+	});
+});
+
+describe('sources page: lemmatizer rules', () => {
+	it('lists each rule-table pack with its licence and attribution', async () => {
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Lemmatizer rules' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getAllByText('Japanese lemmatizer rules').length).toBeGreaterThan(0));
+		expect(within(section).getByText('CC0-1.0')).toBeTruthy();
+		expect(within(section).getByText('Rule table written for qinqin')).toBeTruthy();
+	});
+
+	it('shows an error line with a retry on failure', async () => {
+		lemmaPacks = () => json({ error: 'x', message: 'down' }, 500);
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Lemmatizer rules' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getByRole('alert')).toBeTruthy());
+		lemmaPacks = () => json([]);
+		await fireEvent.click(within(section).getByRole('button', { name: 'Retry' }));
+		await waitFor(() => expect(screen.queryByRole('heading', { name: 'Lemmatizer rules' })).toBeNull());
+	});
+
+	it('is hidden when no rule-table pack is installed', async () => {
+		lemmaPacks = () => json([]);
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('heading', { name: 'Lemmatizer rules' })).toBeNull();
 	});
 });
 

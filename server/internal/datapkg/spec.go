@@ -16,7 +16,7 @@ import (
 	"slices"
 	"strings"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -33,6 +33,7 @@ const (
 	TypeAudio      Type = "audio"
 	TypeGrammar    Type = "grammar"
 	TypeStrokes    Type = "strokes"
+	TypeLemmaRules Type = "lemma-rules"
 )
 
 // FormatVersion is the data.sqlite schema version of every type.
@@ -40,11 +41,20 @@ const FormatVersion = 1
 
 // Types returns every package type in contract order.
 func Types() []Type {
-	return []Type{TypeLexicon, TypeLevels, TypeSentences, TypeFrequency, TypeComponents, TypeAudio, TypeGrammar, TypeStrokes}
+	return []Type{TypeLexicon, TypeLevels, TypeSentences, TypeFrequency, TypeComponents, TypeAudio, TypeGrammar, TypeStrokes, TypeLemmaRules}
 }
 
-// idPattern is the package id grammar (catalogue.json idPattern).
-var idPattern = regexp.MustCompile(`^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$`)
+// idPattern is the package id grammar (catalogue.json idPattern): the
+// lexicon by language, every other type of Types() by pack id.
+var idPattern = func() *regexp.Regexp {
+	var perPack []string
+	for _, t := range Types() {
+		if t != TypeLexicon {
+			perPack = append(perPack, string(t))
+		}
+	}
+	return regexp.MustCompile(`^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(` + strings.Join(perPack, "|") + `)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$`)
+}()
 
 // ErrBadID reports a string that is not a package id.
 var ErrBadID = errors.New("datapkg: not a package id")
@@ -99,21 +109,35 @@ type Querier interface {
 
 // registry is where Plan finds the live packs of one package type.
 type registry struct {
-	typ      Type
-	packType string // the dict manifest type of its source packs
-	query    string // pack_id, name, version, language, license, attribution, notice of live packs
+	typ             Type
+	packType        string // the manifest type of its source packs
+	query           string // pack_id, name, version, language, license, attribution, notice of live packs
+	manyLanguages   bool   // the language column is a JSON array (strokes)
+	optional        bool   // clients ask before downloading (audio)
+	requiresLexicon bool   // the package requires lexicon.<language>
 }
 
-var registries = []registry{
-	{TypeLevels, dict.TypeLevels, `SELECT pack_id, name, version, language, license, attribution, notice FROM schemes WHERE deleted_at IS NULL`},
-	{TypeSentences, dict.TypeSentences, `SELECT pack_id, name, version, language, license, attribution, notice FROM sentence_packs WHERE deleted_at IS NULL`},
-	{TypeFrequency, dict.TypeFrequency, `SELECT pack_id, name, version, language, license, attribution, notice FROM frequency_packs WHERE deleted_at IS NULL`},
-	{TypeComponents, dict.TypeComponents, `SELECT pack_id, name, version, language, license, attribution, notice FROM component_packs WHERE deleted_at IS NULL`},
-	{TypeAudio, dict.TypeAudio, `SELECT pack_id, name, version, language, license, attribution, notice FROM audio_packs WHERE deleted_at IS NULL`},
-	{TypeGrammar, dict.TypeGrammar, `SELECT pack_id, name, version, language, license, attribution, notice FROM grammar_packs WHERE deleted_at IS NULL`},
-	// languages is a JSON array for strokes packs.
-	{TypeStrokes, dict.TypeStrokes, `SELECT pack_id, name, version, languages, license, attribution, notice FROM stroke_packs WHERE deleted_at IS NULL`},
-}
+// registries are the package types built per pack: every row of the
+// pack-type table (internal/pack) with a package, except the
+// dictionaries' lexicon, which Plan builds per language.
+var registries = func() []registry {
+	var out []registry
+	for _, d := range pack.All {
+		if d.Package == "" || d.Package == pack.LexiconPackage {
+			continue
+		}
+		lang := d.LanguageColumn()
+		out = append(out, registry{
+			typ:             Type(d.Package),
+			packType:        d.Type,
+			query:           `SELECT pack_id, name, version, ` + lang + `, license, attribution, notice FROM ` + d.Registry + ` WHERE deleted_at IS NULL`,
+			manyLanguages:   d.Languages == pack.Many,
+			optional:        d.OptionalPackage,
+			requiresLexicon: d.RequiresLexicon,
+		})
+	}
+	return out
+}()
 
 // Plan returns the packages that should exist now, sorted by id: one
 // lexicon package per language with at least one live dictionary (its
@@ -121,13 +145,12 @@ var registries = []registry{
 // pack of every other type. Levels and sentences packages require their
 // language's lexicon; audio packages are optional. A pack whose id or
 // language does not fit the package id grammar gets no package (no pack
-// imported through the manifest rules has one). Sentences imported before
-// the sentence pack registry existed have no licence on record and get no
-// package.
+// imported through the manifest rules has one).
 func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 	var specs []Spec
 	lexicons := map[string]*Spec{}
-	err := scanPacks(ctx, q, `SELECT pack_id, name, version, language, license, attribution, notice FROM dictionaries WHERE deleted_at IS NULL`,
+	lex := pack.Lexicon()
+	err := scanPacks(ctx, q, `SELECT pack_id, name, version, language, license, attribution, notice FROM `+lex.Registry+` WHERE deleted_at IS NULL`,
 		func(packID, name, version, language, license, attribution, notice string) error {
 			id := string(TypeLexicon) + "." + language
 			if _, _, err := ParseID(id); err != nil {
@@ -138,7 +161,7 @@ func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 				s = &Spec{ID: id, Type: TypeLexicon, Languages: []string{language}}
 				lexicons[language] = s
 			}
-			s.Sources = append(s.Sources, Source{Type: dict.TypeDictionary, PackID: packID, Name: name, Version: version,
+			s.Sources = append(s.Sources, Source{Type: lex.Type, PackID: packID, Name: name, Version: version,
 				License: license, Attribution: attribution, Notice: notice})
 			return nil
 		})
@@ -155,18 +178,18 @@ func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 			if _, _, err := ParseID(id); err != nil {
 				return nil
 			}
-			s := Spec{ID: id, Type: r.typ, Optional: r.typ == TypeAudio,
+			s := Spec{ID: id, Type: r.typ, Optional: r.optional,
 				Sources: []Source{{Type: r.packType, PackID: packID, Name: name, Version: version,
 					License: license, Attribution: attribution, Notice: notice}}}
-			if r.typ == TypeStrokes {
+			if r.manyLanguages {
 				if err := json.Unmarshal([]byte(language), &s.Languages); err != nil {
-					return fmt.Errorf("datapkg: strokes pack %s: languages: %w", packID, err)
+					return fmt.Errorf("datapkg: %s pack %s: languages: %w", r.packType, packID, err)
 				}
 				slices.Sort(s.Languages)
 			} else {
 				s.Languages = []string{language}
 			}
-			if r.typ == TypeLevels || r.typ == TypeSentences {
+			if r.requiresLexicon {
 				s.Requires = []string{string(TypeLexicon) + "." + language}
 			}
 			specs = append(specs, s)

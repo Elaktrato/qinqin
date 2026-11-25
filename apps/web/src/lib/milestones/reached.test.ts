@@ -1,14 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/milestones/reached.json';
 import type { StudyEvent } from '$lib/events';
 import { dailyStreak } from '$lib/study/exp';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';
 import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';
-import { journalEntryId, reachedFromLog, reachedStats, type LogInputs } from './reached';
+import { journalEntryId, reachedFromLog, reachedStats, type LogInputs, type Reached } from './reached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
+import * as build from '$lib/testing/study';
+
+// A fresh memo per test (record 0009: the session owns one).
+let reachedMemo = new Map<string, Reached[]>();
+beforeEach(() => {
+	reachedMemo = new Map<string, Reached[]>();
+});
 
 const cases = fixture.cases as unknown as ReachedCase[];
 
@@ -28,7 +35,7 @@ function logInputs(c: ReachedCase): LogInputs {
 
 describe('milestones/reached.json: log families', () => {
 	it.each(cases)('$name', (c) => {
-		expect(asFixture(reachedFromLog(logInputs(c)))).toEqual(expectedOf(c, 'log'));
+		expect(asFixture(reachedFromLog(reachedMemo, logInputs(c)))).toEqual(expectedOf(c, 'log'));
 	});
 });
 
@@ -49,14 +56,7 @@ const ALL = enabledFamilies({ flashcards: true, reader: true, journal: true, han
 const START = Date.parse('2026-01-01T00:00:00Z');
 
 function review(i: number, at: number, cardId: string, grade = 3): ReviewEvent {
-	return {
-		id: `r${String(i).padStart(6, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts: new Date(at).toISOString(),
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade: grade as 1 }
-	};
+	return build.review({ id: `r${String(i).padStart(6, '0')}`, ts: new Date(at).toISOString(), cardId, grade });
 }
 
 function event(i: number, at: number, type: string, payload: unknown): StudyEvent {
@@ -98,7 +98,7 @@ describe('reachedFromLog properties (seeded)', () => {
 		it(`count families agree with a brute force over prefixes (seed ${seed})`, () => {
 			const g = generate(seed);
 			const vacation = [{ start: '2026-01-20', end: '2026-01-22' }];
-			const got = reachedFromLog({ ...g, deckIds: new Set([GENERAL_DECK_ID]), day: BERLIN, vacation, families: ALL });
+			const got = reachedFromLog(reachedMemo, { ...g, deckIds: new Set([GENERAL_DECK_ID]), day: BERLIN, vacation, families: ALL });
 			const byId = new Map(got.map((r) => [r.id, r.at]));
 			const scoped = new Map(g.cards.filter((c) => c.deckIds.includes(GENERAL_DECK_ID)).map((c) => [c.id, c.entryId]));
 			type Item = { at: number; id: string; review?: ReviewEvent; event?: StudyEvent };
@@ -137,7 +137,7 @@ describe('reachedFromLog properties (seeded)', () => {
 		it(`the streak family agrees with dailyStreak at the reached day and the day before (seed ${seed})`, () => {
 			const g = generate(seed);
 			const vacation = [{ start: '2026-01-20', end: '2026-01-22' }];
-			const got = reachedFromLog({ ...g, deckIds: new Set([GENERAL_DECK_ID]), day: UTC, vacation, families: ALL });
+			const got = reachedFromLog(reachedMemo, { ...g, deckIds: new Set([GENERAL_DECK_ID]), day: UTC, vacation, families: ALL });
 			const before = (t: number) => g.reviews.filter((r) => Date.parse(r.ts) <= t);
 			const best = dailyStreak(before(g.now), g.now, UTC, vacation).best;
 			for (const n of FAMILIES.find((f) => f.family === 'streak')!.thresholds) {
@@ -171,23 +171,23 @@ describe('reachedFromLog', () => {
 	const hundred = Array.from({ length: 100 }, (_, i) => review(i, START + i * 1000, 'c-vocab-1'));
 
 	it('disabled families yield nothing', () => {
-		const got = reachedFromLog({ ...base(), reviews: hundred, families: new Set(['days-active']) });
+		const got = reachedFromLog(reachedMemo, { ...base(), reviews: hundred, families: new Set(['days-active']) });
 		expect(got.map((r) => r.id)).toEqual([]);
-		expect(reachedFromLog({ ...base(), reviews: hundred }).map((r) => r.id)).toEqual(['reviews:100']);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred }).map((r) => r.id)).toEqual(['reviews:100']);
 	});
 
 	it('a review after now is ignored', () => {
-		expect(reachedFromLog({ ...base(), reviews: hundred, now: START + 98_000 })).toEqual([]);
-		expect(reachedFromLog({ ...base(), reviews: hundred, now: START + 99_000 }).map((r) => r.id)).toEqual(['reviews:100']);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, now: START + 98_000 })).toEqual([]);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, now: START + 99_000 }).map((r) => r.id)).toEqual(['reviews:100']);
 	});
 
 	it('review events in the event log are not counted twice', () => {
 		const events = hundred.map((r) => ({ ...r, payload: r.payload as unknown }) as StudyEvent);
-		expect(reachedFromLog({ ...base(), reviews: hundred.slice(0, 99), events })).toEqual([]);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred.slice(0, 99), events })).toEqual([]);
 	});
 
 	it('a read without bookId counts its seconds', () => {
-		const got = reachedFromLog({ ...base(), events: [event(1, START, 'read', { seconds: 3600 })] });
+		const got = reachedFromLog(reachedMemo, { ...base(), events: [event(1, START, 'read', { seconds: 3600 })] });
 		expect(got.map((r) => r.id)).toEqual(['reading-hours:1']);
 	});
 
@@ -199,7 +199,7 @@ describe('reachedFromLog', () => {
 			event(4, START, 'journal', null)
 		];
 		const days = Array.from({ length: 10 }, (_, i) => event(10 + i, START + i * 86_400_000, 'journal', { entryId: 5 }));
-		expect(reachedFromLog({ ...base(), events: [...events, ...days] })).toEqual([]);
+		expect(reachedFromLog(reachedMemo, { ...base(), events: [...events, ...days] })).toEqual([]);
 	});
 
 	it('journalEntryId reads a non-empty string only', () => {
@@ -209,28 +209,28 @@ describe('reachedFromLog', () => {
 
 	it('memoises by content: a reloaded (copied) event log is a hit, no second pass', () => {
 		const events = [event(1, START, 'read', { seconds: 3600 }), event(2, START, 'journal', { entryId: 'J' })];
-		const first = reachedFromLog({ ...base(), reviews: hundred, events });
+		const first = reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events });
 		const passes = reachedStats.passes;
-		expect(reachedFromLog({ ...base(), reviews: hundred, events: events.map((e) => ({ ...e })) })).toBe(first);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: events.map((e) => ({ ...e })) })).toBe(first);
 		expect(reachedStats.passes).toBe(passes);
 		// A changed payload is a different log.
 		const longer = events.map((e) => (e.type === 'read' ? { ...e, payload: { seconds: 7200 } } : e));
-		expect(reachedFromLog({ ...base(), reviews: hundred, events: longer })).not.toBe(first);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: longer })).not.toBe(first);
 	});
 
 	it('with workspaceId, events of another workspace are ignored', () => {
 		const events = [event(1, START, 'read', { seconds: 3600 }), { ...event(2, START, 'journal', { entryId: 'J' }), workspaceId: 2 }];
-		expect(reachedFromLog({ ...base(), events, workspaceId: 1 }).map((r) => r.id)).toEqual(['reading-hours:1']);
-		expect(reachedFromLog({ ...base(), events, workspaceId: 2 }).map((r) => r.id)).toEqual(['journal-entries:1']);
+		expect(reachedFromLog(reachedMemo, { ...base(), events, workspaceId: 1 }).map((r) => r.id)).toEqual(['reading-hours:1']);
+		expect(reachedFromLog(reachedMemo, { ...base(), events, workspaceId: 2 }).map((r) => r.id)).toEqual(['journal-entries:1']);
 	});
 
 	it('memoises: an equal reloaded log returns the same array', () => {
 		const events = [event(1, START, 'read', { seconds: 3600 })];
-		const first = reachedFromLog({ ...base(), reviews: hundred, events });
-		const again = reachedFromLog({ ...base(), reviews: hundred.map((r) => ({ ...r })), events });
+		const first = reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events });
+		const again = reachedFromLog(reachedMemo, { ...base(), reviews: hundred.map((r) => ({ ...r })), events });
 		expect(again).toBe(first);
 		// A different day (now moved) or another family set is a different answer.
-		expect(reachedFromLog({ ...base(), reviews: hundred, events, now: Date.parse('2026-02-03T00:00:00Z') })).not.toBe(first);
-		expect(reachedFromLog({ ...base(), reviews: hundred, events, families: new Set(['reviews']) })).not.toBe(first);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events, now: Date.parse('2026-02-03T00:00:00Z') })).not.toBe(first);
+		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events, families: new Set(['reviews']) })).not.toBe(first);
 	});
 });

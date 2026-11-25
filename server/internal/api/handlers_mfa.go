@@ -79,7 +79,7 @@ func otpauthURI(issuer, username, secret string) string {
 func (s *server) writeMFAError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, auth.ErrMFAUnavailable):
-		writeAuthError(w, http.StatusConflict, "secret_unavailable", "Two-factor authentication needs QINQIN_SECRET to be set on the server.")
+		writeError(w, http.StatusConflict, "secret_unavailable", "Two-factor authentication needs QINQIN_SECRET to be set on the server.")
 	default:
 		writeInternal(w, r)
 	}
@@ -121,14 +121,14 @@ func (s *server) checkSecondFactor(w http.ResponseWriter, r *http.Request, userI
 		refund()
 		return true
 	case errors.Is(err, auth.ErrTOTPCodeInvalid):
-		writeAuthError(w, http.StatusForbidden, "code_invalid", "That code is not right.")
+		writeError(w, http.StatusForbidden, "code_invalid", "That code is not right.")
 	case errors.Is(err, auth.ErrMFAUnavailable):
 		// The secret cannot be read: only a recovery code can prove it.
 		if rerr := auth.UseRecoveryCode(r.Context(), s.db, userID, code); rerr == nil {
 			refund()
 			return true
 		}
-		writeAuthError(w, http.StatusForbidden, "code_invalid", "That code is not right.")
+		writeError(w, http.StatusForbidden, "code_invalid", "That code is not right.")
 	default:
 		writeInternal(w, r)
 	}
@@ -200,10 +200,10 @@ func (s *server) handleTOTPConfirm(w http.ResponseWriter, r *http.Request) {
 	codes, err := s.mfa.ConfirmTOTP(r.Context(), p.User.ID, req.Code, s.now())
 	switch {
 	case errors.Is(err, auth.ErrTOTPCodeInvalid):
-		writeAuthError(w, http.StatusForbidden, "code_invalid", "That code is not right. Check the clock of your phone and try the next code.")
+		writeError(w, http.StatusForbidden, "code_invalid", "That code is not right. Check the clock of your phone and try the next code.")
 		return
 	case errors.Is(err, auth.ErrNoPending):
-		writeAuthError(w, http.StatusConflict, "setup_expired", "The setup has expired. Start again.")
+		writeError(w, http.StatusConflict, "setup_expired", "The setup has expired. Start again.")
 		return
 	case err != nil:
 		s.writeMFAError(w, r, err)
@@ -249,31 +249,17 @@ func (s *server) handleTOTPDisable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !st.TOTP {
-		writeAuthError(w, http.StatusConflict, "not_enabled", "Two-factor authentication with an authenticator is not on.")
+		writeError(w, http.StatusConflict, "not_enabled", "Two-factor authentication with an authenticator is not on.")
 		return
 	}
 	if s.mfaEnforcedEffective(r.Context(), set) && !s.otherMethodLeft(r.Context(), *u, st, "totp") {
-		writeAuthError(w, http.StatusConflict, "mfa_required", "Two-step sign-in is required here: turn on email codes before you remove the authenticator.")
+		writeError(w, http.StatusConflict, "mfa_required", "Two-step sign-in is required here: turn on email codes before you remove the authenticator.")
 		return
 	}
 	if !s.verifyOwnPassword(w, r, u.ID, req.Password) || !s.secondFactorOK(w, r, u.ID, req.Code) {
 		return
 	}
-	tx, err := s.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	defer tx.Rollback()
-	if err := auth.RemoveTOTP(r.Context(), tx, u.ID); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := auth.Audit(r.Context(), tx, auth.AuditEvent{Action: "mfa_disabled", ActorID: u.ID, TargetID: &u.ID, Detail: map[string]any{"scope": "totp"}}); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := tx.Commit(); err != nil {
+	if err := auth.DisableTOTP(r.Context(), s.db, u.ID); err != nil {
 		writeInternal(w, r)
 		return
 	}
@@ -300,7 +286,7 @@ func (s *server) handleRecoveryCodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !has {
-		writeAuthError(w, http.StatusConflict, "not_enabled", "Recovery codes belong to an authenticator: set one up first.")
+		writeError(w, http.StatusConflict, "not_enabled", "Recovery codes belong to an authenticator: set one up first.")
 		return
 	}
 	if !s.verifyOwnPassword(w, r, u.ID, req.Password) || !s.secondFactorOK(w, r, u.ID, req.Code) {
@@ -342,15 +328,15 @@ func (s *server) handleMFAEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Enabled {
 		if !s.mailConfigured(r.Context()) {
-			writeAuthError(w, http.StatusConflict, "mail_unavailable", "Email codes need email to be set up on this server.")
+			writeError(w, http.StatusConflict, "mail_unavailable", "Email codes need email to be set up on this server.")
 			return
 		}
 		if !s.emailMethodUsable(r.Context(), p.User, set) {
-			writeAuthError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
+			writeError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
 			return
 		}
 	} else if s.mfaEnforcedEffective(r.Context(), set) && !s.otherMethodLeft(r.Context(), p.User, st, "email") {
-		writeAuthError(w, http.StatusConflict, "mfa_required", "Two-step sign-in is required here: set up an authenticator before you turn off email codes.")
+		writeError(w, http.StatusConflict, "mfa_required", "Two-step sign-in is required here: set up an authenticator before you turn off email codes.")
 		return
 	}
 	if p.Restriction() == "" && !s.verifyOwnPassword(w, r, p.User.ID, req.Password) {
@@ -422,7 +408,7 @@ func (s *server) handleMFAEmailConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.emailMethodUsable(r.Context(), p.User, set) {
-		writeAuthError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
+		writeError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
 		return
 	}
 	refund, ok := s.codeBudget(w, p.User.ID)

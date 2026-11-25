@@ -2,8 +2,10 @@
 // system/starter detail pages (addToDeck.ts), without the target picker. The
 // deck gets its usual owned id and name; adding again joins only what is new.
 
+import type { StudyState } from '$lib/study/data';
 import type { NewOrder } from '$lib/study/newOrder';
-import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { loadRawStudyData } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
 import type { Deck } from '$lib/study/types';
 import { addPlanRows, planAddToDeck, type AddItem, type AddPlan } from './addToDeck';
 
@@ -18,13 +20,14 @@ export interface OverviewAddInput {
 }
 
 /** addDeckFromOverview plans from the stored rows now and pushes one batch. */
-export async function addDeckFromOverview(input: OverviewAddInput): Promise<AddPlan> {
-	const raw = await loadRawStudyData(input.workspaceId);
+export async function addDeckFromOverview(study: StudyState, input: OverviewAddInput): Promise<AddPlan> {
+	const raw = await loadRawStudyData(study, input.workspaceId);
 	const plan = planAddToDeck({
 		items: input.items,
 		target: input.target,
 		existingDeck: raw.decks.find((deck) => deck.id === input.target.id) ?? null,
 		rawCards: raw.cards,
+		unreadable: raw.unreadable,
 		now: new Date(),
 		exclude: input.exclude,
 		settings:
@@ -36,6 +39,6 @@ export async function addDeckFromOverview(input: OverviewAddInput): Promise<AddP
 					}
 	});
 	const rows = addPlanRows(plan, raw);
-	if (rows.length > 0) await pushStudy(input.workspaceId, rows);
+	if (rows.length > 0) await pushStudy(study, input.workspaceId, rows);
 	return plan;
 }

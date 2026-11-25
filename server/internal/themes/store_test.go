@@ -10,19 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // testTheme is a valid theme with the given id.
 func testTheme(id string) map[string]any {
@@ -34,7 +24,7 @@ func testTheme(id string) map[string]any {
 }
 
 // themePack writes a theme pack directory and loads it.
-func themePack(t *testing.T, id, version string, themes any) dict.Pack {
+func themePack(t *testing.T, id, version string, themes any) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]string{"id": id, "name": "Pack " + id, "version": version, "type": "theme",
@@ -48,7 +38,7 @@ func themePack(t *testing.T, id, version string, themes any) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -69,7 +59,7 @@ func storedIDs(t *testing.T, sqlDB *sql.DB) string {
 }
 
 func TestImportListUninstall(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	r, err := Import(ctx, sqlDB, themePack(t, "night", "1", []any{testTheme("night-a"), testTheme("night-b")}))
 	if err != nil || r.Themes != 2 {
@@ -107,7 +97,7 @@ func TestImportListUninstall(t *testing.T) {
 
 	// Another pack may not take a theme id that is installed.
 	_, err = Import(ctx, sqlDB, themePack(t, "other", "1", []any{testTheme("night-a")}))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "night-a") || !strings.Contains(err.Error(), "night") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "night-a") || !strings.Contains(err.Error(), "night") {
 		t.Fatalf("clash = %v", err)
 	}
 
@@ -136,29 +126,29 @@ func TestImportListUninstall(t *testing.T) {
 }
 
 func TestImportRefusesInvalidFilesAndBuiltinIDs(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	bad := testTheme("x")
 	bad["colors"].(map[string]string)["panel"] = "#FFFFFF"
 	_, err := Import(ctx, sqlDB, themePack(t, "p", "1", []any{bad}))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "themes.json: bad-colour at $[0].colors.panel") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "themes.json: bad-colour at $[0].colors.panel") {
 		t.Fatalf("invalid file = %v", err)
 	}
 	_, err = Import(ctx, sqlDB, themePack(t, "p", "1", append([]byte(`[`), make([]byte, MaxFileBytes)...)))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "too-large") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "too-large") {
 		t.Fatalf("large file = %v", err)
 	}
 
 	defer func(saved func() []BuiltinPack) { builtinSource = saved }(builtinSource)
 	th, _ := ParseTheme(mustJSON(testTheme("house-dark")))
 	builtinSource = func() []BuiltinPack {
-		return []BuiltinPack{{Manifest: dict.Manifest{ID: "house", Name: "House"}, Themes: []Theme{th}}}
+		return []BuiltinPack{{Manifest: pack.Manifest{ID: "house", Name: "House"}, Themes: []Theme{th}}}
 	}
-	if _, err := Import(ctx, sqlDB, themePack(t, "house", "1", []any{testTheme("mine")})); !errors.Is(err, dict.ErrInvalidPack) ||
+	if _, err := Import(ctx, sqlDB, themePack(t, "house", "1", []any{testTheme("mine")})); !errors.Is(err, pack.ErrInvalidPack) ||
 		!strings.Contains(err.Error(), "built-in") {
 		t.Errorf("built-in pack id = %v", err)
 	}
-	if _, err := Import(ctx, sqlDB, themePack(t, "p", "1", []any{testTheme("house-dark")})); !errors.Is(err, dict.ErrInvalidPack) ||
+	if _, err := Import(ctx, sqlDB, themePack(t, "p", "1", []any{testTheme("house-dark")})); !errors.Is(err, pack.ErrInvalidPack) ||
 		!strings.Contains(err.Error(), "built-in") {
 		t.Errorf("built-in theme id = %v", err)
 	}
@@ -167,8 +157,8 @@ func TestImportRefusesInvalidFilesAndBuiltinIDs(t *testing.T) {
 	}
 	// The wrong type or format never reaches the store.
 	p := themePack(t, "p", "1", []any{testTheme("ok")})
-	p.Type = dict.TypeStrokes
-	if _, err := Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	p.Type = pack.TypeStrokes
+	if _, err := Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("strokes manifest = %v", err)
 	}
 }

@@ -12,8 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 )
 
@@ -264,7 +265,7 @@ func TestPackCreditsTheDictionaryReadings(t *testing.T) {
 		{"ja-sentences-tatoeba", "JMdict", "https://www.edrdg.org/"},
 	} {
 		dir := filepath.Join(out, tc.id)
-		p, err := dict.LoadPack(dir)
+		p, err := pack.LoadPack(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -311,14 +312,14 @@ func TestGoldenPacksInstall(t *testing.T) {
 		{"zh-sentences-tatoeba", "testdata/dict/cedict"},
 		{"ja-sentences-tatoeba", "testdata/dict/jmdict"},
 	} {
-		p, err := dict.LoadPack(filepath.Join(goldenDir, tc.id))
+		p, err := pack.LoadPack(filepath.Join(goldenDir, tc.id))
 		if err != nil {
 			t.Fatalf("LoadPack(%s): %v", tc.id, err)
 		}
-		if p.Type != dict.TypeSentences || p.Notice == "" {
+		if p.Type != pack.TypeSentences || p.Notice == "" {
 			t.Errorf("%s: type %q, notice %q", tc.id, p.Type, p.Notice)
 		}
-		if err := dict.ValidateNotice(p.Notice); err != nil {
+		if err := pack.ValidateNotice(p.Notice); err != nil {
 			t.Errorf("%s notice: %v", tc.id, err)
 		}
 		for _, want := range []string{"[Tatoeba](https://tatoeba.org)", "CC BY 2.0 FR", "CC0 1.0", "may contain errors", "credits.tsv"} {
@@ -326,11 +327,8 @@ func TestGoldenPacksInstall(t *testing.T) {
 				t.Errorf("%s notice lacks %q", tc.id, want)
 			}
 		}
-		sqlDB, err := db.Open(filepath.Join(t.TempDir(), "q.db"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		dp, err := dict.LoadPack(tc.dict)
+		sqlDB := dbtest.Open(t)
+		dp, err := pack.LoadPack(tc.dict)
 		if err != nil {
 			t.Fatal(err)
 		}

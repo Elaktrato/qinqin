@@ -4,22 +4,20 @@
 // only (no replay); the Week tab passes the timelines and the character
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
-import { get } from 'svelte/store';
+import type { Session } from '$lib/context/session.svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
-import { loadWorkspaceEvents } from '$lib/events';
-import { FLASHCARDS_ID, READER_ID, featureEnabled } from '$lib/features';
+
+import { FLASHCARDS_ID, JOURNAL_ID, READER_ID, featureEnabled } from '$lib/features';
 import { levelDecks, levelItems, ownedLevelDeckId } from '$lib/features/flashcards/decks/systemDecks';
 import { usesHan } from '$lib/languages';
-import { pluginEnabled } from '$lib/plugins';
-import { pluginStates } from '$lib/plugins/states';
+import type { FeatureSwitchesValue } from '$lib/features/switches.svelte';
 import { buildSections } from '$lib/study/charGroups';
-import { loadStudyHistory } from '$lib/study/history';
-import { outboxUser } from '$lib/study/outboxUser';
-import { GENERAL_DECK_ID, saveSeenMilestones } from '$lib/study/store';
+import { loadStudyHistory } from '$lib/study/data';
+import { saveSeenMilestones } from '$lib/study/commands/keyed';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { StudyCard } from '$lib/study/types';
 import { vacationRuns } from '$lib/study/vacation';
-import { currentStudyDay } from '$lib/time/zone';
 import type { Timelines } from '$lib/weekly/replay';
 import { MILESTONE_KEY_PREFIX, enabledFamilies, logFamilies } from './catalogue';
 import { milestoneTitle } from './milestoneText';
@@ -35,8 +33,6 @@ import {
 	seenWritePlan,
 	type SeenMilestone
 } from './seen';
-
-export const JOURNAL_PLUGIN_ID = 'qinqin-journal';
 
 export interface MilestonesView {
 	/** The workspace this view was loaded for: a dismiss writes there, never into another one. */
@@ -64,33 +60,24 @@ export interface WeekInputs {
 
 /** A pending flush is tried at most this often (a failed push notifies, and the page reloads). */
 const FLUSH_EVERY_MS = 30_000;
-const lastFlush = new Map<string, number>();
-/** The last load's user, workspace and live rows: an `online` flush never rewrites a live row. */
-let lastPlace: {
-	user: number;
-	workspaceId: number;
-	live: ReadonlyMap<string, SeenMilestone>;
-	tombstones: ReadonlyMap<string, string>;
-} | null = null;
-let onlineHooked = false;
 
-/** Test hook: forget the flush throttle and the last place. */
-export function resetMilestonesForTests(): void {
-	lastFlush.clear();
-	lastPlace = null;
-}
-
-function hookOnline(): void {
-	if (onlineHooked || typeof window === 'undefined') return;
-	onlineHooked = true;
-	window.addEventListener('online', () => void flushOnOnline());
+function hookOnline(session: Session): void {
+	const flushes = session.caches.milestones;
+	const target = session.deps.window;
+	if (flushes.hooked || target === null) return;
+	flushes.hooked = true;
+	const online = (): void => void flushOnOnline(session);
+	target.addEventListener('online', online);
+	session.onDispose(() => target.removeEventListener('online', online));
 }
 
 /** flushOnOnline: back online, push the pending ids that were not live at the last load. */
-export async function flushOnOnline(): Promise<void> {
-	lastFlush.clear();
-	if (lastPlace === null) return;
-	await flushPending(lastPlace.user, lastPlace.workspaceId, lastPlace.live, lastPlace.tombstones, Date.now());
+export async function flushOnOnline(session: Session): Promise<void> {
+	const flushes = session.caches.milestones;
+	flushes.last.clear();
+	const place = flushes.place;
+	if (place === null) return;
+	await flushPending(session, place.user, place.workspaceId, place.live, place.tombstones, session.deps.now());
 }
 
 function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, string>): { key: string; data: unknown; knownAt?: string } {
@@ -109,12 +96,14 @@ function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, st
 
 /** flushPending pushes the pending ids that are not live; a failure keeps them. */
 async function flushPending(
+	session: Session,
 	user: number,
 	workspaceId: number,
 	live: ReadonlyMap<string, SeenMilestone>,
 	tombstones: ReadonlyMap<string, string>,
 	now: number
 ): Promise<void> {
+	const lastFlush = session.caches.milestones.last;
 	const key = `${user}:${workspaceId}`;
 	const last = lastFlush.get(key);
 	if (last !== undefined && now - last < FLUSH_EVERY_MS) return;
@@ -123,6 +112,7 @@ async function flushPending(
 	lastFlush.set(key, now);
 	try {
 		const result = await saveSeenMilestones(
+			session.study,
 			workspaceId,
 			pending.map((m) => rowOf(m, now, tombstones))
 		);
@@ -135,6 +125,7 @@ async function flushPending(
 
 /** The levels of the language's installed schemes with their members; [] when they cannot be read. */
 async function loadLevels(
+	session: Session,
 	language: string,
 	chars: readonly CharRow[] | null
 ): Promise<{ levels: LevelInput[]; names: Map<string, string> }> {
@@ -153,7 +144,7 @@ async function loadLevels(
 				if (chars === null) continue;
 				let members = membersOf.get(deck.schemeId);
 				if (members === undefined) {
-					members = await fetchSchemeCharacters(deck.schemeId);
+					members = await fetchSchemeCharacters(session.caches.schemes, deck.schemeId);
 					membersOf.set(deck.schemeId, members);
 				}
 				const level = members.find((m) => m.name === deck.level);
@@ -177,47 +168,49 @@ async function loadLevels(
  * loadMilestones: the card plan, the history and the titles of one
  * workspace. `scope: 'home'` computes the log families only; 'week' adds
  * the replay families from `week` and the installed levels. Before the
- * plugin states are loaded nothing is computed: no card, seen rows only.
+ * feature switches are loaded nothing is computed: no card, seen rows only.
  * Callers guard against a stale answer (workspace switch) themselves.
  */
 export async function loadMilestones(
+	session: Session,
 	workspaceId: number,
-	opts: { scope: 'home' | 'week'; language: string; now?: number; week?: WeekInputs }
+	opts: { scope: 'home' | 'week'; language: string; states: FeatureSwitchesValue; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
-	hookOnline();
+	hookOnline(session);
 	const now = opts.now ?? Date.now();
-	const day = currentStudyDay();
+	const day = session.zone.day();
 	const today = day.today(now);
-	const [data, log] = await Promise.all([loadStudyHistory(workspaceId), loadWorkspaceEvents(workspaceId)]);
+	const [data, log] = await Promise.all([loadStudyHistory(session.study, workspaceId), session.events.load(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
-	const user = outboxUser();
-	if (user !== null) {
-		lastPlace = { user, workspaceId, live, tombstones };
+	const user = session.user;
+	// A load for a session that has ended leaves no place to flush into (#173).
+	if (user !== null && session.alive) {
+		session.caches.milestones.place = { user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
-		await flushPending(user, workspaceId, live, tombstones, now);
+		await flushPending(session, user, workspaceId, live, tombstones, now);
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
-	const states = get(pluginStates);
+	const states = opts.states;
 	let reached: Reached[] = [];
 	let names = new Map<string, string>();
 	if (states.status === 'ready') {
 		const all = enabledFamilies({
 			flashcards: featureEnabled(FLASHCARDS_ID, states.list),
 			reader: featureEnabled(READER_ID, states.list),
-			journal: pluginEnabled(JOURNAL_PLUGIN_ID, states.list),
+			journal: featureEnabled(JOURNAL_ID, states.list),
 			han: usesHan(opts.language)
 		});
 		const families = opts.scope === 'home' || opts.week === undefined ? logFamilies(all) : all;
 		const deckIds = new Set([GENERAL_DECK_ID, ...data.decks.map((d) => d.id)]);
 		const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
 		// The log as loaded (filtered inside, keyed by content): a reload is a memo hit.
-		reached = reachedFromLog({ reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
+		reached = reachedFromLog(session.caches.reached, { reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
 		if (opts.scope === 'week' && opts.week !== undefined && families.has('words-mature')) {
 			const chars = families.has('characters-learned') ? opts.week.chars : null;
-			const loaded = families.has('level-complete') ? await loadLevels(opts.language, opts.week.chars) : null;
+			const loaded = families.has('level-complete') ? await loadLevels(session, opts.language, opts.week.chars) : null;
 			names = loaded?.names ?? names;
 			const replayed = reachedFromReplay({
 				cards: opts.week.cards ?? data.cards,
@@ -254,19 +247,20 @@ export async function loadMilestones(
  * pending list first, then the rows of the ids without a live row are
  * pushed; on success they leave the pending list. Never throws.
  */
-export async function markSeen(view: MilestonesView): Promise<void> {
+export async function markSeen(session: Session, view: MilestonesView): Promise<void> {
+	const study = session.study;
 	if (view.plan.kind === 'none') return;
 	const { workspaceId } = view;
 	const covered = new Set(view.plan.ids);
 	const mark = view.reached.filter((r) => covered.has(r.id));
-	const now = new Date();
-	const user = outboxUser();
+	const now = new Date(session.deps.now());
+	const user = session.user;
 	const items = mark.map((r) => ({ id: r.id, seenAt: now.toISOString(), reachedDay: r.day }));
 	if (user !== null) addPending(user, workspaceId, items);
 	const rows = seenWritePlan(mark, view.live, now, view.tombstones);
 	try {
 		// 'pending': a row was skipped or refused; its id stays pending until live in a pull.
-		if ((await saveSeenMilestones(workspaceId, rows)) === 'done' && user !== null) {
+		if ((await saveSeenMilestones(study, workspaceId, rows)) === 'done' && user !== null) {
 			dropPending(user, workspaceId, items.map((m) => m.id));
 		}
 	} catch {

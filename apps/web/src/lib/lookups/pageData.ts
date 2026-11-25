@@ -2,16 +2,17 @@
 // everything the page shows, and the decks view's idempotent add plan
 // (addWords) for the chosen words. The page itself stays thin.
 
+import type { Session } from '$lib/context/session.svelte';
 import { loadEntryBases } from '$lib/api/entryBases';
 import { listBooks } from '$lib/api/library';
 import type { EntryBase } from '$lib/api/types';
 import { scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
 import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions';
 import { contextForData } from '$lib/study/currentContext';
-import { loadStudyHistory } from '$lib/study/history';
 import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';
-import { activeWeights, loadRawStudyData, pushStudy } from '$lib/study/store';
-import { invalidateStudyData } from '$lib/study/studyData';
+import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
+import { activeWeights } from '$lib/study/readModel';
 import type { Deck } from '$lib/study/types';
 import type { LookupHistory, LookupState } from './lookups';
 import { loadHistory, loadLookupCfg } from './store';
@@ -27,20 +28,20 @@ export interface PageData {
 }
 
 /** loadStates: the familiarity of every entry in the workspace (#68's predicate). */
-async function loadStates(ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
-	const data = await loadStudyHistory(ws, { force: true });
-	const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, ws).clock);
+async function loadStates(session: Session, ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
+	const data = await loadStudyHistory(session.study, ws, { force: true });
+	const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(session.zone, data, ws).clock);
 	return { decks: data.decks, index: knownIndex(data.cards, (id) => schedules.get(id) ?? null, data.known) };
 }
 
-export async function loadPage(ws: number): Promise<PageData> {
+export async function loadPage(session: Session, ws: number): Promise<PageData> {
 	const [history, cfg, books, states] = await Promise.all([
 		loadHistory(ws),
 		loadLookupCfg(),
 		listBooks(ws).catch(() => []),
-		loadStates(ws)
+		loadStates(session, ws)
 	]);
-	const bases = history.items.length === 0 ? new Map<number, EntryBase>() : await loadEntryBases(history.items.map((i) => i.entryId));
+	const bases = history.items.length === 0 ? new Map<number, EntryBase>() : await loadEntryBases(session.caches.entryBases, history.items.map((i) => i.entryId));
 	return {
 		history,
 		record: cfg.record,
@@ -53,6 +54,7 @@ export async function loadPage(ws: number): Promise<PageData> {
 
 /** addEntries adds the words (in the given order) to a deck; adding twice creates nothing. */
 export async function addEntries(
+	session: Session,
 	ws: number,
 	entryIds: readonly number[],
 	target: { id: string; name: string },
@@ -63,10 +65,9 @@ export async function addEntries(
 		entryIds,
 		target,
 		now,
-		bases: (ids) => loadEntryBases(ids),
-		raw: () => loadRawStudyData(ws),
-		push: (w, writes) => pushStudy(w, writes)
+		bases: (ids) => loadEntryBases(session.caches.entryBases, ids),
+		raw: () => loadRawStudyData(session.study, ws),
+		push: (w, writes) => pushStudy(session.study, w, writes)
 	});
-	invalidateStudyData(ws);
 	return result;
 }

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"qinqin/internal/lang"
 )
 
 // OCR reads the text of a photo offline.
@@ -34,7 +36,7 @@ func OCRLanguages(workspaceLang string) string {
 		return "chi_sim+chi_tra"
 	case workspaceLang == "ja":
 		return "jpn"
-	case latinLanguages[workspaceLang]:
+	case lang.LatinLanguage(workspaceLang):
 		return "eng"
 	}
 	return ""

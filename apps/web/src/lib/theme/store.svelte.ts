@@ -9,8 +9,7 @@
 // rewritten for it.
 
 import { getThemes, type ListedTheme, type ThemePack, type ThemesAnswer } from '$lib/api/themes';
-import { coreManifest } from '$lib/plugins/core/manifest';
-import { createPluginSdk } from '$lib/plugins/sdk';
+import { keyedData } from '$lib/sync/keyed';
 import {
 	APPEARANCE_KEY,
 	parseAppearance,
@@ -53,14 +52,14 @@ export interface ResolvedPair {
 }
 
 function coreData() {
-	return createPluginSdk(coreManifest).data.user();
+	return keyedData(null);
 }
 
 const defaultDeps: ThemeStoreDeps = {
 	fetchThemes: getThemes,
 	// find() reads through the list route: no row is an empty 200, not a 404.
 	loadRow: () => coreData().find(APPEARANCE_KEY),
-	saveRow: (value) => coreData().put(APPEARANCE_KEY, value),
+	saveRow: async (value) => void (await coreData().put(APPEARANCE_KEY, value)),
 	storage: () => {
 		try {
 			return typeof localStorage === 'undefined' ? null : localStorage;
@@ -272,5 +271,3 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 
 export type ThemeStore = ReturnType<typeof createThemeStore>;
 
-/** The app's one theme store (wired once in routes/+layout.svelte). */
-export const themeStore = createThemeStore();

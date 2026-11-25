@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -40,7 +40,7 @@ type stagedPack struct {
 	dir     string // <data>/packs/.stage-<token>
 	root    string // directory holding manifest.json, dir or one folder inside it
 	userID  int64
-	pack    dict.Pack
+	pack    pack.Pack
 	expires time.Time
 
 	license    string // the licence the import will store; the install request must echo it

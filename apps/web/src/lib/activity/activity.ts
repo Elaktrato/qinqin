@@ -1,5 +1,5 @@
 // Core activity: one points-per-day view across every learning source.
-// The server scores events by the activity rules in plugin manifests
+// The server scores events by the core activity rules (server/internal/stats/rules.go)
 // (GET /api/stats/activity) and returns cells per learner day, workspace
 // and type (lib/time/studyDay.ts); these pure functions fold them into
 // the heatmap's days.
@@ -9,6 +9,7 @@ import { t, type MessageKey } from '../i18n';
 import type { FlowerStage } from '../goals/stage';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
+import { activityText } from './sources';
 
 /** Days covered by the heatmap: 52 weeks of 7 cells. */
 export const HEATMAP_DAYS = 364;
@@ -160,13 +161,12 @@ export function foldRange(
 }
 
 /**
- * describe words a raw amount with the rule's own template: seconds
- * show as whole minutes, at least 1; otherwise {n} is the raw count.
+ * describe words a raw amount in the source's catalogue words: seconds
+ * show as whole minutes, at least 1; otherwise the raw count.
  */
 export function describe(source: ActivitySource, raw: number): string {
 	const n = source.unit === 'seconds' ? Math.max(1, Math.round(raw / 60)) : Math.round(raw);
-	const template = n === 1 ? source.describe.one : source.describe.other;
-	return template.replaceAll('{n}', String(n));
+	return activityText(source, n, String(n));
 }
 
 function pointsWord(count: number): string {

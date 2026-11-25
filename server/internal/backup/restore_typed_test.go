@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// The committed sample-v1 manifest lists every file with its exact size
+// The committed sample-v2 manifest lists every file with its exact size
 // and SHA-256 (the files were extended by hand for the typed families).
 func TestSampleManifestMatchesItsFiles(t *testing.T) {
 	var m Manifest
@@ -46,7 +46,7 @@ func sampleTarget(t *testing.T) (*targetWorld, int64) {
 // ids and derived card ids remapped (remap.json), version and modifiedAt
 // kept, review events following their cards; plugin_data keeps only the
 // keyed rows.
-func TestRestoreSampleV1IntoTypedTables(t *testing.T) {
+func TestRestoreSampleIntoTypedTables(t *testing.T) {
 	a, err := Open(writeZip(t, sampleFiles(t), zopts{}))
 	if err != nil {
 		t.Fatal(err)
@@ -122,18 +122,18 @@ func TestRestoreSampleV1IntoTypedTables(t *testing.T) {
 	if strings.Join(limits, ",") != " 1 15 1 null,general 1 5 0 null" {
 		t.Errorf("limits rows %q", limits)
 	}
-	// plugin_data holds no typed family; the keyed rows are there
-	if n := count(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-flashcards' AND key NOT LIKE 'vacation:%'`, tg.UID); n != 0 {
-		t.Errorf("%d typed-family rows in plugin_data", n)
+	// keyed_rows holds no typed family; the keyed rows are there
+	if n := count(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ? AND key <> 'lookups' AND key NOT LIKE 'note:%' AND key NOT LIKE 'vacation:%'`, tg.UID); n != 0 {
+		t.Errorf("%d other rows in keyed_rows", n)
 	}
-	if n := count(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ?`, tg.UID); n != 3 {
-		t.Errorf("plugin_data rows %d, want the lookups, note and vacation rows", n)
+	if n := count(`SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?`, tg.UID); n != 3 {
+		t.Errorf("keyed rows %d, want the lookups, note and vacation rows", n)
 	}
 	// review events follow the remapped card ids
 	if n := count(`SELECT COUNT(*) FROM study_events WHERE user_id = ? AND payload LIKE ?`, tg.UID, `%"cardId":"`+e("c-reverse-E")+`"%`); n != 1 {
 		t.Errorf("review of the reverse card: %d", n)
 	}
-	if res.Restored.PluginData != 12 || res.Restored.Cards != 3 || res.DroppedRows != 0 {
+	if res.Restored.Rows != 12 || res.Restored.Cards != 3 || res.DroppedRows != 0 {
 		t.Errorf("restored %+v dropped %d", res.Restored, res.DroppedRows)
 	}
 }
@@ -143,14 +143,14 @@ func TestRestoreSampleV1IntoTypedTables(t *testing.T) {
 func TestRestoreDropsUnreadableTypedRows(t *testing.T) {
 	files := sampleFiles(t)
 	bad := []string{
-		`{"pluginId":"qinqin-flashcards","workspaceId":7,"key":"card:c-bad","data":{"id":"c-bad","kind":"vocab","entryId":1201,"deckIds":[]},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
-		`{"pluginId":"qinqin-flashcards","workspaceId":8,"key":"limits:workspace","data":{"version":2},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
-		`{"pluginId":"qinqin-flashcards","workspaceId":null,"key":"deck:global","data":{"id":"global","name":"x","createdAt":"t"},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
+		`{"workspaceId":7,"key":"card:c-bad","data":{"id":"c-bad","kind":"vocab","entryId":1201,"deckIds":[]},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
+		`{"workspaceId":8,"key":"limits:workspace","data":{"version":2},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
+		`{"workspaceId":null,"key":"deck:global","data":{"id":"global","name":"x","createdAt":"t"},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`,
 	}
-	name := PartName(NamePluginData, 1)
+	name := PartName(NameRows, 1)
 	files[name] = append(files[name], []byte(strings.Join(bad, "\n")+"\n")...)
 	a, err := Open(writeZip(t, files, zopts{manifest: func(m map[string]any) {
-		m["counts"].(map[string]any)["pluginData"] = 12 + len(bad)
+		m["counts"].(map[string]any)["rows"] = 12 + len(bad)
 	}}))
 	if err != nil {
 		t.Fatal(err)
@@ -161,18 +161,18 @@ func TestRestoreDropsUnreadableTypedRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rep.Unresolved.DroppedRows != len(bad) || rep.Restores.PluginData != 12 || rep.Restores.Cards != 3 {
+	if rep.Unresolved.DroppedRows != len(bad) || rep.Restores.Rows != 12 || rep.Restores.Cards != 3 {
 		t.Errorf("dry run: dropped %d, restores %+v", rep.Unresolved.DroppedRows, rep.Restores)
 	}
 	res, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.DroppedRows != len(bad) || res.Restored.PluginData != 12 {
+	if res.DroppedRows != len(bad) || res.Restored.Rows != 12 {
 		t.Errorf("restore: dropped %d, restored %+v", res.DroppedRows, res.Restored)
 	}
 	var n int
-	tg.DB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_cards WHERE id = 'c-bad') + (SELECT COUNT(*) FROM plugin_data WHERE key IN ('card:c-bad', 'deck:global', 'limits:workspace'))
+	tg.DB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_cards WHERE id = 'c-bad') + (SELECT COUNT(*) FROM keyed_rows WHERE key IN ('card:c-bad', 'deck:global', 'limits:workspace'))
 		+ (SELECT COUNT(*) FROM study_decks WHERE id = 'global')`).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d unreadable rows were stored", n)

@@ -1,17 +1,24 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
 import { levelProgress, xpFromReviews } from '$lib/study/exp';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import type { ReviewEvent } from '$lib/study/types';
-import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const NO_GOAL: GoalView = {
 	row: null,
@@ -51,10 +58,8 @@ const WITH_GOAL: GoalView = {
 	sources: [
 		{
 			type: 'review',
-			plugin: 'qinqin-flashcards',
-			label: 'Flashcard reviews',
-			unit: 'count',
-			describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+			feature: 'flashcards',
+			unit: 'count'
 		}
 	],
 	limitsNew: 20,
@@ -64,7 +69,7 @@ const WITH_GOAL: GoalView = {
 const text = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim();
 
 beforeEach(() => {
-	workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
 	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
 });
 afterEach(() => {
@@ -73,7 +78,7 @@ afterEach(() => {
 });
 
 async function ready(): Promise<HTMLElement> {
-	const { container } = render(FlashcardsWidget);
+	const { container } = render(FlashcardsWidget, { context: ctx.context });
 	await screen.findByText(/days streak/);
 	return container;
 }
@@ -103,7 +108,7 @@ describe('FlashcardsWidget goal ring', () => {
 		}));
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0 });
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
-		const total = xpFromReviews(reviews, currentStudyDay().dayOf);
+		const total = xpFromReviews(reviews, ctx.session.zone.day().dayOf);
 		const progress = levelProgress(total);
 		expect(progress).toEqual({ level: 3, xpInto: 200, xpForNext: 300 });
 
@@ -122,7 +127,7 @@ describe('FlashcardsWidget goal ring', () => {
 		expect(ring.getAttribute('aria-valuetext')).toBe('32 of 50 flashcard reviews today');
 		expect(screen.getByText('32/50')).toBeTruthy();
 		expect(screen.getByText('Goal streak: 4 days')).toBeTruthy();
-		expect(loadGoalStatus).toHaveBeenCalledWith(1, { force: false });
+		expect(loadGoalStatus).toHaveBeenCalledWith(expect.anything(), 1, { force: false });
 	});
 
 	it('says "Goal reached" next to the small ring when met', async () => {

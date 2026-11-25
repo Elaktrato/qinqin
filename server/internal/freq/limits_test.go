@@ -12,15 +12,16 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
 // importFails runs Import and checks it failed with an invalid-pack error
 // mentioning every want, and that nothing was written.
-func importFails(t *testing.T, name string, p *dict.Pack, want ...string) {
+func importFails(t *testing.T, name string, p *pack.Pack, want ...string) {
 	t.Helper()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	_, err := freq.Import(context.Background(), sqlDB, p)
 	if err == nil {
 		t.Errorf("%s: import succeeded, want an error", name)
@@ -31,8 +32,8 @@ func importFails(t *testing.T, name string, p *dict.Pack, want ...string) {
 			t.Errorf("%s: err = %v, want it to mention %q", name, err, w)
 		}
 	}
-	if !errors.Is(err, dict.ErrInvalidPack) {
-		t.Errorf("%s: err = %v, want dict.ErrInvalidPack", name, err)
+	if !errors.Is(err, pack.ErrInvalidPack) {
+		t.Errorf("%s: err = %v, want pack.ErrInvalidPack", name, err)
 	}
 	if n := count(t, sqlDB, `SELECT count(*) FROM frequency`) + count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {
 		t.Errorf("%s: %d rows written", name, n)
@@ -120,6 +121,6 @@ func TestTooManyRows(t *testing.T) {
 		"term_meta_bank_1.json", "row 3", "rows")
 
 	// Exactly at the cap is fine.
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "ok", "a,,1\nb,,2\nc,,3\n"))
 }

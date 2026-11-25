@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
+	"qinqin/internal/pack"
 )
 
 // grammarFixture is the shared grammar pack fixture, relative to this
@@ -17,11 +17,11 @@ const grammarFixture = "../grammar/testdata/zh-mini"
 
 func TestGrammarRoutes(t *testing.T) {
 	ts, sqlDB := newServer(t)
-	pack, err := dict.LoadPack(grammarFixture)
+	pk, err := pack.LoadPack(grammarFixture)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := grammar.Import(context.Background(), sqlDB, pack); err != nil {
+	if _, err := grammar.Import(context.Background(), sqlDB, pk); err != nil {
 		t.Fatal(err)
 	}
 

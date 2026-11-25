@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // importFreqPack installs a freq-csv pack with the given rows.
@@ -27,7 +27,7 @@ func importFreqPack(t *testing.T, sqlDB *sql.DB, id, language, rows string) int6
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,14 +88,14 @@ func TestFrequencyRanksRejectsBadBodies(t *testing.T) {
 		body any
 		msg  string
 	}{
-		"no ids":   {map[string]any{"language": "ja", "ids": []int64{}}, "ids must be 1 to 500 entry ids"},
-		"501 ids":  {map[string]any{"language": "ja", "ids": big}, "ids must be 1 to 500 entry ids"},
-		"zero id":  {map[string]any{"language": "ja", "ids": []int64{0}}, "ids must be 1 to 500 entry ids"},
-		"language": {map[string]any{"ids": []int64{1}}, "language is required"},
-		"blank":    {map[string]any{"language": " ", "ids": []int64{1}}, "language is required"},
+		"no ids":   {map[string]any{"language": "ja", "ids": []int64{}}, "1 to 500 entry ids"},
+		"501 ids":  {map[string]any{"language": "ja", "ids": big}, "1 to 500 entry ids"},
+		"zero id":  {map[string]any{"language": "ja", "ids": []int64{0}}, "1 to 500 entry ids"},
+		"language": {map[string]any{"ids": []int64{1}}, "anguage is required"},
+		"blank":    {map[string]any{"language": " ", "ids": []int64{1}}, "anguage is required"},
 	} {
 		resp := postRanks(t, ts.URL, alice, tc.body)
-		if text := readAll(t, resp); resp.StatusCode != http.StatusBadRequest || !strings.Contains(text, tc.msg) {
+		if text := readAll(t, resp); resp.StatusCode != http.StatusBadRequest || errorCode(t, []byte(text)) != "bad_request" || !strings.Contains(text, tc.msg) {
 			t.Errorf("%s: status = %d body %q, want 400 %q", name, resp.StatusCode, text, tc.msg)
 		}
 	}
@@ -236,7 +236,7 @@ func TestFrequencyTopFollowsDictionaryInstalls(t *testing.T) {
 	if len(first.Entries) != 2 {
 		t.Fatalf("top = %+v, want 2 entries", first)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-more", Name: "JMdict more", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", `<?xml version="1.0" encoding="UTF-8"?>

@@ -1,10 +1,18 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/time/zone', () => ({ currentStudyDay: vi.fn(), onStudyDayChange: vi.fn() }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn(),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/activity/viewPrefs')>()),
 	loadActivityView: vi.fn(() => Promise.resolve({ scope: 'workspace', hidden: [] })),
@@ -13,20 +21,28 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 
 import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
-import { loadStudyHistory } from '$lib/study/history';
-import { getStudyData } from '$lib/study/studyData';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
+import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { addDays, studyDay } from '$lib/time/studyDay';
-import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+let onStudyDayChange!: MockInstance<StudyDays['onChange']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	onStudyDayChange = vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const WS = { id: 3, language: 'zh', name: 'zh' } as never;
 const REVIEWS = {
 	type: 'review',
-	plugin: 'flashcards',
-	label: 'Reviews',
-	unit: 'count' as const,
-	describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 
 function reply(from: string, to: string, cells: ActivityResponse['cells'] = []): ActivityResponse {
@@ -41,7 +57,7 @@ beforeEach(() => {
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
 	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
 	vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to));
-	workspaces.set({ list: [WS], current: WS });
+	ctx.session.workspaces.set({ list: [WS], current: WS });
 });
 afterEach(() => {
 	cleanup();
@@ -67,7 +83,7 @@ const CELLS = [
 
 describe('HeatmapWeek', () => {
 	it('shows seven large tiles Monday..Sunday with weekday names, from the 52-week response', async () => {
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('.week-days .tile')).toHaveLength(7));
 		const names = [...document.querySelectorAll('.week-days .wd')].map((e) => e.textContent);
 		expect(names).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
@@ -80,7 +96,7 @@ describe('HeatmapWeek', () => {
 
 	it('shows "21/50" under each past or today tile with a goal, else the points', async () => {
 		vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to, CELLS));
-		const { unmount } = render(ActivityHeatmap, { layout: 'week' });
+		const { unmount } = render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		await waitFor(() =>
 			expect([...document.querySelectorAll('.week-days .amount')].map((e) => e.textContent)).toEqual([
 				'60',
@@ -94,7 +110,7 @@ describe('HeatmapWeek', () => {
 		);
 		unmount();
 		withGoal();
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		await waitFor(() =>
 			expect([...document.querySelectorAll('.week-days .amount')].map((e) => e.textContent)).toEqual([
 				'60/50',
@@ -109,13 +125,13 @@ describe('HeatmapWeek', () => {
 	});
 
 	it('future days are empty outlines', async () => {
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('.week-days .tile.future')).toHaveLength(4));
 		expect(document.querySelector('.week-days .tile.today')?.getAttribute('data-day')).toBe('2026-11-18');
 	});
 
 	it('the block is one link to /stats/week with an accessible name', async () => {
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		const link = await screen.findByRole('link', { name: 'This week — open Stats, Week' });
 		expect(link.getAttribute('href')).toBe('/stats/week');
 		expect(screen.getAllByRole('link')).toHaveLength(1);
@@ -127,7 +143,7 @@ describe('HeatmapWeek', () => {
 			reply(from, to, [...CELLS, { day: '2026-11-01', workspace: 3, type: 'review', points: 9, raw: 9 }])
 		);
 		withGoal();
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		expect(await screen.findByText('29 flashcard reviews to go today')).toBeTruthy();
 		const list = screen.getByRole('list', { name: 'Daily activity' });
 		expect(within(list).getAllByRole('listitem')).toHaveLength(3);
@@ -135,11 +151,11 @@ describe('HeatmapWeek', () => {
 
 	it('says the goal is reached, or the week points without a goal', async () => {
 		vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to, CELLS));
-		const { unmount } = render(ActivityHeatmap, { layout: 'week' });
+		const { unmount } = render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		expect(await screen.findByText('84 points this week')).toBeTruthy();
 		unmount();
 		withGoal(20);
-		render(ActivityHeatmap, { layout: 'week' });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		expect(await screen.findByText('Goal reached')).toBeTruthy();
 	});
 });

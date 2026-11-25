@@ -6,17 +6,12 @@
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
 import { orderNew } from './newOrder';
+import { compareById, instantOf, isValidReview, sortedReviews } from './reviewOrder';
 import { weightsKey } from './fsrs/params';
 import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
-import {
-	admit,
-	dayCountsCached,
-	effectiveLimits,
-	type Candidate,
-	type DayCounts,
-	type LimitPair
-} from './limits';
+import { dayCountsCached, type Candidate, type DayCounts } from './limits';
+import { admitSession } from './sessionQueue';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -60,7 +55,9 @@ export interface BuildQueueOptions {
 
 // One scheduler instance per weight set: instances are stateless between
 // calls, so equal weights share one. Every other option stays the
-// ts-fsrs default (fuzz off, short-term on).
+// ts-fsrs default (fuzz off, short-term on). A pure function's memo of
+// numbers (at most 16 weight sets), no rows: it may outlive a session
+// (record 0009's allow-list).
 const MAX_SCHEDULERS = 16;
 const schedulers = new Map<string, ReturnType<typeof fsrs>>();
 
@@ -92,39 +89,10 @@ const RATING: Record<ReviewGrade, Grade> = {
 	4: Rating.Easy
 };
 
-function instant(ts: string): number {
-	const ms = Date.parse(ts);
-	return Number.isNaN(ms) ? 0 : ms;
-}
-
-/**
- * isValidReview guards the replay against out-of-contract payloads. The
- * server only validates a review's id and ts, so a stored grade can be
- * anything; ts-fsrs throws on unknown grades and would otherwise break
- * every queue build.
- */
-export function isValidReview(review: ReviewEvent): boolean {
-	if (review === null || typeof review !== 'object') return false;
-	if (typeof review.ts !== 'string' || Number.isNaN(Date.parse(review.ts))) return false;
-	const payload: unknown = review.payload;
-	if (typeof payload !== 'object' || payload === null) return false;
-	const { cardId, grade } = payload as { cardId?: unknown; grade?: unknown };
-	if (typeof cardId !== 'string' || cardId.length === 0) return false;
-	return grade === 1 || grade === 2 || grade === 3 || grade === 4;
-}
-
-function byId(a: { id: string }, b: { id: string }): number {
-	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
-/**
- * sortedReviews orders a card's history by event time, then by id so
- * two events written in the same millisecond still replay in the same
- * order on every device.
- */
-export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
-	return [...reviews].sort((a, b) => instant(a.ts) - instant(b.ts) || byId(a, b));
-}
+// The review rules live in reviewOrder.ts (#175); re-exported so existing imports keep working.
+export { isValidReview, sortedReviews };
+const instant = instantOf;
+const byId = compareById;
 
 /** The schedule of a card right after one of its reviews (`ts`: the review's real instant, epoch ms). */
 export interface TimelinePoint {
@@ -258,11 +226,6 @@ export function isDue(schedule: Schedule, now: Date): boolean {
 	return instant(schedule.due) <= now.getTime();
 }
 
-function cap(limit: number): number {
-	if (!Number.isFinite(limit)) return 0;
-	return Math.max(0, Math.floor(limit));
-}
-
 /**
  * buildQueue assembles one session: reviewed cards that are due first,
  * earliest due first, then never-reviewed cards. Reviewed cards that
@@ -271,15 +234,9 @@ function cap(limit: number): number {
  */
 export function buildQueue(options: BuildQueueOptions): StudyCard[] {
 	const { newLimit, reviewLimit, ctx } = options;
-	const { candidates, byId: cardById, counts: dayUsed } = queueCandidates(options);
-	const { admitted } = admit(
-		candidates,
-		(deckId) => limitsOf(ctx, deckId),
-		dayUsed,
-		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
-		existingDecksOf(ctx, candidates)
-	);
-	return admitted.map((id) => cardById.get(id) as StudyCard);
+	const { candidates, byId: cardById, counts } = queueCandidates(options);
+	const { inSession } = admitSession({ candidates, ctx, counts, caps: { newLimit, reviewLimit } });
+	return candidates.filter((c) => inSession.has(c.cardId)).map((c) => cardById.get(c.cardId) as StudyCard);
 }
 
 /**
@@ -354,19 +311,8 @@ export function queueCandidates({
 	return { candidates, byId: map, counts: dayUsed };
 }
 
-/** The limits of one deck in a context: its row over the workspace's over the defaults. */
-export function limitsOf(ctx: StudyContext, deckId: string): LimitPair {
-	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
-}
-
-/** The decks that exist: the context's list, else every deck the candidates name. */
-export function existingDecksOf(
-	ctx: StudyContext,
-	candidates: readonly { deckIds: readonly string[] }[]
-): ReadonlySet<string> {
-	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
-	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
-}
+// Moved to limits.ts (#175); re-exported so existing imports keep working.
+export { existingDecksOf, limitsOf } from './limits';
 
 // XP lives in exp.ts; re-exported so existing imports keep working.
 export { levelFromXp, xpFromReviews } from './exp';

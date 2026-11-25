@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { getSchemes } from '$lib/api/schemes';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { flashcardsHref } from '../route';
 	import { Button, Section } from '$lib/ui';
 	import type { EntryBase } from '$lib/api/types';
 	import { addDeckFromOverview } from './addDeckFromOverview';
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Level decks of the installed level packs, grouped by scheme and
 	// collapsed. Nothing here is stored or editable: a level's items are
@@ -57,7 +59,7 @@
 				if (wanted === language) decks = levelDecks(schemes, wanted);
 			},
 			(err) => {
-				loadError = errorMessage(err, t('flashcards.system.loadFailed'));
+				loadError = errorText(err, t('flashcards.system.loadFailed'));
 			}
 		);
 	});
@@ -70,7 +72,7 @@
 		const key = keyOf(deck);
 		const current = items[key];
 		if (Array.isArray(current)) return;
-		loadLevelItems(deck).then(
+		loadLevelItems(session.caches.levelItems, deck).then(
 			(list) => (items = { ...items, [key]: list }),
 			() => (items = { ...items, [key]: 'error' })
 		);
@@ -105,7 +107,7 @@
 		notes = { ...notes, [key]: '' };
 		errors = { ...errors, [key]: '' };
 		try {
-			const plan = await addDeckFromOverview({
+			const plan = await addDeckFromOverview(session.study, {
 				workspaceId,
 				items: list.map((entry) => ({
 					entryId: entry.id,
@@ -131,7 +133,7 @@
 			};
 			onchanged();
 		} catch (err) {
-			errors = { ...errors, [key]: errorMessage(err, t('flashcards.system.addFailed')) };
+			errors = { ...errors, [key]: errorText(err, t('flashcards.system.addFailed')) };
 		} finally {
 			adding = null;
 		}

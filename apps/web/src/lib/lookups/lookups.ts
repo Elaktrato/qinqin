@@ -1,4 +1,4 @@
-// Lookup history (#72): the pure rules of the qinqin-core `lookups` row (one
+// Lookup history (#72): the pure rules of the keyed `lookups` row (one
 // per workspace) and the user-global `lookupcfg` switch. Contract:
 // docs/contracts/lookups/README.md; fixtures lookup-rows.json,
 // lookup-merge.json, lookup-prompt.json. I/O lives in store.ts, buffering in

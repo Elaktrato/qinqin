@@ -1,10 +1,12 @@
 <script lang="ts">
-	// Settings -> Features: switch Decks or the Reader off for yourself.
-	import { pluginStates } from '$lib/plugins/states';
+	import { errorText } from '$lib/api/apiErrors';
+	// Settings -> Features: switch a core feature off for yourself.
 	import { t } from '$lib/i18n';
 	import { featureSwitches, saveFeatureSwitch } from './featureSwitches';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	const switches = $derived(featureSwitches($pluginStates.list));
+	const switches = $derived(featureSwitches(session.features.list));
 	let saving = $state<string | null>(null);
 	let saved = $state<string | null>(null);
 	let error = $state('');
@@ -16,11 +18,11 @@
 		saved = null;
 		error = '';
 		try {
-			await saveFeatureSwitch(id, enabled);
+			await saveFeatureSwitch(session.features, id, enabled);
 			saved = id;
 		} catch (err) {
 			box.checked = !enabled;
-			error = err instanceof Error && err.message ? err.message : t('settings.features.saveFailed');
+			error = errorText(err, t('settings.features.saveFailed'));
 		} finally {
 			saving = null;
 		}
@@ -30,9 +32,9 @@
 <h2>{t('settings.features.title')}</h2>
 <p class="hint">{t('settings.features.hint')}</p>
 
-{#if $pluginStates.status === 'loading' || $pluginStates.status === 'idle'}
+{#if session.features.status === 'loading' || session.features.status === 'idle'}
 	<p>{t('common.loading')}</p>
-{:else if $pluginStates.status === 'error'}
+{:else if session.features.status === 'error'}
 	<p class="error" role="alert">{t('settings.features.loadFailed')}</p>
 {:else}
 	<ul class="features">

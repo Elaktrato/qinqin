@@ -9,7 +9,8 @@ database and the SvelteKit web app embedded in the binary.
 
 - **Dictionaries with their sources**: CC-CEDICT, JMdict, KANJIDIC2 and Unihan bundled; every meaning keeps
   its dictionary's name and licence. Search by written form, reading or meaning, plus radical and part
-  lookup, lookup history, personal notes and your own corrections.
+  lookup, lookup history, personal notes, your own corrections and, with your own AI key, example sentences
+  written at your level (marked as AI-written).
 - **Flashcards with FSRS**: decks, starter decks from a frequency list, HSK and JLPT level decks, vocab,
   Word Salad, writing, tone, reverse and cloze cards, daily limits, vacation mode and an optimizer.
 - **Reader**: import epubs or public-domain works from Aozora Bunko and Project Gutenberg, a Yomitan-style
@@ -79,17 +80,17 @@ Repository with compose path `docker-compose.yml`). In a folder holding that fil
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin adduser --admin --username you
+docker compose logs qinqin | grep 'bootstrap:'
 ```
 
 The first start installs the bundled dictionaries, frequency and level lists, stroke data and audio by itself
-before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). `adduser` asks for a password (10 to 256 characters, not the username). Then open
-<http://localhost:8080>.
+before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). Then open
+<http://localhost:8080> and sign in as `admin` with the password from the log.
 
-- **Create the admin before the port is reachable beyond your LAN.** While no user exists, the first
-  registration becomes the administrator, whoever makes it. Or set `QINQIN_BOOTSTRAP_ADMIN` to a username:
-  on the first start the server creates that admin before it opens the port and prints a one-time password in
-  the container log (or uses `QINQIN_BOOTSTRAP_PASSWORD`); it must be changed at the first sign-in.
+- **The first start creates the administrator `admin`** before it opens the port and prints a one-time
+  password in the container log (`docker compose logs qinqin | grep bootstrap:`); it must be changed at the
+  first sign-in. `QINQIN_BOOTSTRAP_ADMIN` picks another name, `QINQIN_BOOTSTRAP_PASSWORD` the password, and
+  `QINQIN_BOOTSTRAP_ADMIN=off` leaves it to `qinqin adduser --admin`. Nobody becomes administrator by registering.
 - **`QINQIN_SECRET` is optional.** Without it the AI features, authenticator apps and a
   stored mail password are unavailable; everything else works. With it
   (`head -c 32 /dev/urandom | base64`) users' AI keys, the mail password and authenticator secrets are stored
@@ -107,7 +108,7 @@ Portainer step by step, the data directory and the checklist after deploying:
 ## Release images and versions
 
 CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags (pushes to `develop` only run
-the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.5.0`) and
+the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.6.0`) and
 `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by
 surprise. The package is public; an image your own fork publishes starts as a private package (see
 [Deploying](https://github.com/Elaktrato/qinqin/wiki/Admin-deploying#release-images-and-versions)).
@@ -141,7 +142,7 @@ The full documentation is the [qinqin wiki](https://github.com/Elaktrato/qinqin/
 - **Building a client**: [API overview](https://github.com/Elaktrato/qinqin/wiki/API-Overview),
   [API reference](https://github.com/Elaktrato/qinqin/wiki/API-Reference),
   [API access tokens](https://github.com/Elaktrato/qinqin/wiki/API-Access-tokens),
-  [Plugin format](https://github.com/Elaktrato/qinqin/wiki/Plugin-format),
+  [Core data API](https://github.com/Elaktrato/qinqin/wiki/Core-data-api),
   [Data pack format](https://github.com/Elaktrato/qinqin/wiki/Data-pack-format), and the shared rules with
   JSON fixtures in [`docs/contracts/`](docs/contracts/overview.md).
 - **Reference**: [Data and licences](https://github.com/Elaktrato/qinqin/wiki/Data-and-licences),
@@ -161,8 +162,9 @@ npm --prefix apps/web run build
 cd server && go vet ./... && go test ./...
 ```
 
-Branches follow git-flow ([`docs/git-flow.md`](docs/git-flow.md)). More, including the doc checks and the
-repository layout: [Development](https://github.com/Elaktrato/qinqin/wiki/Development),
+Branches follow git-flow ([`docs/git-flow.md`](docs/git-flow.md)). The code-structure rules (layers, folders,
+errors, tests) are the architecture records in [`docs/architecture/`](docs/architecture/README.md). More,
+including the doc checks and the repository layout: [Development](https://github.com/Elaktrato/qinqin/wiki/Development),
 [Project layout](https://github.com/Elaktrato/qinqin/wiki/Project-layout),
 [Translating qinqin](https://github.com/Elaktrato/qinqin/wiki/Translating-qinqin).
 

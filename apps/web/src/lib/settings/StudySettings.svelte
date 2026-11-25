@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { loadWorkspaceEvents } from '$lib/events';
-	import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
+	import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
+	import { saveWorkspaceLimits } from '$lib/study/commands/settings';
 	import GoalSettings from './GoalSettings.svelte';
 	import LimitField from './LimitField.svelte';
 	import NoteSettings from './NoteSettings.svelte';
 	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
-	import { getStudyData } from '$lib/study/studyData';
-	import { newUlid } from '$lib/ulid';
+	import { getStudyData } from '$lib/study/data';
+	import { newUlid } from '$lib/events/ulid';
 	import {
 		parseVacation,
 		planCancel,
@@ -19,9 +19,7 @@
 		type VacationWrite
 	} from '$lib/study/vacation';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaceDisplay } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
 	import {
 		describePeriod,
 		errorText,
@@ -30,13 +28,17 @@
 		startNowNote
 	} from './vacationForm';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+
+
+	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
 
-	let day = $state.raw(currentStudyDay());
+	let day = $state.raw(session.zone.day());
 	// A new learner day (or a zone change) moves "today": min dates and plan rules follow.
-	$effect(() => onContextStale(() => (day = currentStudyDay())));
+	$effect(() => onContextStale(session.zone, () => (day = session.zone.day())));
 	const today = $derived(day.today());
 
 	let periods = $state.raw<VacationPeriod[]>([]);
@@ -56,8 +58,8 @@
 	let scopeMode = $state<'all' | 'chosen'>('all');
 	let chosen = $state<number[]>([]);
 
-	const list = $derived($workspaces.list);
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const list = $derived(session.workspaces.list);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const named = $derived(
 		list.map((w) => {
 			const display = workspaceDisplay(list, w);
@@ -70,20 +72,29 @@
 			.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))
 	);
 
+	/** The workspace whose limits the form holds: set together with them, and the one Save writes (#174). */
+	let loadedWorkspace = $state<number | null>(null);
+
 	async function load(force = false): Promise<void> {
-		if (workspaceId === null) {
+		const ws = workspaceId;
+		if (ws === null) {
 			periods = [];
+			loadedWorkspace = null;
 			loaded = true;
 			return;
 		}
 		try {
-			const data = await getStudyData(workspaceId, { force });
+			const data = await getStudyData(session.study, ws, { force });
+			// A late answer for a workspace no longer selected is dropped.
+			if (ws !== workspaceId) return;
+			loadedWorkspace = ws;
 			newState = workspaceFieldFrom(data.limits?.workspace ?? null, 'new');
 			reviewsState = workspaceFieldFrom(data.limits?.workspace ?? null, 'reviews');
 			periods = (data.vacations ?? [])
 				.map((p) => parseVacation(`vacation:${p.id}`, p))
 				.filter((p): p is VacationPeriod => p !== null);
 		} catch {
+			if (ws !== workspaceId) return;
 			error = t('settings.vacation.loadFailed');
 		}
 		loaded = true;
@@ -97,8 +108,8 @@
 
 	async function apply(writes: VacationWrite[]): Promise<void> {
 		for (const write of writes) {
-			if ('put' in write) await saveVacation(write.put);
-			else await deleteVacation(write.delete);
+			if ('put' in write) await saveVacation(session.study, write.put);
+			else await deleteVacation(session.study, write.delete);
 		}
 		await load(true);
 	}
@@ -107,7 +118,7 @@
 		const out = new Map<number, number[]>();
 		await Promise.all(
 			ids.map(async (id) => {
-				const events = await loadWorkspaceEvents(id);
+				const events = await session.events.load(id);
 				out.set(
 					id,
 					events.filter((e) => e.type === 'review').map((e) => Date.parse(e.ts))
@@ -170,6 +181,9 @@
 		event.preventDefault();
 		limitsMessage = '';
 		limitsError = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = loadedWorkspace;
+		if (ws === null) return;
 		const plan = workspaceRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			limitsError = plan.error;
@@ -177,7 +191,7 @@
 		}
 		busy = true;
 		try {
-			await saveWorkspaceLimits(plan.row);
+			await saveWorkspaceLimits(session.study, ws, plan.row);
 			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {

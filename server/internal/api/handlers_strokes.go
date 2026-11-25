@@ -24,12 +24,12 @@ var strokeFile = regexp.MustCompile(`^U([1-9A-F][0-9A-F]{0,5})\.json$`)
 func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 	m := strokeFile.FindStringSubmatch(r.PathValue("file"))
 	if m == nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such stroke file.")
 		return
 	}
 	cp, err := strconv.ParseUint(m[1], 16, 32)
 	if err != nil || !utf8.ValidRune(rune(cp)) { // surrogates and beyond U+10FFFF
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such stroke file.")
 		return
 	}
 	data, ok, err := strokes.Lookup(r.Context(), s.db, string(rune(cp)))
@@ -38,16 +38,16 @@ func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such stroke file.")
 		return
 	}
 	sum := sha256.Sum256(data)
 	h := w.Header()
 	h.Set("Content-Type", "application/json")
-	h.Set("X-Content-Type-Options", "nosniff") // the 404s carry it too (http.Error)
+	h.Set("X-Content-Type-Options", "nosniff") // the 404s carry it too
 	h.Set("Cache-Control", "public, max-age=86400")
 	h.Set("ETag", `"`+hex.EncodeToString(sum[:16])+`"`)
-	http.ServeContent(w, r, "", time.Time{}, strings.NewReader(string(data)))
+	serveContent(w, r, time.Time{}, strings.NewReader(string(data)))
 }
 
 // strokePackBody is one row of GET /api/stroke-packs: the credits of an

@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // charsOf flattens SchemeCharacters into level name -> chars, keeping
@@ -27,15 +28,15 @@ func charsOf(t *testing.T, got []levels.LevelChars) (names []string, chars map[s
 
 func TestSchemeCharactersWordUnit(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
 
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -64,7 +65,7 @@ func TestSchemeCharactersWordUnit(t *testing.T) {
 
 func TestSchemeCharactersLowestLevelWins(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// No character entry for 人: it still counts, being written in a
 	// member word; 好 sits in level 1 (你好) and not again in level 2.
@@ -92,7 +93,7 @@ func TestSchemeCharactersLowestLevelWins(t *testing.T) {
 
 func TestSchemeCharactersCharacterUnit(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineHao, lineNi, lineRen, lineNihao)
 	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "chars",
@@ -114,14 +115,14 @@ func TestSchemeCharactersCharacterUnit(t *testing.T) {
 
 func TestSchemeCharactersSkipsDeletedRows(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -186,14 +187,14 @@ func TestSchemeCharactersSkipsDeletedRows(t *testing.T) {
 
 func TestSchemeVersionStableOnNoopReimport(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -210,7 +211,7 @@ func TestSchemeVersionStableOnNoopReimport(t *testing.T) {
 	}
 	// An identical re-import re-stamps the scheme row but no level or
 	// member: the characters, and so the version, stay the same.
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("re-import fixture scheme: %v", err)
 	}
 	if v2, err := levels.SchemeVersion(ctx, sqlDB, schemes[0].ID); err != nil || v2 != v1 {

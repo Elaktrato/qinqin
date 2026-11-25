@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import {
 		WORD_STATES,
@@ -9,14 +9,15 @@
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights } from '$lib/study/store';
-	import { workspaces } from '$lib/workspaces';
+	import { loadStudyHistory } from '$lib/study/data';
+	import { activeWeights } from '$lib/study/readModel';
 	import { flashcardsHref } from '$lib/features/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	// Word states (flashcards plugin): how many words are new, learning,
+	// Word states (the flashcards feature): how many words are new, learning,
 	// young or mature. Stats shows a per-deck table under the overall
 	// bar; the home variant (compact) shows the overall numbers only.
 
@@ -30,7 +31,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const headingId = $derived(compact ? 'word-states-home-heading' : 'word-states-heading');
 
 	const overall = $derived(result?.overall ?? null);
@@ -62,14 +63,14 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (history.ts).
-			const data = await loadStudyHistory(workspace, { force });
+			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
-			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(data, workspace).clock);
+			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(session.zone, data, workspace).clock);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;
-			error = errorMessage(err, t('widgets.words.loadFailed'));
+			error = errorText(err, t('widgets.words.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -78,7 +79,7 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 
 	// The per-deck table scrolls sideways on narrow screens: a visible hint
 	// says so while columns are hidden to the right. Screen readers get the

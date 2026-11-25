@@ -3,11 +3,11 @@ import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import { deckLeftToday, type LeftInput } from './deckLimits';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-03-10T12:00:00Z');
-const card = (id: string, deckIds: string[], n: number): StudyCard => ({
-	id, kind: 'vocab', entryId: n, deckIds, createdAt: `2026-01-${String(n).padStart(2, '0')}T00:00:00Z`
-});
+const card = (id: string, deckIds: string[], n: number): StudyCard =>
+	build.card({ id, entryId: n, deckIds, createdAt: `2026-01-${String(n).padStart(2, '0')}T00:00:00Z` });
 const cards = [1, 2, 3, 4, 5].map((n) => card(`c${n}`, n <= 4 ? ['d1'] : ['d2'], n));
 const input = (ctx: StudyContext, reviews: ReviewEvent[] = []): LeftInput => ({
 	cards, reviews, deckSettings: {}, now: NOW, weights: DEFAULT_W, ctx, index: new Map()

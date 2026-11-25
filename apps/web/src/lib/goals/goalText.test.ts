@@ -6,9 +6,9 @@ import { ariaText, metricOptions, progressText, shortText, statusLine, streakTex
 
 // The built-in sources exactly as the plugin manifests declare them.
 const SOURCES: ActivitySource[] = [
-	{ type: 'read', plugin: 'qinqin-reader', label: 'Reading', unit: 'seconds', describe: { one: '{n} minute of reading', other: '{n} minutes of reading' } },
-	{ type: 'review', plugin: 'qinqin-flashcards', label: 'Flashcard reviews', unit: 'count', describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' } },
-	{ type: 'journal', plugin: 'qinqin-journal', label: 'Journal entries', unit: 'count', describe: { one: '{n} journal entry', other: '{n} journal entries' } }
+	{ type: 'read', feature: 'reader', unit: 'seconds' },
+	{ type: 'review', feature: 'flashcards', unit: 'count' },
+	{ type: 'journal', feature: 'journal', unit: 'count' }
 ];
 
 function day(metric: GoalMetric | null, target: number | null, amount: number, status: GoalDay['status'] = 'open', unavailable = false): GoalDay {

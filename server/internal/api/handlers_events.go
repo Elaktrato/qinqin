@@ -1,8 +1,6 @@
 package api
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,6 +11,7 @@ import (
 
 	"qinqin/internal/events"
 	"qinqin/internal/model"
+	"qinqin/internal/workspaces"
 )
 
 // eventBatch is the request body of POST /api/events/batch: the
@@ -41,7 +40,7 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Events == nil {
-		http.Error(w, "events array required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Events array required.")
 		return
 	}
 	// One ownership check per distinct workspace in the batch.
@@ -49,25 +48,25 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	for i := range req.Events {
 		ev := &req.Events[i]
 		if !events.ValidID(ev.ID) {
-			http.Error(w, "event id must be a ULID", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Event id must be a ULID.")
 			return
 		}
 		if ev.TS.IsZero() {
-			http.Error(w, "event ts is required", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Event ts is required.")
 			return
 		}
 		if ev.WorkspaceID <= 0 {
-			http.Error(w, "event workspaceId is required", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Event workspaceId is required.")
 			return
 		}
 		if !owned[ev.WorkspaceID] {
-			ok, err := s.workspaceOwned(r.Context(), u.ID, ev.WorkspaceID)
+			ok, err := workspaces.Owned(r.Context(), s.db, u.ID, ev.WorkspaceID)
 			if err != nil {
-				http.Error(w, "internal error", http.StatusInternalServerError)
+				writeInternal(w, r)
 				return
 			}
 			if !ok {
-				http.Error(w, "workspace not found", http.StatusNotFound)
+				writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 				return
 			}
 			owned[ev.WorkspaceID] = true
@@ -76,7 +75,7 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	accepted, duplicates, err := events.Append(r.Context(), s.db, req.Events)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"accepted": accepted, "duplicates": duplicates})
@@ -99,23 +98,23 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	req, err := events.ParsePageRequest(q)
 	if errors.Is(err, events.ErrSinceInvalid) {
-		http.Error(w, "since must be RFC 3339", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "since must be RFC 3339.")
 		return
 	}
 	var workspace *int64
 	if raw := q.Get("workspace"); raw != "" {
 		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
-			http.Error(w, "workspace must be an integer", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 			return
 		}
-		ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+		ok, err := workspaces.Owned(r.Context(), s.db, u.ID, id)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		if !ok {
-			http.Error(w, "workspace not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 			return
 		}
 		workspace = &id
@@ -130,8 +129,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if errors.Is(err, events.ErrPageInvalid) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "events_page_invalid",
-			"message": "Read the log again from its first page. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "events_page_invalid", "Read the log again from its first page. "+errDetail(err, events.ErrPageInvalid))
 		return
 	}
 	if err != nil {
@@ -143,7 +141,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	h.Set("Deprecation", "true")
 	h.Set("Link", `</api/events?limit=500>; rel="successor-version"`)
 	// A stalled client is cut one window after the last bytes went out.
-	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)}
+	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), streamWindow, time.Now)}
 	stream := s.streamEvents
 	if stream == nil {
 		stream = events.StreamSince
@@ -176,45 +174,29 @@ func (s *server) handleDeleteLookupEvents(w http.ResponseWriter, r *http.Request
 	}
 	raw := r.URL.Query().Get("workspace")
 	if raw == "" {
-		http.Error(w, "workspace is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "workspace is required.")
 		return
 	}
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
-		http.Error(w, "workspace must be an integer", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 		return
 	}
-	ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+	ok, err := workspaces.Owned(r.Context(), s.db, u.ID, id)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if !ok {
-		http.Error(w, "workspace not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return
 	}
 	n, err := events.DeleteLookups(r.Context(), s.db, u.ID, id)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int64{"deleted": n})
-}
-
-// workspaceOwned reports whether the workspace belongs to userID. The
-// lookup keys on (id, user_id), so unknown and foreign ids are
-// indistinguishable to the caller.
-func (s *server) workspaceOwned(ctx context.Context, userID, workspaceID int64) (bool, error) {
-	var one int
-	err := s.db.QueryRowContext(ctx, `
-		SELECT 1 FROM workspaces WHERE id = ? AND user_id = ?`, workspaceID, userID).Scan(&one)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 // countingWriter counts the bytes that went out, so a stream that failed

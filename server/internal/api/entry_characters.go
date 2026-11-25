@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
@@ -39,7 +40,7 @@ type entryCharacter struct {
 	Levels  []lookupLevel     `json:"levels"`
 }
 
-// entryCharacters returns the distinct Han characters of a zh/ja word's
+// entryCharacters returns the distinct Han characters of a Han-script word
 // written form in order, at most eight, each resolved to the character
 // entry with that written form. An entry that merely folds the form in as
 // a traditional variant (复 holds 覆) is not the character the word
@@ -51,7 +52,7 @@ type entryCharacter struct {
 // without an entry are left out.
 func entryCharacters(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) ([]entryCharacter, error) {
 	out := []entryCharacter{}
-	if e.Kind != "word" || (e.Language != "zh" && e.Language != "ja") {
+	if e.Kind != "word" || lang.ProfileOf(e.Language).Script != lang.ScriptHan {
 		return out, nil
 	}
 	seenRunes := map[rune]bool{}

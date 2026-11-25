@@ -4,14 +4,15 @@
 	import {
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
-	import { user } from '$lib/auth';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import {
 		canApply, clearLocalAfterRestore, errorText, formatBytes, needsDropAck, nextPollDelay, replaceSentence,
 		restoreSentence, stageProblem, unresolvedLines, type StageView
 	} from './backupView';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	// Settings -> Account -> Your data: download everything you own, or
 	// replace it all from such a download. The restore is staged (uploaded
@@ -20,7 +21,7 @@
 		reload = () => location.reload(),
 		assign = (u: string) => location.assign(u),
 		storage = typeof localStorage === 'undefined' ? null : localStorage
-	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'removeItem'> | null } = $props();
+	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null } = $props();
 
 	let error = $state('');
 	let busy = $state(false);
@@ -35,8 +36,8 @@
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let polls = 0;
 
-	const username = $derived($user?.username ?? '');
-	const hasTotp = $derived(!!$user?.mfa?.totp);
+	const username = $derived(app.auth.user?.username ?? '');
+	const hasTotp = $derived(!!app.auth.user?.mfa?.totp);
 	const ok = $derived(
 		canApply({ status: view?.status ?? 'invalid', report: view?.report ?? null, ackDrop, password, hasTotp, code, typed, username, busy })
 	);
@@ -78,7 +79,7 @@
 			return;
 		}
 		if (view.status === 'done') {
-			droppedReviews = storage ? clearLocalAfterRestore(storage) : 0;
+			droppedReviews = storage ? clearLocalAfterRestore(storage, app.session?.user ?? null) : 0;
 			try {
 				if (typeof caches !== 'undefined') for (const k of await caches.keys()) await caches.delete(k);
 			} catch {
@@ -197,9 +198,6 @@
 		<p>{replaceSentence(r)}</p>
 		<p>{restoreSentence(r)}</p>
 		{#each r.warnings as w, i (i)}<p role="note">{w}</p>{/each}
-		{#if r.pluginsNotInstalled.length}
-			<p class="hint">{t('account.data.pluginsNotInstalled', { plugins: r.pluginsNotInstalled.join(', ') })}</p>
-		{/if}
 		{#if r.reidentifiedEvents}<p class="hint">{t('account.data.reidentified', { count: r.reidentifiedEvents })}</p>{/if}
 		{#if needsDropAck(r)}
 			<div role="group" aria-label={t('account.data.missingWords')}>

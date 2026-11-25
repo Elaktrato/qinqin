@@ -1,21 +1,18 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { errorText } from '$lib/api/apiErrors';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemes } from '$lib/api/schemes';
-	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
-	import { pluginName as manifestPluginName } from '$lib/plugins/manifestText';
-	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
-	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
-	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import type { Dictionary, Scheme, Workspace } from '$lib/api/types';
+	import { coverage, dictionaryHint, levelsHint } from '$lib/languages/coverage';
+	import DeleteWorkspaceDialog from '$lib/workspace/DeleteWorkspaceDialog.svelte';
+	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { webPlugins } from '$lib/plugins';
-	import { listedPlugins, pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
-	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';
 	import AdminSettings from '$lib/settings/AdminSettings.svelte';
@@ -29,8 +26,6 @@
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import FeatureSettings from '$lib/settings/FeatureSettings.svelte';
-	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
-	import { user } from '$lib/auth';
 	import {
 		RENAMED_TABS,
 		SETTINGS_TAB_LABELS,
@@ -40,26 +35,18 @@
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
 
-	interface PluginRow {
-		id: string;
-		name: string;
-		version: string;
-		enabled: boolean;
-		order: number;
-		permissions: string;
-		notice: 'app-update' | 'legacy' | null;
-		saving: boolean;
-		saved: boolean;
-		error: string;
-	}
+	const session = useSession();
+	const app = useApp();
+
 
 	// The open tab lives in the URL (`?tab=`), so it can be linked to;
 	// switching replaces the history entry instead of adding one. The
 	// panels stay mounted (only hidden), so drafts survive a tab switch.
-	const admin = $derived($user?.admin === true);
+	const admin = $derived(app.auth.user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
 	// A renamed tab's old link (`?tab=home`) lands on the new tab, and the
@@ -98,47 +85,6 @@
 		if (!deleted && id !== undefined && deleteButtons[id]) deleteButtons[id].focus();
 		else workspacesHeading?.focus();
 	}
-
-	let plugins = $state<PluginRow[]>([]);
-	let pluginsLoading = $state(true);
-	let pluginsError = $state('');
-
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
-	function pluginName(plugin: PluginInfo): string {
-		const name = plugin.manifest?.name;
-		return manifestPluginName({ id: plugin.id, name: typeof name === 'string' && name.trim() ? name : plugin.id });
-	}
-
-	async function loadPlugins(): Promise<void> {
-		pluginsLoading = true;
-		pluginsError = '';
-		try {
-			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
-			// Plugins only: never the core row or the core features (lib/features).
-			plugins = listedPlugins(list).map((plugin) => ({
-				id: plugin.id,
-				name: pluginName(plugin),
-				version: typeof plugin.manifest?.version === 'string' ? plugin.manifest.version : '',
-				enabled: plugin.enabled,
-				order: plugin.order,
-				...pluginRowInfo(plugin, webPlugins),
-				saving: false,
-				saved: false,
-				error: ''
-			}));
-		} catch (err) {
-			pluginsError = message(err, t('settings.plugins.loadFailed'));
-		} finally {
-			pluginsLoading = false;
-		}
-	}
-
-	onMount(loadPlugins);
 
 	// Bumped when the Packs section changes, so Languages reloads.
 	let languagesKey = $state(0);
@@ -198,38 +144,18 @@
 		renameSaving = true;
 		renameError = '';
 		try {
-			await rename(workspace.id, renameDraft);
+			await session.workspaces.rename(workspace.id, renameDraft);
 			renamingId = null;
 		} catch (err) {
 			renameError =
 				err instanceof ApiError && err.status === 409
 					? t('settings.workspaces.nameTaken')
-					: message(err, t('settings.workspaces.renameFailed'));
+					: errorText(err, t('settings.workspaces.renameFailed'));
 		} finally {
 			renameSaving = false;
 		}
 	}
 
-	async function savePlugin(row: PluginRow): Promise<void> {
-		if (row.saving || !validOrder(row.order)) return;
-
-		row.saving = true;
-		row.saved = false;
-		row.error = '';
-		try {
-			await api(`/api/plugins/${encodeURIComponent(row.id)}/state`, {
-				method: 'PUT',
-				body: { enabled: row.enabled, order: row.order }
-			});
-			row.saved = true;
-			// The shell nav and /p/<plugin> read the shared store.
-			void loadPluginStates();
-		} catch (err) {
-			row.error = message(err, t('settings.plugins.saveFailed'));
-		} finally {
-			row.saving = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -250,27 +176,27 @@
 		<h2 bind:this={workspacesHeading} tabindex="-1">{t('settings.workspaces.title')}</h2>
 		<p class="hint">{t('settings.workspaces.hint')}</p>
 
-		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
-			<p class="error" role="alert">{$workspacesLoadError}</p>
+		{#if session.workspaces.list.length === 0 && !session.workspaces.loaded && session.workspaces.loadError}
+			<p class="error" role="alert">{session.workspaces.loadError}</p>
 			<Button
 				onclick={() => {
-					workspacesLoadError.set('');
-					loadWorkspaces().catch((err) =>
-						workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')))
+					session.workspaces.loadError = '';
+					session.workspaces.load().catch((err) =>
+						(session.workspaces.loadError = errorText(err, t('app.workspaces.loadFailed')))
 					);
 				}}>{t('common.action.retry')}</Button
 			>
-		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
+		{:else if session.workspaces.list.length === 0 && !session.workspaces.loaded}
 			<p class="hint" aria-live="polite">{t('settings.workspaces.loading')}</p>
-		{:else if $workspaces.list.length === 0}
+		{:else if session.workspaces.list.length === 0}
 			<p>{t('settings.workspaces.none')}</p>
 		{:else}
 			<ul class="workspaces">
-				{#each $workspaces.list as workspace (workspace.id)}
+				{#each session.workspaces.list as workspace (workspace.id)}
 					<li>
 						{#if renamingId === workspace.id}
 							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
-								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
+								<WorkspaceLabel {workspace} list={session.workspaces.list} withLanguage size={18} />
 								<Field
 									class="rename-field"
 									label={t('settings.workspaces.name')}
@@ -298,8 +224,8 @@
 							{/if}
 						{:else}
 							<div class="row">
-								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
-								{#if $workspaces.current?.id === workspace.id}
+								<WorkspaceLabel {workspace} list={session.workspaces.list} withLanguage size={18} />
+								{#if session.workspaces.current?.id === workspace.id}
 									<Chip>{t('settings.workspaces.current')}</Chip>
 								{/if}
 								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
@@ -327,7 +253,7 @@
 								>
 									{t('settings.workspaces.rename')}
 								</Button>
-								{#if $workspaces.list.length > 1}
+								{#if session.workspaces.list.length > 1}
 									<Button
 										tone="danger"
 										element={deleteButtons[workspace.id]}
@@ -350,23 +276,23 @@
 					</li>
 				{/each}
 			</ul>
-			{#if $workspaces.list.length === 1}
+			{#if session.workspaces.list.length === 1}
 				<p class="hint">{t('settings.workspaces.onlyOne')}</p>
 			{/if}
 		{/if}
 
 		{#if deleting}
-			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
+			<DeleteWorkspaceDialog workspace={deleting} list={session.workspaces.list} onclose={closeDelete} />
 		{/if}
 
-		{#if $workspaces.current}
-			{@const active = $workspaces.current}
+		{#if session.workspaces.current}
+			{@const active = session.workspaces.current}
 			<Section title={t('settings.workspaces.audioTitle')} level={3}>
 				<p class="hint">{t('settings.workspaces.audioHint')}</p>
 				<AudioSettings
 					settings={active.settings}
 					onChange={async (patch) => {
-						await setWorkspaceSettings(active.id, patch);
+						await session.workspaces.setSettings(active.id, patch);
 					}}
 				/>
 			</Section>
@@ -389,84 +315,6 @@
 
 			<div class="group" hidden={activeTab !== 'features'}>
 				<FeatureSettings />
-			</div>
-
-			<div class="group" hidden={activeTab !== 'plugins'}>
-		<h2>{t('settings.plugins.title')}</h2>
-		<p class="hint">{t('settings.plugins.hint')}</p>
-
-		{#if pluginsLoading}
-			<p>{t('settings.plugins.loading')}</p>
-		{:else if pluginsError}
-			<p class="error" role="alert">{pluginsError}</p>
-		{:else if plugins.length === 0}
-			<p>{t('settings.plugins.none')}</p>
-		{:else}
-			<ul class="plugins">
-				{#each plugins as plugin (plugin.id)}
-					<li class="plugin">
-						<div class="plugin-head">
-							<strong>{plugin.name}</strong>
-							{#if plugin.version}<Chip>{plugin.version}</Chip>{/if}
-							<code>{plugin.id}</code>
-							{#if plugin.notice === 'app-update'}
-								<Chip>{t('settings.plugins.needsUpdate')}</Chip>
-							{:else if plugin.notice === 'legacy'}
-								<Chip>{t('settings.plugins.legacy')}</Chip>
-							{/if}
-						</div>
-						{#if plugin.permissions}
-							<p class="plugin-permissions"><span class="plugin-permissions-label">{t('settings.plugins.permissions')}</span> {plugin.permissions}</p>
-						{/if}
-
-						<div class="plugin-controls">
-							<label class="inline">
-								<input
-									type="checkbox"
-									bind:checked={plugin.enabled}
-									onchange={() => (plugin.saved = false)}
-								/>
-								{t('settings.plugins.enabled')}
-							</label>
-
-							<div class="order">
-								<Field
-									label={t('settings.plugins.order')}
-									type="number"
-									min="0"
-									step="1"
-									value={String(plugin.order)}
-									oninput={(event) => {
-										const raw = (event.currentTarget as HTMLInputElement).value;
-										plugin.order = raw === '' ? Number.NaN : Number(raw);
-										plugin.saved = false;
-									}}
-								/>
-							</div>
-
-							<Button
-								onclick={() => savePlugin(plugin)}
-								disabled={plugin.saving || !validOrder(plugin.order)}
-								busy={plugin.saving}
-							>
-								{plugin.saving ? t('common.state.saving') : t('common.action.save')}
-							</Button>
-							{#if !validOrder(plugin.order)}
-								<span class="error" role="alert">{t('settings.plugins.orderInvalid')}</span>
-							{/if}
-
-							{#if plugin.saved}
-								<span class="saved">{t('settings.plugins.saved')}</span>
-							{/if}
-						</div>
-
-						{#if plugin.error}
-							<p class="error" role="alert">{plugin.error}</p>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
 			</div>
 
 			<div class="group" hidden={activeTab !== 'appearance'}>
@@ -546,21 +394,6 @@
 		border-top: 1px solid var(--hair);
 	}
 
-	/* Plugin rows are hairline rows, not a box per plugin (#106). */
-	.plugins {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.plugin {
-		padding-block: var(--space-3);
-	}
-
-	.plugin + .plugin {
-		border-top: 1px solid var(--hair);
-	}
-
 	.workspaces .row,
 	.rename {
 		display: flex;
@@ -577,61 +410,11 @@
 		outline: none;
 	}
 
-	.plugin-permissions {
-		margin: 0.25rem 0 0;
-		font-size: 0.9rem;
-	}
-
-	.plugin-permissions-label {
-		font-weight: var(--weight-strong);
-	}
-
-	.plugin-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.5rem;
-	}
-
-	.plugin-controls {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.75rem;
-		margin-top: 0.5rem;
-	}
-
-	.plugin-controls .inline {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	.order {
-		width: 5rem;
-	}
-
 	.error {
 		margin: 0.5rem 0 0;
 		color: var(--readable-bad);
 		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
-	}
-
-	/* Success: the text in --text, a --good dot as the shape cue (design §5). */
-	.saved {
-		color: var(--text);
-		font-weight: 600;
-	}
-	.saved::before {
-		content: '';
-		display: inline-block;
-		width: 0.5em;
-		height: 0.5em;
-		margin-inline-end: 0.35em;
-		border-radius: 50%;
-		background: var(--good);
-		vertical-align: 0.1em;
 	}
 </style>

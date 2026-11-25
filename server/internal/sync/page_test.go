@@ -6,13 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // The core tests page over two fake tables, alpha_rows and beta_rows, so the
@@ -21,11 +20,7 @@ import (
 
 func coreDB(t *testing.T) *sql.DB {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "core.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	for _, tb := range []string{"alpha_rows", "beta_rows"} {
 		if _, err := sqlDB.Exec(`CREATE TABLE ` + tb + ` (user_id INTEGER NOT NULL, v TEXT NOT NULL,
 			updated_at TEXT NOT NULL, deleted_at TEXT);
@@ -156,7 +151,7 @@ func TestParsePageRequest(t *testing.T) {
 		want  PageRequest
 	}{
 		{"v=2", PageRequest{}},
-		{"v=2&limit=1&collections=pluginData,cards&workspace=7&since=c2.x", PageRequest{Limit: 1, Only: map[string]bool{"pluginData": true, "cards": true}, Workspace: 7, Since: "c2.x"}},
+		{"v=2&limit=1&collections=rows,cards&workspace=7&since=c2.x", PageRequest{Limit: 1, Only: map[string]bool{"rows": true, "cards": true}, Workspace: 7, Since: "c2.x"}},
 		{"v=2&limit=2000", PageRequest{Limit: 2000}},
 		{"v=2&page=p2.x", PageRequest{Page: "p2.x"}},
 		{"v=2&collections=", PageRequest{}},
@@ -180,24 +175,24 @@ func TestParsePageRequest(t *testing.T) {
 		}
 	}
 	bad := map[string]error{
-		"v=2&limit=0":                        ErrPageInvalid,
-		"v=2&limit=2001":                     ErrPageInvalid,
-		"v=2&limit=abc":                      ErrPageInvalid,
-		"v=2&limit=":                         ErrPageInvalid,
-		"v=2&collections=pluginData,nope":    ErrPageInvalid,
-		"v=2&collections=pluginData,entries": ErrMoved,
-		"v=2&collections=levels":             ErrMoved,
-		"v=2&page=p2.x&since=c2.y":           ErrPageInvalid,
-		"v=2&page=p2.x&collections=cards":    ErrPageInvalid,
-		"v=2&page=p2.x&workspace=7":          ErrPageInvalid,
-		"v=2&page=p2.x&limit=10":             ErrPageInvalid,
-		"v=2&workspace=abc":                  ErrPageInvalid,
-		"v=2&workspace=0":                    ErrPageInvalid,
-		"v=2&workspace=-3":                   ErrPageInvalid,
-		"v=2&tombstones=0":                   ErrPageInvalid,
-		"v=2&tombstones=":                    ErrPageInvalid,
-		"v=2&tombstones=true":                ErrPageInvalid,
-		"v=2&page=p2.x&tombstones=1":         ErrPageInvalid,
+		"v=2&limit=0":                     ErrPageInvalid,
+		"v=2&limit=2001":                  ErrPageInvalid,
+		"v=2&limit=abc":                   ErrPageInvalid,
+		"v=2&limit=":                      ErrPageInvalid,
+		"v=2&collections=rows,nope":       ErrPageInvalid,
+		"v=2&collections=rows,entries":    ErrMoved,
+		"v=2&collections=levels":          ErrMoved,
+		"v=2&page=p2.x&since=c2.y":        ErrPageInvalid,
+		"v=2&page=p2.x&collections=cards": ErrPageInvalid,
+		"v=2&page=p2.x&workspace=7":       ErrPageInvalid,
+		"v=2&page=p2.x&limit=10":          ErrPageInvalid,
+		"v=2&workspace=abc":               ErrPageInvalid,
+		"v=2&workspace=0":                 ErrPageInvalid,
+		"v=2&workspace=-3":                ErrPageInvalid,
+		"v=2&tombstones=0":                ErrPageInvalid,
+		"v=2&tombstones=":                 ErrPageInvalid,
+		"v=2&tombstones=true":             ErrPageInvalid,
+		"v=2&page=p2.x&tombstones=1":      ErrPageInvalid,
 	}
 	for query, wantErr := range bad {
 		q, _ := url.ParseQuery(query)

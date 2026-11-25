@@ -13,9 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"net/http/httptest"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/library"
 )
@@ -65,7 +64,6 @@ func TestExportRequiresASessionAndServesOwnDataOnce(t *testing.T) {
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bobby", alice)
 	aliceID, bobID := userID(t, sqlDB, "alice"), userID(t, sqlDB, "bobby")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	wsA := createWorkspace(t, ts.URL, alice, "zh", "")
 	wsB := createWorkspace(t, ts.URL, bob, "zh", "")
@@ -130,12 +128,8 @@ func TestExportTicketExpires(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	var mu sync.Mutex
 	clock := func() time.Time { mu.Lock(); defer mu.Unlock(); return now }
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(clock)))
+	sqlDB := dbtest.Open(t)
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(clock)))
 	t.Cleanup(ts.Close)
 	alice := registerUser(t, ts.URL, "alice", "")
 	var tk ticketReply

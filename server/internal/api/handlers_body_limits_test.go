@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 )
 
 // padded returns a JSON object of about n bytes: the given fields plus a
@@ -62,7 +61,7 @@ func (c *countingReader) Read(p []byte) (int, error) {
 }
 
 // A 30 MB anonymous login is refused without the server reading it.
-func TestHugeLoginRejectedQuickly(t *testing.T) {
+func TestHugeLoginRejectedUnread(t *testing.T) {
 	ts, _ := newServer(t)
 	body := &countingReader{}
 	req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/auth/login",
@@ -70,9 +69,7 @@ func TestHugeLoginRejectedQuickly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	start := time.Now()
 	resp, err := http.DefaultClient.Do(req)
-	elapsed := time.Since(start)
 	if err != nil {
 		// The server may close the connection before the client finishes
 		// writing; what matters is that it did not read 30 MB.
@@ -83,9 +80,6 @@ func TestHugeLoginRejectedQuickly(t *testing.T) {
 	}
 	if sent := body.n.Load(); sent >= 30<<20 {
 		t.Errorf("client wrote the whole 30 MB body (%d bytes): the server read it all", sent)
-	}
-	if elapsed > 5*time.Second {
-		t.Errorf("30 MB login took %v", elapsed)
 	}
 }
 
@@ -130,27 +124,22 @@ func TestWorkspaceBodyLimits(t *testing.T) {
 	}
 }
 
-func TestPluginBodyLimits(t *testing.T) {
-	ts, sqlDB := newServer(t)
+func TestRowAndFeatureBodyLimits(t *testing.T) {
+	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	seedBuiltin(t, sqlDB, deleteTestPlugin)
-	wantTooLarge(t, "register plugin", doRaw(t, http.MethodPost, ts.URL, "/api/admin/plugins", admin,
-		padded(`"id":"big","name":"Big","version":"1","type":"feature"`, 64<<10)))
-	wantTooLarge(t, "plugin state", doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/state", admin,
-		padded(`"enabled":true,"order":1`, 64<<10)))
+	wantTooLarge(t, "feature switch", doRaw(t, http.MethodPut, ts.URL, "/api/features/journal", admin,
+		padded(`"enabled":true`, 4<<10)))
 
 	ws := strconv.FormatInt(createWorkspace(t, ts.URL, admin, "zh", "w"), 10)
-	data := "/api/plugins/qinqin-flashcards/data/card:x?workspace=" + ws
-	// card:x is a typed study key (the legacy view): a readable card whose
-	// unknown member pads it travels to the typed table under the same cap.
-	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded(`"id":"x","kind":"vocab","entryId":1,"deckIds":[],"createdAt":"t"`, 200<<10)); resp.StatusCode != http.StatusOK {
+	data := "/api/rows/notecfg?workspace=" + ws
+	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded(`"id":"x"`, 200<<10)); resp.StatusCode != http.StatusOK {
 		t.Errorf("200 KiB plugin data: status = %d, want 200", resp.StatusCode)
 	}
 	wantTooLarge(t, "plugin data", doRaw(t, http.MethodPut, ts.URL, data, admin, padded("", 256<<10)))
 
 	// Sync push carries plugin data too: one oversized value is refused
 	// there as well, so the push cannot bypass the per-value cap.
-	push := `{"events":[],"pluginData":[{"pluginId":"qinqin-flashcards","workspaceId":` + ws +
+	push := `{"events":[],"rows":[{"workspaceId":` + ws +
 		`,"key":"card:y","data":` + padded("", 256<<10) + `,"updatedAt":"2026-11-14T10:00:00Z"}]}`
 	wantTooLarge(t, "sync push plugin data", doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, push))
 

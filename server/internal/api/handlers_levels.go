@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // handleSchemeEntries serves GET /api/schemes/{id}/entries: the scheme's
@@ -23,7 +23,7 @@ import (
 func (s *server) handleSchemeEntries(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "scheme not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 		return
 	}
 	var ids []int64
@@ -33,22 +33,22 @@ func (s *server) handleSchemeEntries(w http.ResponseWriter, r *http.Request) {
 		ids, err = levels.SchemeEntryIDs(r.Context(), s.db, id)
 	}
 	if errors.Is(err, levels.ErrNotFound) {
-		http.Error(w, "scheme or level not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme or level not found.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	store := lexicon.Store{DB: s.db}
 	es, err := store.GetMany(r.Context(), ids)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	list, err := entryBases(r.Context(), store, es)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -59,7 +59,7 @@ func (s *server) handleSchemeEntries(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleListSchemes(w http.ResponseWriter, r *http.Request) {
 	list, err := levels.List(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -77,22 +77,22 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "scheme not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 		return
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
-	var packID, language string
-	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM schemes WHERE id = ?`, id).Scan(&packID, &language)
+	// The pack the change hook names; an unknown id is refused just below.
+	packID, language, _ := levels.PackOf(r.Context(), s.db, id)
 	if err := levels.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, levels.ErrNotFound) {
-			http.Error(w, "scheme not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
-	s.packChanged(dict.TypeLevels, packID, language)
+	s.packChanged(pack.TypeLevels, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -110,16 +110,16 @@ const schemeCharsFormat = 1
 func (s *server) handleSchemeCharacters(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "scheme not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 		return
 	}
 	version, err := levels.SchemeVersion(r.Context(), s.db, id)
 	if errors.Is(err, levels.ErrNotFound) {
-		http.Error(w, "scheme not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	sum := sha256.Sum256([]byte(version))
@@ -135,11 +135,11 @@ func (s *server) handleSchemeCharacters(w http.ResponseWriter, r *http.Request) 
 
 	list, err := levels.SchemeCharacters(r.Context(), s.db, id)
 	if errors.Is(err, levels.ErrNotFound) {
-		http.Error(w, "scheme not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	var raw bytes.Buffer
@@ -148,7 +148,7 @@ func (s *server) handleSchemeCharacters(w http.ResponseWriter, r *http.Request) 
 	if err := enc.Encode(struct {
 		Levels []levels.LevelChars `json:"levels"`
 	}{list}); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	body := bytes.TrimSuffix(raw.Bytes(), []byte("\n"))
@@ -156,7 +156,7 @@ func (s *server) handleSchemeCharacters(w http.ResponseWriter, r *http.Request) 
 		var gz bytes.Buffer
 		zw := gzip.NewWriter(&gz)
 		if _, err := zw.Write(body); err != nil || zw.Close() != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		h.Set("Content-Encoding", "gzip")

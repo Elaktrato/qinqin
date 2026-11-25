@@ -16,24 +16,29 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
-	"qinqin/internal/study"
 	"strings"
+	"sync"
+	"syscall"
 	"time"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
+	"qinqin/internal/datapkg"
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
+	"qinqin/internal/lemmapack"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
-	"qinqin/internal/plugins"
+	"qinqin/internal/packs"
 	"qinqin/internal/webdist"
 )
 
@@ -78,6 +83,10 @@ func registerLanguages() {
 	lang.Register(lang.Ja{})
 }
 
+// lemmaWatchEvery is how often serve checks for rule tables another
+// process changed (lemmapack.Watch); tests shorten it.
+var lemmaWatchEvery = 30 * time.Second
+
 // defaultData is the --data default of every command: $QINQIN_DATA
 // (set by the compose stack) or ./data.
 func defaultData() string {
@@ -85,48 +94,6 @@ func defaultData() string {
 		return d
 	}
 	return "./data"
-}
-
-// retiredHeatmapPlugin is the plugin id earlier builds registered for
-// the generic home heatmap. The flashcards widget replaced it; an
-// upgraded database still carries the old registry row, so startup
-// unregisters it to keep Settings free of a dead plugin.
-const retiredHeatmapPlugin = "qinqin-heatmap"
-
-// registerBuiltinPlugins puts the feature plugins this build ships (the
-// embedded manifests of internal/plugins/builtin, the same files the web
-// build imports) into the server registry and retires the ones it no
-// longer ships. It runs at serve startup, after migrations and before
-// the HTTP server accepts requests; both steps are idempotent. A built-in
-// wins an event-type conflict with an admin-registered plugin; the
-// conflict is logged, never fatal.
-func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
-	for _, raw := range plugins.Builtin() {
-		m, err := plugins.ParseManifest(raw)
-		if err != nil {
-			return fmt.Errorf("built-in plugin manifest: %w", err)
-		}
-		conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, raw)
-		if err != nil {
-			return fmt.Errorf("register built-in plugin %s: %w", m.ID, err)
-		}
-		for _, other := range conflicts {
-			log.Printf("plugin %s also claims event types of %s; the built-in wins", other, m.ID)
-		}
-	}
-	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
-		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
-	}
-	// Rows that fail the manifest contract stay writable but count for
-	// neither event ownership nor activity rules: say so once.
-	bad, err := plugins.UnparsableRows(ctx, sqlDB)
-	if err != nil {
-		return fmt.Errorf("check plugin registry: %w", err)
-	}
-	if len(bad) > 0 {
-		log.Printf("plugin registry rows that do not parse as manifests (re-register or remove them): %s", strings.Join(bad, ", "))
-	}
-	return nil
 }
 
 // openData creates the data directory if needed and opens (migrating)
@@ -155,59 +122,110 @@ func serveCmd(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	// SIGINT or SIGTERM (docker stop) starts the graceful shutdown; once it
+	// has started, a second signal kills the process at once.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	go func() {
+		<-ctx.Done()
+		stop()
+	}()
+	return serve(ctx, *data, func() (net.Listener, error) { return net.Listen("tcp", *addr) })
+}
+
+// The shutdown budget (#170): requests in flight get httpGrace to finish,
+// then the background workers share backgroundGrace to stop. docker-compose.yml
+// gives the container 30 s (stop_grace_period) for both.
+const (
+	httpGrace       = 10 * time.Second
+	backgroundGrace = 10 * time.Second
+)
+
+// serve runs the server on the data directory until ctx ends, then shuts
+// down in order: the HTTP server (requests in flight get httpGrace), the mail
+// queue, the package builder, the API's background jobs (stage sweeper,
+// staged pack imports, restores), the janitors, and last the database. Startup steps run
+// under ctx, so a signal during the first-start auto-seed aborts it and serve
+// returns without listening. The background workers run under their own
+// context, cancelled only once the HTTP server has stopped, so requests that
+// finish during the grace period can still queue mail and kick builds.
+// listen is called once startup is done. A shutdown, however it went, returns
+// nil; errors are startup failures and a failed listener.
+func serve(ctx context.Context, data string, listen func() (net.Listener, error)) error {
 	trusted, err := api.ParseTrustedProxies(os.Getenv("QINQIN_TRUSTED_PROXIES"))
 	if err != nil {
 		return fmt.Errorf("QINQIN_TRUSTED_PROXIES: %w", err)
 	}
 	registerLanguages()
-	sqlDB, err := openData(*data)
+	sqlDB, err := openData(data)
 	if err != nil {
 		return err
 	}
-	defer sqlDB.Close()
+	closeDB := sync.OnceValue(sqlDB.Close)
+	defer closeDB()
+	// A startup step that failed because a signal ended ctx is a stop, not
+	// a startup failure.
+	stopped := func(err error) error {
+		if ctx.Err() != nil {
+			log.Printf("shutting down: stopped during startup (%v)", err)
+			return nil
+		}
+		return err
+	}
 
-	// A fresh instance gets its admin here (when configured), before the
+	// A fresh instance gets its admin here (unless switched off), before the
 	// port opens, so first registration never decides who is admin.
-	if err := bootstrapAdminFromEnv(context.Background(), sqlDB, os.Getenv, log.Printf); err != nil {
-		return err
-	}
-	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
-		return err
-	}
-	// Study rows an older (downgraded) binary wrote as plugin data after
-	// migration 038 move into the typed tables; idempotent and per row.
-	// A failure is logged, never fatal: the rows stay where the legacy view
-	// serves them, and the next start tries again.
-	if _, err := study.AdoptLeftovers(context.Background(), sqlDB); err != nil {
-		log.Printf("study: adopting study rows left in plugin_data: %v", err)
+	if err := bootstrapAdminFromEnv(ctx, sqlDB, os.Getenv, log.Printf); err != nil {
+		return stopped(err)
 	}
 	// The Sources page shows the stored terms; say when seed is due.
-	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
+	warnStalePackTerms(ctx, sqlDB, defaultPacks(), log.Printf)
 	// Data packages carry each pack's licence files; say which packs lack them.
-	warnMissingPackTexts(context.Background(), sqlDB, log.Printf)
+	warnMissingPackTexts(ctx, sqlDB, log.Printf)
+
+	// Background workers live until the HTTP server has stopped.
+	bg, cancelBg := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelBg()
 
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
 	sec := secretsFromEnv(os.Getenv)
 	mailSvc := mailFromEnv(sqlDB, sec, os.Getenv, log.Printf)
-	ctx, stop := context.WithCancel(context.Background())
-	defer stop()
-	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	// The janitors (AI call records, sessions, journal photos) stop with bg;
+	// serve waits for them before it closes the database.
+	var janitors sync.WaitGroup
+	runJanitor := func(fn func()) {
+		janitors.Add(1)
+		go func() {
+			defer janitors.Done()
+			fn()
+		}()
+	}
+	runJanitor(func() { aiJanitor(bg, aiSvc, 15*time.Minute, log.Printf) })
 	rotateSecrets(ctx, sqlDB, sec, mailSvc, log.Printf)
-	go mailSvc.Run(ctx)
-	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
+	mailDone := make(chan struct{})
+	go func() {
+		mailSvc.Run(bg)
+		close(mailDone)
+	}()
+	runJanitor(func() { auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf) })
+	// Rule tables changed by another process (`qinqin seed` while serving)
+	// take effect within half a minute (#176).
+	runJanitor(func() { lemmapack.Watch(bg, sqlDB, lemmaWatchEvery, nil) })
 	// Files of users that no longer exist (a deletion whose file removal failed).
-	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, *data); err != nil {
+	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, data); err != nil {
 		log.Printf("startup sweep of orphan user directories: %v", err)
 	} else if n > 0 {
 		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
 	}
 	// Interrupted restores and server backups leave staged files behind.
-	api.CleanBackupTemp(*data)
+	api.CleanBackupTemp(data)
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
 	}
-	go journal.RunJanitor(ctx, journal.Photos{DB: sqlDB, Dir: filepath.Join(*data, "journal")}, limiter, 15*time.Minute, log.Printf)
+	runJanitor(func() {
+		journal.RunJanitor(bg, journal.Photos{DB: sqlDB, Dir: filepath.Join(data, "journal")}, limiter, 15*time.Minute, log.Printf)
+	})
 
 	tess := journal.DetectTesseract(ctx, envOr("QINQIN_TESSERACT", "tesseract"))
 	if tess.Available() {
@@ -219,7 +237,9 @@ func serveCmd(args []string) error {
 	// First start: install the bundled packs (not the demos) when nothing is
 	// installed yet; synchronous, before the listener. A failure is logged and
 	// the server starts anyway (the next start retries; `qinqin seed` works).
-	if err := autoSeed(ctx, sqlDB, *data, defaultPacks(), os.Getenv, log.Printf); err != nil {
+	// A signal aborts it: each pack is one transaction and the done marker is
+	// set only after the whole seed, so the next start seeds again.
+	if err := autoSeed(ctx, sqlDB, data, defaultPacks(), os.Getenv, log.Printf); err != nil {
 		log.Printf("%v", err)
 	}
 
@@ -231,10 +251,128 @@ func serveCmd(args []string) error {
 
 	// Data packages: one builder goroutine; the startup reconcile builds what
 	// is missing or stale in the background (the catalogue says building).
-	pkgs := startPackages(ctx, sqlDB, *data, log.Printf)
+	// Lemmatizer rule tables first: sync the bundled lemma-rules packs (a
+	// changed one kicks its package), then load every installed table over
+	// the built-in ones (#176). The sync runs before the builder does: an
+	// import commits its rows and its licence texts in two transactions, and
+	// a build between them would publish a revision without the texts.
+	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf, func(b *datapkg.Builder) {
+		loadLemmaTables(ctx, sqlDB, defaultPacks(), log.Printf, packs.WithOnChange(b.PackChanged))
+	})
 
-	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
+	var apiJobs api.Jobs
+	if ctx.Err() != nil {
+		log.Printf("shutting down: stopped during startup, before listening")
+	} else if ln, err := listen(); err != nil {
+		log.Printf("listen: %v", err)
+		cancelBg()
+		<-mailDone
+		<-pkgsDone
+		return err
+	} else {
+		log.Printf("qinqin listening on %s (data: %s)", ln.Addr(), data)
+		srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, data, librarySources(data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(bg, 5*time.Minute), api.WithBackgroundGroup(&apiJobs), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
+		if err := runHTTP(ctx, srv, ln, httpGrace, log.Printf); err != nil {
+			log.Printf("%v", err)
+		}
+	}
+	if shutdownHooks.afterHTTP != nil {
+		shutdownHooks.afterHTTP(mailDone, pkgsDone)
+	}
+
+	cancelBg()
+	deadline := time.Now().Add(backgroundGrace)
+	waitStep("mail queue", mailDone, deadline, log.Printf)
+	if n := mailSvc.Pending(); n > 0 {
+		log.Printf("mail: %d queued mail(s) not sent", n)
+	}
+	waitStep("package builder", pkgsDone, deadline, log.Printf)
+	jobsDone := make(chan struct{})
+	go func() {
+		apiJobs.Wait()
+		close(jobsDone)
+	}()
+	waitStep("background jobs", jobsDone, deadline, log.Printf)
+	janitorsDone := make(chan struct{})
+	go func() {
+		janitors.Wait()
+		close(janitorsDone)
+	}()
+	waitStep("janitors", janitorsDone, deadline, log.Printf)
+	if shutdownHooks.afterJobs != nil {
+		shutdownHooks.afterJobs(sqlDB)
+	}
+	if err := closeDB(); err != nil {
+		log.Printf("close database: %v", err)
+	}
+	log.Printf("shutdown complete")
+	return nil
+}
+
+// shutdownHooks are test seams of serve's shutdown: afterHTTP runs once the
+// HTTP server stopped and before the workers are told to stop, afterJobs
+// once every worker stopped and before the database closes.
+var shutdownHooks struct {
+	afterHTTP func(mailDone, pkgsDone <-chan struct{})
+	afterJobs func(sqlDB *sql.DB)
+}
+
+// runHTTP serves srv on ln until ctx ends, then stops accepting and gives
+// the requests in flight grace to finish; what still runs after that (a long
+// download) is closed. An error is a failed listener or a forced close.
+func runHTTP(ctx context.Context, srv *http.Server, ln net.Listener, grace time.Duration, logf func(string, ...any)) error {
+	served := make(chan error, 1)
+	go func() { served <- srv.Serve(ln) }()
+	select {
+	case err := <-served:
+		return fmt.Errorf("http server: %w", err)
+	case <-ctx.Done():
+	}
+	logf("shutting down: no new connections; requests in flight get %s", grace)
+	sctx, cancel := context.WithTimeout(context.Background(), grace)
+	defer cancel()
+	if err := srv.Shutdown(sctx); err != nil {
+		logf("http server: requests still running after %s; closing them", grace)
+		srv.Close()
+		<-served
+		return fmt.Errorf("http server: shutdown: %w", err)
+	}
+	<-served
+	logf("http server stopped")
+	return nil
+}
+
+// waitStep waits until done is closed or the deadline passes, and logs
+// which of the two it was for the named shutdown step.
+func waitStep(name string, done <-chan struct{}, deadline time.Time, logf func(string, ...any)) {
+	select {
+	case <-done: // already stopped, even after the deadline
+		logf("%s stopped", name)
+		return
+	default:
+	}
+	t := time.NewTimer(time.Until(deadline))
+	defer t.Stop()
+	select {
+	case <-done:
+		logf("%s stopped", name)
+	case <-t.C:
+		logf("%s did not stop before the shutdown deadline; exiting anyway", name)
+	}
+}
+
+// newHTTPServer is the HTTP server of serve (#170): a client gets 10 s to
+// send its request headers and an idle keep-alive connection is closed after
+// 125 s (longer than Caddy's 2-minute upstream keep-alive, so the proxy
+// closes first), so slow-header connections cannot pile up. There is deliberately no
+// ReadTimeout or WriteTimeout: uploads, package downloads and the streamed
+// full event list set their own deadlines (api stream_deadline.go).
+func newHTTPServer(h http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           h,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       125 * time.Second,
+	}
 }
 
 // version is sent in the User-Agent of requests to the text sources; set

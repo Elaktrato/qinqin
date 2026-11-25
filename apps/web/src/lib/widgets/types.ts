@@ -1,7 +1,7 @@
 // A widget is one self-contained view of the user's learning (the
 // activity heatmap, the flashcards summary, …). The core app declares
-// its own in ./core.ts; a plugin declares its widgets in its manifest
-// (`PluginManifest.widgets`). Stats shows every available widget; the
+// its own in ./core.ts; a core feature declares its widgets in its
+// definition (`FeatureDef.widgets`, lib/features). Stats shows every available widget; the
 // home page shows the ones in the user's layout (./layout.ts).
 
 import type { Component } from 'svelte';
@@ -15,7 +15,7 @@ export interface WidgetDef {
 	title: string;
 	/** One line, shown in the Settings picker. */
 	description: string;
-	/** 'core' for the app's own widgets, else the owning plugin id (e.g. 'qinqin-flashcards'). */
+	/** 'core' for the app's own widgets, else the owning feature id (e.g. 'flashcards'). */
 	owner: 'core' | string;
 	/** 'wide' spans the whole row of the widget grid. */
 	size: 'normal' | 'wide';

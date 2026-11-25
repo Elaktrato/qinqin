@@ -24,11 +24,13 @@ type credentials struct {
 
 // handleRegister creates a user (registration spec section 2). Order: the
 // admin bearer check (an equality lookup, no hash), the client bucket for
-// everyone else, the zero-users bootstrap (always allowed, becomes admin),
-// the legacy admin path (a valid unrestricted admin creates a non-admin
-// with the given password), then the instance mode: closed refuses,
+// everyone else, the legacy admin path (a valid unrestricted admin creates
+// a non-admin with the given password), then the instance mode: closed refuses,
 // invite needs a valid invite, open takes anyone (an invite supplied in
-// either mode is spent and must be valid). Every password hash runs behind
+// either mode is spent and must be valid). Registering never makes an
+// administrator: serve bootstraps the first one before the port opens, or
+// the operator creates it with `qinqin adduser --admin` (#211); an empty
+// instance is closed whatever its stored mode. Every password hash runs behind
 // the gate and before any transaction opens.
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	body, ok := readAuthBody(w, r)
@@ -54,20 +56,20 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	var req credentials
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	req.Username = auth.NormalizeUsername(req.Username)
 	if req.Username == "" || req.Password == "" {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
-		return
-	}
-	var count int
-	if err := s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
-		internal()
+		writeError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
 	}
 	set, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		internal()
+		return
+	}
+	users, err := auth.CountUsers(r.Context(), s.db)
 	if err != nil {
 		internal()
 		return
@@ -76,23 +78,27 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// outsider learns nothing about usernames or emails.
 	useInvite := false
 	switch {
-	case count == 0 || isAdmin:
+	case isAdmin:
+	case users == 0:
+		// No administrator yet: closed whatever the stored mode (#211).
+		writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+		return
 	case req.Invite != "":
 		if set.Registration == "closed" {
-			writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+			writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
 			return
 		}
 		useInvite = true
 	case set.Registration == "closed":
-		writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+		writeError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
 		return
 	case set.Registration == "invite":
-		writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+		writeError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
 		return
 	}
 	if useInvite {
 		if _, err := auth.CheckInvite(r.Context(), s.db, req.Invite); errors.Is(err, auth.ErrInviteInvalid) {
-			writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+			writeError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
 			return
 		} else if err != nil {
 			internal()
@@ -102,16 +108,16 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if err := auth.CheckNewUsername(r.Context(), s.db, req.Username); err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidUsername):
-			writeAuthError(w, http.StatusUnprocessableEntity, "invalid_username", auth.PolicyReason(err))
+			writeError(w, http.StatusUnprocessableEntity, "invalid_username", auth.PolicyReason(err))
 		case errors.Is(err, auth.ErrUsernameTaken):
-			writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+			writeError(w, http.StatusConflict, "username_taken", "That username is taken.")
 		default:
 			internal()
 		}
 		return
 	}
 	if err := auth.CheckPassword(req.Username, req.Password); err != nil {
-		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		writeError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
 	nu := auth.NewUser{Username: req.Username, EmailVerified: isAdmin}
@@ -120,25 +126,6 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	var u model.User
 	switch {
-	case count == 0:
-		// The bootstrap insert re-checks emptiness atomically; losing a
-		// race to another first registration is a closed instance now.
-		err = s.withHashGate(r.Context(), func() error {
-			var e error
-			u, e = s.hash.createFirstUser(r.Context(), s.db, req.Username, req.Password)
-			return e
-		})
-		if errors.Is(err, auth.ErrNotFirst) {
-			writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
-			return
-		}
-		if err == nil && nu.Email != nil {
-			// The validated address of the first account (policy required or
-			// optional): stored unverified like any self-entered one.
-			if err = auth.SetOwnEmail(r.Context(), s.db, u.ID, nu.Email, nu.EmailNorm); err == nil {
-				u.Email = nu.Email
-			}
-		}
 	case isAdmin && req.Email == nil:
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
@@ -162,17 +149,17 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	case err != nil && r.Context().Err() != nil:
 		writeClientGone(w)
 	case errors.Is(err, auth.ErrUsernameTaken):
-		writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+		writeError(w, http.StatusConflict, "username_taken", "That username is taken.")
 	case errors.Is(err, auth.ErrEmailTaken):
-		writeAuthError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
+		writeError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
 	case errors.Is(err, auth.ErrInviteInvalid):
-		writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+		writeError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
 	case errors.Is(err, errHashBusy):
 		writeBusy(w)
 	case err != nil:
 		internal()
 	default:
-		if isAdmin && count != 0 {
+		if isAdmin {
 			// The legacy administrator path creates users too: it is audited
 			// like the admin route (the row follows the insert).
 			if aerr := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "user_created", ActorID: caller.User.ID,
@@ -195,16 +182,16 @@ func (s *server) applyEmailFormat(w http.ResponseWriter, r *http.Request, policy
 	disp, norm, err := auth.ApplyEmailPolicy(policy, email)
 	switch {
 	case errors.Is(err, auth.ErrEmailRequired):
-		writeAuthError(w, http.StatusUnprocessableEntity, "email_required", "An email address is required.")
+		writeError(w, http.StatusUnprocessableEntity, "email_required", "An email address is required.")
 		return false
 	case errors.Is(err, auth.ErrEmailDisabled):
-		writeAuthError(w, http.StatusUnprocessableEntity, "email_disabled", "This instance does not use email addresses.")
+		writeError(w, http.StatusUnprocessableEntity, "email_disabled", "This instance does not use email addresses.")
 		return false
 	case errors.Is(err, auth.ErrEmailLocalNotASCII):
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_email", "Use an address whose part before the @ has only ASCII letters, digits and symbols (internationalised mailbox names are not supported yet).")
+		writeError(w, http.StatusUnprocessableEntity, "invalid_email", "Use an address whose part before the @ has only ASCII letters, digits and symbols (internationalised mailbox names are not supported yet).")
 		return false
 	case errors.Is(err, auth.ErrInvalidEmail):
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_email", "Enter a valid email address.")
+		writeError(w, http.StatusUnprocessableEntity, "invalid_email", "Enter a valid email address.")
 		return false
 	case err != nil:
 		writeInternal(w, r)
@@ -227,7 +214,7 @@ func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy strin
 			return false
 		}
 		if taken {
-			writeAuthError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
+			writeError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
 			return false
 		}
 	}
@@ -252,11 +239,11 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	var req credentials
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if req.Username == "" || req.Password == "" {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
 	}
 	now := s.now()
@@ -303,14 +290,14 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		// The password was right, so this is not a failure to count.
 		l.pair.Succeed(pair, s.now())
 		refund()
-		writeAuthError(w, http.StatusForbidden, "account_disabled", "This account has been disabled. Ask an administrator.")
+		writeError(w, http.StatusForbidden, "account_disabled", "This account has been disabled. Ask an administrator.")
 	case errors.Is(err, errMailUnavailable):
 		l.pair.Succeed(pair, s.now()) // the password was right
 		refund()
 		s.writeMailOutage(w)
 	case errors.Is(err, auth.ErrBadCredentials):
 		l.pair.Fail(pair, s.now()) // the account token stays spent
-		writeAuthError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
+		writeError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
 	case err != nil && r.Context().Err() != nil:
 		l.pair.Abort(pair) // the client went away: nothing to count, nothing to say
 		refund()
@@ -322,7 +309,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		l.pair.Abort(pair)
 		refund()
-		writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
+		writeError(w, http.StatusInternalServerError, "internal", "Internal error.")
 	default:
 		l.pair.Succeed(pair, s.now())
 		refund()
@@ -343,14 +330,10 @@ func (s *server) hideEmailWhenOff(r *http.Request, u *model.User) {
 }
 
 // handleAuthOptions serves GET /api/auth/options: the instance-level
-// switches the sign-in and register pages (and the Kotlin client) need
+// switches the sign-in and register pages need
 // before anyone is signed in. Public, never cached.
 func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	set, err := auth.LoadSettings(r.Context(), s.db)
-	var count int
-	if err == nil {
-		err = s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count)
-	}
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -358,7 +341,6 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	mail := s.mailConfigured(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, map[string]any{
-		"bootstrap":         count == 0,
 		"registration":      set.Registration,
 		"emailPolicy":       set.EmailPolicy,
 		"passwordReset":     mail,
@@ -402,6 +384,11 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
+	avatarURL, err := s.avatarURLOf(r.Context(), p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
 	writeJSON(w, http.StatusOK, struct {
 		model.User
 		MFA         auth.MFAState `json:"mfa"`
@@ -413,7 +400,9 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		// InterfaceLanguage is the stored interface language, '' = follow
 		// the browser/device (PUT /api/me/interface-language).
 		InterfaceLanguage string `json:"interfaceLanguage"`
-	}{p.User, st, p.Restriction(), !p.TemporarySession, lang})
+		// AvatarURL is the profile picture (#189, auth/avatar.json), null for none.
+		AvatarURL *string `json:"avatarUrl"`
+	}{p.User, st, p.Restriction(), !p.TemporarySession, lang, avatarURL})
 }
 
 // The access gate. Every handler reaches a session through one of the
@@ -440,7 +429,7 @@ func writeInternal(w http.ResponseWriter, r *http.Request) {
 		writeClientGone(w)
 		return
 	}
-	writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
+	writeError(w, http.StatusInternalServerError, "internal", "Internal error.")
 }
 
 // authenticate resolves the session of r: nil with no error is anonymous.
@@ -468,12 +457,12 @@ func (s *server) requirePrincipal(w http.ResponseWriter, r *http.Request, allow 
 		return nil
 	}
 	if p == nil {
-		writeAuthError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
 		return nil
 	}
 	if res := p.Restriction(); res != "" && !slices.Contains(allow, res) {
 		code, msg := restrictionError(res)
-		writeAuthError(w, http.StatusForbidden, code, msg)
+		writeError(w, http.StatusForbidden, code, msg)
 		return nil
 	}
 	return p
@@ -512,18 +501,18 @@ func (s *server) requireAdminPrincipal(w http.ResponseWriter, r *http.Request) *
 	}
 	// No admin route takes an access token, even if its row were marked.
 	if p != nil && p.ViaToken() {
-		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		writeError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 		return nil
 	}
 	if p != nil {
 		if res := p.Restriction(); res != "" {
 			code, msg := restrictionError(res)
-			writeAuthError(w, http.StatusForbidden, code, msg)
+			writeError(w, http.StatusForbidden, code, msg)
 			return nil
 		}
 	}
 	if p == nil || !p.User.Admin {
-		writeAuthError(w, http.StatusForbidden, "forbidden", "Administrator access is required.")
+		writeError(w, http.StatusForbidden, "forbidden", "Administrator access is required.")
 		return nil
 	}
 	return p

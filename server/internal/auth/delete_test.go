@@ -17,34 +17,45 @@ import (
 // seedSQL gives one row per registry table for user ?1 (and, where the
 // primary key needs it, a value derived from ?1 so two users can coexist).
 var seedSQL = map[string][]string{
-	"workspaces":          {`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?1, 'zh', 'w', 't')`},
-	"study_events":        {`INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('ev' || ?1, ?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'd', 't', 'review', '{}', 't')`},
-	"plugin_states":       {`INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?1, 'p', 1, 0, 't')`},
-	"plugin_data":         {`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at) VALUES ('p', ?1, NULL, 'k', '{}', 1, 't')`},
-	"user_edits":          {`INSERT INTO user_edits (user_id, entry_id, updated_at) VALUES (?1, 1, 't')`},
-	"sentences":           {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
-	"library_books":       {`INSERT INTO library_books (user_id, workspace_id, language, title, created_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'zh', 'B', 't')`},
-	"library_bookmarks":   {`INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), '0:0', 't')`},
-	"library_highlights":  {`INSERT INTO library_highlights (user_id, book_id, chapter, paragraph, start_cp, end_cp, text, created_at, updated_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), 0, 0, 0, 1, 'x', 't', 't')`},
-	"study_cards":         {`INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, created_at, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'c', 'vocab', 1, 't', 1, 't', 't')`},
-	"study_decks":         {`INSERT INTO study_decks (user_id, workspace_id, id, name, created_at, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'd', 'n', 't', 1, 't', 't')`},
-	"study_deck_settings": {`INSERT INTO study_deck_settings (user_id, workspace_id, deck_id, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'general', 1, 't', 't')`},
-	"study_limits":        {`INSERT INTO study_limits (user_id, workspace_id, deck_id, new_set, reviews_set, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), '', 0, 0, 1, 't', 't')`},
-	"study_fsrs_sets":     {`INSERT INTO study_fsrs_sets (user_id, workspace_id, id, w, created_at, source, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 's', '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', 't', 'imported', 1, 't', 't')`},
-	"study_fsrs_active":   {`INSERT INTO study_fsrs_active (user_id, workspace_id, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 1, 't', 't')`},
-	"library_deletions":   {`INSERT INTO library_deletions (user_id, collection, row_id, workspace_id, deleted_at) VALUES (?1, 'books', 1000 + ?1, 1, 't')`},
-	"user_time_zones":     {`INSERT INTO user_time_zones (user_id, seq, zone, created_at) VALUES (?1, 0, 'UTC', 't')`},
-	"journal_photos":      {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
-	"ai_keys":             {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},
-	"ai_selection":        {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
-	"ai_calls":            {`INSERT INTO ai_calls (user_id, kind, model, ok, at) VALUES (?1, 'k', 'm', 1, 't')`},
-	"sessions":            {`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('th' || ?1, ?1, 't', 't')`},
-	"access_tokens":       {`INSERT INTO access_tokens (user_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, 'n', 'ah' || ?1, 'abcdef', 'read', 't', '9999')`},
-	"password_resets":     {`INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES ('rh' || ?1, ?1, 't', 't')`},
-	"mfa_totp":            {`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?1, x'00', x'00', 'fp', 't', 't')`},
-	"mfa_recovery_codes":  {`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?1, 'rc' || ?1)`},
-	"auth_challenges":     {`INSERT INTO auth_challenges (token_hash, kind, user_id, expires_at, created_at) VALUES ('ch' || ?1, 'mfa', ?1, 't', 't')`},
-	"invites":             {`INSERT INTO invites (token_hash, max_uses, created_by, created_at) VALUES ('ih' || ?1, 1, ?1, 't')`},
+	"workspaces":            {`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?1, 'zh', 'w', 't')`},
+	"study_events":          {`INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('ev' || ?1, ?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'd', 't', 'review', '{}', 't')`},
+	"feature_switches":      {`INSERT INTO feature_switches (user_id, feature, enabled, updated_at) VALUES (?1, 'journal', 0, 't')`},
+	"keyed_rows":            {`INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?1, NULL, 'home-layout', '{}', 1, 't', 't')`},
+	"user_edits":            {`INSERT INTO user_edits (user_id, entry_id, updated_at) VALUES (?1, 1, 't')`},
+	"sentences":             {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
+	"example_drafts":        {`INSERT INTO example_drafts (user_id, entry_id, request_id, hanzi, pinyin, translation, level, provider, model, created_at) VALUES (?1, 1, 'r', 'h', '', 't', 'beginner', 'p', 'm', 't')`},
+	"example_generations":   {`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at) VALUES (?1, 1, 'r', 'beginner', 0, 'p', 'm', 't')`},
+	"example_reports":       {`INSERT INTO example_reports (user_id, entry_id, language, hanzi, pinyin, translation, reason, level, provider, model, created_at) VALUES (?1, 1, 'zh', 'h', '', 't', 'other', 'beginner', 'p', 'm', 't')`},
+	"library_books":         {`INSERT INTO library_books (user_id, workspace_id, language, title, created_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'zh', 'B', 't')`},
+	"library_bookmarks":     {`INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), '0:0', 't')`},
+	"library_highlights":    {`INSERT INTO library_highlights (user_id, book_id, chapter, paragraph, start_cp, end_cp, text, created_at, updated_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), 0, 0, 0, 1, 'x', 't', 't')`},
+	"study_cards":           {`INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, created_at, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'c', 'vocab', 1, 't', 1, 't', 't')`},
+	"study_decks":           {`INSERT INTO study_decks (user_id, workspace_id, id, name, created_at, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'd', 'n', 't', 1, 't', 't')`},
+	"study_deck_settings":   {`INSERT INTO study_deck_settings (user_id, workspace_id, deck_id, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'general', 1, 't', 't')`},
+	"study_limits":          {`INSERT INTO study_limits (user_id, workspace_id, deck_id, new_set, reviews_set, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), '', 0, 0, 1, 't', 't')`},
+	"study_fsrs_sets":       {`INSERT INTO study_fsrs_sets (user_id, workspace_id, id, w, created_at, source, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 's', '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', 't', 'imported', 1, 't', 't')`},
+	"study_fsrs_active":     {`INSERT INTO study_fsrs_active (user_id, workspace_id, version, updated_at, modified_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 1, 't', 't')`},
+	"library_deletions":     {`INSERT INTO library_deletions (user_id, collection, row_id, workspace_id, deleted_at) VALUES (?1, 'books', 1000 + ?1, 1, 't')`},
+	"user_time_zones":       {`INSERT INTO user_time_zones (user_id, seq, zone, created_at) VALUES (?1, 0, 'UTC', 't')`},
+	"journal_entries":       {`INSERT INTO journal_entries (user_id, workspace_id, id, date, title, text, source, created_at, updated_at) VALUES (?1, 1, 'e', '2026-11-19', '', 't', 'typed', 't', 't')`},
+	"journal_reviews":       {`INSERT INTO journal_reviews (user_id, workspace_id, entry_id, text_hash, annotations, overall, model, dropped, created_at) VALUES (?1, 1, 'e', 'h', '[]', '{}', 'm', '{}', 't')`},
+	"journal_suggestions":   {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, 1, '[]', 'm', 't')`},
+	"journal_settings":      {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
+	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, 1, 'c', '', 'beginner', 't', 't')`},
+	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't1', 't')`},
+	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
+	"user_avatars":          {`INSERT INTO user_avatars (user_id, hash, updated_at) VALUES (?1, printf('%032d', ?1), 't')`},
+	"journal_photos":        {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
+	"ai_keys":               {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},
+	"ai_selection":          {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
+	"ai_calls":              {`INSERT INTO ai_calls (user_id, kind, model, ok, at) VALUES (?1, 'k', 'm', 1, 't')`},
+	"sessions":              {`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('th' || ?1, ?1, 't', 't')`},
+	"access_tokens":         {`INSERT INTO access_tokens (user_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, 'n', 'ah' || ?1, 'abcdef', 'read', 't', '9999')`},
+	"password_resets":       {`INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES ('rh' || ?1, ?1, 't', 't')`},
+	"mfa_totp":              {`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?1, x'00', x'00', 'fp', 't', 't')`},
+	"mfa_recovery_codes":    {`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?1, 'rc' || ?1)`},
+	"auth_challenges":       {`INSERT INTO auth_challenges (token_hash, kind, user_id, expires_at, created_at) VALUES ('ch' || ?1, 'mfa', ?1, 't', 't')`},
+	"invites":               {`INSERT INTO invites (token_hash, max_uses, created_by, created_at) VALUES ('ih' || ?1, 1, ?1, 't')`},
 }
 
 // refColumns are the columns that point at a user; a table with one of
@@ -163,7 +174,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Cards: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, AccessTokens: 1, Avatar: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
@@ -307,10 +318,12 @@ func TestSweepOrphanUserDirs(t *testing.T) {
 // user table: data the learner made is exported and replaced on restore;
 // security and account state is never exported and never touched.
 func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
-	rows := map[string]bool{"workspaces": true, "study_events": true, "plugin_data": true, "plugin_states": true,
+	rows := map[string]bool{"workspaces": true, "study_events": true, "keyed_rows": true, "feature_switches": true,
 		"user_edits": true, "sentences": true, "library_books": true, "library_bookmarks": true,
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
-		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true}
+		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
+		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true,
+		"journal_conversations": true, "journal_messages": true, "grammar_progress": true, "user_avatars": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)
@@ -328,6 +341,10 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
 				t.Errorf("journal_photos: skip export, drop on restore")
 			}
+		case tb.Name == "example_drafts" || tb.Name == "example_generations":
+			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
+				t.Errorf("%s: skip export (undecided AI output, retry bookkeeping), drop on restore", tb.Name)
+			}
 		default:
 			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreKeep {
 				t.Errorf("%s must be skipped from export and kept on restore (security or instance data)", tb.Name)
@@ -336,6 +353,9 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 	}
 	if !slices.Contains(auth.UserDirs, "backups/pre-restore") {
 		t.Errorf("UserDirs %v lacks the safety export directory", auth.UserDirs)
+	}
+	if !slices.Contains(auth.UserDirs, "avatars") {
+		t.Errorf("UserDirs %v lacks the profile pictures (#189)", auth.UserDirs)
 	}
 }
 

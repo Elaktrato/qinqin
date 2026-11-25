@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"qinqin/internal/dbtest"
 )
 
 func TestBuiltinIDsFrozen(t *testing.T) {
@@ -121,7 +123,7 @@ func TestSpecJSONHidesInternals(t *testing.T) {
 }
 
 func TestLookupUnknown(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	r := &Registry{Custom: &CustomStore{DB: sqlDB}}
 	ctx := context.Background()
 	for _, id := range []string{"nope", "", "custom-aaaaaaaaaa", "OpenAI"} {
@@ -138,7 +140,7 @@ func TestLookupUnknown(t *testing.T) {
 }
 
 func TestLookupDisabled(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	cs := &CustomStore{DB: sqlDB}
 	ctx := context.Background()
 	c, err := cs.Create(ctx, 1, CustomInput{Name: "Local", BaseURL: "https://llm.example.com/v1", DefaultModel: "m"})

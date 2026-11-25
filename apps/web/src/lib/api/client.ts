@@ -1,14 +1,18 @@
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
-import { reportNetworkFailure, reportResponse } from '../pwa/offlineState';
-
 export const TOKEN_KEY = 'qinqin.token';
 
-// ApiError carries the HTTP status alongside the plain-text body the Go
-// API sends for 4xx/5xx responses.
+// ApiError carries the HTTP status of a 4xx/5xx answer and its body, parsed once here: every API error is
+// `{error, message}` (docs/contracts/auth/errors.json). `code` is the `error` string, `body` the parsed object;
+// both are undefined for a body that is not one (a proxy's HTML page, an old server's text). `message` keeps the
+// raw text for logs and the console only: screens show `errorText(err, fallback)` (lib/api/apiErrors.ts).
 export class ApiError extends Error {
 	status: number;
+	/** The catalogue code of a `{error, message}` body. */
+	code?: string;
+	/** The parsed `{error, message, ...}` body (with members such as attemptsLeft or existingId). */
+	body?: Readonly<Record<string, unknown>>;
 	/** Seconds from a Retry-After header, when the server sent one. */
 	retryAfterSeconds?: number;
 
@@ -16,7 +20,23 @@ export class ApiError extends Error {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
+		const body = parseErrorBody(message);
+		if (body !== undefined) {
+			this.body = body;
+			this.code = body.error as string;
+		}
 		if (retryAfterSeconds !== undefined) this.retryAfterSeconds = retryAfterSeconds;
+	}
+}
+
+function parseErrorBody(text: string): Record<string, unknown> | undefined {
+	if (!text.trimStart().startsWith('{')) return undefined;
+	try {
+		const body = JSON.parse(text) as unknown;
+		if (typeof body !== 'object' || body === null || Array.isArray(body)) return undefined;
+		return typeof (body as { error?: unknown }).error === 'string' ? (body as Record<string, unknown>) : undefined;
+	} catch {
+		return undefined;
 	}
 }
 
@@ -31,61 +51,56 @@ export interface ApiOptions {
 	keepalive?: boolean;
 }
 
-let unauthorizedHandler: (() => void) | null = null;
-let workspaceGoneHandler: (() => void) | null = null;
-let restrictedHandler: (() => void) | null = null;
-
-/** The API's 404 text for a workspace that does not exist (any more). */
-export const WORKSPACE_GONE_MESSAGE = 'workspace not found';
-
-/** True for a 404 whose text says the workspace does not exist. */
-export function isWorkspaceGoneResponse(status: number, message: string): boolean {
-	return status === 404 && message.trim().toLowerCase() === WORKSPACE_GONE_MESSAGE;
+/**
+ * What the app context (lib/context/app.svelte.ts) hears from every request:
+ * a 401, a 403 restriction, a 404 workspace_not_found, the headers of every
+ * answer (the worker marks a saved copy) and a request that reached nobody.
+ * The client imports no state module; the app context installs this while it
+ * runs (record 0009).
+ */
+export interface ApiObserver {
+	unauthorized?(): void;
+	restricted?(): void;
+	workspaceGone?(): void;
+	answered?(headers: { get(name: string): string | null }): void;
+	unreachable?(): void;
 }
+
+// The tab's one transport has one observer slot, set by the running app context.
+let observer: ApiObserver | null = null;
 
 /**
- * Registers a callback fired when a request comes back 401, so the auth
- * store can drop its in-memory state. The client itself stays free of
- * store imports to avoid an import cycle.
+ * setApiObserver installs the observer (null: none) and returns its remover,
+ * which clears the slot only while it still holds this observer: a stale app
+ * context stopping late never removes a newer one's.
  */
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
-	unauthorizedHandler = handler;
+export function setApiObserver(next: ApiObserver | null): () => void {
+	observer = next;
+	return () => {
+		if (observer === next) observer = null;
+	};
 }
+
+/** The API's 404 code for a workspace that does not exist (any more). */
+export const WORKSPACE_GONE_CODE = 'workspace_not_found';
+
+/** True for the 404 `workspace_not_found` (`code` is ApiError.code). */
+export function isWorkspaceGoneResponse(status: number, code: string | undefined): boolean {
+	return status === 404 && code === WORKSPACE_GONE_CODE;
+}
+
 
 /** True for the 403 body of a restricted session (`password_change_required`, `mfa_enrollment_required`). */
-export function isRestrictionResponse(status: number, message: string): boolean {
-	if (status !== 403) return false;
-	try {
-		const code = (JSON.parse(message) as { error?: unknown }).error;
-		return typeof code === 'string' && RESTRICTION_CODES.has(code);
-	} catch {
-		return false;
-	}
+export function isRestrictionResponse(status: number, code: string | undefined): boolean {
+	return status === 403 && code !== undefined && RESTRICTION_CODES.has(code);
 }
 
-/**
- * Registers a callback fired when a request is refused with 403
- * `password_change_required` or `mfa_enrollment_required`: the session is
- * restricted, so the auth store reloads `me` and the layout guard moves it
- * to the page it may use. The token stays; this is not a 401.
- */
-export function setRestrictedHandler(handler: (() => void) | null): void {
-	restrictedHandler = handler;
-}
 
 const RESTRICTION_CODES: ReadonlySet<string> = new Set([
 	'password_change_required',
 	'mfa_enrollment_required'
 ]);
 
-/**
- * Registers a callback fired when a request comes back 404 "workspace not
- * found": the workspace was deleted in another tab or on another device,
- * so the workspace store reloads its list (lib/workspaceGone.ts).
- */
-export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
-	workspaceGoneHandler = handler;
-}
 
 // Only used when storage refuses the write (blocked or private mode): the
 // session then lasts until the tab is closed instead of failing at once.
@@ -134,20 +149,20 @@ export function isOwnApiPath(path: string): boolean {
 
 /**
  * notifyUnauthorized is what any 401 does: drop the token and tell the auth
- * store. It never navigates: the layout guard (lib/routeAccess.ts) is the
+ * store. It never navigates: the layout guard (lib/routing/routeAccess.ts) is the
  * single owner of the redirect to /login. api() and the XHR upload helper
  * share it, so a session that drops mid-upload logs out too.
  */
 export function notifyUnauthorized(): void {
 	clearToken();
-	unauthorizedHandler?.();
+	observer?.unauthorized?.();
 }
 
 /**
  * api performs a same-origin JSON request. A stored token is attached as
  * `Authorization: Bearer` unless `auth` is false. Non-2xx responses throw
  * ApiError; a 401 also clears the token and tells the auth store, and the
- * layout guard (lib/routeAccess.ts) is the one place that navigates to
+ * layout guard (lib/routing/routeAccess.ts) is the one place that navigates to
  * /login — on an auth or open page the user simply stays put.
  */
 async function request(path: string, options: ApiOptions): Promise<Response> {
@@ -176,28 +191,30 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		});
 	} catch (err) {
 		// An abort is the caller's choice, not a lost connection.
-		if (!(err instanceof DOMException && err.name === 'AbortError')) reportNetworkFailure();
+		if (!(err instanceof DOMException && err.name === 'AbortError')) observer?.unreachable?.();
 		throw err;
 	}
 	// The worker marks answers it served from its saved copy (offlineState.ts).
-	reportResponse(response.headers);
+	observer?.answered?.(response.headers);
 
 	if (!response.ok) {
-		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
-		if (response.status === 401) notifyUnauthorized();
-		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
-		if (response.status === 403 && restrictedHandler) {
-			try {
-				const code = (JSON.parse(message) as { error?: unknown }).error;
-				if (typeof code === 'string' && RESTRICTION_CODES.has(code)) restrictedHandler();
-			} catch {
-				// Not a JSON body: an ordinary 403.
-			}
-		}
+		const text = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
-		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
+		const err = new ApiError(response.status, text, Number.isFinite(retry) && retry > 0 ? retry : undefined);
+		notifyErrorAnswer(err);
+		throw err;
 	}
 	return response;
+}
+
+/**
+ * notifyErrorAnswer is what every error answer of the API does, fetched or uploaded by XHR: a 401 drops the token,
+ * a 404 workspace_not_found tells the workspace store, a restriction code tells the auth store.
+ */
+export function notifyErrorAnswer(err: ApiError): void {
+	if (err.status === 401) notifyUnauthorized();
+	if (isWorkspaceGoneResponse(err.status, err.code)) observer?.workspaceGone?.();
+	if (isRestrictionResponse(err.status, err.code)) observer?.restricted?.();
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
@@ -219,21 +236,19 @@ export async function apiBlob(path: string, options: ApiOptions = {}): Promise<B
 	return response.blob();
 }
 
+/** What a screen may read of an API error: its code and the attempts left of a one-time code. */
+export interface ApiErrorInfo {
+	error: string;
+	attemptsLeft?: number;
+}
+
 /**
- * apiErrorBody parses the `{error, message}` JSON the AI and journal
- * routes answer with; null for any other error or a plain-text body.
+ * apiErrorBody is the code (and attemptsLeft) of an ApiError's `{error, message}` body; null for any other error
+ * or a body that is not one. The English `message` is not handed out: screens show the code's text (#168).
  */
-export function apiErrorBody(err: unknown): { error: string; message: string; attemptsLeft?: number } | null {
-	if (!(err instanceof ApiError)) return null;
-	try {
-		const body = JSON.parse(err.message) as unknown;
-		if (typeof body !== 'object' || body === null) return null;
-		const { error, message, attemptsLeft } = body as { error?: unknown; message?: unknown; attemptsLeft?: unknown };
-		if (typeof error !== 'string') return null;
-		const out: { error: string; message: string; attemptsLeft?: number } = { error, message: typeof message === 'string' ? message : '' };
-		if (typeof attemptsLeft === 'number') out.attemptsLeft = attemptsLeft;
-		return out;
-	} catch {
-		return null;
-	}
+export function apiErrorBody(err: unknown): ApiErrorInfo | null {
+	if (!(err instanceof ApiError) || err.body === undefined || err.code === undefined) return null;
+	const out: ApiErrorInfo = { error: err.code };
+	if (typeof err.body.attemptsLeft === 'number') out.attemptsLeft = err.body.attemptsLeft;
+	return out;
 }

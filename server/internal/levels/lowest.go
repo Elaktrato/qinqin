@@ -4,7 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
+
+	"qinqin/internal/pack"
 )
 
 // Level is one levels scheme's level of an entry: the scheme's name and the
@@ -36,7 +37,7 @@ func LowestPerScheme(ctx context.Context, db *sql.DB, ids []int64) (map[int64][]
 		FROM level_members m
 		JOIN levels l ON l.id = m.level_id AND l.deleted_at IS NULL
 		JOIN schemes s ON s.id = l.scheme_id AND s.deleted_at IS NULL
-		WHERE m.deleted_at IS NULL AND m.entry_id IN (`+strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")+`)
+		WHERE m.deleted_at IS NULL AND m.entry_id IN (`+pack.Placeholders(len(ids))+`)
 		GROUP BY m.entry_id, s.id
 		ORDER BY m.entry_id, s.id`, args...)
 	if err != nil {

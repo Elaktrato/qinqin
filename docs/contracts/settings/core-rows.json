@@ -1,7 +1,6 @@
 {
  "version": 1,
  "rule": "settings/core-rows",
- "pluginId": "qinqin-core",
  "widgets": [
   "activity-heatmap",
   "character-map-summary",

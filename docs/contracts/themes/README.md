@@ -50,7 +50,7 @@ an upper-case or short hex, a colour with alpha are refused. The **first** probl
    `too-many-accents`, then each member in file order: `bad-accent-key`, `bad-colour`), `defaultAccent`
    (`bad-default-accent`).
 
-A pack whose `themes.json` fails is refused at upload (`400 invalid pack: themes.json: <code> at <path>`) and by
+A pack whose `themes.json` fails is refused at upload (400 `pack_invalid`, message `invalid pack: themes.json: <code> at <path>`) and by
 `qinqin seed`; nothing is stored. Fixture: `theme-file.json`.
 
 ## Contrast
@@ -217,10 +217,10 @@ Android builds the same set in Compose). Every visible word is a prop the caller
 
 ## The `appearance` row
 
-The person's choice: a plugin data row of `qinqin-core`, key `appearance`, **user-global** (`workspaceId: null`;
-written with `PUT /api/plugins/qinqin-core/data/appearance` without `workspace`, or pushed). One per user, shared
+The person's choice: the keyed row `appearance` (`keyed/`), **user-global** (`workspaceId: null`;
+written with `PUT /api/rows/appearance` without `workspace`, or pushed). One per user, shared
 by every device and by Android, last write wins (`sync/`); it backs up and restores unchanged (`backup/`). The
-server stores it like any plugin row and never validates it.
+server stores it like any keyed row and never validates it.
 
 ```json
 { "version": 1, "mode": "system",
@@ -290,7 +290,7 @@ which theme packs an administrator installed.
 ## Built-in themes
 
 Embedded in the server binary (`server/internal/themes/builtin/<pack>/`), always present, never stored, never
-uninstalled; an uploaded pack may not use a built-in pack id or theme id (`400 invalid pack`). Order (pinned by
+uninstalled; an uploaded pack may not use a built-in pack id or theme id (400 `pack_invalid`). Order (pinned by
 `themes-api.json` `builtinPacks`): `qinqin` (`qinqin-day`, `qinqin-night`, `qinqin-deep`), `qinqin-extras`
 (`qinqin-neon-light`, `qinqin-neon-dark`, `qinqin-pigment-light`, `qinqin-pigment-dark`, `qinqin-pop-light`,
 `qinqin-pop-dark`), `catppuccin` (`catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,

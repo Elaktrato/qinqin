@@ -12,24 +12,18 @@ import {
 	wordStateShares,
 	wordStateSummary
 } from './wordStates';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-11-14T12:00:00.000Z');
 
 let seq = 0;
 function review(cardId: string, grade: ReviewGrade, ts: string): ReviewEvent {
 	seq += 1;
-	return {
-		id: `01JTEST${String(seq).padStart(19, '0')}`,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id: build.eventId(seq), cardId, grade, ts, workspaceId: 7 });
 }
 
 function card(id: string, deckIds: string[] = ['general'], kind: StudyCardKind = 'vocab'): StudyCard {
-	return { id, kind, entryId: 1, deckIds, createdAt: '2026-01-01T00:00:00.000Z' };
+	return build.card({ id, kind, deckIds });
 }
 
 function deck(id: string, name: string): Deck {

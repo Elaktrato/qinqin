@@ -32,4 +32,10 @@ describe('variantLabel (#104)', () => {
 			)
 		).toBe('variant');
 	});
+
+	it('follows the language profile: a regional Chinese tag has variants (#199)', () => {
+		expect(
+			variantLabel({ language: 'zh-TW', written: '发', forms: [{ text: '發', flags: ['trad'] }] }, { written: '發' })
+		).toBe('traditional');
+	});
 });

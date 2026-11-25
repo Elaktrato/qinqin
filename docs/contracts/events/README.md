@@ -9,7 +9,7 @@ with it, and what each type's payload means. Design: `docs/superpowers/specs/202
 Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
 `page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events.ts`, `apps/web/src/lib/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
@@ -20,8 +20,8 @@ Fixtures:
   `$bobWs` one of another user.
 - `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
   events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
-  `apps/web/src/lib/eventPayloads.test.ts` (the builders of `lib/eventPayloads.ts`, member order included),
-  `features/reader/readingTimer.test.ts`, `plugins/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
+  `apps/web/src/lib/events/eventPayloads.test.ts` (the builders of `lib/events/eventPayloads.ts`, member order included),
+  `features/reader/readingTimer.test.ts`, `features/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 - `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
@@ -33,9 +33,9 @@ Fixtures:
   from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
   (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
-  cases (query → status, JSON code or plain-text body). Decoded by
+  cases (query → status and JSON code). Decoded by
   `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
-  the shape check) and `apps/web/src/lib/eventPages.test.ts` (the web's strict decoder).
+  the shape check) and `apps/web/src/lib/events/eventPages.test.ts` (the web's strict decoder).
 - `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
   `from`..`to`). Decoded by `server/internal/stats/contract_activity_test.go` (every cell) and
   `apps/web/src/lib/stats/readingTime.test.ts` (the `read` cells through `readingPoints`/`readSeconds`).
@@ -69,8 +69,8 @@ Fixtures:
   workspaces or one, ordered by `ts`, then `id`. `since` is cut to its whole second before comparing, so an
   event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). With `limit` or `page` it
   answers in pages (Paging below); without them it is the **legacy form**: one array, streamed, with
-  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept at least until v0.5.0
-  for cached older web shells and scripts). A second client may read the log from the pull v2 `events`
+  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept for scripts; use the
+  paged form). A second client may read the log from the pull v2 `events`
   collection instead (`sync/`), which pages by `updatedAt` and leaves `lookup` out.
 - Pull v2 `events` ships every type **except `lookup`**.
 - `DELETE /api/events/lookups?workspace=<id>` → `{"deleted": n}`: the only deletion of events (the lookup
@@ -101,8 +101,8 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   `since`/`limit`, an empty `page`, a parameter given twice (paged form only: the legacy form keeps reading the
   first `since`), a `limit` outside 1..2000 → 400 JSON
   `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
-  bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
-- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
+  bad `since` or `workspace` and a foreign workspace keep the answers below, on every page.
+- Web reader: `apps/web/src/lib/events/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
   an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
   service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
   all (offline, and not saved: the page boundaries moved since the pages were saved) ends the read with the
@@ -111,22 +111,22 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
 
 ## Errors
 
-The batch route answers **plain text** (not JSON), with a trailing newline. The events are checked in order
-before anything is stored; the first failing check answers and **nothing of the batch is stored**:
+Every error is JSON `{error, message}` (`auth/errors.json`; branch on the code, the message is English for
+developers). The events are checked in order before anything is stored; the first failing check answers and
+**nothing of the batch is stored**:
 
-| Check | Status | Body |
+| Check | Status | Code (message) |
 | --- | --- | --- |
-| body not JSON, `ts` not RFC 3339 with a zone | 400 | `malformed request body` |
-| `events` missing | 400 | `events array required` |
-| `id` not a ULID | 400 | `event id must be a ULID` |
-| `ts` missing (zero) | 400 | `event ts is required` |
-| `workspaceId` missing or ≤ 0 | 400 | `event workspaceId is required` |
-| a workspace not the caller's (unknown or another user's) | 404 | `workspace not found` |
-| body over 4 MiB | 413 | `request body too large` |
+| body not JSON, `ts` not RFC 3339 with a zone | 400 | `bad_request` (`Malformed request body.`) |
+| `events` missing | 400 | `bad_request` (`Events array required.`) |
+| `id` not a ULID | 400 | `bad_request` (`Event id must be a ULID.`) |
+| `ts` missing (zero) | 400 | `bad_request` (`Event ts is required.`) |
+| `workspaceId` missing or ≤ 0 | 400 | `bad_request` (`Event workspaceId is required.`) |
+| a workspace not the caller's (unknown or another user's) | 404 | `workspace_not_found` |
+| body over 4 MiB | 413 | `too_large` |
 
-`GET /api/events` answers `400` text for a bad `since` (`since must be RFC 3339`) or `workspace`
-(`workspace must be an integer`) and `404 workspace not found` for a foreign workspace, in both forms; the
-paged form adds `events_page_invalid` (Paging).
+`GET /api/events` answers 400 `bad_request` for a bad `since` or `workspace` and 404 `workspace_not_found`
+for a foreign workspace, in both forms; the paged form adds `events_page_invalid` (Paging).
 
 ## Order and the `ts` rule
 
@@ -143,20 +143,19 @@ copy byte for byte; the server accepts either.
 Ruling: the overview's former "keeps `ts` verbatim" is corrected, not the server — changing storage would
 alter every stored log and the pull's string comparison — cost: none.
 
-## Declared types
+## Event types
 
-| Type | Declared by (manifest) | Activity rule |
+| Type | Written by | Activity rule (feature) |
 | --- | --- | --- |
-| `session` | `qinqin-core` | none |
-| `view` | `qinqin-core` | none |
-| `lookup` | `qinqin-core` | none (legacy; never written since #72) |
-| `review` | `qinqin-core` | count |
-| `read` | `qinqin-core` | measure `seconds` (min 30, max 7200, 300 per point) |
-| `journal` | `qinqin-journal` | distinct `entryId` |
+| `session` | the app | none |
+| `view` | the app | none |
+| `lookup` | nobody | none (legacy; never written since #72) |
+| `review` | flashcards | count (`flashcards`) |
+| `read` | the reader | measure `seconds` (min 30, max 7200, 300 per point) (`reader`) |
+| `journal` | the journal | distinct `entryId` (`journal`) |
 
-The manifests are `server/internal/plugins/builtin/*.json`; other plugins may declare more types. The server
-stores any type; the web plugin SDK refuses to record a type the recording plugin's manifest does not declare.
-A client records only types declared by enabled plugins.
+The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
+there are no plugin manifests (#199). The server stores any type; a client writes only these.
 
 ## Payloads and emit rules
 
@@ -182,7 +181,7 @@ unremapped — cost: none for the learner.
 Ruling: `read` and `journal` are written exactly as above by every client — the heatmap, the weekly summary,
 goals and item 7 count them — cost if wrong: reading time or journal days differ per device.
 
-Ruling: the web's four call sites use named payload builders in the pure module `lib/eventPayloads.ts`
+Ruling: the web's four call sites use named payload builders in the pure module `lib/events/eventPayloads.ts`
 (`sessionPayload()`, `viewPayload(entryId)`, `readPayload(bookId, seconds)`, `journalPayload(entryId)`), and
 `payloads.json` is decoded against the builders and against the consumers (`readingPoints`, `readSeconds`,
 `journalEventDue`, and the reading timer's flush) — the payload of `read` was built inline in a Svelte

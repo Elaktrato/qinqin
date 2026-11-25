@@ -5,21 +5,26 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | Path | Contents |
 |---|---|
 | `server/` | The Go server: the `qinqin` command (`cmd/qinqin`: `serve`, `seed`, `adduser`, `recover`, `backup`) and its packages under `internal/` |
-| `server/internal/api` | HTTP routes and handlers; the route table is in `api.go` |
+| `server/internal/api` | HTTP routes and handlers: they decode, authorise, call a domain package and answer (no SQL here); the route table is in `api.go` |
+| `server/internal/workspaces`, `lang` | Workspaces (create, list, rename, delete with everything in them); the language rules and the language registry |
 | `server/internal/db` | SQLite access and the embedded migrations |
-| `server/internal/dict`, `freq`, `packs`, `lexicon` | Pack manifests and importers (dictionaries, frequency lists, the per-type dispatch), the lexicon store |
+| `server/internal/pack`, `dict`, `freq`, `packs`, `lexicon` | Pack manifests and the pack-type table, importers (dictionaries, frequency lists, the per-type dispatch), the lexicon store |
 | `server/internal/lookup`, `segment` | The lookup engine and the tokenizer |
 | `server/internal/datapkg`, `sync` | Data packages (ids, writers, builder, registry) and the paged sync pull |
 | `server/internal/auth`, `ratelimit`, `secretbox`, `netguard` | Accounts, sessions, two-step sign-in and tokens; throttling; sealing with `QINQIN_SECRET`; the outbound address guard |
-| `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, journal photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
-| `server/internal/plugins` | The plugin manifest contract and the built-in manifests (`plugins/builtin/*.json`) |
+| `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, the journal's storage, photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
+| `server/internal/features`, `keyed`, `grammar` | The feature switches, the keyed rows store, grammar packs and lesson progress |
+| `server/internal/lang` | Language code packs, the language registry and the language profiles (`profile.go`) |
 | `server/internal/webdist` | The embedded web app |
-| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features in `src/lib/features/` |
+| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routing/routeAccess.ts`, core features (flashcards, reader, journal, grammar) in `src/lib/features/`, the language profiles in `src/lib/languages/profiles.ts`, the app and session contexts that hold the app's state in `src/lib/context/` |
+| `apps/web/src/lib/` | Folders by owner ([record 0004](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0004-web-folder-rules.md)): `ui/` the generic building blocks, `frame/` the app chrome, `features/<feature>/` the four switchable core features, the other feature folders beside them (`entry/`, `stats/`, `settings/`, `widgets/`, `workspace/`, ...), `components/` only the widgets two or more features share, and logic-only layers with no component (`api/`, `study/`, `sync/`, `events/`, `routing/`, `auth/`, `languages/`, `i18n/`, `context/`, ...). Nothing loose at the top of `lib/` |
+| `apps/web/tests/repo/` | The checks of the repository itself: the docs, the README, the wiki, the shipped licence texts, the bundle size and the folder rules (`folderRules.test.ts`) |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the level lists, the KanjiVG component index, the demos) with their licences and attribution notices; `plugins/data/README.md` documents the formats |
 | `plugins/data-local/` | Gitignored: local-only packs with unclear or restrictive licences |
 | `plugins/data-strokes/`, `plugins/data-audio/`, `plugins/data-fonts/` | Gitignored: the built stroke pack, fetched audio packs and built font packs |
 | `plugins/samples/` | Hand-written samples, not seeded by default: dictionaries `zh-mini` and `ja-mini`, level packs `hsk-mini` and `jlpt-mini` (`qinqin seed --packs plugins/samples`) |
 | `docs/contracts/` | The client contracts with their JSON fixtures ([API overview](API-Overview#contracts-for-client-implementers)) |
+| `docs/architecture/` | The [architecture records](https://github.com/Elaktrato/qinqin/tree/develop/docs/architecture): the rules of the code's structure and how each is enforced ([Development](Development#architecture-records)) |
 | `docs/sources.md` | The data sources and licence decisions |
 | `docs/wiki/` | The source of this wiki |
 | `docs/releases/` | Release notes, used as the GitHub Release text of each tag |
@@ -37,7 +42,6 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `scripts/prepare-ids-components.mjs` | Prepares a local-only Chinese components pack from an IDS file |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); `--jlpt-vocab` generates the optional local-only JLPT vocabulary pack |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
-| `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 | `scripts/prepare-strokes-pack.mjs` | Builds the stroke-order pack from the pinned `hanzi-writer-data` package |
 | `scripts/prepare-font-pack.mjs` | Builds a hanzi/kanji font pack from a pinned upstream face (needs `npm --prefix scripts/fonts ci`) |

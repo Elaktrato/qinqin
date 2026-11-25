@@ -9,12 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // cedictPackFromText builds a cedict pack around the given dictionary.txt
 // content.
-func cedictPackFromText(t *testing.T, text string) dict.Pack {
+func cedictPackFromText(t *testing.T, text string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(cedictManifest)
@@ -23,11 +25,11 @@ func cedictPackFromText(t *testing.T, text string) dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"), text)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return pack
+	return pk
 }
 
 // goodCedictLines returns n distinct well-formed lines.
@@ -44,10 +46,10 @@ func goodCedictLines(n int) string {
 // lines; an import skips them, counts them in Result.Skipped, and keeps
 // going rather than aborting the whole file.
 func TestCedictImportSkipsMalformedLines(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	text := goodCedictLines(40) + "this is not an entry\n" + "你好 你好 [ni3 hao3] //\n"
-	pack := cedictPackFromText(t, text)
-	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
+	pk := cedictPackFromText(t, text)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
 	if err != nil {
 		t.Fatalf("ImportLexicon with 2 malformed lines in 42: %v", err)
 	}
@@ -63,11 +65,11 @@ func TestCedictImportSkipsMalformedLines(t *testing.T) {
 // page, a truncated download), not CEDICT with a few odd lines: the
 // import fails instead of silently installing nothing.
 func TestCedictImportRejectsMostlyMalformedFile(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	text := goodCedictLines(1) + strings.Repeat("<html>not cedict</html>\n", 5)
-	pack := cedictPackFromText(t, text)
-	_, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
-	if !errors.Is(err, dict.ErrInvalidPack) {
+	pk := cedictPackFromText(t, text)
+	_, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
+	if !errors.Is(err, pack.ErrInvalidPack) {
 		t.Fatalf("ImportLexicon(mostly garbage) err = %v, want ErrInvalidPack", err)
 	}
 }

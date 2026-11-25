@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
 )
 
 func TestUninstallFrequencyPack(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	body := "猫,ねこ,1\n犬,いぬ,2\n鳥,とり,3\n"
 	mustImport(t, sqlDB, csvPack(t, "up", body))

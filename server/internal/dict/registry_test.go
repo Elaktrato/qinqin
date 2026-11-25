@@ -1,21 +1,25 @@
 package dict
 
-import "testing"
+import (
+	"testing"
+
+	"qinqin/internal/pack"
+)
 
 // TestRegistryTerms: the dictionaries row a pack's import writes is
 // keyed and credited as the import does it — kanjidic2 and unihan
 // register their built-in dictionaries, everything else its own id.
 func TestRegistryTerms(t *testing.T) {
-	base := Manifest{ID: "my-pack", License: "L", Attribution: "A", Type: TypeDictionary}
+	base := pack.Manifest{ID: "my-pack", License: "L", Attribution: "A", Type: pack.TypeDictionary}
 	cases := []struct {
 		format                       string
 		packID, license, attribution string
 	}{
-		{FormatJSON, "my-pack", "L", "A"},
-		{FormatCedict, "my-pack", "L", "A"},
-		{FormatJMdict, "my-pack", "L", "A"},
-		{FormatUnihan, unihanPackID, "L", "A"},
-		{FormatKanjidic2, kanjidic2PackID, kanjidic2License, kanjidic2Attribution},
+		{pack.FormatJSON, "my-pack", "L", "A"},
+		{pack.FormatCedict, "my-pack", "L", "A"},
+		{pack.FormatJMdict, "my-pack", "L", "A"},
+		{pack.FormatUnihan, unihanPackID, "L", "A"},
+		{pack.FormatKanjidic2, kanjidic2PackID, kanjidic2License, kanjidic2Attribution},
 	}
 	for _, c := range cases {
 		m := base

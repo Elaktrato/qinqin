@@ -6,7 +6,7 @@
 	// Native radio groups: arrow keys move within a group.
 	import { onDestroy } from 'svelte';
 	import { t, type MessageKey } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import {
 		CORNERS,
 		DEFAULT_APPEARANCE,
@@ -22,15 +22,16 @@
 		type Spacing
 	} from '$lib/theme/appearance';
 	import { fallbackTheme } from '$lib/theme/fallback';
-	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
+	import { type ThemeStore } from '$lib/theme/store.svelte';
 	import { HANZI_SAMPLES, hasPackFace, type HanziScript, type InstalledFaces } from '$lib/fonts/hanzi';
-	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { accentOptions, changeFrom, isDirty, previewOf, slotThemeGroups } from './appearanceForm';
 	import { Button, Panel, Section } from '$lib/ui';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
-		store = themeStore,
+		store = app.theme,
 		installed = undefined
 	}: {
 		store?: ThemeStore;
@@ -65,7 +66,7 @@
 
 	const dirty = $derived(isDirty(draft, store.appearance));
 	const resolved = $derived(store.resolveFor(draft));
-	const packFacesNow = $derived(installed ?? packFaces.installed);
+	const packFacesNow = $derived(installed ?? app.fonts.installed);
 	// Without a pack for the chosen face, the device's fonts show it: say so.
 	const systemOnly = $derived(!hasPackFace(draft.hanziFont, packFacesNow));
 

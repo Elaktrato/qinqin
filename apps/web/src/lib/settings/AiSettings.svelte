@@ -11,7 +11,7 @@
 		type AiStatus,
 		type ProvidersResponse
 	} from '$lib/api/ai';
-	import { aiErrorView } from '$lib/plugins/journal/aiErrors';
+	import { aiErrorView } from '$lib/features/journal/aiErrors';
 	import { t } from '$lib/i18n';
 	import AiCustomEndpoints from './AiCustomEndpoints.svelte';
 	import AiProviderForm from './AiProviderForm.svelte';
@@ -242,7 +242,7 @@
 
 		<p class="note">{t('settings.ai.note')}</p>
 		<p>
-			<a href="/p/journal/settings">{t('settings.ai.journalLink')}</a>
+			<a href="/journal/settings">{t('settings.ai.journalLink')}</a>
 		</p>
 	{/if}
 </Section>

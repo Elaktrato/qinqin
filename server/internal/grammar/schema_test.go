@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
+	"qinqin/internal/pack"
 )
 
 // validJSON is the smallest valid lessons.json.
@@ -106,7 +106,7 @@ func TestReadDataRules(t *testing.T) {
 			if err == nil {
 				t.Fatal("want error")
 			}
-			if !errors.Is(err, dict.ErrInvalidPack) {
+			if !errors.Is(err, pack.ErrInvalidPack) {
 				t.Errorf("err = %v, want ErrInvalidPack", err)
 			}
 			if !strings.Contains(err.Error(), c.want) {
@@ -145,16 +145,16 @@ func TestReadDataCodePointLengths(t *testing.T) {
 }
 
 func TestReadDataMissingAndMalformed(t *testing.T) {
-	if _, err := grammar.ReadData(t.TempDir()); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := grammar.ReadData(t.TempDir()); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("missing file err = %v", err)
 	}
-	if _, err := grammar.ReadData(write(t, `{`)); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := grammar.ReadData(write(t, `{`)); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("malformed err = %v", err)
 	}
 }
 
 func TestManifestAcceptsGrammar(t *testing.T) {
-	m := dict.Manifest{ID: "g", Name: "G", Version: "1", Type: "grammar", Language: "zh",
+	m := pack.Manifest{ID: "g", Name: "G", Version: "1", Type: "grammar", Language: "zh",
 		License: "CC0-1.0", Attribution: "me", Format: "json"}
 	if err := m.Validate(); err != nil {
 		t.Errorf("Validate = %v", err)
@@ -164,7 +164,7 @@ func TestManifestAcceptsGrammar(t *testing.T) {
 func TestReadDataRejectsTrailingJSON(t *testing.T) {
 	for _, tail := range []string{" {}", "\n[1]", " garbage"} {
 		_, err := grammar.ReadData(write(t, validJSON+tail))
-		if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "trailing") {
+		if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "trailing") {
 			t.Errorf("tail %q: err = %v, want a trailing-data ErrInvalidPack", tail, err)
 		}
 	}
@@ -176,7 +176,7 @@ func TestReadDataRejectsTrailingJSON(t *testing.T) {
 func TestReadDataSizeCap(t *testing.T) {
 	big := validJSON + strings.Repeat(" ", 4<<20)
 	_, err := grammar.ReadData(write(t, big))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "too large") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "too large") {
 		t.Errorf("err = %v, want a too-large ErrInvalidPack", err)
 	}
 }

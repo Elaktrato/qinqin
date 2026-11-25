@@ -12,6 +12,7 @@ export type PackType =
 	| 'audio'
 	| 'components'
 	| 'strokes'
+	| 'lemma-rules'
 	| 'font'
 	| 'theme';
 

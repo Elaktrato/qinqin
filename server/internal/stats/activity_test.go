@@ -5,29 +5,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
-
-func newDB(t testing.TB) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 func newUser(t testing.TB, sqlDB *sql.DB, name string) int64 {
 	t.Helper()
@@ -38,19 +26,7 @@ func newUser(t testing.TB, sqlDB *sql.DB, name string) int64 {
 	return u.ID
 }
 
-func builtinRules(t testing.TB, sqlDB *sql.DB) []plugins.RuleOf {
-	t.Helper()
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
-	rules, err := plugins.ActivityRules(context.Background(), sqlDB)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return rules
-}
+func builtinRules(testing.TB, *sql.DB) []stats.Rule { return stats.Rules }
 
 var seq int
 
@@ -94,12 +70,12 @@ func date(s string) studyday.Date {
 }
 
 // run buckets by UTC days (a user with no zone).
-func run(t *testing.T, sqlDB *sql.DB, user int64, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
+func run(t *testing.T, sqlDB *sql.DB, user int64, from, to string, ws *int64, rules []stats.Rule) []stats.Cell {
 	t.Helper()
 	return runIn(t, sqlDB, user, studyday.UTCHistory(), from, to, ws, rules)
 }
 
-func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
+func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to string, ws *int64, rules []stats.Rule) []stats.Cell {
 	t.Helper()
 	cells, err := stats.Activity(context.Background(), sqlDB, user, h.Windows(date(from), date(to)), ws, rules)
 	if err != nil {
@@ -112,7 +88,7 @@ func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to
 }
 
 func TestActivityCount(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u, other := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	for i := 0; i < 3; i++ {
@@ -134,7 +110,7 @@ func TestActivityCount(t *testing.T) {
 }
 
 func TestActivityMeasure(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	for _, c := range []struct {
@@ -170,7 +146,7 @@ func TestActivityMeasure(t *testing.T) {
 }
 
 func TestActivityDistinct(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	add(t, sqlDB, u, 1, "2026-11-13T08:00:00Z", "journal", `{"entryId":"A"}`)
@@ -190,7 +166,7 @@ func TestActivityDistinct(t *testing.T) {
 }
 
 func TestActivityBadPayloads(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	for _, typ := range []string{"read", "journal"} {
@@ -208,7 +184,7 @@ func TestActivityBadPayloads(t *testing.T) {
 }
 
 func TestActivityWindowAndFilter(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	add(t, sqlDB, u, 1, "2026-11-10T00:00:00Z", "review", "")
@@ -238,7 +214,7 @@ func TestActivityWindowAndFilter(t *testing.T) {
 // voids nothing of Alice's, and Alice's replacement of her own misclick
 // leaves Bob's count alone.
 func TestActivityReplacedIsolation(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	const ts = "2026-11-13T08:00:00Z"
@@ -269,7 +245,7 @@ func TestActivityReplacedIsolation(t *testing.T) {
 // review: read without the user filter, Bob's greater id would win the family
 // and Alice's own review would stop counting.
 func TestActivityReplacedTargetOfAnotherUser(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	const ts = "2026-11-13T08:00:00Z"

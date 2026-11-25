@@ -5,14 +5,18 @@ const LINES: [keyof DeletionPreview, MessageKey][] = [
 	['workspaces', 'admin.delete.preview.workspaces'],
 	['studyEvents', 'admin.delete.preview.studyEvents'],
 	['cards', 'admin.delete.preview.cards'],
-	['pluginData', 'admin.delete.preview.pluginData'],
+	['keyedRows', 'admin.delete.preview.keyedRows'],
 	['books', 'admin.delete.preview.books'],
 	['overlays', 'admin.delete.preview.overlays'],
 	['sentences', 'admin.delete.preview.sentences'],
+	['exampleReports', 'admin.delete.preview.exampleReports'],
+	['journalEntries', 'admin.delete.preview.journalEntries'],
+	['journalConversations', 'admin.delete.preview.journalConversations'],
 	['journalPhotos', 'admin.delete.preview.journalPhotos'],
 	['aiKeys', 'admin.delete.preview.aiKeys'],
 	['sessions', 'admin.delete.preview.sessions'],
-	['accessTokens', 'admin.delete.preview.accessTokens']
+	['accessTokens', 'admin.delete.preview.accessTokens'],
+	['avatar', 'admin.delete.preview.avatar']
 ];
 
 /**

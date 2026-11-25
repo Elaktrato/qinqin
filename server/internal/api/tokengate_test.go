@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/ratelimit"
 )
@@ -36,9 +37,7 @@ func newTokenActors(t *testing.T, sqlDB *sql.DB) tokenActors {
 		}
 		return n
 	}
-	if _, err := sqlDB.Exec(`INSERT INTO users (username, hash, updated_at, created_at) VALUES ('gate-user2', 'x', 't', 't')`); err != nil {
-		t.Fatal(err)
-	}
+	dbtest.User(t, sqlDB, "gate-user2")
 	ws := func(user int64, name string) int64 {
 		res, err := sqlDB.Exec(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', ?, '2026-01-01T00:00:00Z')`, user, name)
 		if err != nil {
@@ -319,6 +318,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/characters":               tokReadGlobal,
 	"GET /api/components":               tokReadGlobal, // #71: public shared data (amendment at merge)
 	"GET /api/component-packs":          tokReadGlobal, // #71: public shared data (amendment at merge)
+	"GET /api/lemma-packs":              tokReadGlobal, // #176: public shared credits, like component-packs (spec Ruling)
 	"GET /api/dictionaries":             tokReadGlobal,
 	"GET /api/frequency-packs":          tokReadGlobal,
 	"GET /api/sentence-packs":           tokReadGlobal,
@@ -347,7 +347,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,
 	"GET /api/me/time-zone":                    tokReadAny,
-	"GET /api/plugins":                         tokReadAny,
+	"GET /api/features":                        tokReadAny, // #199: the feature switches replace the plugin states
 	"GET /api/library/books/{id}":              tokReadAny,
 	"GET /api/library/books/{id}/chapters/{n}": tokReadAny,
 	"GET /api/library/books/{id}/bookmarks":    tokReadAny,
@@ -355,11 +355,13 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/audio/entries/{id}":              tokReadAny,
 	"GET /api/audio/clips/{file}":              tokReadAny,
 
-	"GET /api/events":                  tokReadWS,
-	"GET /api/stats/activity":          tokReadWS,
-	"GET /api/library/books":           tokReadWS,
-	"GET /api/plugins/{id}/data":       tokReadWS,
-	"GET /api/plugins/{id}/data/{key}": tokReadWS,
+	"GET /api/events":         tokReadWS,
+	"GET /api/stats/activity": tokReadWS,
+	"GET /api/library/books":  tokReadWS,
+	// #199: the keyed rows replace the plugin data routes with the same
+	// rules (plan Ruling "personal access tokens keep the reach they had").
+	"GET /api/rows":       tokReadWS,
+	"GET /api/rows/{key}": tokReadWS,
 
 	"POST /api/sync/push":                             tokWriteAny,
 	"POST /api/events/batch":                          tokWriteAny,
@@ -374,10 +376,10 @@ var v1TokenRoutes = map[string]tokenRule{
 	"POST /api/library/books/{id}/highlights":         tokWriteAny,
 	"PUT /api/library/books/{id}/highlights/{hid}":    tokWriteAny,
 	"DELETE /api/library/books/{id}/highlights/{hid}": tokWriteAny,
-	"PUT /api/plugins/{id}/state":                     tokWriteAny,
+	"PUT /api/features/{id}":                          tokWriteAny,
 
-	"PUT /api/plugins/{id}/data/{key}":    tokWriteWS,
-	"DELETE /api/plugins/{id}/data/{key}": tokWriteWS,
+	"PUT /api/rows/{key}":    tokWriteWS,
+	"DELETE /api/rows/{key}": tokWriteWS,
 }
 
 // readPOSTs are the POST routes whose handlers change nothing and may be

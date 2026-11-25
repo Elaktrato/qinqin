@@ -1,5 +1,7 @@
 import { api } from './client';
 import type { CharactersResponse, CharRow } from './types';
+import type { CharacterCache } from '../context/caches';
+
 
 export type { CharRow } from './types';
 
@@ -10,7 +12,7 @@ export interface CharacterList {
 	stale?: boolean;
 }
 
-interface Pending {
+export interface Pending {
 	promise: Promise<CharacterList>;
 	controller: AbortController;
 	waiters: number;
@@ -19,21 +21,12 @@ interface Pending {
 // The universe list is large and changes only on a re-seed, so it stays in
 // memory for the session. Revalidation across visits is the browser cache's
 // job: the server sends an ETag with `max-age=0, must-revalidate`.
-const loaded = new Map<string, CharacterList>();
-const inFlight = new Map<string, Pending>();
-
-/** clearCharacterCache forgets every loaded list (tests, sign-out). */
-export function clearCharacterCache(): void {
-	loaded.clear();
-	for (const pending of inFlight.values()) pending.controller.abort();
-	inFlight.clear();
-}
 
 function abortError(): DOMException {
 	return new DOMException('The request was aborted.', 'AbortError');
 }
 
-function start(language: string): Pending {
+function start(cache: CharacterCache, language: string): Pending {
 	const controller = new AbortController();
 	const params = new URLSearchParams({ language });
 	const pending: Pending = {
@@ -47,19 +40,19 @@ function start(language: string): Pending {
 				const count = typeof body?.count === 'number' ? body.count : chars.length;
 				const list: CharacterList = { chars, count };
 				if (body?.stale === true) list.stale = true;
-				if (inFlight.get(language) === pending) {
-					inFlight.delete(language);
-					loaded.set(language, list);
+				if (cache.inFlight.get(language) === pending) {
+					cache.inFlight.delete(language);
+					cache.loaded.set(language, list);
 				}
 				return list;
 			},
 			(error: unknown) => {
-				if (inFlight.get(language) === pending) inFlight.delete(language);
+				if (cache.inFlight.get(language) === pending) cache.inFlight.delete(language);
 				throw error;
 			}
 		)
 	};
-	inFlight.set(language, pending);
+	cache.inFlight.set(language, pending);
 	return pending;
 }
 
@@ -72,14 +65,14 @@ function start(language: string): Pending {
  * `signal` rejects this caller with an AbortError; the shared request is
  * cancelled only once every caller waiting on it has aborted.
  */
-export function fetchCharacters(code: string, signal?: AbortSignal): Promise<CharacterList> {
+export function fetchCharacters(cache: CharacterCache, code: string, signal?: AbortSignal): Promise<CharacterList> {
 	// The endpoint knows only primary languages: `zh-TW` asks for `zh`.
 	const language = code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
-	const cached = loaded.get(language);
+	const cached = cache.loaded.get(language);
 	if (cached !== undefined) return Promise.resolve(cached);
 	if (signal?.aborted) return Promise.reject(abortError());
 
-	const pending = inFlight.get(language) ?? start(language);
+	const pending = cache.inFlight.get(language) ?? start(cache, language);
 	pending.waiters += 1;
 	if (signal === undefined) return pending.promise;
 
@@ -89,8 +82,8 @@ export function fetchCharacters(code: string, signal?: AbortSignal): Promise<Cha
 			if (done) return;
 			done = true;
 			pending.waiters -= 1;
-			if (pending.waiters === 0 && inFlight.get(language) === pending) {
-				inFlight.delete(language);
+			if (pending.waiters === 0 && cache.inFlight.get(language) === pending) {
+				cache.inFlight.delete(language);
 				pending.controller.abort();
 			}
 			reject(abortError());

@@ -2,6 +2,7 @@
 // the en-XA catalogue installed and list the interface text that is still plain ASCII English. Call
 // `resetCatalogue()` from `$lib/i18n` in afterEach.
 import { render } from '@testing-library/svelte';
+import { testContext } from './context';
 import type { Component } from 'svelte';
 import { installCatalogue } from '$lib/i18n';
 import en from '$lib/i18n/messages/en.json';
@@ -10,10 +11,10 @@ import { pseudoCatalogue } from '$lib/i18n/pseudo';
 const ENGLISH = /[A-Za-z]{2,}/;
 const TEXT_ATTRIBUTES = ['aria-label', 'title', 'placeholder', 'alt'];
 
-/** Installs en-XA (format locale `en`) and renders the component. */
+/** Installs en-XA (format locale `en`) and renders the component (in a fresh signed-in test context). */
 export function renderPseudo(component: Component<any>, props: Record<string, unknown> = {}) {
 	installCatalogue('en-XA', pseudoCatalogue(en), 'en');
-	return render(component, { props });
+	return render(component, { props, context: testContext().context });
 }
 
 function hidden(el: Element | null): boolean {

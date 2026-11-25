@@ -72,18 +72,13 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	get := func(path string) func() (int, any) {
 		return func() (int, any) { return callJSON(t, ts, "GET", path, "", nil) }
 	}
-	// options: the four states of one instance, in the order it goes through them
-	var alice string
+	// options: the three modes of one instance, in the order it goes through them
+	alice := registerUser(t, ts.URL, "alice", "")
 	setMode := func(reg, email string) {
 		sqlDB.Exec(`UPDATE auth_settings SET registration = ?, email_policy = ?`, reg, email)
 	}
-	runCases(t, "options.json", []string{"bootstrap", "closed", "invite", "open"}, map[string]func() (int, any){
-		"bootstrap": get("/api/auth/options"),
-		"closed": func() (int, any) {
-			alice = registerUser(t, ts.URL, "alice", "")
-			setMode("closed", "off")
-			return get("/api/auth/options")()
-		},
+	runCases(t, "options.json", []string{"closed", "invite", "open"}, map[string]func() (int, any){
+		"closed": func() (int, any) { setMode("closed", "off"); return get("/api/auth/options")() },
 		"invite": func() (int, any) { setMode("invite", "optional"); return get("/api/auth/options")() },
 		"open":   func() (int, any) { setMode("open", "required"); return get("/api/auth/options")() },
 	}, true)

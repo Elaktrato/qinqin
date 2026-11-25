@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ReadingText from '$lib/components/ReadingText.svelte';
-	import ReadingTable from '$lib/components/ReadingTable.svelte';
+	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';

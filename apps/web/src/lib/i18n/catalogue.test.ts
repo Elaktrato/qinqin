@@ -28,7 +28,7 @@ function walk(d: string): string[] {
 	return out;
 }
 /** The runtime and its checks document keys in comments and messages; they use none. */
-const RUNTIME = ['lib/i18n/index.ts', 'lib/i18n/Msg.svelte', 'lib/i18n/catalogueCheck.ts', 'lib/i18n/lint.ts'];
+const RUNTIME = ['lib/i18n/index.ts', 'lib/ui/Msg.svelte', 'lib/i18n/catalogueCheck.ts', 'lib/i18n/lint.ts'];
 const sources = walk(src)
 	.map((p) => ({ path: p.slice(src.length + 1), text: readFileSync(p, 'utf8') }))
 	.filter((s) => !RUNTIME.includes(s.path));

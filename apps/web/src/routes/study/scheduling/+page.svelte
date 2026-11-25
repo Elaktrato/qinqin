@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { errorText } from '$lib/api/apiErrors';
+	import { UserError } from '$lib/api/userError';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onDestroy, untrack } from 'svelte';
 	import ImportExport from '$lib/features/flashcards/scheduling/ImportExport.svelte';
@@ -15,15 +17,12 @@ import type { StudyContext } from '$lib/study/studyContext';
 	import { activeProblem, sameWeights, shouldRestorePointer } from '$lib/study/fsrs/guard';
 	import { DEFAULT_W, type FsrsState } from '$lib/study/fsrs/params';
 	import { canApply, type Preview } from '$lib/study/fsrs/preview';
-	import {
-		deleteParamSet,
-		loadStudyData,
-		saveParamSet,
-		setActiveSet
-	} from '$lib/study/store';
+	import { deleteParamSet, saveParamSet, setActiveSet } from '$lib/study/commands/settings';
+	import { loadStudyData } from '$lib/study/data';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Candidate {
 		workspaceId: number;
@@ -42,13 +41,13 @@ import type { StudyContext } from '$lib/study/studyContext';
 	const UNDO_MS = 10000;
 	const EMPTY_FIT: Fit = { logLoss: 0, rmseBins: 0, items: 0 };
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	let loading = $state(true);
 	let loadError = $state('');
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let dataset = $state.raw<Dataset>({ cards: [], labelled: 0 });
 	let fsrs = $state.raw<FsrsState>({ sets: [], active: null, w: DEFAULT_W });
 	let activeFit = $state.raw<Fit>(EMPTY_FIT);
@@ -98,17 +97,17 @@ import type { StudyContext } from '$lib/study/studyContext';
 		loading = true;
 		loadError = '';
 		try {
-			const data = await loadStudyData(id);
+			const data = await loadStudyData(session.study, id);
 			if (mine !== seq) return;
 			cards = data.cards;
 			reviews = data.reviews;
-			ctx = contextForData(data, id);
+			ctx = contextForData(session.zone, data, id);
 			dataset = buildDataset(data.reviews, ctx.clock);
 			fsrs = data.fsrs ?? { sets: [], active: null, w: DEFAULT_W };
 			activeFit = evaluate(fsrs.w, dataset);
 		} catch (err) {
 			if (mine !== seq) return;
-			loadError = err instanceof Error ? err.message : t('study.sched.loadFailed');
+			loadError = errorText(err, t('study.sched.loadFailed'));
 		} finally {
 			if (mine === seq) loading = false;
 		}
@@ -158,7 +157,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			}
 		} catch (err) {
 			if (mine !== seq) return;
-			optimiseError = err instanceof Error ? err.message : t('study.sched.optimizerFailed');
+			optimiseError = errorText(err, t('study.sched.optimizerFailed'));
 		} finally {
 			if (mine === seq) running = false;
 		}
@@ -208,7 +207,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			})
 			.catch((err: unknown) => {
 				if (ctl.signal.aborted) return;
-				previewError = err instanceof Error ? err.message : t('study.fsrs.previewFailed');
+				previewError = errorText(err, t('study.fsrs.previewFailed'));
 				previewPending = false;
 			});
 		return () => ctl.abort();
@@ -273,14 +272,14 @@ import type { StudyContext } from '$lib/study/studyContext';
 			const problemText = verify?.(pointerBefore) ?? null;
 			if (problemText !== null) actionError = problemText;
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : t('study.sched.saveFailed');
+			actionError = errorText(err, t('study.sched.saveFailed'));
 		} finally {
 			busy = false;
 		}
 	}
 
 	async function reloadData(id: number): Promise<void> {
-		const data = await loadStudyData(id);
+		const data = await loadStudyData(session.study, id);
 		if (id !== workspaceId) return;
 		fsrs = data.fsrs ?? { sets: [], active: null, w: DEFAULT_W };
 		activeFit = evaluate(fsrs.w, dataset);
@@ -290,15 +289,15 @@ import type { StudyContext } from '$lib/study/studyContext';
 		const c = candidate;
 		if (c === null || !check.ok) return;
 		await change(async (id) => {
-			if (id !== c.workspaceId) throw new Error('The workspace changed. Optimise again.');
-			const saved = await saveParamSet(id, {
+			if (id !== c.workspaceId) throw new UserError('study.sched.workspaceChanged');
+			const saved = await saveParamSet(session.study, id, {
 				w: c.w,
 				source: c.source,
 				labelled: c.labelled,
 				logLoss: c.logLoss,
 				baselineLogLoss: c.source === 'optimized' ? c.baselineLogLoss : undefined
 			});
-			await setActiveSet(id, saved.id);
+			await setActiveSet(session.study, id, saved.id);
 			return saved.id;
 		}, t('study.sched.changed'));
 	}
@@ -310,7 +309,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	function use(setId: string | null): Promise<void> {
 		return change(async (id) => {
-			await setActiveSet(id, setId);
+			await setActiveSet(session.study, id, setId);
 			return setId;
 		}, t('study.sched.changed'));
 	}
@@ -318,7 +317,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	function remove(setId: string): Promise<void> {
 		return change(
 			async (id) => {
-				await deleteParamSet(id, setId);
+				await deleteParamSet(session.study, id, setId);
 				return undefined;
 			},
 			null,
@@ -342,12 +341,12 @@ import type { StudyContext } from '$lib/study/studyContext';
 				undo = null;
 				return;
 			}
-			await setActiveSet(slot.workspaceId, slot.previousId);
+			await setActiveSet(session.study, slot.workspaceId, slot.previousId);
 			undo = null;
 			candidate = null;
 			await reloadData(slot.workspaceId);
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : t('study.store.undoFailed');
+			actionError = errorText(err, t('study.store.undoFailed'));
 		} finally {
 			busy = false;
 		}

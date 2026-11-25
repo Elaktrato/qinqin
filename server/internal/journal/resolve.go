@@ -6,6 +6,7 @@ import (
 	"unicode"
 
 	"qinqin/internal/ai"
+	langpkg "qinqin/internal/lang"
 )
 
 const (
@@ -36,7 +37,7 @@ func ResolveAnnotations(text, lang string, raw []ai.RawAnnotation) ([]Annotation
 		case corr == quote:
 			drop.NoChange++
 			continue
-		case !CorrectionFitsLanguage(lang, corr):
+		case !langpkg.FitsScript(lang, corr):
 			drop.WrongScript++
 			continue
 		}
@@ -114,6 +115,8 @@ func occurrences(text, q []rune) []int {
 
 // FilterSuggestionWords keeps at most 5 items, trims their fields and keeps
 // only words that were in the list sent, so no invented word reaches a chip.
+// A title becomes an entry title: plain text of at most MaxTitleRunes code
+// points; the prompt is plain text too.
 func FilterSuggestionWords(items []ai.SuggestionItem, sent []string) []ai.SuggestionItem {
 	allowed := make(map[string]bool, len(sent))
 	for _, w := range sent {
@@ -124,7 +127,7 @@ func FilterSuggestionWords(items []ai.SuggestionItem, sent []string) []ai.Sugges
 		if len(out) == 5 {
 			break
 		}
-		n := ai.SuggestionItem{Title: strings.TrimSpace(it.Title), Prompt: strings.TrimSpace(it.Prompt), Words: []string{}}
+		n := ai.SuggestionItem{Title: cutRunes(plainOnly(it.Title), MaxTitleRunes), Prompt: plainOnly(it.Prompt), Words: []string{}}
 		for _, w := range it.Words {
 			if w = strings.TrimSpace(w); allowed[w] {
 				n.Words = append(n.Words, w)
@@ -133,4 +136,16 @@ func FilterSuggestionWords(items []ai.SuggestionItem, sent []string) []ai.Sugges
 		out = append(out, n)
 	}
 	return out
+}
+
+// plainOnly is s as valid UTF-8 without the control characters an entry
+// refuses (all but line breaks and tabs), trimmed.
+func plainOnly(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) && r != '\n' && r != '\r' && r != '\t' {
+			return -1
+		}
+		return r
+	}, strings.ToValidUTF8(s, ""))
+	return strings.TrimSpace(s)
 }

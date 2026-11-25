@@ -103,12 +103,12 @@ func TestRemapCases(t *testing.T) {
 				if !reflect.DeepEqual(any(out), want) {
 					t.Errorf("got %v\nwant %v", out, want)
 				}
-			case "pluginRow":
-				var in PluginRow
+			case "row":
+				var in Row
 				if err := json.Unmarshal(c.Input, &in); err != nil {
 					t.Fatal(err)
 				}
-				nr, drop := m.PluginRow(in)
+				nr, drop := m.Row(in)
 				got := map[string]any{"drop": drop}
 				if !drop {
 					got["workspaceId"] = nil
@@ -144,8 +144,8 @@ func TestCardRewriteKeepsUnknownFieldBytes(t *testing.T) {
 	}
 }
 
-func coreNote(ws int64, key, data, updated string, modified *string) PluginRow {
-	return PluginRow{PluginID: CorePlugin, WorkspaceID: &ws, Key: key, Data: json.RawMessage(data), UpdatedAt: updated, ModifiedAt: modified}
+func coreNote(ws int64, key, data, updated string, modified *string) Row {
+	return Row{WorkspaceID: &ws, Key: key, Data: json.RawMessage(data), UpdatedAt: updated, ModifiedAt: modified}
 }
 
 func strp(s string) *string { return &s }
@@ -156,7 +156,7 @@ func strp(s string) *string { return &s }
 func TestNoteCollisionNewestWins(t *testing.T) {
 	cases := []struct {
 		name   string
-		a, b   PluginRow
+		a, b   Row
 		winner string
 	}{
 		{"newer modifiedAt wins",
@@ -174,7 +174,7 @@ func TestNoteCollisionNewestWins(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			for _, order := range [][2]PluginRow{{c.a, c.b}, {c.b, c.a}} {
+			for _, order := range [][2]Row{{c.a, c.b}, {c.b, c.a}} {
 				m := NewMaps()
 				m.Workspaces[7] = 70
 				for _, r := range order {
@@ -186,7 +186,7 @@ func TestNoteCollisionNewestWins(t *testing.T) {
 				}
 				kept := 0
 				for _, r := range order {
-					nr, drop := m.PluginRow(r)
+					nr, drop := m.Row(r)
 					if drop {
 						if r.Key == c.winner {
 							t.Errorf("winner %s dropped", r.Key)
@@ -221,8 +221,8 @@ func TestNoteCollisionIsPerWorkspace(t *testing.T) {
 	b := coreNote(8, "note:1", `{"version":1,"entryId":1,"text":"b"}`, "2026-11-06T00:00:00Z", nil)
 	m.RegisterNote(a)
 	m.RegisterNote(b)
-	for _, r := range []PluginRow{a, b} {
-		if _, drop := m.PluginRow(r); drop {
+	for _, r := range []Row{a, b} {
+		if _, drop := m.Row(r); drop {
 			t.Errorf("%v dropped", r)
 		}
 	}
@@ -233,11 +233,11 @@ func TestNoteWithoutRegisterIsItsOwnWinner(t *testing.T) {
 	m := NewMaps()
 	m.Workspaces[7] = 70
 	m.Entries[1], m.Entries[2] = 500, 500
-	for _, r := range []PluginRow{
+	for _, r := range []Row{
 		coreNote(7, "note:1", `{"version":1,"entryId":1,"text":"a"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:2", `{"version":1,"entryId":2,"text":"b"}`, "2026-11-06T00:00:00Z", nil),
 	} {
-		if nr, drop := m.PluginRow(r); drop || nr.Key != "note:500" {
+		if nr, drop := m.Row(r); drop || nr.Key != "note:500" {
 			t.Errorf("%s: drop=%v key=%s", r.Key, drop, nr.Key)
 		}
 	}
@@ -249,7 +249,7 @@ func TestNoteRewriteKeepsOtherBytes(t *testing.T) {
 	m.Workspaces[7] = 70
 	m.Entries[1201] = 1250
 	in := coreNote(7, "note:1201", `{"text":"马\n<b>x</b>","zeta":{"b": 1,"a":[3, 2,1]},"entryId":1201,"version":1}`, "2026-11-05T00:00:00Z", nil)
-	out, drop := m.PluginRow(in)
+	out, drop := m.Row(in)
 	want := `{"text":"马\n<b>x</b>","zeta":{"b": 1,"a":[3, 2,1]},"entryId":1250,"version":1}`
 	if drop || out.Key != "note:1250" || string(out.Data) != want {
 		t.Errorf("got %s %s want %s", out.Key, out.Data, want)
@@ -263,7 +263,7 @@ func TestInvalidNoteRowsAreDropped(t *testing.T) {
 	m := NewMaps()
 	m.Workspaces[7] = 70
 	m.Entries[1201], m.Entries[1] = 1250, 2
-	for _, r := range []PluginRow{
+	for _, r := range []Row{
 		coreNote(7, "note:01201", `{"version":1,"entryId":1201,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:+1", `{"version":1,"entryId":1,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:1", `"not an object"`, "2026-11-05T00:00:00Z", nil),
@@ -271,15 +271,15 @@ func TestInvalidNoteRowsAreDropped(t *testing.T) {
 		coreNote(7, "note:1", `{"version":1,"entryId":1201,"text":"other id"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:", `{"version":1,"entryId":1,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
 	} {
-		if _, drop := m.PluginRow(r); !drop {
+		if _, drop := m.Row(r); !drop {
 			t.Errorf("%s %s kept", r.Key, r.Data)
 		}
 	}
-	for _, r := range []PluginRow{
+	for _, r := range []Row{
 		coreNote(7, "notecfg", `{"version":1,"onAnswer":false}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "notebook:1", `{"entryId":1}`, "2026-11-05T00:00:00Z", nil),
 	} {
-		nr, drop := m.PluginRow(r)
+		nr, drop := m.Row(r)
 		if drop || nr.Key != r.Key || string(nr.Data) != string(r.Data) {
 			t.Errorf("%s changed: drop=%v %s %s", r.Key, drop, nr.Key, nr.Data)
 		}

@@ -1,7 +1,6 @@
 // Package sync_test exercises delta sync over a real SQLite database:
-// the pull (every row changed since a cursor, tombstones included) and
-// the push (idempotent events, last-write-wins plugin data), through the
-// library and over real HTTP.
+// the paged pull and the push (idempotent events, last-write-wins plugin
+// data and typed rows), through the library and over real HTTP.
 package sync_test
 
 import (
@@ -10,45 +9,25 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/keyed"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
+	"qinqin/internal/study/rows"
 	chinsync "qinqin/internal/sync"
 )
 
 func init() {
 	lang.Register(lang.Zh{})
 	lang.Register(lang.Ja{})
-}
-
-// validManifest is a feature manifest that passes plugins.ParseManifest:
-// sdk 1, owns-data, no surfaces or events. extra is a list of JSON members
-// appended last, so a repeated key overrides the default.
-func validManifest(id, extra string) string {
-	if extra != "" {
-		extra = "," + extra
-	}
-	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
-}
-
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // newUser creates a user and returns its id.
@@ -74,20 +53,71 @@ func newWorkspace(t *testing.T, sqlDB *sql.DB, userID int64) int64 {
 	return id
 }
 
-// pullDelta runs the legacy pull (StreamLegacy) and decodes its answer.
-func pullDelta(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, only map[string]bool) (chinsync.Delta, error) {
-	var buf bytes.Buffer
-	if err := chinsync.StreamLegacy(ctx, &buf, sqlDB, userID, cursor, only); err != nil {
-		return chinsync.Delta{}, err
-	}
-	var d chinsync.Delta
-	err := json.Unmarshal(buf.Bytes(), &d)
-	return d, err
+// delta is what the push tests read back: one full paged round (sync.PullPage)
+// of the caller's keyed rows and typed study rows.
+type delta struct {
+	Rows         []model.KeyedRow       `json:"rows"`
+	Cards        []rows.Card            `json:"cards"`
+	Decks        []rows.Deck            `json:"decks"`
+	DeckSettings []rows.DeckSettingsRow `json:"deckSettings"`
+	Limits       []rows.LimitsRow       `json:"limits"`
+	FsrsSets     []rows.FsrsSet         `json:"fsrsSets"`
+	FsrsActive   []rows.FsrsActiveRow   `json:"fsrsActive"`
 }
 
-func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chinsync.Delta {
+// pullDelta pulls a full paged round of userID: live rows only, or
+// tombstones too when withTombstones; only limits the collections (nil:
+// all). The round's clock runs a minute ahead, so rows written this second
+// are in it.
+func pullDelta(ctx context.Context, sqlDB *sql.DB, userID int64, withTombstones bool, only map[string]bool) (delta, error) {
+	d := delta{}
+	req := chinsync.PageRequest{Only: only, Tombstones: withTombstones, Now: time.Now().Add(time.Minute)}
+	for {
+		page, err := chinsync.PullPage(ctx, sqlDB, userID, req, nil)
+		if err != nil {
+			return delta{}, err
+		}
+		for name, raw := range page.Collections {
+			switch name {
+			case "rows":
+				err = appendTo(&d.Rows, raw)
+			case "cards":
+				err = appendTo(&d.Cards, raw)
+			case "decks":
+				err = appendTo(&d.Decks, raw)
+			case "deckSettings":
+				err = appendTo(&d.DeckSettings, raw)
+			case "limits":
+				err = appendTo(&d.Limits, raw)
+			case "fsrsSets":
+				err = appendTo(&d.FsrsSets, raw)
+			case "fsrsActive":
+				err = appendTo(&d.FsrsActive, raw)
+			}
+			if err != nil {
+				return delta{}, fmt.Errorf("%s: %w", name, err)
+			}
+		}
+		if !page.More || page.Next == nil {
+			return d, nil
+		}
+		req = chinsync.PageRequest{Page: *page.Next, Now: req.Now}
+	}
+}
+
+// appendTo decodes a JSON array and appends it to list.
+func appendTo[T any](list *[]T, raw json.RawMessage) error {
+	var page []T
+	if err := json.Unmarshal(raw, &page); err != nil {
+		return err
+	}
+	*list = append(*list, page...)
+	return nil
+}
+
+func mustPull(t *testing.T, sqlDB *sql.DB, userID int64) delta {
 	t.Helper()
-	d, err := pullDelta(context.Background(), sqlDB, userID, cursor, nil)
+	d, err := pullDelta(context.Background(), sqlDB, userID, false, nil)
 	if err != nil {
 		t.Fatalf("pull: %v", err)
 	}
@@ -95,14 +125,10 @@ func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chins
 }
 
 func TestPushEventsAndLWW(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
-	if err := plugins.Register(ctx, sqlDB, []byte(validManifest("flashcards", ""))); err != nil {
-		t.Fatalf("register plugin: %v", err)
-	}
-
 	evt := func(id string) model.StudyEvent {
 		return model.StudyEvent{ID: id, UserID: 999, WorkspaceID: ws, Device: "phone",
 			TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}
@@ -122,29 +148,29 @@ func TestPushEventsAndLWW(t *testing.T) {
 		t.Errorf("event owner = %d, %v; want the caller %d (body claimed 999)", owner, err, alice)
 	}
 
-	// Plugin data: seed the server row, then push older and newer copies.
-	if _, err := plugins.PutData(ctx, sqlDB, alice, nil, "flashcards", "deck", json.RawMessage(`{"v":"server"}`)); err != nil {
+	// Keyed rows: seed the server row, then push older and newer copies.
+	if _, err := keyed.Put(ctx, sqlDB, alice, nil, "home-layout", json.RawMessage(`{"v":"server"}`), nil); err != nil {
 		t.Fatalf("seed data: %v", err)
 	}
 	serverTime := time.Now().UTC()
-	row := func(val string, at time.Time) model.PluginData {
-		return model.PluginData{PluginID: "flashcards", Key: "deck", Data: json.RawMessage(val), UpdatedAt: at}
+	row := func(val string, at time.Time) model.KeyedRow {
+		return model.KeyedRow{Key: "home-layout", Data: json.RawMessage(val), UpdatedAt: at}
 	}
 
-	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: []model.PluginData{row(`{"v":"stale"}`, serverTime.Add(-time.Hour))}})
+	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{Rows: []model.KeyedRow{row(`{"v":"stale"}`, serverTime.Add(-time.Hour))}})
 	if err != nil || res.DataSkipped != 1 || res.DataAccepted != 0 {
 		t.Fatalf("older push = %+v, %v; want skipped", res, err)
 	}
-	got, err := plugins.GetData(ctx, sqlDB, alice, nil, "flashcards", "deck")
+	got, err := keyed.Get(ctx, sqlDB, alice, nil, "home-layout")
 	if err != nil || string(got.Data) != `{"v":"server"}` || got.Version != 1 {
 		t.Fatalf("after stale push = %+v, %v; want untouched server row v1", got, err)
 	}
 
-	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: []model.PluginData{row(`{"v":"fresh"}`, serverTime.Add(time.Hour))}})
+	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{Rows: []model.KeyedRow{row(`{"v":"fresh"}`, serverTime.Add(time.Hour))}})
 	if err != nil || res.DataAccepted != 1 || res.DataSkipped != 0 {
 		t.Fatalf("newer push = %+v, %v; want accepted", res, err)
 	}
-	got, err = plugins.GetData(ctx, sqlDB, alice, nil, "flashcards", "deck")
+	got, err = keyed.Get(ctx, sqlDB, alice, nil, "home-layout")
 	if err != nil || string(got.Data) != `{"v":"fresh"}` || got.Version != 2 {
 		t.Fatalf("after fresh push = %+v, %v; want fresh data at version 2", got, err)
 	}
@@ -153,17 +179,18 @@ func TestPushEventsAndLWW(t *testing.T) {
 	tomb := row(`null`, serverTime.Add(2*time.Hour))
 	deleted := tomb.UpdatedAt
 	tomb.DeletedAt = &deleted
-	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: []model.PluginData{tomb}})
+	res, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{Rows: []model.KeyedRow{tomb}})
 	if err != nil || res.DataAccepted != 1 {
 		t.Fatalf("tombstone push = %+v, %v; want accepted", res, err)
 	}
-	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "flashcards", "deck"); !errors.Is(err, plugins.ErrNotFound) {
-		t.Errorf("after tombstone push GetData err = %v, want ErrNotFound", err)
+	if _, err := keyed.Get(ctx, sqlDB, alice, nil, "home-layout"); !errors.Is(err, keyed.ErrNotFound) {
+		t.Errorf("after tombstone push Get err = %v, want ErrNotFound", err)
 	}
+	_ = ws
 }
 
-func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
-	sqlDB := newDB(t)
+func TestPushRejectsForeignWorkspace(t *testing.T) {
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 	bobWS := newWorkspace(t, sqlDB, bob)
@@ -173,13 +200,8 @@ func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
 	if !errors.Is(err, chinsync.ErrNotFound) {
 		t.Errorf("foreign workspace event err = %v, want ErrNotFound", err)
 	}
-	_, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: []model.PluginData{
-		{PluginID: "no-such-plugin", Key: "k", Data: json.RawMessage(`1`), UpdatedAt: time.Now().UTC()}}})
-	if !errors.Is(err, chinsync.ErrNotFound) {
-		t.Errorf("unknown plugin err = %v, want ErrNotFound", err)
-	}
-	_, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: []model.PluginData{
-		{PluginID: "heatmap", WorkspaceID: &bobWS, Key: "k", Data: json.RawMessage(`1`), UpdatedAt: time.Now().UTC()}}})
+	_, err = chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{Rows: []model.KeyedRow{
+		{WorkspaceID: &bobWS, Key: "notecfg", Data: json.RawMessage(`1`), UpdatedAt: time.Now().UTC()}}})
 	if !errors.Is(err, chinsync.ErrNotFound) {
 		t.Errorf("foreign workspace data err = %v, want ErrNotFound", err)
 	}
@@ -190,7 +212,7 @@ func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
 }
 
 func TestSyncEndpoints(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	seedWorld(t, sqlDB)
@@ -205,7 +227,7 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Fatalf("anonymous pull status = %d, want 401", resp.StatusCode)
 	}
 
-	token := registerAndLogin(t, ts.URL)
+	token := registerAndLogin(t, sqlDB, ts.URL)
 	call := func(method, path string, body any) *http.Response {
 		var r *bytes.Reader
 		if body != nil {
@@ -223,36 +245,6 @@ func TestSyncEndpoints(t *testing.T) {
 		return resp
 	}
 
-	// The lexicon is in data packages now: a full legacy pull keeps its
-	// keys, empty, and still ships the caller's rows.
-	resp = call(http.MethodGet, "/api/sync/pull", nil)
-	var delta chinsync.Delta
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&delta) != nil || len(delta.Entries) != 0 ||
-		delta.Entries == nil || len(delta.Sentences) != 0 {
-		t.Fatalf("pull status = %d entries = %d sentences = %d, want 200 without the lexicon and pack sentences",
-			resp.StatusCode, len(delta.Entries), len(delta.Sentences))
-	}
-	resp.Body.Close()
-
-	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,pluginStates", nil)
-	var subset chinsync.Delta
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&subset) != nil ||
-		len(subset.Entries) != 0 || len(subset.Senses) != 0 || len(subset.Sentences) != 0 {
-		t.Fatalf("collections pull status = %d entries = %d, want 200 with only the requested collections", resp.StatusCode, len(subset.Entries))
-	}
-	resp.Body.Close()
-	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,bogus", nil)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("unknown collection status = %d, want 400", resp.StatusCode)
-	}
-
-	resp = call(http.MethodGet, "/api/sync/pull?cursor=garbage", nil)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("bad cursor status = %d, want 400", resp.StatusCode)
-	}
-
 	resp = call(http.MethodPost, "/api/sync/push", map[string]any{"events": []any{
 		map[string]any{"id": "01J00000000000000000000077", "workspaceId": 424242, "ts": time.Now().UTC().Format(time.RFC3339), "type": "review", "payload": map[string]any{}}}})
 	resp.Body.Close()
@@ -260,7 +252,7 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Errorf("push to foreign workspace status = %d, want 404", resp.StatusCode)
 	}
 
-	resp = call(http.MethodPost, "/api/sync/push", map[string]any{"events": []any{}, "pluginData": []any{}})
+	resp = call(http.MethodPost, "/api/sync/push", map[string]any{"events": []any{}, "rows": []any{}})
 	var res chinsync.PushResult
 	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&res) != nil {
 		t.Errorf("empty push status = %d, want 200", resp.StatusCode)
@@ -268,20 +260,16 @@ func TestSyncEndpoints(t *testing.T) {
 	resp.Body.Close()
 }
 
-// registerAndLogin creates the first (admin) user over HTTP and returns
-// its bearer token.
-func registerAndLogin(t *testing.T, tsURL string) string {
+// registerAndLogin creates the first (admin) user in the database, as
+// `qinqin adduser --admin` does (no registration makes an admin, #211), and
+// returns its bearer token.
+func registerAndLogin(t *testing.T, sqlDB *sql.DB, tsURL string) string {
 	t.Helper()
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
+		t.Fatalf("create admin: %v", err)
+	}
 	creds, _ := json.Marshal(map[string]string{"username": "owner", "password": "secret-pass-owner"})
-	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(creds))
-	if err != nil {
-		t.Fatalf("register: %v", err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register status = %d, want 201", resp.StatusCode)
-	}
-	resp, err = http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
+	resp, err := http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
 	if err != nil {
 		t.Fatalf("login: %v", err)
 	}
@@ -295,65 +283,38 @@ func registerAndLogin(t *testing.T, tsURL string) string {
 	return out.Token
 }
 
-// TestPushSkipsUndeclaredWriter: a row for a plugin without owns-data is
-// refused on its own; the events and the other rows of the push land.
-func TestPushSkipsUndeclaredWriter(t *testing.T) {
-	sqlDB := newDB(t)
+// TestPushRefusesKeysNoFamilyAccepts: a row of an unknown key, or of a key
+// in the wrong scope, is refused on its own; the events and the other rows
+// of the push land.
+func TestPushRefusesKeysNoFamilyAccepts(t *testing.T) {
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
-	for _, i := range []int{1, 2} { // flashcards, reader
-		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, plugins.Builtin()[i]); err != nil {
-			t.Fatal(err)
-		}
-	}
 	at := time.Now().UTC().Add(-time.Minute)
 	evt := func(id, typ string) model.StudyEvent {
 		return model.StudyEvent{ID: id, WorkspaceID: ws, Device: "phone", TS: time.Now().UTC(), Type: typ, Payload: json.RawMessage(`{}`)}
 	}
 	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{
 		Events: []model.StudyEvent{evt("01J00000000000000000000011", "review"), evt("01J00000000000000000000012", "read")},
-		PluginData: []model.PluginData{
-			{PluginID: "qinqin-reader", Key: "x", Data: json.RawMessage(`1`), UpdatedAt: at},
-			{PluginID: "qinqin-flashcards", Key: "x", Data: json.RawMessage(`2`), UpdatedAt: at},
+		Rows: []model.KeyedRow{
+			{Key: "x", Data: json.RawMessage(`1`), UpdatedAt: at},
+			{Key: "note:1", Data: json.RawMessage(`1`), UpdatedAt: at},                           // a workspace row without one
+			{Key: "card:c-vocab-1", WorkspaceID: &ws, Data: json.RawMessage(`1`), UpdatedAt: at}, // a typed family
+			{Key: "known:5", WorkspaceID: &ws, Data: json.RawMessage(`2`), UpdatedAt: at},
 		},
 	})
-	if err != nil || res.EventsAccepted != 2 || res.DataAccepted != 1 || res.DataRefused != 1 {
-		t.Fatalf("push = %+v, %v; want 2 events, 1 accepted, 1 refused", res, err)
+	if err != nil || res.EventsAccepted != 2 || res.DataAccepted != 1 || res.DataRefused != 3 {
+		t.Fatalf("push = %+v, %v; want 2 events, 1 accepted, 3 refused", res, err)
 	}
-	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-reader", "x"); !errors.Is(err, plugins.ErrNotFound) {
-		t.Errorf("refused reader row present: %v", err)
-	}
-	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "x"); err != nil {
-		t.Errorf("flashcards row: %v", err)
-	}
-}
-
-// TestPushAcceptsBuiltinWriters: every plugin id the web writes under is
-// accepted by the built-in manifests.
-func TestPushAcceptsBuiltinWriters(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice := newUser(t, sqlDB, "alice")
-	for _, raw := range plugins.Builtin() {
-		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
-			t.Fatal(err)
-		}
-	}
-	at := time.Now().UTC().Add(-time.Minute)
-	var rows []model.PluginData
-	for _, id := range []string{"qinqin-flashcards", "qinqin-journal", "qinqin-core"} {
-		rows = append(rows, model.PluginData{PluginID: id, Key: "k", Data: json.RawMessage(`{}`), UpdatedAt: at})
-	}
-	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: rows})
-	if err != nil || res.DataAccepted != 3 || res.DataRefused != 0 {
-		t.Fatalf("push = %+v, %v; want 3 accepted", res, err)
+	if list, err := keyed.List(ctx, sqlDB, alice, &ws, ""); err != nil || len(list) != 1 || list[0].Key != "known:5" {
+		t.Errorf("stored rows %+v (%v), want known:5 only", list, err)
 	}
 }
 
 // An event without a workspace (0) is invalid, as in POST /api/events/batch.
 func TestPushRejectsEventWithoutWorkspace(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	_, err := chinsync.Push(context.Background(), sqlDB, alice, chinsync.PushBody{Events: []model.StudyEvent{
 		{ID: "01J00000000000000000000008", TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}}})

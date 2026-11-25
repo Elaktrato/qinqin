@@ -1,9 +1,15 @@
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import { fetchWorkspaceContents } from './workspaceContents';
-import { pagedPull } from '../study/testing/legacyCodec';
+import { pagedPull } from '$lib/testing/legacyCodec';
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -22,7 +28,7 @@ describe('fetchWorkspaceContents', () => {
 	});
 
 	function row(key: string, data: unknown, over: Record<string, unknown> = {}) {
-		return { pluginId: 'qinqin-flashcards', key, workspaceId: 7, data, deletedAt: null, ...over };
+		return { key, workspaceId: 7, data, deletedAt: null, ...over };
 	}
 	function card(id: string, entryId: number, createdAt: string) {
 		return { id, kind: 'vocab', entryId, deckIds: ['general'], createdAt };
@@ -44,14 +50,13 @@ describe('fetchWorkspaceContents', () => {
 			if (url === '/api/library/books?workspace=7') return jsonResponse([{ id: 1 }, { id: 2 }]);
 			if (url.startsWith('/api/sync/pull')) {
 				return jsonResponse(pagedPull({
-					pluginData: [
+					rows: [
 						row(`card:${a.id}`, a),
 						row(`card:${aDup.id}`, aDup),
 						row(`card:${b.id}`, b),
 						row(`card:${gone.id}`, gone, { deletedAt: '2026-01-06T00:00:00Z' }),
 						row('deck:d', { id: 'd', name: 'D', createdAt: '2026-01-01T00:00:00Z' }),
-						row(`card:${other.id}`, other, { workspaceId: 3 }),
-						row(`card:${other.id}`, other, { pluginId: 'other' })
+						row(`card:${other.id}`, other, { workspaceId: 3 })
 					]
 				}));
 			}
@@ -66,11 +71,11 @@ describe('fetchWorkspaceContents', () => {
 			return new Response('unexpected', { status: 500 });
 		});
 
-		await expect(fetchWorkspaceContents(7)).resolves.toEqual({ books: 2, cards: 2, decks: 1, reviews: 3 });
+		await expect(fetchWorkspaceContents(ctx.session.study, 7)).resolves.toEqual({ books: 2, cards: 2, decks: 1, reviews: 3 });
 	});
 
 	it('rejects when a count cannot be fetched', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
-		await expect(fetchWorkspaceContents(7)).rejects.toBeTruthy();
+		await expect(fetchWorkspaceContents(ctx.session.study, 7)).rejects.toBeTruthy();
 	});
 });

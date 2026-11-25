@@ -5,10 +5,11 @@ import (
 	"time"
 )
 
-// legacyPullWindow is how long one write of the legacy streaming pull may
-// block: a client that reads nothing for that long is cut, so the SQLite
-// read transaction behind the stream does not stay open.
-const legacyPullWindow = 60 * time.Second
+// streamWindow is how long one write of a streamed answer (the full GET
+// /api/events array) may block: a client that reads nothing for that long
+// is cut, so the SQLite read transaction behind the stream does not stay
+// open.
+const streamWindow = 60 * time.Second
 
 // writeDeadliner is http.ResponseController's deadline setter.
 type writeDeadliner interface {

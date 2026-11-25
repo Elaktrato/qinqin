@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Retention is how long a replaced or tombstoned revision's file stays on
@@ -576,8 +576,22 @@ func (r Registry) commit(ctx context.Context, spec Spec, b Built, rev int, now t
 		os.Remove(b.Path)
 		return err
 	}
-	if err := r.commitRows(ctx, spec, b, rev, now, func() error { return renameFile(b.Path, dest) }); err != nil {
+	moved := false
+	move := func() error {
+		err := renameFile(b.Path, dest)
+		if _, serr := os.Stat(b.Path); errors.Is(serr, os.ErrNotExist) {
+			moved = true // in place, whatever the rename reported
+		}
+		return err
+	}
+	if err := r.commitRows(ctx, spec, b, rev, now, move); err != nil {
 		os.Remove(b.Path)
+		if moved {
+			// The rows did not commit (a cancelled build at shutdown, or
+			// an error after the rename): the file must not outlive them.
+			// The next build of the revision writes it again.
+			os.Remove(dest)
+		}
 		return err
 	}
 	return nil
@@ -759,15 +773,20 @@ func AffectedIDs(ctx context.Context, q Querier, typ, packID, language string) [
 			ids = append(ids, id)
 		}
 	}
-	if typ != dict.TypeDictionary {
+	if typ != pack.Lexicon().Type {
 		add(typ + "." + packID)
 		return ids
 	}
 	add(string(TypeLexicon) + "." + language)
-	for _, query := range []struct{ typ, sql string }{
-		{string(TypeLevels), `SELECT pack_id FROM schemes WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`},
-		{string(TypeSentences), `SELECT pack_id FROM sentence_packs WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`},
-	} {
+	// The packages that require this language's lexicon reference it.
+	var dependents []struct{ typ, sql string }
+	for _, d := range pack.All {
+		if d.RequiresLexicon {
+			dependents = append(dependents, struct{ typ, sql string }{d.Package,
+				`SELECT pack_id FROM ` + d.Registry + ` WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`})
+		}
+	}
+	for _, query := range dependents {
 		rows, err := q.QueryContext(ctx, query.sql, language)
 		if err != nil {
 			continue // the lexicon is kicked; a reconcile catches the rest

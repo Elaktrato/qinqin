@@ -17,8 +17,8 @@ func TestSeenMilestonesSurviveExportAndRestore(t *testing.T) {
 	src := newWorld(t)
 	tg := newTarget(t, nil)
 	put := func(ws int64, key, data string, deleted any) {
-		exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
-			VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-17T08:00:00Z', '2026-11-17T08:00:00Z', ?)`,
+		exec(t, src.DB, `INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+			VALUES (?, ?, ?, ?, 1, '2026-11-17T08:00:00Z', '2026-11-17T08:00:00Z', ?)`,
 			src.AliceUID, ws, key, data, deleted)
 	}
 	reviews := `{"version":1,"id":"reviews:1000","seenAt":"2026-11-17T08:00:00.000Z","reachedDay":"2026-11-03"}`
@@ -31,7 +31,7 @@ func TestSeenMilestonesSurviveExportAndRestore(t *testing.T) {
 	files, _ := unzipAll(t, data)
 	var exported []string
 	for name, body := range files {
-		if !strings.HasPrefix(name, "plugin-data/") {
+		if !strings.HasPrefix(name, "rows/") {
 			continue
 		}
 		for _, line := range bytes.Split(body, []byte("\n")) {
@@ -47,8 +47,8 @@ func TestSeenMilestonesSurviveExportAndRestore(t *testing.T) {
 	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, openExport(t, src, src.AliceUID), Options{DropUnresolved: true}); err != nil {
 		t.Fatal(err)
 	}
-	rs, err := tg.DB.Query(`SELECT p.key, p.data, w.language, p.deleted_at IS NULL FROM plugin_data p JOIN workspaces w ON w.id = p.workspace_id
-		WHERE p.user_id = ? AND w.user_id = ? AND p.pack_id = 'qinqin-flashcards' AND p.key LIKE 'milestone:%' ORDER BY p.key`, tg.UID, tg.UID)
+	rs, err := tg.DB.Query(`SELECT p.key, p.data, w.language, p.deleted_at IS NULL FROM keyed_rows p JOIN workspaces w ON w.id = p.workspace_id
+		WHERE p.user_id = ? AND w.user_id = ? AND p.key LIKE 'milestone:%' ORDER BY p.key`, tg.UID, tg.UID)
 	if err != nil {
 		t.Fatal(err)
 	}

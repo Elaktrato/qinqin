@@ -1,12 +1,14 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import type { Dictionary, Workspace } from '$lib/api/types';
-	import { dictionaryHint } from '$lib/coverage';
-	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/dictionaryVisibility';
+	import { dictionaryHint } from '$lib/languages/coverage';
+	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/workspace/dictionaryVisibility';
 	import { languageLabel } from '$lib/languages';
-	import { setSettings } from '$lib/workspaces';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Inline panel choosing which dictionaries of the workspace's language
 	// its entries and lookups show. `dictionaries` are already filtered to
@@ -48,10 +50,10 @@
 			const listed = new Set(dictionaries.map((d) => d.id));
 			const kept = [...hiddenDictionaries(workspace)].filter((id) => !listed.has(id));
 			const hidden = [...kept, ...dictionaries.filter((d) => !shownIds.includes(d.id)).map((d) => d.id)];
-			await setSettings(workspace.id, { [HIDDEN_DICTIONARIES_KEY]: hidden });
+			await session.workspaces.setSettings(workspace.id, { [HIDDEN_DICTIONARIES_KEY]: hidden });
 			onclose();
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('settings.dictionaries.saveFailed');
+			error = errorText(err, t('settings.dictionaries.saveFailed'));
 		} finally {
 			saving = false;
 		}

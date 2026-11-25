@@ -5,15 +5,15 @@ import { resetCatalogue } from './index';
 import PseudoStub from './PseudoStub.test.svelte';
 import AppSection from '$lib/pwa/AppSection.svelte';
 import EmailVerify from '$lib/account/EmailVerify.svelte';
-import Badges from '$lib/components/Badges.svelte';
+import Badges from '$lib/entry/Badges.svelte';
 import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
-import StageBar from '$lib/components/map/StageBar.svelte';
+import StageBar from '$lib/stats/map/StageBar.svelte';
 import LimitField from '$lib/settings/LimitField.svelte';
 import CreateTokenDialog from '$lib/settings/CreateTokenDialog.svelte';
 import ResetMfaDialog from '$lib/admin/ResetMfaDialog.svelte';
 import DeckStatsPanel from '$lib/features/flashcards/decks/DeckStatsPanel.svelte';
 import HighlightBar from '$lib/features/reader/HighlightBar.svelte';
-import OverallReview from '$lib/plugins/journal/OverallReview.svelte';
+import OverallReview from '$lib/features/journal/OverallReview.svelte';
 import PlayButton from '$lib/components/PlayButton.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the

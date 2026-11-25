@@ -8,8 +8,6 @@ import { t } from '$lib/i18n';
 
 export const DEFAULT_W: readonly number[] = default_w;
 
-export const SET_PREFIX = 'fsrs:set:';
-export const ACTIVE_KEY = 'fsrs:active';
 
 export interface ParamSet {
 	id: string;
@@ -69,30 +67,6 @@ export function validWeights(raw: unknown): number[] | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function optionalNumber(value: unknown): number | undefined | null {
-	if (value === undefined) return undefined;
-	return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-/** parseParamSet reads one `fsrs:set:<id>` row; anything off gives null. */
-export function parseParamSet(key: string, raw: unknown): ParamSet | null {
-	if (!isRecord(raw)) return null;
-	const { id, w, createdAt, source } = raw;
-	if (typeof id !== 'string' || typeof createdAt !== 'string') return null;
-	if (key !== SET_PREFIX + id) return null;
-	if (source !== 'optimized' && source !== 'imported') return null;
-	if (!Array.isArray(w) || w.length !== 21) return null;
-	const valid = validWeights(w);
-	if (valid === null) return null;
-	const set: ParamSet = { id, w: valid, createdAt, source };
-	for (const field of ['labelled', 'logLoss', 'baselineLogLoss'] as const) {
-		const value = optionalNumber(raw[field]);
-		if (value === null) return null;
-		if (value !== undefined) set[field] = value;
-	}
-	return set;
 }
 
 function newestFirst(a: ParamSet, b: ParamSet): number {

@@ -6,10 +6,10 @@ Everything qinqin knows about words and characters comes from **packs**: diction
 
 | Where it comes from | What | How it gets installed |
 |---|---|---|
-| **Bundled** (`plugins/data/` in the repository, `/opt/qinqin/packs` in the image) | CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, HSK 3.0 characters and words, jōyō grades, 通用规范汉字表, JLPT kanji, KanjiVG components, a Spanish demo dictionary, the Chinese (HSK-aligned) and Japanese (≈ JLPT) grammar packs; the Tatoeba example sentences (`zh-sentences-tatoeba`, `ja-sentences-tatoeba`) once a maintainer has generated them ([Data and licences](Data-and-licences#example-sentences-tatoeba)) | The first start of a fresh instance ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start); not the two demos), or `qinqin seed` (everything, demos included) |
+| **Bundled** (`plugins/data/` in the repository, `/opt/qinqin/packs` in the image) | CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, HSK 3.0 characters and words, jōyō grades, 通用规范汉字表, JLPT kanji, KanjiVG components, a Spanish demo dictionary, the Chinese (HSK-aligned) and Japanese (≈ JLPT) grammar packs, the Japanese lemmatizer rules (`ja-lemma`, see below); the Tatoeba example sentences (`zh-sentences-tatoeba`, `ja-sentences-tatoeba`) once a maintainer has generated them ([Data and licences](Data-and-licences#example-sentences-tatoeba)) | The first start of a fresh instance ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start); not the two demos), or `qinqin seed` (everything, demos included) |
 | **Built into the image** (not committed) | The stroke-order data `hanzi-writer-strokes` (`/opt/qinqin/strokes`) and the Kanji alive audio (`/opt/qinqin/audio`, when the image was built with it) | The first start ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start)), or `qinqin seed`; the stroke data also installs itself at start when no strokes pack is installed |
 | **Built by you** (never committed or bundled) | Font packs, made with `scripts/prepare-font-pack.mjs` from a pinned upstream face ([Data and licences](Data-and-licences#hanzi-and-kanji-font-packs)) | Upload in Settings → Data, or `qinqin seed --packs <folder>` |
-| **Local-only** (the gitignored `plugins/data-local/`) | Data with an unclear or restrictive licence: a Chinese frequency list, the JLPT vocabulary pack, a Chinese components pack, your own level lists | `qinqin seed` with the folder mounted and named in `--packs` |
+| **Local-only** (the gitignored `plugins/data-local/`) | Data with an unclear or restrictive licence: a Chinese frequency list, the JLPT vocabulary pack, a Chinese components pack, a level list of your own | `qinqin seed` with the folder mounted and named in `--packs` |
 
 The bundled set is chosen so a fresh server can seed itself offline on its first start and every pack's licence allows redistribution (see `docs/sources.md`). Local-only data stays on your server: it is never part of the repository or the image, and you are responsible for its terms.
 
@@ -19,7 +19,7 @@ The bundled set is chosen so a fresh server can seed itself offline on its first
 docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local
 ```
 
-**Your own level list** (TBCL, a curriculum table, any private list): put a folder `plugins/data-local/<id>/` with a `manifest.json` (`"type": "levels"`, `"format": "json"`, a `license` and an `attribution`) and a `levels.json`, or let `node scripts/prepare-local-levels.mjs` convert a TSV into one, then run `qinqin seed --packs plugins/data,plugins/data-local` (in a checkout) or the Docker form above. Font packs built into `plugins/data-fonts/` are not a default root either: name the folder in `--packs`, or upload the pack. The hand-written samples in `plugins/samples/` (`zh-mini`, `ja-mini`, `hsk-mini`, `jlpt-mini`) are never seeded unless you name them (`qinqin seed --packs plugins/samples`). `zh-grammar-demo` is the only bundled grammar pack.
+**A level list of your own**: put a folder `plugins/data-local/<id>/` with a `manifest.json` (`"type": "levels"`, `"format": "json"`, a `license` and an `attribution`) and a `levels.json` ([Data pack format](Data-pack-format)), then run `qinqin seed --packs plugins/data,plugins/data-local` (in a checkout) or the Docker form above. Font packs built into `plugins/data-fonts/` are not a default root either: name the folder in `--packs`, or upload the pack. The hand-written samples in `plugins/samples/` (`zh-mini`, `ja-mini`, `hsk-mini`, `jlpt-mini`) are never seeded unless you name them (`qinqin seed --packs plugins/samples`). `zh-grammar-demo` is the only bundled grammar pack.
 
 **Re-seed after upgrades that add pack data.** A database seeded before the character-map level fields existed shows a "Level data missing" banner on the character map until `qinqin seed` runs. A re-seed also drops the pre-2010 four-level JLPT field that older KANJIDIC2 imports wrote; JLPT levels come only from the `jlpt-kanji` pack.
 
@@ -49,7 +49,7 @@ The API behind this: `POST /api/admin/packs` (multipart field `pack`), `GET` and
 
 ### The installed list
 
-Packs are grouped by type (Dictionaries, Frequency lists, Level lists, Sentences, Grammar lessons, Audio, Character components, Stroke data, Fonts, Themes). Each shows its licence and attribution as stored ("Licence not recorded — reinstall the pack to record it" for old sentence packs), and one **Package** line per data package built from it, for example "lexicon.zh: revision 3, 15.2 MB, ready", "being built", "build failed" (with the error, which only administrators see) or "removed". "Packages are being built" appears above the list while the server builds. **See all credits on the Sources page** links to `/sources`.
+Packs are grouped by type (Dictionaries, Frequency lists, Level lists, Sentences, Grammar lessons, Audio, Character components, Stroke data, Lemmatizer rules, Themes, Fonts). Each shows its licence and attribution as stored ("Licence not recorded — reinstall the pack to record it" when the server holds no licence for a pack), and one **Package** line per data package built from it, for example "lexicon.zh: revision 3, 15.2 MB, ready", "being built", "build failed" (with the error, which only administrators see) or "removed". "Packages are being built" appears above the list while the server builds. **See all credits on the Sources page** links to `/sources`.
 
 ### Uninstalling
 
@@ -58,6 +58,7 @@ Packs are grouped by type (Dictionaries, Frequency lists, Level lists, Sentences
 - a dictionary: its glosses disappear from lookups and entries; entries, flashcards and edits stay;
 - frequency, levels, sentences, grammar, components: their ranks, levels, pack sentences, lessons or parts disappear; study data and sentences people added stay;
 - strokes: characters it alone carried show no strokes, and the server will **not** reinstall the bundled stroke data at start any more (run `qinqin seed` to bring it back);
+- lemmatizer rules: inflected words of its language are recognised by the table built into the server again (Japanese has one), or not at all; the Reader and lookups follow at once. The server does **not** reinstall an uninstalled bundled `ja-lemma` at start (run `qinqin seed` to bring it back);
 - audio: its recordings are deleted from `/data/audio` and play buttons fall back to the device voice;
 - a font pack: its faces disappear and Chinese and Japanese text falls back to the device's own fonts;
 - a theme pack: its themes disappear from the pickers; anyone who chose one sees their slot's default theme, and their choice comes back if the pack is installed again.
@@ -75,7 +76,7 @@ Since v0.4.0 dictionary and other shared data no longer travels in the sync pull
 | Package id | Built from |
 |---|---|
 | `lexicon.<lang>` | Every live entry of the language with the senses of all its live dictionaries (exists while the language has at least one dictionary) |
-| `levels.<pack>`, `sentences.<pack>`, `frequency.<pack>`, `components.<pack>`, `grammar.<pack>`, `strokes.<pack>` | One installed pack each |
+| `levels.<pack>`, `sentences.<pack>`, `frequency.<pack>`, `components.<pack>`, `grammar.<pack>`, `strokes.<pack>`, `lemma-rules.<pack>` | One installed pack each |
 | `audio.<pack>` | One audio pack, its clips included; marked optional, so clients ask before downloading |
 
 Theme and font packs build no package: clients read them from `GET /api/themes`, `GET /api/fonts` and the font slices.
@@ -98,6 +99,16 @@ Stroke animations come from the pack `hanzi-writer-strokes` (data from the `hanz
 - At start the server installs it when no strokes pack is installed, unless an administrator uninstalled one (log: `strokes: installed the bundled stroke data ...`). `qinqin seed` installs it too.
 - The server answers `GET /hanzi/U<HEX>.json` (the code point in uppercase hex) from the installed strokes packs, the URL the static files had in v0.3. When several strokes packs carry a character, the one installed first serves it. `GET /api/stroke-packs` lists their credits for the Sources page.
 - In a repository checkout, build it with `npm --prefix apps/web ci` and then `node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes`; `qinqin seed` picks up `plugins/data-strokes` when it exists.
+
+## Lemmatizer rule tables
+
+The lemmatizer turns inflected words into dictionary forms (勉強しています → 勉強する) from a per-language rule table. Japanese has one built into the server; a `lemma-rules` pack ([format](Data-pack-format#types-formats-and-data-files)) adds a table for another language or replaces the built-in one, at once and without a restart.
+
+- **Bundled:** `ja-lemma` is the built-in Japanese table as a pack, so clients can download the exact table the server runs (`lemma-rules.ja-lemma`). A fresh instance installs it with the other bundled packs; at every start the server also installs it when it was never installed and no other Japanese table is, and **updates it from the image** when the image's copy differs (log: `lemma-rules: updated the bundled rule table ja-lemma ...`). An uninstalled `ja-lemma` stays uninstalled.
+- **Your own table:** give it its own pack id (for example `ja-lemma-custom`), uninstall `ja-lemma` first (one live table per language), then upload it in Settings → Data. A table uploaded under the id `ja-lemma` is replaced by the image's copy at the next start.
+- **Seeding while the server runs:** a table installed or removed by `qinqin seed` in a separate process applies within about 30 seconds; uploads and uninstalls in Settings → Data apply at once.
+- **Checks:** the review refuses a table that does not parse, breaks the contract's limits, names another language than the manifest, or is for a language that already has a live table. Only administrators can upload.
+- **Backup:** installed tables are server data. They are not in a user's backup export; a server backup carries them with the database.
 
 ## Related
 

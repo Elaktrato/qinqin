@@ -1,10 +1,18 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/time/zone', () => ({ currentStudyDay: vi.fn(), onStudyDayChange: vi.fn() }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn(),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/activity/viewPrefs')>()),
 	loadActivityView: vi.fn(() => Promise.resolve({ scope: 'workspace', hidden: [] })),
@@ -12,20 +20,28 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 }));
 
 import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
-import { loadStudyHistory } from '$lib/study/history';
-import { getStudyData } from '$lib/study/studyData';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
+import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+let onStudyDayChange!: MockInstance<StudyDays['onChange']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	onStudyDayChange = vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const WS = { id: 3, language: 'zh', name: 'zh' } as never;
 const REVIEWS = {
 	type: 'review',
-	plugin: 'flashcards',
-	label: 'Reviews',
-	unit: 'count' as const,
-	describe: { one: 'flashcard review', other: 'flashcard reviews' }
+	feature: 'flashcards',
+	unit: 'count' as const
 };
 
 function reply(from: string, to: string, cells: ActivityResponse['cells'] = []): ActivityResponse {
@@ -40,7 +56,7 @@ beforeEach(() => {
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
 	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
 	vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to));
-	workspaces.set({ list: [WS], current: WS });
+	ctx.session.workspaces.set({ list: [WS], current: WS });
 });
 afterEach(() => {
 	cleanup();
@@ -52,7 +68,7 @@ const monthName = () => document.querySelector('.month-name');
 
 describe('HeatmapMonth', () => {
 	it('shows the current month with weekday headings and date numbers', async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		expect(vi.mocked(fetchActivity)).toHaveBeenCalledTimes(1);
 		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual(['2026-11-01', '2026-11-16']);
@@ -68,7 +84,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it("Previous loads the previous month's window and announces the new month", async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
 		await waitFor(() => expect(monthName()?.textContent).toBe('October 2026'));
@@ -78,7 +94,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('Next is disabled in the current month; Previous is disabled at the earliest month', async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		const next = screen.getByRole('button', { name: 'Next month' });
 		const prev = screen.getByRole('button', { name: 'Previous month' });
@@ -92,7 +108,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('future days are outlined, not tinted', async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		const future = [...document.querySelectorAll('.month-grid .tile.future')];
 		expect(future).toHaveLength(14);
@@ -101,7 +117,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('a slow earlier page never overwrites a newer one', async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		let releaseOctober: (r: ActivityResponse) => void = () => {};
 		vi.mocked(fetchActivity)
@@ -117,7 +133,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('the summary line counts goal days met in the month only when a goal exists', async () => {
-		const { unmount } = render(ActivityHeatmap, { layout: 'month' });
+		const { unmount } = render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		expect(screen.queryByText(/Goal reached on/)).toBeNull();
 		unmount();
@@ -136,7 +152,7 @@ describe('HeatmapMonth', () => {
 				{ day: '2026-11-12', workspace: 3, type: 'review', points: 1, raw: 1 }
 			])
 		);
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		// 10..15 November: six past goal days, two met; today (open) does not count yet.
 		expect(await screen.findByText('Goal reached on 2 of 6 days')).toBeTruthy();
 		const list = screen.getByRole('list', { name: 'Daily activity' });
@@ -144,7 +160,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('switching from the garden shows a loading state, not the 13-week window, until the month arrives (#100 review)', async () => {
-		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		const { rerender } = render(ActivityHeatmap, { props: { layout: 'garden' }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
 		let release: (r: ActivityResponse) => void = () => {};
 		vi.mocked(fetchActivity).mockImplementationOnce(() => new Promise((resolve) => (release = resolve)));
@@ -156,7 +172,7 @@ describe('HeatmapMonth', () => {
 	});
 
 	it('a failed month fetch says so with Try again instead of showing another window', async () => {
-		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		const { rerender } = render(ActivityHeatmap, { props: { layout: 'garden' }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
 		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
 		await rerender({ layout: 'month' });
@@ -175,14 +191,14 @@ describe('HeatmapMonth', () => {
 			merged: 0,
 			goals: { version: 1, showStreak: true, history: [{ from: '2026-11-16', metric: 'activity:review', target: 5 }] }
 		});
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		// Today is a goal day (its stage is listed) but still open, so nothing is counted.
 		await waitFor(() => expect(screen.getByRole('list', { name: 'Daily activity' }).textContent).toMatch(/of 5/));
 		expect(screen.queryByText(/Goal reached on/)).toBeNull();
 	});
 
 	it('a failed page keeps the month on screen and the paging in step with it (#100 review)', async () => {
-		render(ActivityHeatmap, { layout: 'month' });
+		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
 		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));

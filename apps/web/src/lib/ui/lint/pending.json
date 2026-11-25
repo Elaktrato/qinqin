@@ -3,26 +3,26 @@
 	"opacity": [],
 	"weight": [],
 	"caps": [
-		"lib/components/EntryEditor.svelte"
+		"lib/entry/EntryEditForm.svelte"
 	],
 	"border": [
-		"lib/components/ClozeChoice.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ReverseCard.svelte",
 		"lib/features/flashcards/cards/WritingCard.svelte",
+		"lib/features/grammar/ClozeChoice.svelte",
+		"lib/features/journal/EntryEditor.svelte",
+		"lib/features/journal/PhotoImport.svelte",
 		"lib/features/reader/BookView.svelte",
 		"lib/features/reader/PopupFrameView.svelte",
 		"lib/features/reader/ReaderRail.svelte",
 		"lib/notes/NoteAnswer.svelte",
-		"lib/plugins/journal/EntryEditor.svelte",
-		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/weekly/WeekStrip.svelte"
 	],
 	"shadow": [
-		"lib/components/ActivityHeatmap.svelte",
-		"lib/components/map/CharGrid.svelte",
+		"lib/activity/ActivityHeatmap.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
-		"lib/features/flashcards/cards/ToneCard.svelte"
+		"lib/features/flashcards/cards/ToneCard.svelte",
+		"lib/stats/map/CharGrid.svelte"
 	],
 	"control": []
 }

@@ -6,3 +6,6 @@ node_modules/
 !.env.example
 .DS_Store
 vite.config.ts.timestamp-*
+# end-to-end test output (#157)
+/e2e/test-results/
+/e2e/playwright-report/

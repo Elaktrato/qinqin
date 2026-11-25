@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withStudy } from '$lib/study/data';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { t, type MessageKey } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -11,16 +12,14 @@
 	import { enabledKinds } from '$lib/study/deckSettings';
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import {
-		GENERAL_DECK_ID,
 		deleteCards,
 		dropSiblingCards,
 		moveCards,
 		restoreCards,
 		skipKind,
 		unskipKind
-	} from '$lib/study/store';
-	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
+	} from '$lib/study/commands/cards';
+	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/study/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
@@ -39,16 +38,18 @@
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { deckId }: { deckId: string } = $props();
 
-	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const store = createDecksData(session);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void store.load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
 	const KIND_KEYS: Record<StudyCardKind, MessageKey> = {
 		vocab: 'study.cardType.vocab',
@@ -89,8 +90,8 @@
 		};
 		try {
 			const first = ids.slice(0, PAGE_SIZE);
-			merge(await loadEntryBases(first));
-			if (ids.length > first.length) merge(await loadEntryBases(ids, { priority: first }));
+			merge(await loadEntryBases(session.caches.entryBases, first));
+			if (ids.length > first.length) merge(await loadEntryBases(session.caches.entryBases, ids, { priority: first }));
 		} catch {
 			if (mine === basesSeq) basesFailed = true;
 		}
@@ -165,12 +166,12 @@
 	});
 
 	const actions = createCardActions({
-		deleteCards,
-		moveCards,
-		restoreCards,
-		dropSiblingCards,
-		skipKind,
-		unskipKind,
+		deleteCards: withStudy(session.study, deleteCards),
+		moveCards: withStudy(session.study, moveCards),
+		restoreCards: withStudy(session.study, restoreCards),
+		dropSiblingCards: withStudy(session.study, dropSiblingCards),
+		skipKind: withStudy(session.study, skipKind),
+		unskipKind: withStudy(session.study, unskipKind),
 		onchanged: () => store.load(untrack(() => workspaceId), true)
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });
@@ -207,13 +208,23 @@
 		else root?.querySelector<HTMLElement>('h1')?.focus();
 	}
 
+	/** The workspace of the rows on screen, captured when the user acts (#174). */
+	const shownWorkspace = (): number | null => data?.workspaceId ?? null;
+
 	async function remove(): Promise<void> {
+		const ws = shownWorkspace();
+		if (ws === null) return;
 		const entries = [...chosen];
 		const index = Math.min(...entries.map((id) => filtered.findIndex((r) => r.entryId === id)).filter((i) => i >= 0));
 		confirming = false;
-		await actions.remove(idsOf(entries));
+		await actions.remove(ws, idsOf(entries));
 		selected = selected.filter((id) => !entries.includes(id));
 		await focusRow(Number.isFinite(index) ? index : 0);
+	}
+
+	function act(write: (ws: number) => Promise<void>): Promise<void> {
+		const ws = shownWorkspace();
+		return ws === null ? Promise.resolve() : write(ws);
 	}
 
 	const targetName = $derived(moveTargets.find((d) => d.id === target)?.name ?? target);
@@ -226,11 +237,12 @@
 	}
 
 	async function move(): Promise<void> {
-		if (target === '' || chosen.length === 0) return;
+		const ws = shownWorkspace();
+		if (target === '' || chosen.length === 0 || ws === null) return;
 		const entries = [...chosen];
 		const index = Math.min(...entries.map((id) => filtered.findIndex((r) => r.entryId === id)).filter((i) => i >= 0));
 		confirmingMove = false;
-		await actions.move(idsOf(entries), target, targetName);
+		await actions.move(ws, idsOf(entries), target, targetName);
 		selected = [];
 		await focusRow(Number.isFinite(index) ? index : 0);
 	}
@@ -444,8 +456,8 @@
 								checked={chosen.includes(row.entryId)}
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang($workspaces.current?.language)}>{row.written}</a>
-							<span class="reading" lang={wordReadingLang($workspaces.current?.language)}
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(session.workspaces.current?.language)}>{row.written}</a>
+							<span class="reading" lang={wordReadingLang(session.workspaces.current?.language)}
 								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
 							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>
@@ -483,19 +495,19 @@
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.turnBackOnNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.unskip(row.entryId, k)}>{t('flashcards.deck.turnBackOn')}</Button
+												onclick={() => void act((ws) => actions.unskip(ws, row.entryId, k))}>{t('flashcards.deck.turnBackOn')}</Button
 											>
 										{:else if ids.length > 0}
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.dropKind(ids)}>{t('flashcards.deck.remove')}</Button
+												onclick={() => void act((ws) => actions.dropKind(ws, ids))}>{t('flashcards.deck.remove')}</Button
 											>
 										{:else if row.vocab !== null}
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.skip(row.entryId, k)}>{t('flashcards.deck.remove')}</Button
+												onclick={() => void act((ws) => actions.skip(ws, row.entryId, k))}>{t('flashcards.deck.remove')}</Button
 											>
 										{/if}
 									</li>

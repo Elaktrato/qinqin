@@ -2,7 +2,9 @@ package api_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -23,7 +25,7 @@ func adminLang(t *testing.T, method, tsURL, path, token string, body any) (int, 
 	resp := doJSON(t, method, tsURL, path, token, body)
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	return resp.StatusCode, strings.TrimSpace(string(b))
+	return resp.StatusCode, errorText(b)
 }
 
 func mustExec(t *testing.T, sqlDB *sql.DB, stmts ...string) {
@@ -63,13 +65,13 @@ func TestAdminLanguageRoutes(t *testing.T) {
 	if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "pt-br"}); st != http.StatusOK {
 		t.Errorf("POST again = %d, want 200", st)
 	}
-	if st, msg := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "zh"}); st != http.StatusConflict || msg != "zh is built in" {
+	if st, msg := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "zh"}); st != http.StatusConflict || msg != "language_built_in: zh is built in." {
 		t.Errorf("POST zh = %d %q", st, msg)
 	}
 	if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "x"}); st != http.StatusUnprocessableEntity {
 		t.Errorf("POST x = %d, want 422", st)
 	}
-	if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/zh", admin, nil); st != http.StatusConflict || msg != "zh is built in" {
+	if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/zh", admin, nil); st != http.StatusConflict || msg != "language_built_in: zh is built in." {
 		t.Errorf("DELETE zh = %d %q", st, msg)
 	}
 	if st, _ := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/nope", admin, nil); st != http.StatusNotFound {
@@ -82,7 +84,7 @@ func TestAdminLanguageRoutes(t *testing.T) {
 
 func TestDeleteLanguageBlockers(t *testing.T) {
 	lang.Register(lang.Zh{})
-	const blocked = "still used by:"
+	const blocked = "language_in_use: The language is still used by:"
 	cases := []struct {
 		name string
 		stmt []string
@@ -108,6 +110,40 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 			}
 		})
 	}
+
+	// #198 review: own sentences (source_pack '') are no pack.
+	t.Run("own sentences do not block", func(t *testing.T) {
+		ts, sqlDB := newServer(t)
+		admin := registerUser(t, ts.URL, "admin", "")
+		mustExec(t, sqlDB,
+			`INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`,
+			`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (7001, 'es', 'word', 'hola', 't')`,
+			`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (7001, '', (SELECT id FROM users WHERE username = 'admin'), 'h', 'h', 'h', 't')`)
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusNoContent {
+			t.Errorf("DELETE = %d %q, want 204", st, msg)
+		}
+	})
+
+	// #198 review: GET /api/admin/packs no longer lists sentences without a
+	// registry row, so the 409 names such a pack and its removal route.
+	t.Run("an older sentence pack is named with its removal route", func(t *testing.T) {
+		ts, sqlDB := newServer(t)
+		admin := registerUser(t, ts.URL, "admin", "")
+		mustExec(t, sqlDB,
+			`INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`,
+			`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (7001, 'es', 'word', 'hola', 't')`,
+			`INSERT INTO sentences (entry_id, source_pack, hanzi, pinyin, translation, updated_at) VALUES (7001, 'es-old', 'h', 'h', 'h', 't')`)
+		st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
+		if st != http.StatusConflict || !strings.Contains(msg, "DELETE /api/admin/sentences/es-old") {
+			t.Fatalf("DELETE = %d %q, want 409 naming DELETE /api/admin/sentences/es-old", st, msg)
+		}
+		if r := doRaw(t, http.MethodDelete, ts.URL, "/api/admin/sentences/es-old", admin, ""); r.StatusCode != http.StatusNoContent {
+			t.Fatalf("remove the older pack = %d, want 204", r.StatusCode)
+		}
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusNoContent {
+			t.Errorf("DELETE after the removal = %d %q, want 204", st, msg)
+		}
+	})
 
 	t.Run("dead rows do not block", func(t *testing.T) {
 		ts, sqlDB := newServer(t)
@@ -199,12 +235,27 @@ func TestDeleteLanguageBodyNamesBlockers(t *testing.T) {
 		}
 	}
 	st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
-	want := "still used by: 2 workspaces, a sentence pack"
+	want := "language_in_use: The language is still used by: 2 workspaces, a sentence pack."
 	if st != http.StatusConflict || msg != want {
 		t.Errorf("DELETE = %d %q, want 409 %q", st, msg, want)
 	}
 	if strings.Contains(msg, "bob") {
 		t.Errorf("body names a user: %q", msg)
+	}
+	// The counts ride beside the code (errors.json language_in_use).
+	resp := doJSON(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
+	defer resp.Body.Close()
+	var body struct {
+		Error string         `json:"error"`
+		Usage map[string]int `json:"usage"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	wantUsage := map[string]int{"workspaces": 2, "dictionaries": 0, "levelLists": 0, "frequencyPacks": 0,
+		"sentencePacks": 1, "grammarPacks": 0, "audioPacks": 0, "legacySentences": 0}
+	if body.Error != "language_in_use" || !maps.Equal(body.Usage, wantUsage) {
+		t.Errorf("usage = %v, want %v", body.Usage, wantUsage)
 	}
 }
 

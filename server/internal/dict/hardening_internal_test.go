@@ -2,22 +2,18 @@ package dict
 
 import (
 	"context"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // A radical outside the Kangxi table is rejected before the first entry is
 // written, not after (the surrounding transaction would hide a late check).
 func TestUnihanRadicalCheckRunsBeforeAnyWrite(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
@@ -28,7 +24,7 @@ func TestUnihanRadicalCheckRunsBeforeAnyWrite(t *testing.T) {
 		Radicals:    map[string]int{"好": 215},
 		Definitions: map[string]string{"一": "one"},
 	}
-	_, err = importUnihanLexicon(ctx, tx, lexicon.Store{DB: sqlDB}, 1, Manifest{Language: "zh"}, data)
+	_, err = importUnihanLexicon(ctx, tx, lexicon.Store{DB: sqlDB}, 1, pack.Manifest{Language: "zh"}, data)
 	if err == nil || !strings.Contains(err.Error(), "215") {
 		t.Fatalf("err = %v, want the radical error", err)
 	}

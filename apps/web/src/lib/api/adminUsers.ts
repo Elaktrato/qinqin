@@ -13,22 +13,32 @@ export interface AdminUserDto {
 	lastSeenAt: string | null;
 	/** Which second steps the user has (never a secret); absent from servers before v0.3.0. */
 	mfa?: { totp: boolean; email: boolean };
+	/** The profile picture's path, or null (docs/contracts/auth/avatar.json). */
+	avatarUrl?: string | null;
 }
 
 export interface DeletionPreview {
 	workspaces: number;
 	studyEvents: number;
-	pluginData: number;
+	keyedRows: number;
 	/** Live flashcards (typed study rows; absent from servers before v0.4.0). */
 	cards?: number;
 	books: number;
+	/** Journal entries (typed storage since #199). */
+	journalEntries?: number;
+	/** Open conversations of the partner (#185). */
+	journalConversations?: number;
 	journalPhotos: number;
 	aiKeys: number;
 	sessions: number;
 	overlays: number;
 	sentences: number;
+	/** Reports of AI example sentences (#186). */
+	exampleReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
+	/** 1 when the account has a profile picture (#189). */
+	avatar?: number;
 }
 
 export async function listUsers(): Promise<AdminUserDto[]> {

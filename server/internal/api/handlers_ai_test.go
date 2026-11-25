@@ -10,14 +10,13 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/journal"
 )
 
@@ -29,18 +28,14 @@ const aiBadKey = "sk-fake-bad-key-0001"
 // aiFromEnv does.
 func aiServer(t *testing.T, secret ai.SecretState) (*httptest.Server, *sql.DB, string) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	var seed byte
 	if secret == ai.SecretOK {
 		seed = 7
 	}
 	svc := testAIService(sqlDB, ai.Fake{}, secret, seed)
 	svc.Fake = true
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	admin := registerUser(t, ts.URL, "root", "")
 	return ts, sqlDB, admin
@@ -499,7 +494,7 @@ func TestAIKeyUndecryptable(t *testing.T) {
 	// The server restarts with another secret.
 	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretOK, 9)
 	svc.Fake = true
-	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	st := statusOf(t, ts2, tok)
 	if st.Reason != "key_undecryptable" || st.Key == nil || st.Key.State != ai.KeyUndecryptable {
@@ -535,7 +530,7 @@ func TestAIKeyDeleteWithoutSecret(t *testing.T) {
 	for _, secret := range []ai.SecretState{ai.SecretMissing, ai.SecretInvalid} {
 		svc := testAIService(sqlDB, ai.Fake{}, secret, 0)
 		svc.Fake = true
-		ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+		ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 		t.Cleanup(ts2.Close)
 		if st := statusOf(t, ts2, tok); st.Reason == "" {
 			t.Fatalf("%s: status = %+v", secret, st)
@@ -543,7 +538,7 @@ func TestAIKeyDeleteWithoutSecret(t *testing.T) {
 	}
 	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretMissing, 0)
 	svc.Fake = true
-	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts2 := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	if resp := doJSON(t, http.MethodDelete, ts2.URL, "/api/ai/keys/anthropic", tok, nil); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("DELETE: %d", resp.StatusCode)
@@ -640,8 +635,8 @@ func TestSelectionCheckedOnEveryAIRoute(t *testing.T) {
 	}
 	e.putEntry(t, e.ws, "e1", "你好。")
 	// Bob writes his own entry (the plugin data route is per user) and has no key.
-	body, _ := json.Marshal(map[string]any{"id": "b1", "date": "2026-11-15", "title": "T", "text": "你好。", "source": "typed"})
-	if r := doRaw(t, http.MethodPut, e.url, "/api/plugins/qinqin-journal/data/entry:b1?workspace="+strconv.FormatInt(bobWS, 10), bob, string(body)); r.StatusCode != 200 {
+	body, _ := json.Marshal(map[string]any{"date": "2026-11-15", "title": "T", "text": "你好。", "source": "typed"})
+	if r := doRaw(t, http.MethodPut, e.url, "/api/journal/entries/b1?workspace="+strconv.FormatInt(bobWS, 10), bob, string(body)); r.StatusCode != 200 {
 		t.Fatalf("bob entry: %d", r.StatusCode)
 	}
 	photo := e.uploadOK(t, bob, bobWS)
@@ -726,13 +721,9 @@ type counting struct {
 func (c counting) ValidateCounted(context.Context, ai.Credentials) (int, error) { return c.calls, nil }
 
 func TestValidateFallbackRecordsEveryCall(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	svc := testAIService(sqlDB, counting{calls: 2}, ai.SecretOK, 7)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
 	if r := putKey(t, ts, tok, "openai", map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {

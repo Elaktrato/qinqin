@@ -143,7 +143,8 @@ func TestMigration038MovesStudyRows(t *testing.T) {
 	var logBuf bytes.Buffer
 	log.SetOutput(&logBuf)
 	defer log.SetOutput(os.Stderr)
-	if err := migrate(sqlDB); err != nil {
+	// Through 038 only: later migrations (044 and on, #199) move or drop plugin_data.
+	if err := migrateThrough(sqlDB, "038_core_study"); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 

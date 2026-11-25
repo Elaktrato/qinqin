@@ -1,13 +1,14 @@
 <script lang="ts">
-	// "Show my notes on the answer side": the workspace's qinqin-core notecfg row
+	// "Show my notes on the answer side": the workspace's keyed notecfg row
 	// (docs/contracts/notes/README.md). Missing or unreadable reads as on.
 	import type { NoteCfg } from '$lib/notes/notes';
 	import { t } from '$lib/i18n';
 	import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
-	import { workspaces } from '$lib/workspaces';
 	import Section from '$lib/ui/Section.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	let cfg = $state.raw<NoteCfg>({ onAnswer: true, extra: {} });
 	let checked = $state(true);
 	let busy = $state(false);

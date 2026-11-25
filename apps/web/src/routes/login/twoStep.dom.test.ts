@@ -1,16 +1,23 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-vi.mock('$lib/auth', () => ({ signIn: vi.fn(), completeMfa: vi.fn(), completeEmailLogin: vi.fn() }));
+const fakes = vi.hoisted(() => ({ signIn: vi.fn(), completeMfa: vi.fn(), completeEmailLogin: vi.fn() }));
 vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn() }));
 vi.mock('$lib/api/mfa', () => ({ mfaSendEmail: vi.fn(), emailLoginStart: vi.fn() }));
 
-import { completeEmailLogin, completeMfa, signIn } from '$lib/auth';
+const { completeEmailLogin, completeMfa, signIn } = fakes;
 import { getAuthOptions } from '$lib/api/account';
 import { emailLoginStart, mfaSendEmail } from '$lib/api/mfa';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
+
+let ctx: TestContext = testContext({ user: null });
+beforeEach(() => {
+	ctx = testContext({ user: null });
+	Object.assign(ctx.app.auth, fakes);
+});
 
 const challenge = (methods: string[], emailHint: string | null = null) => ({
 	kind: 'mfa' as const,
@@ -18,7 +25,7 @@ const challenge = (methods: string[], emailHint: string | null = null) => ({
 });
 const err = (status: number, body: object) => new ApiError(status, JSON.stringify(body));
 const opts = (o: object = {}) =>
-	({ bootstrap: false, registration: 'closed', emailPolicy: 'off', passwordReset: false, emailCodeLogin: false, passwordMinLength: 10, ...o }) as never;
+	({ registration: 'closed', emailPolicy: 'off', passwordReset: false, emailCodeLogin: false, passwordMinLength: 10, ...o }) as never;
 
 beforeEach(() => {
 	vi.mocked(getAuthOptions).mockResolvedValue(opts());
@@ -31,7 +38,7 @@ afterEach(() => {
 
 async function toSecondStep(methods = ['totp', 'recovery'], hint: string | null = null) {
 	vi.mocked(signIn).mockResolvedValue(challenge(methods, hint) as never);
-	render(Page);
+	render(Page, { context: ctx.context });
 	await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'owner' } });
 	await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'pw' } });
 	await fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -119,12 +126,12 @@ describe('two-step sign-in', () => {
 
 describe('sign-in by emailed code', () => {
 	it('offers the link only when the instance allows it', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: 'Sign in' });
 		expect(screen.queryByRole('button', { name: 'Email me a sign-in code' })).toBeNull();
 		cleanup();
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ emailCodeLogin: true }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('button', { name: 'Email me a sign-in code' })).toBeTruthy();
 	});
 
@@ -132,7 +139,7 @@ describe('sign-in by emailed code', () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ emailCodeLogin: true }));
 		vi.mocked(emailLoginStart).mockResolvedValue({ challenge: 'el_example', resendAfter: 60, expiresAt: 'x' });
 		vi.mocked(completeEmailLogin).mockResolvedValue({ kind: 'session' } as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Email me a sign-in code' }));
 		// the email start step: one primary action and a Field for the identifier
 		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Email me a code']);
@@ -155,7 +162,7 @@ describe('sign-in by emailed code', () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ emailCodeLogin: true }));
 		vi.mocked(emailLoginStart).mockResolvedValue({ challenge: 'el_example', resendAfter: 60, expiresAt: 'x' });
 		vi.mocked(completeEmailLogin).mockResolvedValue(challenge(['totp', 'recovery']) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Email me a sign-in code' }));
 		await fireEvent.input(screen.getByLabelText('Username or email address'), { target: { value: 'owner' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));
@@ -167,7 +174,7 @@ describe('sign-in by emailed code', () => {
 	it('shows the server sentence for a rate limit on the start', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ emailCodeLogin: true }));
 		vi.mocked(emailLoginStart).mockRejectedValue(new ApiError(429, JSON.stringify({ error: 'rate_limited', message: 'Too many requests. Try again in 5 minutes.' }), 300));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Email me a sign-in code' }));
 		await fireEvent.input(screen.getByLabelText('Username or email address'), { target: { value: 'owner' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));

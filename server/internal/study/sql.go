@@ -1,6 +1,7 @@
 // Package study stores the typed study rows (cards, decks, deck settings,
 // limits, FSRS sets, the active set; shapes in study/rows): last-write-wins
-// writes, reads, the sync pull, and the legacy view old web shells use.
+// writes and reads (the paged pull reads the tables through
+// TableOf/SelectColumns).
 // Every query is scoped to one user. Contract: docs/contracts/study/.
 package study
 
@@ -8,7 +9,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -129,8 +132,8 @@ func extraText(e json.RawMessage) string {
 }
 
 // InsertStored inserts r for userID as stored elsewhere: version and the
-// three stamps are written verbatim (the migration copies plugin_data's
-// strings byte for byte). The row must not exist yet.
+// three stamps are written verbatim (a restore keeps the archive's
+// stamps byte for byte). The row must not exist yet.
 func InsertStored(ctx context.Context, q Querier, userID int64, r rows.Row, version int, updatedAt, modifiedAt string, deletedAt *string) error {
 	t := tables[r.Family()]
 	cols := append([]string{"user_id", "workspace_id"}, t.cols...)
@@ -218,7 +221,38 @@ func strPtr(n sql.NullString) *string {
 	return &s
 }
 
-// scanRow reads one row of family f in selectCols order.
+// ErrUnreadableStored reports a stored typed row this server cannot read
+// back: stored JSON it does not know (a deck source type or a new-card order
+// written by a newer server, then downgraded, or a damaged row). Readers skip
+// the row and log it (LogUnreadable); writers refuse to replace it. Errors
+// that wrap it are *UnreadableStoredError (errors.As), which names the row.
+var ErrUnreadableStored = errors.New("study: stored row unreadable")
+
+// UnreadableStoredError names an unreadable stored row by family, workspace
+// and identity. Its message never carries the stored data.
+type UnreadableStoredError struct {
+	Family      rows.Family
+	WorkspaceID int64
+	Identity    string
+}
+
+func (e *UnreadableStoredError) Error() string {
+	return fmt.Sprintf("study: stored %s row %q of workspace %d is unreadable", e.Family, e.Identity, e.WorkspaceID)
+}
+
+func (e *UnreadableStoredError) Is(target error) bool { return target == ErrUnreadableStored }
+
+// LogUnreadable logs a skipped unreadable stored row (family, workspace,
+// identity; never the data) for the reader named by where.
+func LogUnreadable(where string, err error) {
+	var bad *UnreadableStoredError
+	if errors.As(err, &bad) {
+		log.Printf("%s: skipped an unreadable stored row: family=%s workspace=%d identity=%q", where, bad.Family, bad.WorkspaceID, bad.Identity)
+	}
+}
+
+// scanRow reads one row of family f in selectCols order. A row whose
+// stored JSON or stamps do not decode is an *UnreadableStoredError.
 func scanRow(f rows.Family, sc scanner) (rows.Row, error) {
 	var (
 		ws                       int64
@@ -345,14 +379,17 @@ func scanRow(f rows.Family, sc scanner) (rows.Row, error) {
 	default:
 		return nil, fmt.Errorf("study: unknown family %q", f)
 	}
+	unreadable := func() error {
+		return &UnreadableStoredError{Family: f, WorkspaceID: ws, Identity: r.Identity()}
+	}
 	if err := finish(); err != nil {
-		return nil, fmt.Errorf("study: read %s: %w", f, err)
+		return nil, unreadable()
 	}
 	m := r.M()
 	m.WorkspaceID, m.Version = ws, version
 	var err error
 	if m.UpdatedAt, err = parseStamp(updated); err != nil {
-		return nil, err
+		return nil, unreadable()
 	}
 	if m.ModifiedAt, err = parseStamp(modified); err != nil {
 		// An edit time no client wrote in RFC 3339 (a hand-made archive) must
@@ -362,7 +399,7 @@ func scanRow(f rows.Family, sc scanner) (rows.Row, error) {
 	if deleted.Valid {
 		d, err := parseStamp(deleted.String)
 		if err != nil {
-			return nil, err
+			return nil, unreadable()
 		}
 		m.DeletedAt = &d
 	}

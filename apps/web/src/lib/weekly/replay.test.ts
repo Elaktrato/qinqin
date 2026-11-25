@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/weekly/week-summary.json';
 import type { CharRow } from '../api/types';
-import { usesHan } from '../languages';
+import { usesHan } from '$lib/languages';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { cellStates, masteryGlyphs, sectionStats } from '../study/charGroups';
 import { masteryFromSchedules } from '../study/mastery';
 import { scheduleAt, type TimelinePoint } from '../study/scheduler';
 import { IDENTITY_CLOCK, clockFromRuns } from '../study/studyClock';
-import { GENERAL_DECK_ID } from '../study/store';
+import { GENERAL_DECK_ID } from '../study/types';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { addDays, studyDay, type ZoneChange } from '../time/studyDay';
 import {
@@ -18,6 +18,13 @@ import {
 	wordsReachingMature,
 	type Timelines
 } from './replay';
+import * as build from '$lib/testing/study';
+
+// A fresh memo per test (record 0009: the session owns one).
+let timelineMemo = new Map<string, Timelines>();
+beforeEach(() => {
+	timelineMemo = new Map<string, Timelines>();
+});
 
 interface ReplayCase {
 	name: string;
@@ -65,14 +72,7 @@ describe('week-summary.json: mature and character crossings', () => {
 });
 
 function ev(id: number, cardId: string, grade: number, ts: string): ReviewEvent {
-	return {
-		id: `01JRP${String(id).padStart(21, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	} as unknown as ReviewEvent;
+	return build.review({ id: build.eventId(id, '01JRP'), cardId, grade, ts });
 }
 
 describe('timelinesFor', () => {
@@ -84,11 +84,11 @@ describe('timelinesFor', () => {
 
 	it('replays each card once per reviews array, weights and clock', () => {
 		const before = replayStats.timelines;
-		const t1 = timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK);
+		const t1 = timelinesFor(timelineMemo, reviews, DEFAULT_W, IDENTITY_CLOCK);
 		t1.of('a');
 		t1.of('a');
 		t1.of('b');
-		const t2 = timelinesFor(reviews, DEFAULT_W, clockFromRuns([]));
+		const t2 = timelinesFor(timelineMemo, reviews, DEFAULT_W, clockFromRuns([]));
 		t2.of('a');
 		t2.of('b');
 		expect(replayStats.timelines - before).toBe(2);
@@ -97,32 +97,26 @@ describe('timelinesFor', () => {
 	});
 
 	it('keeps the timelines for a new array with the same reviews (a reloaded history after its TTL)', () => {
-		timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
 		const before = replayStats.timelines;
-		timelinesFor(reviews.map((r) => ({ ...r, payload: { ...r.payload } })), DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, reviews.map((r) => ({ ...r, payload: { ...r.payload } })), DEFAULT_W, IDENTITY_CLOCK).of('a');
 		expect(replayStats.timelines - before).toBe(0);
 	});
 
 	it('replays again when the reviews, the weights or the clock change', () => {
-		timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
 		const before = replayStats.timelines;
-		timelinesFor([...reviews, ev(4, 'a', 1, '2026-11-06T10:00:00Z')], DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, [...reviews, ev(4, 'a', 1, '2026-11-06T10:00:00Z')], DEFAULT_W, IDENTITY_CLOCK).of('a');
 		// A review moved to another card by a duplicate merge: same ids, other content.
-		timelinesFor(reviews.map((r) => (r.payload.cardId === 'b' ? { ...r, payload: { ...r.payload, cardId: 'a' } } : r)), DEFAULT_W, IDENTITY_CLOCK).of('a');
-		timelinesFor(reviews, DEFAULT_W.map((x, i) => (i === 0 ? x + 0.1 : x)), IDENTITY_CLOCK).of('a');
-		timelinesFor(reviews, DEFAULT_W, clockFromRuns([{ a: Date.parse('2026-11-03T00:00:00Z'), n: 1 }])).of('a');
+		timelinesFor(timelineMemo, reviews.map((r) => (r.payload.cardId === 'b' ? { ...r, payload: { ...r.payload, cardId: 'a' } } : r)), DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, reviews, DEFAULT_W.map((x, i) => (i === 0 ? x + 0.1 : x)), IDENTITY_CLOCK).of('a');
+		timelinesFor(timelineMemo, reviews, DEFAULT_W, clockFromRuns([{ a: Date.parse('2026-11-03T00:00:00Z'), n: 1 }])).of('a');
 		expect(replayStats.timelines - before).toBe(4);
 	});
 });
 
-const card = (id: string, kind: StudyCard['kind'], deckIds: string[], written?: string): StudyCard => ({
-	id,
-	kind,
-	entryId: 1,
-	deckIds,
-	createdAt: '2026-01-01T00:00:00Z',
-	...(written === undefined ? {} : { written })
-});
+const card = (id: string, kind: StudyCard['kind'], deckIds: string[], written?: string): StudyCard =>
+	build.card({ id, kind, deckIds, createdAt: '2026-01-01T00:00:00Z', written });
 
 describe('wordsReachingMature', () => {
 	const t = givenTimelines({

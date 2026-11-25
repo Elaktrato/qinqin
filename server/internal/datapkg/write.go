@@ -49,6 +49,7 @@ var typeDefs = map[Type]typeDef{
 	TypeAudio:      audioDef,
 	TypeGrammar:    grammarDef,
 	TypeStrokes:    strokesDef,
+	TypeLemmaRules: lemmaRulesDef,
 }
 
 var commonStatements = []string{

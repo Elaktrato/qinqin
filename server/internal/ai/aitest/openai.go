@@ -71,22 +71,52 @@ func canned(w http.ResponseWriter, auth, body string) bool {
 	return true
 }
 
-var entryRe = regexp.MustCompile(`(?s)<entry_[0-9a-f]+>\n(.*?)\n</entry_[0-9a-f]+>`)
+var (
+	entryRe   = regexp.MustCompile(`(?s)<entry_[0-9a-f]+>\n(.*?)\n</entry_[0-9a-f]+>`)
+	messageRe = regexp.MustCompile(`(?s)<message_[0-9a-f]+>\n(.*?)\n</message_[0-9a-f]+>`)
+	wordRe    = regexp.MustCompile(`<word_[0-9a-f]+>\n([^\n]*)\n`)
+)
+
+// firstRunes is the first two runes of the trimmed match, or "".
+func firstRunes(re *regexp.Regexp, user string) string {
+	m := re.FindStringSubmatch(user)
+	if m == nil {
+		return ""
+	}
+	r := []rune(strings.TrimSpace(m[1]))
+	if len(r) > 2 {
+		r = r[:2]
+	}
+	return string(r)
+}
 
 // CannedText returns the JSON text a well-behaved model would answer for the
 // request's system and user text.
 func CannedText(system, user string) string {
 	switch {
+	case strings.Contains(system, "You write example sentences for a word"):
+		// Two sentences with the word (Chinese), one reading each.
+		word := "你好"
+		if m := wordRe.FindStringSubmatch(user); m != nil {
+			word = m[1]
+		}
+		b, _ := json.Marshal(map[string]any{"sentences": []any{
+			map[string]any{"text": "我每天" + word + "。", "reading": "wǒ měitiān …", "translation": "Every day (fake)."},
+			map[string]any{"text": word + "很好。", "reading": "… hěn hǎo", "translation": "It is good (fake)."},
+		}})
+		return string(b)
+	case strings.Contains(system, "conversation partner for a language learner"):
+		// The reply is Chinese; the learner's new message (if any) gets one correction.
+		anns := []any{}
+		if quote := firstRunes(messageRe, user); quote != "" {
+			anns = append(anns, map[string]any{"quote": quote, "context_before": "", "correction": quote + "X", "explanation": "Fake explanation", "category": "grammar", "kind": "mistake"})
+		}
+		b, _ := json.Marshal(map[string]any{"reply": "你好！你今天做什么了？", "annotations": anns})
+		return string(b)
 	case strings.Contains(system, "review a language learner's journal entry"):
 		quote := "你好"
-		if m := entryRe.FindStringSubmatch(user); m != nil {
-			r := []rune(strings.TrimSpace(m[1]))
-			if len(r) > 2 {
-				r = r[:2]
-			}
-			if len(r) > 0 {
-				quote = string(r)
-			}
+		if q := firstRunes(entryRe, user); q != "" {
+			quote = q
 		}
 		b, _ := json.Marshal(map[string]any{
 			"annotations": []any{map[string]any{"quote": quote, "context_before": "", "correction": quote + "X", "explanation": "Fake explanation", "category": "grammar"}},

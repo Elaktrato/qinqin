@@ -1,61 +1,61 @@
 import { describe, expect, it } from 'vitest';
-import type { PluginInfo } from '$lib/api/types';
-import { webPlugins } from '$lib/plugins';
 import { allWidgets } from '$lib/widgets/registry';
-import { FLASHCARDS_ID, READER_ID, RESERVED_IDS, coreFeatures, featureEnabled, findFeature } from './index';
+import type { FeatureSwitch } from './switches.svelte';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, coreFeatures, featureById, featureEnabled, findFeature } from './index';
 
-function state(id: string, order: number, enabled = true): PluginInfo {
-	return { id, manifest: {}, enabled, order };
+function state(id: string, enabled = true): FeatureSwitch {
+	return { id, enabled };
 }
 
-const ready = (list: PluginInfo[]) => ({ list, status: 'ready' as const });
+const ALL_ON = [state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)];
 
 describe('core features', () => {
-	it('are Decks and Reader, with fixed ids, and are not web plugins', () => {
+	it('are the four core features, with fixed ids and routes', () => {
 		expect(coreFeatures.map((f) => [f.id, f.title])).toEqual([
-			[FLASHCARDS_ID, 'Decks'],
-			[READER_ID, 'Reader']
+			['flashcards', 'Decks'],
+			['reader', 'Reader'],
+			['journal', 'Journal'],
+			['grammar', 'Grammar']
 		]);
-		expect(FLASHCARDS_ID).toBe('qinqin-flashcards');
-		expect(READER_ID).toBe('qinqin-reader');
-		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader']);
-		expect(webPlugins.map((p) => p.manifest.id)).toEqual(['qinqin-journal', 'qinqin-grammar']);
+		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar']);
 	});
 
-	it('reserves the core, flashcards and reader registry ids', () => {
-		expect([...RESERVED_IDS].sort()).toEqual(['qinqin-core', 'qinqin-flashcards', 'qinqin-reader']);
-	});
-
-	it('a feature without a state row is on; its row switches it', () => {
+	it('a feature without a switch row is on; its row switches it', () => {
 		expect(featureEnabled(READER_ID, [])).toBe(true);
-		expect(featureEnabled(READER_ID, [state(READER_ID, 0, false)])).toBe(false);
-		expect(featureEnabled(READER_ID, [state(FLASHCARDS_ID, 0, false)])).toBe(true);
+		expect(featureEnabled(READER_ID, [state(READER_ID, false)])).toBe(false);
+		expect(featureEnabled(READER_ID, [state(FLASHCARDS_ID, false)])).toBe(true);
 	});
 
 	it('findFeature resolves an enabled feature by its slug', () => {
 		expect(findFeature('reader', [])?.id).toBe(READER_ID);
-		expect(findFeature('flashcards', [state(FLASHCARDS_ID, 0, false)])).toBeUndefined();
-		expect(findFeature('journal', [])).toBeUndefined();
+		expect(findFeature('journal', [])?.id).toBe(JOURNAL_ID);
+		expect(findFeature('flashcards', [state(FLASHCARDS_ID, false)])).toBeUndefined();
+		expect(findFeature('notes', [])).toBeUndefined();
+	});
+
+	it('featureById refuses an id that is no core feature', () => {
+		expect(featureById(GRAMMAR_ID).slug).toBe('grammar');
+		expect(() => featureById('qinqin-journal')).toThrow();
 	});
 });
 
 // navLinks moved into the frame's sections (lib/frame/sections.test.ts, #99).
 
 describe('feature widgets', () => {
-	it('exist while the feature is on, as in v0.3.0', () => {
-		const ids = (states: PluginInfo[]) => allWidgets(webPlugins, states, 'zh').map((w) => w.id);
-		const on = ids([state(FLASHCARDS_ID, 0), state(READER_ID, 0)]);
+	it('exist while the feature is on', () => {
+		const ids = (states: FeatureSwitch[]) => allWidgets(states, 'zh').map((w) => w.id);
+		const on = ids(ALL_ON);
 		expect(on).toEqual(expect.arrayContaining(['flashcards-summary', 'word-states', 'reading-time']));
-		const off = ids([state(FLASHCARDS_ID, 0, false), state(READER_ID, 0)]);
+		const off = ids([state(FLASHCARDS_ID, false), state(READER_ID)]);
 		expect(off).not.toContain('flashcards-summary');
 		expect(off).not.toContain('word-states');
 		expect(off).toContain('reading-time');
-		// No states yet: no feature widget can flash in.
+		// No switches yet: no feature widget can flash in.
 		expect(ids([])).not.toContain('reading-time');
 	});
 
 	it('are owned by the feature id', () => {
-		expect(coreFeatures.flatMap((f) => (f.manifest.widgets ?? []).map((w) => [w.id, w.owner]))).toEqual([
+		expect(coreFeatures.flatMap((f) => (f.def.widgets ?? []).map((w) => [w.id, w.owner]))).toEqual([
 			['flashcards-summary', FLASHCARDS_ID],
 			['word-states', FLASHCARDS_ID],
 			['reading-time', READER_ID]

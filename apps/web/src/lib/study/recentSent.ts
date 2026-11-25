@@ -9,6 +9,9 @@ export const RECENT_SENT_KEY = 'qinqin.study.sent.v1';
 export const RECENT_SENT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 export const RECENT_SENT_MAX = 300;
 
+// Kept per user id, so another account never reads them; an explicit sign-out
+// still drops them (the session's dispose, context/session.svelte.ts).
+
 interface Item {
 	userId: number;
 	sentAt: number;

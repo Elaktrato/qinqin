@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // audioPackDir writes a generated two-clip audio pack (synthetic bytes
@@ -55,8 +55,8 @@ func TestSeedImportsAudioPack(t *testing.T) {
 	if _, err := os.Stat(audio.BlobPath(filepath.Join(data, "audio"), r.Terms[0].SHA, r.Terms[0].Ext)); err != nil {
 		t.Errorf("blob not under <data>/audio: %v", err)
 	}
-	if importOrder[dict.TypeAudio] <= importOrder[dict.TypeSentences] {
-		t.Errorf("importOrder[audio] = %d, want after sentences", importOrder[dict.TypeAudio])
+	if importRank(pack.TypeAudio) <= importRank(pack.TypeSentences) {
+		t.Errorf("importRank(audio) = %d, want after sentences", importRank(pack.TypeAudio))
 	}
 }
 
