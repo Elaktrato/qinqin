@@ -241,6 +241,66 @@ async function main() {
 	});
 	if (rec.failed) return;
 
+	// ---- native device features (#36): cheap, deterministic checks of the bridge pieces ------------------------
+	await rec.step('native plugins: speech, files, share, notifications and the shell answer through the bridge', async () => {
+		const r = await cdp.eval(`(async () => {
+			const P = window.Capacitor.Plugins;
+			const kinds = Object.fromEntries(['QinqinShell', 'QinqinSpeech', 'QinqinFiles', 'QinqinShare', 'QinqinNotifications'].map((n) => [n, typeof P[n]]));
+			const zh = await P.QinqinSpeech.isAvailable({ lang: 'zh' });
+			const ja = await P.QinqinSpeech.isAvailable({ lang: 'ja' });
+			const perm = await P.QinqinNotifications.permission();
+			const pending = await P.QinqinNotifications.pending();
+			const buzz = await P.QinqinShell.vibrate({ ms: 20 });
+			return { kinds, zh, ja, perm, pending, buzz };
+		})()`);
+		for (const [n, k] of Object.entries(r.kinds)) if (k === 'undefined') throw new Error(`${n} is missing: ${JSON.stringify(r)}`);
+		if (typeof r.zh.available !== 'boolean' || typeof r.ja.available !== 'boolean') throw new Error(`speech answers: ${JSON.stringify(r)}`);
+		if (!['granted', 'denied', 'prompt'].includes(r.perm.state) || !Array.isArray(r.pending.ids)) throw new Error(JSON.stringify(r));
+		num.nativePlugins = r;
+		return r;
+	});
+
+	await rec.step('share in: ACTION_SEND text/plain opens the lookup with that text', async () => {
+		adb(['shell', 'am', 'start', '-a', 'android.intent.action.SEND', '-t', 'text/plain', '--es', 'android.intent.extra.TEXT', '你好 world', '-n', `${PKG}/qinqin.shell.MainActivity`]);
+		const where = await waitFor('the lookup', async () => {
+			const w = await cdp.eval('({ path: location.pathname, q: new URLSearchParams(location.search).get("q") })');
+			return w.path === '/search' && w.q === '你好 world' ? w : false;
+		}, { timeout: 30_000 });
+		screenshot('04a-shared-text');
+		return where;
+	});
+
+	await rec.step('share in: "Look up in qinqin" (ACTION_PROCESS_TEXT) opens the lookup', async () => {
+		adb(['shell', 'am', 'start', '-a', 'android.intent.action.PROCESS_TEXT', '-t', 'text/plain', '--es', 'android.intent.extra.PROCESS_TEXT', '谢谢', '-n', `${PKG}/qinqin.shell.LookupAlias`]);
+		return await waitFor('the lookup', async () => {
+			const w = await cdp.eval('({ path: location.pathname, q: new URLSearchParams(location.search).get("q") })');
+			return w.path === '/search' && w.q === '谢谢' ? w : false;
+		}, { timeout: 30_000 });
+	});
+
+	await rec.step('local notification: granted, scheduled, posted by the alarm; a tap route opens the page', async () => {
+		adb(['shell', 'pm', 'grant', PKG, 'android.permission.POST_NOTIFICATIONS'], { soft: true });
+		const perm = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.permission()');
+		if (perm.state !== 'granted') throw new Error(`permission: ${JSON.stringify(perm)}`);
+		await cdp.eval(`window.Capacitor.Plugins.QinqinNotifications.schedule({ id: 4242, title: 'qinqin e2e reminder', body: 'ready', at: Date.now() + 4000, channel: { id: 'e2e', name: 'E2E' }, route: '/stats' })`);
+		const pending = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
+		if (!pending.ids.includes(4242)) throw new Error(`not pending: ${JSON.stringify(pending)}`);
+		const shown = await waitFor('the notification', () => adb(['shell', 'dumpsys', 'notification', '--noredact'], { soft: true }).includes('qinqin e2e reminder'), { timeout: 90_000, interval: 2000 });
+		const left = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
+		adb(['shell', 'am', 'start', '-n', `${PKG}/qinqin.shell.MainActivity`, '--es', 'qinqin.shell.ROUTE', '/stats']);
+		const at = await waitFor('the route', async () => ((await cdp.eval('location.pathname')) === '/stats' ? true : false), { timeout: 30_000 });
+		return { shown, stillPending: left.ids, routed: at };
+	});
+
+	await rec.step('keep awake: the window flag is set while asked (informational)', async () => {
+		await cdp.eval('window.Capacitor.Plugins.QinqinShell.keepAwake({ on: true })');
+		await sleep(500);
+		const on = adb(['shell', 'dumpsys window windows'], { soft: true }).includes('KEEP_SCREEN_ON');
+		await cdp.eval('window.Capacitor.Plugins.QinqinShell.keepAwake({ on: false })');
+		num.keepScreenOnFlagSeen = on;
+		return { flagSeenInDumpsys: on };
+	});
+
 	await rec.step('offline preparation: settings page saves the cards (receipt line)', async () => {
 		const t0 = Date.now();
 		await cdp.eval("location.assign('/settings?tab=account')");
