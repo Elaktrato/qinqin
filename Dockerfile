@@ -34,7 +34,7 @@ ARG VERSION=dev
 ARG COMMIT=
 ARG BUILD_DATE=
 RUN CGO_ENABLED=0 go build -trimpath \
-    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
+    -ldflags="-s -w -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.buildDate=${BUILD_DATE}'" \
     -o /out/qinqin ./cmd/qinqin
 
 # Audio: the Kanji alive example-word pack (CC BY 4.0, about 69 MB), fetched
