@@ -394,13 +394,8 @@ describe('post timeout', () => {
 		void hanging.post([{ id: 'A', workspaceId: 1, device: 'web', ts: '2026-11-25T08:00:00.000Z', type: 'view', payload: null }]);
 		expect(signal).toBeInstanceOf(AbortSignal);
 		expect(signal!.aborted).toBe(false);
-		vi.useFakeTimers();
-		try {
-			// AbortSignal.timeout runs on the runtime's own clock: assert the limit's size instead.
-			expect(EVENT_WRITE_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
-			expect(EVENT_WRITE_TIMEOUT_MS).toBeLessThanOrEqual(30_000);
-		} finally {
-			vi.useRealTimers();
-		}
+		// AbortSignal.timeout runs on the runtime's own clock: assert the limit's size.
+		expect(EVENT_WRITE_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
+		expect(EVENT_WRITE_TIMEOUT_MS).toBeLessThanOrEqual(30_000);
 	});
 });

@@ -196,6 +196,32 @@ describe('write-ahead', () => {
 	});
 });
 
+describe('sign-out and a user switch (#173)', () => {
+	it("the next user's session neither sees nor sends the first user's stored reviews", async () => {
+		post = async () => {
+			throw new TypeError('offline');
+		};
+		const a = outboxOn(factory, 1);
+		await a.ready();
+		await a.recordReview(7, 'c1', 3);
+		a.dispose(); // sign-out: the session's mirror goes with it
+		post = async (events) => {
+			for (const e of events) if (!stored.has(e.id)) (stored.add(e.id), accepted++);
+		};
+		const b = outboxOn(factory, 2);
+		await b.ready();
+		expect(b.pendingCount(2)).toBe(0);
+		expect(b.pendingReviews(2, 7)).toEqual([]);
+		await b.flush();
+		expect(accepted).toBe(0);
+		expect(await persisted()).toHaveLength(1); // kept for A (30 days), as in v2
+		// A signs in again and sends it.
+		const again = outboxOn(factory, 1);
+		await again.flush();
+		expect(accepted).toBe(1);
+	});
+});
+
 describe('migration and clearing', () => {
 	function v2Item(id: string, userId: number | null = 1): OutboxItem {
 		return { userId, queuedAt: '2026-11-25T08:00:00.000Z', event: { id, workspaceId: 7, device: 'web', ts: '2026-11-25T08:00:00.000Z', type: 'review', payload: {} } };
