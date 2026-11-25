@@ -13,6 +13,7 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/mail"
 	"qinqin/internal/netguard"
+	"qinqin/internal/reminders"
 	"qinqin/internal/secretbox"
 )
 
@@ -73,7 +74,11 @@ func TestRotateSecretsReSealsMailAndTOTP(t *testing.T) {
 	if _, err := oldMFA.ConfirmTOTP(ctx, u.ID, code, at); err != nil {
 		t.Fatal(err)
 	}
-	oldMFA.BeginTOTP(ctx, u.ID, at) // a pending secret too
+	oldMFA.BeginTOTP(ctx, u.ID, at)                                     // a pending secret too
+	vapid, err := reminders.LoadVAPID(ctx, sqlDB, old.Current, nil, at) // the web push key too
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// the new secret, the old one as PREVIOUS
 	cur := get(b64seed(50), b64seed(1))
@@ -103,6 +108,9 @@ func TestRotateSecretsReSealsMailAndTOTP(t *testing.T) {
 	later := at.Add(time.Minute)
 	if err := newMFA.VerifyTOTP(ctx, u.ID, mustTOTP(secret, later), later); err != nil {
 		t.Errorf("TOTP after rotation: %v", err)
+	}
+	if v, err := reminders.LoadVAPID(ctx, sqlDB, newOnly.Current, nil, later); err != nil || v.PublicKey() != vapid.PublicKey() {
+		t.Errorf("the web push key must open with the new secret alone after rotation: %v", err)
 	}
 	// a second run is a no-op
 	logs = nil
