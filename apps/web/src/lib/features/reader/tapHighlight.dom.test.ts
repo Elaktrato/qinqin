@@ -38,11 +38,12 @@ vi.mock('$lib/study/data', async (orig) => ({
 import ChapterText from './ChapterText.svelte';
 import PopupStackView from './PopupStackView.svelte';
 import type { Highlight } from './highlights';
-import type { HighlightActions } from './highlightUi';
+import { highlightMark, type HighlightActions } from './highlightUi';
 import { LookupController } from './useLookup.svelte';
 
 const TEXT = '私は水を飲みます。';
 const mark: Highlight = { id: 4, chapter: 0, paragraph: 0, start: 2, end: 3, text: '水', note: '', color: 'yellow' } as unknown as Highlight;
+const stop: Highlight = { id: 5, chapter: 0, paragraph: 0, start: 8, end: 9, text: '。', note: '', color: 'pink' } as unknown as Highlight;
 const highlighter: HighlightActions = { color: 'yellow', ready: true, notice: '', pick: vi.fn(), note: vi.fn() };
 
 let ctx: TestContext;
@@ -64,12 +65,17 @@ beforeEach(() => {
 		lang: () => 'ja',
 		textLang: () => 'ja',
 		runsOf: (p) => (p === 0 ? [{ text: TEXT }] : undefined),
-		now: () => clock
+		now: () => clock,
+		// As BookView wires it: a tap on no word over a highlight edits it.
+		onTapNoWord: (target) => {
+			const hit = highlightMark(target);
+			if (hit) onhighlight(hit.id, hit.el);
+		}
 	});
 	detach = ctl.attach();
 	onhighlight = vi.fn<(id: number, el: HTMLElement) => void>();
 	const view = render(ChapterText, {
-		props: { paragraphs: [[{ text: TEXT }]], lang: 'ja', lookup: ctl, highlights: new Map([[0, [mark]]]), onhighlight },
+		props: { paragraphs: [[{ text: TEXT }]], lang: 'ja', lookup: ctl, highlights: new Map([[0, [mark, stop]]]), onhighlight },
 		context: ctx.context
 	});
 	root = view.container.querySelector('.chapter-text');
@@ -83,8 +89,8 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-function markElement(): HTMLElement {
-	const el = document.querySelector<HTMLElement>('mark[data-h="4"]');
+function markElement(id = 4): HTMLElement {
+	const el = document.querySelector<HTMLElement>(`mark[data-h="${id}"]`);
 	if (!el) throw new Error('the highlight is not drawn');
 	layout.caret = { node: el.firstChild!, offset: 0 };
 	return el;
@@ -125,5 +131,13 @@ describe('a highlighted word', () => {
 		expect(onhighlight).toHaveBeenCalledExactlyOnceWith(4, el);
 		expect(ctl.info).toBeNull();
 		expect(screen.queryByRole('dialog')).toBeNull();
+	});
+
+	it('a tap on a highlighted character that is no word (punctuation) opens the highlight editor', async () => {
+		const el = markElement(5);
+		press(el, 'touch', new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }));
+		await vi.advanceTimersByTimeAsync(100);
+		expect(onhighlight).toHaveBeenCalledExactlyOnceWith(5, el);
+		expect(ctl.info).toBeNull();
 	});
 });

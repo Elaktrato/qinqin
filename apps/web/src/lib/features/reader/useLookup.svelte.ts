@@ -29,7 +29,7 @@ import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText
 import { anchorOf, inPopup, PopupPointer } from './popupPointer.svelte';
 import { PopupStack } from './popupStack.svelte';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
-import { TAP_IGNORE, TAP_SETTLE_MS, TapTracker, touchClick, type PointerSample } from './tapGesture';
+import { TAP_IGNORE, TAP_SETTLE_MS, TapTracker, tapProbes, touchClick, type PointerSample } from './tapGesture';
 
 const HOVER_DEBOUNCE_MS = 80;
 const SELECTION_DEBOUNCE_MS = 250;
@@ -68,6 +68,11 @@ export interface LookupOptions {
 	onLookup?: (entryId: number, mode: 'hover' | 'selection') => void;
 	/** The clock taps are timed with (ms); performance.now by default. */
 	now?: () => number;
+	/**
+	 * A tap inside the text found no word (punctuation, Latin, digits, a
+	 * gap): what it landed on, so the reader can open a highlight there.
+	 */
+	onTapNoWord?: (target: Element) => void;
 }
 
 /** A word under a point: paragraph p, its text, and the code point there. */
@@ -182,8 +187,8 @@ export class LookupController {
 			if (!this.#pointerDown) this.#scheduleSelection(SELECTION_DEBOUNCE_MS);
 		};
 		const onScroll = (e: Event) => {
-			// A finger that scrolled the page did not tap.
-			this.#tap.cancel();
+			// A finger that scrolled the page did not tap, nor does one that stops a fling.
+			this.#tap.scrolled(this.#now());
 			// A popup scrolling its own long entry list moves nothing.
 			if (!this.info || inPopup(e.target)) return;
 			if (this.info.mode === 'hover') this.close();
@@ -239,7 +244,10 @@ export class LookupController {
 	 * alone; a mouse click is never one.
 	 */
 	fromTouch(e: MouseEvent): boolean {
-		return touchClick({ pointerType: (e as Partial<PointerEvent>).pointerType, at: this.#now() }, this.#lastTouchUp);
+		return touchClick(
+			{ pointerType: (e as Partial<PointerEvent>).pointerType, detail: e.detail, at: this.#now() },
+			this.#lastTouchUp
+		);
 	}
 
 	// --- container events (delegated) ---
@@ -344,14 +352,25 @@ export class LookupController {
 	 * wordAt finds the lookable character under a point of the text: the
 	 * word finding of hover and tap alike, so the two always agree. Null
 	 * over a gap between lines or paragraphs, outside the text, or on
-	 * whitespace, punctuation, Latin letters and digits.
+	 * whitespace, punctuation, Latin letters and digits. A tap (`tap`) may
+	 * land in the gap between lines: it also tries points up to TAP_SLACK_PX
+	 * above and below (tapProbes) and takes the first character it meets;
+	 * hover stays exact.
 	 */
-	#wordAt(x: number, y: number, target: EventTarget | null): WordPoint | null {
+	#wordAt(x: number, y: number, target: EventTarget | null, tap = false): WordPoint | null {
 		const container = this.#opts.container();
-		// Only text counts: the gaps between lines and paragraphs do not.
-		if (!container || !(target instanceof Element) || !container.contains(target) || !target.closest('[data-r]')) {
-			return null;
+		// Only text counts: for hover the gaps between lines and paragraphs do not.
+		if (!container || !(target instanceof Element) || !container.contains(target)) return null;
+		if (!target.closest(tap ? '[data-p]' : '[data-r]')) return null;
+		for (const probe of tap ? tapProbes(x, y) : [{ x, y }]) {
+			const at = this.#charAt(container, probe.x, probe.y);
+			if (at) return hoverable(sliceCodePoints(at.text, at.offset, at.offset + 1)) ? at : null;
 		}
+		return null;
+	}
+
+	/** The character whose box holds the point, whatever it is; null over no character. */
+	#charAt(container: HTMLElement, x: number, y: number): WordPoint | null {
 		const caret = caretFromPoint(x, y);
 		const point = caret && runPointAt(caret.node, caret.offset, 'start');
 		const runs = point && this.#opts.runsOf(point.p);
@@ -369,7 +388,6 @@ export class LookupController {
 			if (under === undefined) return null;
 			offset = under;
 		}
-		if (!hoverable(sliceCodePoints(text, offset, offset + 1))) return null;
 		return { p: point.p, text, offset };
 	}
 
@@ -399,9 +417,9 @@ export class LookupController {
 		if (!container || !(target instanceof Element) || !container.contains(target) || target.closest(TAP_IGNORE)) return;
 		const selection = typeof window === 'undefined' ? null : window.getSelection();
 		if (selection && selection.rangeCount > 0 && !selection.isCollapsed) return;
-		const at = this.#wordAt(x, y, target);
+		const at = this.#wordAt(x, y, target, true);
 		this.close();
-		if (!at) return;
+		if (!at) return this.#opts.onTapNoWord?.(target);
 		const abort = new AbortController();
 		this.#selectionAbort = abort;
 		const seq = this.#selectionSeq;

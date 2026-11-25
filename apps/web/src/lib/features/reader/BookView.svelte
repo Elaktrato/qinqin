@@ -62,6 +62,7 @@
 		highlightKeyBusy,
 		loadLastColor,
 		actionSpan,
+		highlightMark,
 		planHighlight,
 		saveLastColor,
 		type HighlightActions,
@@ -344,7 +345,12 @@
 		textLang: () => textLang,
 		runsOf: (p) => paragraphs[p],
 		// The lookup history (#72), in the book's workspace like "+".
-		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id }),
+		// A tap on a highlighted character that is no word (punctuation, Latin) edits the highlight.
+		onTapNoWord: (target) => {
+			const hit = highlightMark(target);
+			if (hit) editFromText(hit.id, hit.el);
+		}
 	});
 	$effect(() => lookup.attach());
 	// One read of the history for the popup's "looked up N times" hint.

@@ -104,6 +104,12 @@ export interface ParagraphSpan {
 	clamped: boolean;
 }
 
+/** highlightMark: the drawn highlight (`mark[data-h]`) an event target sits in, with its id; null outside one. */
+export function highlightMark(target: EventTarget | null): { id: number; el: HTMLElement } | null {
+	const el = target instanceof Element ? target.closest<HTMLElement>('mark[data-h]') : null;
+	return el ? { id: Number(el.dataset.h), el } : null;
+}
+
 /**
  * actionSpan is what the lookup's highlight actions act on. A tapped word
  * (tap to look up) that lies inside a highlight of this chapter acts on that

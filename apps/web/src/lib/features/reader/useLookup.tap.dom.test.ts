@@ -6,11 +6,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
-const layout = vi.hoisted(() => ({ caret: null as { node: Node; offset: number } | null, rect: { top: 600, height: 30 } }));
+const layout = vi.hoisted(() => ({
+	caret: null as { node: Node; offset: number } | null,
+	rect: { top: 600, height: 30 },
+	/** Whether a character box holds a point at this height (the line's glyphs). */
+	hit: (_y: number) => true
+}));
 vi.mock('./dom', async (orig) => ({
 	...(await orig<typeof import('./dom')>()),
 	caretFromPoint: () => layout.caret,
-	rangeContainsPoint: () => true,
+	rangeContainsPoint: (_r: Range, _x: number, y: number) => layout.hit(y),
 	rangeForSpan: () =>
 		({ getBoundingClientRect: () => new DOMRect(40, layout.rect.top, 20, layout.rect.height) }) as unknown as Range
 }));
@@ -27,13 +32,14 @@ vi.mock('$lib/api/lookup', async (orig) => ({
 }));
 
 import { LookupController } from './useLookup.svelte';
-import { TAP_MAX_MOVE_PX, TAP_MAX_MS } from './tapGesture';
+import { FLING_STOP_MS, TAP_MAX_MOVE_PX, TAP_MAX_MS } from './tapGesture';
 
 const TEXT = '私は水を飲みます。';
 let clock = 0;
 let container: HTMLElement;
 let run: HTMLElement;
 let onLookup: ReturnType<typeof vi.fn<(entryId: number, mode: 'hover' | 'selection') => void>>;
+let onTapNoWord: ReturnType<typeof vi.fn<(target: Element) => void>>;
 let ctl: LookupController;
 let cleanup: (() => void)[];
 
@@ -64,6 +70,8 @@ beforeEach(() => {
 	container = document.getElementById('text')!;
 	run = container.querySelector('[data-p="0"] [data-r]')!;
 	caretAt(2);
+	layout.hit = () => true;
+	onTapNoWord = vi.fn<(target: Element) => void>();
 	onLookup = vi.fn<(entryId: number, mode: 'hover' | 'selection') => void>();
 	ctl = new LookupController({
 		container: () => container,
@@ -71,6 +79,7 @@ beforeEach(() => {
 		textLang: () => 'ja',
 		runsOf: (p) => (p === 0 ? [{ text: TEXT }] : p === 1 ? [{ text: '水' }] : undefined),
 		onLookup,
+		onTapNoWord,
 		now: () => clock
 	});
 	cleanup = [ctl.attach(), ctl.listen(container)];
@@ -118,6 +127,39 @@ describe('a tap on a word', () => {
 		expect(ctl.stack.frames).toEqual([]);
 	});
 
+	it('a tap on no word inside the text tells the host what it landed on; a word or the outside does not', async () => {
+		caretAt(8);
+		await tap();
+		expect(onTapNoWord).toHaveBeenCalledExactlyOnceWith(run);
+		onTapNoWord.mockClear();
+		caretAt(2);
+		await tap();
+		const outside = document.createElement('p');
+		document.body.append(outside);
+		await tap(outside);
+		expect(onTapNoWord).not.toHaveBeenCalled();
+	});
+
+	it('a finger in the gap between lines finds the nearer line’s character, within the slack', async () => {
+		const paragraph = container.querySelector<HTMLElement>('[data-p="0"]')!;
+		// The glyphs start 8 px under the finger (y 610): the last probe reaches them.
+		layout.hit = (y) => y >= 618;
+		await tap(paragraph);
+		expect(ctl.stack.frames[0]?.text).toBe('水');
+		ctl.close();
+		layout.hit = (y) => y >= 619;
+		await tap(paragraph);
+		expect(ctl.info).toBeNull();
+	});
+
+	it('hover stays exact: no slack and only over the text', async () => {
+		layout.hit = (y) => y >= 614;
+		pointer('pointermove', run, { pointerType: 'mouse' });
+		await vi.advanceTimersByTimeAsync(500);
+		expect(ctl.info).toBeNull();
+		expect(server.calls).toBe(0);
+	});
+
 	it('a tap on another word replaces the lookup', async () => {
 		caretAt(5);
 		await tap();
@@ -149,6 +191,19 @@ describe('what is no tap', () => {
 		await tap(run, TAP_MAX_MS + 100);
 		expect(ctl.info).toBeNull();
 		expect(server.calls).toBe(0);
+	});
+
+	it('a press that stops a scroll fling', async () => {
+		for (let i = 0; i < 10; i++) {
+			window.dispatchEvent(new Event('scroll'));
+			clock += 16;
+		}
+		await tap(run, 60);
+		expect(ctl.info).toBeNull();
+		// Once the page has settled, a tap is a tap again.
+		clock += FLING_STOP_MS;
+		await tap();
+		expect(ctl.info).not.toBeNull();
 	});
 
 	it('a scroll in between', async () => {
@@ -201,11 +256,13 @@ describe('what is no tap', () => {
 describe('fromTouch', () => {
 	it('a click right after a touch tap is the tap’s; a mouse click never is', async () => {
 		await tap();
-		expect(ctl.fromTouch(new MouseEvent('click'))).toBe(true);
-		expect(ctl.fromTouch(new PointerEvent('click', { pointerType: 'mouse' }))).toBe(false);
-		expect(ctl.fromTouch(new PointerEvent('click', { pointerType: 'touch' }))).toBe(true);
+		expect(ctl.fromTouch(new MouseEvent('click', { detail: 1 }))).toBe(true);
+		expect(ctl.fromTouch(new PointerEvent('click', { detail: 1, pointerType: 'mouse' }))).toBe(false);
+		expect(ctl.fromTouch(new PointerEvent('click', { detail: 1, pointerType: 'touch' }))).toBe(true);
+		// The keyboard (Enter on a focused link) right after a touch.
+		expect(ctl.fromTouch(new MouseEvent('click', { detail: 0 }))).toBe(false);
 		clock += 5000;
-		expect(ctl.fromTouch(new MouseEvent('click'))).toBe(false);
+		expect(ctl.fromTouch(new MouseEvent('click', { detail: 1 }))).toBe(false);
 	});
 });
 
