@@ -327,7 +327,15 @@ func TestRunStopsWithItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { w.s.Run(ctx); close(done) }()
-	time.Sleep(20 * time.Millisecond)
+	for i := 0; i < 500; i++ { // the first pass is immediate; a loaded machine may be slow
+		w.mail.mu.Lock()
+		n := len(w.mail.sent)
+		w.mail.mu.Unlock()
+		if n > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 	cancel()
 	select {
 	case <-done:
