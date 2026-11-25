@@ -76,3 +76,15 @@ describe('suggestReverseGrade', () => {
 		expect(suggestReverseGrade({ typed: '高兴', accepted, readingShown: false })).toBe(1);
 	});
 });
+
+describe('typed answers with symbols', () => {
+	it('keeps symbols and stays gradable for a symbol-only answer', () => {
+		const e = entry({ written: 'C++', forms: [], variants: [] });
+		const accepted = acceptedReverseAnswers(e);
+		expect(suggestReverseGrade({ typed: 'C++', accepted, readingShown: false })).toBe(3);
+		expect(suggestReverseGrade({ typed: 'C', accepted, readingShown: false })).toBe(1);
+		const plus = acceptedReverseAnswers(entry({ written: '+' }));
+		expect(suggestReverseGrade({ typed: '＋', accepted: plus, readingShown: false })).toBe(3);
+		expect(suggestReverseGrade({ typed: '$5', accepted: acceptedReverseAnswers(entry({ written: '5' })), readingShown: false })).toBe(1);
+	});
+});

@@ -5,29 +5,41 @@
 // Three signals, because no single one is reliable:
 //  - `event.isComposing`: Chrome/Firefox; false on the confirming Enter in Safari.
 //  - `keyCode === 229`: what Android Gboard/Samsung and Safari send for IME keys,
-//    often with isComposing false.
-//  - the compositionstart/compositionend window tracked here; Safari fires
-//    compositionend BEFORE the final keydown, so the flag also stays set for a
-//    few milliseconds after the end.
-
-const AFTER_END_MS = 50;
+//    often with isComposing false. Safari fires compositionend BEFORE the final
+//    keydown of a composition, but that keydown still carries keyCode 229, so
+//    no time window after compositionend is needed (and one would swallow the
+//    genuine Enter that Gboard sends within milliseconds of committing a Latin
+//    word: that Enter has keyCode 13).
+//  - the compositionstart/compositionend flag tracked here, for keyboards that
+//    send keys during a composition with isComposing false and a real keyCode.
+//
+// The flag is dropped when the composing element loses focus or is removed:
+// a detached input never gets compositionend, and a stuck flag would kill
+// every Enter/Escape handler.
 
 let composing = false;
-let endedAt = -Infinity;
+let target: EventTarget | null = null;
 let installed = false;
+
+function reset(): void {
+	composing = false;
+	target = null;
+}
 
 function install(): void {
 	if (installed || typeof document === 'undefined') return;
 	installed = true;
-	document.addEventListener('compositionstart', () => (composing = true), true);
 	document.addEventListener(
-		'compositionend',
-		() => {
-			composing = false;
-			endedAt = Date.now();
+		'compositionstart',
+		(e) => {
+			composing = true;
+			target = e.target;
 		},
 		true
 	);
+	document.addEventListener('compositionend', reset, true);
+	document.addEventListener('focusout', reset, true);
+	window.addEventListener('blur', reset);
 	// Safety net for implicit form submission (Enter in a single-line input):
 	// browsers normally block it during composition, but Android Chrome with some
 	// keyboards sends the confirming Enter with isComposing false. Cancelling the
@@ -42,10 +54,11 @@ function install(): void {
 }
 install();
 
-/** True while a composition is open or ended a moment ago. */
+/** True while a composition is open in the element that still has focus. */
 export function imeComposing(): boolean {
 	install();
-	return composing || Date.now() - endedAt < AFTER_END_MS;
+	if (composing && target instanceof Element && (!target.isConnected || document.activeElement !== target)) reset();
+	return composing;
 }
 
 /** True when the key event belongs to an IME composition and must not trigger an action. */

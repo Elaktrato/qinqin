@@ -97,11 +97,11 @@ describe('ClozeCard (type)', () => {
 			await fireEvent.keyDown(field, { key: 'Enter', isComposing: false });
 			expect(onDone).not.toHaveBeenCalled();
 			await fireEvent.compositionEnd(field, { data: '喜欢' });
-			// Safari: the confirming Enter keydown arrives after compositionend.
-			await fireEvent.keyDown(field, { key: 'Enter', isComposing: false });
+			// Safari: the confirming Enter keydown arrives after compositionend, with keyCode 229.
+			await fireEvent.keyDown(field, { key: 'Enter', isComposing: false, keyCode: 229 });
 			expect(onDone).not.toHaveBeenCalled();
-			vi.advanceTimersByTime(100);
-			await fireEvent.keyDown(field, { key: 'Enter' });
+			// A genuine Enter (keyCode 13) right after the commit acts: Gboard sends it within milliseconds.
+			await fireEvent.keyDown(field, { key: 'Enter', keyCode: 13 });
 			expect(onDone).toHaveBeenCalledTimes(1);
 		} finally {
 			vi.useRealTimers();

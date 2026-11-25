@@ -55,6 +55,13 @@ export async function run(ctx) {
 		await waitFor('the search URL', async () => /q=/.test((await where(ctx.cdp)).search), { timeout: 15_000 });
 		await waitText(ctx.cdp, /school/);
 		screenshot('ime-01-search');
+		// Enter immediately after a commit (no sleep): Gboard finishes a composition and sends a plain Enter within
+		// milliseconds, and that Enter (keyCode 13) must search, not be swallowed as part of the composition.
+		await ctx.cdp.eval(`(() => { const f = ${field}; f.focus(); f.select(); })()`);
+		await commit(ctx.cdp, '先生');
+		await press(ctx.cdp, 'Enter');
+		await waitFor('the search URL for the immediate Enter', async () => decodeURIComponent((await where(ctx.cdp)).search).includes('先生'), { timeout: 15_000 });
+		num.imeSearchImmediateEnter = true;
 		const log = await imeLog(ctx.cdp);
 		num.imeSearch = { composing, committed, events: log.map((e) => e.t + (e.isComposing === undefined ? '' : `:${e.isComposing}`)) };
 		return num.imeSearch;
@@ -63,23 +70,23 @@ export async function run(ctx) {
 	await rec.step('ime: typing card - Enter during composition does not check; commit then Enter checks', async () => {
 		await ctx.cdp.eval("location.assign('/study')");
 		await waitFor('the study dialog', () => ctx.cdp.eval(`!!(${find.dialog('Study')})`), { timeout: 40_000 });
-		// The card is a vocab card studied in the Reverse mode: choose the chips as a person does (Reverse on, Vocab off).
-		const chipScope = 'dialog label, dialog [role=checkbox], dialog button, [role=dialog] label, [role=dialog] [role=checkbox], [role=dialog] button';
-		await click(ctx.cdp, find.named('Reverse', chipScope));
-		await sleep(600);
-		await click(ctx.cdp, find.named('Vocab', chipScope));
-		await sleep(800);
+		// The deck switches Reverse on, and an opt-in chip starts CHECKED (setupKinds): clicking it would uncheck it and
+		// the session would serve the Recognise card. Put each chip in the wanted state instead of toggling blindly:
+		// Reverse on, Vocab off.
+		const chipScope = 'label.chip';
+		for (const [name, want] of [['Reverse', true], ['Vocab', false]]) {
+			const chip = find.named(name, chipScope);
+			await waitFor(`the ${name} chip`, () => ctx.cdp.eval(`!!(${chip})`), { timeout: 40_000 });
+			const checked = () => ctx.cdp.eval(`!!(${chip}).querySelector('input').checked`);
+			if ((await checked()) !== want) {
+				await click(ctx.cdp, chip);
+				await waitFor(`the ${name} chip to be ${want ? 'checked' : 'unchecked'}`, async () => (await checked()) === want, { timeout: 10_000 });
+			}
+		}
 		await clickNamed(ctx.cdp, 'Start studying', { timeout: 40_000 });
 		const field = find.field('Type the word');
-		// Known gap (#37): on the CI emulator the seeded card is served as a Recognise card although the deck is set to the
-		// Reverse mode, so no typing field appears. The step then does not run (recorded, not failed); the typing card's
-		// Enter guard is covered by the jsdom tests of ReverseCard and ClozeCard and by the manual checklist (android-ime.md).
-		const appeared = await waitFor('the typing card', () => ctx.cdp.eval(`!!(${field})`), { timeout: 30_000 }).then(() => true, () => false);
-		if (!appeared) {
-			num.imeTypingCard = { ran: false, reason: 'no typing field appeared (the card came as Recognise); manual checklist item' };
-			screenshot('ime-02-typing-card-not-shown');
-			return num.imeTypingCard;
-		}
+		// The step must really run: a missing typing field is a failure (it used to be recorded as ran:false and pass).
+		await waitFor('the typing card (a Reverse card with a "Type the word" field)', () => ctx.cdp.eval(`!!(${field})`), { timeout: 30_000 });
 		await focusField(ctx.cdp, field);
 		await watchIme(ctx.cdp);
 		await compose(ctx.cdp, 'gakkou');
@@ -90,11 +97,15 @@ export async function run(ctx) {
 		await sleep(600);
 		let text = await bodyText(ctx.cdp);
 		if (/Correct|Not quite/.test(text)) throw new Error(`the card was checked during composition: ${text.slice(0, 200)}`);
+		if ((await imeLog(ctx.cdp)).some((e) => e.t === 'compositionend')) {
+			// As in the search step: the emulator may commit the synthetic composition early; start the commit from an empty field.
+			num.imeTypingEarlyEnd = true;
+			await ctx.cdp.eval(`(() => { const f = ${field}; f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+		}
 		await commit(ctx.cdp, '学校');
-		await sleep(300);
 		const typed = await value(ctx.cdp, field);
 		if (typed !== '学校') throw new Error(`typed text is "${typed}"`);
-		if (/Correct|Not quite/.test(await bodyText(ctx.cdp))) throw new Error('committing a candidate checked the card');
+		// Enter immediately after the commit (no sleep): a genuine Enter (keyCode 13) right after compositionend must check.
 		await press(ctx.cdp, 'Enter');
 		await waitText(ctx.cdp, /Correct/, { timeout: 15_000 });
 		screenshot('ime-02-typing-card');

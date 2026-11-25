@@ -84,6 +84,29 @@ describe('normalizeAnswer and accepted answers', () => {
 		expect(normalizeAnswer('ｷﾞﾀｰ')).toBe(normalizeAnswer('ギター'));
 	});
 
+	it('keeps meaningful symbols at the edge and falls back for punctuation-only answers', () => {
+		expect(normalizeAnswer('C++')).toBe('c++');
+		expect(normalizeAnswer('C++')).not.toBe(normalizeAnswer('C'));
+		expect(normalizeAnswer('$5')).toBe('$5');
+		expect(normalizeAnswer('50%')).toBe('50%');
+		expect(normalizeAnswer('C#')).toBe('c#');
+		expect(normalizeAnswer('R&D')).toBe('r&d');
+		expect(normalizeAnswer('@home')).toBe('@home');
+		expect(normalizeAnswer('＋')).toBe('+');
+		expect(normalizeAnswer('Ｃ＋＋')).toBe('c++');
+		expect(normalizeAnswer('￥５００')).toBe('¥500');
+		expect(normalizeAnswer('＃')).toBe('#');
+		expect(normalizeAnswer('+')).toBe('+');
+		// punctuation-only: not empty, so still gradable
+		expect(normalizeAnswer('。')).toBe('。');
+		expect(normalizeAnswer('？！')).toBe('?!');
+		expect(normalizeAnswer('「」')).toBe('「」');
+		// CJK sentence punctuation around a word is still dropped
+		expect(normalizeAnswer('「C++」。')).toBe('c++');
+		expect(normalizeAnswer('食べる！')).toBe('食べる');
+		expect(normalizeAnswer('（学校）')).toBe('学校');
+	});
+
 	it('keeps the script and the long vowel mark: hiragana and katakana are different answers', () => {
 		expect(normalizeAnswer('コーヒー')).not.toBe(normalizeAnswer('こーひー'));
 		expect(normalizeAnswer('コーヒー')).toBe('コーヒー');
