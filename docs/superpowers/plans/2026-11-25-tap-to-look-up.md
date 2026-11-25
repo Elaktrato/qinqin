@@ -124,4 +124,49 @@ options; no module state). It must work inside the Android shell's WebView
 
 ## Execution record
 
-(filled in while building)
+- Task 2 (`tapGesture`): 12 tests written first, failed on the missing module, then passed.
+- Task 3 (`keepAbove`): 9 tests (6 unit, 3 jsdom) written first, failed on the missing module. One unit case
+  then failed against the first implementation (a word 5 px under the top but inside the margin was scrolled
+  down 7 px); the rule was sharpened to "only a word cut off at the top comes down", as the Ruling says.
+- Task 7 (e2e) was written before the controller code and run on the unchanged app: it failed ("element(s) not
+  found": no sheet after `locator.tap`). After tasks 4–6 it passed. To check that it really tests the scroll, the
+  `keepWordAbove` call in `LookupSheet.svelte` was disabled for one run: the test failed with the word's box
+  197.6 px below the sheet's top, then the call was restored.
+- Task 4 (controller): 18 jsdom tests in `useLookup.tap.dom.test.ts` written first; all failed (`listen` is not
+  a function), then passed. The one fix on the way was the test's own index (み, not ま, at code point 5).
+- Task 5 (highlights): `tapHighlight.dom.test.ts` (real ChapterText, controller and phone sheet) failed on the two
+  tap cases (the editor opened) and passed on the mouse case before the change; `actionSpan`'s 3 unit tests failed
+  on the missing export. All pass after it. `ChapterText.dom.test.ts`'s stand-in controller gained `listen`.
+- Task 6 (sheet): the LookupSheet test (the sheet measures itself on open and on growth) failed (nothing observed),
+  then passed.
+- Deviation: the full suite found the conversation and lesson tests' mocked `LookupController` without `listen`
+  (9 unhandled errors, every test still green). Fixed in a separate commit (`test(journal,grammar)`), not folded
+  into task 4's.
+- Environment: under Node 22, 4 tests of `BookView.dom.test.ts` fail on 1 s `findBy` timeouts with and without
+  this branch's changes (checked with the changes stashed); under Node 26 (CI's) all 34 pass. All gates below ran
+  under Node 26 for vitest.
+
+### Gates (2026-11-25)
+
+- `npm run check`: 0 errors, 0 warnings (1779 files; includes `tsc -p e2e`).
+- `npm run build`: ok.
+- Full vitest under Node 26.13.1: 626 files, 13015 passed, 2 skipped, exit 0, no unhandled errors.
+- e2e (`npm run e2e -- --trace off`, pre-installed Chromium): 3 runs, 19 passed each (the 18 of develop plus the
+  new tap test), no failures, no flakes.
+- `node --test scripts/*.test.mjs`: 144 tests, 143 passed, 1 skipped (the font pack build without
+  `scripts/fonts` installed), 0 failed.
+- `node scripts/gen-api-docs.mjs --check`: ok (no routes changed).
+- No Go change, so no Go gate.
+
+### Not verified
+
+- A real Android WebView, a real phone, Safari/WebKit and Firefox: the e2e taps are Chromium's emulated touch
+  (`hasTouch`, `isMobile`). The long-press interplay with the system selection menu, the real double-tap delay
+  with `touch-action: manipulation`, the `pointerType` of real compat clicks and the 30 ms settle against a real
+  selection clearing were not observed on a device.
+- A pen. Only the rules are tested.
+- A tap in the conversation partner's replies and in grammar lessons: they go through the same `listen` and
+  controller, but no test taps there (their DOM tests mock the controller).
+- The scroll when the page cannot scroll far enough (a word in the last lines of a short chapter): the browser
+  clamps it and the word may stay partly covered; nothing adds room.
+- Screen readers: the tap adds no new interface, and the sheet is the one a selection opens.
