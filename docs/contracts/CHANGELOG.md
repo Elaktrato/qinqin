@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #154 — version, bridge and release check (contract 1)
+
+- **Contract version:** the answer of `GET /api/version` carries `contract`, an integer that starts at 1 with this
+  entry and goes up by one in each change that adds an entry a client must follow (`version/README.md`). Entries
+  before this one count as contract 0.
+- **Routes:** new `GET /api/version` (public: `{app: "qinqin", version, contract, bridge: {level, features}}`;
+  with a full session also `commit` and `buildDate`; `Cache-Control: no-store`), and the administrator routes `GET
+  /api/admin/update`, `PATCH /api/admin/update/settings`, `POST /api/admin/update/check`, no access token
+  (`version/version.json`, `version/update-check.json`, new fixtures).
+- **Native shell:** the compatibility rule between the server's `bridge` and the shell's own is the fixture
+  `version/bridge-compat.json` (web: `bridgeCompatibility`).
+
 ## #211 — bootstrap administrator by default
 
 - **Registration:** `POST /api/auth/register` no longer makes the first user on an empty instance the

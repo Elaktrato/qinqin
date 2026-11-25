@@ -21,6 +21,7 @@ import (
 	"qinqin/internal/mail"
 	"qinqin/internal/pack"
 	"qinqin/internal/secretbox"
+	"qinqin/internal/update"
 )
 
 // server carries the shared database handle and data directory for all
@@ -98,6 +99,8 @@ type server struct {
 	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
 	bgGroup    *Jobs            // the background goroutines (WithBackgroundGroup); nil: not counted
+	build      Build            // version, commit and date of this binary (WithBuild)
+	updates    *update.Checker  // nil: no release check (WithUpdateChecker)
 }
 
 // Jobs is the group of a server's background goroutines (the stage
@@ -258,6 +261,10 @@ type route struct {
 func (s *server) routes() []route {
 	return []route{
 		{"GET /healthz", handleHealthz, accPublic, nil, noTok},
+		{"GET /api/version", s.handleVersion, accPublic, nil, noTok},
+		{"GET /api/admin/update", s.handleGetUpdate, accAdmin, nil, noTok},
+		{"PATCH /api/admin/update/settings", s.handlePatchUpdateSettings, accAdmin, nil, noTok},
+		{"POST /api/admin/update/check", s.handleCheckUpdate, accAdmin, nil, noTok},
 		{"POST /api/auth/register", s.handleRegister, accPublic, nil, noTok},
 		{"POST /api/auth/login", s.handleLogin, accPublic, nil, noTok},
 		{"POST /api/auth/login/mfa", s.handleLoginMFA, accPublic, nil, noTok},
