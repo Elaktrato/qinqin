@@ -1,4 +1,4 @@
-// The core features: flashcards (Decks), the reader, the journal and grammar.
+// The core features: flashcards (Decks), the reader, the journal, grammar and the writing-system trainer (scripts, #204).
 // They are the app (record 0006, #199): there are no code plugins. Each user
 // can switch one off for themselves (GET /api/features, PUT
 // /api/features/{id}; docs/contracts/features/). Switching off only hides the
@@ -17,12 +17,16 @@ import JournalPage from '$lib/features/journal/JournalPage.svelte';
 import { journalDef } from '$lib/features/journal/manifest';
 import GrammarPage from '$lib/features/grammar/GrammarPage.svelte';
 import { grammarDef } from '$lib/features/grammar/manifest';
+import ScriptsPage from '$lib/features/scripts/ScriptsPage.svelte';
+import { scriptsDef } from '$lib/features/scripts/manifest';
+import { writingSystemsOf } from '$lib/languages/profiles';
 import type { FeatureSwitch } from './switches.svelte';
 
 export const FLASHCARDS_ID = 'flashcards';
 export const READER_ID = 'reader';
 export const JOURNAL_ID = 'journal';
 export const GRAMMAR_ID = 'grammar';
+export const SCRIPTS_ID = 'scripts';
 
 /** What the web build ships for a feature besides its page: widgets and third-party credits. */
 export interface FeatureDef {
@@ -41,11 +45,18 @@ export interface CoreFeature {
 	href: string;
 	/** Widgets and credits. */
 	def: FeatureDef;
+	/** Shown only where this accepts the workspace's language (the language profile decides); absent: every language. */
+	appliesTo?: (language: string) => boolean;
 	/** The page, which routes `rest` itself. */
 	component: Component<{ rest: string }>;
 }
 
-function feature(id: string, title: MessageKey, def: FeatureDef, component: Component<{ rest: string }>): CoreFeature {
+function feature(
+	id: string,
+	title: MessageKey,
+	def: FeatureDef,
+	component: Component<{ rest: string }>
+): CoreFeature {
 	return {
 		id,
 		get title() {
@@ -54,16 +65,23 @@ function feature(id: string, title: MessageKey, def: FeatureDef, component: Comp
 		slug: id,
 		href: `/${id}`,
 		def,
-		component
+		component,
+		appliesTo: APPLIES_TO[id]
 	};
 }
+
+/** The features that appear only for some languages: the language profile says which (#204). */
+const APPLIES_TO: Readonly<Record<string, (language: string) => boolean>> = {
+	[SCRIPTS_ID]: (language) => writingSystemsOf(language).length > 0
+};
 
 /** The core features in the navigation order (docs/contracts/features/switches.json). */
 export const coreFeatures: readonly CoreFeature[] = [
 	feature(FLASHCARDS_ID, 'features.flashcards.title', flashcardsDef, FlashcardsPage),
 	feature(READER_ID, 'features.reader.title', readerDef, ReaderPage),
 	feature(JOURNAL_ID, 'features.journal.title', journalDef, JournalPage),
-	feature(GRAMMAR_ID, 'features.grammar.title', grammarDef, GrammarPage)
+	feature(GRAMMAR_ID, 'features.grammar.title', grammarDef, GrammarPage),
+	feature(SCRIPTS_ID, 'features.scripts.title', scriptsDef, ScriptsPage)
 ];
 
 /**
@@ -74,7 +92,8 @@ const SWITCHED_OFF: Readonly<Record<string, MessageKey>> = {
 	[FLASHCARDS_ID]: 'features.flashcards.switchedOff',
 	[READER_ID]: 'features.reader.switchedOff',
 	[JOURNAL_ID]: 'features.journal.switchedOff',
-	[GRAMMAR_ID]: 'features.grammar.switchedOff'
+	[GRAMMAR_ID]: 'features.grammar.switchedOff',
+	[SCRIPTS_ID]: 'features.scripts.switchedOff'
 };
 
 /** switchedOffTitle: "Flashcards are switched off" for a core feature id. */

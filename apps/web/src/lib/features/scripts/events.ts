@@ -3,6 +3,8 @@
 
 import { MODES, SYSTEM_IDS, type Mode, type SystemId } from './types';
 
+import { scriptPayload as buildPayload } from '$lib/events/eventPayloads';
+
 export interface ScriptPayload {
 	system: SystemId;
 	/** The item (`hiragana:あ`) or word (`hiragana:word:ねこ`) answered. */
@@ -11,9 +13,9 @@ export interface ScriptPayload {
 	ok: boolean;
 }
 
-/** scriptPayload builds the payload; the member order is part of the contract. */
+/** scriptPayload builds the payload; the member order is part of the contract (events/payloads.json). */
 export function scriptPayload(system: SystemId, item: string, mode: Mode, ok: boolean): ScriptPayload {
-	return { system, item, mode, ok };
+	return buildPayload(system, item, mode, ok) as ScriptPayload;
 }
 
 export interface ScriptAnswer extends ScriptPayload {

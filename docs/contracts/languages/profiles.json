@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "languages/profiles",
- "note": "One profile per language the app knows, and the fallback (code \"*\") for every other code. A code resolves by its primary subtag, case-insensitive (zh-TW -> zh). A profile says what a language has, not how its reading code works. resolve: code -> the profile's code.",
+ "note": "One profile per language the app knows, and the fallback (code \"*\") for every other code. A code resolves by its primary subtag, case-insensitive (zh-TW -> zh). A profile says what a language has, not how its reading code works. resolve: code -> the profile's code. writingSystems (#204): the scripts of the writing-system trainer, ids of its script data (hiragana, katakana, hangul, cyrillic); an empty list hides the trainer.",
  "profiles": [
   {
    "code": "zh",
@@ -13,7 +13,8 @@
    "kana": false,
    "variants": true,
    "cardKinds": ["vocab", "sentence", "writing", "tone", "reverse", "cloze"],
-   "practiceModes": ["decks", "levels", "characterMap"]
+   "practiceModes": ["decks", "levels", "characterMap"],
+   "writingSystems": []
   },
   {
    "code": "ja",
@@ -25,7 +26,8 @@
    "kana": true,
    "variants": false,
    "cardKinds": ["vocab", "sentence", "writing", "reverse", "cloze"],
-   "practiceModes": ["decks", "levels", "characterMap"]
+   "practiceModes": ["decks", "levels", "characterMap"],
+   "writingSystems": ["hiragana", "katakana"]
   },
   {
    "code": "es",
@@ -37,7 +39,34 @@
    "kana": false,
    "variants": false,
    "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
-   "practiceModes": ["decks", "levels"]
+   "practiceModes": ["decks", "levels"],
+   "writingSystems": []
+  },
+  {
+   "code": "ko",
+   "script": "other",
+   "readings": [],
+   "segmentation": "spaces",
+   "tones": false,
+   "strokes": false,
+   "kana": false,
+   "variants": false,
+   "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels"],
+   "writingSystems": ["hangul"]
+  },
+  {
+   "code": "ru",
+   "script": "other",
+   "readings": [],
+   "segmentation": "spaces",
+   "tones": false,
+   "strokes": false,
+   "kana": false,
+   "variants": false,
+   "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels"],
+   "writingSystems": ["cyrillic"]
   },
   {
    "code": "*",
@@ -49,7 +78,8 @@
    "kana": false,
    "variants": false,
    "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
-   "practiceModes": ["decks", "levels"]
+   "practiceModes": ["decks", "levels"],
+   "writingSystems": []
   }
  ],
  "resolve": [
@@ -61,8 +91,11 @@
   {"code": "ja-JP", "profile": "ja"},
   {"code": "es", "profile": "es"},
   {"code": "es-419", "profile": "es"},
+  {"code": "ko", "profile": "ko"},
+  {"code": "ko-KR", "profile": "ko"},
+  {"code": "ru", "profile": "ru"},
+  {"code": "RU_ru", "profile": "ru"},
   {"code": "pt-br", "profile": "*"},
-  {"code": "ko", "profile": "*"},
   {"code": "zhx", "profile": "*"},
   {"code": "", "profile": "*"}
  ]

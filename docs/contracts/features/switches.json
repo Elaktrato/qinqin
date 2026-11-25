@@ -2,12 +2,13 @@
  "version": 1,
  "rule": "features/switches",
  "note": "GET /api/features answers the caller's switch of every core feature, in this order; a feature never switched is on (updatedAt null). reads: how a client reads a list (no row, or a row it cannot read, is on).",
- "features": ["flashcards", "reader", "journal", "grammar"],
+ "features": ["flashcards", "reader", "journal", "grammar", "scripts"],
  "list": [
   {"id": "flashcards", "enabled": true, "updatedAt": null},
   {"id": "reader", "enabled": true, "updatedAt": null},
   {"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"},
-  {"id": "grammar", "enabled": true, "updatedAt": "2026-11-24T10:01:00Z"}
+  {"id": "grammar", "enabled": true, "updatedAt": "2026-11-24T10:01:00Z"},
+  {"id": "scripts", "enabled": true, "updatedAt": null}
  ],
  "reads": [
   {"name": "the stored switches", "list": [{"id": "flashcards", "enabled": true, "updatedAt": null}, {"id": "reader", "enabled": true, "updatedAt": null}, {"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"}, {"id": "grammar", "enabled": true, "updatedAt": null}], "enabled": {"flashcards": true, "reader": true, "journal": false, "grammar": true}},

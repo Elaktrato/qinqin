@@ -13,7 +13,7 @@ describe('the activity sources', () => {
 				unit: 'measure' in r.rule && r.rule.measure?.field === 'seconds' ? 'seconds' : 'count'
 			}))
 		);
-		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal']);
+		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script']);
 	});
 
 	it('word themselves from the catalogue; an unknown type shows its id', () => {

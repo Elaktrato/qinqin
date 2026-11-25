@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #204, #63 — writing-system trainer (scripts)
+
+- **Feature switch:** a fifth core feature id `scripts`, last in the order (`features/switches.json`:
+  `features`, the fresh list). `GET /api/features` answers five rows; clients keep reading a missing row as on.
+- **Event type:** `script`, written by the web app, one per practice answer: `{system, item, mode, ok}`
+  (`events/payloads.json`, builder `scriptPayload`). The server stores it like any event; payload ids need no
+  remapping on restore.
+- **Activity rule:** `script` is a count rule of the feature `scripts` (`events/activity.json`: `rules`, a case), so
+  every answer is a heatmap, goal and weekly-summary activity. `GET /api/stats/activity` lists it among the sources.
+- **Language profiles:** the new member `writingSystems` (a list of ids, empty for no trainer) on every profile, and
+  new profiles `ko` (`hangul`) and `ru` (`cyrillic`) (`languages/profiles.json`; `ko` resolved to the fallback
+  before). Readers that ignore unknown members are unaffected.
+- **Catalogue keys:** the key area `scripts` (`i18n/README.md`).
+
 ## #36 — native device features advertised on the bridge (contract 4)
 
 - **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["files", "haptics", "keep-awake",

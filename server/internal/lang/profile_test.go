@@ -41,4 +41,12 @@ func TestProfilesFixture(t *testing.T) {
 	if !ProfileOf("ja").Kana || ProfileOf("ja").Tones {
 		t.Errorf("ja %+v", ProfileOf("ja"))
 	}
+	// The writing-system trainer (#204) appears for these languages only.
+	for code, want := range map[string][]string{
+		"ja-JP": {"hiragana", "katakana"}, "ko": {"hangul"}, "RU_ru": {"cyrillic"}, "zh": {}, "es": {}, "pt": {}, "": {},
+	} {
+		if got := ProfileOf(code).WritingSystems; !reflect.DeepEqual(got, want) {
+			t.Errorf("WritingSystems of %q = %v, want %v", code, got, want)
+		}
+	}
 }

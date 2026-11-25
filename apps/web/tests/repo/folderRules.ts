@@ -88,6 +88,7 @@ export const ROUTE_FEATURES: Record<string, string> = {
 	reader: 'features/reader',
 	register: 'account',
 	reset: 'account',
+	scripts: 'features/scripts',
 	search: 'search',
 	settings: 'settings',
 	sources: 'sources',

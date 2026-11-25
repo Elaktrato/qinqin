@@ -11,7 +11,7 @@ This wiki has five parts. Pick the one that matches why you are here.
 - [Workspaces and languages](Workspaces-and-languages)
 - [Searching and entries](Searching-and-entries): search, radical and part lookup, entries, notes, lookup history.
 - [Flashcards: study sessions](Flashcards-study-sessions), [Decks, limits and vacation](Flashcards-decks-limits-vacation), [Daily goals](Daily-goals), [Reminders](Reminders), [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)
-- [Reader](Reader) and [Grammar lessons](Grammar-lessons)
+- [Reader](Reader), [Grammar lessons](Grammar-lessons) and [Scripts: kana, Hangul, Cyrillic](Scripts-trainer)
 - [Journal and AI providers](Journal-and-AI)
 - [Stats and the activity heatmap](Stats-and-heatmap), [Weekly summary](Weekly-summary), [Milestones](Milestones)
 - [Settings tour](Settings-tour) and [Appearance and themes](Appearance-and-themes): colour themes, accent, corners, spacing and the hanzi font.

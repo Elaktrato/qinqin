@@ -71,7 +71,8 @@ describe('deriveProgress', () => {
 	});
 
 	it('ignores other event types and unreadable payloads', () => {
-		const map = deriveProgress([{ id: 'x', workspaceId: 1, device: 'web', ts: new Date(T0).toISOString(), type: 'review', payload: {} }, ev('hangul:ㄱ', true, T0, 'hangul')]);
+		const review = { id: 'x', ts: new Date(T0).toISOString(), type: 'review', payload: {} };
+		const map = deriveProgress([review, ev('hangul:ㄱ', true, T0, 'hangul')]);
 		expect([...map.keys()]).toEqual(['hangul:ㄱ']);
 	});
 
