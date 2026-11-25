@@ -12,11 +12,13 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 }));
 vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
-	createDeck: vi.fn()
+	createDeck: vi.fn(),
+	renameDeck: vi.fn(),
+	deleteDeck: vi.fn()
 }));
 
 import { loadStudyHistory } from '$lib/study/data';
-import { createDeck } from '$lib/study/commands/decks';
+import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { defaultSetup } from '$lib/study/setup';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
@@ -257,5 +259,58 @@ describe('DeckList Study (all decks)', () => {
 		expect(study.getAttribute('href')).toBe('/study');
 		await fireEvent.click(study);
 		expect(ctx.session.studyModal.open).toBe(true);
+	});
+});
+
+describe('DeckList rename and delete (moved from the study page)', () => {
+	async function verbsRow(): Promise<HTMLElement> {
+		render(DeckList, { context: ctx.context });
+		return (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
+	}
+
+	it('General can be neither renamed nor deleted', async () => {
+		await verbsRow();
+		const general = screen.getByRole('link', { name: 'General' }).closest('li') as HTMLElement;
+		expect(within(general).queryByRole('button', { name: /Rename/ })).toBeNull();
+		expect(within(general).queryByRole('button', { name: /Delete/ })).toBeNull();
+	});
+
+	it('renames a deck inline and reloads the list', async () => {
+		vi.mocked(renameDeck).mockResolvedValue({ ...verbs, name: 'Actions' });
+		const row = await verbsRow();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Rename Verbs' }));
+		const field = within(row).getByLabelText('New name for Verbs') as HTMLInputElement;
+		await fireEvent.input(field, { target: { value: '  Actions ' } });
+		await fireEvent.click(within(row).getByRole('button', { name: 'Save' }));
+		await waitFor(() => expect(renameDeck).toHaveBeenCalledWith(ctx.session.study, 1, 'd1', 'Actions'));
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
+	});
+
+	it('refuses an empty name', async () => {
+		const row = await verbsRow();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Rename Verbs' }));
+		await fireEvent.input(within(row).getByLabelText('New name for Verbs'), { target: { value: '   ' } });
+		await fireEvent.click(within(row).getByRole('button', { name: 'Save' }));
+		expect(await within(row).findByRole('alert')).toHaveProperty('textContent', 'Deck name cannot be empty.');
+		expect(renameDeck).not.toHaveBeenCalled();
+	});
+
+	it('deletes a deck after the same confirmation, and not without it', async () => {
+		const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+		const row = await verbsRow();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Delete Verbs' }));
+		expect(confirm).toHaveBeenCalledWith('Delete "Verbs"? Its cards stay in your other decks, or move to General.');
+		expect(deleteDeck).not.toHaveBeenCalled();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Delete Verbs' }));
+		await waitFor(() => expect(deleteDeck).toHaveBeenCalledWith(ctx.session.study, 1, 'd1'));
+		confirm.mockRestore();
+	});
+
+	it('a failed delete says so', async () => {
+		vi.spyOn(window, 'confirm').mockReturnValue(true);
+		vi.mocked(deleteDeck).mockRejectedValue(new Error('down'));
+		const row = await verbsRow();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Delete Verbs' }));
+		expect((await screen.findByText('Could not delete the deck.'))).toBeTruthy();
 	});
 });

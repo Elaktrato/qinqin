@@ -4,7 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { saveConfig } from '$lib/study/session';
 	import { here } from '$lib/routing/here';
-	import { createDeck } from '$lib/study/commands/decks';
+	import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { knownEntries } from '$lib/study/known';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
@@ -94,6 +95,56 @@
 		}
 	}
 
+	// Rename and delete (moved from the study page: the same commands, confirmation and wording).
+	let renamingId = $state<string | null>(null);
+	let renameName = $state('');
+	let deletingId = $state<string | null>(null);
+	let deckError = $state('');
+	let deckErrorId = $state<string | null>(null);
+
+	function beginRename(id: string, name: string): void {
+		renamingId = id;
+		renameName = name;
+		deckError = '';
+	}
+
+	async function submitRename(event: SubmitEvent, id: string): Promise<void> {
+		event.preventDefault();
+		const name = renameName.trim();
+		deckErrorId = id;
+		if (name === '') {
+			deckError = t('study.decks.nameEmpty');
+			return;
+		}
+		const ws = workspaceId;
+		if (ws === null) return;
+		deckError = '';
+		try {
+			await renameDeck(session.study, ws, id, name);
+			renamingId = null;
+			if (workspaceId === ws) await store.load(ws, true);
+		} catch (err) {
+			deckError = errorText(err, t('study.decks.renameFailed'));
+		}
+	}
+
+	async function removeDeck(id: string, name: string): Promise<void> {
+		const ws = workspaceId;
+		if (deletingId !== null || ws === null) return;
+		if (!confirm(t('study.decks.confirmDelete', { deck: name }))) return;
+		deletingId = id;
+		deckErrorId = id;
+		deckError = '';
+		try {
+			await deleteDeck(session.study, ws, id);
+			if (workspaceId === ws) await store.load(ws, true);
+		} catch (err) {
+			deckError = errorText(err, t('study.decks.deleteFailed'));
+		} finally {
+			deletingId = null;
+		}
+	}
+
 	function study(deckId: string, kinds: readonly StudyCardKind[]): void {
 		if (workspaceId === null) return;
 		saveConfig(deckSessionConfig(session.setups.of(workspaceId).setup, deckId, kinds, here()));
@@ -160,16 +211,42 @@
 				{#if deck.extras}
 					<p class="note">{t('flashcards.list.extras')}</p>
 				{/if}
-				<div class="actions">
-					<Button
-						aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
-						onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
-					>
-					<Button
-						href={flashcardsHref({ view: 'settings', deckId: deck.id })}
-						aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</Button
-					>
-				</div>
+				{#if renamingId === deck.id}
+					<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
+						<Field label={t('study.decks.newName', { deck: deck.name })} hideLabel bind:value={renameName} maxlength={80} />
+						<Button type="submit">{t('common.action.save')}</Button>
+						<Button onclick={() => (renamingId = null)}>{t('common.action.cancel')}</Button>
+					</form>
+				{:else}
+					<div class="actions">
+						<Button
+							aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
+							onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
+						>
+						<Button
+							href={flashcardsHref({ view: 'settings', deckId: deck.id })}
+							aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</Button
+						>
+						{#if deck.id !== GENERAL_DECK_ID}
+							<Button
+								variant="plain"
+								aria-label={t('flashcards.list.renameNamed', { name: deck.name })}
+								onclick={() => beginRename(deck.id, deck.name)}>{t('study.decks.rename')}</Button
+							>
+							<Button
+								variant="plain"
+								tone="danger"
+								disabled={deletingId === deck.id}
+								aria-label={t('flashcards.list.deleteNamed', { name: deck.name })}
+								onclick={() => void removeDeck(deck.id, deck.name)}
+								>{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}</Button
+							>
+						{/if}
+					</div>
+				{/if}
+				{#if deckError && deckErrorId === deck.id}
+					<p class="error" role="alert">{deckError}</p>
+				{/if}
 			</li>
 		{/each}
 	</ul>
@@ -271,6 +348,18 @@
 		gap: var(--space-2);
 		align-items: center;
 		margin-top: var(--space-2);
+	}
+
+	.rename {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: end;
+		margin-top: var(--space-2);
+	}
+
+	.rename :global(.field) {
+		flex: 1 1 14rem;
 	}
 
 	.new {
