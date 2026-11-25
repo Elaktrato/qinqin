@@ -5,6 +5,22 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #212 — visual aids: pictures, tone colours, character anatomy (contract 9)
+
+- **Workspace setting:** the key `visualAids`, `{pictures, toneColors, anatomy}` booleans, all on by default, read
+  switch by switch (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **New fixtures:** `aids/visual-aids.json` (rule `aids/visual-aids`: the key, the defaults, how it is read and
+  written), `aids/tones.json` (rule `aids/tones`: the syllable split of a pinyin reading, the five tone contours,
+  the Okabe-Ito based colour set and how it is made readable on a theme) and `aids/anatomy.json` (rule
+  `aids/anatomy`: parts of a character from the components index with meanings from the character universe). The
+  rules are in `aids/README.md`.
+- **Hints:** the `picture` kind of `cards/hints.json` is ready: an entry offers it when `hasPicture` (an images pack
+  maps it and `pictures` is on). Defaults and plans are unchanged.
+- **No new route, row or pack type.** A client that draws none of these changes nothing; a client that does reads
+  `GET /api/images/entries/{id}`, `GET /api/components` and `GET /api/characters` as before.
+- **Catalogue keys:** `settings` gains `settings.aids.*`, `study` gains `study.aids.*`; `settings.hints.kind.pictureNote`
+  now describes the ready picture hint.
+
 ## #216 — images packs: bundled pictures for words (contract 8)
 
 - **New pack type:** `images` (format `images-svg`, `languages` like a strokes pack, uploadable, no data package),

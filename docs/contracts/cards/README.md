@@ -209,8 +209,9 @@ Optional help a learner asks for during a review instead of looking at the answe
 `apps/web/src/lib/study/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
 
 - **Hint kinds** (the registry, in the fixed order they are revealed in): `reading` (the entry's readings: kana,
-  pinyin, zhuyin, romaji, on and kun), then `picture` (defined, but no entry has a picture before #212/#216: an entry
-  offers it only when it has one, `hasPicture`). A new kind is a new registry row with its own defaults; Starter mode
+  pinyin, zhuyin, romaji, on and kun), then `picture` (ready since #212: an entry
+  offers it only when it has one, `hasPicture`: an images pack maps it, #216, and the Pictures visual aid is on,
+  `aids/README.md`). A new kind is a new registry row with its own defaults; Starter mode
   (#214) uses the same kinds, rules and display, and replaces the modes of one card with `forced` ones (its stages).
 - **Modes**, per hint kind and card kind: `always` (part of the front, shown from the start), `hint` (hidden until the
   learner asks), `never`. **Defaults** are the table `defaults` in the fixture: reading is a hint on `vocab`

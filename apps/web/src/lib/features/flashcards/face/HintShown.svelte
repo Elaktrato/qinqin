@@ -2,16 +2,20 @@
 	// The hints on view for the card (#215), in the fixed order: the readings (as the Recall card's
 	// "Show reading" showed them), later the picture (#212/#216). One place draws every hint kind, so
 	// Starter mode (#214) and every card kind show a hint the same way.
+	import EntryPicture from '$lib/aids/EntryPicture.svelte';
 	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { t } from '$lib/i18n';
 	import type { Entry } from '$lib/api/types';
 	import { useCardHints } from './cardHints.svelte';
 
-	let { entry }: { entry: Pick<Entry, 'readings' | 'language'> } = $props();
+	let { entry }: { entry: Pick<Entry, 'readings' | 'language'> & Partial<Pick<Entry, 'id'>> } = $props();
 	const hints = useCardHints();
 </script>
 
 {#each hints.visible as kind (kind)}
+	{#if kind === 'picture' && entry.id !== undefined}
+		<span data-hint="picture"><EntryPicture entryId={entry.id} size={7} /></span>
+	{/if}
 	{#if kind === 'reading' && entry.readings.length > 0}
 		<ul class="hint-readings" data-hint="reading" aria-label={t('flashcards.card.readings')}>
 			{#each entry.readings as reading, i (`${reading.type}:${i}`)}

@@ -25,7 +25,7 @@ Under `apps/web/src/lib/`:
 - **Feature folders**: everything owned by one feature, UI and logic. The four switchable core features live
   under `lib/features/<feature>` (flashcards, reader, journal, grammar: the features of record
   [0006](0006-core-features-instead-of-code-plugins.md), each with a switch); every other feature folder sits
-  at the top of `lib/`: `account`, `activity`, `admin`, `entry`, `goals`, `lookups` (the lookup history and
+  at the top of `lib/`: `account`, `activity`, `admin`, `aids` (the visual aids: tone colours, pictures, anatomy), `entry`, `goals`, `lookups` (the lookup history and
   its page), `milestones`, `notes`, `placement` (the placement test and "I already know this", #74), `pwa`, `search`, `settings`, `sources`, `stats`, `weekly`, `widgets` (the
   home and Stats overview board) and `workspace`.
 - **Logic-only folders**: the shared layers below the features, with no component: `api`, `audio`, `auth`,

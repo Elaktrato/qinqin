@@ -1,0 +1,24 @@
+{
+ "version": 1,
+ "rule": "aids/tones",
+ "note": "Tone colours and contours (#212). Web: apps/web/src/lib/aids/aids.contract.test.ts. `segments` are [text, tone] pairs; tone null = not coloured.",
+ "spectrum": ["#0072b2", "#e69f00", "#009e73", "#cc79a7"],
+ "minContrast": 4.5,
+ "contours": { "1": "M1 2 H9", "2": "M1 8 L9 2", "3": "M1 3 L4 8 L9 2", "4": "M1 2 L9 8", "5": "M4 5 H6" },
+ "segments": [
+  { "value": "nǐ hǎo", "segments": [["nǐ", 3], [" ", null], ["hǎo", 3]] },
+  { "value": "mā má mǎ mà ma", "segments": [["mā", 1], [" ", null], ["má", 2], [" ", null], ["mǎ", 3], [" ", null], ["mà", 4], [" ", null], ["ma", 5]] },
+  { "value": "xī'àn", "segments": [["xī", 1], ["'", null], ["àn", 4]] },
+  { "value": "Běijīng", "segments": [["Běi", 3], ["jīng", 1]] },
+  { "value": "tāmen", "segments": [["tā", 1], ["men", 5]] },
+  { "value": "chángchéng", "segments": [["cháng", 2], ["chéng", 2]] },
+  { "value": "xiǎoháir", "segments": [["xiǎo", 3], ["háir", 2]] },
+  { "value": "ni3 hǎo", "segments": [["ni3", null], [" ", null], ["hǎo", 3]] },
+  { "value": "", "segments": [] }
+ ],
+ "colors": [
+  { "colors": { "panel": "#ffffff", "text": "#000000", "muted": "#595959" }, "expect": ["#0072b2", "#966700", "#008662", "#a36186", "#595959"] },
+  { "colors": { "panel": "#1a1b26", "text": "#e6e6ee", "muted": "#9aa0b4" }, "expect": ["#3a8fc1", "#e69f00", "#009e73", "#cc79a7", "#9aa0b4"] },
+  { "colors": { "panel": "#ffffff", "text": "#222222", "muted": "#cccccc" }, "expect": ["#0072b2", "#986d0e", "#078563", "#a26386", "#222222"] }
+ ]
+}

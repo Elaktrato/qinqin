@@ -21,6 +21,7 @@
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import FeedbackSettings from '$lib/settings/FeedbackSettings.svelte';
 	import HintSettings from '$lib/settings/HintSettings.svelte';
+	import VisualAidsSettings from '$lib/settings/VisualAidsSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -318,6 +319,7 @@
 				<StudyDaySettings />
 				<StudySettings />
 				<HintSettings />
+				<VisualAidsSettings />
 				<KnownSettings />
 				<LevelCheck />
 				<FeedbackSettings />
