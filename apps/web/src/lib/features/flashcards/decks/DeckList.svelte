@@ -14,7 +14,7 @@
 	import { Button, Field, Section } from '$lib/ui';
 	import SystemDecks from './SystemDecks.svelte';
 	import StarterDecks from './StarterDecks.svelte';
-	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
@@ -145,9 +145,9 @@
 		}
 	}
 
-	function study(deckId: string, kinds: readonly StudyCardKind[]): void {
+	async function study(deckId: string, kinds: readonly StudyCardKind[]): Promise<void> {
 		if (workspaceId === null) return;
-		saveConfig(deckSessionConfig(session.setups.of(workspaceId).setup, deckId, kinds, here()));
+		saveConfig(deckSessionConfig(await loadedSetup(session.setups, workspaceId), deckId, kinds, here()));
 		void goto('/study/session');
 	}
 
@@ -221,7 +221,7 @@
 					<div class="actions">
 						<Button
 							aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
-							onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
+							onclick={() => void study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
 						>
 						<Button
 							href={flashcardsHref({ view: 'settings', deckId: deck.id })}

@@ -123,6 +123,7 @@ describe('DeckList', () => {
 		render(DeckList, { context: ctx.context });
 		const study = await screen.findByRole('button', { name: 'Study Verbs' });
 		await fireEvent.click(study);
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
 		const saved = JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string);
 		expect(saved).toMatchObject({ mode: 'decks', deckIds: ['d1'], cardTypes: ['vocab'], from: location.pathname });
 		expect(goto).toHaveBeenCalledWith('/study/session');
@@ -138,6 +139,7 @@ describe('DeckList', () => {
 		const row = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(row.textContent).toContain('+ reverse/cloze cards as you study');
 		await fireEvent.click(within(row).getByRole('button', { name: 'Study Verbs' }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string).cardTypes).toEqual(['vocab', 'reverse']);
 	});
 

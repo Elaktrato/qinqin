@@ -37,7 +37,7 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
-	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -262,9 +262,14 @@
 		}
 	}
 
-	function study(): void {
+	// The saved setup's limits and kinds count here; a deep link must not start from the defaults.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+
+	async function study(): Promise<void> {
 		if (data === null) return;
-		const setup = session.setups.of(data.workspaceId).setup;
+		const setup = await loadedSetup(session.setups, data.workspaceId);
 		saveConfig(
 			deckSessionConfig(setup, deckId, sessionKinds(setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? ''), here())
 		);

@@ -6,7 +6,18 @@
 import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 import { newSessionSeed, type StudySessionConfig } from '$lib/study/session';
 import { setupKinds, setupSessionConfig, type StudySetup } from '$lib/study/setup';
+import type { StudySetups } from '$lib/study/setupStore.svelte';
 import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
+
+/**
+ * loadedSetup: the workspace's saved setup once the server answered in this
+ * session (a deep link may start before the page's own refresh lands); offline
+ * the device's copy, else the defaults.
+ */
+export async function loadedSetup(setups: StudySetups, workspaceId: number): Promise<StudySetup> {
+	if (!setups.of(workspaceId).loaded) await setups.refresh(workspaceId);
+	return setups.of(workspaceId).setup;
+}
 
 /** A session over this deck only: the saved limits and the deck's kinds, with a fresh seed. */
 export function deckSessionConfig(

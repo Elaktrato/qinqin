@@ -19,6 +19,7 @@ vi.mock('$lib/study/commands/write', async (importOriginal) => ({
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { defaultSetup } from '$lib/study/setup';
 import { PartialPushError } from '$lib/sync/push';
 import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
 import { pushStudy } from '$lib/study/commands/write';
@@ -142,6 +143,7 @@ describe('SystemDeckDetail', () => {
 	it('Study starts a level session of this level', async () => {
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Study this level' }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({
 			mode: 'levels',
 			schemeId: 1,
@@ -274,5 +276,26 @@ describe('SystemDeckDetail', () => {
 	it('says when the level does not exist', async () => {
 		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'nope', level: 'x' } }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
+	});
+});
+
+describe('SystemDeckDetail Study and the saved setup (review)', () => {
+	it('a deep-linked Study waits for the synced setup before it starts', async () => {
+		const synced = { ...defaultSetup(), newLimit: 7, reviewLimit: 33 };
+		let loaded = false;
+		let release!: () => void;
+		const gate = new Promise<void>((r) => (release = r));
+		vi.spyOn(ctx.session.setups, 'of').mockImplementation(() => ({ setup: loaded ? synced : defaultSetup(), raw: null, loaded, known: loaded, saveError: null }));
+		const refresh = vi.spyOn(ctx.session.setups, 'refresh').mockImplementation(async () => {
+			await gate;
+			loaded = true;
+		});
+		await open();
+		expect(refresh).toHaveBeenCalled();
+		await fireEvent.click(await screen.findByRole('button', { name: 'Study this level' }));
+		expect(goto).not.toHaveBeenCalledWith('/study/session');
+		release();
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({ mode: 'levels', newLimit: 7 });
 	});
 });

@@ -18,7 +18,7 @@
 	import { createDecksData } from './decksData.svelte';
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
-	import { levelSessionConfig } from './studyStart';
+	import { levelSessionConfig, loadedSetup } from './studyStart';
 	import { Button, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -92,11 +92,18 @@
 	let retryable = $state(true);
 	let skippedBefore = false;
 
-	function study(): void {
-		if (deck === null || deck === undefined) return;
+	// The saved setup's limits count here; a deep link must not start from the defaults.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+
+	async function study(): Promise<void> {
+		const level = deck;
+		if (level === null || level === undefined) return;
 		const ws = session.workspaces.current?.id ?? null;
 		if (ws === null) return;
-		saveConfig(levelSessionConfig(session.setups.of(ws).setup, deck.schemeId, deck.level, here()));
+		const setup = await loadedSetup(session.setups, ws);
+		saveConfig(levelSessionConfig(setup, level.schemeId, level.level, here()));
 		void goto('/study/session');
 	}
 
