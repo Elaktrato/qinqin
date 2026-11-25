@@ -2,7 +2,7 @@
 
 ## The routine
 
-1. **Back up first** ([Backup, recovery and the command line](Admin-backup-and-recovery)). Read the release notes of the new version on the repository's Releases page.
+1. **Back up first** ([Backup, recovery and the command line](Admin-backup-and-recovery)). Read the release notes of the new version on the repository's Releases page; Settings → Admin → Updates shows them and tells you when a newer release exists ([Updates and the release check](Admin-updates)).
 2. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and redeploy; in Portainer enable *Pull latest image*.
 3. Read the container log of the first start. It tells you when a `qinqin seed` is due.
 

@@ -180,6 +180,10 @@
 		"access": "admin"
 	},
 	{
+		"pattern": "GET /api/admin/update",
+		"access": "admin"
+	},
+	{
 		"pattern": "GET /api/admin/users",
 		"access": "admin"
 	},
@@ -428,6 +432,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/version",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
 	},
@@ -445,6 +453,10 @@
 	},
 	{
 		"pattern": "PATCH /api/admin/settings/auth",
+		"access": "admin"
+	},
+	{
+		"pattern": "PATCH /api/admin/update/settings",
 		"access": "admin"
 	},
 	{
@@ -541,6 +553,10 @@
 	},
 	{
 		"pattern": "POST /api/admin/settings/smtp/test",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/update/check",
 		"access": "admin"
 	},
 	{

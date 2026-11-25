@@ -26,6 +26,7 @@ where the rule is implemented today.
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `examples/` (AI example sentences: drafts, kept examples marked `ai`, reports), `journal/` (the journal's entries, reviews, topic ideas, settings and the conversation partner's conversations; the mistake/suggestion kind), `grammar/` (lesson progress) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Features | `features/` (the per-user switches of the four core features) |
+| Version | `version/` (`GET /api/version`, the contract version, the native bridge level and features, the administrator's release check) |
 | Settings | `settings/` (workspace settings keys and their merge; the user-global keyed rows `home-layout`, `activity-view`, `widget-options` and `nav-layout`) |
 | Data safety | `backup/` (archive format 2, id remapping) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
@@ -35,7 +36,7 @@ where the rule is implemented today.
 
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
-`auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
+`auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `journal/` → `grammar/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 

@@ -127,7 +127,7 @@ describe('the Admin tab', () => {
 		expect(SETTINGS_TAB_LABELS.admin).toBe('Admin');
 	});
 	it('has the sections Users, Invites, Email, Security with Users as the default', () => {
-		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security', 'backup']);
+		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security', 'backup', 'updates']);
 		expect(parseAdminSection(null)).toBe('users');
 		expect(parseAdminSection('invites')).toBe('invites');
 		expect(parseAdminSection('email')).toBe('email');

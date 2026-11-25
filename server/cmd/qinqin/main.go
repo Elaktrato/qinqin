@@ -39,6 +39,7 @@ import (
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/packs"
+	"qinqin/internal/update"
 	"qinqin/internal/webdist"
 )
 
@@ -271,7 +272,7 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		return err
 	} else {
 		log.Printf("qinqin listening on %s (data: %s)", ln.Addr(), data)
-		srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, data, librarySources(data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(bg, 5*time.Minute), api.WithBackgroundGroup(&apiJobs), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
+		srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, data, librarySources(data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(bg, 5*time.Minute), api.WithBackgroundGroup(&apiJobs), api.WithTrustedProxies(trusted), api.WithPackages(pkgs), api.WithBuild(buildInfo()), api.WithUpdateChecker(update.NewChecker(update.Config{Token: os.Getenv("QINQIN_UPDATE_TOKEN")})))))
 		if err := runHTTP(ctx, srv, ln, httpGrace, log.Printf); err != nil {
 			log.Printf("%v", err)
 		}
@@ -375,8 +376,9 @@ func newHTTPServer(h http.Handler) *http.Server {
 	}
 }
 
-// version is sent in the User-Agent of requests to the text sources; set
-// it at build time with -ldflags "-X main.version=1.2.3".
+// version is sent in the User-Agent of requests to the text sources and
+// reported by GET /api/version; set it at build time with -ldflags "-X
+// main.version=1.2.3" (see commit and buildDate in buildinfo.go).
 var version = "dev"
 
 // librarySources builds the public-domain text sources, sharing one

@@ -26,6 +26,7 @@
 
 - [Deploying](Admin-deploying)
 - [Upgrading](Admin-upgrading)
+- [Updates and the release check](Admin-updates)
 - [Environment variables](Admin-environment-variables)
 - [Users and registration](Admin-users-and-registration)
 - [Email and security](Admin-email-and-security)
