@@ -1,10 +1,11 @@
-// The session setup is a small choice the user makes before studying:
-// which decks to draw from, how many new and review cards to include,
-// and which card kinds to queue. It is per-tab state, so it lives in
-// sessionStorage rather than the server: no sync, no stale setup on the
-// next device.
+// The running study session of this tab: what Start in the study modal, or a
+// deck's or level's Study, planned (decks or a level, limits, kinds, orders,
+// the shuffle's seed, Study all and the page it was started from). It lives in
+// sessionStorage, so a reload of /study/session keeps its order; the setup the
+// modal starts from is the synced, per-workspace `study-setup` row (setup.ts).
 
 import { t } from '$lib/i18n';
+import { appPath } from '$lib/routing/here';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';
 import type { TypeOrder } from './sessionMix';
 import { CARD_KINDS } from './types';
@@ -47,6 +48,8 @@ export interface StudySessionConfig {
 	 * default: kinds interleaved, a word's cards kept apart.
 	 */
 	typeOrder?: TypeOrder;
+	/** The app path the session was started from; its Back returns there (absent: home). */
+	from?: string;
 }
 
 /** sessionNewOrder is the setup's order of new cards, random by default. */
@@ -189,10 +192,13 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder } =
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder, from } =
 		parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
+
+	// Only a path of this app: a stored address cannot send Back to another site.
+	const origin = appPath(typeof from === 'string' ? from : null);
 
 	// Round 1 stored no mode; those setups were all deck sessions.
 	const parsedMode = mode === undefined ? 'decks' : mode;
@@ -209,7 +215,8 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		...(studyAll === true ? { studyAll: true } : {}),
 		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
 		// An unknown order of card types is the default (mixed); it never discards the setup.
-		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {})
+		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {}),
+		...(origin !== null ? { from: origin } : {})
 	};
 	// A missing or unreadable order is the default (random); it never discards the setup.
 	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;

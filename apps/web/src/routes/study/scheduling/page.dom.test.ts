@@ -63,6 +63,13 @@ afterEach(() => {
 	ctx.session.workspaces.set({ list: [], current: null });
 });
 
+describe('study scheduling, the way back', () => {
+	it('links back to the advanced settings, where its link lives', async () => {
+		render(Page, { context: ctx.context });
+		expect((await screen.findByRole('link', { name: 'Back to advanced settings' })).getAttribute('href')).toBe('/study/advanced');
+	});
+});
+
 describe('study scheduling in the lighter look (#106)', () => {
 	it('shows the panels as Sections and Optimise as the one primary', async () => {
 		render(Page, { context: ctx.context });

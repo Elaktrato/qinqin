@@ -34,6 +34,7 @@ export const ROW_FAMILIES: readonly RowFamily[] = [
 	{ key: 'known:', prefix: true, scope: 'workspace' },
 	{ key: 'milestone:', prefix: true, scope: 'workspace' },
 	{ key: 'goals:workspace', prefix: false, scope: 'workspace' },
+	{ key: 'study-setup', prefix: false, scope: 'workspace' },
 	{ key: 'vacation:', prefix: true, scope: 'user-global' },
 	{ key: 'home-layout', prefix: false, scope: 'user-global' },
 	{ key: 'activity-view', prefix: false, scope: 'user-global' },
@@ -116,13 +117,13 @@ export interface KeyedScope {
 	delete(key: string): Promise<void>;
 }
 
-/** keyedData: the key routes, scoped to a workspace or (null) user-global. */
-export function keyedData(workspace: number | null): KeyedScope {
+/** keyedData: the key routes, scoped to a workspace or (null) user-global; `call` is the API client (the session's). */
+export function keyedData(workspace: number | null, call: typeof api = api): KeyedScope {
 	const scope: KeyedScope = {
 		async get<T>(key: string): Promise<T | null> {
 			const path = keyedPath(key, workspace);
 			try {
-				const row = await api<{ data?: unknown } | undefined>(path, { method: 'GET' });
+				const row = await call<{ data?: unknown } | undefined>(path, { method: 'GET' });
 				return row === undefined || row === null ? null : ((decodeKeyedData(row.data) ?? null) as T | null);
 			} catch (err) {
 				if (err instanceof ApiError && err.status === 404) return null;
@@ -131,7 +132,7 @@ export function keyedData(workspace: number | null): KeyedScope {
 		},
 		async put(key, value, opts) {
 			const path = keyedPath(key, workspace);
-			const answer = await api<unknown>(path, {
+			const answer = await call<unknown>(path, {
 				method: 'PUT',
 				body: value,
 				...(opts?.keepalive ? { keepalive: true } : {})
@@ -147,7 +148,7 @@ export function keyedData(workspace: number | null): KeyedScope {
 			const query: string[] = [];
 			if (workspace !== null) query.push(`workspace=${workspace}`);
 			if (prefix !== undefined) query.push(`prefix=${encodeURIComponent(prefix)}`);
-			const rows = await api<unknown[] | undefined>(`${BASE}${query.length ? `?${query.join('&')}` : ''}`);
+			const rows = await call<unknown[] | undefined>(`${BASE}${query.length ? `?${query.join('&')}` : ''}`);
 			const out: KeyedRow<T>[] = [];
 			let skipped = 0;
 			for (const raw of Array.isArray(rows) ? rows : []) {
@@ -161,7 +162,7 @@ export function keyedData(workspace: number | null): KeyedScope {
 		async delete(key) {
 			const path = keyedPath(key, workspace);
 			try {
-				await api(path, { method: 'DELETE' });
+				await call(path, { method: 'DELETE' });
 			} catch (err) {
 				// Only a missing row is done already; a missing workspace (workspace_not_found) is an error.
 				if (err instanceof ApiError && err.status === 404 && err.code === 'not_found') return;

@@ -84,8 +84,10 @@ describe('forgetWorkspace', () => {
 			'qinqin.session.7.2026-11-14': '1',
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
-			'qinqin.study.cardTypes': JSON.stringify({ '7': ['vocab'], '3': ['tone'] }),
-			'qinqin.study.extraTypes': JSON.stringify({ '7': { reverse: false }, '3': { cloze: false } }),
+			'qinqin.study.setup.1.7': '{"raw":{"version":1},"dirty":false}',
+			'qinqin.study.setup.2.7': '{"raw":{"version":1},"dirty":true}',
+			'qinqin.study.setup.1.17': '{"raw":{"version":1},"dirty":false}',
+			'qinqin.study.setup.1.3': '{"raw":{"version":1},"dirty":false}',
 			'qinqin.study.pending.v2': JSON.stringify([
 				{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } },
 				{ userId: 2, queuedAt: 't', event: { id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} } }
@@ -104,8 +106,8 @@ describe('forgetWorkspace', () => {
 			'qinqin.token': 't',
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
-			'qinqin.study.cardTypes': JSON.stringify({ '3': ['tone'] }),
-			'qinqin.study.extraTypes': JSON.stringify({ '3': { cloze: false } }),
+			'qinqin.study.setup.1.17': '{"raw":{"version":1},"dirty":false}',
+			'qinqin.study.setup.1.3': '{"raw":{"version":1},"dirty":false}',
 			'qinqin.study.pending.v2': JSON.stringify([
 				{ userId: 2, queuedAt: 't', event: { id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} } }
 			]),
@@ -119,7 +121,7 @@ describe('forgetWorkspace', () => {
 
 	it('drops keys that only held the deleted workspace', () => {
 		const local = fakeStorage({
-			'qinqin.study.cardTypes': JSON.stringify({ '7': ['vocab'] }),
+			'qinqin.study.setup.1.7': '{}',
 			'qinqin.study.pending.v2': JSON.stringify([
 				{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }
 			])
@@ -133,9 +135,9 @@ describe('forgetWorkspace', () => {
 	});
 
 	it('leaves corrupt values alone and never throws', () => {
-		const local = fakeStorage({ 'qinqin.study.cardTypes': '{', 'qinqin.study.pending.v2': 'nope' });
+		const local = fakeStorage({ 'qinqin.study.ineligible.x': '{', 'qinqin.study.pending.v2': 'nope' });
 		expect(() => forgetWorkspace(7, local, null)).not.toThrow();
-		expect(dump(local)).toEqual({ 'qinqin.study.cardTypes': '{', 'qinqin.study.pending.v2': 'nope' });
+		expect(dump(local)).toEqual({ 'qinqin.study.ineligible.x': '{', 'qinqin.study.pending.v2': 'nope' });
 
 		const throwing = {
 			get length(): number {

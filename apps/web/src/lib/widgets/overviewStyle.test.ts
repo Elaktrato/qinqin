@@ -45,7 +45,7 @@ describe('the Stats overview widgets in the lighter look', () => {
 		expect(css).toMatch(/\.bar\s*\{[^}]*height:\s*4px/);
 		expect(css).toMatch(/\.bar\s*\{[^}]*background:\s*var\(--raised\)/);
 		expect(css).toMatch(/\.bar span\s*\{[^}]*background:\s*var\(--accent\)/);
-		expect(flashcards).toMatch(/<Button variant="primary" href="\/study"/);
+		expect(flashcards).toMatch(/<Button\s+variant="primary"\s+href="\/study"/);
 		expect(flashcards).not.toMatch(/class="study"/);
 	});
 

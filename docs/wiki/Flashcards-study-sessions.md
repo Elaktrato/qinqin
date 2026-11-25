@@ -4,17 +4,29 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 
 ## Starting a session
 
-A session starts from **Study** on a deck of the Decks page, from the flashcards widget on the home page, or from the study setup (`/study`).
+**Study** on the home page's flashcards widget and above your decks on the Decks page opens the **study modal** (a bottom sheet on a phone; Escape, the close button or the Android back button closes it). It holds:
 
-The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; the button is enabled when that session would hold something. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
+- one line with what is waiting: "12 due · 8 new · 4 decks", or for a level "HSK 2 · 12 due · 8 new";
+- **This session: 20 cards**, about how many cards **Start studying** will plan under your limits (an estimate: a Word Salad, writing or tone card is made only when its word comes up, and words without a sentence or stroke data are skipped then); or why nothing can start, such as "Nothing is due and no new cards are left in the selected decks", with Start disabled; on a vacation day the vacation line and a link to change it instead;
+- the **card types** as chips: only the types your workspace language has (Spanish has no Writing or Tone), and Reverse and Cloze only when one of your decks switches them on. At least one stays selected. A change is saved at once (only what you changed, so a change made on another device meanwhile stays); right after signing in on a new device the chips wait until your saved setup has arrived;
+- **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; it is enabled when that session would hold something;
+- **Advanced settings →**, the full setup.
 
-Below that:
+The setup is saved for the workspace on your account, so it is the same on every device and in the Android app, and it is used by every later session. Until you narrow it, every deck of the workspace is studied, new decks included. When something it names is gone (a deck deleted, a level pack removed, a card type the language does not have), the modal falls back for that part alone and says so in one line ("Your level is no longer installed; studying your decks instead"); nothing is changed until you change something. A change made offline is kept on the device ("Not saved yet") and saved when the server can be reached; one the server refuses is dropped and the line says why. Signing out removes such an unsaved change from the device.
 
-- **Session source**: **My decks** (choose the decks to draw from) or **By level** (see below).
-- **Card types**: pick at least one. A session queues only the types you selected, so a Tone-only session never shows a vocab card, and a type with nothing to study says so ("Tone: nothing to study in the selected decks right now"). Your last choice is preselected in new tabs of the same workspace, and the home widget counts the same types.
-- **Advanced settings → Per-deck card types**: the Reverse and Cloze switches of a single deck.
-- **Decks**: **Create deck**, **Rename** and delete your decks (a deleted deck's cards stay in your other decks, or move to General).
+**Study** on a single deck, on a deck's page or on a level studies just that deck or level with your limits; it never changes the saved setup.
+
+### Advanced settings
+
+**Advanced settings** (`/study/advanced`) has every control; each change is saved at once, and **Back to study** returns to the page you came from with the modal open. A direct visit to `/study` opens the modal over the home page.
+
+- **This session**: what a session would hold ("Today: 18 reviews and 5 new") and the type warnings.
+- **Limits**: new cards and reviews (a session stops after these counts, reviews first; saved when you leave the field), the **Order of new cards**, the **Order of card types**, and **Scheduling: …**, which opens the [scheduling page](Scheduling-and-FSRS).
+- **Session source**: **My decks** or **By level** (see below).
+- **Decks**: tick the decks to draw from; **All decks** keeps every deck, including the ones you create later. Creating, renaming and deleting decks is on the [Decks page](Flashcards-decks-limits-vacation).
 - **Manage cards**: every card of the workspace, filtered by deck, to **Move** or **Delete** several at once. Deleting a word removes it from every deck with its sentence, writing and tone cards; moving puts it and those cards in the chosen deck only. A ten-second **Undo** follows both.
+- **Card types**: pick at least one. A session queues only the types you selected, so a Tone-only session never shows a vocab card, and a type with nothing to study says so ("Tone: nothing to study in the selected decks right now"). Reverse and Cloze here switch the type on or off in every deck; the home widget counts the same types.
+- **Per-deck settings → Per-deck card types**: the Reverse and Cloze switches of a single deck.
 
 ### Order of new cards
 
@@ -22,7 +34,7 @@ The order decides which new cards come first; reviews always come first and in d
 
 ### Order of card types
 
-A session mixes its card types: instead of all the Vocab cards and then a block of Writing, Tone or Cloze cards, you meet the types interleaved (on the card they are named by what you do, Recognise for Vocab, Write for Writing and so on; see [The session screen](#the-session-screen)). Two cards of the same word are kept apart, so a word's Vocab card straight before its Writing card does not give the answer away: never back to back when the session allows it, and a few cards apart in longer sessions (at least one other card between them when the reviews, or the new cards, of a session number fewer than 8, two below 16, three from 16). A session that cannot keep them apart (say only one word's four types) still starts, as close to that as it can. In a deck session a new word always starts with its Vocab card; its other types follow later in the session. Reviews still come first and in due order (a card moves only a few places, so the most overdue ones stay at the front whatever their type), and an order you chose for new cards (**Most frequent first**, **Level order**) still holds roughly. A session of a single card type keeps its order exactly. The mix is fixed when the session starts, from the study setup or a deck's or level's **Study** button, so reloading the same session keeps it; the next session is mixed differently. Limits, burying and the re-show of Again cards are unchanged.
+A session mixes its card types: instead of all the Vocab cards and then a block of Writing, Tone or Cloze cards, you meet the types interleaved (on the card they are named by what you do, Recognise for Vocab, Write for Writing and so on; see [The session screen](#the-session-screen)). Two cards of the same word are kept apart, so a word's Vocab card straight before its Writing card does not give the answer away: never back to back when the session allows it, and a few cards apart in longer sessions (at least one other card between them when the reviews, or the new cards, of a session number fewer than 8, two below 16, three from 16). A session that cannot keep them apart (say only one word's four types) still starts, as close to that as it can. In a deck session a new word always starts with its Vocab card; its other types follow later in the session. Reviews still come first and in due order (a card moves only a few places, so the most overdue ones stay at the front whatever their type), and an order you chose for new cards (**Most frequent first**, **Level order**) still holds roughly. A session of a single card type keeps its order exactly. The mix is fixed when the session starts, from the study modal or a deck's or level's **Study** button, so reloading the same session keeps it; the next session is mixed differently. Limits, burying and the re-show of Again cards are unchanged.
 
 Choose **Grouped by type** to drill one type at a time: reviews first, then the new cards, each grouped in the order Vocab, Word Salad, Writing, Tone, Reverse, Cloze (a card may move one place so a word is not back to back where one group ends and the next begins). Like the order of new cards, the choice belongs to the setup of this tab. The rule is specified in `docs/contracts/cards/` (Session mix).
 
@@ -60,7 +72,7 @@ They appear once in the setup's **Card types** list. Checking one enables it on 
 
 ## The session screen
 
-A session is an open page, not a card in a box. At the top: a close button (back to the study setup), a thin progress line and the count ("4 / 20", with "3 to repeat" when cards come back). Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
+A session is an open page, not a card in a box. At the top: a close button (**End session**: back to the page the session was started from, with the study modal open), a thin progress line and the count ("4 / 20", with "3 to repeat" when cards come back). Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
 
 The session names each exercise by what you do; settings, decks and the XP breakdown keep the card type names:
 
@@ -113,7 +125,7 @@ Back belongs to the open session: after a reload, a workspace switch or a new se
 
 ## The end of a session
 
-**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the XP this session by card type and the daily bonus, the progress to your next level and your streak.
+**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the XP this session by card type and the daily bonus, the progress to your next level and your streak. **Done** returns to the page the session was started from. A session with nothing to study, or one that could not load, has **Back to study** instead, which returns there with the study modal open.
 
 ## Scheduling, XP and streaks
 

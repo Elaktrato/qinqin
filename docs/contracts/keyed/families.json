@@ -10,6 +10,7 @@
   {"key": "known:", "prefix": true, "scope": "workspace", "contract": "reader/"},
   {"key": "milestone:", "prefix": true, "scope": "workspace", "contract": "milestones/"},
   {"key": "goals:workspace", "prefix": false, "scope": "workspace", "contract": "goals/"},
+  {"key": "study-setup", "prefix": false, "scope": "workspace", "contract": "study/"},
   {"key": "vacation:", "prefix": true, "scope": "user-global", "contract": "scheduler/"},
   {"key": "home-layout", "prefix": false, "scope": "user-global", "contract": "settings/"},
   {"key": "activity-view", "prefix": false, "scope": "user-global", "contract": "settings/"},
@@ -30,6 +31,9 @@
   {"name": "a known mark", "key": "known:5", "scope": "workspace", "accept": true},
   {"name": "a milestone seen", "key": "milestone:reviews:1000", "scope": "workspace", "accept": true},
   {"name": "the daily goal", "key": "goals:workspace", "scope": "workspace", "accept": true},
+  {"name": "the study setup of a workspace", "key": "study-setup", "scope": "workspace", "accept": true},
+  {"name": "the study setup without a workspace", "key": "study-setup", "scope": "user-global", "accept": false, "answer": "scope"},
+  {"name": "an exact study setup key with more after it", "key": "study-setup:1", "scope": "workspace", "accept": false, "answer": "unknown"},
   {"name": "a typed study key is no keyed row", "key": "card:c-vocab-1", "scope": "workspace", "accept": false, "answer": "unknown"},
   {"name": "a former journal key", "key": "entry:01JD0000000000000000000001", "scope": "workspace", "accept": false, "answer": "unknown"},
   {"name": "an unknown key", "key": "knownfilter", "scope": "workspace", "accept": false, "answer": "unknown"}

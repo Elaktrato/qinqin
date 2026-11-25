@@ -13,6 +13,8 @@ Fixtures:
 
 - `rows.json` — valid and invalid wire rows per collection (the strict wire decode).
 - `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
+- `setup.json` — the saved study setup, the keyed row `study-setup` (see Study setup below; web:
+  `apps/web/src/lib/study/setup.test.ts`; Go: `server/internal/keyed/setup_contract_test.go`, key and scope).
 - `canonical.json` — duplicate cards merged at read time: `{cards, reviews}` and the merged `{cards, reviews,
   merged}` (web: `apps/web/src/lib/study/canonical.test.ts`).
 
@@ -127,3 +129,34 @@ limits, queues, statistics and goals count anything. Stored rows are never rewri
 Ruling: no Go test and no server implementation — the server never merges cards (it stores rows as written);
 adding one would be a second implementation nobody runs — cost: none.
 
+## Study setup (`study-setup`, a keyed row)
+
+The setup the study modal starts (design `docs/superpowers/specs/2026-11-25-study-modal-design.md`): one keyed row
+per workspace (`keyed/`), synced, the same on every device. It is not a typed row: the server stores it like any
+keyed row and never reads its members.
+
+```jsonc
+{"version": 1,
+ "decks": "all" | ["general", "<deck id>", ...],   // "all" stays live: a deck created later joins
+ "mode": "decks" | "levels", "schemeId": int | null, "levelName": string | null,
+ "cardTypes": ["vocab" | "sentence" | "writing" | "tone"],   // the kinds that are not opt-in
+ "unchecked": ["reverse" | "cloze"],   // opt-in kinds the learner switched off
+ "newLimit": 1..999, "reviewLimit": 1..999,
+ "newOrder": "random" | "deck" | {"by": "added"} | {"by": "frequency"} | {"by": "level", "packId": string},
+ "typeOrder": "mixed" | "grouped"}
+```
+
+- **Read** member by member (`parse` cases): a missing or bad member is its default (`defaults`), never the
+  whole row. An empty deck list is `"all"`. A kind list with no known kind is `["vocab"]`; a list of opt-in kinds
+  only is an empty list. A newer `version` is read leniently.
+- **Kinds studied:** `cardTypes` (within the workspace language's `cardKinds`, `languages/profiles.json`), plus
+  each opt-in kind a deck in scope switches on (`deckSettings.cardTypes`) that is not in `unchecked`.
+- **Repair** after the read, with what the reader knows (`repair` cases; `null` = not known yet, left alone): a
+  level mode with no scheme or level, or one not installed for the workspace language → decks mode, the deck
+  selection kept (`levelGone`); an explicit list with no deck left (`general` always exists) → `"all"`
+  (`decksGone`); kinds the language lacks are dropped, and none left → `["vocab"]` (`typesGone`). A reader shows
+  the note; the repaired value is used but written back only when the learner changes something.
+- **Write** (`write` cases): the stored object with the setup's members replaced; unknown members kept; a stored
+  integer `version` ≥ 1 kept, else 1. A client re-reads the row before it writes.
+- **Not in the row:** a running session (its seed, Study all and the page it was started from) stays in the tab;
+  a one-off start from a deck or a level never changes the row.

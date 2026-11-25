@@ -20,7 +20,7 @@ Switching a feature off only hides it in the app; nothing is deleted or refused.
 | `PUT /api/rows/{key}?workspace=` | The body is the value (any JSON). Increments the row's version and revives a deleted row. |
 | `DELETE /api/rows/{key}?workspace=` | Marks the row deleted (a tombstone the sync pull sees). |
 
-Without `?workspace=<id>` a row is user-global; with it, it belongs to that workspace. Only the listed key families are accepted, each in its one scope (notes, lookups, known marks, milestones, goals, vacations, the layouts, the appearance): an unknown key is 404, the wrong scope 400. The same rows travel through `POST /api/sync/push` and `GET /api/sync/pull?v=2` (collection `rows`), last write wins. Cards, decks, deck settings, limits and FSRS sets are typed collections of the sync pull and push, never keyed rows (`docs/contracts/study/`). Contract: `docs/contracts/keyed/`.
+Without `?workspace=<id>` a row is user-global; with it, it belongs to that workspace. Only the listed key families are accepted, each in its one scope (notes, lookups, known marks, milestones, goals, the study setup, vacations, the layouts, the appearance): an unknown key is 404, the wrong scope 400. The same rows travel through `POST /api/sync/push` and `GET /api/sync/pull?v=2` (collection `rows`), last write wins. Cards, decks, deck settings, limits and FSRS sets are typed collections of the sync pull and push, never keyed rows (`docs/contracts/study/`). Contract: `docs/contracts/keyed/`.
 
 ## Journal and grammar
 
