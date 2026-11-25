@@ -132,10 +132,15 @@ unverified facts marked unverified) must stay the same in both places.
 The example sentences on entry pages and in "Fill the gap" and "Build the
 sentence" cards come from **Tatoeba** (<https://tatoeba.org>), a collection of
 sentences and translations written by its contributors. Two packs are bundled
-in `plugins/data/` **once generated** (issue #133): the repository holds the
-tool that makes them, `server/tools/tatoeba`, and the owner generates and
-commits them from a pinned export (they are absent until then, and
-`scripts/check-sources.mjs` accepts that through its `GENERATED_PACKS` list).
+in `plugins/data/` (issue #133): the repository holds the tool that makes
+them, `server/tools/tatoeba`, and the packs generated from the pinned export of
+**2026-11-21** (licence re-read 2026-11-25, see the spec
+`docs/superpowers/specs/2026-11-26-v080-data-sources.md`).
+Sizes: Mandarin 32,810 sentences under 20,226 words, 12.8 MB raw (3.4 MB
+gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
+`qinqin seed` of `plugins/data` took 3 min 20 s on the development machine.
+`scripts/check-sources.mjs` ties both packs to the pin through its
+`GENERATED_PACKS` list.
 
 | Pack | Provides | License | Upstream |
 |---|---|---|---|
