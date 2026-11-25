@@ -11,7 +11,7 @@ Fixtures (format: `docs/contracts/README.md`; fixtures win over code):
 - `plan.json` — `plan`: the pure "what to remind and when" computation (Go: `server/internal/reminders/plan_test.go`;
   web: `lib/reminders/plan.test.ts` decodes the answer shape).
 - `unsubscribe.json` — the signed unsubscribe token (Go: `server/internal/reminders/token_test.go`).
-- `routes.json` — the routes, their access and error codes (Go: `server/internal/api/contract_reminders_test.go`).
+- The routes are pinned by `server/internal/api/handlers_reminders_test.go` and the generated wiki page `API-Routes.md`.
 
 ## Why the clients publish "facts"
 
@@ -139,7 +139,8 @@ Every reminder mail carries the link `<public URL>/api/reminders/unsubscribe?t=<
 (an old mail must still work) and can do one thing: switch the account's **email channel off**.
 
 - `GET /api/reminders/unsubscribe?t=` (public): a small HTML page, text in the language the browser asks for, a
-  button that POSTs. It changes nothing (link scanners open links). A bad token is 400 `bad_request` with the same page.
+  button that POSTs. It changes nothing (link scanners open links). A bad token is the coded JSON 400 `bad_request`
+  like every API error.
 - `POST /api/reminders/unsubscribe?t=` (public; form body `List-Unsubscribe=One-Click` or empty): sets
   `channels.email` to `false` in the account's `reminders` row (other keys kept; the row is created disabled when there
   is none) and answers 200 with a "you are unsubscribed" page. Idempotent. Re-enabling is the Settings switch.

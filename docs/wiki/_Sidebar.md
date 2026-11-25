@@ -9,6 +9,7 @@
 - [Flashcards: study sessions](Flashcards-study-sessions)
 - [Decks, limits and vacation](Flashcards-decks-limits-vacation)
 - [Daily goals](Daily-goals)
+- [Reminders](Reminders)
 - [Scheduling and FSRS](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Grammar lessons](Grammar-lessons)
