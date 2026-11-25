@@ -116,9 +116,46 @@ options; no module state). It must work inside the Android shell's WebView
   element (restored on cleanup), replacing the three copies in ChapterText, ConversationView and LessonView — the
   spec wants the no-delay rule everywhere the controller serves; one place keeps the hosts from drifting — cost if
   wrong: a host that needs its own `touch-action` must set it after `listen`.
-- Ruling: a tap while the phone sheet is open lands on the modal sheet's backdrop and only closes it (a second tap
-  looks the next word up) — the sheet is modal (record of the design system, `lib/ui/modal.ts`) and the page
-  behind it is inert — cost if wrong: one more tap to look up the next word on a phone.
+- Ruling (fix wave, replaces "a tap on the backdrop only closes"): a press on the open phone sheet's backdrop
+  keeps the modal sheet until the finger lifts; the release closes it, and a tap then hit-tests its point with
+  `document.elementFromPoint` 30 ms later and looks up the word there through the shared `#wordAt`; a tap on a gap,
+  on punctuation or on anything outside the lookup text only closes. The click the browser sends after a touch
+  press on the backdrop is swallowed (capture listener, `preventDefault` + `stopPropagation`, once) — the owner's
+  intent is that a tap on a word looks it up; the sheet stays modal (focus trap, Escape, back button, return
+  focus); closing on the release instead of the press keeps the release on a mounted element, so it reaches the
+  window listener, and Chromium hit-tests the click afresh after the sheet is gone, which without the swallow
+  would follow a link that was under the backdrop — cost if wrong: a mouse press on the backdrop closes on release
+  instead of on press (no visible difference), and a click the swallow eats is lost (it only arms for a touch or pen
+  press on the backdrop and disarms on the next press).
+- Ruling (fix wave): a press within 150 ms (`FLING_STOP_MS`) of a scroll event, after a touch the browser took over
+  to pan (pointercancel), is no tap — momentum scrolling stops when the finger lands, and that stopping touch must
+  not look a word up; a fling always starts with a pan, so a scroll no finger started (a script, the wheel, the
+  sheet keeping its word in view, the e2e test's own scrolling) blocks no tap — cost if wrong: a deliberate tap
+  within 150 ms of a fling's last frame needs a second tap; a fling the browser runs without a pointercancel first
+  would still let its stopping touch tap.
+- Ruling (fix wave): a primary touch or pen press always starts a fresh tap, and only a non-primary press (a second
+  finger) cancels one — a release can be lost (its target unmounted, an up stopped before the window), and it must
+  not eat the next tap — cost if wrong: none found; a pinch's second finger is never primary.
+- Ruling (fix wave): a tap tries its point, then 4 and 8 px above and below it (`tapProbes`, `TAP_SLACK_PX = 8`),
+  and takes the first character box it meets; its target need only be inside a paragraph (`[data-p]`), not a run;
+  hover stays exact — with line height 2.2 the leading of CJK text is about 12 px per line, so a finger landing
+  there was dead; 8 px reaches the nearer line from most of the gap without reaching across a whole one — cost if
+  wrong: a tap in the exact middle of a very tall gap still finds nothing, and the nearer line wins over the one
+  the learner meant when the finger was nearer the other.
+- Ruling (fix wave): a click with `detail === 0` (the keyboard, a script) is never a tap's click — Enter on a
+  focused highlight right after a touch must still edit it — cost if wrong: none found.
+- Ruling (fix wave): a tap that finds no word inside the text tells the host what it landed on
+  (`onTapNoWord`); the reader opens the highlight editor when that is a `mark[data-h]` — a highlight on
+  punctuation, Latin or digits had no way to be opened by touch — cost if wrong: none found.
+- Ruling (fix wave): while the lookup sheet is open it sets `--lookup-sheet-space` (its `offsetHeight`) on the root
+  element, measured with the sheet's top, and the phone page panel's bottom padding is
+  `max(var(--bottom-bar-space), var(--lookup-sheet-space, 0px))`; the property is removed when the sheet goes —
+  the last line of a chapter, the latest conversation reply and a lesson's end could not scroll above the sheet;
+  the bottom bar is under the sheet's backdrop then, so the larger of the two is enough (the conversation's
+  composer is in the page flow, not fixed) — cost if wrong: when the sheet closes the page may jump back by that
+  padding.
+- Ruling (fix wave): the sheet measures itself again on window and `visualViewport` resizes (the keyboard closing
+  in the WebView), as well as on its own size changes — cost if wrong: none found.
 - Ruling: no new interface strings — the sheet's label, the not-found text and the actions exist — cost if wrong:
   none.
 
@@ -167,6 +204,46 @@ options; no module state). It must work inside the Android shell's WebView
 - A pen. Only the rules are tested.
 - A tap in the conversation partner's replies and in grammar lessons: they go through the same `listen` and
   controller, but no test taps there (their DOM tests mock the controller).
-- The scroll when the page cannot scroll far enough (a word in the last lines of a short chapter): the browser
-  clamps it and the word may stay partly covered; nothing adds room.
+- (Fixed in the fix wave: the last line now gets room under it, `--lookup-sheet-space`.)
 - Screen readers: the tap adds no new interface, and the sheet is the one a selection opens.
+
+### Fix wave (independent review, 2026-11-25)
+
+The review found 5 should-fix items and 6 nits; all were fixed test-first (each new test seen failing first):
+
+1. A lost pointerup ate the next tap: `TapTracker.down` now starts a fresh tap on every primary press; test "a lost
+   release does not eat the next tap" failed, then passed.
+2. A touch that stops a fling looked a word up: the tracker records scrolls (`scrolled`) and ignores a press within
+   150 ms of one after a pan. The first version (any scroll) broke the e2e tap test, whose own `scrollBy` came
+   right before the tap; narrowed to scrolls after a pointercancel (Ruling above), with tests for a fling, for
+   repeated presses during one, and for a scroll no finger started.
+3. A tap behind the open phone sheet now looks that word up (Ruling above). `tapSheet.dom.test.ts` (real
+   ChapterText, controller and sheet): another word, a gap, the sheet staying modal while the finger is down, and a
+   link under the backdrop whose click is swallowed; three of its four tests failed before the change. The e2e tap
+   test goes on to tap 学 behind the backdrop with `page.touchscreen.tap` and sees the sheet for 学校 (passed in
+   real Chromium on the first run after the change).
+4. The last line could not reach above the sheet: `--lookup-sheet-space` (Ruling above). The
+   `bottomBarRules.test.ts` padding rule and a LookupSheet test (set, updated on growth, removed on unmount) failed
+   first; the new e2e test (tap 水 on the last line after scrolling to the very end) failed with the word under the
+   sheet, then passed.
+5. Taps in the line gap: `tapProbes` (Ruling above). The controller test (glyphs 8 px under the finger found, 9 px
+   not) failed first; a hover test pins that hover stays exact.
+6. Viewport resizes: the LookupSheet test (window and `visualViewport` resize measure again; nothing after unmount)
+   failed first.
+7. e2e: `expectAboveSheet` also checks that the word's top is on the screen (`y >= 0`) and that
+   `CSS.highlights.has('reader-lookup')`.
+8. `touchClick` treats `detail === 0` as never a tap's click; unit and controller tests failed first.
+9. A tap with no word on a highlight opens its editor (`onTapNoWord`, `highlightMark`); the tapHighlight test (a
+   highlight on 。) failed first. The test wires `onTapNoWord` as BookView does; BookView's own wiring is covered by
+   review and the type check only.
+10. Wiki: `Grammar-lessons.md` (taps and selections count in the history), `Reader.md` (a tap behind the sheet looks
+    the next word up; flings; the line gap; punctuation highlights; room under the last line).
+11. Known limit, no change: TalkBack's double tap sends a touch to the centre of the focused element (a whole
+    paragraph), so with TalkBack on, a double tap looks up whatever character sits at the paragraph's centre.
+    Screen-reader users look words up by selecting text, as before.
+
+Also: the `useLookup.tap.dom.test.ts` layout stand-in needed a type annotation for the check (`test(reader)`
+commit).
+
+Fix-wave gates are listed below.
+
