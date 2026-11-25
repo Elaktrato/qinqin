@@ -1,6 +1,6 @@
 # Study modal — design
 
-Status: approach A chosen by the owner on 2026-11-25. Approval of this document is pending.
+Status: Approved by the owner on 2026-11-25.
 
 ## 1. Intent
 
