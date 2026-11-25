@@ -19,7 +19,7 @@ Keyboards: **Gboard Pinyin** (Chinese, Simplified), **Gboard Japanese** (romaji 
 | Search (Chinese workspace) | type `xuexi`, pick 学习, press the search key on the keyboard | the search runs once, after the pick | [ ] | n/a | [ ] |
 | Search, keyboard search/go key | type 学校 and press the keyboard's search key | one search | [ ] | [ ] | [ ] |
 | Typing card, Recall (reverse) | type the word, confirm the candidate, press Enter | not checked until Enter after the confirm; Correct for the right word | [ ] | [ ] | [ ] |
-| Typing card, full-width or katakana | type the answer in katakana or full-width Latin where the card accepts it | still accepted (NFKC and kana variants are folded) | n/a | [ ] | n/a |
+| Typing card, full-width or katakana | type the answer in katakana or full-width Latin where the card accepts it | still accepted (NFKC folds full-width Latin and numerals and half-width katakana; hiragana and katakana stay distinct answers) | n/a | [ ] | n/a |
 | Cloze card | type the missing word | as the typing card | [ ] | [ ] | [ ] |
 | Journal editor | write a sentence with several candidate picks, a line break with Enter after confirming | no break inside a composition; autosave while composing does not reset the text; the saved text is the typed text | [ ] | [ ] | [ ] |
 | Journal margin / correction note | type a note | as above | [ ] | [ ] | [ ] |
