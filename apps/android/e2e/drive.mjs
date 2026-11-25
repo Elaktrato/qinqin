@@ -248,17 +248,32 @@ async function main() {
 	if (rec.failed) return;
 
 	await rec.step('first-run screen: address entry, plain-http warning, Open', async () => {
-		await cdp.eval(`(() => { const i = document.getElementById("address"); i.value = ${JSON.stringify(ORIGIN)}; document.getElementById("form").requestSubmit(); })()`);
-		await waitFor('the check to finish', () => cdp.eval('!!document.querySelector("#actions button.primary")'), { timeout: 30_000 });
-		const notes = await cdp.eval('document.getElementById("notes").innerText');
-		screenshot('02-address-checked');
-		if (!/plain http|http/i.test(notes) || !/Found qinqin/.test(notes)) throw new Error(`unexpected notes: ${notes}`);
-		await cdp.eval('document.querySelector("#actions button.primary").click()');
-		cdp.close();
-		const t0 = Date.now();
-		cdp = await connectPage(ORIGIN + '/', { timeout: 90_000 });
-		num.openToServerPageMs = Date.now() - t0;
-		return { notes };
+		// The emulator image may kill the app here too (a Google Play services restart): start the screen anew, twice at most.
+		for (let attempt = 1; ; attempt++) {
+			try {
+				await cdp.eval(`(() => { const i = document.getElementById("address"); i.value = ${JSON.stringify(ORIGIN)}; document.getElementById("form").requestSubmit(); })()`);
+				await waitFor('the check to finish', () => cdp.eval('!!document.querySelector("#actions button.primary")'), { timeout: 30_000 });
+				const notes = await cdp.eval('document.getElementById("notes").innerText');
+				screenshot('02-address-checked');
+				if (!/plain http|http/i.test(notes) || !/Found qinqin/.test(notes)) throw new Error(`unexpected notes: ${notes}`);
+				await cdp.eval('document.querySelector("#actions button.primary").click()');
+				cdp.close();
+				const t0 = Date.now();
+				cdp = await connectPage(ORIGIN + '/', { timeout: 90_000 });
+				num.openToServerPageMs = Date.now() - t0;
+				return { notes, attempt };
+			} catch (err) {
+				if (attempt >= 3 || !/socket closed|No page|not found/i.test(err.message)) throw err;
+				console.log(`first-run screen failed (${err.message}); starting it again`);
+				cdp?.close();
+				forceStop();
+				adb(['shell', 'pm', 'clear', PKG], { soft: true });
+				await sleep(3000);
+				launch();
+				cdp = await connectPage('https://localhost/', { timeout: 90_000 });
+				await waitFor('the first-run form', () => cdp.eval('!!document.getElementById("address")'), { timeout: 45_000 });
+			}
+		}
 	});
 	if (rec.failed) return;
 
