@@ -48,6 +48,19 @@ location / {
 }
 ```
 
+## The Android app
+
+[The Android app](Android) loads your server's web app in a WebView, so what works in a browser works there. In addition:
+
+- **A certificate chain Android trusts** (a public CA such as Let's Encrypt). The app uses the phone's system trust store only; a private CA must be installed on the phone, and a self-signed certificate is refused with a "not trusted" message. Serve the full chain.
+- **`GET /api/version` must stay reachable without a sign-in** and without a redirect to another host: the app checks an address with it. A redirect to another host (for example `www.`) is reported and the new address offered.
+- **Do not add framing or content-security headers that block the app.** qinqin sets none of CSP, CORS or `Service-Worker-Allowed` itself, and needs none: the shell injects its bridge through the WebView, not through the page, so a `Content-Security-Policy` does not stop it. If you add one, it must allow what the web app itself needs (its own scripts, styles and workers, `blob:` and `data:` images, requests to its own origin); the shell adds nothing to it. `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`, which qinqin sets, are fine.
+- **Cookies and the `Authorization` header** pass as for a browser; the app keeps the WebView's cookies.
+- **The service worker** is served from `/` with scope `/` and `Cache-Control: no-cache`; do not cache it. It needs https (or `localhost`).
+- **Uploads** (backups, photos, packs) use the limits above; the WebView sends them like a browser.
+- **No WebSocket** is used.
+- **Plain http on a home network** works for the app (with a warning on its first screen) but there is no service worker, so no offline start.
+
 ## Trusted proxies and client addresses
 
 Sign-in and registration are limited per client address, so the server must see the real address. It believes `X-Forwarded-For` only when the TCP peer is a trusted proxy. By default that means the private networks a Docker or LAN proxy connects from: 127.0.0.0/8, ::1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16, fc00::/7 and fe80::/10. `QINQIN_TRUSTED_PROXIES` replaces that set with a comma list of CIDRs or addresses (for example a CDN's ranges in front of your proxy), or `none` to ignore the header. A bad value stops the server at startup.

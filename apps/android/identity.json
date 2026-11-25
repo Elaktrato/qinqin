@@ -1,0 +1,5 @@
+{
+	"_comment": "PLACEHOLDER, to be confirmed by the owner before the first release (#147): the Android package id (it can never change once published) and the launcher name. This is the only place they are set: capacitor.config.ts and android/app/build.gradle read it.",
+	"appId": "io.github.elaktrato.qinqin",
+	"appName": "qinqin"
+}

@@ -10,6 +10,7 @@
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { requestSignOut } from '$lib/account/signOut';
+	import { canChangeServer, changeServer } from '$lib/native';
 	import { type ThemeStore } from '$lib/theme/store.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';
@@ -97,6 +98,10 @@
 				{/if}
 				<!-- The open Sources page, for a restricted session too. -->
 				<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
+				<!-- Only the Android app has a server address to change (lib/native); it returns to the app's first-run screen. -->
+				{#if canChangeServer()}
+					<MenuItem icon="repeat" onselect={() => void changeServer()}>{t('nav.account.changeServer')}</MenuItem>
+				{/if}
 				<MenuItem separator />
 				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut(app)}>{t('nav.signOut')}</MenuItem>
 			</div>

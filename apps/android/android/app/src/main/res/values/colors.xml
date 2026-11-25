@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- qinqin Day chrome (apps/web/src/lib/theme/fallback.ts): the window before the web app paints. -->
+    <color name="qq_chrome">#e3f4fa</color>
+    <!-- The launcher icon's blue (apps/web/static/icons/maskable-512.png). -->
+    <color name="ic_launcher_background">#0b6bcb</color>
+</resources>

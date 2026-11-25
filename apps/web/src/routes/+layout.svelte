@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
+	import { startNative } from '$lib/native';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
@@ -39,6 +40,8 @@
 	const given = existingApp();
 	const app = provideApp(given ?? createAppContext(browserDeps()));
 	onMount(() => app.start());
+	// The Android shell's back button and system bars; nothing in a browser (lib/native).
+	onMount(() => startNative());
 	onDestroy(() => {
 		if (given === null) app.dispose();
 	});

@@ -1,0 +1,20 @@
+node_modules/
+# the first-run screen, built by `npm run build:web`
+/www/
+# Capacitor's generated copies (cap sync) and Gradle outputs
+/android/app/src/main/assets/public/
+/android/app/src/main/assets/capacitor.config.json
+/android/app/src/main/assets/capacitor.plugins.json
+/android/app/src/main/res/xml/config.xml
+/android/capacitor-cordova-android-plugins/
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/captures/
+*.apk
+*.aab
+# signing material is never committed (#147 keeps it in repository secrets)
+*.jks
+*.keystore
+keystore.properties

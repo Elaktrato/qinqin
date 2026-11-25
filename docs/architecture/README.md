@@ -70,6 +70,7 @@ repository path it names in backticks exists.
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
 | [0008](0008-pack-types.md) | Server: one pack system and how to add a pack type | Accepted |
 | [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted |
+| [0010](0010-android-shell-and-native-bridge.md) | Android shell and native bridge | Accepted |
 
 ## Adding or changing a record
 

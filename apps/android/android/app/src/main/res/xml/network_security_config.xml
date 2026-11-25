@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android cannot say "cleartext only for private addresses" (no address ranges). So the platform allows
+  cleartext and the shell enforces the rule itself: the first-run screen accepts http only for private
+  addresses (src/firstrun/address.ts), and MainActivity only ever opens the saved origin. Certificates: the
+  system trust store only (no user-added CAs, no pinning): a self-signed server needs its CA installed on the
+  phone, as for any app.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

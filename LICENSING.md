@@ -4,7 +4,7 @@ qinqin has three kinds of material, and each keeps its own licence.
 
 ## The code: MIT
 
-The source code of qinqin (the Go server, the web app, the scripts and the build files) is under the
+The source code of qinqin (the Go server, the web app, the Android shell, the scripts and the build files) is under the
 [MIT licence](LICENSE), Copyright (c) 2026 qinqin contributors.
 
 ## Content the project writes: CC BY 4.0

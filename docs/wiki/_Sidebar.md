@@ -21,6 +21,7 @@
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data](Your-data)
 - [Install and offline](Install-and-offline)
+- [The Android app](Android)
 
 **Running a server**
 

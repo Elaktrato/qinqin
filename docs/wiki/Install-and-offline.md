@@ -1,6 +1,6 @@
 # Install as an app and study offline
 
-qinqin is an installable web app (PWA). An Android app is planned as this same web app in a native shell.
+qinqin is an installable web app (PWA). The Android app is this same web app in a native shell ([The Android app](Android)).
 
 ## Requirements
 
