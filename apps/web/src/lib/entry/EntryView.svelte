@@ -21,6 +21,8 @@
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
+	import ShareButton from '$lib/entry/ShareButton.svelte';
+	import { entryShareText } from '$lib/entry/shareText';
 	import { viewPayload } from '$lib/events/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
@@ -396,6 +398,7 @@
 				{#if !editing}
 					<a class="edit" href={`/entry/${entry.id}?edit=1`}>{t('entry.page.edit')}</a>
 				{/if}
+				<ShareButton text={entryShareText(entry)} label={t('entry.page.shareLabel')} />
 			</div>
 		</header>
 
