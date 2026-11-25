@@ -255,6 +255,21 @@ func TestReminderTestRoute(t *testing.T) {
 	}
 }
 
+func TestReminderTestMailWorksOverHTTPPublicURL(t *testing.T) {
+	e, _, _ := reminderEnv(t, mailOpts{configure: true})
+	if _, err := e.db.Exec(`UPDATE smtp_settings SET public_url = 'http://words.example.org'`); err != nil {
+		t.Fatal(err)
+	}
+	r := doJSON(t, "POST", e.ts.URL, "/api/reminders/test", e.owner, map[string]any{"channel": "email"})
+	if r.StatusCode != 204 {
+		t.Fatalf("test mail over http: %d", r.StatusCode)
+	}
+	got := e.smtp.Messages()
+	if len(got) != 1 || strings.Contains(got[0].Data, "List-Unsubscribe") || !strings.Contains(got[0].Data, "http://words.example.org/api/reminders/unsubscribe?t=") {
+		t.Fatalf("mail %+v", got)
+	}
+}
+
 func TestUnsubscribeLink(t *testing.T) {
 	e, _, _ := reminderEnv(t, mailOpts{})
 	var id int64

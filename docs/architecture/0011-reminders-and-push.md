@@ -47,6 +47,14 @@ and streaks are computed by the clients (`docs/contracts/scheduler/`, `goals/`).
 - Server-side reminders depend on the last facts a client published (30-day staleness cap). A learner who never opens
   the web app after opting in has no facts and gets nothing.
 - Web push needs HTTPS and a usable `QINQIN_SECRET`; on iOS only for a home-screen web app (16.4+).
+- A failed send is final for that learner day (one claim per channel, kind and day): a late or doubled reminder is
+  worse than a missed one. Web push messages carry a TTL of at most the rest of the two-hour window and stop at the
+  start of quiet hours; a subscription is dropped after five consecutive failures.
+- Due counts come in UTC-hour buckets, so a slot's count runs to the end of its UTC hour; in :30 and :45 zones this
+  is off by that offset. Accepted for a nudge.
+- Rotating `QINQIN_SECRET` re-seals the push key at start (with the previous secret supplied); without it the key is
+  lost and must be recreated by hand (drop `push_vapid` and the subscriptions), which makes every device subscribe
+  again. No in-app reset exists: it would need an admin route with re-authentication for a rare, recoverable case.
 - Our own push implementation is ours to maintain; no push service was reachable in testing.
 
 ## Allowed / Not allowed

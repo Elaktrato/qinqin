@@ -46,11 +46,13 @@ type fakePush struct {
 	mu   sync.Mutex
 	errs map[string]error // by endpoint
 	got  []string         // endpoint + " " + payload
+	opts []webpush.Options
 }
 
-func (f *fakePush) Send(_ context.Context, sub webpush.Subscription, payload []byte, _ webpush.Options) error {
+func (f *fakePush) Send(_ context.Context, sub webpush.Subscription, payload []byte, o webpush.Options) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.opts = append(f.opts, o)
 	f.got = append(f.got, sub.Endpoint+" "+string(payload))
 	return f.errs[sub.Endpoint]
 }
@@ -89,6 +91,7 @@ func newWorld(t *testing.T, settings string) *world {
 	if err := SaveFacts(ctx, db, u, f, now); err != nil {
 		t.Fatal(err)
 	}
+	age(t, db, u, now.Add(-100*24*time.Hour)) // enabled long ago
 	w := &world{db: db, user: u, ws: ws, now: now, mail: &fakeMailer{configured: true}, push: &fakePush{errs: map[string]error{}}, seal: secretbox.NewSealer(make([]byte, 32))}
 	w.s = &Scheduler{DB: db, Mail: w.mail, PublicURL: func(context.Context) string { return "https://words.example.org" },
 		Push: func(context.Context) (PushSender, error) { return w.push, nil }, Seal: w.seal, Now: func() time.Time { return w.now }, Logf: func(string, ...any) {}}
@@ -185,6 +188,15 @@ func TestNothingIsSentWhenItShouldNot(t *testing.T) {
 func put(t *testing.T, w *world, row string) {
 	t.Helper()
 	if _, err := keyed.Put(context.Background(), w.db, w.user, nil, Key, json.RawMessage(row), nil); err != nil {
+		t.Fatal(err)
+	}
+	age(t, w.db, w.user, w.now.Add(-100*24*time.Hour))
+}
+
+// age sets when the settings row was last written (Put stamps the wall clock).
+func age(t *testing.T, db *sql.DB, user int64, at time.Time) {
+	t.Helper()
+	if _, err := db.Exec(`UPDATE keyed_rows SET updated_at = ? WHERE user_id = ? AND key = ?`, at.UTC().Format(time.RFC3339), user, Key); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -344,5 +356,124 @@ func TestRunStopsWithItsContext(t *testing.T) {
 	}
 	if len(w.mail.sent) != 1 {
 		t.Fatalf("sent %d", len(w.mail.sent))
+	}
+}
+
+func TestEnablingNeverSendsForASlotBeforeTheSettingsWereSaved(t *testing.T) {
+	for name, tc := range map[string]struct {
+		saved time.Duration // relative to 17:05Z; the slot is 17:00Z
+		want  int
+	}{
+		"saved after the slot":  {-2 * time.Minute, 0},
+		"saved before the slot": {-10 * time.Minute, 3},
+	} {
+		w := newWorld(t, emailOnly)
+		age(t, w.db, w.user, w.now.Add(tc.saved))
+		w.s.Tick(context.Background())
+		n := 0
+		if len(w.mail.sent) == 1 {
+			n = len(w.mail.sent[0].d.Items)
+		}
+		if n != tc.want {
+			t.Errorf("%s: %d items, want %d", name, n, tc.want)
+		}
+	}
+}
+
+func TestPushTTLStopsAtTheWindowEndAndAtQuietHours(t *testing.T) {
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	now := time.Date(2026, 11, 25, 17, 5, 0, 0, time.UTC) // 18:05 Berlin
+	slot := time.Date(2026, 11, 25, 17, 0, 0, 0, time.UTC)
+	cases := map[string]struct {
+		quiet *Quiet
+		now   time.Time
+		want  time.Duration
+	}{
+		"no quiet hours: rest of the window": {nil, now, 55*time.Minute + time.Hour},
+		"quiet starts sooner":                {&Quiet{Start: "18:30", End: "07:00"}, now, 25 * time.Minute},
+		"quiet starts later than the window": {&Quiet{Start: "23:00", End: "07:00"}, now, 55*time.Minute + time.Hour},
+		"already in quiet hours: the floor":  {&Quiet{Start: "18:00", End: "07:00"}, now, MinPushTTL},
+		"window almost over: the floor":      {nil, slot.Add(Window - 5*time.Second), MinPushTTL},
+		"quiet start tomorrow is not before": {&Quiet{Start: "17:00", End: "17:30"}, now, 55*time.Minute + time.Hour},
+	}
+	for name, c := range cases {
+		if got := pushTTL(c.now, slot, c.quiet, berlin); got != c.want {
+			t.Errorf("%s: %v, want %v", name, got, c.want)
+		}
+	}
+}
+
+func TestPushSendsCarryTheShortTTL(t *testing.T) {
+	w := newWorld(t, `{"version":1,"enabled":true,"times":["18:00"],"quiet":{"start":"18:30","end":"07:00"},"channels":{"push":true}}`)
+	age(t, w.db, w.user, w.now.Add(-100*24*time.Hour))
+	AddSubscription(context.Background(), w.db, w.user, NewSubscription{Endpoint: "https://push.example/a", P256dh: make([]byte, 65), Auth: make([]byte, 16)}, w.now)
+	w.s.Tick(context.Background())
+	if len(w.push.opts) == 0 {
+		t.Fatal("nothing sent")
+	}
+	for _, o := range w.push.opts {
+		if o.TTL != 25*time.Minute {
+			t.Fatalf("ttl %v", o.TTL)
+		}
+	}
+}
+
+func failures(t *testing.T, w *world) (n int, exists bool) {
+	t.Helper()
+	err := w.db.QueryRow(`SELECT failures FROM push_subscriptions WHERE user_id = ?`, w.user).Scan(&n)
+	return n, err == nil
+}
+
+func TestASubscriptionIsDroppedAfterRepeatedFailuresAndSuccessResetsTheCount(t *testing.T) {
+	w := newWorld(t, `{"version":1,"enabled":true,"times":["18:00"],"channels":{"push":true}}`)
+	ctx := context.Background()
+	ep := "https://push.example/dead"
+	AddSubscription(ctx, w.db, w.user, NewSubscription{Endpoint: ep, P256dh: make([]byte, 65), Auth: make([]byte, 16)}, w.now)
+	w.push.errs[ep] = &webpush.SendError{Kind: "network"}
+	w.s.Tick(ctx) // three kinds, three failures
+	if n, ok := failures(t, w); !ok || n != 3 {
+		t.Fatalf("after day 1: %d %v", n, ok)
+	}
+	w.db.Exec(`UPDATE push_subscriptions SET failures = 4`)
+	delete(w.push.errs, ep)
+	w.now = w.now.Add(24 * time.Hour)
+	w.s.Tick(ctx)
+	if n, ok := failures(t, w); !ok || n != 0 {
+		t.Fatalf("a success resets the count: %d %v", n, ok)
+	}
+	w.push.errs[ep] = &webpush.SendError{Kind: "rejected", Status: 500}
+	w.now = w.now.Add(24 * time.Hour)
+	w.s.Tick(ctx)
+	if n, _ := failures(t, w); n != 2 { // two kinds that day, below the limit
+		t.Fatalf("failures %d", n)
+	}
+	w.db.Exec(`UPDATE push_subscriptions SET failures = 3`)
+	w.now = w.now.Add(24 * time.Hour)
+	w.s.Tick(ctx)
+	if _, ok := failures(t, w); ok {
+		t.Fatal("a subscription failing repeatedly must be dropped")
+	}
+}
+
+type blockingPush struct{}
+
+func (blockingPush) Send(ctx context.Context, _ webpush.Subscription, _ []byte, _ webpush.Options) error {
+	<-ctx.Done()
+	return &webpush.SendError{Kind: "network"}
+}
+
+func TestAnAccountsPushSendsAreBoundedAndOurOwnDeadlineIsNoFailure(t *testing.T) {
+	w := newWorld(t, `{"version":1,"enabled":true,"times":["18:00"],"channels":{"push":true}}`)
+	ctx := context.Background()
+	AddSubscription(ctx, w.db, w.user, NewSubscription{Endpoint: "https://push.example/slow", P256dh: make([]byte, 65), Auth: make([]byte, 16)}, w.now)
+	w.s.Push = func(context.Context) (PushSender, error) { return blockingPush{}, nil }
+	w.s.PushBudget = 50 * time.Millisecond
+	start := time.Now()
+	w.s.Tick(ctx)
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("tick took %v", d)
+	}
+	if n, ok := failures(t, w); !ok || n != 0 {
+		t.Fatalf("our own deadline is not the endpoint's fault: %d %v", n, ok)
 	}
 }
