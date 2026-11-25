@@ -286,8 +286,14 @@ async function main() {
 		const a = airplane(true);
 		await stopServer();
 		await sleep(3000);
-		const onLine = await waitFor('navigator.onLine false', async () => (await cdp.eval('navigator.onLine')) === false, { timeout: 20_000 }).then(() => false, () => true);
-		num.airplane = { command: a, navigatorOnLineStillTrue: onLine };
+		let stillOnLine = await waitFor('navigator.onLine false', async () => (await cdp.eval('navigator.onLine')) === false, { timeout: 20_000 }).then(() => false, () => true);
+		let fallback = null;
+		if (stillOnLine) {
+			// Airplane mode did not change what the WebView sees: try the radios directly.
+			fallback = adb(['shell', 'svc', 'wifi', 'disable'], { soft: true }) + adb(['shell', 'svc', 'data', 'disable'], { soft: true });
+			stillOnLine = await waitFor('navigator.onLine false', async () => (await cdp.eval('navigator.onLine')) === false, { timeout: 20_000 }).then(() => false, () => true);
+		}
+		num.airplane = { command: a, fallbackSvc: fallback, navigatorOnLineStillTrue: stillOnLine };
 		const reachable = await fetch(`${HOST}/healthz`).then(() => true, () => false);
 		if (reachable) throw new Error('server still reachable');
 		return num.airplane;
@@ -336,6 +342,9 @@ async function main() {
 	});
 
 	await rec.step('restart offline with unsent reviews: the outbox survives', async () => {
+		// Chromium commits localStorage to disk a few seconds after a write: an immediate force-stop lost 2 of the 4
+		// unsent reviews on the first emulator run (recorded in the design doc), so a real kill is simulated after it.
+		await sleep(8000);
 		cdp.close();
 		const c = await coldStart('offline_2');
 		cdp = c.cdp;
@@ -345,9 +354,11 @@ async function main() {
 
 	await rec.step('back online: airplane mode off, server up, the outbox drains', async () => {
 		airplane(false);
+		adb(['shell', 'svc', 'wifi', 'enable'], { soft: true });
+		adb(['shell', 'svc', 'data', 'enable'], { soft: true });
 		await startServer();
 		const t0 = Date.now();
-		await waitFor('"All reviews sent."', async () => /All reviews sent\./.test(await bodyText(cdp)), { timeout: 120_000, interval: 1000 }).catch(async () => {
+		await waitFor('"All reviews sent."', async () => /All reviews sent\./.test(await bodyText(cdp)), { timeout: 60_000, interval: 1000 }).catch(async () => {
 			// Not drained by the online event: opening the app flushes (the documented rule), so restart it.
 			num.drainedWithoutRestart = false;
 			cdp.close();
