@@ -80,6 +80,13 @@ describe('pictures on a card (#212)', () => {
 		expect(document.querySelectorAll('[data-testid="entry-picture"]')).toHaveLength(1);
 	});
 
+	it('still reveals the reading hint inside a session (the picture may arrive meanwhile)', async () => {
+		setup({ always: [], onRequest: ['reading', 'picture'] }, false);
+		await fireEvent.click(screen.getByRole('button', { name: 'Hint' }));
+		expect(await screen.findByText('ねこ')).toBeTruthy();
+		expect(document.querySelector('[data-hint="picture"]')).toBeNull();
+	});
+
 	it('shows nothing when the Pictures aid is off', async () => {
 		setup({ always: ['picture'], onRequest: [] }, true, { visualAids: { pictures: false } });
 		await Promise.resolve();
