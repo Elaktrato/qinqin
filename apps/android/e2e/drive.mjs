@@ -281,12 +281,15 @@ async function main() {
 
 	await rec.step('local notification: granted, scheduled, posted by the alarm; a tap route opens the page', async () => {
 		adb(['shell', 'pm', 'grant', PKG, 'android.permission.POST_NOTIFICATIONS'], { soft: true });
+		// Doze and app standby may hold an inexact alarm for minutes on the emulator image: switch them off for this step.
+		adb(['shell', 'dumpsys', 'deviceidle', 'disable'], { soft: true });
+		adb(['shell', 'cmd', 'appops', 'set', PKG, 'RUN_ANY_IN_BACKGROUND', 'allow'], { soft: true });
 		const perm = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.permission()');
 		if (perm.state !== 'granted') throw new Error(`permission: ${JSON.stringify(perm)}`);
 		await cdp.eval(`window.Capacitor.Plugins.QinqinNotifications.schedule({ id: 4242, title: 'qinqin e2e reminder', body: 'ready', at: Date.now() + 4000, channel: { id: 'e2e', name: 'E2E' }, route: '/stats' })`);
 		const pending = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
 		if (!pending.ids.includes(4242)) throw new Error(`not pending: ${JSON.stringify(pending)}`);
-		const shown = await waitFor('the notification', () => adb(['shell', 'dumpsys', 'notification', '--noredact'], { soft: true }).includes('qinqin e2e reminder'), { timeout: 90_000, interval: 2000 });
+		const shown = await waitFor('the notification', () => adb(['shell', 'dumpsys', 'notification', '--noredact'], { soft: true }).includes('qinqin e2e reminder'), { timeout: 180_000, interval: 2000 });
 		const left = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.pending()');
 		adb(['shell', 'am', 'start', '-n', `${PKG}/qinqin.shell.MainActivity`, '--es', 'qinqin.shell.ROUTE', '/stats']);
 		const at = await waitFor('the route', async () => ((await cdp.eval('location.pathname')) === '/stats' ? true : false), { timeout: 30_000 });
