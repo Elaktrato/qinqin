@@ -6,7 +6,7 @@ Set them in a `.env` file next to `docker-compose.yml`, in the shell, or (Portai
 
 | Variable | Meaning |
 |---|---|
-| `QINQIN_IMAGE` | The image to run. Default `ghcr.io/elaktrato/qinqin:latest`; for production pin a release such as `ghcr.io/elaktrato/qinqin:v0.5.0` ([Deploying](Admin-deploying#release-images-and-versions)) |
+| `QINQIN_IMAGE` | The image to run. Default `ghcr.io/elaktrato/qinqin:latest`; for production pin a release such as `ghcr.io/elaktrato/qinqin:v0.6.0` ([Deploying](Admin-deploying#release-images-and-versions)) |
 | `QINQIN_PORT` | The published host port. Default 8080 (the container always listens on 8080) |
 | `QINQIN_DATA_VOLUME` | Default `qinqin-data`, a named volume that works everywhere, Portainer included. A value starting with `./` or `/` bind-mounts that host directory instead: `./data` (next to the compose file; plain compose only, a relative path is unreliable in Portainer; also the way to keep an old quick-start install) or an absolute path such as `/srv/qinqin/data`. The directory must be writable by root, the user the image runs as |
 

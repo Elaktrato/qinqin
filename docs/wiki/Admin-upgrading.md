@@ -21,7 +21,12 @@ In the Portainer console the seed is `qinqin seed`; with plain compose `docker c
 
 ## Notes per release
 
-### To the release after v0.5.0
+### To v0.6.0
+
+- **Read the release notes first** ([v0.6.0](https://github.com/Elaktrato/qinqin/releases/tag/v0.6.0)): this release wipes data that does not convert cleanly, and personal backups made before it no longer restore. Make a server backup before upgrading and a new personal backup after.
+- Migrations 044 to 050 run at the first start. 048 to 050 only add tables and columns (conversations, AI examples, profile pictures).
+- **Fresh installs only:** the first start creates the administrator `admin` and prints a one-time password in the log ([the bootstrap administrator](Admin-deploying#the-bootstrap-administrator)). An existing instance has users, so nothing is created. If `QINQIN_BOOTSTRAP_ADMIN` is set but empty in your stack, it now means `admin` rather than off; use `off` to switch it off.
+- Server backups now include `avatars/` (profile pictures) with the database.
 
 - **v0.3.x clients are no longer supported.** Before you upgrade, open the app online on every device (every browser and every installed copy) and let it finish syncing: a copy of the app from before v0.4.0 may hold reviews it cached offline and never sent, and the upgraded server no longer accepts them from that old copy. Afterwards nothing is lost.
 - The old sync form (`GET /api/sync/pull` without `v=2`) is gone and answers 404; scripts use the paged pull ([API access tokens](API-Access-tokens)). The plugin-data routes no longer serve or accept cards, decks, deck settings, limits or FSRS sets under their old `qinqin-flashcards` keys.
