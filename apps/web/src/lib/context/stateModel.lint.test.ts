@@ -32,7 +32,7 @@ const ALLOWED: Record<string, string> = {
 	'lib/i18n/message.ts:pluralRules': 'Intl.PluralRules by locale',
 	'lib/i18n/message.ts:numberFormats': 'Intl.NumberFormat by locale',
 	'lib/ui/ime.ts:composing': 'whether the keyboard has an IME composition open: input-device state, no user data',
-	'lib/ui/ime.ts:endedAt': 'when that composition ended (milliseconds): input-device state, no user data',
+	'lib/ui/ime.ts:target': 'the element that holds the open composition: input-device state, no user data',
 	'lib/ui/ime.ts:installed': 'whether the document listeners are attached: no data',
 	'lib/time/studyDay.ts:formatters': 'Intl.DateTimeFormat by zone',
 	'lib/radicals/kangxi.ts:numbers': 'built from the bundled Kangxi table at load',
