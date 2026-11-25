@@ -515,9 +515,12 @@
 			border-radius: 0;
 		}
 		/* The bottom bar is fixed over the page's end: the page ends above it
-		   (app.css sets --bottom-bar-space with the bar, safe area included). */
+		   (app.css sets --bottom-bar-space with the bar, safe area included).
+		   An open lookup sheet covers more: while it is open LookupSheet sets
+		   --lookup-sheet-space to its height, so the last line of the text can
+		   still scroll above it. */
 		.framed .panel {
-			padding-bottom: var(--bottom-bar-space);
+			padding-bottom: max(var(--bottom-bar-space), var(--lookup-sheet-space, 0px));
 		}
 	}
 
