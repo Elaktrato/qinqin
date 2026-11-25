@@ -24,7 +24,7 @@ decks. Kana (#63) is its first script.
 
 One Leitner-style box per item (system + glyph), derived by replaying the workspace's `script` events in time
 order (`progress.ts`): a correct answer moves the item up one box (max 5) and sets its next due time from the
-box's interval (10 min, 1 day, 3 days, 7 days, 21 days); a wrong answer sends it back to box 1. An item is
+box's interval (box 1: 10 min, then 1, 3, 7 and 21 days); a wrong answer sends it to box 0 (asked again after a minute). A correct answer promotes only an item that is due (or new), so repeating one item in a sitting cannot climb. An item is
 **known** from box 3. Any mode counts; the mode is kept in the event for later statistics. The queue picks due
 items first, then new ones (at most 5 new per round), then the weakest. Distractors prefer items of the same group
 and never share the correct answer's romanisation.
@@ -53,3 +53,13 @@ and never share the correct answer's romanisation.
   typed progress table like grammar's.
 - Ruling: `ko` and `ru` get language profiles now (script `other`) so the feature can appear for them — a profile
   row is the documented way to add a language — if wrong: the rows change with no data migration.
+- Ruling: script answers do not use the review outbox; a failed send waits in a per-workspace list in the browser's
+  storage (`pending.ts`), counts in the progress at once and is re-sent with the same event id on the next visit —
+  the outbox is review-specific and a script answer is cheap to lose but better kept — if wrong: another device
+  does not see an offline answer until that browser comes back online.
+- Ruling: read-mode answers (words, Hangul blocks) are events too (activity, statistics) but only chart items fill
+  the chart's known/learning colours — a word is not a letter — if wrong: credit each letter of a word.
+- Ruling: the nav icon is the existing `words` ("Aa") icon, no new vendored icon — avoids a lucide download for a
+  cosmetic choice — if wrong: swap the icon name in `frame/sections.ts`.
+- Ruling: the new interface strings exist in English only (the only complete catalogue today, `docs/contracts/i18n`)
+  — if wrong: translations arrive with the other catalogues.
