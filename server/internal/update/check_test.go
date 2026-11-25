@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -291,6 +292,24 @@ func TestRelation(t *testing.T) {
 	for _, tc := range cases {
 		if got := Relation(tc.installed, tc.latest); got != tc.want {
 			t.Errorf("Relation(%q, %q) = %q, want %q", tc.installed, tc.latest, got, tc.want)
+		}
+	}
+}
+
+func TestRelationMatchesTheFixture(t *testing.T) {
+	b, err := os.ReadFile("../../../docs/contracts/version/update-check.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Relation []struct{ Installed, Latest, Update string }
+	}
+	if err := json.Unmarshal(b, &f); err != nil || len(f.Relation) == 0 {
+		t.Fatalf("fixture: %v", err)
+	}
+	for _, tc := range f.Relation {
+		if got := Relation(tc.Installed, tc.Latest); got != tc.Update {
+			t.Errorf("Relation(%q, %q) = %q, fixture %q", tc.Installed, tc.Latest, got, tc.Update)
 		}
 	}
 }

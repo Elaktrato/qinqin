@@ -1,0 +1,14 @@
+{
+  "doc": "bridgeCompatibility(server, shell): shellOutdated when the shell's level is below the server's or the shell lacks features the server lists (missing: sorted names); else serverOutdated when the shell's level is above the server's; else ok. shellOutdated wins when both apply. Web: lib/api/version.test.ts.",
+  "cases": [
+    { "name": "same level, nothing used", "server": { "level": 1, "features": [] }, "shell": { "level": 1, "features": [] }, "want": { "status": "ok", "missing": [] } },
+    { "name": "shell has more features", "server": { "level": 1, "features": ["share"] }, "shell": { "level": 1, "features": ["share", "tts"] }, "want": { "status": "ok", "missing": [] } },
+    { "name": "shell lacks a feature", "server": { "level": 1, "features": ["tts", "share"] }, "shell": { "level": 1, "features": ["share"] }, "want": { "status": "shellOutdated", "missing": ["tts"] } },
+    { "name": "missing names are sorted", "server": { "level": 1, "features": ["tts", "files", "share"] }, "shell": { "level": 1, "features": [] }, "want": { "status": "shellOutdated", "missing": ["files", "share", "tts"] } },
+    { "name": "shell level below the server's", "server": { "level": 2, "features": [] }, "shell": { "level": 1, "features": [] }, "want": { "status": "shellOutdated", "missing": [] } },
+    { "name": "shell level above the server's", "server": { "level": 1, "features": [] }, "shell": { "level": 3, "features": ["tts"] }, "want": { "status": "serverOutdated", "missing": [] } },
+    { "name": "both apply: the shell is updated first", "server": { "level": 2, "features": ["tts"] }, "shell": { "level": 1, "features": [] }, "want": { "status": "shellOutdated", "missing": ["tts"] } },
+    { "name": "above the level but a feature short", "server": { "level": 1, "features": ["tts"] }, "shell": { "level": 2, "features": [] }, "want": { "status": "shellOutdated", "missing": ["tts"] } },
+    { "name": "duplicates count once", "server": { "level": 1, "features": ["tts", "tts"] }, "shell": { "level": 1, "features": [] }, "want": { "status": "shellOutdated", "missing": ["tts"] } }
+  ]
+}

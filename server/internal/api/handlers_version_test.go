@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
@@ -45,6 +46,32 @@ func getMap(t *testing.T, ts *httptest.Server, method, path, token string, body 
 	var m map[string]any
 	_ = json.NewDecoder(resp.Body).Decode(&m)
 	return resp.StatusCode, m
+}
+
+// versionFixture is docs/contracts/version/version.json.
+func versionFixture(t *testing.T) (anonymous, signedIn map[string]any) {
+	t.Helper()
+	b, err := os.ReadFile("../../../docs/contracts/version/version.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct{ Anonymous, SignedIn map[string]any }
+	if err := json.Unmarshal(b, &f); err != nil {
+		t.Fatal(err)
+	}
+	return f.Anonymous, f.SignedIn
+}
+
+func TestVersionMatchesTheFixture(t *testing.T) {
+	var hits int
+	ts, admin, _ := versionEnv(t, &hits)
+	anon, signed := versionFixture(t)
+	if _, m := getMap(t, ts, "GET", "/api/version", "", nil); !reflect.DeepEqual(m, anon) {
+		t.Errorf("anonymous = %v, fixture %v", m, anon)
+	}
+	if _, m := getMap(t, ts, "GET", "/api/version", admin, nil); !reflect.DeepEqual(m, signed) {
+		t.Errorf("signed in = %v, fixture %v", m, signed)
+	}
 }
 
 func TestVersionIsPublicAndMinimal(t *testing.T) {
