@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	cardStarterReviews,
+	stageNote,
 	readStarterSettings,
 	starterForcedHints,
 	starterFront,
@@ -74,13 +75,23 @@ describe('starterFront', () => {
 		]
 	};
 	it('stage 1 shows the romaji only', () => {
-		expect(starterFront('ja', 1, { usuallyKana: false }, entry)).toEqual({ main: 'ringo', mainLang: 'ja-Latn', annotation: null, annotationLang: null });
+		expect(starterFront('ja', 1, { usuallyKana: false }, entry)).toEqual({ main: 'ringo', mainLang: 'ja-Latn', annotation: null, annotationLang: null, placement: null });
 	});
 	it('stage 2 shows kana with romaji', () => {
 		expect(starterFront('ja', 2, { usuallyKana: false }, entry)).toMatchObject({ main: 'りんご', annotation: 'ringo' });
 	});
 	it('stage 5 shows the word with kana above', () => {
-		expect(starterFront('ja', 5, { usuallyKana: false }, entry)).toMatchObject({ main: '林檎', annotation: 'りんご' });
+		expect(starterFront('ja', 5, { usuallyKana: false }, entry)).toMatchObject({ main: '林檎', annotation: 'りんご', placement: 'above' });
+	});
+	it('stage 2 puts the romaji below the kana', () => {
+		expect(starterFront('ja', 2, { usuallyKana: false }, entry)).toMatchObject({ placement: 'below' });
+	});
+	it('drops an annotation equal to the main text (a loanword at stage 5)', () => {
+		const coffee = { language: 'ja', written: 'コーヒー', readings: [{ type: 'kana', value: 'コーヒー' }] };
+		expect(starterFront('ja', 5, { usuallyKana: false }, coffee)).toMatchObject({ main: 'コーヒー', annotation: null, placement: null });
+	});
+	it('a usually-kana word at its normal card shows its kana', () => {
+		expect(starterFront('ja', 4, { usuallyKana: true }, entry)).toMatchObject({ main: 'りんご', annotation: null });
 	});
 	it('a loanword keeps its katakana', () => {
 		const coffee = { language: 'ja', written: 'コーヒー', readings: [{ type: 'kana', value: 'コーヒー' }, { type: 'romaji', value: 'kōhī' }] };
@@ -97,5 +108,21 @@ describe('starterFront', () => {
 		const zh = { language: 'zh', written: '苹果', readings: [{ type: 'pinyin', value: 'píngguǒ' }] };
 		expect(starterFront('zh', 1, { usuallyKana: false }, zh)).toMatchObject({ main: 'píngguǒ', mainLang: 'zh-Latn-pinyin' });
 		expect(starterFront('zh', 2, { usuallyKana: false }, zh)).toMatchObject({ main: '苹果', annotation: 'píngguǒ', annotationLang: 'zh-Latn-pinyin' });
+	});
+});
+
+describe('stageNote', () => {
+	const plain = { usuallyKana: false };
+	it('names what a Japanese stage adds', () => {
+		expect([1, 2, 3, 4, 5, 6].map((s) => stageNote('ja', s, plain))).toEqual([null, 'kana', 'noRomaji', 'pictureHint', 'kanji', 'normal']);
+	});
+	it('says katakana for a loanword', () => {
+		expect(stageNote('ja', 2, plain, { katakana: true })).toBe('katakana');
+	});
+	it('names what a Chinese stage adds', () => {
+		expect([1, 2, 3, 4, 5].map((s) => stageNote('zh', s, plain))).toEqual([null, 'hanzi', 'pictureHint', 'noPinyin', 'normal']);
+	});
+	it('a usually-kana word reaches its normal card at stage 4', () => {
+		expect(stageNote('ja', 4, { usuallyKana: true })).toBe('normal');
 	});
 });

@@ -1,8 +1,7 @@
 // Hints on a flashcard (#215): optional help the learner may ask for, one at a time, instead of
 // looking at the answer. The rules are pure and shared with Android (docs/contracts/cards/, hints.json).
 //
-// A hint KIND is registered once below (reading now; picture is defined and waits for the pictures of
-// #212/#216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
+// A hint KIND is registered once below (reading, and picture from an installed images pack, #216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
 // or never. Starter mode (#214) reuses this: it passes `forced` modes per stage instead of the settings.
 
 import { CARD_KINDS, type ReviewGrade, type ReviewMeta, type StudyCardKind } from './types';
@@ -45,8 +44,9 @@ export const HINT_REGISTRY: readonly HintKindDef[] = [
 	},
 	{
 		id: 'picture',
-		// Entries carry no pictures until #212/#216; the day they do, `available` reads that field.
-		ready: false,
+		// Pictures come from an installed images pack (#216) through entryPicture; the session tells
+		// `hintsForEntry` whether the card's entry has one.
+		ready: true,
 		applies: () => true,
 		available: (entry) => entry.hasPicture,
 		defaults: { vocab: 'hint', sentence: 'never', writing: 'hint', tone: 'hint', reverse: 'hint', cloze: 'never' }
@@ -92,9 +92,9 @@ export function hintPatch(kind: HintKind, cardKind: StudyCardKind, mode: HintMod
 	return { [HINTS_SETTINGS_KEY]: { [kind]: { [cardKind]: mode } } };
 }
 
-/** hintsForEntry: what an entry can offer (its readings; pictures wait for #212). */
-export function hintsForEntry(entry: { readings: readonly unknown[] }): HintEntry {
-	return { hasReading: entry.readings.length > 0, hasPicture: false };
+/** hintsForEntry: what an entry can offer: its readings, and a picture when the caller found one (#216). */
+export function hintsForEntry(entry: { readings: readonly unknown[] }, opts: { hasPicture?: boolean } = {}): HintEntry {
+	return { hasReading: entry.readings.length > 0, hasPicture: opts.hasPicture === true };
 }
 
 /** The hints of one card: shown from the start, and offered one at a time (both in the fixed order). */

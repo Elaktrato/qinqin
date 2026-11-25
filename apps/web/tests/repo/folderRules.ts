@@ -54,6 +54,7 @@ export const FEATURE_FOLDERS = [
 	'search',
 	'settings',
 	'sources',
+	'starter',
 	'stats',
 	'weekly',
 	'widgets',

@@ -5,6 +5,25 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #214 — Starter mode: per-word stages and Starter sets (contract 9)
+
+- **New fixtures:** `starter/stages.json` (rule `starter/stages`): the stage of a word derived from its vocab card's
+  own reviews (a success counts one point at least twelve hours after the last counted review, Hard pauses, Again drops
+  one stage, per-profile thresholds `ja` 0,1,2,3,5,7 and `zh` 0,1,2,4,6, words usually written in kana stop at stage 4),
+  what the front shows at each stage and the hint modes it forces; and `starter/set.json` (rule `starter/set`): the
+  Starter set file format. Clients that show Starter mode implement the rule the same way (`starter/README.md`).
+- **New routes:** `GET /api/starter-sets` (public, not access tokens) and `GET /api/starter-sets/{id}` (signed-in users,
+  not access tokens): the shipped sets, and one set's words resolved to dictionary entries in the set's order. Neither
+  is cached offline by the service worker beyond the default (`routes.fixture.json`).
+- **Workspace setting:** the key `starter`, `{enabled, scope}`, read member by member with the defaults off and `base`
+  (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **Deck id:** the Starter set is copied into the plain deck `d-starter-<ja|zh>` (no `source`, so no deck row shape
+  changes); `decks/README.md` lists the id.
+- **Behaviour change (#215/#216):** the `picture` hint kind is now ready: where an images pack maps the entry, the
+  Hint control reveals its picture on every card kind that offers it (the defaults of `cards/hints.json` are unchanged).
+- **Catalogue keys:** `flashcards.starter.new.*`, `flashcards.starterSet.*`, `app.home.starter*`, `settings.starter.*`;
+  the text of `settings.hints.kind.pictureNote` changes.
+
 ## #216 — images packs: bundled pictures for words (contract 8)
 
 - **New pack type:** `images` (format `images-svg`, `languages` like a strokes pack, uploadable, no data package),

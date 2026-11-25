@@ -8,6 +8,7 @@
 	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
+	import type { StarterFront } from '$lib/study/starter';
 	import { buildVocabFaces } from '$lib/study/cardView';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
@@ -24,9 +25,15 @@
 		onDone: (result: CardResult) => void;
 		/** Pronunciation; its button shows only after the reveal. */
 		audio?: CardAudio;
+		/**
+		 * Starter mode (#214): what the front shows at this word's stage, and the "New" note for the
+		 * first time at a stage. Without it (or with a null front) the card is the normal card.
+		 */
+		starter?: { front: StarterFront | null; note: string | null } | null;
 	}
 
-	let { item, entry, revealed, onDone, audio }: Props = $props();
+	let { item, entry, revealed, onDone, audio, starter = null }: Props = $props();
+	const front = $derived(starter?.front ?? null);
 
 	// A sentence id that no longer resolves is passed as null so the card
 	// simply has no sentence block. A virtual level card previews the
@@ -55,8 +62,40 @@
 </script>
 
 <FacePrompt>
+	{#if starter?.note}
+		<p class="starter-note" role="status" data-testid="starter-note">{starter.note}</p>
+	{/if}
 	<HintShown {entry} />
-	<p class="fp-word" lang={studyLang(entry.language)}>{faces.front.written}</p>
+	{#if front !== null}
+		<!-- Starter mode: the word as far as the learner has come (#214). The annotation is ruby when it sits above the
+		word (furigana, pinyin), so a screen reader and a browser without ruby both get it. -->
+		<p class="fp-word starter-front" data-testid="starter-front" data-placement={front.placement ?? 'none'}>
+			{#if front.annotation !== null && front.placement === 'above'}
+				<ruby
+					><span lang={front.mainLang}>{front.main}</span><rp>(</rp><rt lang={front.annotationLang ?? undefined}>{front.annotation}</rt
+					><rp>)</rp></ruby
+				>
+			{:else}
+				<span lang={front.mainLang}>{front.main}</span>
+			{/if}
+		</p>
+		{#if front.annotation !== null && front.placement === 'below'}
+			<p class="starter-below" lang={front.annotationLang ?? undefined}>{front.annotation}</p>
+		{/if}
+		{#if audio && !revealed}
+			<span class="fa-play" data-testid="starter-play">
+				<PlayButton
+					clips={audio.clips}
+					speakText={audio.speakText}
+					lang={audio.lang}
+					deviceVoice={audio.deviceVoice}
+					label={entry.written}
+				/>
+			</span>
+		{/if}
+	{:else}
+		<p class="fp-word" lang={studyLang(entry.language)}>{faces.front.written}</p>
+	{/if}
 </FacePrompt>
 
 <FaceWork>
@@ -108,6 +147,26 @@
 {/if}
 
 <style>
+	.starter-note {
+		margin: 0;
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--accent-32);
+		border-radius: var(--radius);
+		background: var(--accent-14);
+		font-size: var(--font-size-s);
+	}
+	.starter-front ruby {
+		ruby-position: over;
+	}
+	.starter-front rt {
+		color: var(--reading-accent);
+		font-size: 0.45em;
+	}
+	.starter-below {
+		margin: 0;
+		color: var(--reading-accent);
+		font-size: var(--font-size-l);
+	}
 	.sentence {
 		font-family: var(--font-hanzi);
 		font-size: var(--font-size-l);

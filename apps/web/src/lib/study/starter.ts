@@ -166,12 +166,15 @@ export interface StarterEntryLike {
 	readings: readonly { type: string; value: string }[];
 }
 
-/** One line of the front: its text and the `lang` it is read in. */
+/** What the front of a card shows at a stage: the main text, and a small annotation above it (ruby: furigana, pinyin) or below it. */
 export interface StarterFront {
 	main: string;
+	/** The `lang` the main text is read in. */
 	mainLang: string | undefined;
 	annotation: string | null;
 	annotationLang: string | null | undefined;
+	/** Above the main text (furigana or pinyin over the word) or below it (romaji under kana); null without an annotation. */
+	placement: 'above' | 'below' | null;
 }
 
 type Slot = { text: string; lang: string | undefined };
@@ -199,12 +202,32 @@ export function starterFront(profile: StarterProfile, stage: number, word: Start
 	const spec = stageSpec(profile, stage, word);
 	const main = slotFor(profile, entry, spec.main);
 	const note = spec.annotation === 'none' ? null : slotFor(profile, entry, spec.annotation);
+	const shown = note !== null && note.text !== main.text;
 	return {
 		main: main.text,
 		mainLang: main.lang,
-		annotation: note === null || note.text === main.text ? null : note.text,
-		annotationLang: note === null || note.text === main.text ? null : note.lang
+		annotation: shown ? note.text : null,
+		annotationLang: shown ? note.lang : null,
+		placement: !shown ? null : spec.main === 'written' ? 'above' : 'below'
 	};
+}
+
+/** The "New" note a card shows the first time its word reaches a stage: which change it announces. */
+export type StageNote = 'kana' | 'katakana' | 'noRomaji' | 'pictureHint' | 'kanji' | 'hanzi' | 'noPinyin' | 'normal';
+
+/**
+ * stageNote names what changed on arriving at `stage` (null at stage 1: nothing came before). A loanword's
+ * kana are katakana, so its note says so (the reading is the dictionary's, never converted).
+ */
+export function stageNote(profile: StarterProfile, stage: number, word: StarterWord, opts: { katakana?: boolean } = {}): StageNote | null {
+	const final = finalStage(profile, word);
+	const s = Math.min(Math.max(1, Math.floor(stage)), final);
+	if (s <= 1) return null;
+	if (profile === 'ja') {
+		if (word.usuallyKana && s === final) return s === 4 ? 'normal' : null;
+		return (['kana', 'noRomaji', 'pictureHint', 'kanji', 'normal'] as const).map((n) => (n === 'kana' && opts.katakana ? 'katakana' : n))[s - 2] ?? null;
+	}
+	return (['hanzi', 'pictureHint', 'noPinyin', 'normal'] as const)[s - 2] ?? null;
 }
 
 // --- Settings -------------------------------------------------------------------------------------

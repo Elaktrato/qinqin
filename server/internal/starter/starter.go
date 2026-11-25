@@ -75,8 +75,8 @@ type Set struct {
 	Attribution string `json:"attribution"`
 	// HumanReviewed says a person has read every word against the dictionary; false marks a seed that
 	// only the author (an agent) checked.
-	HumanReviewed bool `json:"humanReviewed"`
-	Words    []Word `json:"words"`
+	HumanReviewed bool   `json:"humanReviewed"`
+	Words         []Word `json:"words"`
 }
 
 // Parse reads and validates one set file.

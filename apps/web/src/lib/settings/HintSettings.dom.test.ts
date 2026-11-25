@@ -50,9 +50,9 @@ describe('Settings → Study → Hints (#215)', () => {
 		);
 	});
 
-	it('says pictures are not available yet', () => {
+	it('says where pictures come from', () => {
 		open();
-		expect(screen.getByText(/Pictures are not available yet/)).toBeTruthy();
+		expect(screen.getByText(/A picture of the word from an installed pictures pack/)).toBeTruthy();
 	});
 
 	it('shows a failed save', async () => {

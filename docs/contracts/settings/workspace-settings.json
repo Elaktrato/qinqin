@@ -39,6 +39,12 @@
    "shape": "object: hint kind -> card kind -> \"always\" | \"hint\" | \"never\"",
    "default": "see cards/hints.json (its own parse rules; not repeated here)",
    "owner": "apps/web/src/lib/study/hints.ts"
+  },
+  {
+   "key": "starter",
+   "shape": "object: {enabled: boolean, scope: \"base\" | \"all\"}",
+   "default": "enabled false, scope base, member by member (see starter/README.md)",
+   "owner": "apps/web/src/lib/study/starter.ts"
   }
  ],
  "parse": [

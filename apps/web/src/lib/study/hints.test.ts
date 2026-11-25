@@ -17,10 +17,11 @@ describe('the hint registry', () => {
 		expect(HINT_REGISTRY.map((d) => d.id)).toEqual(['reading', 'picture']);
 	});
 
-	it('picture is defined but has no source yet', () => {
+	it('picture is ready and available only when the entry has one', () => {
 		const picture = HINT_REGISTRY.find((d) => d.id === 'picture');
 		expect(picture?.available({ hasReading: true, hasPicture: false })).toBe(false);
-		expect(picture?.ready).toBe(false);
+		expect(picture?.available({ hasReading: false, hasPicture: true })).toBe(true);
+		expect(picture?.ready).toBe(true);
 	});
 });
 
@@ -31,6 +32,11 @@ describe('hintsForEntry', () => {
 			hasPicture: false
 		});
 		expect(hintsForEntry({ readings: [] })).toEqual({ hasReading: false, hasPicture: false });
+	});
+
+	it('reports a picture only when the caller found one', () => {
+		expect(hintsForEntry({ readings: [] }, { hasPicture: true })).toEqual({ hasReading: false, hasPicture: true });
+		expect(hintsForEntry({ readings: [] }, { hasPicture: false }).hasPicture).toBe(false);
 	});
 });
 
