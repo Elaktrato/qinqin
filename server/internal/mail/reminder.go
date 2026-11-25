@@ -99,3 +99,38 @@ func (s *Service) SendReminder(ctx context.Context, userID int64, to string, d R
 	s.logf("mail: sent kind=%s user=%d", KindReminder, userID)
 	return nil
 }
+
+// The unsubscribe page's texts (a page served by the API, not a mail).
+const (
+	PageAsk    Kind = "reminder_page_ask"
+	PageButton Kind = "reminder_page_button"
+	PageDone   Kind = "reminder_page_done"
+	PageBad    Kind = "reminder_page_bad"
+)
+
+// Line is one catalogue line (body part) of a reminder text kind in lang,
+// falling back to English; empty when there is none.
+func Line(lang string, k Kind) string {
+	if _, ok := catalogues[lang]; !ok {
+		lang = "en"
+	}
+	msg, _ := lookup(lang, catalogueKey(k, "body"))
+	s, err := i18n.Format(msg, lang, map[string]any{})
+	if err != nil {
+		return msg
+	}
+	return s
+}
+
+// PublicURL is the configured public address (no trailing slash), "" when
+// mail is not configured.
+func (s *Service) PublicURL(ctx context.Context) string {
+	if s == nil || s.Store == nil {
+		return ""
+	}
+	_, cfg, err := s.Store.Stored(ctx)
+	if err != nil || cfg == nil {
+		return ""
+	}
+	return cfg.PublicURL
+}
