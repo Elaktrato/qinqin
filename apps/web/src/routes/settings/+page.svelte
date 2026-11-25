@@ -26,6 +26,7 @@
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
 	import KnownSettings from '$lib/placement/KnownSettings.svelte';
+	import LevelCheck from '$lib/placement/LevelCheck.svelte';
 	import NotificationSettings from '$lib/settings/NotificationSettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
@@ -318,6 +319,7 @@
 				<StudySettings />
 				<HintSettings />
 				<KnownSettings />
+				<LevelCheck />
 				<FeedbackSettings />
 			</div>
 
