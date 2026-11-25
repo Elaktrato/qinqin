@@ -5,6 +5,16 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## Study modal — the saved study setup (contract 2)
+
+- **Keyed rows:** new workspace family `study-setup` (exact key; `keyed/families.json`, three new cases). A
+  user-global row of it is 400 `bad_request` on the key routes and refused alone in a push.
+- **Study setup:** the row is the setup the study modal starts, saved per workspace and synced
+  (`study/setup.json`, new fixture, rule `study/setup`): `{version: 1, decks: "all" | [deck id], mode, schemeId,
+  levelName, cardTypes, unchecked, newLimit, reviewLimit, newOrder, typeOrder}`, read member by member, repaired
+  member by member, unknown members kept on write. It replaces the web's per-tab setup and the browser keys
+  `qinqin.study.cardTypes` and `qinqin.study.extraTypes`, which are no longer read or written.
+
 ## #154 — version, bridge and release check (contract 1)
 
 - **Contract version:** the answer of `GET /api/version` carries `contract`, an integer that starts at 1 with this

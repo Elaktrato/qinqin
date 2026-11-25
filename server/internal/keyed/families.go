@@ -37,6 +37,7 @@ var Families = []Family{
 	{"known:", true, ScopeWorkspace},
 	{"milestone:", true, ScopeWorkspace},
 	{"goals:workspace", false, ScopeWorkspace},
+	{"study-setup", false, ScopeWorkspace},
 	{"vacation:", true, ScopeGlobal},
 	{"home-layout", false, ScopeGlobal},
 	{"activity-view", false, ScopeGlobal},

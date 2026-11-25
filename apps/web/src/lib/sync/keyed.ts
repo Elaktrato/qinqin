@@ -34,6 +34,7 @@ export const ROW_FAMILIES: readonly RowFamily[] = [
 	{ key: 'known:', prefix: true, scope: 'workspace' },
 	{ key: 'milestone:', prefix: true, scope: 'workspace' },
 	{ key: 'goals:workspace', prefix: false, scope: 'workspace' },
+	{ key: 'study-setup', prefix: false, scope: 'workspace' },
 	{ key: 'vacation:', prefix: true, scope: 'user-global' },
 	{ key: 'home-layout', prefix: false, scope: 'user-global' },
 	{ key: 'activity-view', prefix: false, scope: 'user-global' },
