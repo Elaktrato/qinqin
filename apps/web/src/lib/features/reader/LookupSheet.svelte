@@ -34,19 +34,34 @@
 	});
 
 	// The word stays visible: the text scrolls so the looked-up word sits
-	// above the sheet's top edge, when it opens and whenever it grows (a
-	// selection's results arrive after it opened). The top is measured from
-	// the layout height: the sheet slides in with a translate.
+	// above the sheet's top edge, when it opens and whenever it or the
+	// viewport changes size (a selection's results arrive after it opened;
+	// the keyboard closes in the WebView). The top is measured from the
+	// layout height: the sheet slides in with a translate. While it is open
+	// the page gets as much room under its end (--lookup-sheet-space, the
+	// panel's bottom padding in routes/+layout.svelte), so a word on the last
+	// line can scroll above the sheet too.
 	let content = $state<HTMLElement | null>(null);
 	$effect(() => {
 		const dialog = content?.closest('dialog');
 		if (!dialog) return;
-		const keep = (): void => lookup.keepWordAbove(window.innerHeight - dialog.offsetHeight);
+		const root = document.documentElement;
+		const keep = (): void => {
+			root.style.setProperty('--lookup-sheet-space', `${dialog.offsetHeight}px`);
+			lookup.keepWordAbove(window.innerHeight - dialog.offsetHeight);
+		};
 		keep();
-		if (typeof ResizeObserver !== 'function') return;
-		const observer = new ResizeObserver(keep);
-		observer.observe(dialog);
-		return () => observer.disconnect();
+		const visual = window.visualViewport;
+		window.addEventListener('resize', keep);
+		visual?.addEventListener('resize', keep);
+		const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(keep) : null;
+		observer?.observe(dialog);
+		return () => {
+			observer?.disconnect();
+			window.removeEventListener('resize', keep);
+			visual?.removeEventListener('resize', keep);
+			root.style.removeProperty('--lookup-sheet-space');
+		};
 	});
 </script>
 

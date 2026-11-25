@@ -226,6 +226,58 @@ describe('the lookup on the phone (#102)', () => {
 		}
 	});
 
+	it('while open the page gets room for the sheet under its end (--lookup-sheet-space), given back on close', async () => {
+		stubPhone(true);
+		let resized: (() => void) | null = null;
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				constructor(cb: () => void) {
+					resized = cb;
+				}
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			}
+		);
+		let height = 300;
+		const offsetHeight = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+			return this.tagName === 'DIALOG' ? height : 0;
+		});
+		const space = () => document.documentElement.style.getPropertyValue('--lookup-sheet-space');
+		try {
+			const view = render(PopupStackView, {
+				props: { lookup: fakeLookup('selection', [root]) as unknown as LookupController, studyWorkspaceId: 7, highlighter },
+				context: ctx.context
+			});
+			expect(space()).toBe('300px');
+			height = 420;
+			resized!();
+			expect(space()).toBe('420px');
+			view.unmount();
+			expect(space()).toBe('');
+		} finally {
+			offsetHeight.mockRestore();
+		}
+	});
+
+	it('a viewport resize (the keyboard closing) measures the sheet again; the listeners go with it', () => {
+		stubPhone(true);
+		const visual = new EventTarget();
+		vi.stubGlobal('visualViewport', visual);
+		const lookup = fakeLookup('selection', [root]);
+		const view = render(PopupStackView, { props: { lookup: lookup as unknown as LookupController, studyWorkspaceId: 7, highlighter }, context: ctx.context });
+		const opened = lookup.keepWordAbove.mock.calls.length;
+		window.dispatchEvent(new Event('resize'));
+		expect(lookup.keepWordAbove).toHaveBeenCalledTimes(opened + 1);
+		visual.dispatchEvent(new Event('resize'));
+		expect(lookup.keepWordAbove).toHaveBeenCalledTimes(opened + 2);
+		view.unmount();
+		window.dispatchEvent(new Event('resize'));
+		visual.dispatchEvent(new Event('resize'));
+		expect(lookup.keepWordAbove).toHaveBeenCalledTimes(opened + 2);
+	});
+
 	it('the Sheet is lib/ui/Sheet (the journal reuses it)', () => {
 		expect(sheetSource).toMatch(/import \{[^}]*\bSheet\b[^}]*\} from '\$lib\/ui'/);
 	});
