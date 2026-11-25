@@ -115,6 +115,53 @@ body {
 	color: var(--text);
 }
 
+/* Scrollbars (owner request, 2026-11-25): thin, rounded and in the theme's
+   own colours everywhere, instead of the system's grey bar with arrow
+   buttons. The thumb is the theme's muted text colour at low strength (in
+   Safari it firms up under the pointer); the track stays clear, so a scrollable strip
+   (the heatmap, a wide table) reads as part of its card. Browsers with the
+   standard properties use the first rule (Chrome draws no arrow buttons
+   then); the WebKit rules give Safari, which lacks them, the same look. */
+:root {
+	--scrollbar-thumb: color-mix(in srgb, var(--muted) 40%, transparent);
+	--scrollbar-thumb-hover: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+@supports (scrollbar-color: auto) {
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--scrollbar-thumb) transparent;
+	}
+}
+
+@supports not (scrollbar-color: auto) {
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track,
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 999px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: var(--scrollbar-thumb-hover);
+	}
+	::-webkit-scrollbar-button {
+		display: none;
+	}
+}
+
+/* High-contrast (forced colours) keeps the system's scrollbars. */
+@media (forced-colors: active) {
+	* {
+		scrollbar-color: auto;
+	}
+}
+
 /* The page column: a page's root container (the frame's <main> holds every
    page and stays full width; pages bring no <main> of their own). */
 .page-body {
