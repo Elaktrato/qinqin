@@ -68,6 +68,16 @@ describe('loadConfig', () => {
 		expect(loadConfig()).toEqual(DEFAULT_CONFIG);
 	});
 
+	it('keeps the page a session was started from only when it is a path of this app (review)', () => {
+		const base = { mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] };
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, from: '/flashcards?x=1' }));
+		expect(loadConfig().from).toBe('/flashcards?x=1');
+		for (const from of ['/\t/evil.example', '/\n/evil.example', '//evil.example', '/\\evil.example', 'javascript:alert(1)']) {
+			sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, from }));
+			expect(loadConfig().from, from).toBeUndefined();
+		}
+	});
+
 	it('returns defaults when storage holds malformed JSON', () => {
 		sessionStorage.setItem(SESSION_CONFIG_KEY, '{not json');
 		expect(loadConfig()).toEqual(DEFAULT_CONFIG);

@@ -1,20 +1,31 @@
 <script lang="ts">
-	// The session top (#101, design §9): close (back to the setup), a thin
-	// progress line and the count.
+	// The session top (#101, design §9): close (end the session: back where it
+	// was started, with the study modal open; `onend`), a thin progress line
+	// and the count. The link to /study works without the handler too.
 	import { t } from '$lib/i18n';
 	import IconButton from '$lib/ui/IconButton.svelte';
 
 	let {
 		progress,
-		countText
-	}: { progress: { position: number; total: number }; countText: string } = $props();
+		countText,
+		onend
+	}: { progress: { position: number; total: number }; countText: string; onend?: () => void } = $props();
 
 	const doneCount = $derived(Math.max(0, Math.min(progress.total, progress.position - 1)));
 	const width = $derived(progress.total > 0 ? (doneCount / progress.total) * 100 : 0);
 </script>
 
 <div class="session-top">
-	<IconButton href="/study" icon="close" label={t('study.session.end')} />
+	<IconButton
+		href="/study"
+		icon="close"
+		label={t('study.session.end')}
+		onclick={(e: MouseEvent) => {
+			if (!onend) return;
+			e.preventDefault();
+			onend();
+		}}
+	/>
 	<div
 		class="line"
 		role="progressbar"

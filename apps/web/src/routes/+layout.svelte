@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { onDestroy, onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
 	import { startIncoming, startNative, type IncomingHandle } from '$lib/native';
@@ -28,6 +28,7 @@
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
+	import StudyModal from '$lib/features/flashcards/setup/StudyModal.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
@@ -105,6 +106,11 @@
 	const noWorkspaces = $derived(
 		session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length === 0
 	);
+
+	// A navigation the study modal did not start (Back in the browser, a link
+	// elsewhere) closes it; the modal's own navigations close it first and
+	// reopen it once they land (session.studyModal.show after goto).
+	afterNavigate(() => app.session?.studyModal.hide());
 
 	// A guard redirect replaces the history entry it leaves: Back from
 	// home after signing in must not land on /login only to be sent home
@@ -325,6 +331,8 @@
 			</div>
 
 			{#if app.logoutPrompt !== null}<LogoutDialog />{/if}
+			<!-- The study modal (one per session), opened by every Study button. -->
+			{#if signedIn && !restricted && session !== null}<StudyModal />{/if}
 
 			<!-- The one main landmark of every page (the skip link's target):
 			     pages bring plain containers, never their own <main>. -->

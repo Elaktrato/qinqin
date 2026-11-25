@@ -13,6 +13,7 @@
 		kindLabel = 'Recognise',
 		deckLevel = null,
 		done = false,
+		onend,
 		instance = $bindable()
 	}: {
 		card: Component<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -22,6 +23,7 @@
 		kindLabel?: string;
 		deckLevel?: string | null;
 		done?: boolean;
+		onend?: () => void;
 		instance?: unknown;
 	} = $props();
 
@@ -44,6 +46,7 @@
 	{done}
 	{chips}
 	{status}
+	{onend}
 	keys="Keys: test"
 >
 	<Card bind:this={instance} {...cardProps} />

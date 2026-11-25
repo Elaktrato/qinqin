@@ -32,6 +32,7 @@ import {
 	unskipKind
 } from '$lib/study/commands/cards';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { defaultSetup } from '$lib/study/setup';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckDetail from './DeckDetail.svelte';
@@ -159,7 +160,8 @@ describe('DeckDetail', () => {
 		expect(header.textContent).toContain('3 words');
 		expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/flashcards/deck/d1/settings');
 		await fireEvent.click(screen.getByRole('button', { name: 'Study' }));
-		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({ mode: 'decks', deckIds: ['d1'] });
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({ mode: 'decks', deckIds: ['d1'], from: location.pathname });
 		expect(goto).toHaveBeenCalledWith('/study/session');
 	});
 
@@ -348,5 +350,26 @@ describe('DeckDetail daily limits and vacation', () => {
 		const numbers = document.querySelector('.numbers p') as HTMLElement;
 		expect(numbers.textContent).toMatch(/On vacation/);
 		expect(numbers.textContent).not.toMatch(/ due/);
+	});
+});
+
+describe('DeckDetail Study and the saved setup (review)', () => {
+	it('a deep-linked Study waits for the synced setup before it starts', async () => {
+		const synced = { ...defaultSetup(), newLimit: 7, reviewLimit: 33 };
+		let loaded = false;
+		let release!: () => void;
+		const gate = new Promise<void>((r) => (release = r));
+		vi.spyOn(ctx.session.setups, 'of').mockImplementation(() => ({ setup: loaded ? synced : defaultSetup(), raw: null, loaded, known: loaded, saveError: null }));
+		const refresh = vi.spyOn(ctx.session.setups, 'refresh').mockImplementation(async () => {
+			await gate;
+			loaded = true;
+		});
+		await open();
+		expect(refresh).toHaveBeenCalledWith(1);
+		await fireEvent.click(screen.getByRole('button', { name: 'Study' }));
+		expect(goto).not.toHaveBeenCalledWith('/study/session');
+		release();
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({ newLimit: 7, reviewLimit: 33 });
 	});
 });

@@ -6,7 +6,8 @@
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { loadConfig, saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
 	import { PartialPushError } from '$lib/sync/push';
 	import { loadRawStudyData } from '$lib/study/data';
 	import { pushStudy } from '$lib/study/commands/write';
@@ -17,7 +18,7 @@
 	import { createDecksData } from './decksData.svelte';
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
-	import { levelSessionConfig } from './studyStart';
+	import { levelSessionConfig, loadedSetup } from './studyStart';
 	import { Button, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -91,9 +92,18 @@
 	let retryable = $state(true);
 	let skippedBefore = false;
 
-	function study(): void {
-		if (deck === null || deck === undefined) return;
-		saveConfig(levelSessionConfig(loadConfig(), deck.schemeId, deck.level));
+	// The saved setup's limits count here; a deep link must not start from the defaults.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+
+	async function study(): Promise<void> {
+		const level = deck;
+		if (level === null || level === undefined) return;
+		const ws = session.workspaces.current?.id ?? null;
+		if (ws === null) return;
+		const setup = await loadedSetup(session.setups, ws);
+		saveConfig(levelSessionConfig(setup, level.schemeId, level.level, here()));
 		void goto('/study/session');
 	}
 

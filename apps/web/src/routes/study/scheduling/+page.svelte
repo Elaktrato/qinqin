@@ -368,7 +368,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 </svelte:head>
 
 <div class="page-body page">
-	<p><a href="/study">{t('study.sched.back')}</a></p>
+	<p><a href="/study/advanced">{t('study.sched.back')}</a></p>
 	<h1>{t('study.sched.title')}</h1>
 
 	{#if workspaceId === null}

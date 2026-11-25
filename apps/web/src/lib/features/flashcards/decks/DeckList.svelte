@@ -2,8 +2,10 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { loadConfig, saveConfig } from '$lib/study/session';
-	import { createDeck } from '$lib/study/commands/decks';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
+	import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { knownEntries } from '$lib/study/known';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
@@ -12,12 +14,13 @@
 	import { Button, Field, Section } from '$lib/ui';
 	import SystemDecks from './SystemDecks.svelte';
 	import StarterDecks from './StarterDecks.svelte';
-	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
 	import { useSession } from '$lib/context/context';
+	import type { StudyCardKind } from '$lib/study/types';
 	const session = useSession();
 
 	const store = createDecksData(session);
@@ -26,6 +29,11 @@
 	$effect(() => {
 		void store.load(workspaceId);
 	});
+	// The saved setup's kinds count here; another device may have changed it.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+	const language = $derived(session.workspaces.current?.language ?? '');
 	// A new learner day (or zone) changes what is due and on vacation.
 	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
@@ -35,7 +43,7 @@
 		return summarizeDecks({
 			...data,
 			w: data.weights,
-			kindsFor: (ids) => sessionKinds(data.workspaceId, ids, data.deckSettings)
+			kindsFor: (ids) => sessionKinds(session.setups.of(data.workspaceId).setup, ids, data.deckSettings, language)
 		});
 	});
 
@@ -87,8 +95,59 @@
 		}
 	}
 
-	function study(deckId: string, kinds: readonly string[]): void {
-		saveConfig(deckSessionConfig(loadConfig(), deckId, kinds));
+	// Rename and delete (moved from the study page: the same commands, confirmation and wording).
+	let renamingId = $state<string | null>(null);
+	let renameName = $state('');
+	let deletingId = $state<string | null>(null);
+	let deckError = $state('');
+	let deckErrorId = $state<string | null>(null);
+
+	function beginRename(id: string, name: string): void {
+		renamingId = id;
+		renameName = name;
+		deckError = '';
+	}
+
+	async function submitRename(event: SubmitEvent, id: string): Promise<void> {
+		event.preventDefault();
+		const name = renameName.trim();
+		deckErrorId = id;
+		if (name === '') {
+			deckError = t('study.decks.nameEmpty');
+			return;
+		}
+		const ws = workspaceId;
+		if (ws === null) return;
+		deckError = '';
+		try {
+			await renameDeck(session.study, ws, id, name);
+			renamingId = null;
+			if (workspaceId === ws) await store.load(ws, true);
+		} catch (err) {
+			deckError = errorText(err, t('study.decks.renameFailed'));
+		}
+	}
+
+	async function removeDeck(id: string, name: string): Promise<void> {
+		const ws = workspaceId;
+		if (deletingId !== null || ws === null) return;
+		if (!confirm(t('study.decks.confirmDelete', { deck: name }))) return;
+		deletingId = id;
+		deckErrorId = id;
+		deckError = '';
+		try {
+			await deleteDeck(session.study, ws, id);
+			if (workspaceId === ws) await store.load(ws, true);
+		} catch (err) {
+			deckError = errorText(err, t('study.decks.deleteFailed'));
+		} finally {
+			deletingId = null;
+		}
+	}
+
+	async function study(deckId: string, kinds: readonly StudyCardKind[]): Promise<void> {
+		if (workspaceId === null) return;
+		saveConfig(deckSessionConfig(await loadedSetup(session.setups, workspaceId), deckId, kinds, here()));
 		void goto('/study/session');
 	}
 
@@ -108,7 +167,14 @@
 
 	<Section title={t('flashcards.list.yourDecks')}>
 	<div class="study-all">
-		<Button href="/study" variant="primary">{t('flashcards.deck.study')}</Button>
+		<Button
+			href="/study"
+			variant="primary"
+			onclick={(e: MouseEvent) => {
+				e.preventDefault();
+				session.studyModal.show();
+			}}>{t('flashcards.deck.study')}</Button
+		>
 	</div>
 	{#if summary.decks.length === 0}
 		<p class="hint">{t('flashcards.list.empty')}</p>
@@ -145,16 +211,42 @@
 				{#if deck.extras}
 					<p class="note">{t('flashcards.list.extras')}</p>
 				{/if}
-				<div class="actions">
-					<Button
-						aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
-						onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
-					>
-					<Button
-						href={flashcardsHref({ view: 'settings', deckId: deck.id })}
-						aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</Button
-					>
-				</div>
+				{#if renamingId === deck.id}
+					<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
+						<Field label={t('study.decks.newName', { deck: deck.name })} hideLabel bind:value={renameName} maxlength={80} />
+						<Button type="submit">{t('common.action.save')}</Button>
+						<Button onclick={() => (renamingId = null)}>{t('common.action.cancel')}</Button>
+					</form>
+				{:else}
+					<div class="actions">
+						<Button
+							aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
+							onclick={() => void study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
+						>
+						<Button
+							href={flashcardsHref({ view: 'settings', deckId: deck.id })}
+							aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</Button
+						>
+						{#if deck.id !== GENERAL_DECK_ID}
+							<Button
+								variant="plain"
+								aria-label={t('flashcards.list.renameNamed', { name: deck.name })}
+								onclick={() => beginRename(deck.id, deck.name)}>{t('study.decks.rename')}</Button
+							>
+							<Button
+								variant="plain"
+								tone="danger"
+								disabled={deletingId === deck.id}
+								aria-label={t('flashcards.list.deleteNamed', { name: deck.name })}
+								onclick={() => void removeDeck(deck.id, deck.name)}
+								>{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}</Button
+							>
+						{/if}
+					</div>
+				{/if}
+				{#if deckError && deckErrorId === deck.id}
+					<p class="error" role="alert">{deckError}</p>
+				{/if}
 			</li>
 		{/each}
 	</ul>
@@ -256,6 +348,18 @@
 		gap: var(--space-2);
 		align-items: center;
 		margin-top: var(--space-2);
+	}
+
+	.rename {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: end;
+		margin-top: var(--space-2);
+	}
+
+	.rename :global(.field) {
+		flex: 1 1 14rem;
 	}
 
 	.new {
