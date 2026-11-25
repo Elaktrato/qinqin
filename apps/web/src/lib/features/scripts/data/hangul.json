@@ -1,0 +1,410 @@
+{
+	"id": "hangul",
+	"license": "CC0-1.0",
+	"systems": [
+		{
+			"id": "hangul",
+			"language": "ko",
+			"groups": [
+				"consonant",
+				"tense",
+				"vowel",
+				"compound"
+			],
+			"items": [
+				{
+					"glyph": "ㄱ",
+					"roman": "g/k",
+					"group": "consonant",
+					"sound": "가",
+					"key": "R"
+				},
+				{
+					"glyph": "ㄴ",
+					"roman": "n",
+					"group": "consonant",
+					"sound": "나",
+					"key": "S"
+				},
+				{
+					"glyph": "ㄷ",
+					"roman": "d/t",
+					"group": "consonant",
+					"sound": "다",
+					"key": "E"
+				},
+				{
+					"glyph": "ㄹ",
+					"roman": "r/l",
+					"group": "consonant",
+					"sound": "라",
+					"key": "F"
+				},
+				{
+					"glyph": "ㅁ",
+					"roman": "m",
+					"group": "consonant",
+					"sound": "마",
+					"key": "A"
+				},
+				{
+					"glyph": "ㅂ",
+					"roman": "b/p",
+					"group": "consonant",
+					"sound": "바",
+					"key": "Q"
+				},
+				{
+					"glyph": "ㅅ",
+					"roman": "s",
+					"group": "consonant",
+					"sound": "사",
+					"key": "T"
+				},
+				{
+					"glyph": "ㅇ",
+					"roman": "-/ng",
+					"group": "consonant",
+					"sound": "아",
+					"key": "D"
+				},
+				{
+					"glyph": "ㅈ",
+					"roman": "j",
+					"group": "consonant",
+					"sound": "자",
+					"key": "W"
+				},
+				{
+					"glyph": "ㅊ",
+					"roman": "ch",
+					"group": "consonant",
+					"sound": "차",
+					"key": "C"
+				},
+				{
+					"glyph": "ㅋ",
+					"roman": "k",
+					"group": "consonant",
+					"sound": "카",
+					"key": "Z"
+				},
+				{
+					"glyph": "ㅌ",
+					"roman": "t",
+					"group": "consonant",
+					"sound": "타",
+					"key": "X"
+				},
+				{
+					"glyph": "ㅍ",
+					"roman": "p",
+					"group": "consonant",
+					"sound": "파",
+					"key": "V"
+				},
+				{
+					"glyph": "ㅎ",
+					"roman": "h",
+					"group": "consonant",
+					"sound": "하",
+					"key": "G"
+				},
+				{
+					"glyph": "ㄲ",
+					"roman": "kk",
+					"group": "tense",
+					"sound": "까",
+					"key": "Shift+R"
+				},
+				{
+					"glyph": "ㄸ",
+					"roman": "tt",
+					"group": "tense",
+					"sound": "따",
+					"key": "Shift+E"
+				},
+				{
+					"glyph": "ㅃ",
+					"roman": "pp",
+					"group": "tense",
+					"sound": "빠",
+					"key": "Shift+Q"
+				},
+				{
+					"glyph": "ㅆ",
+					"roman": "ss",
+					"group": "tense",
+					"sound": "싸",
+					"key": "Shift+T"
+				},
+				{
+					"glyph": "ㅉ",
+					"roman": "jj",
+					"group": "tense",
+					"sound": "짜",
+					"key": "Shift+W"
+				},
+				{
+					"glyph": "ㅏ",
+					"roman": "a",
+					"group": "vowel",
+					"sound": "아",
+					"key": "K"
+				},
+				{
+					"glyph": "ㅑ",
+					"roman": "ya",
+					"group": "vowel",
+					"sound": "야",
+					"key": "I"
+				},
+				{
+					"glyph": "ㅓ",
+					"roman": "eo",
+					"group": "vowel",
+					"sound": "어",
+					"key": "J"
+				},
+				{
+					"glyph": "ㅕ",
+					"roman": "yeo",
+					"group": "vowel",
+					"sound": "여",
+					"key": "U"
+				},
+				{
+					"glyph": "ㅗ",
+					"roman": "o",
+					"group": "vowel",
+					"sound": "오",
+					"key": "H"
+				},
+				{
+					"glyph": "ㅛ",
+					"roman": "yo",
+					"group": "vowel",
+					"sound": "요",
+					"key": "Y"
+				},
+				{
+					"glyph": "ㅜ",
+					"roman": "u",
+					"group": "vowel",
+					"sound": "우",
+					"key": "N"
+				},
+				{
+					"glyph": "ㅠ",
+					"roman": "yu",
+					"group": "vowel",
+					"sound": "유",
+					"key": "B"
+				},
+				{
+					"glyph": "ㅡ",
+					"roman": "eu",
+					"group": "vowel",
+					"sound": "으",
+					"key": "M"
+				},
+				{
+					"glyph": "ㅣ",
+					"roman": "i",
+					"group": "vowel",
+					"sound": "이",
+					"key": "L"
+				},
+				{
+					"glyph": "ㅐ",
+					"roman": "ae",
+					"group": "compound",
+					"sound": "애",
+					"key": "O"
+				},
+				{
+					"glyph": "ㅒ",
+					"roman": "yae",
+					"group": "compound",
+					"sound": "얘",
+					"key": "Shift+O"
+				},
+				{
+					"glyph": "ㅔ",
+					"roman": "e",
+					"group": "compound",
+					"sound": "에",
+					"key": "P"
+				},
+				{
+					"glyph": "ㅖ",
+					"roman": "ye",
+					"group": "compound",
+					"sound": "예",
+					"key": "Shift+P"
+				},
+				{
+					"glyph": "ㅘ",
+					"roman": "wa",
+					"group": "compound",
+					"sound": "와",
+					"key": "H, K"
+				},
+				{
+					"glyph": "ㅙ",
+					"roman": "wae",
+					"group": "compound",
+					"sound": "왜",
+					"key": "H, O"
+				},
+				{
+					"glyph": "ㅚ",
+					"roman": "oe",
+					"group": "compound",
+					"sound": "외",
+					"key": "H, L"
+				},
+				{
+					"glyph": "ㅝ",
+					"roman": "wo",
+					"group": "compound",
+					"sound": "워",
+					"key": "N, J"
+				},
+				{
+					"glyph": "ㅞ",
+					"roman": "we",
+					"group": "compound",
+					"sound": "웨",
+					"key": "N, P"
+				},
+				{
+					"glyph": "ㅟ",
+					"roman": "wi",
+					"group": "compound",
+					"sound": "위",
+					"key": "N, L"
+				},
+				{
+					"glyph": "ㅢ",
+					"roman": "ui",
+					"group": "compound",
+					"sound": "의",
+					"key": "M, L"
+				}
+			],
+			"words": [
+				{
+					"text": "나무",
+					"roman": "namu",
+					"gloss": "tree"
+				},
+				{
+					"text": "고기",
+					"roman": "gogi",
+					"gloss": "meat"
+				},
+				{
+					"text": "사과",
+					"roman": "sagwa",
+					"gloss": "apple"
+				},
+				{
+					"text": "바다",
+					"roman": "bada",
+					"gloss": "sea"
+				},
+				{
+					"text": "하늘",
+					"roman": "haneul",
+					"gloss": "sky"
+				},
+				{
+					"text": "사람",
+					"roman": "saram",
+					"gloss": "person"
+				},
+				{
+					"text": "학교",
+					"roman": "hakgyo",
+					"gloss": "school"
+				},
+				{
+					"text": "물",
+					"roman": "mul",
+					"gloss": "water"
+				},
+				{
+					"text": "책",
+					"roman": "chaek",
+					"gloss": "book"
+				},
+				{
+					"text": "집",
+					"roman": "jip",
+					"gloss": "house"
+				},
+				{
+					"text": "밥",
+					"roman": "bap",
+					"gloss": "rice"
+				},
+				{
+					"text": "친구",
+					"roman": "chingu",
+					"gloss": "friend"
+				},
+				{
+					"text": "가방",
+					"roman": "gabang",
+					"gloss": "bag"
+				},
+				{
+					"text": "우유",
+					"roman": "uyu",
+					"gloss": "milk"
+				},
+				{
+					"text": "아이",
+					"roman": "ai",
+					"gloss": "child"
+				},
+				{
+					"text": "어머니",
+					"roman": "eomeoni",
+					"gloss": "mother"
+				},
+				{
+					"text": "아버지",
+					"roman": "abeoji",
+					"gloss": "father"
+				},
+				{
+					"text": "나라",
+					"roman": "nara",
+					"gloss": "country"
+				},
+				{
+					"text": "오리",
+					"roman": "ori",
+					"gloss": "duck"
+				},
+				{
+					"text": "고양이",
+					"roman": "goyangi",
+					"gloss": "cat"
+				},
+				{
+					"text": "강아지",
+					"roman": "gangaji",
+					"gloss": "puppy"
+				},
+				{
+					"text": "의자",
+					"roman": "uija",
+					"gloss": "chair"
+				}
+			]
+		}
+	]
+}
