@@ -23,8 +23,8 @@ func TestManifestMessagesArePinned(t *testing.T) {
 		{"no version", func(m *pack.Manifest) { m.Version = "" }, "manifest: version is required"},
 		{"no license", func(m *pack.Manifest) { m.License = "" }, "manifest: license is required — packs without license terms are rejected"},
 		{"no attribution", func(m *pack.Manifest) { m.Attribution = "" }, "manifest: attribution is required — packs without attribution are rejected"},
-		{"unknown type", func(m *pack.Manifest) { m.Type = "bogus" }, "manifest: unknown type \"bogus\" (want dictionary, frequency, levels, sentences, grammar, audio, components, strokes, lemma-rules, theme, or font)"},
-		{"unknown format", func(m *pack.Manifest) { m.Format = "bogus" }, "manifest: unknown format \"bogus\" (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, font-slices, or rules-json)"},
+		{"unknown type", func(m *pack.Manifest) { m.Type = "bogus" }, "manifest: unknown type \"bogus\" (want dictionary, frequency, levels, sentences, grammar, audio, components, strokes, lemma-rules, images, theme, or font)"},
+		{"unknown format", func(m *pack.Manifest) { m.Format = "bogus" }, "manifest: unknown format \"bogus\" (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, font-slices, rules-json, or images-svg)"},
 		{"theme with json", func(m *pack.Manifest) { m.Type, m.Language = "theme", "" }, "manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type theme, format json)"},
 		{"dictionary with themes-json", func(m *pack.Manifest) { m.Format = "themes-json" }, "manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type dictionary, format themes-json)"},
 		{"font with json", func(m *pack.Manifest) { m.Type, m.Language = "font", "" }, "manifest: a font pack has the format font-slices, and font-slices is for font packs only (type font, format json)"},
@@ -42,7 +42,7 @@ func TestManifestMessagesArePinned(t *testing.T) {
 		{"font with languages", func(m *pack.Manifest) {
 			m.Type, m.Format, m.Language, m.Languages = "font", "font-slices", "", []string{"zh"}
 		}, "manifest: a font pack states no language and no languages"},
-		{"one language with languages", func(m *pack.Manifest) { m.Languages = []string{"es"} }, "manifest: languages is for packs that serve several languages (strokes); a dictionary pack states one language"},
+		{"one language with languages", func(m *pack.Manifest) { m.Languages = []string{"es"} }, "manifest: languages is for packs that serve several languages (strokes, images); a dictionary pack states one language"},
 		{"one language missing", func(m *pack.Manifest) { m.Language = "" }, "manifest: language is required"},
 		{"one language malformed", func(m *pack.Manifest) { m.Language = "Spanish!" }, "manifest: language \"Spanish!\" must be a code like es or pt-br"},
 		{"many with language", func(m *pack.Manifest) { strokes(m); m.Language = "zh" }, "manifest: a strokes pack states its languages in languages, not language"},

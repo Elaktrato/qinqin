@@ -15,13 +15,13 @@ import (
 
 // seedOrder is the seed order the owner pinned for #192: dictionaries first
 // (the other packs refer to their entries), then frequency, levels,
-// sentences, grammar, audio, components, strokes, lemma-rules, theme and
-// font; within a type, path order. It is written out here on purpose, not
+// sentences, grammar, audio, components, strokes, lemma-rules, theme,
+// font and images (appended last by #216, so no other type moved); within a type, path order. It is written out here on purpose, not
 // read from the pack-type table: a change of the table's order must fail
 // this test.
 var seedOrder = []string{
 	"dictionary", "frequency", "levels", "sentences", "grammar", "audio",
-	"components", "strokes", "lemma-rules", "theme", "font",
+	"components", "strokes", "lemma-rules", "theme", "font", "images",
 }
 
 // writeOrderPack writes a pack directory root/dir from its files.
@@ -61,6 +61,12 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		"faces.json": `{"version":1,"faces":[{"face":"serif","script":"Hant","original":"Test Serif","weight":"400","style":"normal",
 			"slices":[{"file":"slices/` + sha + `.woff2","unicodeRange":"U+4E00-9FFF"}]}]}`,
 		"slices/" + sha + ".woff2": slice,
+	})
+	writeOrderPack(t, root, "a-images", map[string]string{
+		"manifest.json": `{"id":"order-images","name":"order-images","version":"1","type":"images","languages":["zh"],"license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"images-svg"}`,
+		"pictures.tsv": "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\ta\tb\n",
+		"pictures/A.svg": `<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>`,
+		"map.tsv": "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t好\t0\tA\t90\tname\t\n",
 	})
 	writeOrderPack(t, root, "b-theme", map[string]string{
 		"manifest.json": manifest("order-theme", "theme", "", "themes-json"),
@@ -117,6 +123,7 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		"order-lemma lemma-rules",
 		"order-theme theme",
 		"order-font font",
+		"order-images images",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("seed order\n%s\nwant\n%s\nfull output:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"), out.String())

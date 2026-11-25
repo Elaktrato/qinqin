@@ -38,8 +38,9 @@ var typeCases = map[string]func(t *testing.T) pack.Pack{
 	pack.TypeLemmaRules: func(t *testing.T) pack.Pack {
 		return buildPack(t, "lemma-rules", "es-rules", "Spanish rules", "CC0-1.0", "rules-json", map[string]string{"rules.json": xaRules})
 	},
-	pack.TypeTheme: themePack,
-	pack.TypeFont:  func(t *testing.T) pack.Pack { p, _ := fontPack(t); return p },
+	pack.TypeImages: imagesPack,
+	pack.TypeTheme:  themePack,
+	pack.TypeFont:   func(t *testing.T) pack.Pack { p, _ := fontPack(t); return p },
 }
 
 // Re-importing a pack that did not change writes no row, for every pack

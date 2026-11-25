@@ -160,6 +160,17 @@ var typeChanges = map[string][]change{
 		{"language", both(setManifest("language", "pt"), replaceIn("rules.json", `"language": "es"`, `"language": "pt"`)), registryColumn(pack.TypeLemmaRules, "language"), "pt", false},
 		{"the rules", replaceIn("rules.json", `"to": "ar"`, `"to": "ir"`), registryColumn(pack.TypeLemmaRules, "rules_json"), `"to": "ir"`, true},
 	},
+	pack.TypeImages: {
+		{"languages", both(setManifest("languages", []string{"zh"}), replaceIn("map.tsv", "ja\t犬\t0\t1F415\t90\tname\t\n", "")), registryColumn(pack.TypeImages, "languages"), `["zh"]`, false},
+		{"a picture", replaceIn("pictures/1F415.svg", `r="2"`, `r="3"`),
+			`SELECT group_concat(svg, '|') FROM image_pictures WHERE pack_id = ?`, `r="3"`, true},
+		{"a credit", replaceIn("pictures.tsv", "OpenMoji, Liz Bravo", "OpenMoji, Someone"),
+			`SELECT group_concat(credit, '|') FROM image_pictures WHERE pack_id = ?`, "OpenMoji, Someone", true},
+		{"a score", replaceIn("map.tsv", "zh\t狗\t1\t1F415\t100", "zh\t狗\t1\t1F415\t95"),
+			`SELECT group_concat(score, '|') FROM image_map WHERE pack_id = ?`, "95", true},
+		{"a sense", replaceIn("map.tsv", "zh\t狗\t1\t1F415", "zh\t狗\t2\t1F415"),
+			`SELECT group_concat(sense, '|') FROM image_map WHERE pack_id = ?`, "2", true},
+	},
 	pack.TypeTheme: {
 		{"a colour", replaceIn("themes.json", `"panel":"#1e1e2e"`, `"panel":"#1f1f2f"`),
 			`SELECT group_concat(data, '|') FROM themes WHERE pack_id = ?`, "#1f1f2f", true},

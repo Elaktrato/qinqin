@@ -22,6 +22,7 @@ const pack = {
 let components: () => Response;
 let lemmaPacks: () => Response;
 let strokes: () => Response;
+let imagePacks: () => Response;
 let themesAnswer: () => Response;
 let fonts: () => Response;
 const fontsAsked = vi.fn();
@@ -71,6 +72,7 @@ beforeEach(() => {
 	lemmaPacks = () =>
 		json([{ packId: 'ja-lemma', name: 'Japanese lemmatizer rules', version: '2026-11-22', language: 'ja', license: 'CC0-1.0', attribution: 'Rule table written for qinqin', notice: '' }]);
 	strokes = () => json([strokePack]);
+	imagePacks = () => json([]);
 	themesAnswer = () =>
 		json({
 			themes: [],
@@ -88,6 +90,7 @@ beforeEach(() => {
 			if (path === '/api/component-packs') return components();
 			if (path === '/api/lemma-packs') return lemmaPacks();
 			if (path === '/api/stroke-packs') return strokes();
+			if (path === '/api/image-packs') return imagePacks();
 			if (path === '/api/themes') return themesAnswer();
 			if (path === '/api/fonts') {
 				fontsAsked();
@@ -238,6 +241,43 @@ describe('sources page: stroke packs', () => {
 		await screen.findByRole('heading', { name: 'Frequency lists' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('heading', { name: 'Stroke data' })).toBeNull();
+	});
+});
+
+describe('sources page: pictures (#216)', () => {
+	const openmoji = {
+		packId: 'images-openmoji',
+		name: 'OpenMoji pictures (black outline)',
+		version: '17.0.0',
+		languages: ['ja', 'zh'],
+		license: 'CC BY-SA 4.0',
+		attribution: 'All emojis designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0 (https://openmoji.org)',
+		notice: 'Pictures: the black-outline SVG files of OpenMoji.',
+		pictureCount: 962,
+		mappingCount: 3172
+	};
+
+	it('credits each images pack with the licence text link and the pack credit line', async () => {
+		imagePacks = () => json([openmoji]);
+		render(Page);
+		const section = (await screen.findByRole('heading', { name: 'Pictures' })).closest('section')!;
+		await waitFor(() => expect(within(section).getAllByText('OpenMoji pictures (black outline)').length).toBeGreaterThan(0));
+		expect(within(section).getByText(/All emojis designed by OpenMoji/)).toBeTruthy();
+		expect(within(section).getByRole('link', { name: 'CC BY-SA 4.0' }).getAttribute('href')).toBe('https://creativecommons.org/licenses/by-sa/4.0/');
+		expect(within(section).getByText('Pictures: the black-outline SVG files of OpenMoji.')).toBeTruthy();
+	});
+
+	it('shows an error with a retry, and hides when no pack is installed', async () => {
+		imagePacks = () => json({ error: 'x', message: 'down' }, 500);
+		render(Page);
+		const section = (await screen.findByRole('heading', { name: 'Pictures' })).closest('section')!;
+		await waitFor(() => expect(within(section).getByRole('alert')).toBeTruthy());
+		cleanup();
+		imagePacks = () => json([]);
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('heading', { name: 'Pictures' })).toBeNull();
 	});
 });
 
