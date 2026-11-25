@@ -4,6 +4,10 @@ Goal: pushing a `v*` semver tag produces a signed APK and its SHA-256 file on th
 Not in scope: the release checklist (#147), release notes, an AAB, Play/F-Droid. Record:
 `docs/architecture/0010-android-shell-and-native-bridge.md` ("Release build and signing").
 
+> **Superseded in part (2026-11-25):** the CI signing design below was replaced by a local build, see "Change of
+> direction: local build" at the end. The tasks, rulings and review fixes that name `android-apk.yml`, the
+> `android-release` environment, the signing secrets or `ANDROID_CERT_SHA256` are history, not live steps.
+
 ## Tasks (test first where logic exists)
 
 1. **Version rules**: `apps/android/scripts/version-code.test.mjs` (vitest, runs in `npm test`) then
@@ -63,34 +67,11 @@ Not in scope: the release checklist (#147), release notes, an AAB, Play/F-Droid.
 
    keytool asks for the keystore password, the identity fields and the key password (PKCS12 keystores use one
    password for both; give the same value twice).
-3. **Create the environment `android-release`** (Settings, Environments): deployment branches and tags limited to
-   `v*` tags (a selected-tags rule `v*`), optionally required reviewers. Then **add the four secrets to that
-   environment** (Settings, Environments, android-release, Environment secrets; or `gh secret set --env
-   android-release`), and delete any repository-level copies afterwards, because a repository-scoped secret is
-   readable by a workflow on any collaborator's branch. Repository-level secrets keep working until then, so
-   nothing breaks if this is done later. The shell reads the value from stdin or a prompt so it stays out of history:
-
-   | Secret | Content |
-   | --- | --- |
-   | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 qinqin-release.jks` |
-   | `ANDROID_KEYSTORE_PASSWORD` | the keystore password |
-   | `ANDROID_KEY_ALIAS` | `qinqin` (the `-alias` above) |
-   | `ANDROID_KEY_PASSWORD` | the key password (same as the keystore password for PKCS12) |
-
-   ```sh
-   base64 -w0 qinqin-release.jks | gh secret set ANDROID_KEYSTORE_BASE64 --env android-release --repo Elaktrato/qinqin
-   gh secret set ANDROID_KEYSTORE_PASSWORD --env android-release --repo Elaktrato/qinqin
-   gh secret set ANDROID_KEY_ALIAS --env android-release --repo Elaktrato/qinqin
-   gh secret set ANDROID_KEY_PASSWORD --env android-release --repo Elaktrato/qinqin
-   ```
-
-4. **Pin the signing fingerprint**: `keytool -list -v -keystore qinqin-release.jks -alias qinqin` (the SHA-256
-   line). Set the repository **variable** `ANDROID_CERT_SHA256` to it (Settings, Secrets and variables, Actions,
-   Variables; public, not a secret; case and colons do not matter). A release signed with any other certificate
-   then fails. Unset (first release), the job prints the fingerprint, writes it to the job summary and warns: put
-   it in the release notes of that release and set the variable before the next one.
-5. Before the first tag, run the `android-apk` workflow by hand (Actions, android-apk, Run workflow) to see the
-   pipeline pass without secrets.
+3. **Build locally and upload** (replaces the former environment, secrets and variable steps; see "Change of
+   direction: local build" below): `apps/android/scripts/release-local.sh vX.Y.Z`, then the `gh release upload`
+   command it prints. Nothing is set in GitHub for signing.
+4. **Pin the signing fingerprint**: after the first release commit the fingerprint the script printed, as one line,
+   to `apps/android/release-fingerprint.txt` (public). Later builds with another certificate then fail.
 
 ## Review fixes (stage 3)
 
@@ -142,3 +123,33 @@ The independent review of #148 and #147 found these; all are fixed in `fix/stage
   (not by a release tag), and the checklist asks for the fingerprint in the release notes and the DRAFT banner
   removed — they contradicted `verify.ts` and `build.yml` — older release notes (v0.2.0 to v0.5.0) still carry the
   same "also `latest`" wording; they are published history and left as is.
+
+## Change of direction: local build
+
+The owner decided (2026-11-25) that the APK is **not built or signed in GitHub Actions**. It is built and signed on
+the owner's machine and uploaded to the GitHub release by hand. Removed: `.github/workflows/android-apk.yml`,
+`.github/actions/android-apk/`, the `android` and `tag` jobs of `build.yml`, the dependency of the `release` job on an
+APK, and (owner-side) the GitHub environment `android-release`, the four signing secrets and the repository variable
+`ANDROID_CERT_SHA256` (delete them if they were already created). Kept: `build.gradle`'s env-driven signing config,
+`version-code.mjs`, the PR-time emulator workflow (`android-emulator.yml`) and the image job's semver tag guard.
+Added: `apps/android/scripts/release-local.sh`, its pure checks `release-checks.mjs` (with tests) and the optional
+public pin file `apps/android/release-fingerprint.txt`.
+
+Rulings:
+
+- Ruling: local signing instead of CI. The keystore never leaves the owner's machine and no secrets live in GitHub —
+  nothing a collaborator's workflow, a compromised action or a leaked token can read. Cost: the release depends on one
+  person's machine and there is no reproducible CI artifact (the APK is only as trustworthy as that machine).
+- Ruling: the `release` job still creates the GitHub release for the tag, now always as a **draft** — the owner
+  uploads the APK and publishes, so no public release exists without its APK — a forgotten publish leaves an
+  unpublished draft (the checklist's last step).
+- Ruling: the separate `tag` job is dropped — the image job already refuses a tag that is not semver; the stricter
+  Android rule (`alpha.N`/`beta.N`/`rc.N`) is enforced by the local script and checked by hand before tagging — a tag
+  such as `v0.7.0-nightly` now publishes an image and then fails only when the APK is built.
+- Ruling: the script stops when HEAD is not the tag commit (`QINQIN_ALLOW_OFF_TAG=1` overrides with a warning)
+  and when the tree is dirty — a release APK must come from the tag — a hotfix build from a branch needs the override.
+- Ruling: the script refuses a keystore inside the repository, reads passwords with `read -s` (never echoed, logged
+  or written) and keeps them out of the npm steps' environment — npm lifecycle scripts run beside no key — Gradle and its
+  plugins still see them, as signing requires.
+- Ruling: fingerprint pinning is a public committed file, not a repository variable — the pin belongs with the code
+  and needs no GitHub setting — until the owner commits it the script only warns, so the first release is unpinned.

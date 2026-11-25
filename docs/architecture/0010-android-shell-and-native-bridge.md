@@ -97,12 +97,12 @@ UI in native code.
 
 ### Release build and signing (#148)
 
-- A `v*` tag builds a signed release APK in `build.yml` (job `android`, the reusable `android-apk.yml`) and the
-  `release` job attaches `qinqin-<version>.apk` and `qinqin-<version>.apk.sha256` (`sha256sum` format) to the
-  GitHub release. No APK means no release: the release job needs the APK job, creates the release as a draft,
-  uploads the files and only then publishes it. The image job does not wait for the APK (a tag whose APK fails
-  still has its image, and gets no release); a cheap `tag` job validates the tag with `version-code.mjs` before the
-  image is published.
+- The release APK is **built and signed locally by the owner**, not in CI (owner decision, replacing the first
+  design of #148, which signed in GitHub Actions). `apps/android/scripts/release-local.sh vX.Y.Z` does it; a `v*` tag
+  in `build.yml` publishes the image and the `release` job creates the GitHub release as a **draft**. The owner
+  uploads `qinqin-<version>.apk` and `qinqin-<version>.apk.sha256` (`sha256sum` format) with `gh release upload`
+  and publishes it. The keystore never leaves the owner's machine and GitHub holds no signing secret, environment
+  or variable. Cost: a release depends on one person's machine and there is no reproducible CI artifact.
 - versionName is the tag without its `v` (semver, checked like the image job's tag guard). versionCode is
   `major*1000000 + minor*10000 + patch*100 + slot`; slot is 99 for a release and orders `alpha.N` (1-29), `beta.N`
   (30-59) and `rc.N` (60-89) below it. `apps/android/scripts/version-code.mjs` holds the rule and its tests; any
@@ -110,26 +110,20 @@ UI in native code.
   without them (local, debug) is `package.json`'s version with code 1. `package.json`'s `version` is therefore only
   that local default and need not be bumped per release.
 - Signing reads four environment variables (QINQIN_KEYSTORE_FILE, QINQIN_KEYSTORE_PASSWORD, QINQIN_KEY_ALIAS,
-  QINQIN_KEY_PASSWORD) and applies only when all four are set. The signing job runs in the GitHub environment
-  `android-release` and build.yml passes the four secrets explicitly (no `secrets: inherit`). The owner creates the
-  environment, restricts its deployment branches and tags to `v*` tags and moves the four secrets into it, so a
-  workflow on any other branch cannot read them; required reviewers are optional. Until then the repository-level
-  secrets keep working. The secrets are read only for a tag build in `Elaktrato/qinqin`, never on a fork or pull
-  request. `npm ci`, `npm test` and `npm run sync` run in an earlier step with no secret in the environment (and
-  without the npm cache); the workflow decodes ANDROID_KEYSTORE_BASE64 to a temporary file immediately before the
-  Gradle step, which alone carries the signing environment, and removes it afterwards. A missing secret fails the
-  job with its name.
-- The build runs `npm run sync` (first-run screen, `capacitor.config.json`, `www/`) before Gradle, then checks the
-  APK: `apksigner verify` must report a verified v2 signature and a signer certificate digest (a release build
-  without signing input is unsigned, so this fails), the version is read back with `aapt2 dump badging`, and a
-  release must not carry a debug certificate. The same signing certificate is required for every release: the
-  optional repository variable ANDROID_CERT_SHA256 (a public fingerprint, not a secret) pins it, and a different
-  certificate fails the job. While it is unset (the first release) the job prints the fingerprint, writes it to the
-  job summary and warns; the owner puts it in the release notes and sets the variable.
-- A manual run of `android-apk` (workflow_dispatch) builds a debug-signed `qinqin-<version>-dryrun.apk` as a
-  workflow artifact only, with no secrets and no release.
+  QINQIN_KEY_PASSWORD) and applies only when all four are set; `build.gradle` never names a key or a path. The
+  script takes them from the environment (passwords: prompted with no echo when unset), keeps them in shell
+  variables that are not exported, and hands them to the Gradle process alone: `npm ci`, `npm test` and `npm run
+  sync` run before, with no signing input. Passwords are never printed, logged or written to disk, and a keystore
+  inside the repository is refused (`*.jks` and `*.keystore` are gitignored as well).
+- The script requires a clean tree at the tag commit, validates the tag with `version-code.mjs`, runs `npm run sync`
+  before Gradle, then checks the APK: `apksigner verify` must report a verified v2 signature and a signer
+  certificate digest (a release build without signing input is unsigned, so this fails), a debug certificate is
+  refused, and the version is read back with `aapt2 dump badging`. The parsing and the fingerprint comparison are
+  in `apps/android/scripts/release-checks.mjs` with tests. The same certificate is required for every release: the
+  public file `apps/android/release-fingerprint.txt`, committed by the owner after the first release, pins it and a
+  different certificate fails the script; while the file is absent the script prints the fingerprint and warns.
 - Extension point: an Android App Bundle for Play (Gradle bundle task, same signing config) is not built; add it as a
-  second Gradle task in `android-apk.yml` and a second release asset when a Play listing is decided.
+  second Gradle task in `release-local.sh` and a second release asset when a Play listing is decided.
 - The keystore is the identity of the app: Android refuses an update signed with another key. The owner keeps an
   offline copy of the keystore and its passwords; losing them means a new package id.
 
@@ -209,4 +203,4 @@ Not allowed:
   loses it (measured, #35). Moving the outbox to IndexedDB belongs to the study data layer.
 - Whether plain http for 100.64.0.0/10 (Tailscale and carrier-grade NAT) should count as private. It does not
   today (the secure default); the owner decides.
-- Which Android package id the app ships under (`identity.json` is a placeholder) and the app name; the owner also creates the release keystore and its four secrets before the first tag (see the plan of #148).
+- Which Android package id the app ships under (`identity.json` is a placeholder) and the app name; the owner also creates the release keystore (kept locally) before the first release (see the plan of #148).
