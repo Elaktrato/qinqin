@@ -120,7 +120,7 @@ describe('ConversationView', () => {
 		vi.useFakeTimers({ toFake: ['Date'] });
 		try {
 			vi.mocked(getConversation).mockResolvedValue(talked);
-			vi.mocked(sendTurn).mockResolvedValue({ conversation: talked } as never);
+			vi.mocked(sendTurn).mockResolvedValue(talked);
 			show();
 			const box = await screen.findByRole('textbox', { name: 'Your message' });
 			await fireEvent.compositionStart(box);
