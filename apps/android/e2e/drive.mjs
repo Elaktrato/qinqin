@@ -284,6 +284,9 @@ async function main() {
 		// Doze and app standby may hold an inexact alarm for minutes on the emulator image: switch them off for this step.
 		adb(['shell', 'dumpsys', 'deviceidle', 'disable'], { soft: true });
 		adb(['shell', 'cmd', 'appops', 'set', PKG, 'RUN_ANY_IN_BACKGROUND', 'allow'], { soft: true });
+		// The web app's reminder scheduler (#137) cancels every device notification once after sign-in when this
+		// account has no reminders on: let that replan finish before the test schedules its own.
+		await sleep(12_000);
 		const perm = await cdp.eval('window.Capacitor.Plugins.QinqinNotifications.permission()');
 		if (perm.state !== 'granted') throw new Error(`permission: ${JSON.stringify(perm)}`);
 		await cdp.eval(`window.Capacitor.Plugins.QinqinNotifications.schedule({ id: 4242, title: 'qinqin e2e reminder', body: 'ready', at: Date.now() + 4000, channel: { id: 'e2e', name: 'E2E' }, route: '/stats' })`);
