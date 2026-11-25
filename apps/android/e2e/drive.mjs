@@ -232,9 +232,10 @@ async function main() {
 				num.coldStart_firstRun = { amStartTotalMs: l.totalTimeMs, amStartWaitMs: l.waitTimeMs, attempt };
 				cdp = await connectPage('https://localhost/', { timeout: 90_000 });
 				await waitFor('the first-run form', () => cdp.eval('!!document.getElementById("address") && document.getElementById("title").textContent.length > 0'), { timeout: 45_000 });
+				num.coldStart_firstRun.bridge = await cdp.eval('typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform()');
 				break;
 			} catch (err) {
-				if (attempt >= 2) throw err;
+				if (attempt >= 3) throw err;
 				console.log(`first launch failed (${err.message}); retrying once`);
 				cdp?.close();
 				forceStop();
@@ -242,7 +243,7 @@ async function main() {
 			}
 		}
 		screenshot('01-first-run');
-		return { ...num.coldStart_firstRun, bridge: await cdp.eval('typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform()') };
+		return { ...num.coldStart_firstRun };
 	});
 	if (rec.failed) return;
 
