@@ -1,89 +1,74 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_CONFIG, type StudySessionConfig } from '$lib/study/session';
+import { defaultSetup, type StudySetup } from '$lib/study/setup';
 import type { DeckSettings } from '$lib/study/deckSettings';
-import { deckKinds, deckSessionConfig, levelSessionConfig } from './studyStart';
+import { deckSessionConfig, levelSessionConfig, sessionKinds } from './studyStart';
 
-const BASE: StudySessionConfig = {
-	...DEFAULT_CONFIG,
-	deckIds: ['general', 'other'],
+const SETUP: StudySetup = {
+	...defaultSetup(),
+	decks: ['general', 'other'],
 	newLimit: 7,
 	reviewLimit: 42,
 	cardTypes: ['vocab', 'writing']
 };
 
 describe('deckSessionConfig', () => {
-	it('studies this deck only with the saved limits and the given kinds', () => {
-		const config = deckSessionConfig(BASE, 'd1', ['vocab', 'reverse']);
+	it('studies this deck only with the saved limits and the given kinds, and remembers where it started', () => {
+		const config = deckSessionConfig(SETUP, 'd1', ['vocab', 'reverse'], '/flashcards');
 		expect(config).toMatchObject({
 			mode: 'decks',
 			deckIds: ['d1'],
 			newLimit: 7,
 			reviewLimit: 42,
-			cardTypes: ['vocab', 'reverse']
+			cardTypes: ['vocab', 'reverse'],
+			from: '/flashcards'
 		});
+		expect(config.studyAll).toBeUndefined();
 	});
 
-	it('keeps the level fields so a switch back on /study still works', () => {
-		const config = deckSessionConfig({ ...BASE, schemeId: 3, levelName: 'HSK 1' }, 'd1', ['vocab']);
-		expect(config.schemeId).toBe(3);
-		expect(config.levelName).toBe('HSK 1');
+	it('is a deck session even when the saved setup studies a level', () => {
+		const config = deckSessionConfig({ ...SETUP, mode: 'levels', schemeId: 3, levelName: 'HSK 1' }, 'd1', ['vocab'], '/');
+		expect(config.mode).toBe('decks');
 	});
 });
 
 describe('levelSessionConfig', () => {
 	it('is a levels session whose kinds always contain vocab and never reverse or cloze', () => {
-		const config = levelSessionConfig({ ...BASE, cardTypes: ['writing', 'reverse', 'cloze'] }, 5, 'HSK 2');
-		expect(config).toMatchObject({ mode: 'levels', schemeId: 5, levelName: 'HSK 2' });
-		expect(config.cardTypes).toContain('vocab');
-		expect(config.cardTypes).toContain('writing');
-		expect(config.cardTypes).not.toContain('reverse');
-		expect(config.cardTypes).not.toContain('cloze');
-		expect(config.newLimit).toBe(7);
+		const config = levelSessionConfig({ ...SETUP, cardTypes: ['writing'] }, 5, 'HSK 2', '/flashcards/system/x');
+		expect(config).toMatchObject({ mode: 'levels', schemeId: 5, levelName: 'HSK 2', newLimit: 7, from: '/flashcards/system/x' });
+		expect(config.cardTypes).toEqual(['vocab', 'writing']);
 	});
 	it('does not duplicate vocab', () => {
-		expect(levelSessionConfig(BASE, 5, 'x').cardTypes.filter((k) => k === 'vocab')).toHaveLength(1);
+		expect(levelSessionConfig(SETUP, 5, 'x', '/').cardTypes.filter((k) => k === 'vocab')).toHaveLength(1);
 	});
 });
 
 describe('a fresh seed per started session (#132 review)', () => {
-	const old: StudySessionConfig = { ...BASE, seed: 111, studyAll: true };
-
-	it('deckSessionConfig draws a new seed and drops a stale study-all', () => {
-		const config = deckSessionConfig(old, 'd1', ['vocab'], 222);
-		expect(config.seed).toBe(222);
-		expect(config.studyAll).toBeUndefined();
+	it('uses the given seed', () => {
+		expect(deckSessionConfig(SETUP, 'd1', ['vocab'], '/', 222).seed).toBe(222);
+		expect(levelSessionConfig(SETUP, 5, 'HSK 2', '/', 333).seed).toBe(333);
 	});
 
-	it('levelSessionConfig draws a new seed and drops a stale study-all', () => {
-		const config = levelSessionConfig(old, 5, 'HSK 2', 333);
-		expect(config.seed).toBe(333);
-		expect(config.studyAll).toBeUndefined();
-	});
-
-	it('draws a random seed when none is given, also without a saved setup', () => {
-		const a = deckSessionConfig(DEFAULT_CONFIG, 'd1', ['vocab']);
-		const b = levelSessionConfig(DEFAULT_CONFIG, 5, 'HSK 2');
-		for (const config of [a, b]) {
+	it('draws a random seed when none is given', () => {
+		for (const config of [deckSessionConfig(defaultSetup(), 'd1', ['vocab'], '/'), levelSessionConfig(defaultSetup(), 5, 'HSK 2', '/')]) {
 			expect(Number.isInteger(config.seed)).toBe(true);
 			expect(config.seed).toBeGreaterThanOrEqual(0);
 		}
 	});
 });
 
-describe('deckKinds', () => {
+describe('sessionKinds', () => {
 	const settings: Record<string, DeckSettings> = {
 		d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} }
 	};
-	it('adds opt-in kinds a deck enables on top of the remembered kinds', () => {
-		expect(deckKinds(['d1'], settings, null, null, {})).toEqual(['vocab', 'reverse']);
-		expect(deckKinds(['d2'], settings, null, null, {})).toEqual(['vocab']);
+	it('adds opt-in kinds a deck enables on top of the saved kinds', () => {
+		expect(sessionKinds(defaultSetup(), ['d1'], settings, 'ja')).toEqual(['vocab', 'reverse']);
+		expect(sessionKinds(defaultSetup(), ['d2'], settings, 'ja')).toEqual(['vocab']);
 	});
-	it('respects a kind the learner unchecked on the setup page', () => {
-		expect(deckKinds(['d1'], settings, null, null, { reverse: false })).toEqual(['vocab']);
+	it('respects a kind the learner unchecked', () => {
+		expect(sessionKinds({ ...defaultSetup(), unchecked: ['reverse'] }, ['d1'], settings, 'ja')).toEqual(['vocab']);
 	});
-	it('uses the tab setup, then the remembered kinds', () => {
-		expect(deckKinds(['d2'], settings, ['writing'], ['tone'], {})).toEqual(['writing']);
-		expect(deckKinds(['d2'], settings, null, ['tone'], {})).toEqual(['tone']);
+	it('uses the saved kinds the language offers', () => {
+		expect(sessionKinds({ ...defaultSetup(), cardTypes: ['writing', 'tone'] }, ['d2'], settings, 'ja')).toEqual(['writing']);
 	});
 });

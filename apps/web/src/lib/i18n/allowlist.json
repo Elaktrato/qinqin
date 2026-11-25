@@ -103,5 +103,45 @@
 		"file": "lib/api/apiErrors.ts",
 		"text": "body?.message",
 		"reason": "packErrorDetail: the one ruled exception (spec 2026-11-23-error-contract-design.md, Ruling in section 5): the pack validator's English reason of a pack_invalid answer, shown to the administrator under the translated text as English detail."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "CC BY 4.0",
+		"reason": "An SPDX-style licence name, shown verbatim (data)."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Time to study",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Your daily goal",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Today's goal is still open.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Keep your streak",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Test reminder",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Reminders work on this device.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
+	},
+	{
+		"file": "lib/pwa/sw/pushTexts.ts",
+		"text": "Open qinqin to see what is waiting.",
+		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."
 	}
 ]

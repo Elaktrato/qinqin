@@ -34,9 +34,10 @@ test('reviews graded offline are sent once when the browser is back online', asy
 	// The line at the top says so: "You're offline…", or "Can't reach the server…"
 	// when the page noticed the failed requests before the browser's offline event.
 	await expect(page.getByRole('status').filter({ hasText: /You're offline|Can't reach the server/ })).toBeVisible();
-	await expect(page.getByRole('region', { name: 'This session' })).toContainText(/0\s*due\s*·\s*4\s*new/);
+	const modal = page.getByRole('dialog', { name: 'Study' });
+	await expect(modal).toContainText(/0 due · 4 new/);
 	const sessionStart = Date.now();
-	await page.getByRole('button', { name: 'Start studying' }).click();
+	await modal.getByRole('button', { name: 'Start studying' }).click();
 
 	// Each word gets its own grade the first time. A card graded Again comes back
 	// once as practice (graded Good, not recorded).
@@ -87,7 +88,7 @@ test('reviews graded offline are sent once when the browser is back online', asy
 	// back from the server (no new cards left: all four were reviewed), the
 	// server still holds the same reviews.
 	await page.goto('/study');
-	await expect(page.getByRole('region', { name: 'This session' })).toContainText(/\d+\s*due\s*·\s*0\s*new/);
+	await expect(page.getByRole('dialog', { name: 'Study' })).toContainText(/\d+ due · 0 new/);
 	await expect(page.getByRole('status').filter({ hasText: /reviews are saved on this device/ })).toHaveCount(0);
 	const after = await learner.api.reviews(ws);
 	expect(after.map((r) => r.id).sort()).toEqual(sent.map((r) => r.id).sort());
@@ -105,14 +106,15 @@ test('a reverse card the decks switch on is saved for offline study too', async 
 		],
 		['reverse']
 	);
-	// The Study page is never opened online in this tab: the preparation must
-	// find the reverse card from the deck settings, not from a saved setup.
+	// The study modal is never opened online in this tab and nothing is saved:
+	// the preparation must find the reverse card from the deck settings and the default setup.
 	await prepareOffline(page, 2);
 
 	await context.setOffline(true);
 	await page.goto('/study');
-	await expect(page.getByRole('region', { name: 'This session' })).toContainText(/0\s*due\s*·\s*2\s*new/);
-	await page.getByRole('button', { name: 'Start studying' }).click();
+	const modal = page.getByRole('dialog', { name: 'Study' });
+	await expect(modal).toContainText(/0 due · 2 new/);
+	await modal.getByRole('button', { name: 'Start studying' }).click();
 	const seen: string[] = [];
 	for (let n = 1; n <= 2; n++) {
 		await expect(page.getByText(new RegExp(`^${n} / 2`))).toBeVisible();

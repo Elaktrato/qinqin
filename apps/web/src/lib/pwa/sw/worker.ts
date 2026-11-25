@@ -5,6 +5,8 @@
 import { classify } from './classify';
 import { onActivate, onInstall, onMessage, shellCacheName } from './lifecycle';
 import { partitionName } from './partition';
+import { onNotificationClick, onPush, type ClickEv, type ClientLike, type PushEv } from './push';
+import { readPushTexts } from './pushTexts';
 import { handleFetch, type CacheStorageLike, type Deps } from './strategies';
 
 export interface SwEv {
@@ -23,8 +25,17 @@ export interface SwScope {
 	addEventListener(type: 'install' | 'activate', listener: (event: SwEv) => void): void;
 	addEventListener(type: 'fetch', listener: (event: FetchEv) => void): void;
 	addEventListener(type: 'message', listener: (event: MessageEv) => void): void;
+	addEventListener(type: 'push', listener: (event: PushEv) => void): void;
+	addEventListener(type: 'notificationclick', listener: (event: ClickEv) => void): void;
 	skipWaiting(): Promise<void>;
-	clients: { claim(): Promise<void> };
+	clients: {
+		claim(): Promise<void>;
+		matchAll(options: { type: 'window'; includeUncontrolled: boolean }): Promise<readonly ClientLike[]>;
+		openWindow(url: string): Promise<unknown>;
+	};
+	registration: {
+		showNotification(title: string, options: { body: string; tag: string; icon: string; data: { route: string } }): Promise<void>;
+	};
 	caches: CacheStorageLike;
 	fetch(request: Request, init?: { signal?: AbortSignal }): Promise<Response>;
 	location: { origin: string };
@@ -66,5 +77,16 @@ export function startWorker(scope: SwScope, config: WorkerConfig): void {
 		// Not ours: no respondWith, the browser does what it always did.
 		if (kind === 'bypass') return;
 		event.respondWith(handleFetch(kind, event.request, deps));
+	});
+	// Push (#139): the payload is text-free; the notification text is the page's stored map (pushTexts.ts).
+	// Nothing here is cached, and no fetch is involved.
+	scope.addEventListener('push', (event) => {
+		onPush(event, {
+			show: (title, options) => scope.registration.showNotification(title, options),
+			texts: () => readPushTexts(scope.caches)
+		});
+	});
+	scope.addEventListener('notificationclick', (event) => {
+		onNotificationClick(event, { clients: scope.clients, origin });
 	});
 }

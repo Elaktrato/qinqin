@@ -1,4 +1,5 @@
 import type { AudioClip } from '../api/audio';
+import { nativeSpeech, type NativeSpeech } from '../native/speech';
 
 export interface Player {
 	/**
@@ -28,6 +29,20 @@ export function deviceVoiceFor(lang: string, voices: SpeechSynthesisVoice[]): Sp
 }
 
 /**
+ * hasDeviceVoice: whether this device can speak `lang`. In the shell the Android engine answers (asked ahead by
+ * probeVoice; unknown counts as no, so no button appears that might stay silent); in a browser the page's
+ * voices do.
+ */
+export function hasDeviceVoice(
+	lang: string,
+	voices: SpeechSynthesisVoice[] = typeof speechSynthesis === 'undefined' ? [] : speechSynthesis.getVoices(),
+	native: NativeSpeech | null = nativeSpeech()
+): boolean {
+	if (native !== null) return native.state(lang) === 'ok';
+	return deviceVoiceFor(lang, voices) !== null;
+}
+
+/**
  * createPlayer makes the shared player: one audio element, so two sounds can
  * never overlap. `make` builds the element (tests pass a fake), `synth` is the
  * speech synthesis to use (default the browser's, null for none).
@@ -36,13 +51,15 @@ export function deviceVoiceFor(lang: string, voices: SpeechSynthesisVoice[]): Sp
  * the URL itself). `readySrc` returns a source that is already available, or
  * null: when it is, `play` starts the element in the same tick as the call,
  * which Safari on iOS requires (play() must run inside the user's tap); the
- * first clip of a button whose clip was preloaded takes that path.
+ * first clip of a button whose clip was preloaded takes that path. `native` is the shell's text-to-speech
+ * (default: present only in the Android shell); it replaces `synth` there.
  */
 export function createPlayer(
 	make: () => HTMLAudioElement = () => new Audio(),
 	synth: SpeechSynthesis | null | undefined = typeof speechSynthesis === 'undefined' ? null : speechSynthesis,
 	resolveSrc: (clipUrl: string) => Promise<string> = (url) => Promise.resolve(url),
-	readySrc: (clipUrl: string) => string | null = () => null
+	readySrc: (clipUrl: string) => string | null = () => null,
+	native: NativeSpeech | null = nativeSpeech()
 ): Player {
 	let el: HTMLAudioElement | null = null;
 	let abort: (() => void) | null = null;
@@ -57,6 +74,7 @@ export function createPlayer(
 		a?.();
 		el?.pause();
 		synth?.cancel();
+		native?.stop();
 		busy = false;
 	}
 
@@ -121,6 +139,22 @@ export function createPlayer(
 			}
 		},
 		speak(text, lang, onEnd) {
+			if (native !== null) {
+				if (native.state(lang) !== 'ok') return false;
+				cancel();
+				busy = true;
+				const mine = {};
+				current = mine;
+				const end = () => {
+					if (current === mine) {
+						current = null;
+						busy = false;
+					}
+					onEnd?.();
+				};
+				void native.speak(text, lang).then(end, end);
+				return true;
+			}
 			if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
 			const voice = deviceVoiceFor(lang, synth.getVoices());
 			if (!voice) return false;

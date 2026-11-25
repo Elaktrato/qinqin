@@ -2,7 +2,7 @@
 
 ## Email (Admin → Email)
 
-Email is optional and lives in the server itself. A mail server lets people reset passwords, confirm addresses and get sign-in codes, and lets you require two-step sign-in. The form has: **Server**, **Port**, **Connection security**, **User name** and **Password**, **Sender address**, **Sender name**, and **Address of this site** (the address people use to reach qinqin; it goes into reset links).
+Email is optional and lives in the server itself. A mail server lets people reset passwords, confirm addresses and get sign-in codes, lets you require two-step sign-in, and lets accounts that opt in get [study reminders](Reminders) by email (one digest a day at most, with a one-click unsubscribe link and the `List-Unsubscribe` headers). The form has: **Server**, **Port**, **Connection security**, **User name** and **Password**, **Sender address**, **Sender name**, and **Address of this site** (the address people use to reach qinqin; it goes into reset links).
 
 - **Connection security**: STARTTLS (port 587, the default; it must succeed and is never silently downgraded), TLS (port 465), or None (port 25, plain text, allowed only without a user name and password). Certificates are always verified.
 - **The password** is encrypted with `QINQIN_SECRET`, never shown again and never logged: the form says "A password is saved" and offers **Replace** and **Remove**. Without a usable secret a password cannot be stored; a relay without a password still works. Changing the server, port, security, user name or the site address makes you type the password again, so a session cannot send it somewhere else.

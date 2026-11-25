@@ -1,0 +1,29 @@
+{
+  "doc": "The release check. relation: how installed stands against latest (check.update); both are read as semantic versions, a leading v and +build ignored, anything else is unknown. states: check.state and check.error. answer: the shape of GET /api/admin/update. Go: server/internal/update/check_test.go, server/internal/api/handlers_version_test.go.",
+  "relation": [
+    { "installed": "0.6.0", "latest": "0.7.0", "update": "available" },
+    { "installed": "0.7.0", "latest": "0.7.0", "update": "current" },
+    { "installed": "0.8.0", "latest": "0.7.0", "update": "ahead" },
+    { "installed": "0.7.0-rc1", "latest": "0.7.0", "update": "available" },
+    { "installed": "0.7.0", "latest": "0.7.1-rc1", "update": "available" },
+    { "installed": "v0.7.0+abc", "latest": "0.7.0", "update": "current" },
+    { "installed": "dev", "latest": "0.7.0", "update": "unknown" },
+    { "installed": "0.7.0", "latest": "", "update": "unknown" }
+  ],
+  "states": {
+    "state": ["disabled", "unchecked", "ok", "error"],
+    "error": ["offline", "rate_limited", "bad_response"],
+    "update": ["available", "current", "ahead", "unknown"]
+  },
+  "answer": {
+    "installed": { "version": "0.6.0", "commit": "abc1234", "buildDate": "2026-11-01T00:00:00Z" },
+    "settings": { "enabled": true, "prereleases": false },
+    "check": {
+      "state": "ok",
+      "stale": false,
+      "latest": { "version": "0.7.0", "tag": "v0.7.0", "name": "qinqin v0.7.0", "url": "https://github.com/Elaktrato/qinqin/releases/tag/v0.7.0", "publishedAt": "2026-11-20T10:00:00Z", "prerelease": false, "notes": "Notes" },
+      "update": "available",
+      "checkedAt": "2026-11-25T12:00:00Z"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { errorText } from '$lib/api/apiErrors';
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
@@ -18,10 +19,12 @@
 	import AdminSettings from '$lib/settings/AdminSettings.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
+	import FeedbackSettings from '$lib/settings/FeedbackSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
+	import NotificationSettings from '$lib/settings/NotificationSettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
@@ -207,7 +210,7 @@
 									autocomplete="off"
 									placeholder={t('settings.workspaces.noName')}
 									onkeydown={(event) => {
-										if (event.key === 'Escape') {
+										if (event.key === 'Escape' && !isImeKey(event)) {
 											event.preventDefault();
 											cancelRename();
 										}
@@ -311,10 +314,16 @@
 			<div class="group" hidden={activeTab !== 'study'}>
 				<StudyDaySettings />
 				<StudySettings />
+				<FeedbackSettings />
 			</div>
 
 			<div class="group" hidden={activeTab !== 'features'}>
 				<FeatureSettings />
+			</div>
+
+			<div class="group" hidden={activeTab !== 'notifications'}>
+				<!-- Mounted only while open: it reads the plan and the devices when shown. -->
+				{#if activeTab === 'notifications'}<NotificationSettings />{/if}
 			</div>
 
 			<div class="group" hidden={activeTab !== 'appearance'}>

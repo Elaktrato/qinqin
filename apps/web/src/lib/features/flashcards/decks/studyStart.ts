@@ -1,35 +1,33 @@
-// Starting a study session from the decks view: the same setup the /study
-// page writes (sessionStorage), prepared for one deck or one level.
+// Starting a one-off study session from the decks view (the study modal
+// design, 4.4a): one deck or one level, with the saved setup's limits and
+// orders. The saved setup itself is never changed; only the tab's running
+// session (session.ts) is written.
 
-import {
-	effectiveCardTypes,
-	effectiveKinds,
-	hasTabSetup,
-	loadExtraChoices,
-	loadRememberedTypes,
-	type ExtraChoices
-} from '$lib/study/cardTypesMemory';
 import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-import { loadConfig, newSessionSeed, type StudySessionConfig } from '$lib/study/session';
+import { newSessionSeed, type StudySessionConfig } from '$lib/study/session';
+import { setupKinds, setupSessionConfig, type StudySetup } from '$lib/study/setup';
+import type { StudySetups } from '$lib/study/setupStore.svelte';
 import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
 
-/** The saved setup without what belongs to the session it started: its seed and Study all. */
-function fresh(base: StudySessionConfig, seed: number): StudySessionConfig {
-	const { seed: _oldSeed, studyAll: _oldStudyAll, ...rest } = base;
-	return { ...rest, seed };
+/**
+ * loadedSetup: the workspace's saved setup once the server answered in this
+ * session (a deep link may start before the page's own refresh lands); offline
+ * the device's copy, else the defaults.
+ */
+export async function loadedSetup(setups: StudySetups, workspaceId: number): Promise<StudySetup> {
+	if (!setups.of(workspaceId).loaded) await setups.refresh(workspaceId);
+	return setups.of(workspaceId).setup;
 }
 
-/**
- * A session over this deck only: the saved limits and the deck's effective
- * kinds, with a fresh seed (a new session is shuffled and mixed anew).
- */
+/** A session over this deck only: the saved limits and the deck's kinds, with a fresh seed. */
 export function deckSessionConfig(
-	base: StudySessionConfig,
+	setup: StudySetup,
 	deckId: string,
-	kinds: readonly string[],
+	kinds: readonly StudyCardKind[],
+	from: string,
 	seed: number = newSessionSeed()
 ): StudySessionConfig {
-	return { ...fresh(base, seed), mode: 'decks', deckIds: [deckId], cardTypes: [...kinds] };
+	return setupSessionConfig({ ...setup, mode: 'decks' }, [deckId], kinds, { seed, from });
 }
 
 /**
@@ -37,48 +35,27 @@ export function deckSessionConfig(
  * empty) and never plans reverse or cloze cards.
  */
 export function levelSessionConfig(
-	base: StudySessionConfig,
+	setup: StudySetup,
 	schemeId: number,
 	levelName: string,
+	from: string,
 	seed: number = newSessionSeed()
 ): StudySessionConfig {
-	const kept = base.cardTypes.filter((kind) => !OPT_IN_KINDS.includes(kind as OptInKind));
-	return {
-		...fresh(base, seed),
-		mode: 'levels',
-		schemeId,
-		levelName,
-		cardTypes: kept.includes('vocab') ? kept : ['vocab', ...kept]
-	};
+	const kept = setup.cardTypes.filter((kind) => !OPT_IN_KINDS.includes(kind as OptInKind));
+	const kinds: StudyCardKind[] = kept.includes('vocab') ? kept : ['vocab', ...kept];
+	return setupSessionConfig({ ...setup, mode: 'levels', schemeId, levelName }, [], kinds, { seed, from });
 }
 
 /**
- * The kinds a session over `deckIds` studies: this tab's setup, else the
- * kinds last started in the workspace, else vocab, plus each opt-in kind a
- * deck in scope enables and the learner has not unchecked (the same rule
- * as the setup page and the home widget).
+ * The kinds a session over `deckIds` studies: the saved setup's kinds plus each
+ * opt-in kind a deck in scope enables and the learner has not unchecked (the
+ * rule of the study modal and the home widget).
  */
-export function deckKinds(
+export function sessionKinds(
+	setup: StudySetup,
 	deckIds: readonly string[],
 	settings: Record<string, DeckSettings> | undefined,
-	tabTypes: readonly string[] | null,
-	remembered: StudyCardKind[] | null,
-	choices: ExtraChoices
+	language: string
 ): StudyCardKind[] {
-	return effectiveKinds(effectiveCardTypes(tabTypes, remembered), enabledKinds(settings, deckIds), choices);
-}
-
-/** deckKinds with this tab's setup and this workspace's remembered choices read from storage. */
-export function sessionKinds(
-	workspaceId: number,
-	deckIds: readonly string[],
-	settings: Record<string, DeckSettings> | undefined
-): StudyCardKind[] {
-	return deckKinds(
-		deckIds,
-		settings,
-		hasTabSetup() ? loadConfig().cardTypes : null,
-		loadRememberedTypes(workspaceId),
-		loadExtraChoices(workspaceId)
-	);
+	return setupKinds(setup, enabledKinds(settings, deckIds), language);
 }

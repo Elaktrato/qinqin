@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- app_name comes from identity.json (app/build.gradle resValue). -->
+    <string name="title_activity_main">qinqin</string>
+    <string name="shortcut_change_server">Change server</string>
+    <string name="lookup_in_qinqin">Look up in qinqin</string>
+</resources>

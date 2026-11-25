@@ -5,7 +5,15 @@ qinqin bundles dictionaries and level lists so a fresh install seeds offline: by
 - the app's **Sources** page (`/sources`, open to everyone, signed in or not), built from what the server has actually installed;
 - [`docs/sources.md`](https://github.com/Elaktrato/qinqin/blob/develop/docs/sources.md) in the repository: attributions, upstream links, pinned versions and the redistribution decision for every source.
 
-Nothing here is legal advice. Installing and removing packs: [Data packs on the server](Admin-data-packs).
+Nothing here is legal advice.
+
+## qinqin's own licences
+
+- **The code is MIT** (`LICENSE` in the repository root, Copyright (c) 2026 qinqin contributors).
+- **Content the project writes is CC BY 4.0**: the grammar packs, the Japanese lemmatizer rule table and the qinqin colour themes. Credit it as "qinqin contributors, CC BY 4.0" with a link to <https://github.com/Elaktrato/qinqin>.
+- **Third-party data keeps its own licence**, as listed on the Sources page and in each pack's `ATTRIBUTION.md`; the MIT licence of the code does not cover it. The HSK lists carry no reuse licence and are included at the owner's decision (see "The HSK lists" below).
+
+The short overview is [`LICENSING.md`](https://github.com/Elaktrato/qinqin/blob/develop/LICENSING.md). Installing and removing packs: [Data packs on the server](Admin-data-packs).
 
 ## Bundled packs
 
@@ -25,8 +33,8 @@ The image ships these under `/opt/qinqin/packs` (source: `plugins/data/`):
 | 通用规范汉字表 (`tgh-chars`) | The 2013 standard characters list in three levels (3,500 / 3,000 / 1,605), derived from Unihan's `kTGH` | Unicode License v3 |
 | JLPT kanji (`jlpt-kanji`) | Approximate N5–N1 kanji levels: kanjiapi.dev's list (of unstated provenance) plus levels derived from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …) | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) |
 | Spanish–English demo dictionary (`es-demo`) | A hand-written sample | CC0 1.0 |
-| Chinese grammar (HSK-aligned) (`zh-grammar`) | Grammar lessons ≈ HSK 1 to 7–9, written for qinqin; the HSK 3.0 syllabus grammar outline is used as a topic index only, no syllabus text is reproduced | CC0 1.0 (the lessons) |
-| Japanese grammar (≈ JLPT levels) (`ja-grammar`) | Grammar lessons ≈ N5 to N1, written for qinqin; the choice and order of points are qinqin's own | CC0 1.0 |
+| Chinese grammar (HSK-aligned) (`zh-grammar`) | Grammar lessons ≈ HSK 1 to 7–9, written for qinqin; the HSK 3.0 syllabus grammar outline is used as a topic index only, no syllabus text is reproduced | CC BY 4.0 (the lessons) |
+| Japanese grammar (≈ JLPT levels) (`ja-grammar`) | Grammar lessons ≈ N5 to N1, written for qinqin; the choice and order of points are qinqin's own | CC BY 4.0 |
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a conversion of the published file with unmodified ranks; the level lists are converted from pinned upstream files by `scripts/prepare-level-packs.mjs` and `scripts/prepare-standard-levels.mjs` and, for HSK, from the official syllabus by `scripts/prepare-hsk-syllabus.mjs`.
 

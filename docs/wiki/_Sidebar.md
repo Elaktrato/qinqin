@@ -9,6 +9,7 @@
 - [Flashcards: study sessions](Flashcards-study-sessions)
 - [Decks, limits and vacation](Flashcards-decks-limits-vacation)
 - [Daily goals](Daily-goals)
+- [Reminders](Reminders)
 - [Scheduling and FSRS](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Grammar lessons](Grammar-lessons)
@@ -21,11 +22,13 @@
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data](Your-data)
 - [Install and offline](Install-and-offline)
+- [The Android app](Android)
 
 **Running a server**
 
 - [Deploying](Admin-deploying)
 - [Upgrading](Admin-upgrading)
+- [Updates and the release check](Admin-updates)
 - [Environment variables](Admin-environment-variables)
 - [Users and registration](Admin-users-and-registration)
 - [Email and security](Admin-email-and-security)

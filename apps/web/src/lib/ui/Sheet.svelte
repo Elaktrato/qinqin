@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// The bottom sheet (design §9): the reader's lookup and the journal's
 	// corrections on the phone. A modal dialog (lib/ui/modal.ts: focus moves
 	// in, Tab stays inside, Escape closes, focus returns) anchored to the
@@ -117,7 +118,7 @@
 		// An inner action (an inline rename, a delete confirmation, a menu)
 		// took the key first: Escape cancels that, not the whole sheet (the
 		// old drawer's keys checked the same).
-		if (e.defaultPrevented) return;
+		if (e.defaultPrevented || isImeKey(e)) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			dismiss();

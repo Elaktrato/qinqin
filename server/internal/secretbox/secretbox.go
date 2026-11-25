@@ -52,8 +52,9 @@ var ErrOpen = errors.New("secretbox: cannot decrypt")
 
 // Sealer encrypts and decrypts secrets with keys derived from the secret.
 type Sealer struct {
-	aead cipher.AEAD
-	fp   string
+	aead   cipher.AEAD
+	fp     string
+	secret []byte
 }
 
 func derive(secret []byte, label string) []byte {
@@ -74,7 +75,15 @@ func NewSealer(secret []byte) *Sealer {
 	if err != nil {
 		panic(fmt.Sprintf("secretbox: gcm: %v", err))
 	}
-	return &Sealer{aead: aead, fp: hex.EncodeToString(derive(secret, "qinqin ai key fingerprint v1"))[:16]}
+	return &Sealer{aead: aead, fp: hex.EncodeToString(derive(secret, "qinqin ai key fingerprint v1"))[:16], secret: append([]byte(nil), secret...)}
+}
+
+// MAC is HMAC-SHA256 of msg under a key derived from the secret for one
+// purpose (label), for signed links; labels are part of the format.
+func (s *Sealer) MAC(label string, msg []byte) []byte {
+	m := hmac.New(sha256.New, derive(s.secret, label))
+	m.Write(msg)
+	return m.Sum(nil)
 }
 
 // Fingerprint identifies the secret without revealing it.

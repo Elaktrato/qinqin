@@ -179,3 +179,49 @@ describe('deviceVoiceFor', () => {
 		expect(deviceVoiceFor('es', [v('ja-JP')])).toBeNull();
 	});
 });
+
+describe('the shell voice', () => {
+	const fakeNative = (state: 'ok' | 'missing' | 'unknown', spoken = Promise.resolve(true)) => ({
+		state: () => state,
+		speak: vi.fn(() => spoken),
+		stop: vi.fn()
+	});
+
+	it('speaks through the shell and ends when the speech ends', async () => {
+		const native = fakeNative('ok');
+		const p = createPlayer(() => new FakeAudio() as unknown as HTMLAudioElement, null, undefined, undefined, native);
+		const onEnd = vi.fn();
+		expect(p.speak('你好', 'zh', onEnd)).toBe(true);
+		expect(p.playing).toBe(true);
+		await tick();
+		expect(native.speak).toHaveBeenCalledWith('你好', 'zh');
+		expect(onEnd).toHaveBeenCalledOnce();
+		expect(p.playing).toBe(false);
+	});
+
+	it('says no when the shell has no voice for the language', () => {
+		const native = fakeNative('missing');
+		const p = createPlayer(() => new FakeAudio() as unknown as HTMLAudioElement, null, undefined, undefined, native);
+		expect(p.speak('こんにちは', 'ja')).toBe(false);
+		expect(native.speak).not.toHaveBeenCalled();
+	});
+
+	it('stop stops the shell voice', () => {
+		const native = fakeNative('ok', new Promise(() => undefined));
+		const p = createPlayer(() => new FakeAudio() as unknown as HTMLAudioElement, null, undefined, undefined, native);
+		p.speak('你好', 'zh');
+		p.stop();
+		expect(native.stop).toHaveBeenCalled();
+	});
+});
+
+describe('hasDeviceVoice', () => {
+	it('asks the shell when there is one, else the browser voices', async () => {
+		const { hasDeviceVoice } = await import('./player');
+		const v = (lang: string) => ({ lang }) as SpeechSynthesisVoice;
+		expect(hasDeviceVoice('zh', [v('zh-CN')], null)).toBe(true);
+		expect(hasDeviceVoice('ja', [v('zh-CN')], null)).toBe(false);
+		expect(hasDeviceVoice('zh', [v('zh-CN')], { state: () => 'unknown', speak: async () => true, stop() {} })).toBe(false);
+		expect(hasDeviceVoice('zh', [], { state: () => 'ok', speak: async () => true, stop() {} })).toBe(true);
+	});
+});

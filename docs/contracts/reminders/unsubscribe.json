@@ -1,0 +1,50 @@
+{
+ "version": 1,
+ "rule": "reminders/unsubscribe",
+ "secretBase64": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+ "note": "token(userId) = v1.<userId>.<base64url, unpadded, of HMAC-SHA256(key, 'qinqin reminder unsubscribe v1\\n' + userId)> with key = HMAC-SHA256(secret, 'qinqin reminder token v1'). verify returns the user id; a changed id, a changed signature, another secret, any other shape: refused.",
+ "valid": [
+  {
+   "userId": 1,
+   "token": "v1.1.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  },
+  {
+   "userId": 4242,
+   "token": "v1.4242.aZLPOA4sta5Ygb9Z6Vx3nPBUpvGVG5NPkhOGfkBYth8"
+  }
+ ],
+ "invalid": [
+  {
+   "name": "another user's id",
+   "token": "v1.2.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  },
+  {
+   "name": "truncated",
+   "token": "v1.1.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJX"
+  },
+  {
+   "name": "empty",
+   "token": ""
+  },
+  {
+   "name": "wrong version",
+   "token": "v2.1.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  },
+  {
+   "name": "no signature",
+   "token": "v1.1."
+  },
+  {
+   "name": "not a number",
+   "token": "v1.x.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  },
+  {
+   "name": "negative id",
+   "token": "v1.-1.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  },
+  {
+   "name": "leading zero id",
+   "token": "v1.01.-YaaCCtJkWzNkz5XSPOJ8i9F7GGAA6h1XOtG9sJXZg4"
+  }
+ ]
+}

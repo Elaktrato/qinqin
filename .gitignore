@@ -27,7 +27,13 @@ syllabus*.tsv
 /.superpowers/
 /.claude/worktrees/
 
+# the local Android release script's output (apps/android/scripts/release-local.sh)
+/dist/
+
 # generated web build copied into the embed dir (Docker/CI)
 /server/internal/webdist/dist/*
 !/server/internal/webdist/dist/.gitkeep
 .svelte-kit/
+
+# stray vitest caches from running tests at apps/ level
+/apps/node_modules/

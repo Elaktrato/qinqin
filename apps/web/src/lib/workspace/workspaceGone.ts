@@ -27,6 +27,8 @@ export interface WorkspaceRecoveryDeps {
 	now(): number;
 	local(): Storage | null;
 	session(): Storage | null;
+	/** Removes the queued reviews of a deleted workspace from the outbox (IndexedDB). */
+	dropReviews?(workspaceId: number): void;
 }
 
 export class WorkspaceRecovery {
@@ -67,6 +69,7 @@ export class WorkspaceRecovery {
 		const { list, current } = workspaces;
 		if (list.some((workspace) => workspace.id === before.id)) return;
 		forgetWorkspace(before.id, this.#deps.local(), this.#deps.session());
+		this.#deps.dropReviews?.(before.id);
 		notices.show(
 			current
 				? t('app.workspaces.deletedSwitched', { workspace: confirmLabel(list, current) })

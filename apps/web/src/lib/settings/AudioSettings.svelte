@@ -2,7 +2,11 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { AUDIO_AUTOPLAY_KEY, AUDIO_DEVICE_VOICE_KEY, readAudioSettings } from '$lib/audio/settings';
+	import { onMount } from 'svelte';
+	import { languageLabel } from '$lib/languages';
+	import { openVoiceSettings, probeVoice, nativeSpeech } from '$lib/native/speech';
 	import Section from '$lib/ui/Section.svelte';
+	import Button from '$lib/ui/Button.svelte';
 
 	let {
 		settings,
@@ -19,6 +23,16 @@
 	// The value shown while a save is in flight; dropped on failure, so the box
 	// goes back to the stored setting instead of showing a change that never saved.
 	let pending = $state<Record<string, boolean>>({});
+
+	// In the Android app the device voice is the phone's text-to-speech engine, and it may have no Chinese or
+	// Japanese voice installed: say so, with where to fix it. Nothing is asked in a browser.
+	let missing = $state<string[]>([]);
+	onMount(async () => {
+		if (nativeSpeech() === null) return;
+		const out: string[] = [];
+		for (const lang of ['zh', 'ja']) if ((await probeVoice(lang)) === 'missing') out.push(lang);
+		missing = out;
+	});
 
 	async function change(key: string, value: boolean) {
 		error = '';
@@ -54,6 +68,12 @@
 		/>
 		{t('settings.audio.deviceVoice')}
 	</label>
+	{#each missing as lang (lang)}
+		<p class="hint" role="status">{t('settings.audio.voiceMissing', { language: languageLabel(lang) })}</p>
+	{/each}
+	{#if missing.length > 0}
+		<p><Button onclick={() => void openVoiceSettings()}>{t('settings.audio.voiceSettings')}</Button></p>
+	{/if}
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}

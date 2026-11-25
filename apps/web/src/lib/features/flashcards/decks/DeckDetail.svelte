@@ -10,7 +10,8 @@
 	import { WORD_STATES, type WordState } from '$lib/stats/wordStates';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import { enabledKinds } from '$lib/study/deckSettings';
-	import { loadConfig, saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/study/session';
+	import { here } from '$lib/routing/here';
 	import {
 		deleteCards,
 		dropSiblingCards,
@@ -36,7 +37,7 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
-	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -134,7 +135,7 @@
 		data === null || limitsLeftToday === null
 			? null
 			: deckLeftText(
-					limitsLeftToday(deckId, data, sessionKinds(data.workspaceId, [deckId], data.deckSettings))
+					limitsLeftToday(deckId, data, sessionKinds(session.setups.of(data.workspaceId).setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? ''))
 				)
 	);
 
@@ -145,7 +146,7 @@
 					...data,
 					w: data.weights,
 					deckId,
-					kinds: sessionKinds(data.workspaceId, [deckId], data.deckSettings)
+					kinds: sessionKinds(session.setups.of(data.workspaceId).setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? '')
 				})
 	);
 
@@ -255,16 +256,24 @@
 
 	function confirmKey(event: KeyboardEvent): void {
 		if (event.key === 'Escape') {
+			// Handled: the shell's back button reads this as "closed something" and does not also go back.
+			event.preventDefault();
 			event.stopPropagation();
 			confirming = false;
 			confirmingMove = false;
 		}
 	}
 
-	function study(): void {
+	// The saved setup's limits and kinds count here; a deep link must not start from the defaults.
+	$effect(() => {
+		if (workspaceId !== null) void session.setups.refresh(workspaceId);
+	});
+
+	async function study(): Promise<void> {
 		if (data === null) return;
+		const setup = await loadedSetup(session.setups, data.workspaceId);
 		saveConfig(
-			deckSessionConfig(loadConfig(), deckId, sessionKinds(data.workspaceId, [deckId], data.deckSettings))
+			deckSessionConfig(setup, deckId, sessionKinds(setup, [deckId], data.deckSettings, session.workspaces.current?.language ?? ''), here())
 		);
 		void goto('/study/session');
 	}

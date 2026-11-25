@@ -1,5 +1,9 @@
 # Starter data sources
 
+Licensing of qinqin itself is in [`LICENSING.md`](../LICENSING.md): the code is MIT, content the project
+writes (the grammar packs, the lemmatizer rules, the qinqin themes) is CC BY 4.0, and everything below
+keeps its own licence.
+
 The app's **Sources page** (`/sources`) is the live source of truth for
 credits. It is public: anyone can open it without signing in. It is built at runtime from three places: the installed packs'
 manifests (`license`, `attribution` and the optional `notice`, served by
@@ -88,8 +92,8 @@ unverified facts marked unverified) must stay the same in both places.
 - **Chinese grammar (HSK-aligned)** (`zh-grammar`, type `grammar`; bundled):
   grammar lessons level by level (≈ HSK 1 to 7–9), each syllabus grammar point
   taught with 4–8 example sentences, readings, translations and exercise
-  answers, **written for qinqin by the project and released under CC0 1.0**
-  (`plugins/data/zh-grammar`, with `LICENSE` and `ATTRIBUTION.md`). Topic
+  answers, **written for qinqin by the project and released under CC BY 4.0**
+  (credit: "qinqin contributors, CC BY 4.0", https://github.com/Elaktrato/qinqin; `plugins/data/zh-grammar`, with `LICENSE` and `ATTRIBUTION.md`). Topic
   coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 /
   Syllabus for the Chinese Proficiency Test (CLEC/CTI, edition 2025-11,
   effective 2026-07;
@@ -102,8 +106,8 @@ unverified facts marked unverified) must stay the same in both places.
 - **Japanese grammar (≈ JLPT levels)** (`ja-grammar`, type `grammar`; bundled):
   grammar lessons in five levels (≈ N5 to N1), each grammar point taught with
   4–8 example sentences, kana readings, translations and exercise answers,
-  **written for qinqin by the project and released under CC0 1.0**
-  (`plugins/data/ja-grammar`, with `LICENSE` and `ATTRIBUTION.md`). The JLPT
+  **written for qinqin by the project and released under CC BY 4.0**
+  (credit: "qinqin contributors, CC BY 4.0", https://github.com/Elaktrato/qinqin; `plugins/data/ja-grammar`, with `LICENSE` and `ATTRIBUTION.md`). The JLPT
   publishes no grammar list; the choice and order of points per level are
   qinqin's own (`docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`),
   not taken from JLPT preparation books or other published lists. The levels
@@ -115,8 +119,8 @@ unverified facts marked unverified) must stay the same in both places.
 - **Japanese lemmatizer rules** (`ja-lemma`, type `lemma-rules`; bundled): the
   rule table that turns inflected Japanese (食べました, 勉強しています,
   しちゃった) into dictionary forms for the Reader and lookups, **written for
-  qinqin by the project and released under CC0 1.0**
-  (`plugins/data/ja-lemma`, with `LICENSE` and `ATTRIBUTION.md`; issues #165,
+  qinqin by the project and released under CC BY 4.0**
+  (credit: "qinqin contributors, CC BY 4.0"; `plugins/data/ja-lemma`, with `LICENSE` and `ATTRIBUTION.md`; issues #165,
   #177, #176). The same table is built into the server
   (`server/internal/lemma/tables/ja.json`) and is the contract fixture
   `docs/contracts/lemma/ja.rules.json`; the pack serves it to clients as the
@@ -729,7 +733,8 @@ upstream `LICENSE`, copied verbatim) and are always present; the Sources page
 credits them from `GET /api/themes`. Only colour values are taken from each
 project (no code, fonts or images); every third-party palette is under the MIT
 licence, checked against the upstream LICENSE file on 2026-11-17, and the qinqin
-packs are the project's own work under the same MIT text. Each pack's LICENSE
+packs are the project's own work under CC BY 4.0 (the full legal code as their
+`LICENSE`; credit "qinqin contributors, CC BY 4.0", https://github.com/Elaktrato/qinqin). Each pack's LICENSE
 ships inside the server binary and reaches users verbatim: `GET /api/themes`
 serves it as the pack's `licenseText`, and the Sources page shows it under the
 Themes table. The eight themes of
@@ -738,17 +743,17 @@ upstream palettes; two mockup values that belonged to another variant are
 corrected (Rosé Pine's `pine` accent is `#31748f`, not Moon's `#3e8fb0`; Rosé
 Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
 
-- **qinqin** (`qinqin`, built in): Day, Night, Deep. MIT, © 2026 qinqin. The
+- **qinqin** (`qinqin`, built in): Day, Night, Deep. CC BY 4.0, qinqin contributors. The
   owner's own palette (`#ffffff #0ce6f2 #0098db #1e579c #203562 #252446
   #201533`); the palette has no red, orange or green, so the state and grade
   colours were added beside the blues. Day and Night are the default light and
   dark themes and are also compiled into the web app as the first-paint and
   offline fallback (`apps/web/src/lib/theme/fallback.ts`, pinned to the pack's
-  `themes.json` by a test); the web app serves the same MIT text at
+  `themes.json` by a test); the web app serves the same CC BY 4.0 text at
   `apps/web/static/QINQIN-LICENSE.TXT` (the pack's `LICENSE`, byte for byte)
   and credits it under "Built into the app".
 - **qinqin extras** (`qinqin-extras`, built in): Neon Day and Night, Pigments
-  Celadon and Indigo, Pop Bubblegum and Grape. MIT, © 2026 qinqin. Three further
+  Celadon and Indigo, Pop Bubblegum and Grape. CC BY 4.0, qinqin contributors. Three further
   directions: Neon's ink-grey surfaces with neon accents; Pigments' painter's
   accents 胭脂 rouge, 朱 vermilion, 藤黄 gamboge, 石绿 malachite, 群青
   ultramarine and 紫 violet; Pop's tinted surfaces and clashing

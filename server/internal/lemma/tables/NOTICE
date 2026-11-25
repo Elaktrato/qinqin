@@ -1,0 +1,4 @@
+ja.json is the Japanese lemmatizer rule table, written for qinqin by the project and released under the Creative
+Commons Attribution 4.0 International licence (CC BY 4.0): credit "qinqin contributors, CC BY 4.0 —
+https://github.com/Elaktrato/qinqin". The full legal code is plugins/data/ja-lemma/LICENSE. The rest of the Go
+server is under the MIT licence (the repository's LICENSE and LICENSING.md).

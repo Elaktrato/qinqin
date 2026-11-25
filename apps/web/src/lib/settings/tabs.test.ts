@@ -51,6 +51,17 @@ describe('the Study tab', () => {
 	});
 });
 
+describe('the Notifications tab (#137)', () => {
+	it('is visible to everyone, after Features, and parsed from ?tab=notifications', () => {
+		expect(visibleSettingsTabs(false)).toContain('notifications');
+		expect(SETTINGS_TABS.indexOf('notifications')).toBe(SETTINGS_TABS.indexOf('features') + 1);
+		expect(parseSettingsTab('notifications')).toBe('notifications');
+		expect(SETTINGS_TAB_LABELS.notifications).toBe('Notifications');
+		expect(settingsTabHref('notifications')).toBe('/settings?tab=notifications');
+		expect(settingsTitleParts('notifications', null)).toEqual(['Notifications', 'Settings']);
+	});
+});
+
 describe('features tab', () => {
 	it('is visible to everyone, before Plugins', () => {
 		expect(SETTINGS_TAB_LABELS.features).toBe('Features');
@@ -62,13 +73,14 @@ describe('features tab', () => {
 
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'layout', 'appearance', 'study', 'features', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'layout', 'appearance', 'study', 'features', 'notifications', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
 			'layout',
 			'appearance',
 			'study',
 			'features',
+			'notifications',
 			'ai',
 			'account',
 			'data',
@@ -127,7 +139,7 @@ describe('the Admin tab', () => {
 		expect(SETTINGS_TAB_LABELS.admin).toBe('Admin');
 	});
 	it('has the sections Users, Invites, Email, Security with Users as the default', () => {
-		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security', 'backup']);
+		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security', 'backup', 'updates']);
 		expect(parseAdminSection(null)).toBe('users');
 		expect(parseAdminSection('invites')).toBe('invites');
 		expect(parseAdminSection('email')).toBe('email');

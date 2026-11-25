@@ -3,7 +3,8 @@
 	import type { AudioClip } from '$lib/api/audio';
 	import { activate, buttonState, playLabel } from '$lib/audio/button';
 	import { clipObjectUrl } from '$lib/audio/source';
-	import { deviceVoiceFor } from '$lib/audio/player';
+	import { hasDeviceVoice } from '$lib/audio/player';
+	import { probeVoice } from '$lib/native/speech';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
@@ -38,8 +39,10 @@
 	});
 
 	onMount(() => {
+		// In the shell the Android engine is asked once; a browser's voices load by themselves.
+		void probeVoice(lang).then(() => (voiceAvailable = hasDeviceVoice(lang)));
 		if (typeof speechSynthesis === 'undefined') return;
-		const refresh = () => (voiceAvailable = deviceVoiceFor(lang, speechSynthesis.getVoices()) !== null);
+		const refresh = () => (voiceAvailable = hasDeviceVoice(lang, speechSynthesis.getVoices()));
 		refresh();
 		speechSynthesis.addEventListener?.('voiceschanged', refresh);
 		return () => speechSynthesis.removeEventListener?.('voiceschanged', refresh);

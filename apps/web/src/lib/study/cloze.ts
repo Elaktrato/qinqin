@@ -212,9 +212,25 @@ export function pickDistractors(input: {
 	return [...same, ...other].slice(0, 3);
 }
 
-/** NFC, trimmed, inner whitespace removed. */
+// Edge punctuation that may be dropped: any punctuation except # % & @.
+const EDGE_PUNCT = String.raw`(?![#%&@])\p{P}`;
+const EDGE_RE = new RegExp(`^(?:${EDGE_PUNCT})+|(?:${EDGE_PUNCT})+$`, 'gu');
+
+/**
+ * What an answer is compared by: NFKC (full-width Latin and digits, half-width
+ * katakana and the like fold to one form), case-folded, all whitespace
+ * (including U+3000) removed, and sentence punctuation or brackets at either
+ * edge dropped. Symbols (+ $ % # & @ = <, currency, maths) are part of an
+ * answer and are kept ('C++' is not 'C', '$5' is not '5'), as are the
+ * punctuation marks # % & @. An answer that would be empty after the edge
+ * strip (only punctuation) falls back to its unstripped form so it stays
+ * gradable. The script is NOT folded: hiragana and katakana stay different
+ * answers, and the long vowel mark is kept.
+ */
 export function normalizeAnswer(text: string): string {
-	return text.normalize('NFC').replace(/\s+/gu, '');
+	const folded = text.normalize('NFKC').toLowerCase().replace(/\s+/gu, '');
+	const stripped = folded.replace(EDGE_RE, '');
+	return stripped === '' ? folded : stripped;
 }
 
 /** The accepted answers: the surface, plus every form when the surface is a plain one. */

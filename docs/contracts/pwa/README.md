@@ -22,11 +22,30 @@ server while its answer was lost, so a rewritten item (same id) would be a dupli
 dropped one would leave the stored wrong grade in place. Items flush oldest first, so a replacement normally
 arrives after its target; if not, the rule still holds (the late target is replaced when it arrives).
 
-## Outbox v2 (`outbox-v2.json`)
+## Outbox v3 (`outbox-v3.json`)
 
-`localStorage['qinqin.study.pending.v2']` = `[{userId, queuedAt, event}]`.
+The queue is an IndexedDB object store (database `qinqin-outbox`, store `items`, key = `event.id`) of
+`{userId, queuedAt, event}` records: the same item as v2 (the item, the ownership and the flush rules below
+are unchanged). What v3 adds is how the web client keeps them (#35, measured on Android: a process kill within
+about 5 s after grading lost reviews that localStorage had not yet written):
 
-- An item belongs to the user who was signed in when the review was recorded
+- **Write-ahead.** A review is committed to the store before its POST is made; "saved" is reported only after the
+  transaction's `complete` (`durability: 'strict'`). The record is deleted after the server answered (or refused it
+  permanently). A crash between the answer and the delete is harmless: the server keeps an event id once, so the
+  retry is a duplicate (exactly once in effect).
+- **One record per review**, no whole-queue rewrite: two tabs add and remove records without overwriting each other.
+  The page reads an in-memory copy for its synchronous needs (counts, the offline banner, the study history) and
+  refreshes it from the store before each flush and when the app returns to the front.
+- **Event writes time out** (20 s) so a request that never answers becomes a retryable failure and the review,
+  already stored, waits for the next flush.
+- **Migration.** On start the v2 localStorage array `qinqin.study.pending.v2` is put into the store by event id (an
+  id already in the store keeps the stored record), then the key is removed (`migration` in the fixture).
+- **Fallback.** Where IndexedDB is missing or refuses (private mode, a blocked database) the queue stays the v2
+  localStorage array, and with no storage at all it lives in memory for the session: reviews are still queued and
+  retried, only not durable.
+- **Sign-out** ends the session and its in-memory copy. The stored items stay for their user unless the user chose
+  "sign out and delete them" (which deletes their records from the store).
+- An item (`{userId, queuedAt, event}`) belongs to the user who was signed in when the review was recorded
   (`userId` null: no user was known yet, adopted by the next user to flush).
 - The pre-v2 queue (`qinqin.study.pending`, bare events, v0.3.x) is neither read nor removed (#198):
   open the app online on every device before upgrading from v0.3.x, so an old copy sends its reviews first.
@@ -91,3 +110,31 @@ are computed from rows the client already holds (`GET /api/me/time-zone`, the
 `vacation:*` rows with `workspaceId: null`, `limits:*` rows). The rules of
 `docs/contracts/scheduler/` and `study-day/` apply unchanged; an offline client never
 asks the server what "today" is.
+
+## Push notifications (#139)
+
+Web push (`docs/contracts/reminders/`) adds two event handlers to the service worker and one small stored text map.
+Nothing about it is cached: the worker's cache never stores a push payload, `/api/push/*` or `/api/reminders/*`
+(`/api/` is `bypass` unless it is on the allowlist above; `classify.test.ts` asserts it for these paths).
+
+- **Subscribing** is the page's job (`lib/pwa/push.ts`), only from a click (the permission prompt needs the gesture),
+  only in a normal browser (never in the Android shell, which schedules local notifications), only in a secure
+  context, and on iOS only in a home-screen install (`display-mode: standalone`). The page remembers the id the
+  server answered per user in `localStorage` (`qinqin.push.device.<user id>`), marks this device in the Settings list
+  and deletes the subscription at sign-out (best effort, started before the token is cleared, never blocking).
+- **`push`** (`lib/pwa/sw/push.ts`): the payload is JSON `{v: 1, kind, count, route}` with no text. It is parsed
+  defensively: no data, malformed JSON, a non-object or an unknown `kind` shows a generic notification, and the
+  handler never throws. The notification is shown with `tag` = the kind (a newer one replaces an older one of the
+  same kind) and `data: {route}`. `route` is kept only when it starts with a single `/` (no `//`, no scheme, no
+  backslash, no control character); anything else is `/study`.
+- **Text**: the worker cannot use the page's catalogue. The page stores the raw catalogue messages of the
+  `settings.reminders.notify.*` keys (title and body of `due`, `goal`, `streak`, `test`, `generic`; `{count}` and
+  plurals as in the catalogue) and its format locale as JSON in the Cache API: cache `qinqin-push-texts-v1`, entry
+  `https://push-texts.invalid/v1` (never fetched). The worker formats them with the same message formatter. With no
+  stored map it uses an English constant (`ENGLISH_FALLBACK`, `lib/pwa/sw/pushTexts.ts`); a test pins that constant
+  to `messages/en.json`, and another that the page's map holds exactly the worker's keys. The cache is neither a
+  shell cache nor an API partition, so `activate` and sign-out leave it alone (the page clears it when the session
+  ends).
+- **`notificationclick`**: the notification is closed; an open window client is focused and, when it does not already
+  show the route, navigated to it (`client.navigate`); with no window, `clients.openWindow(route)`. The route is
+  validated again from `notification.data`.

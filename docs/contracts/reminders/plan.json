@@ -1,0 +1,996 @@
+{
+ "version": 1,
+ "rule": "reminders/plan",
+ "note": "op plan: now, zone (the current zone of the study-day history), settings, facts (one per workspace), days -> expect (the slots, sorted by at then kind: due, goal, streak). id = (daysSinceEpoch(day) % 100000) * 10 + {due 1, goal 2, streak 3}.",
+ "cases": [
+  {
+   "name": "a plain day",
+   "note": "09:00 today is past; due takes the first candidate and counts the bucket due by then; goal and streak take the last candidate; tomorrow's goal is assumed open, its streak is broken",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207822,
+     "kind": "goal",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": null
+    },
+    {
+     "id": 207823,
+     "kind": "streak",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 5
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T08:00:00Z",
+     "local": "2026-11-26T09:00",
+     "day": "2026-11-26",
+     "count": 20
+    },
+    {
+     "id": 207832,
+     "kind": "goal",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": null
+    }
+   ]
+  },
+  {
+   "name": "vacation tomorrow",
+   "note": "a vacation day has no reminder of any kind",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": [
+      "2026-11-26"
+     ]
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207822,
+     "kind": "goal",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": null
+    },
+    {
+     "id": 207823,
+     "kind": "streak",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 5
+    }
+   ]
+  },
+  {
+   "name": "goal met and streak safe today",
+   "note": "a met goal and a streak already extended today give no slot; tomorrow the streak is at risk, one day longer",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "met"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": true
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T08:00:00Z",
+     "local": "2026-11-26T09:00",
+     "day": "2026-11-26",
+     "count": 20
+    },
+    {
+     "id": 207832,
+     "kind": "goal",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": null
+    },
+    {
+     "id": 207833,
+     "kind": "streak",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "name": "only quiet times",
+   "note": "every preferred time inside the quiet hours: nothing",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "23:00",
+     "06:30"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "no quiet hours",
+   "note": "quiet null: 06:30 is a candidate; due takes the first (06:30 = 05:30Z tomorrow counts the 05:00Z bucket), goal the last",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "06:30",
+     "18:00"
+    ],
+    "quiet": null,
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207822,
+     "kind": "goal",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": null
+    },
+    {
+     "id": 207823,
+     "kind": "streak",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 5
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T05:30:00Z",
+     "local": "2026-11-26T06:30",
+     "day": "2026-11-26",
+     "count": 20
+    },
+    {
+     "id": 207832,
+     "kind": "goal",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": null
+    }
+   ]
+  },
+  {
+   "name": "reminders off",
+   "note": "the master switch off: nothing",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": false,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "one kind",
+   "note": "only the kinds switched on",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": false,
+     "streak": false
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T08:00:00Z",
+     "local": "2026-11-26T09:00",
+     "day": "2026-11-26",
+     "count": 20
+    }
+   ]
+  },
+  {
+   "name": "no facts yet",
+   "note": "nothing is known: nothing",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [],
+   "expect": []
+  },
+  {
+   "name": "nothing due",
+   "note": "no due card and no bucket: no due slot; goal and streak stay",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 0,
+     "dueBuckets": [],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207822,
+     "kind": "goal",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": null
+    },
+    {
+     "id": 207823,
+     "kind": "streak",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 5
+    },
+    {
+     "id": 207832,
+     "kind": "goal",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": null
+    }
+   ]
+  },
+  {
+   "name": "stale facts count nothing",
+   "note": "facts older than 30 days are ignored",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-10-01T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "no goal set",
+   "note": "no goal: no goal slot and no streak (streak 0)",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": false,
+      "status": "none"
+     },
+     "streak": {
+      "current": 0,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 15
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T08:00:00Z",
+     "local": "2026-11-26T09:00",
+     "day": "2026-11-26",
+     "count": 20
+    }
+   ]
+  },
+  {
+   "name": "daylight saving ends",
+   "note": "18:00 local before and after the clock change in New York (EDT 22:00Z, then EST 23:00Z)",
+   "now": "2026-10-31T12:00:00Z",
+   "zone": "America/New_York",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": false,
+     "streak": false
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-10-31T12:00:00Z",
+     "dueNow": 1,
+     "dueBuckets": [],
+     "goal": {
+      "set": false,
+      "status": "none"
+     },
+     "streak": {
+      "current": 0,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": [
+    {
+     "id": 207571,
+     "kind": "due",
+     "at": "2026-10-31T22:00:00Z",
+     "local": "2026-10-31T18:00",
+     "day": "2026-10-31",
+     "count": 1
+    },
+    {
+     "id": 207581,
+     "kind": "due",
+     "at": "2026-11-01T23:00:00Z",
+     "local": "2026-11-01T18:00",
+     "day": "2026-11-01",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "name": "two workspaces",
+   "note": "a workspace on vacation that day adds nothing; counts add; the largest streak counts",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 2,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": true,
+     "streak": true
+    },
+    "times": [
+     "09:00",
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 12,
+     "dueBuckets": [
+      {
+       "at": "2026-11-25T16:00:00Z",
+       "count": 3
+      },
+      {
+       "at": "2026-11-26T05:00:00Z",
+       "count": 5
+      }
+     ],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    },
+    {
+     "workspace": 2,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 7,
+     "dueBuckets": [],
+     "goal": {
+      "set": false,
+      "status": "none"
+     },
+     "streak": {
+      "current": 2,
+      "todayMet": false
+     },
+     "vacation": [
+      "2026-11-26"
+     ]
+    }
+   ],
+   "expect": [
+    {
+     "id": 207821,
+     "kind": "due",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 22
+    },
+    {
+     "id": 207822,
+     "kind": "goal",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": null
+    },
+    {
+     "id": 207823,
+     "kind": "streak",
+     "at": "2026-11-25T17:00:00Z",
+     "local": "2026-11-25T18:00",
+     "day": "2026-11-25",
+     "count": 5
+    },
+    {
+     "id": 207831,
+     "kind": "due",
+     "at": "2026-11-26T08:00:00Z",
+     "local": "2026-11-26T09:00",
+     "day": "2026-11-26",
+     "count": 20
+    },
+    {
+     "id": 207832,
+     "kind": "goal",
+     "at": "2026-11-26T17:00:00Z",
+     "local": "2026-11-26T18:00",
+     "day": "2026-11-26",
+     "count": null
+    }
+   ]
+  },
+  {
+   "name": "an unreachable zone date: the slot in the past is skipped",
+   "note": "a slot at or before now never exists",
+   "now": "2026-11-25T17:00:00Z",
+   "zone": "Europe/Berlin",
+   "days": 1,
+   "settings": {
+    "enabled": true,
+    "kinds": {
+     "due": true,
+     "goal": false,
+     "streak": false
+    },
+    "times": [
+     "18:00"
+    ],
+    "quiet": {
+     "start": "22:00",
+     "end": "08:00"
+    },
+    "channels": {
+     "email": false,
+     "push": false,
+     "device": true
+    }
+   },
+   "facts": [
+    {
+     "workspace": 1,
+     "asOf": "2026-11-25T10:00:00Z",
+     "dueNow": 0,
+     "dueBuckets": [],
+     "goal": {
+      "set": true,
+      "status": "open"
+     },
+     "streak": {
+      "current": 5,
+      "todayMet": false
+     },
+     "vacation": []
+    }
+   ],
+   "expect": []
+  }
+ ]
+}

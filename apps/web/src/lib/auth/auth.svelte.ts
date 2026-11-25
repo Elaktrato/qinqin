@@ -11,6 +11,7 @@ import { hasSession, stepFor, type LoginStep, type MfaChallenge } from '$lib/acc
 import { emailLoginVerify, mfaStep, type LoginBody } from '$lib/api/mfa';
 import { cleanupPartitions, ownPartition } from '$lib/pwa/partitions';
 import { clearReceipts } from '$lib/pwa/prepareOffline';
+import { browserPushEnv, forgetThisDevice } from '$lib/pwa/push';
 import { TOKEN_KEY, clearToken, getToken, setToken } from '$lib/api/client';
 import type { AppDeps } from '$lib/context/deps';
 import type { SessionEndReason } from '$lib/context/session.svelte';
@@ -93,6 +94,10 @@ export class Auth {
 
 	/** expire: a 401 ended the session (the client already dropped the token). */
 	expire(): void {
+		// The session ended without a sign-out: on a shared browser the old account's pushes must not go on. The
+		// server DELETE needs the token that is gone (best effort: it may answer 401), but the browser's own
+		// subscription is dropped and the remembered id forgotten, so the server's row is pruned at its next push.
+		forgetThisDevice({ api: this.#deps.api, env: browserPushEnv(), user: this.user?.id ?? null });
 		this.set(SIGNED_OUT, 'expired');
 		this.#forgetOfflineCopies();
 	}
@@ -242,6 +247,9 @@ export class Auth {
 	 * there is no navigation here to fail or double up.
 	 */
 	logout(): void {
+		// This device's web push subscription goes with the session (#139): best effort, and started here so the
+		// request still carries the token cleared next.
+		forgetThisDevice({ api: this.#deps.api, env: browserPushEnv(), user: this.user?.id ?? null });
 		// Best effort, and sent before the token is cleared (the request carries it).
 		if (getToken() !== null) {
 			this.#deps.api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);

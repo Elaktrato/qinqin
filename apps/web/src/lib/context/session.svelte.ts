@@ -14,7 +14,12 @@ import { Notices } from '$lib/frame/notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
 import { ReviewOutbox } from '../study/events';
+import { createOutboxStore } from '../study/outboxStore';
 import { clearRecentSent, rememberSent } from '../study/recentSent';
+import { StudySetups } from '../study/setupStore.svelte';
+import { StudyModalState } from '../study/studyModal.svelte';
+import { STUDY_SETUP_KEY } from '../study/setup';
+import { keyedData } from '../sync/keyed';
 import { WorkspaceRecovery } from '$lib/workspace/workspaceGone';
 import { Workspaces } from '$lib/workspace/workspaces.svelte';
 import { createPlayer, type Player } from '../audio/player';
@@ -62,6 +67,10 @@ export class Session {
 	#player: Player | null = null;
 	/** The lookup history recorder (#72). */
 	readonly lookups = new LookupsState();
+	/** The saved study setup of each workspace (the keyed row `study-setup`). */
+	readonly setups: StudySetups;
+	/** The study modal's opener. */
+	readonly studyModal = new StudyModalState();
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
@@ -79,12 +88,13 @@ export class Session {
 			whenStudyDaySettled: () => this.zone.settled()
 		});
 		this.onDispose(() => this.events.dispose());
-		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive });
+		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
 		this.onDispose((reason) => this.workspaces.dispose(reason));
-		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session });
+		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
 		this.outbox = new ReviewOutbox({
 			post: (events) => this.events.post(events),
 			local,
+			store: createOutboxStore({ indexedDB: deps.indexedDB ?? null, local }),
 			now,
 			timers: deps.timers,
 			window: deps.window,
@@ -107,6 +117,15 @@ export class Session {
 			outbox: this.outbox,
 			events: this.events
 		});
+		this.setups = new StudySetups({
+			load: (ws) => keyedData(ws, api).find(STUDY_SETUP_KEY),
+			save: async (ws, data) => void (await keyedData(ws, api).put(STUDY_SETUP_KEY, data)),
+			local,
+			user: () => this.#user,
+			alive: () => this.alive,
+			// A deleted workspace leaves the list; before the list loads every id counts.
+			exists: (ws) => !this.workspaces.loaded || this.workspaces.list.some((w) => w.id === ws)
+		});
 		if (deps.document !== null) this.onDispose(this.lookups.recorder.attach(deps.document));
 		this.onDispose((reason) => {
 			this.#player?.stop();
@@ -114,7 +133,10 @@ export class Session {
 			this.study.dispose();
 			this.caches.clear();
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
-			if (reason === 'signOut') clearRecentSent(local());
+			if (reason === 'signOut') {
+				clearRecentSent(local());
+				this.setups.forget();
+			}
 		});
 	}
 

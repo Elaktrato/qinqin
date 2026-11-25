@@ -4,6 +4,11 @@
 // `open` attribute, the rest of the page made `inert`, Tab wrapping inside,
 // and the caller's Escape handling.
 // Focus moves in on open and returns to where it was on close.
+// While open it is also on the dismiss stack (dismissStack.ts), so the Android back button closes the innermost
+// one: the request is the dialog's own `cancel` event, which Dialog, Sheet and Drawer already turn into their
+// dismissal (a dialog that is busy declines it).
+
+import { registerDismissable } from './dismissStack';
 
 const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -98,8 +103,20 @@ export function modal(node: HTMLDialogElement, options: ModalOptions = {}): { de
 	queueMicrotask(() => {
 		if (!node.contains(document.activeElement) || document.activeElement === node) target.focus();
 	});
+	const unregister = registerDismissable(() => {
+		// The back button is an Escape press: offer it to whatever has focus inside first, so an inline rename or
+		// confirmation cancels itself (and a Sheet or Drawer closes through its own key handler), as with the
+		// keyboard. Only when nothing took it does the dialog get its `cancel`.
+		const active = document.activeElement;
+		const target = active instanceof HTMLElement && node.contains(active) ? active : node;
+		const escape = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true });
+		target.dispatchEvent(escape);
+		if (escape.defaultPrevented) return;
+		node.dispatchEvent(new Event('cancel', { cancelable: true }));
+	});
 	return {
 		destroy() {
+			unregister();
 			undoInert?.();
 			if (typeof node.close === 'function' && node.open) node.close();
 			const back = returnFocus ? returnFocus() : before && before.isConnected ? before : null;

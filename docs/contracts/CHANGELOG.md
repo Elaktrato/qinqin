@@ -5,6 +5,71 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #36 — native device features advertised on the bridge (contract 4)
+
+- **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["files", "haptics", "keep-awake",
+  "local-notifications", "share", "status-bar", "tts"]}`. The level stays 1: every new piece is optional (the web
+  app also runs in a browser). A shell without one of them gets the "missing in this app" warning only. The
+  Android shell advertises all of them (`SHELL_BRIDGE`, `apps/android/src/firstrun/verify.ts`).
+  `bridge-compat.json` is unchanged; `version.json` follows. `local-notifications` is groundwork: the reminders
+  (#137-#139) use it through the device port.
+- **Settings:** the workspace-settings key `gradeHaptics` (boolean, default on): the buzz when a card is graded
+  (`settings/workspace-settings.json`: `keys` and `parse`). Readers ignore unknown keys, so older clients are
+  unaffected.
+
+## #137, #138, #139 — study reminders, email nudges and web push (contract 3)
+
+- **Settings row:** new user-global keyed row `reminders` (`keyed/families.json`; parse rules and fixture
+  `reminders/settings.json`): master switch (off by default), kinds, up to three local times, quiet hours (wrap
+  midnight), and the channels `email`, `push`, `device`. Clients keep unknown keys.
+- **Routes:** `PUT /api/reminders/facts` (the client's derived due/goal/streak/vacation snapshot per workspace; the
+  server has no scheduler), `GET /api/reminders/plan?days=N` (the planned reminder slots: kind, instant, local time,
+  count; the shell schedules local notifications from it; fixture `reminders/plan.json`), `POST /api/reminders/test`,
+  `GET /api/push/vapid-key`, `GET|POST /api/push/subscriptions`, `DELETE /api/push/subscriptions/{id}`, and the public
+  `GET|POST /api/reminders/unsubscribe?t=` (signed token, fixture `reminders/unsubscribe.json`). No access tokens.
+- **Error codes:** `push_unavailable`, `no_subscription`, `too_many_subscriptions`, `delivery_failed`
+  (`auth/errors.json`).
+- **Email:** reminder mails carry `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`.
+- **Version:** `version/version.json` answers `contract: 3` (then 4 with #36).
+
+## Study modal — the saved study setup (contract 2)
+
+- **Keyed rows:** new workspace family `study-setup` (exact key; `keyed/families.json`, three new cases). A
+  user-global row of it is 400 `bad_request` on the key routes and refused alone in a push.
+- **Study setup:** the row is the setup the study modal starts, saved per workspace and synced
+  (`study/setup.json`, new fixture, rule `study/setup`): `{version: 1, decks: "all" | [deck id], mode, schemeId,
+  levelName, cardTypes, unchecked, newLimit, reviewLimit, newOrder, typeOrder}`, read member by member, repaired
+  member by member, unknown members kept on write. It replaces the web's per-tab setup and the browser keys
+  `qinqin.study.cardTypes` and `qinqin.study.extraTypes`, which are no longer read or written.
+
+## Stage 1 review — the bridge names `status-bar` (contract 2)
+
+- **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["status-bar"]}` (was `[]`): the web
+  app sends the theme's chrome colour to the shell's `setBars` when the shell has it (`lib/native/bars.ts`). A
+  shell without `status-bar` now gets the "missing in this app" warning. `version/version.json` follows;
+  `bridge-compat.json` is unchanged.
+
+## #35 — review outbox v3 (no contract bump)
+
+- **Outbox:** the web client's review queue moves from `localStorage` (`qinqin.study.pending.v2`) to an IndexedDB
+  store with one record per review, written before the POST and committed before a review counts as saved
+  (`pwa/README.md` "Outbox v3"). The item, the event, the ownership and the flush rules are unchanged, and no route
+  or answer changes, so the contract version stays 1: storage is the web client's own, and a second client only has to
+  keep the binding semantics, which did not change. The fixture `pwa/outbox-v2.json` is renamed `outbox-v3.json` and
+  gains `migration` and `order` cases. Event writes time out after 20 s on the web.
+
+## #154 — version, bridge and release check (contract 1)
+
+- **Contract version:** the answer of `GET /api/version` carries `contract`, an integer that starts at 1 with this
+  entry and goes up by one in each change that adds an entry a client must follow (`version/README.md`). Entries
+  before this one count as contract 0.
+- **Routes:** new `GET /api/version` (public: `{app: "qinqin", version, contract, bridge: {level, features}}`;
+  with a full session also `commit` and `buildDate`; `Cache-Control: no-store`), and the administrator routes `GET
+  /api/admin/update`, `PATCH /api/admin/update/settings`, `POST /api/admin/update/check`, no access token
+  (`version/version.json`, `version/update-check.json`, new fixtures).
+- **Native shell:** the compatibility rule between the server's `bridge` and the shell's own is the fixture
+  `version/bridge-compat.json` (web: `bridgeCompatibility`).
+
 ## #211 — bootstrap administrator by default
 
 - **Registration:** `POST /api/auth/register` no longer makes the first user on an empty instance the

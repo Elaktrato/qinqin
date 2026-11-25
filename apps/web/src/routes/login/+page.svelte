@@ -8,7 +8,7 @@
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { emailLoginStart, mfaSendEmail } from '$lib/api/mfa';
 	import { firstMethod, otherMethods, type MfaChallenge, type MfaMethod } from '$lib/account/loginFlow';
-	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from '$lib/account/otpInput';
+	import { codeFailure, otpAttrs, otpComplete, resendText, reconcileOtp } from '$lib/account/otpInput';
 	import { Button, Field } from '$lib/ui';
 	import type { SignInResult } from '$lib/auth/auth.svelte';
 	import { useApp } from '$lib/context/context';
@@ -150,9 +150,7 @@
 	}
 
 	function oninput(event: Event, as: MfaMethod) {
-		const el = event.currentTarget as HTMLInputElement;
-		code = sanitizeOtp(el.value, as);
-		el.value = code;
+		code = reconcileOtp(event.currentTarget as HTMLInputElement, as, (event as InputEvent).isComposing === true);
 	}
 </script>
 
@@ -221,6 +219,7 @@
 					maxlength={attrs.maxlength}
 					value={code}
 					oninput={(e) => oninput(e, method)}
+					oncompositionend={(e) => (code = reconcileOtp(e.currentTarget, method, false))}
 					required
 				/>
 			</label>
@@ -277,6 +276,7 @@
 					maxlength="6"
 					value={code}
 					oninput={(e) => oninput(e, 'email')}
+					oncompositionend={(e) => (code = reconcileOtp(e.currentTarget, 'email', false))}
 					required
 				/>
 			</label>

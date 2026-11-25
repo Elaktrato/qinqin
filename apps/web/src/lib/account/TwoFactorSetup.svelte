@@ -7,7 +7,7 @@
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { Button, Field } from '$lib/ui';
-	import { codeFailure, otpAttrs, otpComplete, sanitizeOtp } from './otpInput';
+	import { codeFailure, otpAttrs, otpComplete, reconcileOtp } from './otpInput';
 	import { groupSecret, twoFactorChoices } from './mfaView';
 	import EmailVerify from './EmailVerify.svelte';
 	import QrCode from './QrCode.svelte';
@@ -207,10 +207,8 @@
 					autocomplete={attrs.autocomplete}
 					maxlength={attrs.maxlength}
 					value={code}
-					oninput={(e) => {
-						code = sanitizeOtp(e.currentTarget.value, 'totp');
-						e.currentTarget.value = code;
-					}}
+					oninput={(e) => (code = reconcileOtp(e.currentTarget, 'totp', (e as unknown as InputEvent).isComposing))}
+					oncompositionend={(e) => (code = reconcileOtp(e.currentTarget, 'totp', false))}
 					required
 				/>
 			</label>

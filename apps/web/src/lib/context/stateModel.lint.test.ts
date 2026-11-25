@@ -31,6 +31,9 @@ const ALLOWED: Record<string, string> = {
 	'lib/i18n/message.ts:safeLocales': 'locale tags',
 	'lib/i18n/message.ts:pluralRules': 'Intl.PluralRules by locale',
 	'lib/i18n/message.ts:numberFormats': 'Intl.NumberFormat by locale',
+	'lib/ui/ime.ts:composing': 'whether the keyboard has an IME composition open: input-device state, no user data',
+	'lib/ui/ime.ts:target': 'the element that holds the open composition: input-device state, no user data',
+	'lib/ui/ime.ts:installed': 'whether the document listeners are attached: no data',
 	'lib/time/studyDay.ts:formatters': 'Intl.DateTimeFormat by zone',
 	'lib/radicals/kangxi.ts:numbers': 'built from the bundled Kangxi table at load',
 	'lib/stats/map/CharGrid.svelte:waiting': 'render jobs of mounted grids, no data',
@@ -46,6 +49,12 @@ const ALLOWED: Record<string, string> = {
 	'lib/weekly/summary.ts:summaryStats': 'an operation counter the performance tests read, no user data',
 	'lib/milestones/reached.ts:reachedStats': 'an operation counter the performance tests read, no user data',
 	'lib/time/studyDay.ts:studyDayStats': 'an operation counter the performance tests read, no user data',
+	'lib/native/awake.ts:holders': 'how many study pages hold the screen on: device state, nothing of a user',
+	'lib/native/awake.ts:sentinel': 'the browser wake lock held for them: device state, nothing of a user',
+	'lib/native/awake.ts:asking': 'whether a wake lock request is in flight: device state, nothing of a user',
+	'lib/native/awake.ts:visibilityOn': 'whether the tab-visibility listener is installed: device state, nothing of a user',
+	'lib/native/speech.ts:known': 'which languages this device has a text-to-speech voice for: a device fact, nothing of a user',
+	'lib/reminders/device/port.ts:installed': "the shell's native notification module, installed once at startup by setDevicePort (app-wide hardware access, no user data)",
 	'lib/api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it at every session end'
 };
 

@@ -42,7 +42,7 @@ afterEach(() => {
 describe('the settings tab row in the lighter look (#106)', () => {
 	afterEach(() => ctx.app.auth.set({ token: null, user: null }));
 
-	it('is a tablist with seven tabs for a member and nine for an admin', async () => {
+	it('is a tablist with eight tabs for a member and ten for an admin', async () => {
 		render(Page, { context: ctx.context });
 		const list = screen.getByRole('tablist', { name: 'Settings' });
 		expect([...list.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim())).toEqual([
@@ -51,13 +51,14 @@ describe('the settings tab row in the lighter look (#106)', () => {
 			'Appearance',
 			'Study',
 			'Features',
+			'Notifications',
 			'AI',
 			'Account'
 		]);
 		cleanup();
 		ctx.app.auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
 		render(Page, { context: ctx.context });
-		expect(screen.getAllByRole('tab')).toHaveLength(9);
+		expect(screen.getAllByRole('tab')).toHaveLength(10);
 	});
 
 	it('the ?tab=data deep link selects Data', async () => {

@@ -8,6 +8,7 @@ export const SETTINGS_TABS = [
 	'appearance',
 	'study',
 	'features',
+	'notifications',
 	'ai',
 	'account',
 	'data',
@@ -31,6 +32,9 @@ export const SETTINGS_TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 	get features() {
 		return t('settings.tabs.features');
 	},
+	get notifications() {
+		return t('settings.tabs.notifications');
+	},
 	get ai() {
 		return t('settings.tabs.ai');
 	},
@@ -53,7 +57,7 @@ export function visibleSettingsTabs(admin: boolean): SettingsTab[] {
 }
 
 /** The sections of the Admin tab (`?tab=admin&section=`). Email arrives with the mail settings. */
-export const ADMIN_SECTIONS = ['users', 'invites', 'email', 'security', 'backup'] as const;
+export const ADMIN_SECTIONS = ['users', 'invites', 'email', 'security', 'backup', 'updates'] as const;
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];
 
 export const ADMIN_SECTION_LABELS: Readonly<Record<AdminSection, string>> = {
@@ -71,6 +75,9 @@ export const ADMIN_SECTION_LABELS: Readonly<Record<AdminSection, string>> = {
 	},
 	get backup() {
 		return t('settings.admin.backup');
+	},
+	get updates() {
+		return t('settings.admin.updates');
 	}
 };
 

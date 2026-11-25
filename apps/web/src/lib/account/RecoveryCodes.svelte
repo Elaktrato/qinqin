@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { saveFile } from '$lib/native/files';
 	import { Button, Panel } from '$lib/ui';
 	import { recoveryClipboard, recoveryFileName, recoveryText } from './recoveryCodes';
 
@@ -25,15 +26,12 @@
 		}
 	}
 
-	function download() {
+	// A browser downloads the file; the Android app opens its save screen (lib/native/files.ts).
+	async function download() {
+		error = '';
 		const now = new Date();
 		const blob = new Blob([recoveryText(codes, site, now)], { type: 'text/plain' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = recoveryFileName(now);
-		a.click();
-		URL.revokeObjectURL(url);
+		if ((await saveFile(recoveryFileName(now), 'text/plain', blob)) === 'failed') error = t('account.recovery.saveFailed');
 	}
 </script>
 

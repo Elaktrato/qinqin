@@ -265,15 +265,19 @@
 	<p class="hint">
 		{t('journal.photo.intro')}
 	</p>
-	<label class="pick">
-		<span class="button primary">{t('journal.photo.choose')}</span>
-		<input
-			type="file"
-			accept="image/jpeg,image/png,image/webp"
-			capture="environment"
-			onchange={onPick}
-		/>
-	</label>
+	<!-- Two inputs: with `capture` a phone's chooser opens the camera only (no gallery), so the picker is its own
+	     button. In the Android app both go through the WebView file chooser (system camera app / system picker);
+	     a desktop browser ignores `capture` and opens its file dialog either way. -->
+	<div class="picks">
+		<label class="pick">
+			<span class="button primary">{t('journal.photo.take')}</span>
+			<input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange={onPick} />
+		</label>
+		<label class="pick">
+			<span class="button primary">{t('journal.photo.choose')}</span>
+			<input type="file" accept="image/jpeg,image/png,image/webp" onchange={onPick} />
+		</label>
+	</div>
 	{#if pickError}<p class="error" role="alert">{pickError}</p>{/if}
 	<p><a href={journalHref({ view: 'list' })}>{t('journal.photo.back')}</a></p>
 {:else if flow.step === 'uploading'}
@@ -380,6 +384,12 @@
 	}
 
 	/* The native input stays reachable for keyboards and screen readers. */
+	.picks {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
 	.pick input {
 		position: absolute;
 		width: 1px;

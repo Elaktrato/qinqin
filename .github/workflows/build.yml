@@ -20,7 +20,9 @@ jobs:
         with:
           node-version: 26
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/android/package-lock.json
       # Cheap consistency checks first; they use the setup-node Node above and
       # need no install, network or data download.
       - name: Check sources and script tests
@@ -38,6 +40,14 @@ jobs:
         run: |
           npm run check
           npm test
+      # The Android shell's first-run screen (TypeScript, jsdom): cheap, no Android SDK needed. Its Java unit tests
+      # run in the android-emulator workflow (./gradlew testDebugUnitTest).
+      - name: Check and test the Android first-run screen
+        working-directory: apps/android
+        run: |
+          npm ci
+          npm test
+          npm run check
       # The font pack script's build test needs its subsetter (a build-time
       # tool of the script only) and opencc-js from the web install above;
       # without them the first script test run skips it.
@@ -138,6 +148,27 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
+      # Build metadata (#154): the tag without its v on a release build, "dev"
+      # otherwise; the commit; the commit's date in UTC (the same for every
+      # rebuild of one commit).
+      - id: build
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version=dev
+          case "$REF" in refs/tags/v*) version="${REF_NAME#v}" ;; esac
+          # A release tag must be semver (v0.7.0, v0.7.0-rc.1): anything else would publish an image that
+          # reports a version the update check cannot compare. Fail here, not silently later.
+          if [ "$version" != dev ] && ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag $REF_NAME is not semver (vMAJOR.MINOR.PATCH[-pre])"
+            exit 1
+          fi
+          date=$(date -u -d "$(git show -s --format=%cI HEAD)" +%Y-%m-%dT%H:%M:%SZ)
+          {
+            echo "version=$version"
+            echo "date=$date"
+          } >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -162,13 +193,18 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.build.outputs.version }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ steps.build.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # A GitHub Release for every v* tag, after the image is pushed. The body is
-  # docs/releases/<tag>.md when that file exists, else GitHub's generated
-  # notes. Tags with a hyphen (v0.5.0-rc1) become pre-releases. Re-running the
-  # job for a tag that already has a release changes nothing.
+  # A GitHub Release for every v* tag, after the image is pushed. The body is docs/releases/<tag>.md when that
+  # file exists, else GitHub's generated notes. Tags with a hyphen (v0.5.0-rc.1) become pre-releases. The release
+  # is created as a DRAFT: the Android APK is built and signed on the owner's machine (apps/android/scripts/
+  # release-local.sh), uploaded to the draft by hand, and the owner publishes it (docs/release-checklist.md).
+  # Re-running the job for a tag that already has a release changes nothing.
   release:
     needs: image
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -177,7 +213,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - name: Create the release
+      - name: Create the draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -186,7 +222,7 @@ jobs:
             echo "Release $TAG already exists; nothing to do."
             exit 0
           fi
-          args=(--verify-tag --title "qinqin $TAG")
+          args=(--draft --verify-tag --title "qinqin $TAG")
           if [ -f "docs/releases/$TAG.md" ]; then
             args+=(--notes-file "docs/releases/$TAG.md")
           else

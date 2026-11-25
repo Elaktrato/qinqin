@@ -5,6 +5,8 @@
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick, untrack } from 'svelte';
+	import { keepAwake } from '$lib/native/awake';
+	import { buzzOnGrade } from '$lib/native/haptics';
 	import { goto } from '$app/navigation';
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
@@ -67,6 +69,7 @@ import type { Run } from '$lib/study/vacation';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { safeFrom } from '$lib/routing/here';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { addCard } from '$lib/study/commands/cards';
 	import { loadStudyData, withStudy } from '$lib/study/data';
@@ -244,6 +247,18 @@ import type { Run } from '$lib/study/vacation';
 	}
 
 	const missingConfig = !sessionConfigPresent();
+
+	/**
+	 * backToStudy returns to the page the session was started from; `reopen`
+	 * opens the study modal there (an empty, failed or ended session), a
+	 * finished session does not (the study modal design, 4.6).
+	 */
+	function backToStudy(event: MouseEvent | null, reopen: boolean): void {
+		event?.preventDefault();
+		void goto(safeFrom(config.from)).then(() => {
+			if (reopen && session.alive) session.studyModal.show();
+		});
+	}
 
 	let loading = $state(true);
 	let loadError = $state('');
@@ -1070,6 +1085,7 @@ import type { Run } from '$lib/study/vacation';
 				return;
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
+			buzzOnGrade(session.workspaces.current?.settings, value);
 
 			const result = step.recorded;
 			let recorded: ReviewEvent | null = null;
@@ -1214,7 +1230,14 @@ import type { Run } from '$lib/study/vacation';
 	}
 
 	onMount(() => {
-		if (missingConfig) void goto('/study');
+		if (missingConfig) void goto('/study', { replaceState: true });
+	});
+
+	// The screen stays on while cards are being studied; it may sleep again at the end of the session and when
+	// the page is left (the effect's cleanup).
+	$effect(() => {
+		if (missingConfig || complete || loading || loadError !== '' || noWorkspace) return;
+		return keepAwake();
 	});
 
 	// Refetch when the active workspace changes; the header switcher makes
@@ -1246,27 +1269,27 @@ import type { Run } from '$lib/study/vacation';
 	{:else if workspaceMismatch}
 		<Section title={t('study.session.unavailable')} level={2}>
 			<p class="error" role="alert">{workspaceMismatch}</p>
-			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+			<div class="actions"><Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button></div>
 		</Section>
 	{:else if loadError}
 		<Section title={t('study.session.unavailable')} level={2}>
 			<p class="error" role="alert">{loadError}</p>
 			<div class="actions">
 				<Button variant="primary" onclick={retryLoad}>{t('study.session.retry')}</Button>
-				<Button href="/study">{t('study.session.back')}</Button>
+				<Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button>
 			</div>
 		</Section>
 	{:else if noWorkspace}
 		<Section title={t('study.session.noWorkspace')} level={2}>
 			<p class="hint">{t('study.session.noWorkspaceText')}</p>
-			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+			<div class="actions"><Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button></div>
 		</Section>
 	{:else if loading}
 		<p class="hint" role="status">{t('study.session.loading')}</p>
 	{:else if queue.length === 0}
 		<Section title={t('study.session.empty')} level={2}>
 			<p class="hint">{t('study.session.emptyText')}</p>
-			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+			<div class="actions"><Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button></div>
 		</Section>
 	{:else if complete && viewing === null}
 		<h1 class="summary-title">{t('study.session.complete')}</h1>
@@ -1310,7 +1333,7 @@ import type { Run } from '$lib/study/vacation';
 			</p>
 			<Mascot level={progress.level} streak={streak.current} todayDone={streak.todayDone} size={72} />
 			<div class="actions">
-				<Button variant="primary" href="/study">{t('study.session.back')}</Button>
+				<Button variant="primary" href={safeFrom(config.from)} onclick={(e: MouseEvent) => backToStudy(e, false)}>{t('study.session.done')}</Button>
 				{#if steps.length > 0}
 					<Button aria-keyshortcuts="z" onclick={() => void goBack()}>{t('study.session.regrade.summaryBack')}</Button>
 				{/if}
@@ -1321,6 +1344,7 @@ import type { Run } from '$lib/study/vacation';
 		{@const kindLabel = KIND_TASK_LABELS[item.kind]}
 		<StudyFace
 			{kindLabel}
+			onend={() => backToStudy(null, true)}
 			deckLevel={deckLevelText(item)}
 			cardLabel={t('study.session.cardLabel', { kind: kindLabel })}
 			headingLabel={t('study.session.cardHeading', {

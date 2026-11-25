@@ -39,6 +39,8 @@ export interface AppDeps {
 	window: EventSource | null;
 	/** The document, for visibility; null outside a browser. */
 	document: VisibilitySource | null;
+	/** The IndexedDB factory (the durable review outbox); null or absent: the outbox uses localStorage. */
+	indexedDB?: IDBFactory | null;
 	/** Whether the browser says it is online (navigator.onLine). */
 	online(): boolean;
 	/** The service worker container; null: no worker (tests, outside a browser). */
@@ -49,6 +51,15 @@ export interface AppDeps {
 export function webStorage(name: 'localStorage' | 'sessionStorage'): Storage | null {
 	try {
 		return typeof globalThis[name] === 'undefined' ? null : globalThis[name];
+	} catch {
+		return null;
+	}
+}
+
+/** webIndexedDB: the browser's IndexedDB, or null where it is missing or access throws. */
+export function webIndexedDB(): IDBFactory | null {
+	try {
+		return typeof indexedDB === 'undefined' ? null : indexedDB;
 	} catch {
 		return null;
 	}
@@ -71,6 +82,7 @@ export function browserDeps(): AppDeps {
 		timers: browserTimers,
 		window: typeof window === 'undefined' ? null : window,
 		document: typeof document === 'undefined' ? null : document,
+		indexedDB: webIndexedDB(),
 		online: () => typeof navigator === 'undefined' || navigator.onLine !== false,
 		worker: browserRegistrationEnv()
 	};

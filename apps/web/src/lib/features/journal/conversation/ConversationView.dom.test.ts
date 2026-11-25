@@ -26,9 +26,9 @@ vi.mock('$lib/features/reader/useLookup.svelte', () => ({
 			return () => {};
 		}
 		close(): void {}
-		pointermove(): void {}
-		pointerleave(): void {}
-		pointerdown(): void {}
+		listen(): () => void {
+			return () => {};
+		}
 	}
 }));
 vi.mock('$lib/features/reader/PopupStackView.svelte', async () => ({ default: (await import('./EmptyStub.test.svelte')).default }));
@@ -114,6 +114,28 @@ describe('ConversationView', () => {
 		expect(sendTurn).toHaveBeenCalledWith(3, 'c1', '我去了公园。', expect.any(String), expect.any(AbortSignal));
 		expect((await screen.findByRole('alert')).textContent).toMatch(/all AI calls for this hour/);
 		expect((box as HTMLTextAreaElement).value).toBe('我去了公园。');
+	});
+
+	it('Ctrl+Enter during an IME composition does not send; after it, it does', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		try {
+			vi.mocked(getConversation).mockResolvedValue(talked);
+			vi.mocked(sendTurn).mockResolvedValue(talked);
+			show();
+			const box = await screen.findByRole('textbox', { name: 'Your message' });
+			await fireEvent.compositionStart(box);
+			await fireEvent.compositionUpdate(box, { data: 'ni' });
+			await fireEvent.input(box, { target: { value: '你好' } });
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true, isComposing: true });
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true, keyCode: 229 });
+			expect(sendTurn).not.toHaveBeenCalled();
+			await fireEvent.compositionEnd(box, { data: '你好' });
+			vi.advanceTimersByTime(100);
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true });
+			expect(sendTurn).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it('keeps the focus in the message field through a turn and reads the reply out', async () => {

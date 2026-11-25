@@ -9,7 +9,7 @@ segmenter. Format: `docs/contracts/lemma/README.md` (format 2).
 
 - Author: written for qinqin by the project (issues #165 and #177). The rules were ported from the
   project's own Go deinflector and extended; no rules were copied from other deinflectors or grammar books.
-- Licence: CC0 1.0 (`LICENSE`).
+- Licence: CC BY 4.0 (`LICENSE`). Credit: "qinqin contributors, CC BY 4.0", https://github.com/Elaktrato/qinqin
 
 ## Copies
 

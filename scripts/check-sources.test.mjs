@@ -231,6 +231,39 @@ test('built-in theme packs are bundled packs that need a LICENSE and a docs entr
 	assert.doesNotMatch(out, /builtin\/night/);
 });
 
+test('rule g: a project-written pack must be CC BY 4.0 with the qinqin credit and its legal code', () => {
+	const bad = okPacks();
+	bad['plugins/data/ja-grammar'] = { id: 'ja-grammar', license: 'CC0-1.0', attribution: 'written for qinqin; CC0 1.0' };
+	const out = checkSources(repo(bad, DOC + '- **J** (`ja-grammar`)\n')).join('\n');
+	assert.match(out, /plugins\/data\/ja-grammar\/manifest.json: project-written pack must state license "CC-BY-4.0"/);
+	assert.match(out, /plugins\/data\/ja-grammar\/manifest.json: attribution must carry the credit "qinqin contributors, CC BY 4.0"/);
+	assert.match(out, /plugins\/data\/ja-grammar: LICENSE must be the CC BY 4.0 legal code/);
+
+	const good = okPacks();
+	good['plugins/data/ja-grammar'] = {
+		id: 'ja-grammar',
+		license: 'CC-BY-4.0 (the lessons); the syllabus is referenced',
+		attribution: 'x; qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin)'
+	};
+	const root = repo(good, DOC + '- **J** (`ja-grammar`)\n');
+	writeFileSync(join(root, 'plugins/data/ja-grammar/LICENSE'), 'Attribution 4.0 International\n');
+	assert.deepEqual(checkSources(root), []);
+});
+
+test('rule g: the licence is exactly CC-BY-4.0, optionally with a parenthesised qualifier', () => {
+	const make = (license) => {
+		const p = okPacks();
+		p['plugins/data/ja-grammar'] = { id: 'ja-grammar', license, attribution: 'qinqin contributors, CC BY 4.0' };
+		const root = repo(p, DOC + '- **J** (`ja-grammar`)\n');
+		writeFileSync(join(root, 'plugins/data/ja-grammar/LICENSE'), 'Attribution 4.0 International\n');
+		return checkSources(root).join('\n');
+	};
+	assert.equal(make('CC-BY-4.0'), '');
+	assert.equal(make('CC-BY-4.0 (the lessons)'), '');
+	for (const bad of ['CC-BY-4.0-or-later', 'CC-BY-4.0X', 'CC-BY-4.01', 'CC-BY-4.0; plus other terms', 'cc-by-4.0'])
+		assert.match(make(bad), /must state license "CC-BY-4\.0"/, bad);
+});
+
 /** withFont adds a font file (and optionally a licence text) to a temp repository. */
 function withFont(root, rel, licence) {
 	mkdirSync(dirname(join(root, rel)), { recursive: true });

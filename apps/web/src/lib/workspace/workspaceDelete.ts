@@ -5,7 +5,7 @@
 
 import type { Workspace } from '$lib/api/types';
 import { workspaceDisplay } from '$lib/languages';
-import { EXTRA_TYPES_KEY, LAST_CARD_TYPES_KEY } from '$lib/study/cardTypesMemory';
+import { setupCacheWorkspace } from '$lib/study/setupStore.svelte';
 import { PENDING_REVIEWS_KEY } from '$lib/study/events';
 import { INELIGIBLE_KEY } from '$lib/study/ineligible';
 
@@ -74,8 +74,8 @@ function dropPending(storage: Storage, id: number): void {
 
 /**
  * forgetWorkspace removes what this browser keeps for a deleted
- * workspace: its daily session receipts, its remembered card types and
- * queued reviews (localStorage), and this tab's ineligible-companion
+ * workspace: its daily session receipts, its cached study setups (every
+ * user's: a workspace id is global) and queued reviews (localStorage), and this tab's ineligible-companion
  * memory (sessionStorage). Other workspaces' entries and global
  * preferences stay. The selection key is the store's business.
  */
@@ -86,12 +86,10 @@ export function forgetWorkspace(id: number, local: Storage | null, session: Stor
 			const doomed: string[] = [];
 			for (let i = 0; i < local.length; i++) {
 				const key = local.key(i);
-				if (key !== null && key.startsWith(prefix)) doomed.push(key);
+				if (key !== null && (key.startsWith(prefix) || setupCacheWorkspace(key) === id)) doomed.push(key);
 			}
 			for (const key of doomed) local.removeItem(key);
 		});
-		attempt(() => dropEntry(local, LAST_CARD_TYPES_KEY, id));
-		attempt(() => dropEntry(local, EXTRA_TYPES_KEY, id));
 		dropPending(local, id);
 	}
 	if (session !== null) {

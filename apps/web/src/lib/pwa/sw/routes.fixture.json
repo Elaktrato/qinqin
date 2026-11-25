@@ -116,6 +116,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/push/subscriptions/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/rows/{key}",
 		"access": "user"
 	},
@@ -177,6 +181,10 @@
 	},
 	{
 		"pattern": "GET /api/admin/settings/smtp",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/update",
 		"access": "admin"
 	},
 	{
@@ -380,6 +388,22 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/push/subscriptions",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/push/vapid-key",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/reminders/plan",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/reminders/unsubscribe",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/rows",
 		"access": "user"
 	},
@@ -428,6 +452,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/version",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
 	},
@@ -445,6 +473,10 @@
 	},
 	{
 		"pattern": "PATCH /api/admin/settings/auth",
+		"access": "admin"
+	},
+	{
+		"pattern": "PATCH /api/admin/update/settings",
 		"access": "admin"
 	},
 	{
@@ -541,6 +573,10 @@
 	},
 	{
 		"pattern": "POST /api/admin/settings/smtp/test",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/update/check",
 		"access": "admin"
 	},
 	{
@@ -688,6 +724,18 @@
 		"access": "user"
 	},
 	{
+		"pattern": "POST /api/push/subscriptions",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/reminders/test",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/reminders/unsubscribe",
+		"access": "public"
+	},
+	{
 		"pattern": "POST /api/segment",
 		"access": "user"
 	},
@@ -753,6 +801,10 @@
 	},
 	{
 		"pattern": "PUT /api/me/time-zone",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/reminders/facts",
 		"access": "user"
 	},
 	{

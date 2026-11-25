@@ -26,7 +26,9 @@ where the rule is implemented today.
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `examples/` (AI example sentences: drafts, kept examples marked `ai`, reports), `journal/` (the journal's entries, reviews, topic ideas, settings and the conversation partner's conversations; the mistake/suggestion kind), `grammar/` (lesson progress) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Features | `features/` (the per-user switches of the four core features) |
+| Version | `version/` (`GET /api/version`, the contract version, the native bridge level and features, the administrator's release check) |
 | Settings | `settings/` (workspace settings keys and their merge; the user-global keyed rows `home-layout`, `activity-view`, `widget-options` and `nav-layout`) |
+| Reminders | `reminders/` (the opt-in `reminders` row, the client's facts, the plan the shell schedules local notifications from, web push routes, the email unsubscribe link) |
 | Data safety | `backup/` (archive format 2, id remapping) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
 | Interface text | `i18n/` (catalogue format, key scheme, message syntax, Android conversion, interface-language negotiation, formatting locale) |
@@ -35,9 +37,9 @@ where the rule is implemented today.
 
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
-`auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
+`auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `journal/` → `grammar/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -105,7 +107,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
   `deckcfg:`, `limits:workspace`, `limits:deck:`, `fsrs:set:`, `fsrs:active`) is 404 on `/api/rows`,
   refused alone in a push and never shipped in `rows` (#198, #199). Pull and push the six typed collections;
   use `rows` only for the keyed rows below.
-- The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`, `milestone:*`), the personal notes (`note:*`,
+- The keyed study rows (`goals:workspace`, `study-setup`, `known:*`, `vacation:*`, `milestone:*`), the personal notes (`note:*`,
   `notecfg`), the lookup history (`lookups`, `lookupcfg`) and the user-global UI rows (`home-layout`,
   `activity-view`, `widget-options`, `nav-layout`, `appearance`) are keyed rows (`keyed/`).
 - There are no code plugins (#199, record 0006). Flashcards, the reader, the journal and grammar are core
@@ -165,6 +167,7 @@ fixes the shape.
 | Key | Scope | JSON shape | Owner code path | Pinned by |
 | --- | --- | --- | --- | --- |
 | `goals:workspace` | workspace | `{version:1, showStreak: bool, history: [{from: "YYYY-MM-DD", metric: "activity:<type>"\|"flashcards:new"\|"flashcards:studyTime"\|null, target: int\|null}]}`; the goal of day D is the last entry with `from <= D`; a version above 1 is never overwritten; unknown keys kept; at most 400 entries; progress is never stored | `goals/goals.ts` | `goals/goal-rows.json` |
+| `study-setup` | workspace | `{version: 1, decks: "all" \| [deck id], mode: "decks"\|"levels", schemeId: int\|null, levelName: string\|null, cardTypes: [non-opt-in kind], unchecked: ["reverse"\|"cloze"], newLimit: 1..999, reviewLimit: 1..999, newOrder, typeOrder: "mixed"\|"grouped"}`; the setup the study modal starts; read member by member (a bad member is its default, `"all"` stays live so a new deck joins); repaired member by member (a gone level is decks mode, an explicit list with no deck left is `"all"`, kinds the language lacks are dropped); written only when the learner changes something, unknown members kept, a newer version kept | `study/setup.ts`, `study/setupStore.svelte.ts` | `study/setup.json` |
 | `vacation:<ULID>` | **user-global** (`workspaceId: null`; written without `workspace`) | `{version:1, id, start: "YYYY-MM-DD", end: day \| null, scope: "all" \| {workspaces: int[]}, createdDay, createdAt}` | `study/vacation.ts`, `study/readModel.ts` (reads rows with no workspace) | `scheduler/vacation-days.json`, `scheduler/vacation-schedule.json` |
 | `note:<entryId>` | workspace (the current one, even for an entry of another language) | `{version:1, entryId: int (= the key's number), text: string (plain text, non-empty after trim), ...unknown kept}`; key decimal, positive, no leading zero; absent unless all hold; editor cap 2000 code points; delete = tombstone; restore rewrites key and `entryId` to the target entry, drops it when unresolved | `notes/notes.ts`, `notes/store.ts`; restore: `server/internal/backup/remap.go` | `notes/note-rows.json`, `notes/note-text.json`, `backup/remap.json` |
 | `known:<entryId>` | workspace (the book's workspace when written from the reader) | `{version:1, entryId: int (= the key's number), createdAt: RFC 3339, ...unknown kept}`; key decimal, positive, no leading zero; anything else is ignored; unmark = tombstone, mark again revives the same key; the learner's manual "I know this word" (a known entry for the reader, smart readings and starter decks; creates no card); restore rewrites key and `entryId` to the target entry, drops it when invalid or unresolved | `study/knownMarks.ts`, `study/commands/keyed.ts` (`setKnownMark`, `setKnownMarks`), `study/known.ts`; restore: `server/internal/backup/remap.go` | `reader/word-states.json`, `frequency/known.json`, `backup/remap.json` |
@@ -172,7 +175,7 @@ fixes the shape.
 | `notecfg` | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `lookups` | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
 | `lookupcfg` | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
-| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}, replaces?: <review id>}`; an unknown `mode` reads as `vocab`; `replaces` (a changed grade, #131) copies the target's `cardId`, `mode`, `meta` and `ts`, and a family of linked reviews counts only its greatest id, before the duplicate-card merge and before anything counts | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `study/replaced.ts`, `server/internal/events` (`Replaced`), `server/internal/stats`, `server/internal/backup` (restore relinks) | `events/review-parse.json`, `events/review-replace.json`, `events/activity.json`, `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
+| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}, replaces?: <review id>}`; an unknown `mode` reads as `vocab`; `replaces` (a changed grade, #131) copies the target's `cardId`, `mode`, `meta` and `ts`, and a family of linked reviews counts only its greatest id, before the duplicate-card merge and before anything counts | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `study/replaced.ts`, `server/internal/events` (`Replaced`), `server/internal/stats`, `server/internal/backup` (restore relinks) | `events/review-parse.json`, `events/review-replace.json`, `events/activity.json`, `pwa/outbox-v3.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not a keyed row) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396 (merged object ≤ 64 KiB); unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json`, `settings/workspace-settings.json` |
 | workspace settings keys `hiddenDictionaries`, `audioAutoplay`, `audioDeviceVoice` | workspace row of `workspaces.settings` | `hiddenDictionaries`: positive integer dictionary ids (others ignored); `audioAutoplay`: bool, default false; `audioDeviceVoice`: bool, default true; same merge | `dictionaryVisibility.ts`, `audio/settings.ts` | `settings/workspace-settings.json` |
 | `home-layout` | **user-global** | `{version: 1, widgets: [widget id]}`; a newer version is read leniently; unknown ids are kept stored, in place; no row = the default layout | `widgets/layout.ts` | `settings/core-rows.json` |
@@ -261,13 +264,14 @@ row shapes, caps and the remapping of entry, card, workspace and book ids on res
 exported and restored as global rows. Never in an archive: password hash, email, sessions, TOTP secrets,
 AI keys, SMTP settings, QINQIN_SECRET.
 
-## PWA outbox v2 (`pwa/`)
+## PWA outbox v3 (`pwa/`)
 
 Web-specific storage, binding semantics: a review recorded offline is the ordinary `review` event with its
 client ULID, retried safely because the server counts an id once. Outbox items are per user; only the
 signed-in user's are flushed, oldest first; a 401 or a restriction 403 stops the flush and keeps items;
 other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; foreign items expire after
-30 days. Offline sessions create no cards.
+30 days. Offline sessions create no cards. The web keeps the queue in IndexedDB, one record per review,
+committed before the POST (write-ahead; a kill right after grading loses nothing), with localStorage as the fallback.
 
 ## Device-local state (not shared)
 
@@ -275,7 +279,7 @@ The web keeps these on the device only (`localStorage`, IndexedDB); they are not
 contract, so Android is free to keep its own: the session setup of the study page (`qinqin.study.session`,
 card-type memory `qinqin.study.cardTypes`, `qinqin.study.extraTypes`), companions found ineligible
 (`qinqin.study.ineligible`, the `skip` set of `cards/deck-session.json`), recently shown sentences
-(`qinqin.study.sent.v1`), the review outbox (`qinqin.study.pending.v2`, `pwa/`), the `session` event receipt
+(`qinqin.study.sent.v1`), the review outbox (IndexedDB `qinqin-outbox`; `qinqin.study.pending.v2` is its migrated-away predecessor and fallback, `pwa/`), the `session` event receipt
 (`qinqin.session.<ws>.<day>`), the cached zone history (`qinqin.studyDay.<user>`), reader preferences and rail
 (`qinqin.reader.prefs`, `qinqin.reader.rail`), the highlight colour (`qinqin.reader.highlightColor`), the
 character map grouping (`qinqin.map.groupBy.*`), grammar reading toggles, the journal photo draft, offline

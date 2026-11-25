@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { onDestroy, onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { onDestroy, onMount, untrack } from 'svelte';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
+	import { isShell, startIncoming, startNative, type IncomingHandle } from '$lib/native';
+	import { setDevicePort } from '$lib/reminders/device/port';
+	import { shellPort } from '$lib/reminders/device/shellPort';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
@@ -25,8 +28,10 @@
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
+	import { startReminders } from '$lib/reminders/runtime';
 	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
+	import StudyModal from '$lib/features/flashcards/setup/StudyModal.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
@@ -39,8 +44,23 @@
 	const given = existingApp();
 	const app = provideApp(given ?? createAppContext(browserDeps()));
 	onMount(() => app.start());
+	// The Android shell's back button and system bars; nothing in a browser (lib/native).
+	onMount(() => startNative());
+	// Reminders on the phone: the shell's local notifications are the device channel's port (#137).
+	onMount(() => {
+		if (!isShell()) return;
+		setDevicePort(shellPort);
+		return () => setDevicePort(null);
+	});
 	onDestroy(() => {
 		if (given === null) app.dispose();
+	});
+	// A text shared to the Android app, a selected text ("Look up in qinqin") or a tapped notification waits here
+	// until the person is signed in and the workspaces are loaded, then opens (lib/native/incoming.ts).
+	let incoming: IncomingHandle | null = null;
+	onMount(() => {
+		incoming = startIncoming({ ready: () => appReady, open: (href) => void goto(href) });
+		return () => incoming?.stop();
 	});
 
 	let { children } = $props();
@@ -86,9 +106,20 @@
 		document.documentElement.toggleAttribute('data-bottom-bar', bottomBar);
 		return () => document.documentElement.removeAttribute('data-bottom-bar');
 	});
+	const appReady = $derived(
+		booted && signedIn && !restricted && session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length > 0
+	);
+	$effect(() => {
+		if (appReady) incoming?.poke();
+	});
 	const noWorkspaces = $derived(
 		session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length === 0
 	);
+
+	// A navigation the study modal did not start (Back in the browser, a link
+	// elsewhere) closes it; the modal's own navigations close it first and
+	// reopen it once they land (session.studyModal.show after goto).
+	afterNavigate(() => app.session?.studyModal.hide());
 
 	// A guard redirect replaces the history entry it leaves: Back from
 	// home after signing in must not land on /login only to be sent home
@@ -174,6 +205,14 @@
 			clearTimeout(timer);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
+	});
+
+	// Reminders (#137): facts for the server and local notifications for the Android shell, only for
+	// accounts that turned them on (lib/reminders/runtime.ts reads the row); stops with the session.
+	$effect(() => {
+		const current = session;
+		if (current === null || !current.workspaces.loaded || app.auth.restriction !== null) return;
+		return untrack(() => startReminders(current));
 	});
 
 	// The person's appearance row: loaded once per signed-in user (not for a
@@ -309,6 +348,8 @@
 			</div>
 
 			{#if app.logoutPrompt !== null}<LogoutDialog />{/if}
+			<!-- The study modal (one per session), opened by every Study button. -->
+			{#if signedIn && !restricted && session !== null}<StudyModal />{/if}
 
 			<!-- The one main landmark of every page (the skip link's target):
 			     pages bring plain containers, never their own <main>. -->
@@ -512,9 +553,12 @@
 			border-radius: 0;
 		}
 		/* The bottom bar is fixed over the page's end: the page ends above it
-		   (app.css sets --bottom-bar-space with the bar, safe area included). */
+		   (app.css sets --bottom-bar-space with the bar, safe area included).
+		   An open lookup sheet covers more: while it is open LookupSheet sets
+		   --lookup-sheet-space to its height, so the last line of the text can
+		   still scroll above it. */
 		.framed .panel {
-			padding-bottom: var(--bottom-bar-space);
+			padding-bottom: max(var(--bottom-bar-space), var(--lookup-sheet-space, 0px));
 		}
 	}
 

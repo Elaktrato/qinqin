@@ -87,11 +87,16 @@ func TestListThemes(t *testing.T) {
 	for i, p := range want.BuiltinPacks {
 		gp := got.Packs[i]
 		// The full licence text of a built-in pack, its embedded LICENSE.
-		if gp.LicenseText != builtin[i].License || !strings.Contains(gp.LicenseText, "Permission is hereby granted") {
+		// The qinqin packs are CC BY 4.0 (#217), the third-party palettes MIT.
+		wantText, wantLic := "Permission is hereby granted", "MIT"
+		if strings.HasPrefix(p.PackID, "qinqin") {
+			wantText, wantLic = "Attribution 4.0 International", "CC-BY-4.0"
+		}
+		if gp.LicenseText != builtin[i].License || !strings.Contains(gp.LicenseText, wantText) {
 			t.Errorf("pack %s licenseText = %q", gp.PackID, gp.LicenseText)
 		}
 		if gp.PackID != p.PackID || !gp.Builtin || strings.Join(gp.Themes, ",") != strings.Join(p.Themes, ",") ||
-			gp.License != "MIT" || gp.Attribution == "" || gp.Notice == "" || gp.Name == "" {
+			gp.License != wantLic || gp.Attribution == "" || gp.Notice == "" || gp.Name == "" {
 			t.Errorf("pack %d = %+v, want %s %v", i, gp, p.PackID, p.Themes)
 		}
 		wantIDs = append(wantIDs, p.Themes...)

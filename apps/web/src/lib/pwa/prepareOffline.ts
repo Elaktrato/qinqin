@@ -8,10 +8,9 @@ import { entryPath } from '../api/entries';
 import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
 import { writableChars } from '../study/writing';
 import type { StudyContext } from '../study/studyContext';
-import { type StudyCardKind, type StudyHistory } from '../study/types';
-import { effectiveCardTypes, effectiveKinds, type ExtraChoices } from '../study/cardTypesMemory';
+import { type StudyHistory } from '../study/types';
 import { enabledKinds } from '../study/deckSettings';
-import type { StudySessionConfig } from '../study/session';
+import { setupDeckIds, setupKinds, type StudySetup } from '../study/setup';
 import type { OfflineState } from './offlineState.svelte';
 
 /** The API reads every page of the app shell needs, besides the study data. */
@@ -96,13 +95,8 @@ interface Receipt {
 export interface PrepareDeps {
 	userId: number;
 	loadHistory: (workspaceId: number) => Promise<StudyHistory>;
-	config: () => StudySessionConfig;
-	/** This tab's own setup kinds, or null when the tab has none (absent: the config's). */
-	tabTypes?: () => readonly string[] | null;
-	/** The kinds last started in the workspace (cardTypesMemory), or null. */
-	remembered?: () => StudyCardKind[] | null;
-	/** The learner's opt-in checkbox choices in the workspace (cardTypesMemory). */
-	choices?: () => ExtraChoices;
+	/** The workspace's saved study setup (what the study modal would start), read after the history. */
+	setup: () => Promise<StudySetup>;
 	language: string;
 	contextFor: (data: StudyHistory, workspaceId: number, now: number) => StudyContext;
 	weights: (data: StudyHistory) => readonly number[];
@@ -203,28 +197,23 @@ export async function prepareOffline(
 			return { status: 'skipped', entries: receipt.entries };
 		}
 		const data = await d.loadHistory(workspaceId);
-		const config = d.config();
-		// A levels session cannot run offline (its entries come from the scheme
-		// API); prepare the plain deck session instead.
-		const deckIds = config.mode === 'decks' && config.deckIds.length > 0 ? config.deckIds : ['general'];
-		// The kinds a session started now would study: the tab's setup (else the
-		// kinds last started in the workspace, else vocab) plus each opt-in kind
-		// a deck in scope switches on and the learner has not unchecked — the
-		// rule of the Study page, the home widget and the deck start (effectiveKinds).
-		const tabTypes = d.tabTypes ? d.tabTypes() : config.cardTypes;
-		const kinds = effectiveKinds(
-			effectiveCardTypes(tabTypes, d.remembered?.() ?? null),
-			enabledKinds(data.deckSettings, deckIds),
-			d.choices?.() ?? {}
-		);
+		const setup = await d.setup();
+		// The decks of the saved setup ("all": every deck). A levels session cannot
+		// run offline (its entries come from the scheme API), so its deck selection
+		// is prepared instead.
+		const deckIds = setupDeckIds(setup, data.decks);
+		// The kinds a session started now would study: the setup's kinds plus each
+		// opt-in kind a deck in scope switches on and the learner has not unchecked
+		// (the rule of the study modal, the home widget and the deck start).
+		const kinds = setupKinds(setup, enabledKinds(data.deckSettings, deckIds), d.language);
 		const plan = planOffline(
 			{
 				cards: data.cards,
 				reviews: data.reviews,
 				deckIds,
 				kinds: kinds.length > 0 ? kinds : ['vocab'],
-				newLimit: config.newLimit,
-				reviewLimit: config.reviewLimit,
+				newLimit: setup.newLimit,
+				reviewLimit: setup.reviewLimit,
 				now: new Date(now),
 				w: d.weights(data),
 				ctx: d.contextFor(data, workspaceId, now),

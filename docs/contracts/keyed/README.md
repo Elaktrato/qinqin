@@ -5,7 +5,7 @@ key and scope (one workspace, or user-global), with the sync rules of the paged 
 the plugin data store of the retired code plugins and has **no namespace**. The server
 (`server/internal/keyed`) accepts only the key families of [`families.json`](families.json), each in its one
 scope; the shapes of the documents are pinned by the folder each family names (`notes/`, `lookups/`,
-`reader/`, `milestones/`, `goals/`, `scheduler/`, `settings/`, `themes/`).
+`reader/`, `milestones/`, `goals/`, `study/`, `scheduler/`, `settings/`, `themes/`).
 
 | Family | Scope | Contract |
 | --- | --- | --- |
@@ -15,9 +15,11 @@ scope; the shapes of the documents are pinned by the folder each family names (`
 | `known:<entryId>` | workspace | `reader/`, `frequency/` |
 | `milestone:<id>` | workspace | `milestones/` |
 | `goals:workspace` | workspace | `goals/` |
+| `study-setup` | workspace | `study/` (`setup.json`) |
 | `vacation:<ULID>` | user-global | `scheduler/` |
 | `home-layout`, `activity-view`, `widget-options`, `nav-layout` | user-global | `settings/` |
 | `appearance` | user-global | `themes/` |
+| `reminders` | user-global | `reminders/` |
 
 A prefix family is the prefix and at least one more character (`note:` alone is no key); any other family is the
 exact key. Keys are 1 to 512 bytes. A new family is a contract change: a line here, in `families.json`, and in

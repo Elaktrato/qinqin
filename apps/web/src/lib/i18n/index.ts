@@ -53,6 +53,11 @@ export function t(key: MessageKey, args: MessageArgs = {}): string {
 	return formatMessage(lookup(key), fmtLocale, args, { missing: strict ? 'throw' : 'keep' });
 }
 
+/** The unformatted message of `key` in the active catalogue (the page hands the service worker its push texts as these). */
+export function rawMessage(key: MessageKey): string {
+	return lookup(key);
+}
+
 /**
  * A record of interface labels read lazily: each property is a getter that calls `t` when read, so a module may
  * define the record at top level (`const LABELS = labelRecord({ read: 'settings.tokens.readOnly' })`).

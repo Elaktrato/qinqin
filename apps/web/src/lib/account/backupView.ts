@@ -163,10 +163,13 @@ export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.sessi
  */
 export function clearLocalAfterRestore(
 	storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>,
-	userId: number | null
+	userId: number | null,
+	outbox?: { dropForRestore(userId: number): number }
 ): number {
 	let dropped = 0;
 	if (userId !== null) {
+		// The durable queue (IndexedDB); the localStorage copy below is the v2 queue or the fallback.
+		dropped += outbox?.dropForRestore(userId) ?? 0;
 		try {
 			const raw = storage.getItem(PENDING_REVIEWS_KEY);
 			const v = raw ? (JSON.parse(raw) as unknown) : null;
@@ -176,12 +179,12 @@ export function clearLocalAfterRestore(
 					return owner === userId || owner === null || owner === undefined;
 				};
 				const kept = v.filter((item) => !mine(item));
-				dropped = v.length - kept.length;
+				dropped += v.length - kept.length;
 				if (kept.length === 0) storage.removeItem(PENDING_REVIEWS_KEY);
 				else if (dropped > 0) storage.setItem(PENDING_REVIEWS_KEY, JSON.stringify(kept));
 			}
 		} catch {
-			dropped = 0;
+			// Unreadable copy: nothing to count.
 		}
 	}
 	for (const k of LOCAL_KEYS_AFTER_RESTORE) {

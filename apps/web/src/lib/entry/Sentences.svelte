@@ -6,6 +6,8 @@
 	import { aiMark } from '$lib/api/examples';
 	import { markTerm } from '$lib/entry/markTerm';
 	import AiTag from '$lib/components/AiTag.svelte';
+	import ShareButton from '$lib/entry/ShareButton.svelte';
+	import { sentenceShareText } from '$lib/entry/shareText';
 
 	let {
 		sentences,
@@ -58,6 +60,7 @@
 					{:else}
 						<span class="origin">{origin(sentence)}</span>
 					{/if}
+					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? origin(sentence) : '')} label={t('entry.sentences.shareLabel')} /></span>
 				</li>
 			{/each}
 		</ul>

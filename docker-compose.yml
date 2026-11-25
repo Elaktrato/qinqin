@@ -51,6 +51,10 @@
 #                    by default; enable only if you trust every admin.
 #   QINQIN_SMTP_ALLOW_PRIVATE "1" lets the mail server be on loopback or a
 #                    private network (a relay container, a LAN host).
+#   QINQIN_VAPID_SUBJECT optional contact (mailto: or https) for web push services
+#   QINQIN_UPDATE_TOKEN  optional GitHub token (no scopes) for the release check
+#                    of Settings, Admin, Updates, when a shared address hits
+#                    GitHub's anonymous rate limit. Sent only to api.github.com.
 #   QINQIN_TRUSTED_PROXIES  which peers may tell the server a client's address
 #                    through X-Forwarded-For (sign-in limits are per client).
 #                    Empty = private networks (right behind a reverse proxy on
@@ -99,6 +103,8 @@ services:
       QINQIN_SMTP_ALLOW_PRIVATE: ${QINQIN_SMTP_ALLOW_PRIVATE:-}
       QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
       QINQIN_TRUSTED_PROXIES: ${QINQIN_TRUSTED_PROXIES:-}
+      QINQIN_UPDATE_TOKEN: ${QINQIN_UPDATE_TOKEN:-}
+      QINQIN_VAPID_SUBJECT: ${QINQIN_VAPID_SUBJECT:-}
       QINQIN_BOOTSTRAP_ADMIN: ${QINQIN_BOOTSTRAP_ADMIN:-}
       QINQIN_BOOTSTRAP_PASSWORD: ${QINQIN_BOOTSTRAP_PASSWORD:-}
       QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}

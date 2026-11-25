@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	import { errorText } from '$lib/api/apiErrors';
 	import { ApiError } from '$lib/api/client';
 	import { onMount, tick } from 'svelte';
@@ -89,7 +90,7 @@
 	}
 
 	function keydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && onCancel) {
+		if (event.key === 'Escape' && onCancel && !isImeKey(event)) {
 			event.preventDefault();
 			event.stopPropagation();
 			onCancel();

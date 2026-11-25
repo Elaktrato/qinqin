@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
+	import { downloadUrl } from '$lib/native/files';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { createServerBackup } from '$lib/api/backup';
@@ -12,7 +13,7 @@
 	import { useApp } from '$lib/context/context';
 	const app = useApp();
 
-	let { assign = (u: string) => location.assign(u) }: { assign?: (url: string) => void } = $props();
+	let { assign = (u: string) => void downloadUrl(u, 'qinqin-server-backup.tar.gz') }: { assign?: (url: string) => void } = $props();
 
 	let selected = $state(new Set(PARTS.map((p) => p.id)));
 	let password = $state('');

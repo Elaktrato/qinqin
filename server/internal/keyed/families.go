@@ -37,12 +37,14 @@ var Families = []Family{
 	{"known:", true, ScopeWorkspace},
 	{"milestone:", true, ScopeWorkspace},
 	{"goals:workspace", false, ScopeWorkspace},
+	{"study-setup", false, ScopeWorkspace},
 	{"vacation:", true, ScopeGlobal},
 	{"home-layout", false, ScopeGlobal},
 	{"activity-view", false, ScopeGlobal},
 	{"widget-options", false, ScopeGlobal},
 	{"nav-layout", false, ScopeGlobal},
 	{"appearance", false, ScopeGlobal},
+	{"reminders", false, ScopeGlobal},
 }
 
 // MaxKey caps a key's length in bytes.

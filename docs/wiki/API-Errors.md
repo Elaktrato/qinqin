@@ -143,6 +143,10 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `language_mismatch` | 422 | The book's language is not the workspace's; workspaceLanguage and bookLanguage name both. |
 | `source_unavailable` | 502 | The library source did not answer; try again later. |
 | `source_language_unavailable` | 422 | The library source has no books in the workspace's language. |
+| `push_unavailable` | 503 | Web push routes: the server has no usable QINQIN_SECRET, so it cannot keep a VAPID key (reminders/). |
+| `no_subscription` | 409 | POST /api/reminders/test with channel push: no device of the account has push turned on. |
+| `too_many_subscriptions` | 409 | POST /api/push/subscriptions: the account already has 10 push devices; remove one first. |
+| `delivery_failed` | 502 | POST /api/reminders/test: the test mail or the test notification could not be delivered (no detail is returned). |
 | `unknown_time_zone` | 400 | PUT /api/me/time-zone: the zone is not an IANA name this server knows (study-day/time-zone-api.json). |
 | `too_many_changes` | 409 | PUT /api/me/time-zone: the account has the most zone changes the history keeps (study-day/). |
 | `licence_mismatch` | 409 | POST /api/admin/packs/staged/{token}: the licence sent is not exactly the staged pack's (the administrator confirms the licence the review showed). |
