@@ -489,6 +489,7 @@
 						<Field
 							label={t('journal.editor.titleLabel')}
 							hideLabel
+							data-testid="journal-title"
 							lang={studyLanguage}
 							bind:value={title}
 							maxlength={200}
@@ -501,6 +502,7 @@
 						hideLabel
 						multiline
 						lang={studyLanguage}
+						data-testid="journal-entry"
 						bind:value={text}
 						bind:element={textarea}
 						maxlength={ENTRY_MAX_CHARS}

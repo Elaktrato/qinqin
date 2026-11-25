@@ -148,6 +148,7 @@
 			<Field
 				label={t('flashcards.card.typeWord')}
 				id="cloze-answer"
+				data-testid="typing-answer"
 				autocomplete="off"
 				autocapitalize="off"
 				spellcheck="false"

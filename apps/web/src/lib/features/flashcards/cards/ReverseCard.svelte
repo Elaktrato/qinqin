@@ -102,6 +102,7 @@
 		<Field
 			label={t('flashcards.card.typeWord')}
 			id="reverse-answer"
+			data-testid="typing-answer"
 			autocomplete="off"
 			autocapitalize="off"
 			spellcheck="false"

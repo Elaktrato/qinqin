@@ -28,6 +28,17 @@ function install(): void {
 		},
 		true
 	);
+	// Safety net for implicit form submission (Enter in a single-line input):
+	// browsers normally block it during composition, but Android Chrome with some
+	// keyboards sends the confirming Enter with isComposing false. Cancelling the
+	// default of an IME Enter keeps every <form onsubmit> from firing on it.
+	document.addEventListener(
+		'keydown',
+		(e) => {
+			if (e.key === 'Enter' && isImeKey(e) && e.target instanceof HTMLInputElement) e.preventDefault();
+		},
+		true
+	);
 }
 install();
 

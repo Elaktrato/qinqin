@@ -37,4 +37,17 @@ describe('isImeKey', () => {
 		expect(isImeKey(key({ key: 'Enter', isComposing: false }))).toBe(false);
 		expect(imeComposing()).toBe(false);
 	});
+
+	it('cancels the default of an IME Enter in an input (no implicit form submission), not of a normal Enter', () => {
+		const input = document.createElement('input');
+		document.body.append(input);
+		const ime = key({ key: 'Enter', keyCode: 229 });
+		input.dispatchEvent(ime);
+		expect(ime.defaultPrevented).toBe(true);
+		vi.advanceTimersByTime(1000);
+		const plain = key({ key: 'Enter', keyCode: 13 });
+		input.dispatchEvent(plain);
+		expect(plain.defaultPrevented).toBe(false);
+		input.remove();
+	});
 });
