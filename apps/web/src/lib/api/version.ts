@@ -16,6 +16,7 @@ export interface VersionInfo {
 	buildDate?: string;
 }
 
+/** Not called by a screen today; the Android first-run screen (apps/android) does this check itself. */
 export function getVersion(): Promise<VersionInfo> {
 	return api('/api/version');
 }

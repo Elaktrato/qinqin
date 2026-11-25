@@ -5,14 +5,15 @@ import "qinqin/internal/update"
 // ContractVersion is the version of the client contracts in docs/contracts/.
 // It goes up by one in the change that adds a CHANGELOG entry a client must
 // follow (docs/contracts/version/README.md).
-const ContractVersion = 1
+const ContractVersion = 2
 
 // BridgeLevel and BridgeFeatures say what this server's web app uses from a
-// native shell (docs/contracts/version/README.md). Today the web app calls no
-// optional shell feature.
+// native shell (docs/contracts/version/README.md): features it uses when the
+// shell has them, not ones it requires. `status-bar`: lib/native/bars.ts sends
+// the theme's chrome colour to QinqinShell.setBars.
 const BridgeLevel = 1
 
-var bridgeFeatures = []string{}
+var bridgeFeatures = []string{"status-bar"}
 
 // Build is what the binary knows about itself (set with -ldflags in the image).
 type Build struct {

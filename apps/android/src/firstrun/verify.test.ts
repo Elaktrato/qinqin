@@ -15,7 +15,7 @@ const ok = (over: object = {}): HttpFn => async (url) => ({ status: 200, url, da
 
 describe('verifyServer', () => {
 	it('accepts a qinqin answer and reports its version', async () => {
-		const r = await verifyServer('https://q.example.org', ok(), { level: 1, features: [] });
+		const r = await verifyServer('https://q.example.org', ok());
 		expect(r).toEqual({ ok: true, version: '0.6.0', compat: { status: 'ok', missing: [] }, bridge: answer.bridge });
 	});
 

@@ -5,6 +5,13 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## Stage 1 review — the bridge names `status-bar` (contract 2)
+
+- **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["status-bar"]}` (was `[]`): the web
+  app sends the theme's chrome colour to the shell's `setBars` when the shell has it (`lib/native/bars.ts`). A
+  shell without `status-bar` now gets the "missing in this app" warning. `version/version.json` follows;
+  `bridge-compat.json` is unchanged.
+
 ## #154 — version, bridge and release check (contract 1)
 
 - **Contract version:** the answer of `GET /api/version` carries `contract`, an integer that starts at 1 with this

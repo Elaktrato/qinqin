@@ -29,9 +29,16 @@ one it was built against; it does not refuse a server for it.
 `bridge = {level, features}` is what this server's web app can use from a native shell. `level` goes up when
 the web app starts to rely on a shell behaviour an older shell lacks; `features` names the optional pieces the
 web app uses when the shell has them (`secure-storage`, `tts`, `share`, `files`, `status-bar`, `keep-awake`,
-`local-notifications`). Today: `{level: 1, features: []}`. `bridge-compat.json` is the rule: `shellOutdated`
+`local-notifications`). A server lists a feature when its web app uses it if the shell has it; a shell lists what
+it implements (the Android shell: `status-bar`, `QinqinShell.setBars`). Today: `{level: 1, features: ["status-bar"]}`. `bridge-compat.json` is the rule: `shellOutdated`
 (level below the server's, or features missing, sorted), `serverOutdated` (level above), else `ok`;
 `shellOutdated` wins. A missing feature is a warning: the web app also runs in a browser, which has none.
+
+Who uses the rule: the Android shell's first-run screen (`apps/android/src/firstrun/verify.ts`) compares the
+server's bridge with `SHELL_BRIDGE` and warns before opening the app. That screen is a separate bundle in the
+APK and cannot import the web app, so the rule is written twice; `bridge-compat.json` pins both copies. The web
+app's `lib/api/version.ts` (`getVersion`, `bridgeCompatibility`) is the reference implementation of the same
+rule and is not called by any screen today.
 
 ## Administrator routes
 
