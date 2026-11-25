@@ -69,6 +69,7 @@ fi
 # --- the toolchain --------------------------------------------------------------------------------------------
 [ -n "${JAVA_HOME:-}" ] || die "JAVA_HOME is not set. Point it at a JDK 17 or newer (the project uses 21), e.g. export JAVA_HOME=/path/to/jdk-21"
 [ -x "$JAVA_HOME/bin/java" ] || die "JAVA_HOME=$JAVA_HOME has no bin/java"
+export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"   # apksigner and Gradle start whatever java is first on PATH
 java_major=$("$JAVA_HOME/bin/java" -version 2>&1 | sed -n '1s/.*version "\([0-9]*\).*/\1/p')
 [ -n "$java_major" ] && [ "$java_major" -ge 17 ] || die "the JDK in JAVA_HOME is version '${java_major:-unknown}'; 17 or newer is needed"
 
