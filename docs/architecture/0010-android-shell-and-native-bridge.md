@@ -56,6 +56,12 @@ UI in native code.
   `bridgeCompatibility` against the server's `/api/version` says `shellOutdated` or `serverOutdated`. A server
   never refuses a shell, and the shell never refuses a server. The web app raises the level when it starts to
   rely on a shell behaviour an older shell lacks.
+- **Offline and storage stay in the WebView (#35, measured in an emulator, `docs/superpowers/specs/2026-11-23-android-shell-design.md`).**
+  The service worker registers over `http://localhost` or https and the app starts offline from its cache; the
+  quota is about 60 % of the disk and the web app stores 5 to 20 MB, so there is no native file storage. The session
+  token stays in `localStorage` (no Keystore plugin). The manifest declares `ACCESS_NETWORK_STATE` so the page's
+  online and offline events fire. The emulator job (`.github/workflows/android-emulator.yml`) is the only place
+  these run.
 - **One source of screens.** No screen except the first-run one exists in native code. A feature of the web app
   is a feature of the app.
 - **Cleartext.** Android cannot restrict cleartext to address ranges, so the manifest's network security config
@@ -105,6 +111,8 @@ Not allowed:
 
 ## Open questions
 
+- Unsent reviews are in localStorage, which Chromium commits a few seconds late: a process kill right after a grade
+  loses it (measured, #35). Moving the outbox to IndexedDB belongs to the study data layer.
 - Whether plain http for 100.64.0.0/10 (Tailscale and carrier-grade NAT) should count as private. It does not
   today (the secure default); the owner decides.
 - Which Android package id the app ships under (`identity.json` is a placeholder).

@@ -30,6 +30,14 @@ The first screen asks for your server's address. Type it the way you would in a 
 
 Offline start and study work as in the browser, through the web app's own service worker ([Install and offline](Install-and-offline)): the same decks, queue and outbox, the same limits. That needs **https** (or `localhost`): over plain http on a home network a browser does not allow a service worker, and neither does the app, so without a connection to the server it shows its first screen with **Try again** instead of your decks. Use an https address if you want offline study. The very first start needs the server too: nothing is saved yet.
 
+Checked in an Android emulator on every change to the app (not yet on a physical phone): the service worker registers, the app opens from its cache with the server down in about 1 to 3 seconds, a study session offline is saved, and the reviews reach the server exactly once when it is back, also across app restarts.
+
+What is stored on the phone is small: the app shell (about 3 MB) and the cards the web app prepared (about 20 KB per card, plus the stroke data of the characters you wrote). Dictionaries, audio and the stroke data packs stay on the server. The WebView allows about 60 % of the phone's free-disk space, so space is not a limit, and the data is in the app's private area: clearing the app's storage in Android's settings (or **Settings, Account, App, Clear offline data**) removes it. The app asks Android to keep it, but the WebView may say no; the data is not removed by Android's cache cleaning. Reviews graded offline reach the disk a few seconds after the grade: open the app online after an offline session, and do not kill the app in the first seconds after grading.
+
+The session token is kept in the app's private web storage like in a browser; it is not in backups, and ending the session on the server (Settings, sessions) invalidates it.
+
+The outbox is sent when the app opens, when it returns to the front and when the phone reports a connection; there is no background work.
+
 ## Notifications
 
 Not yet. Local reminders are planned (#137) and will need the Android notification permission, asked only then.
