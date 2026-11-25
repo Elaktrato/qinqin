@@ -46,6 +46,11 @@ const ALLOWED: Record<string, string> = {
 	'lib/weekly/summary.ts:summaryStats': 'an operation counter the performance tests read, no user data',
 	'lib/milestones/reached.ts:reachedStats': 'an operation counter the performance tests read, no user data',
 	'lib/time/studyDay.ts:studyDayStats': 'an operation counter the performance tests read, no user data',
+	'lib/native/awake.ts:holders': 'how many study pages hold the screen on: device state, nothing of a user',
+	'lib/native/awake.ts:sentinel': 'the browser wake lock held for them: device state, nothing of a user',
+	'lib/native/awake.ts:asking': 'whether a wake lock request is in flight: device state, nothing of a user',
+	'lib/native/awake.ts:visibilityOn': 'whether the tab-visibility listener is installed: device state, nothing of a user',
+	'lib/native/speech.ts:known': 'which languages this device has a text-to-speech voice for: a device fact, nothing of a user',
 	'lib/api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it at every session end'
 };
 

@@ -81,6 +81,7 @@
 	"settings.ai.note": "Review, Ideas and Read with AI are the journal's button labels; use the same words as those buttons.",
 	"settings.ai.privacy": "{name} is the AI provider's name (\"Anthropic\", \"OpenAI\").",
 	"settings.ai.usage": "All four arguments are formatted numbers.",
+	"settings.audio.voiceMissing": "{language} is a language name (Chinese, Japanese).",
 	"settings.home.layoutSaveFailed": "{reason} is the server's or network's error text.",
 	"settings.home.layoutSaved": "Announced to screen readers after the choice is saved; {layout} is one of settings.home.layout.garden|month|week.",
 	"settings.home.parked": "Follows a list of widget names (\"Decks summary (Decks) stays in your layout …\"); the plural follows how many. Features is the Settings tab.",
