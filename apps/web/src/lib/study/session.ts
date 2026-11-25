@@ -47,6 +47,8 @@ export interface StudySessionConfig {
 	 * default: kinds interleaved, a word's cards kept apart.
 	 */
 	typeOrder?: TypeOrder;
+	/** The app path the session was started from; its Back returns there (absent: home). */
+	from?: string;
 }
 
 /** sessionNewOrder is the setup's order of new cards, random by default. */
@@ -189,7 +191,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder } =
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder, from } =
 		parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
@@ -209,7 +211,8 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		...(studyAll === true ? { studyAll: true } : {}),
 		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
 		// An unknown order of card types is the default (mixed); it never discards the setup.
-		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {})
+		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {}),
+		...(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? { from } : {})
 	};
 	// A missing or unreadable order is the default (random); it never discards the setup.
 	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;
