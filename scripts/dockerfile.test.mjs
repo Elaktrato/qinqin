@@ -62,3 +62,19 @@ test('every Dockerfile COPY source exists in the repository', () => {
 	const missing = sources.filter((s) => !existsSync(join(root, s)));
 	assert.deepEqual(missing, [], `Dockerfile COPY sources missing from the repository: ${missing.join(', ')}`);
 });
+
+test('the image takes its build metadata from build args (#154)', () => {
+	const df = readFileSync(join(root, 'Dockerfile'), 'utf8');
+	for (const [arg, def] of [['VERSION', 'dev'], ['COMMIT', ''], ['BUILD_DATE', '']]) {
+		assert.match(df, new RegExp(`^ARG ${arg}=${def}$`, 'm'), `ARG ${arg}=${def}`);
+	}
+	for (const [flag, arg] of [['version', 'VERSION'], ['commit', 'COMMIT'], ['buildDate', 'BUILD_DATE']]) {
+		assert.ok(df.includes(`-X main.${flag}=\${${arg}}`), `ldflags set main.${flag}`);
+	}
+	const wf = readFileSync(join(root, '.github/workflows/build.yml'), 'utf8');
+	assert.match(wf, /VERSION=\$\{\{ steps\.build\.outputs\.version \}\}/);
+	assert.match(wf, /COMMIT=\$\{\{ github\.sha \}\}/);
+	assert.match(wf, /BUILD_DATE=\$\{\{ steps\.build\.outputs\.date \}\}/);
+	// A build that is not a tag reports "dev".
+	assert.match(wf, /version=dev\n\s+case "\$REF" in refs\/tags\/v\*\) version="\$\{REF_NAME#v\}"/);
+});

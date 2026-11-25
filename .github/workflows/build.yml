@@ -138,6 +138,21 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
+      # Build metadata (#154): the tag without its v on a release build, "dev"
+      # otherwise; the commit; the commit's date in UTC (the same for every
+      # rebuild of one commit).
+      - id: build
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version=dev
+          case "$REF" in refs/tags/v*) version="${REF_NAME#v}" ;; esac
+          date=$(date -u -d "$(git show -s --format=%cI HEAD)" +%Y-%m-%dT%H:%M:%SZ)
+          {
+            echo "version=$version"
+            echo "date=$date"
+          } >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -162,6 +177,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.build.outputs.version }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ steps.build.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

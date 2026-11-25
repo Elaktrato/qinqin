@@ -28,7 +28,14 @@ COPY server/ ./
 # //go:embed all:dist ships the UI inside the binary.
 RUN rm -rf ./internal/webdist/dist
 COPY --from=web /src/apps/web/build ./internal/webdist/dist
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqin
+# Build metadata for GET /api/version (#154): the release without its v ("dev" for
+# a build that is not a tag), the commit and the commit date (RFC 3339, UTC).
+ARG VERSION=dev
+ARG COMMIT=
+ARG BUILD_DATE=
+RUN CGO_ENABLED=0 go build -trimpath \
+    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
+    -o /out/qinqin ./cmd/qinqin
 
 # Audio: the Kanji alive example-word pack (CC BY 4.0, about 69 MB), fetched
 # and built here rather than committed (see docs/sources.md, "Audio").
