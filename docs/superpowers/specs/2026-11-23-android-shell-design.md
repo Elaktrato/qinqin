@@ -127,7 +127,7 @@ protects the data — nothing depends on the answer; the data lives in the app's
 caches did not touch it. Not testable here: eviction under real low-disk pressure; a phone restart (the data is on
 disk and a force-stop and a process kill kept it).
 
-**A durability risk found: unsent reviews in localStorage.** The outbox is localStorage, which Chromium writes to
+**A durability risk found: unsent reviews in localStorage (resolved).** The outbox is localStorage, which Chromium writes to
 disk a few seconds after a change. On two emulator runs a process kill within seconds of grading lost reviews that
 were already shown as saved: a force-stop right after the session lost 2 of 4, and an Android kill 1 s after the
 last grade (Play Services restart on the emulator image) lost 3 of 4. With the kill 8 s or later after the last
@@ -135,6 +135,13 @@ grade all 4 survived and were sent once. So a review graded offline is at risk f
 process dies (crash, battery pull, the system kills a foreground app); a normal swipe-away or home press leaves
 that time. Not a blocker for this issue, and the same in a browser, but a follow-up should move the outbox to
 IndexedDB (committed when the transaction ends) or flush on `pagehide`; the web app's study data layer owns it.
+
+Resolved (v0.7.0 fix wave): the outbox is now an IndexedDB store, one record per review, written before the POST with
+`durability: 'strict'` and awaited before the review counts as saved; the record is deleted once the server has it,
+and a crash between the two is harmless because the server keeps an event id once (`docs/contracts/pwa/outbox-v3.json`,
+`docs/superpowers/plans/2026-11-25-outbox-durability.md`). The old `localStorage` queue is migrated on the first start.
+Not re-measured on the emulator in this wave (no emulator available): the force-stop-after-grade step of the Android
+workflow should now keep all four reviews at any delay; confirm on its next run.
 
 **Session token (d).** The token is the bearer string in `localStorage` under `qinqin.token`
 (`apps/web/src/lib/api/client.ts`); there is no session cookie, so the cookie store and its flush do not matter. In

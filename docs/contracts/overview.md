@@ -173,7 +173,7 @@ fixes the shape.
 | `notecfg` | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `lookups` | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
 | `lookupcfg` | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
-| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}, replaces?: <review id>}`; an unknown `mode` reads as `vocab`; `replaces` (a changed grade, #131) copies the target's `cardId`, `mode`, `meta` and `ts`, and a family of linked reviews counts only its greatest id, before the duplicate-card merge and before anything counts | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `study/replaced.ts`, `server/internal/events` (`Replaced`), `server/internal/stats`, `server/internal/backup` (restore relinks) | `events/review-parse.json`, `events/review-replace.json`, `events/activity.json`, `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
+| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}, replaces?: <review id>}`; an unknown `mode` reads as `vocab`; `replaces` (a changed grade, #131) copies the target's `cardId`, `mode`, `meta` and `ts`, and a family of linked reviews counts only its greatest id, before the duplicate-card merge and before anything counts | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `study/replaced.ts`, `server/internal/events` (`Replaced`), `server/internal/stats`, `server/internal/backup` (restore relinks) | `events/review-parse.json`, `events/review-replace.json`, `events/activity.json`, `pwa/outbox-v3.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not a keyed row) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396 (merged object ≤ 64 KiB); unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json`, `settings/workspace-settings.json` |
 | workspace settings keys `hiddenDictionaries`, `audioAutoplay`, `audioDeviceVoice` | workspace row of `workspaces.settings` | `hiddenDictionaries`: positive integer dictionary ids (others ignored); `audioAutoplay`: bool, default false; `audioDeviceVoice`: bool, default true; same merge | `dictionaryVisibility.ts`, `audio/settings.ts` | `settings/workspace-settings.json` |
 | `home-layout` | **user-global** | `{version: 1, widgets: [widget id]}`; a newer version is read leniently; unknown ids are kept stored, in place; no row = the default layout | `widgets/layout.ts` | `settings/core-rows.json` |
@@ -262,13 +262,14 @@ row shapes, caps and the remapping of entry, card, workspace and book ids on res
 exported and restored as global rows. Never in an archive: password hash, email, sessions, TOTP secrets,
 AI keys, SMTP settings, QINQIN_SECRET.
 
-## PWA outbox v2 (`pwa/`)
+## PWA outbox v3 (`pwa/`)
 
 Web-specific storage, binding semantics: a review recorded offline is the ordinary `review` event with its
 client ULID, retried safely because the server counts an id once. Outbox items are per user; only the
 signed-in user's are flushed, oldest first; a 401 or a restriction 403 stops the flush and keeps items;
 other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; foreign items expire after
-30 days. Offline sessions create no cards.
+30 days. Offline sessions create no cards. The web keeps the queue in IndexedDB, one record per review,
+committed before the POST (write-ahead; a kill right after grading loses nothing), with localStorage as the fallback.
 
 ## Device-local state (not shared)
 
@@ -276,7 +277,7 @@ The web keeps these on the device only (`localStorage`, IndexedDB); they are not
 contract, so Android is free to keep its own: the session setup of the study page (`qinqin.study.session`,
 card-type memory `qinqin.study.cardTypes`, `qinqin.study.extraTypes`), companions found ineligible
 (`qinqin.study.ineligible`, the `skip` set of `cards/deck-session.json`), recently shown sentences
-(`qinqin.study.sent.v1`), the review outbox (`qinqin.study.pending.v2`, `pwa/`), the `session` event receipt
+(`qinqin.study.sent.v1`), the review outbox (IndexedDB `qinqin-outbox`; `qinqin.study.pending.v2` is its migrated-away predecessor and fallback, `pwa/`), the `session` event receipt
 (`qinqin.session.<ws>.<day>`), the cached zone history (`qinqin.studyDay.<user>`), reader preferences and rail
 (`qinqin.reader.prefs`, `qinqin.reader.rail`), the highlight colour (`qinqin.reader.highlightColor`), the
 character map grouping (`qinqin.map.groupBy.*`), grammar reading toggles, the journal photo draft, offline

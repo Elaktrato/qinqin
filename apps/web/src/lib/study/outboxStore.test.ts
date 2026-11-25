@@ -1,4 +1,5 @@
 import { IDBFactory } from 'fake-indexeddb';
+import fixture from '../../../../../docs/contracts/pwa/outbox-v3.json';
 import { describe, expect, it } from 'vitest';
 import type { OutboxItem } from './outbox';
 import { OUTBOX_DB, OUTBOX_KEY_V2, createOutboxStore } from './outboxStore';
@@ -158,4 +159,29 @@ describe('IndexedDB outbox store', () => {
 		await store.remove(['A']);
 		expect(store.items()).toHaveLength(0);
 	});
+});
+
+describe('the contract fixture (docs/contracts/pwa/outbox-v3.json)', () => {
+	for (const c of fixture.migration) {
+		it(`migration: ${c.name}`, async () => {
+			const factory = new IDBFactory();
+			const local = memoryStorage(c.v2 === null ? {} : { [OUTBOX_KEY_V2]: JSON.stringify(c.v2) });
+			const seed = createOutboxStore({ indexedDB: factory, local: () => null });
+			await seed.load();
+			for (const existing of c.store) await seed.put(existing as OutboxItem);
+			const store = createOutboxStore({ indexedDB: factory, local: () => local });
+			await store.load();
+			expect(store.items()).toEqual(c.expect.items);
+			expect(local.getItem(OUTBOX_KEY_V2) === null).toBe(c.expect.v2KeyRemoved);
+			expect(await persisted(factory)).toEqual(c.expect.items);
+		});
+	}
+	for (const c of fixture.order.cases) {
+		it(`order: ${c.name}`, async () => {
+			const store = createOutboxStore({ indexedDB: new IDBFactory(), local: () => null });
+			await store.load();
+			for (const i of c.items) await store.put(i as OutboxItem);
+			expect(store.items().map((i) => i.event.id)).toEqual(c.expect);
+		});
+	}
 });
