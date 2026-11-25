@@ -116,6 +116,28 @@ describe('ConversationView', () => {
 		expect((box as HTMLTextAreaElement).value).toBe('我去了公园。');
 	});
 
+	it('Ctrl+Enter during an IME composition does not send; after it, it does', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		try {
+			vi.mocked(getConversation).mockResolvedValue(talked);
+			vi.mocked(sendTurn).mockResolvedValue({ conversation: talked } as never);
+			show();
+			const box = await screen.findByRole('textbox', { name: 'Your message' });
+			await fireEvent.compositionStart(box);
+			await fireEvent.compositionUpdate(box, { data: 'ni' });
+			await fireEvent.input(box, { target: { value: '你好' } });
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true, isComposing: true });
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true, keyCode: 229 });
+			expect(sendTurn).not.toHaveBeenCalled();
+			await fireEvent.compositionEnd(box, { data: '你好' });
+			vi.advanceTimersByTime(100);
+			await fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true });
+			expect(sendTurn).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('keeps the focus in the message field through a turn and reads the reply out', async () => {
 		vi.mocked(getConversation).mockResolvedValue(talked);
 		const answered: Conversation = {

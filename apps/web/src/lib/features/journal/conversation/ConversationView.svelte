@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isImeKey } from '$lib/ui/ime';
 	// One conversation with the partner (#185). The learner's messages show the
 	// journal's corrections (ReviewText marks; the margin on a wide screen, the
 	// shared bottom sheet on a phone); the partner's replies are lookup
@@ -141,7 +142,7 @@
 
 	function keydown(event: KeyboardEvent): void {
 		// Ctrl or Cmd + Enter sends; Enter alone is a new line (a phone keyboard has no modifier).
-		if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void send();
+		if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !isImeKey(event)) void send();
 	}
 
 	function openCorrection(next: string | null): void {
