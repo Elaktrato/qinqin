@@ -33,6 +33,8 @@ collection). Keys in use:
 | `hiddenDictionaries` | array of dictionary ids | none hidden; only positive integers count, others are ignored, duplicates collapse; anything but an array hides nothing | `dictionaryVisibility.ts` | the dictionary visibility switches |
 | `audioAutoplay` | boolean | `false` (anything but a boolean) | `audio/settings.ts` | audio settings |
 | `audioDeviceVoice` | boolean | `true` (anything but a boolean) | `audio/settings.ts` | audio settings |
+| `gradeHaptics` | boolean | `true` (anything but a boolean) | `native/haptics.ts` | Settings > Study > Feedback |
+| `hints` | object: hint kind → card kind → `always` \| `hint` \| `never` | per cell the default of `cards/hints.json` (absent, unknown or invalid cells included) | `study/hints.ts` | Settings > Study > Hints (a cell at a time, by merge patch) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).

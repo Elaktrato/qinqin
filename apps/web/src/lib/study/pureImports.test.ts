@@ -14,6 +14,8 @@ const PURE = [
 	'cardFlow.ts',
 	'sessionOrder.ts',
 	'grade.ts',
+	'hints.ts',
+	'hintKey.ts',
 	'tones.ts',
 	'writing.ts',
 	'readModel.ts',

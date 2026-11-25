@@ -164,7 +164,7 @@ plan. Native pieces only where the WebView falls short.
 
 - Study aids: [#212](https://github.com/Elaktrato/qinqin/issues/212) visual aids,
   [#214](https://github.com/Elaktrato/qinqin/issues/214) Starter mode,
-  [#215](https://github.com/Elaktrato/qinqin/issues/215) hints on every card,
+  [#215](https://github.com/Elaktrato/qinqin/issues/215) hints on every card (on `feature/hints-215`: one Hint control, reading hint now, picture kind defined and empty until #212/#216; design `docs/superpowers/specs/2026-11-26-hints-design.md`),
   [#216](https://github.com/Elaktrato/qinqin/issues/216) pictures for words
 - Getting started: [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test,
   [#82](https://github.com/Elaktrato/qinqin/issues/82) level check,

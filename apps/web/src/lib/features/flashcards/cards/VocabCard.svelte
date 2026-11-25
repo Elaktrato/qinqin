@@ -11,6 +11,9 @@
 	import { buildVocabFaces } from '$lib/study/cardView';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
+	import FaceWork from '../face/FaceWork.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 
 	interface Props {
@@ -52,8 +55,13 @@
 </script>
 
 <FacePrompt>
+	<HintShown {entry} />
 	<p class="fp-word" lang={studyLang(entry.language)}>{faces.front.written}</p>
 </FacePrompt>
+
+<FaceWork>
+	<HintControl />
+</FaceWork>
 
 {#if revealed}
 	<FaceAnswer>
