@@ -4,8 +4,11 @@
 // A drag, a long press, a scroll, a pinch or a pointercancel (the browser took
 // the gesture over, to pan or zoom) is no tap. Whether a tap leaves a
 // selection, or landed on a control, the controller checks on the DOM.
-// A press that lands while the page is still scrolling (a fling) stops the
-// scroll and is no tap either.
+// A press that lands while the page is still gliding after a swipe (a
+// fling) stops it and is no tap either. A fling always starts with a touch
+// the browser took over to pan (pointercancel); a scroll no finger started
+// (a script, the wheel, the lookup sheet keeping its word in view) blocks
+// no tap.
 
 /** The longest press that is still a tap (a longer one is a long press). */
 export const TAP_MAX_MS = 500;
@@ -40,20 +43,24 @@ const tapping = (type: string): boolean => type === 'touch' || type === 'pen';
 export class TapTracker {
 	#start: PointerSample | null = null;
 	#lastScroll: number | null = null;
+	/** A touch was taken over to pan since the page last settled: scrolls now may be a fling. */
+	#panned = false;
 
 	/**
 	 * A pointer went down. A primary touch or pen press starts a fresh tap
 	 * (whatever was tracked before: its release may never have arrived); a
 	 * non-primary one is a second finger (a pinch), which ends the tap. A
-	 * press that stops a fling (a scroll less than FLING_STOP_MS before it)
-	 * starts nothing.
+	 * press that stops a fling (after a pan, a scroll less than
+	 * FLING_STOP_MS before it) starts nothing.
 	 */
 	down(s: PointerSample): void {
 		if (!s.primary) {
 			this.#start = null;
 			return;
 		}
-		const flinging = this.#lastScroll !== null && s.at - this.#lastScroll < FLING_STOP_MS;
+		const flinging = this.#panned && this.#lastScroll !== null && s.at - this.#lastScroll < FLING_STOP_MS;
+		// The page has settled: until the next pan, scrolls are no fling.
+		if (!flinging) this.#panned = false;
 		this.#start = tapping(s.type) && s.button === 0 && !flinging ? s : null;
 	}
 
@@ -78,9 +85,10 @@ export class TapTracker {
 		return { x: s.x, y: s.y };
 	}
 
-	/** A pointercancel or a scroll: whatever was going on is no tap. */
+	/** A pointercancel (the browser took the touch over to pan or zoom): no tap, and a fling may follow. */
 	cancel(): void {
 		this.#start = null;
+		this.#panned = true;
 	}
 }
 

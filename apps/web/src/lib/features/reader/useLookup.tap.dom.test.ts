@@ -194,6 +194,9 @@ describe('what is no tap', () => {
 	});
 
 	it('a press that stops a scroll fling', async () => {
+		// A swipe: the browser takes the touch over to pan, then the page glides on.
+		pointer('pointerdown', run);
+		pointer('pointercancel', run);
 		for (let i = 0; i < 10; i++) {
 			window.dispatchEvent(new Event('scroll'));
 			clock += 16;

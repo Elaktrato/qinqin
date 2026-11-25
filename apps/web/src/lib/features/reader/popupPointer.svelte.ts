@@ -28,6 +28,11 @@ export function inPopup(target: EventTarget | null): boolean {
 	return sheet !== null && sheet !== target && sheet.querySelector(POPUP) !== null;
 }
 
+/** onLookupBackdrop reports whether a target is the phone lookup sheet's backdrop (the dialog element itself). */
+export function onLookupBackdrop(target: EventTarget | null): boolean {
+	return target instanceof HTMLDialogElement && target.querySelector(POPUP) !== null;
+}
+
 /** anchorOf turns a viewport rectangle into a popup frame anchor. */
 export function anchorOf(rect: DOMRect): PopupFrame['anchor'] {
 	return { x: rect.left, y: rect.top, w: rect.width, h: rect.height };

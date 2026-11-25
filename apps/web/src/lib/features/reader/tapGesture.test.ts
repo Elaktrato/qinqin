@@ -93,11 +93,35 @@ describe('TapTracker', () => {
 
 	it('a press that stops a scroll fling is no tap; one after the page settled is', () => {
 		const tap = new TapTracker();
+		// A swipe: the browser takes the touch over to pan (pointercancel), then the page glides on.
+		tap.down(at({ at: 700 }));
+		tap.cancel();
 		for (let t = 840; t <= 984; t += 16) tap.scrolled(t);
 		tap.down(at({ at: 984 + FLING_STOP_MS - 1 }));
 		expect(tap.up(at({ at: 984 + FLING_STOP_MS + 60 }))).toBeNull();
 		tap.down(at({ at: 984 + FLING_STOP_MS }));
 		expect(tap.up(at({ at: 984 + FLING_STOP_MS + 60 }))).not.toBeNull();
+	});
+
+	it('a scroll no finger started (a script, the wheel, the sheet keeping its word in view) blocks no later tap', () => {
+		const tap = new TapTracker();
+		tap.scrolled(990);
+		tap.down(at());
+		expect(tap.up(at({ at: 1080 }))).not.toBeNull();
+	});
+
+	it('every press during a fling is ignored, until the page settles', () => {
+		const tap = new TapTracker();
+		tap.down(at({ at: 700 }));
+		tap.cancel();
+		tap.scrolled(990);
+		tap.down(at());
+		expect(tap.up(at({ at: 1040 }))).toBeNull();
+		tap.scrolled(1050);
+		tap.down(at({ at: 1100 }));
+		expect(tap.up(at({ at: 1150 }))).toBeNull();
+		tap.down(at({ at: 1050 + FLING_STOP_MS }));
+		expect(tap.up(at({ at: 1050 + FLING_STOP_MS + 50 }))).not.toBeNull();
 	});
 
 	it('a scroll during the press cancels it', () => {

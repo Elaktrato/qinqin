@@ -26,7 +26,7 @@ import { scrollDeltaAbove, scrollParent } from './keepAbove';
 import { hoverable } from './lookup';
 import { cachedLookup } from './lookupCache';
 import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
-import { anchorOf, inPopup, PopupPointer } from './popupPointer.svelte';
+import { anchorOf, inPopup, onLookupBackdrop, PopupPointer } from './popupPointer.svelte';
 import { PopupStack } from './popupStack.svelte';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
 import { TAP_IGNORE, TAP_SETTLE_MS, TapTracker, tapProbes, touchClick, type PointerSample } from './tapGesture';
@@ -82,6 +82,11 @@ interface WordPoint {
 	offset: number;
 }
 
+/** The element under a viewport point (null where the browser cannot tell). */
+function hitTest(x: number, y: number): Element | null {
+	return typeof document.elementFromPoint === 'function' ? document.elementFromPoint(x, y) : null;
+}
+
 function reducedMotion(): boolean {
 	return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -111,6 +116,10 @@ export class LookupController {
 	#tap = new TapTracker();
 	#tapTimer: ReturnType<typeof setTimeout> | undefined;
 	#lastTouchUp: number | null = null;
+	/** The press went down on the phone sheet's backdrop: lifting it closes the sheet. */
+	#onBackdrop = false;
+	/** A touch press on the backdrop: the click it produces must not reach what was under the sheet. */
+	#swallowClick = false;
 	#now: () => number;
 	/** The open sticky stack was opened by a tap (not a selection). */
 	tapped = false;
@@ -157,9 +166,16 @@ export class LookupController {
 			// and extends into it still counts as a drag in progress.
 			if (e.button === 0) this.#pointerDown = true;
 			clearTimeout(this.#tapTimer);
-			this.#tap.down(this.#sample(e));
+			const sample = this.#sample(e);
+			this.#tap.down(sample);
+			// The phone sheet is modal: a press beside it lands on its backdrop.
+			// The sheet stays (modal) until the finger lifts, so the release
+			// reaches us; the browser's click after it is swallowed, since by
+			// then the sheet is gone and the click would land on the page.
+			this.#onBackdrop = this.info !== null && onLookupBackdrop(e.target);
+			this.#swallowClick = this.#onBackdrop && (sample.type === 'touch' || sample.type === 'pen');
 			// A tap on no word closes the lookup here; a tap on a word opens the next.
-			if (this.info && !inPopup(e.target)) this.close();
+			if (this.info && !this.#onBackdrop && !inPopup(e.target)) this.close();
 		};
 		const onMove = (e: PointerEvent) => this.#tap.move(this.#sample(e));
 		const release = () => {
@@ -171,17 +187,34 @@ export class LookupController {
 			const sample = this.#sample(e);
 			if (sample.type === 'touch' || sample.type === 'pen') this.#lastTouchUp = sample.at;
 			const point = this.#tap.up(sample);
+			const behind = this.#onBackdrop;
+			this.#onBackdrop = false;
+			if (behind) this.close();
 			if (point) {
 				const target = e.target;
 				clearTimeout(this.#tapTimer);
-				this.#tapTimer = setTimeout(() => void this.#resolveTap(point.x, point.y, target), TAP_SETTLE_MS);
+				// A tap on the backdrop is for the word behind it: hit-test the
+				// point once the sheet is gone.
+				this.#tapTimer = setTimeout(
+					() => void this.#resolveTap(point.x, point.y, behind ? hitTest(point.x, point.y) : target),
+					TAP_SETTLE_MS
+				);
 			}
 			release();
 		};
 		const onCancel = () => {
 			// The browser took the gesture over (a pan, a zoom): no tap.
 			this.#tap.cancel();
+			if (this.#onBackdrop) this.close();
+			this.#onBackdrop = false;
 			release();
+		};
+		const onClick = (e: MouseEvent) => {
+			if (!this.#swallowClick) return;
+			this.#swallowClick = false;
+			if (!this.fromTouch(e)) return;
+			e.preventDefault();
+			e.stopPropagation();
 		};
 		const onSelection = () => {
 			if (!this.#pointerDown) this.#scheduleSelection(SELECTION_DEBOUNCE_MS);
@@ -201,6 +234,7 @@ export class LookupController {
 		window.addEventListener('pointermove', onMove, { passive: true });
 		window.addEventListener('pointerup', onUp);
 		window.addEventListener('pointercancel', onCancel);
+		window.addEventListener('click', onClick, true);
 		window.addEventListener('scroll', onScroll, { capture: true, passive: true });
 		document.addEventListener('selectionchange', onSelection);
 		return () => {
@@ -211,6 +245,7 @@ export class LookupController {
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
 			window.removeEventListener('pointercancel', onCancel);
+			window.removeEventListener('click', onClick, true);
 			window.removeEventListener('scroll', onScroll, { capture: true });
 			document.removeEventListener('selectionchange', onSelection);
 			this.close();
