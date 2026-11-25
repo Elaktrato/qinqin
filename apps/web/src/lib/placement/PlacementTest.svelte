@@ -17,6 +17,7 @@
 		unit,
 		language,
 		marked,
+		busy = false,
 		seed = Math.floor(Math.random() * 2 ** 32),
 		onconfirm,
 		oncancel
@@ -27,6 +28,8 @@
 		unit: 'word' | 'character';
 		language: string;
 		marked: ReadonlySet<number>;
+		/** A declaration is being written: the confirm button waits. */
+		busy?: boolean;
 		seed?: number;
 		onconfirm: (position: number) => void;
 		oncancel: () => void;
@@ -89,7 +92,7 @@
 			{position === 0 || fresh === 0 ? t('settings.known.nothingNew') : t('settings.known.preview', { count: fresh })}
 		</p>
 		<div class="row">
-			<Button variant="primary" disabled={fresh === 0} onclick={() => onconfirm(position)} data-testid="placement-confirm">
+			<Button variant="primary" {busy} disabled={busy || fresh === 0} onclick={() => onconfirm(position)} data-testid="placement-confirm">
 				{t('settings.known.mark')}
 			</Button>
 			<Button onclick={again}>{t('settings.placement.retake')}</Button>
