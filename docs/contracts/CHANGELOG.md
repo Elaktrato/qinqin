@@ -54,6 +54,12 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Clients** that do not draw pictures change nothing. A client that does calls `GET /api/images/entries/{id}`
   (web: `entryPicture`), refuses active content in the svg (`safeSvg`), draws black outlines in the text colour
   (`themeSvg`) and shows the credit (`pictureCreditLine`).
+- **Amendment (v0.8.0 review, stored XSS; no contract renumbering, nothing of it was released):** the server stores
+  and serves the picture's *canonical form* (`images/README.md`, "Pictures are drawings"), no longer the pack's bytes:
+  a comment, `style` element, unknown element or attribute, a non-`#id` reference, an escaped `url(` and nested
+  `<use>` are refused. `images/svg.json` is version 2: each valid case carries its `canonical` form (Go and web must
+  produce it byte for byte) and the payloads of the review are invalid cases. A client draws created DOM nodes
+  (`svgElement`), never `{@html}`.
 
 ## #215 — hints on every flashcard (contract 7)
 

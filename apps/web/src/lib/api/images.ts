@@ -7,6 +7,7 @@
 // the visual aids (#212, #214, #215) call entryPicture and draw the svg; they
 // show `pictureCreditLine(picture)` next to it.
 import { api } from './client';
+import { sanitizeSvg } from './svg';
 
 /** One picture with its credit, as the API sends it. */
 export interface EntryPicture {
@@ -26,7 +27,7 @@ export interface EntryPicture {
 	sense: number;
 	/** How sure the mapping is, 0-100. */
 	score: number;
-	/** The SVG file of the pack, unmodified. Pass it through themeSvg before inlining it. */
+	/** The SVG in canonical form (server CanonicalSVG, checked again by safeSvg). Pass it through themeSvg, draw it with svgElement; never {@html}. */
 	svg: string;
 }
 
@@ -50,18 +51,14 @@ export interface EntryPictureOptions {
 }
 
 /**
- * safeSvg returns svg when it is a plain drawing and null otherwise. The server
- * checks every picture when a pack is installed; this is the second lock on
- * the way to the page, for a server that is not ours or an old pack: an
- * element or attribute that can run code or load something is refused.
+ * safeSvg returns the canonical form of svg (see sanitizeSvg in ./svg) when it is
+ * a plain drawing and null otherwise. The server checks and canonicalises every
+ * picture when a pack is installed and again when it serves one; this is the
+ * second lock on the way to the page, for a server that is not ours: the picture
+ * is parsed as XML and rebuilt from an element and attribute allowlist, so what
+ * comes back holds nothing that can run code, load something or re-parse as HTML.
  */
-export function safeSvg(svg: unknown): string | null {
-	if (typeof svg !== 'string' || !/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/.test(svg)) return null;
-	if (/<\s*(script|foreignObject|iframe|object|embed|image|style|animate|set|a)[\s>/]/i.test(svg)) return null;
-	if (/\son[a-z]+\s*=/i.test(svg) || /javascript:|data:/i.test(svg)) return null;
-	if (/(?:xlink:)?href\s*=\s*["'](?!#)/i.test(svg)) return null;
-	return svg;
-}
+export const safeSvg: (svg: unknown) => string | null = sanitizeSvg;
 
 /**
  * entryPicture asks for the best bundled picture of a dictionary entry: null

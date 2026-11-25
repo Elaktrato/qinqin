@@ -3,6 +3,8 @@ name: images-stage
 # Builds only the Dockerfile's `images` stage (the pinned OpenMoji and Mulberry downloads,
 # their SHA-256 checks and the two pictures packs; no push) so a broken pin or a moved
 # upstream file shows up on a pull request or in the weekly run instead of on release day.
+# Then it runs the Go picture gate (images.CanonicalSVG, via TestBuiltPacks) over the packs the
+# stage produced, so a tightened gate cannot break seeding in a release image unnoticed.
 # Fallback for a release while it is red: build with `--build-arg WITH_IMAGES=0` (the image
 # then has no pictures, nothing else changes).
 
@@ -14,6 +16,7 @@ on:
       - scripts/images/**
       - scripts/images-*
       - scripts/prepare-images-pack.mjs
+      - server/internal/images/**
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
@@ -33,3 +36,18 @@ jobs:
         run: |
           docker run --rm --entrypoint sh qinqin-images-stage -c \
             'for p in openmoji mulberry; do test -s /out/images-$p/manifest.json && test -s /out/images-$p/map.tsv && echo "$p: $(ls /out/images-$p/pictures | wc -l) pictures"; done'
+      - name: Copy the packs out of the stage
+        run: |
+          id=$(docker create qinqin-images-stage)
+          docker cp "$id:/out" "$RUNNER_TEMP/images-out"
+          docker rm "$id"
+          ls "$RUNNER_TEMP/images-out"
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: The Go picture gate accepts every real picture
+        working-directory: server
+        env:
+          QINQIN_IMAGES_PACKS: ${{ runner.temp }}/images-out/images-openmoji,${{ runner.temp }}/images-out/images-mulberry
+        run: go test ./internal/images/ -run '^TestBuiltPacks$' -count=1 -v
