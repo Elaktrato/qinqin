@@ -248,3 +248,14 @@ describe('DeckList daily limits and vacation', () => {
 		expect(within(verbsRow).queryByText(/ due$/)).toBeNull();
 	});
 });
+
+describe('DeckList Study (all decks)', () => {
+	it('opens the study modal', async () => {
+		render(DeckList, { context: ctx.context });
+		await screen.findByRole('link', { name: 'Verbs' });
+		const study = screen.getAllByRole('link', { name: 'Study' })[0];
+		expect(study.getAttribute('href')).toBe('/study');
+		await fireEvent.click(study);
+		expect(ctx.session.studyModal.open).toBe(true);
+	});
+});

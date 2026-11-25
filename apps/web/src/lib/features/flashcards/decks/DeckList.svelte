@@ -116,7 +116,14 @@
 
 	<Section title={t('flashcards.list.yourDecks')}>
 	<div class="study-all">
-		<Button href="/study" variant="primary">{t('flashcards.deck.study')}</Button>
+		<Button
+			href="/study"
+			variant="primary"
+			onclick={(e: MouseEvent) => {
+				e.preventDefault();
+				session.studyModal.show();
+			}}>{t('flashcards.deck.study')}</Button
+		>
 	</div>
 	{#if summary.decks.length === 0}
 		<p class="hint">{t('flashcards.list.empty')}</p>

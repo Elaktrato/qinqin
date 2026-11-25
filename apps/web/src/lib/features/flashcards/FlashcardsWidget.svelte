@@ -174,7 +174,14 @@
 	}}
 >
 	{#snippet actions()}
-		<Button variant="primary" href="/study">{t('flashcards.widget.study')}</Button>
+		<Button
+			variant="primary"
+			href="/study"
+			onclick={(e: MouseEvent) => {
+				e.preventDefault();
+				session.studyModal.show();
+			}}>{t('flashcards.widget.study')}</Button
+		>
 	{/snippet}
 
 	<div class="buddy">

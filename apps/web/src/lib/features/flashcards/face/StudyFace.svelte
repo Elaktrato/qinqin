@@ -27,6 +27,7 @@
 		status,
 		grades,
 		aux,
+		onend,
 		heading = $bindable(),
 		children
 	}: {
@@ -45,12 +46,14 @@
 		/** The session's Back controls in the action dock (#131). */
 		aux?: Snippet;
 		heading?: HTMLElement;
+		/** End session (the close button); without it the button is a plain link to /study. */
+		onend?: () => void;
 		children: Snippet;
 	} = $props();
 </script>
 
 <div class="study-face">
-	<SessionTop {progress} {countText} />
+	<SessionTop {progress} {countText} {onend} />
 	{#if status}{@render status()}{/if}
 	<article class="fc" aria-label={cardLabel}>
 		<FaceHeader {kindLabel} {headingLabel} {deckLevel} {chips} bind:heading />

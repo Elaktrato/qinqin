@@ -45,6 +45,15 @@ describe('StudyFace (#101)', () => {
 		expect(document.querySelector('[role="tooltip"]')?.textContent).toBe('End session');
 	});
 
+	it('End session runs the session\'s own end instead of following the link', async () => {
+		const onend = vi.fn();
+		render(CardHarness, { card: PrimaryCard, onend });
+		const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+		screen.getByRole('link', { name: 'End session' }).dispatchEvent(click);
+		expect(onend).toHaveBeenCalledTimes(1);
+		expect(click.defaultPrevented).toBe(true);
+	});
+
 	it('the progress line is a progressbar with aria-valuenow / valuemax and the count text', () => {
 		render(CardHarness, { card: PrimaryCard });
 		const bar = screen.getByRole('progressbar', { name: 'Cards done in this session' });

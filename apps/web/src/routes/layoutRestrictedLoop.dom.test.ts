@@ -5,7 +5,7 @@ import { createRawSnippet } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
-vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()), afterNavigate: vi.fn() }));
 
 import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';

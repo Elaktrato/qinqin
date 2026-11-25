@@ -187,3 +187,16 @@ describe('FlashcardsWidget and the saved study setup', () => {
 		await waitFor(() => expect(text(again)).toMatch(/1 new left today/));
 	});
 });
+
+describe('FlashcardsWidget Study', () => {
+	it('opens the study modal instead of following the link', async () => {
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
+		await ready();
+		const study = screen.getByRole('link', { name: 'Study' });
+		expect(study.getAttribute('href')).toBe('/study');
+		const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+		study.dispatchEvent(click);
+		expect(click.defaultPrevented).toBe(true);
+		expect(ctx.session.studyModal.open).toBe(true);
+	});
+});
