@@ -387,7 +387,7 @@ func specKey(s Spec) string {
 // when the current file's size is not the row's (a file of another build
 // under the same name, e.g. after an interrupted commit).
 func (r Registry) stale(p pkgRow, s Spec) bool {
-	return p.state != stateReady || p.formatVersion != FormatVersion || p.errText != "" ||
+	return p.state != stateReady || p.formatVersion != FormatVersionOf(s.Type) || p.errText != "" ||
 		p.meta != specKey(s) || !r.fileIntact(p)
 }
 
@@ -476,7 +476,7 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 		if _, err := r.DB.ExecContext(ctx, `INSERT INTO packages (id, type, languages, format_version, revision, content_hash,
 			file_sha256, bytes, built_at, state, error, requires, optional, sources, license_texts, updated_at)
 			VALUES (?, ?, ?, ?, 0, '', '', 0, NULL, 'building', '', ?, ?, ?, ?, ?)`,
-			id, string(spec.Type), m.languages, FormatVersion, m.requires, spec.Optional, m.sources, spec.LicenseTexts(), stamp); err != nil {
+			id, string(spec.Type), m.languages, FormatVersionOf(spec.Type), m.requires, spec.Optional, m.sources, spec.LicenseTexts(), stamp); err != nil {
 			return err
 		}
 		row = pkgRow{id: id, state: stateBuilding}
@@ -505,7 +505,7 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 	// does not cover: a change of them is a new revision too, so the file's
 	// manifest.json and the catalogue row agree. (optional is catalogue
 	// only: revive updates it in place.)
-	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersion &&
+	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersionOf(spec.Type) &&
 		row.languages == m.languages && row.requires == m.requires
 	switch {
 	case same && cand == row.revision:
@@ -620,7 +620,7 @@ func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, n
 	if _, err := tx.ExecContext(ctx, `UPDATE packages SET type = ?, languages = ?, format_version = ?, revision = ?, content_hash = ?,
 		file_sha256 = ?, bytes = ?, built_at = ?, state = 'ready', error = '', requires = ?, optional = ?, sources = ?,
 		license_texts = ?, updated_at = ?, deleted_at = NULL WHERE id = ?`,
-		string(spec.Type), m.languages, FormatVersion, rev, b.ContentHash, b.SHA256, b.Bytes, b.Manifest.BuiltAt,
+		string(spec.Type), m.languages, FormatVersionOf(spec.Type), rev, b.ContentHash, b.SHA256, b.Bytes, b.Manifest.BuiltAt,
 		m.requires, spec.Optional, m.sources, spec.LicenseTexts(), stamp, spec.ID); err != nil {
 		return err
 	}

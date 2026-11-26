@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "packages/schemas",
- "_doc": "The exact schema of data.sqlite in format 1, per package type: the common statements first, then the type's tables and indexes in this order (sqlite_master of a built package holds exactly these, plus SQLite's own autoindexes). order is the row order of each table in the content hash (README.md, Versioning); it is the primary key where the table has one. qq_package holds packageKeys (grammar also levels_json); every value is TEXT (numbers in decimal, languages as a JSON array). JSON lists and objects are TEXT columns holding JSON, as on the server. Decoded by server/internal/datapkg (A5).",
+ "_doc": "The exact schema of data.sqlite per package type (format 1, except where a case states its own formatVersion: sentences is format 2): the common statements first, then the type's tables and indexes in this order (sqlite_master of a built package holds exactly these, plus SQLite's own autoindexes). order is the row order of each table in the content hash (README.md, Versioning); it is the primary key where the table has one. qq_package holds packageKeys (grammar also levels_json); every value is TEXT (numbers in decimal, languages as a JSON array). JSON lists and objects are TEXT columns holding JSON, as on the server. Decoded by server/internal/datapkg (A5).",
  "formatVersion": 1,
  "common": [
   "CREATE TABLE qq_package (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
@@ -128,11 +128,12 @@
   },
   {
    "type": "sentences",
-   "_doc": "pinyin may be \"\": a pack sentence without a reading (the pack left it out rather than guess one, e.g. a word with several readings); a client shows no reading line for it.",
+   "formatVersion": 2,
+   "_doc": "pinyin may be \"\": a pack sentence without a reading (the pack left it out rather than guess one, e.g. a word with several readings); a client shows no reading line for it. Format 2: every sentence carries its credit, credit_id (the sentence's id at its source, Tatoeba; 0 for none) and credit_owner (its owner as the source lists it, may be \"\"), credit_tr_id and credit_tr_owner (the same for the translation shown with it); the link of a credit is the source's page of the id, https://tatoeba.org/en/sentences/show/<id>, not stored. Format 1 (no credit columns) is not read.",
    "tables": [
     {
      "name": "sentences",
-     "sql": "CREATE TABLE sentences (id INTEGER PRIMARY KEY, entry_id INTEGER NOT NULL, hanzi TEXT NOT NULL, pinyin TEXT NOT NULL, translation TEXT NOT NULL)",
+     "sql": "CREATE TABLE sentences (id INTEGER PRIMARY KEY, entry_id INTEGER NOT NULL, hanzi TEXT NOT NULL, pinyin TEXT NOT NULL, translation TEXT NOT NULL, credit_id INTEGER NOT NULL, credit_owner TEXT NOT NULL, credit_tr_id INTEGER NOT NULL, credit_tr_owner TEXT NOT NULL)",
      "order": [
       "id"
      ]

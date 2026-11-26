@@ -21,6 +21,13 @@ func TestSchemasMatchContract(t *testing.T) {
 	for _, c := range fx.Cases {
 		types = append(types, c.Type)
 		typ := datapkg.Type(c.Type)
+		wantFormat := c.FormatVersion
+		if wantFormat == 0 {
+			wantFormat = fx.FormatVersion
+		}
+		if got := datapkg.FormatVersionOf(typ); got != wantFormat {
+			t.Errorf("%s format version = %d, want %d (schemas.json)", c.Type, got, wantFormat)
+		}
 		tables, indexes := datapkg.Schema(typ)
 		if len(tables) != len(c.Tables) {
 			t.Errorf("%s: %d tables, want %d", c.Type, len(tables), len(c.Tables))

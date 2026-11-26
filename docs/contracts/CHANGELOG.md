@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## Tatoeba credits on every sentence (contract 12)
+
+- **Sentence pack file (`sentences.json`):** each sentence carries its own credit: `id` (its Tatoeba id), `by` (its
+  owner as Tatoeba lists it, left out when none), `tid` (the id of the translation shown with it, required with an `id`)
+  and `tby` (the translation's owner, left out when none). The separate top-level `credits` map is gone: a pack that
+  still has it is refused at import, and so is a sentence with a credit but no `id`. A sentence listed under several
+  words repeats its credit. The link of a credit is not stored: it is `https://tatoeba.org/en/sentences/show/<id>`.
+- **Sentences data package (`sentences.<packId>`): format 2.** The `sentences` table gains `credit_id`, `credit_owner`,
+  `credit_tr_id` and `credit_tr_owner` (all `NOT NULL`; `0` and `""` for a sentence without a credit). Format 1 is not
+  read: a server rebuilds its sentences packages at the next reconcile, a client that knows only format 1 gets
+  `unsupported` from `packageAction` for them and keeps what it has. The other package types stay format 1;
+  `schemas.json` states a type's own `formatVersion` when it differs. No client installs data packages yet.
+- **Unchanged:** the entry answer's `credit` object, the stored columns (migration 054) and the pack licence notices.
+
 ## Owner rulings on hints and tone aids (contract 11)
 
 - **Changed rule:** the hint grade rule of `cards/hints.json` (`grades`): a hint asked for with the Hint control

@@ -294,20 +294,23 @@ func upsertRegistry(ctx context.Context, tx *sql.Tx, m pack.Manifest, stamp stri
 	return nil
 }
 
-// packData is the decoded sentences.json of a pack.
+// packData is the decoded sentences.json of a pack. OldCredits is the
+// separate "credits" map earlier packs carried: the credit now sits on each
+// sentence, and a pack that still has the map is refused rather than read
+// without its credits.
 type packData struct {
-	Entries []packEntry `json:"entries"`
-	// Credits is the credit of each sentence id the entries use, keyed by the
-	// id as text (one credit however many words list the sentence).
-	Credits map[string]packCredit `json:"credits"`
+	Entries    []packEntry     `json:"entries"`
+	OldCredits json.RawMessage `json:"credits"`
 }
 
-// packCredit is one sentence's credit in the pack: its owner, and the id and
-// owner of its translation.
+// packCredit is one sentence's credit in the pack: its owner (By), and the id
+// (TID) and owner (TBy) of the translation shown with it. The sentence's own
+// id is its ID. The owners may be empty (Tatoeba lists none for some CC0
+// sentences).
 type packCredit struct {
-	By  string `json:"by"`
-	TID int64  `json:"tid"`
-	TBy string `json:"tby"`
+	By  string
+	TID int64
+	TBy string
 }
 
 // packEntry is one word group of sentences.json: the word its
@@ -321,11 +324,16 @@ type packEntry struct {
 // (pinyin, or kana for Japanese) and may be empty.
 type packSentence struct {
 	// ID is the sentence's id at its source (Tatoeba); 0 for none. A sentence
-	// with an id has an entry in the pack's "credits", joined into Credit.
+	// with an id is credited by the "by", "tid" and "tby" on the sentence
+	// itself (its owner, and the id and owner of its translation), joined into
+	// Credit.
 	ID          int64      `json:"id"`
 	Hanzi       string     `json:"hanzi"`
 	Pinyin      string     `json:"pinyin"`
 	Translation string     `json:"translation"`
+	By          string     `json:"by"`
+	TID         int64      `json:"tid"`
+	TBy         string     `json:"tby"`
 	Credit      packCredit `json:"-"`
 }
 
@@ -344,7 +352,10 @@ func readPack(dir string) ([]packEntry, error) {
 	if len(p.Entries) == 0 {
 		return nil, fmt.Errorf("%w: %s of %s: at least one entry is required", pack.ErrInvalidPack, sentencesFile, dir)
 	}
-	used := map[string]bool{}
+	if len(p.OldCredits) != 0 {
+		return nil, fmt.Errorf("%w: %s of %s: the separate \"credits\" map is gone; each sentence carries its own by, tid and tby",
+			pack.ErrInvalidPack, sentencesFile, dir)
+	}
 	for i, g := range p.Entries {
 		if strings.TrimSpace(g.Word) == "" {
 			return nil, fmt.Errorf("%w: %s of %s: entry %d needs a word", pack.ErrInvalidPack, sentencesFile, dir, i)
@@ -363,24 +374,20 @@ func readPack(dir string) ([]packEntry, error) {
 			if strings.TrimSpace(s.Pinyin) == "" {
 				p.Entries[i].Sentences[j].Pinyin = ""
 			}
-			// A sentence with an id is credited by the pack's credits: the
+			// A sentence with an id is credited on the sentence: the
 			// translation's id is required too, the owners may be empty
-			// (Tatoeba lists none for some CC0 sentences).
+			// (Tatoeba lists none for some CC0 sentences). A credit without
+			// an id credits nothing and is refused.
 			if s.ID != 0 {
-				key := strconv.FormatInt(s.ID, 10)
-				c, ok := p.Credits[key]
-				if !ok || c.TID == 0 {
-					return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s has no complete entry in credits",
+				if s.TID == 0 {
+					return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s has no translation id (tid)",
 						pack.ErrInvalidPack, sentencesFile, dir, s.ID, g.Word)
 				}
-				used[key] = true
-				p.Entries[i].Sentences[j].Credit = c
+				p.Entries[i].Sentences[j].Credit = packCredit{By: s.By, TID: s.TID, TBy: s.TBy}
+			} else if s.By != "" || s.TID != 0 || s.TBy != "" {
+				return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s has a credit but no id",
+					pack.ErrInvalidPack, sentencesFile, dir, j, g.Word)
 			}
-		}
-	}
-	for id := range p.Credits {
-		if !used[id] {
-			return nil, fmt.Errorf("%w: %s of %s: credits lists sentence %s, which no entry uses", pack.ErrInvalidPack, sentencesFile, dir, id)
 		}
 	}
 	return p.Entries, nil

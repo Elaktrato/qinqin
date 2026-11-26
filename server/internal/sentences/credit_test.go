@@ -13,13 +13,12 @@ import (
 )
 
 const creditPack = `{"entries":[{"word":"你好","sentences":[
- {"id":4706,"hanzi":"你好，世界。","pinyin":"nǐ hǎo, shì jiè.","translation":"Hello, world."},
- {"id":4709,"hanzi":"你好吗？","translation":"How are you?"},
- {"hanzi":"你好，再见。","translation":"Hello, goodbye."}]}],
- "credits":{"4706":{"by":"bunbuku","tid":355041,"tby":"CK"},"4709":{"by":"","tid":52115,"tby":"human600"}}}`
+ {"id":4706,"hanzi":"你好，世界。","pinyin":"nǐ hǎo, shì jiè.","translation":"Hello, world.","by":"bunbuku","tid":355041,"tby":"CK"},
+ {"id":4709,"hanzi":"你好吗？","translation":"How are you?","tid":52115,"tby":"human600"},
+ {"hanzi":"你好，再见。","translation":"Hello, goodbye."}]}]}`
 
 // A pack sentence carries who wrote it: the id of its page on Tatoeba and its
-// owner, and the same for its translation, joined from the pack's credits.
+// owner, and the same for its translation, each on the sentence itself.
 func TestPackSentenceCarriesItsCredit(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ctx := context.Background()
@@ -70,14 +69,18 @@ func TestPackSentenceCarriesItsCredit(t *testing.T) {
 	}
 }
 
-// A credit key without a sentence that uses it, or a sentence id with no
-// credit, is a malformed pack.
-func TestPackCreditsMustMatch(t *testing.T) {
+// A sentence id without its translation's id is a malformed pack, and so is
+// the old shape (credits in a separate map, none on the sentence).
+func TestPackCreditsMustBeOnTheSentence(t *testing.T) {
 	lang.Register(lang.Zh{})
 	sqlDB := dbtest.Open(t)
 	seedWords(t, sqlDB)
-	bad := `{"entries":[{"word":"你好","sentences":[{"id":7,"hanzi":"你好。","translation":"Hi."}]}],"credits":{}}`
-	if _, err := sentences.ImportPack(context.Background(), sqlDB, buildPack(t, "mini", bad)); err == nil {
-		t.Error("a sentence id without a credits entry was accepted")
+	for name, bad := range map[string]string{
+		"no translation id": `{"entries":[{"word":"你好","sentences":[{"id":7,"hanzi":"你好。","translation":"Hi.","by":"x"}]}]}`,
+		"old credits map":   `{"entries":[{"word":"你好","sentences":[{"id":7,"hanzi":"你好。","translation":"Hi."}]}],"credits":{"7":{"by":"x","tid":8,"tby":"y"}}}`,
+	} {
+		if _, err := sentences.ImportPack(context.Background(), sqlDB, buildPack(t, "mini", bad)); err == nil {
+			t.Errorf("%s: a pack without the credit on the sentence was accepted", name)
+		}
 	}
 }
