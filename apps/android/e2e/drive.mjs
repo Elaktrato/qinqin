@@ -302,7 +302,8 @@ async function main() {
 				const notes = await cdp.eval('document.getElementById("notes").innerText');
 				screenshot('02-address-checked');
 				if (!/plain http|http/i.test(notes) || !/Found qinqin/.test(notes)) throw new Error(`unexpected notes: ${notes}`);
-				await cdp.eval('document.querySelector("#actions button.primary").click()');
+				// The click recreates the activity: answer first, click in the next task (a reply raced the destroyed page).
+				await cdp.eval('setTimeout(() => document.querySelector("#actions button.primary").click(), 50); true');
 				cdp.close();
 				const t0 = Date.now();
 				cdp = await connectPage(ORIGIN + '/', { timeout: 90_000 });
