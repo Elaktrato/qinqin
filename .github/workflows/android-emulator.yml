@@ -12,7 +12,7 @@ name: android-emulator
 # paths: sign in, study with Back, reader lookup, bottom bar and back button) and `extended` (every page in qinqin
 # Day and Night, Chinese/Japanese IME composition, the writing and tone pads under real touch, performance numbers).
 # By hand, pick the suites with the `suites` input (comma list of shell, core, pages, ime, touch, perf). A nightly
-# run covers the whole set on `develop`.
+# run covers the whole set on `develop`; pull requests run `core` only (owner decision 2026-11-26).
 on:
   workflow_dispatch:
     inputs:
@@ -50,12 +50,8 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: core
-            suites: shell,core
-          - name: extended
-            suites: pages,ime,touch,perf
+      # Pull requests run only the core job; the extended suites (flaky about one run in two) run nightly and by hand.
+      matrix: ${{ fromJSON(github.event_name == 'pull_request' && '{"include":[{"name":"core","suites":"shell,core"}]}' || '{"include":[{"name":"core","suites":"shell,core"},{"name":"extended","suites":"pages,ime,touch,perf"}]}') }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
