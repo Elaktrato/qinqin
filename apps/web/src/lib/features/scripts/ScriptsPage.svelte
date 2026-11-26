@@ -9,6 +9,7 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import { newUlid } from '$lib/events/ulid';
 	import type { StudyEventBody } from '$lib/api/types';
+	import { Button } from '$lib/ui';
 	import { scriptPayload } from './events';
 	import { systemLabel } from './labels';
 	import { systemsFor } from './packs';
@@ -42,6 +43,12 @@
 
 	// What waited from an earlier, offline round is also sent by the app shell on start, on coming online and on coming back to the front.
 	let dropped = $state(0);
+
+	function dismissDropped(): void {
+		if (workspace === null) return;
+		clearDropped(storage(), workspace.id);
+		dropped = 0;
+	}
 
 	$effect(() => {
 		const id = workspace?.id;
@@ -101,7 +108,7 @@
 	{#if dropped > 0 && workspace !== null}
 		<p class="warn" role="alert" data-testid="scripts-pending-dropped">
 			{t('scripts.pendingDropped', { count: dropped })}
-			<button type="button" class="link" onclick={() => { clearDropped(storage(), workspace.id); dropped = 0; }}>{t('scripts.pendingDroppedDismiss')}</button>
+			<Button variant="plain" onclick={dismissDropped}>{t('scripts.pendingDroppedDismiss')}</Button>
 		</p>
 	{/if}
 
@@ -128,14 +135,6 @@
 <style>
 	.warn {
 		color: var(--readable-muted);
-	}
-	.link {
-		background: none;
-		border: 0;
-		padding: 0;
-		color: inherit;
-		text-decoration: underline;
-		cursor: pointer;
 	}
 	.notice {
 		color: var(--readable-muted);
