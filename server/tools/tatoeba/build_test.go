@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -400,5 +401,61 @@ func TestStagingIsOutsideThePackFolder(t *testing.T) {
 		if _, err := os.Stat(s); !os.IsNotExist(err) {
 			t.Errorf("stage %s left behind", s)
 		}
+	}
+}
+
+// TestSentencesCarryTheirCredits: every sentence of a pack carries its Tatoeba
+// id and the pack's "credits" name the owner of it and of its translation, so
+// the app can credit the author of each sentence it shows (CC BY 2.0 FR); the
+// credits are exactly the bundled sentences' (credits.tsv's rows), and each id
+// is credited once however many words list it.
+func TestSentencesCarryTheirCredits(t *testing.T) {
+	out, _ := buildFixture(t, nil)
+	data, err := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "sentences.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var p struct {
+		Entries []struct {
+			Sentences []struct {
+				ID    int64  `json:"id"`
+				Hanzi string `json:"hanzi"`
+			} `json:"sentences"`
+		} `json:"entries"`
+		Credits map[string]struct {
+			By  string `json:"by"`
+			TID int64  `json:"tid"`
+			TBy string `json:"tby"`
+		} `json:"credits"`
+	}
+	if err := json.Unmarshal(data, &p); err != nil {
+		t.Fatal(err)
+	}
+	used := map[string]bool{}
+	for _, g := range p.Entries {
+		for _, s := range g.Sentences {
+			if s.ID == 0 {
+				t.Errorf("%s has no Tatoeba id", s.Hanzi)
+			}
+			used[strconv.FormatInt(s.ID, 10)] = true
+		}
+	}
+	if len(used) != len(p.Credits) {
+		t.Errorf("%d sentence ids, %d credits", len(used), len(p.Credits))
+	}
+	for id := range used {
+		if _, ok := p.Credits[id]; !ok {
+			t.Errorf("sentence %s has no credit", id)
+		}
+	}
+	if c := p.Credits["1013"]; c.By != "wei" || c.TID != 2015 || c.TBy != "emma" {
+		t.Errorf("credit of 1013 = %+v, want wei / 2015 / emma", c)
+	}
+	credits, err := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "credits.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rows := strings.Count(string(credits), "\n") - 1; rows != len(p.Credits) {
+		t.Errorf("credits.tsv has %d rows, sentences.json %d credits", rows, len(p.Credits))
 	}
 }

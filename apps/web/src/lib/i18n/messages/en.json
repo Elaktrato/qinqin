@@ -879,6 +879,8 @@
 	"entry.senses.hiddenShown": "Shown although its dictionaries are hidden in this workspace",
 	"entry.senses.showHidden": "Show {count} from hidden dictionaries",
 	"entry.senses.title": "Senses",
+	"entry.sentences.creditTranslation": "translation {owner}",
+	"entry.sentences.creditTranslationBare": "translation",
 	"entry.sentences.packUser": "{pack} · user {id}",
 	"entry.sentences.shareLabel": "Share this sentence",
 	"entry.sentences.shared": "shared",

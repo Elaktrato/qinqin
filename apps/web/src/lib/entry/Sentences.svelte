@@ -6,8 +6,9 @@
 	import { aiMark } from '$lib/api/examples';
 	import { markTerm } from '$lib/entry/markTerm';
 	import AiTag from '$lib/components/AiTag.svelte';
+	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
 	import ShareButton from '$lib/entry/ShareButton.svelte';
-	import { sentenceShareText } from '$lib/entry/shareText';
+	import { creditText, sentenceShareText } from '$lib/entry/shareText';
 
 	let {
 		sentences,
@@ -57,10 +58,12 @@
 					{#if mark !== null}
 						<AiTag ai={sentence.ai} label={aiLabelOf?.(mark)} />
 						{@render actions?.(sentence, `sentence-${sentence.id}`)}
+					{:else if sentence.credit}
+						<SentenceCredit credit={sentence.credit} />
 					{:else}
 						<span class="origin">{origin(sentence)}</span>
 					{/if}
-					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? origin(sentence) : '')} label={t('entry.sentences.shareLabel')} /></span>
+					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? (sentence.credit ? creditText(sentence.credit) : origin(sentence)) : '')} label={t('entry.sentences.shareLabel')} /></span>
 				</li>
 			{/each}
 		</ul>
