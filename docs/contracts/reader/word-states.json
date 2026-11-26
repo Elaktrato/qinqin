@@ -202,6 +202,33 @@
    "expect": "new"
   }
  ],
+ "batchCases": [
+  {
+   "name": "a placement declaration",
+   "data": { "version": 1, "entryId": 5, "batch": "01JXK0000000000000000000AA", "source": "placement", "scope": "HSK 3.0 · HSK 3" },
+   "expect": { "id": "01JXK0000000000000000000AA", "source": "placement", "scope": "HSK 3.0 · HSK 3" }
+  },
+  {
+   "name": "a range declaration without a scope label",
+   "data": { "version": 1, "entryId": 5, "batch": "b1", "source": "range" },
+   "expect": { "id": "b1", "source": "range", "scope": "" }
+  },
+  {
+   "name": "a mark made by hand has no batch",
+   "data": { "version": 1, "entryId": 5, "createdAt": "2026-11-16T00:00:00.000Z" },
+   "expect": null
+  },
+  {
+   "name": "a source other than range or placement is a mark by hand",
+   "data": { "version": 1, "entryId": 5, "batch": "b1", "source": "import" },
+   "expect": null
+  },
+  {
+   "name": "an empty or non-string batch is a mark by hand",
+   "data": { "version": 1, "entryId": 5, "batch": "", "source": "range" },
+   "expect": null
+  }
+ ],
  "rowCases": [
   {
    "name": "a valid mark",

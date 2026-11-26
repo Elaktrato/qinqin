@@ -12,6 +12,7 @@ import (
 	"qinqin/internal/fonts"
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
+	"qinqin/internal/images"
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/levels"
 	"qinqin/internal/pack"
@@ -234,6 +235,19 @@ var handlers = []handler{
 				return errNoFontStore
 			}
 			return fonts.Uninstall(ctx, sqlDB, packID, o.fontStore)
+		},
+	},
+	{
+		typ: pack.TypeImages,
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := images.Import(ctx, sqlDB, pk)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d pictures, %d word mappings", r.Pictures, r.Mappings), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return images.Uninstall(ctx, sqlDB, packID)
 		},
 	},
 }

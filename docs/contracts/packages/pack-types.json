@@ -101,6 +101,15 @@
    "package": null,
    "requiresLexicon": false,
    "optionalPackage": false
+  },
+  {
+   "type": "images",
+   "registry": "image_packs",
+   "languages": "many",
+   "uploadable": true,
+   "package": null,
+   "requiresLexicon": false,
+   "optionalPackage": false
   }
  ]
 }

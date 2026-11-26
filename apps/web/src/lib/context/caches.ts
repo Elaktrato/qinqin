@@ -5,6 +5,7 @@
 // its module (lib/api/audio.ts getEntryAudio(cache, id), ...), which imports
 // the class as a type, so a test that mocks that module still gets a session.
 
+import { PictureCache } from '../aids/pictures';
 import type { AudioResolution } from '../api/audio';
 import type { CharacterList, Pending } from '../api/characters';
 import type { ComponentIndex } from '../api/components';
@@ -230,6 +231,8 @@ export class SessionCaches {
 	readonly written = new WrittenCache();
 	readonly ranks = new RanksCache();
 	readonly strokes = new StrokeCache();
+	/** The pictures of entries for the visual aids (aids/pictures.ts). */
+	readonly pictures = new PictureCache();
 
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
@@ -253,7 +256,8 @@ export class SessionCaches {
 			this.providerNames,
 			this.written,
 			this.ranks,
-			this.strokes
+			this.strokes,
+			this.pictures
 		]) {
 			cache.clear();
 		}

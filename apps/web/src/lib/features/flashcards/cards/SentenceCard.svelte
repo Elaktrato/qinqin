@@ -5,8 +5,11 @@
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
+	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary, type FacePrimary } from '../face/cardFace.svelte';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
@@ -86,10 +89,12 @@
 			>{#snippet strong(text: string)}<strong lang={language}>{text}</strong>{/snippet}</Msg
 		>
 	</p>
+	<HintShown {entry} />
 	<AiTag ai={sentence.ai} />
 </FacePrompt>
 
 <FaceWork>
+	<HintControl />
 	{#if solution === null}
 		<p class="hint" role="status">{t('flashcards.card.preparing')}</p>
 	{:else}
@@ -114,6 +119,7 @@
 			{#if sentence.translation}
 				<p class="translation">{sentence.translation}</p>
 			{/if}
+			{#if sentence.credit}<SentenceCredit credit={sentence.credit} />{/if}
 		</section>
 	</FaceAnswer>
 {/if}

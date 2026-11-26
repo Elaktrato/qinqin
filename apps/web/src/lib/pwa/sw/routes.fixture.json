@@ -296,6 +296,14 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/image-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/images/entries/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/journal/capabilities",
 		"access": "user"
 	},
@@ -434,6 +442,14 @@
 	{
 		"pattern": "GET /api/sentence-packs",
 		"access": "public"
+	},
+	{
+		"pattern": "GET /api/starter-sets",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/starter-sets/{id}",
+		"access": "user"
 	},
 	{
 		"pattern": "GET /api/stats/activity",

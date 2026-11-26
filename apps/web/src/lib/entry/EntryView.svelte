@@ -11,6 +11,8 @@
 	import { getEntryAudio, type AudioResolution } from '$lib/api/audio';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
+	import Anatomy from '$lib/aids/Anatomy.svelte';
+	import EntryPicture from '$lib/aids/EntryPicture.svelte';
 	import AddToStudy from '$lib/entry/AddToStudy.svelte';
 	import Badges from '$lib/entry/Badges.svelte';
 	import EntryEditForm from '$lib/entry/EntryEditForm.svelte';
@@ -385,6 +387,7 @@
 					<Chip>{languageLabel(entry.language)}</Chip>
 				{/if}
 			</div>
+			{#key entry.id}<EntryPicture entryId={entry.id} size={8} />{/key}
 			<div class="actions">
 				<AddToStudy
 					bind:this={study}
@@ -449,6 +452,9 @@
 						</ul>
 					</section>
 				{/if}
+				{#if strokeChar !== null}
+					<Anatomy char={strokeChar} language={entry.language} radical={entry.kind === 'character' ? radicalWritten : ''} />
+				{/if}
 				{#if profileOf(entry.language).strokes && strokeChar !== null}
 					<section class="section" aria-labelledby="stroke-heading">
 						<h2 id="stroke-heading">{t('entry.page.strokeOrder')}</h2>
@@ -465,7 +471,7 @@
 								{/each}
 							</p>
 						{/if}
-						<StrokePlayer char={strokeChar} />
+						<StrokePlayer char={strokeChar} lang={entry.language} />
 					</section>
 				{/if}
 				{#if !editing && session.workspaces.current}

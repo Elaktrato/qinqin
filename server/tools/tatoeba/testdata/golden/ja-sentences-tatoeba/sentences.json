@@ -1,13 +1,13 @@
 {"entries":[
-{"word":"これ","sentences":[{"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book."}]},
-{"word":"今日","sentences":[{"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book."}]},
-{"word":"勉強","sentences":[{"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese."}]},
-{"word":"学校","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."},{"hanzi":"学校に来ます。","translation":"I come to school."}]},
-{"word":"日本語","sentences":[{"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese."}]},
-{"word":"本","sentences":[{"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book."},{"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book."}]},
-{"word":"来る","sentences":[{"hanzi":"学校に来ます。","translation":"I come to school."}]},
-{"word":"水","sentences":[{"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water."}]},
-{"word":"私","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."}]},
-{"word":"行く","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."}]},
-{"word":"飲む","sentences":[{"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water."}]}
+{"word":"これ","sentences":[{"id":3006,"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book.","by":"yuki","tid":4007,"tby":"emma"}]},
+{"word":"今日","sentences":[{"id":3003,"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book.","by":"ken","tid":4004,"tby":"tom"}]},
+{"word":"勉強","sentences":[{"id":3005,"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese.","by":"yuki","tid":4006,"tby":"emma"}]},
+{"word":"学校","sentences":[{"id":3001,"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school.","by":"yuki","tid":4001,"tby":"emma"},{"id":3004,"hanzi":"学校に来ます。","translation":"I come to school.","by":"ken","tid":4005,"tby":"emma"}]},
+{"word":"日本語","sentences":[{"id":3005,"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese.","by":"yuki","tid":4006,"tby":"emma"}]},
+{"word":"本","sentences":[{"id":3006,"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book.","by":"yuki","tid":4007,"tby":"emma"},{"id":3003,"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book.","by":"ken","tid":4004,"tby":"tom"}]},
+{"word":"来る","sentences":[{"id":3004,"hanzi":"学校に来ます。","translation":"I come to school.","by":"ken","tid":4005,"tby":"emma"}]},
+{"word":"水","sentences":[{"id":3002,"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water.","by":"yuki","tid":4002,"tby":"emma"}]},
+{"word":"私","sentences":[{"id":3001,"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school.","by":"yuki","tid":4001,"tby":"emma"}]},
+{"word":"行く","sentences":[{"id":3001,"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school.","by":"yuki","tid":4001,"tby":"emma"}]},
+{"word":"飲む","sentences":[{"id":3002,"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water.","by":"yuki","tid":4002,"tby":"emma"}]}
 ]}

@@ -14,7 +14,8 @@ export type PackType =
 	| 'strokes'
 	| 'lemma-rules'
 	| 'font'
-	| 'theme';
+	| 'theme'
+	| 'images';
 
 /** One theme of a staged theme pack with its measured contrast (docs/contracts/themes/README.md, Contrast). */
 export interface StagedTheme {

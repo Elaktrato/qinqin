@@ -5,13 +5,17 @@
   a private host (src/firstrun/address.ts), and the native ServerStore refuses a public http origin again
   (ServerStore.isAllowedOrigin, the same rule in Java) whenever an address is saved or read. Only the saved
   origin is opened as the app; links to other hosts go to the system browser. Cleartext requests the app's own
-  page makes to other hosts are NOT blocked by the platform. Certificates: the system trust store only (no
-  user-added CAs, no pinning): a self-signed server needs its CA installed on the phone, as for any app.
+  page makes to other hosts are NOT blocked by the platform. Certificates: the system trust store AND the CAs the
+  user installed on the phone (no pinning). A self-hosted server often uses a private CA (Caddy's internal CA, a
+  home-lab CA); since Android 7 an app ignores user-installed CAs unless it says so here, so without the "user" line
+  that server could never be reached (v0.8.0-alpha.1). Cost: a CA the user installed is trusted by this app, as in
+  the browser; that is the user's own choice and needs a screen lock to install.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system"/>
+            <certificates src="user"/>
         </trust-anchors>
     </base-config>
 </network-security-config>

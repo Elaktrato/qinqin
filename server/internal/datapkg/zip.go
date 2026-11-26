@@ -327,7 +327,7 @@ func writeZip(spec Spec, meta BuildMeta, contentHash string, data, out string) (
 		sources[i] = SourceInfo{Type: s.Type, PackID: s.PackID, Name: s.Name, Version: s.Version,
 			License: s.License, Attribution: s.Attribution, Notice: s.Notice}
 	}
-	m := Manifest{Format: ManifestFormat, FormatVersion: FormatVersion, ID: spec.ID, Type: spec.Type,
+	m := Manifest{Format: ManifestFormat, FormatVersion: FormatVersionOf(spec.Type), ID: spec.ID, Type: spec.Type,
 		Languages: slices.Clone(spec.Languages), Revision: meta.Revision, ContentHash: contentHash,
 		InstanceID: meta.InstanceID, BuiltAt: modified.Format(time.RFC3339),
 		Requires: append([]string{}, spec.Requires...), Sources: sources, Files: files}

@@ -29,7 +29,7 @@ import (
 func contentHash(ctx context.Context, pkg *sql.DB, spec Spec, def typeDef, extras [][2]string) (string, error) {
 	h := sha256.New()
 	w := bufio.NewWriterSize(h, 64<<10)
-	fmt.Fprintf(w, "qinqin-package %s %d\n", spec.Type, FormatVersion)
+	fmt.Fprintf(w, "qinqin-package %s %d\n", spec.Type, FormatVersionOf(spec.Type))
 	tables := append([]TableDef(nil), def.tables...)
 	tables = append(tables, TableDef{Name: "qq_sources", Order: []string{"type", "pack_id"},
 		cols: []string{"type", "pack_id", "name", "version", "license", "attribution", "notice", "license_files"}})

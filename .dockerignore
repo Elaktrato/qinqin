@@ -11,5 +11,7 @@ server/data/
 plugins/data-local
 plugins/data-audio
 plugins/data-fonts
+plugins/data-images
+plugins/upstream
 scripts/fonts/node_modules
 apps/web/.env*

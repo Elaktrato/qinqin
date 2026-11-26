@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -121,12 +122,14 @@ func sha(b []byte) string {
 
 // schemaFixture reads docs/contracts/packages/schemas.json.
 type schemaFixture struct {
+	FormatVersion    int                 `json:"formatVersion"`
 	Common           []string            `json:"common"`
 	PackageKeys      []string            `json:"packageKeys"`
 	ExtraPackageKeys map[string][]string `json:"extraPackageKeys"`
 	Cases            []struct {
-		Type   string `json:"type"`
-		Tables []struct {
+		Type          string `json:"type"`
+		FormatVersion int    `json:"formatVersion"`
+		Tables        []struct {
 			Name  string   `json:"name"`
 			SQL   string   `json:"sql"`
 			Order []string `json:"order"`
@@ -198,7 +201,7 @@ func TestBuildEveryType(t *testing.T) {
 			if _, err := datapkg.ParseManifest(p.members["manifest.json"]); err != nil {
 				t.Errorf("ParseManifest of the built manifest: %v", err)
 			}
-			if m.Format != "qinqin-package" || m.FormatVersion != 1 || m.ID != spec.ID || m.Type != spec.Type || m.Revision != 3 ||
+			if m.Format != "qinqin-package" || m.FormatVersion != datapkg.FormatVersionOf(spec.Type) || m.ID != spec.ID || m.Type != spec.Type || m.Revision != 3 ||
 				m.ContentHash != b.ContentHash || m.InstanceID != instanceID || m.BuiltAt != "2026-11-16T10:00:00Z" ||
 				!slices.Equal(m.Languages, spec.Languages) || !slices.Equal(m.Requires, append([]string{}, spec.Requires...)) {
 				t.Errorf("manifest = %+v", m)
@@ -251,7 +254,7 @@ func TestBuildEveryType(t *testing.T) {
 				t.Errorf("qq_package keys = %v, want %v", gotKeys, wantKeys)
 			}
 			langs, _ := json.Marshal(spec.Languages)
-			if keys["id"] != spec.ID || keys["type"] != string(spec.Type) || keys["formatVersion"] != "1" || keys["revision"] != "3" ||
+			if keys["id"] != spec.ID || keys["type"] != string(spec.Type) || keys["formatVersion"] != strconv.Itoa(datapkg.FormatVersionOf(spec.Type)) || keys["revision"] != "3" ||
 				keys["contentHash"] != b.ContentHash || keys["instanceId"] != instanceID || keys["builtAt"] != "2026-11-16T10:00:00Z" ||
 				keys["languages"] != string(langs) {
 				t.Errorf("qq_package = %v", keys)

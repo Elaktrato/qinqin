@@ -1,0 +1,384 @@
+{
+	"id": "cyrillic",
+	"license": "CC-BY-4.0",
+	"systems": [
+		{
+			"id": "cyrillic",
+			"language": "ru",
+			"groups": [
+				"vowel",
+				"consonant",
+				"signs"
+			],
+			"items": [
+				{
+					"glyph": "А",
+					"lower": "а",
+					"roman": "a",
+					"group": "vowel",
+					"key": "F"
+				},
+				{
+					"glyph": "Б",
+					"lower": "б",
+					"roman": "b",
+					"group": "consonant",
+					"key": ","
+				},
+				{
+					"glyph": "В",
+					"lower": "в",
+					"roman": "v",
+					"group": "consonant",
+					"key": "D",
+					"lookalike": true,
+					"note": "Looks like Latin B but sounds like v."
+				},
+				{
+					"glyph": "Г",
+					"lower": "г",
+					"roman": "g",
+					"group": "consonant",
+					"key": "U"
+				},
+				{
+					"glyph": "Д",
+					"lower": "д",
+					"roman": "d",
+					"group": "consonant",
+					"key": "L",
+					"note": "Italic and handwriting: looks like a g with a loop below."
+				},
+				{
+					"glyph": "Е",
+					"lower": "е",
+					"roman": "ye",
+					"group": "vowel",
+					"key": "T",
+					"note": "Sounds like ye in yes; after a consonant it softens it."
+				},
+				{
+					"glyph": "Ё",
+					"lower": "ё",
+					"roman": "yo",
+					"group": "vowel",
+					"key": "`",
+					"note": "Sounds like yo in yore; the dots are often left out in print."
+				},
+				{
+					"glyph": "Ж",
+					"lower": "ж",
+					"roman": "zh",
+					"group": "consonant",
+					"key": ";"
+				},
+				{
+					"glyph": "З",
+					"lower": "з",
+					"roman": "z",
+					"group": "consonant",
+					"key": "P"
+				},
+				{
+					"glyph": "И",
+					"lower": "и",
+					"roman": "i",
+					"group": "vowel",
+					"key": "B",
+					"note": "Italic and handwriting: looks like a Latin u."
+				},
+				{
+					"glyph": "Й",
+					"lower": "й",
+					"roman": "y",
+					"group": "consonant",
+					"key": "Q",
+					"note": "The short i, as in boy: и with a breve."
+				},
+				{
+					"glyph": "К",
+					"lower": "к",
+					"roman": "k",
+					"group": "consonant",
+					"key": "R"
+				},
+				{
+					"glyph": "Л",
+					"lower": "л",
+					"roman": "l",
+					"group": "consonant",
+					"key": "K",
+					"note": "Italic and handwriting: has a hook, like an upside-down v."
+				},
+				{
+					"glyph": "М",
+					"lower": "м",
+					"roman": "m",
+					"group": "consonant",
+					"key": "V"
+				},
+				{
+					"glyph": "Н",
+					"lower": "н",
+					"roman": "n",
+					"group": "consonant",
+					"key": "Y",
+					"lookalike": true,
+					"note": "Looks like Latin H but sounds like n."
+				},
+				{
+					"glyph": "О",
+					"lower": "о",
+					"roman": "o",
+					"group": "vowel",
+					"key": "J"
+				},
+				{
+					"glyph": "П",
+					"lower": "п",
+					"roman": "p",
+					"group": "consonant",
+					"key": "G",
+					"note": "Italic and handwriting: looks like a Latin n."
+				},
+				{
+					"glyph": "Р",
+					"lower": "р",
+					"roman": "r",
+					"group": "consonant",
+					"key": "H",
+					"lookalike": true,
+					"note": "Looks like Latin P but sounds like r."
+				},
+				{
+					"glyph": "С",
+					"lower": "с",
+					"roman": "s",
+					"group": "consonant",
+					"key": "C",
+					"lookalike": true,
+					"note": "Looks like Latin C but sounds like s."
+				},
+				{
+					"glyph": "Т",
+					"lower": "т",
+					"roman": "t",
+					"group": "consonant",
+					"key": "N",
+					"note": "Italic and handwriting: looks like a small m."
+				},
+				{
+					"glyph": "У",
+					"lower": "у",
+					"roman": "u",
+					"group": "vowel",
+					"key": "E",
+					"lookalike": true,
+					"note": "Looks like Latin Y but sounds like oo in boot."
+				},
+				{
+					"glyph": "Ф",
+					"lower": "ф",
+					"roman": "f",
+					"group": "consonant",
+					"key": "A"
+				},
+				{
+					"glyph": "Х",
+					"lower": "х",
+					"roman": "kh",
+					"group": "consonant",
+					"key": "[",
+					"lookalike": true,
+					"note": "Looks like Latin X but sounds like the ch in Scottish loch."
+				},
+				{
+					"glyph": "Ц",
+					"lower": "ц",
+					"roman": "ts",
+					"group": "consonant",
+					"key": "W"
+				},
+				{
+					"glyph": "Ч",
+					"lower": "ч",
+					"roman": "ch",
+					"group": "consonant",
+					"key": "X"
+				},
+				{
+					"glyph": "Ш",
+					"lower": "ш",
+					"roman": "sh",
+					"group": "consonant",
+					"key": "I"
+				},
+				{
+					"glyph": "Щ",
+					"lower": "щ",
+					"roman": "shch",
+					"group": "consonant",
+					"key": "O"
+				},
+				{
+					"glyph": "Ъ",
+					"lower": "ъ",
+					"roman": "hard sign",
+					"group": "signs",
+					"key": "]",
+					"note": "The hard sign has no sound of its own: it separates a consonant from a following ya, ye, yo or yu."
+				},
+				{
+					"glyph": "Ы",
+					"lower": "ы",
+					"roman": "ɨ",
+					"group": "vowel",
+					"key": "S",
+					"note": "A sound between i and u, with the tongue pulled back; it never starts a word."
+				},
+				{
+					"glyph": "Ь",
+					"lower": "ь",
+					"roman": "soft sign",
+					"group": "signs",
+					"key": "M",
+					"note": "The soft sign has no sound of its own: it softens the consonant before it."
+				},
+				{
+					"glyph": "Э",
+					"lower": "э",
+					"roman": "e",
+					"group": "vowel",
+					"key": "'",
+					"note": "Sounds like e in met; it is found mostly in loanwords."
+				},
+				{
+					"glyph": "Ю",
+					"lower": "ю",
+					"roman": "yu",
+					"group": "vowel",
+					"key": "."
+				},
+				{
+					"glyph": "Я",
+					"lower": "я",
+					"roman": "ya",
+					"group": "vowel",
+					"key": "Z"
+				}
+			],
+			"words": [
+				{
+					"text": "мама",
+					"roman": "mama",
+					"gloss": "mum"
+				},
+				{
+					"text": "папа",
+					"roman": "papa",
+					"gloss": "dad"
+				},
+				{
+					"text": "банк",
+					"roman": "bank",
+					"gloss": "bank"
+				},
+				{
+					"text": "кофе",
+					"roman": "kofe",
+					"gloss": "coffee"
+				},
+				{
+					"text": "метро",
+					"roman": "metro",
+					"gloss": "metro"
+				},
+				{
+					"text": "такси",
+					"roman": "taksi",
+					"gloss": "taxi"
+				},
+				{
+					"text": "парк",
+					"roman": "park",
+					"gloss": "park"
+				},
+				{
+					"text": "театр",
+					"roman": "teatr",
+					"gloss": "theatre"
+				},
+				{
+					"text": "школа",
+					"roman": "shkola",
+					"gloss": "school"
+				},
+				{
+					"text": "вода",
+					"roman": "voda",
+					"gloss": "water"
+				},
+				{
+					"text": "дом",
+					"roman": "dom",
+					"gloss": "house"
+				},
+				{
+					"text": "кот",
+					"roman": "kot",
+					"gloss": "tomcat"
+				},
+				{
+					"text": "рука",
+					"roman": "ruka",
+					"gloss": "hand"
+				},
+				{
+					"text": "река",
+					"roman": "reka",
+					"gloss": "river"
+				},
+				{
+					"text": "хлеб",
+					"roman": "khleb",
+					"gloss": "bread"
+				},
+				{
+					"text": "молоко",
+					"roman": "moloko",
+					"gloss": "milk"
+				},
+				{
+					"text": "друг",
+					"roman": "drug",
+					"gloss": "friend"
+				},
+				{
+					"text": "спасибо",
+					"roman": "spasibo",
+					"gloss": "thank you"
+				},
+				{
+					"text": "привет",
+					"roman": "privet",
+					"gloss": "hi"
+				},
+				{
+					"text": "город",
+					"roman": "gorod",
+					"gloss": "city"
+				},
+				{
+					"text": "окно",
+					"roman": "okno",
+					"gloss": "window"
+				},
+				{
+					"text": "снег",
+					"roman": "sneg",
+					"gloss": "snow"
+				}
+			]
+		}
+	]
+}

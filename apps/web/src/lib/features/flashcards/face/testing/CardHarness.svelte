@@ -4,6 +4,9 @@
 	import type { Component, Snippet } from 'svelte';
 	import StudyFace from '../StudyFace.svelte';
 	import { provideCardFace } from '../cardFace.svelte';
+	import HintScope from '../HintScope.svelte';
+	import { EMPTY_PLAN, type HintPlan } from '$lib/study/hints';
+	import type { CardHints } from '../cardHints.svelte';
 
 	let {
 		card,
@@ -14,6 +17,8 @@
 		deckLevel = null,
 		done = false,
 		onend,
+		hintPlan = EMPTY_PLAN,
+		onhints,
 		instance = $bindable()
 	}: {
 		card: Component<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -24,10 +29,18 @@
 		deckLevel?: string | null;
 		done?: boolean;
 		onend?: () => void;
+		/** The hints of the card (#215); none by default. */
+		hintPlan?: HintPlan;
+		/** Receives the card's hint state (how many hints were used). */
+		onhints?: (hints: CardHints) => void;
 		instance?: unknown;
 	} = $props();
 
 	provideCardFace();
+	let bound = $state<CardHints | null>(null);
+	$effect(() => {
+		if (bound !== null) onhints?.(bound);
+	});
 	const Card = $derived(card);
 
 	/** The rendered card's instance (its exported functions, e.g. ReverseCard.finish). */
@@ -49,5 +62,7 @@
 	{onend}
 	keys="Keys: test"
 >
-	<Card bind:this={instance} {...cardProps} />
+	<HintScope plan={hintPlan} locked={done} bind:hints={bound}>
+		<Card bind:this={instance} {...cardProps} />
+	</HintScope>
 </StudyFace>

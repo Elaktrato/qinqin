@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { isImeKey } from '$lib/ui/ime';
-	import ReadingText from '$lib/components/ReadingText.svelte';
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
@@ -17,12 +16,14 @@
 		suggestReverseGrade
 	} from '$lib/study/reverse';
 	import type { ReviewMeta } from '$lib/study/types';
-	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
+	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
+	import HintControl from '../face/HintControl.svelte';
+	import HintShown from '../face/HintShown.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 
 	interface Props {
@@ -44,10 +45,9 @@
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
 	let typed = $state('');
-	let readingShown = $state(false);
 	let field = $state<HTMLInputElement | HTMLTextAreaElement>();
 
-	const typedGrade = $derived(suggestReverseGrade({ typed, accepted, readingShown: false }));
+	const typedGrade = $derived(suggestReverseGrade({ typed, accepted }));
 	const verdict = $derived(typedGrade === null ? null : typedGrade === 1 ? 'wrong' : 'right');
 
 	onMount(() => field?.focus());
@@ -55,9 +55,9 @@
 	/** Finishes the card with what was typed; the runner's Space/Enter calls it too. */
 	export function finish(): void {
 		if (revealed) return;
-		const suggested = suggestReverseGrade({ typed, accepted, readingShown });
+		// A hint asked for with the Hint control is added by the session (lib/study/hints.ts).
+		const suggested = suggestReverseGrade({ typed, accepted });
 		const meta: ReviewMeta = {};
-		if (readingShown) meta.hints = 1;
 		if (suggested === 1) meta.mistakes = 1;
 		onDone({ suggested, meta });
 	}
@@ -113,16 +113,9 @@
 			onkeydown={onFieldKeydown}
 		/>
 	</div>
-	{#if !revealed && faces.readings.length > 0}
-		{#if readingShown}
-			<ul class="readings" aria-label={t('flashcards.card.readings')}>
-				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-				{/each}
-			</ul>
-		{:else}
-			<Button variant="plain" onclick={() => (readingShown = true)}>{t('flashcards.card.showReading')}</Button>
-		{/if}
+	{#if !revealed}
+		<HintShown {entry} />
+		<HintControl />
 	{/if}
 </FaceWork>
 
@@ -135,6 +128,7 @@
 			</p>
 		{/if}
 		<p class="fa-word" lang={studyLang(language)}>{faces.written}</p>
+		<AnswerAids {entry} />
 		{#if faces.readings.length > 0 || audio}
 			<div class="fa-readings">
 				{#if faces.readings.length > 0}
@@ -192,16 +186,6 @@
 	}
 	.entry.right :global(input) {
 		border-bottom: 2px solid var(--good);
-	}
-	.readings {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--space-1) var(--space-3);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		color: var(--reading-accent);
 	}
 	.feedback {
 		display: inline-flex;

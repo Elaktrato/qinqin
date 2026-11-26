@@ -14,7 +14,7 @@ docker compose logs qinqin | grep 'bootstrap:'
 On the first start the server creates the administrator `admin` before it opens the port and prints its password **once** in the log: `bootstrap: initial password (shown once, never again): <password>`. Open `http://localhost:8080`, sign in as `admin` with that password, and choose your own password (the server asks for it at once; nothing else works until you have). See [the bootstrap administrator](#the-bootstrap-administrator) below to pick the name or the password, or to create the admin yourself.
 
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none` (in a `.env` file next to `docker-compose.yml`, or in the stack's environment). The default trusts the `X-Forwarded-For` header of private-network peers, which a LAN client could forge to dodge the per-client sign-in limits ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
-- **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 300 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
+- **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 600 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
 - **Nobody becomes administrator by registering.** The bootstrap administrator exists before the port opens, and registration is closed by default.
 - **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features, authenticator apps and a stored mail password are unavailable, and everything else works ([AI providers and offline OCR](Admin-AI-and-OCR)).
 - **Upgrading from the old quick start?** It kept the data in `./data`; the compose file now defaults to a named volume, so without a change you would start on an empty instance. Set `QINQIN_DATA_VOLUME=./data` to keep using it.
@@ -34,7 +34,7 @@ While the instance has no users, each start creates an administrator before it o
 
 ### The auto-seed on the first start
 
-The first start of a fresh instance installs the bundled packs by itself before the server listens: the upstream dictionaries, the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists, the stroke data and the Kanji alive audio when present. It takes about 2 minutes (126 s measured on a busy machine; the first start only), and the compose health check allows 300 s.
+The first start of a fresh instance installs the bundled packs by itself before the server listens: the upstream dictionaries, the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists, the stroke data and the Kanji alive audio when present. It takes about 2.5 minutes (152 s measured on a busy machine with the v0.8.0 packs; the first start only), and the compose health check allows 600 s.
 
 - It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
 - It leaves out the demo pack `es-demo`.
@@ -78,6 +78,7 @@ The published image is the full build:
 - Tesseract OCR with the Chinese, Japanese and English models (about +193 MB), for reading journal photos offline.
 - The Kanji alive example-word audio (about +70 MB, 10,156 Japanese clips, CC BY 4.0).
 - The stroke-order data pack (`/opt/qinqin/strokes`, about 13 MB). It is a pack, not part of the web app, whose build shrank from about 50 MB to about 3 MB.
+- The Japanese stroke-order pack (`/opt/qinqin/kanjivg`, about 7 MB, KanjiVG, CC BY-SA 3.0), cloned at image build from a pinned commit; `--build-arg WITH_KANJIVG=0` leaves it out (the kana Write mode then stays hidden).
 
 Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
 
@@ -119,13 +120,13 @@ Everything lives in `/data` (the volume):
 | `tmp/` | Staged restore uploads and database snapshots; emptied at start |
 | `cache/sources/` | Cache of the Aozora Bunko and Gutenberg imports; safe to delete |
 
-The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`). At start the server also removes the book and photo folders of users that no longer exist.
+The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`, `/opt/qinqin/kanjivg`). At start the server also removes the book and photo folders of users that no longer exist.
 
 `packages/` grows with the installed packs: one file per package, roughly the size of the pack's data compressed (CC-CEDICT's `lexicon.zh` is about 15 MB, the stroke data about 13 MB, an audio pack its clips), and a replaced revision is kept 7 days so clients can finish a download. See [Data packs on the server](Admin-data-packs).
 
 ## Checklist after deploying
 
-- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 300 s start period that covers the first start's auto-seed).
+- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 600 s start period that covers the first start's auto-seed).
 - Sign in as the admin from step 4.
 - Search `好`: results appear (the first-start seed ran).
 - Create a deck and a flashcard.

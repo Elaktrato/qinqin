@@ -1,0 +1,172 @@
+{
+ "version": 1,
+ "rule": "aids/visual-aids",
+ "note": "The workspace-settings key `visualAids` (settings/workspace-settings.json). Web: apps/web/src/lib/aids/aids.contract.test.ts.",
+ "key": "visualAids",
+ "aids": [
+  "pictures",
+  "toneColors",
+  "toneContour",
+  "anatomy"
+ ],
+ "defaults": {
+  "pictures": true,
+  "toneColors": true,
+  "toneContour": true,
+  "anatomy": true
+ },
+ "parse": [
+  {
+   "name": "no key: the defaults",
+   "settings": {},
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": true,
+    "anatomy": true
+   }
+  },
+  {
+   "name": "one switch off",
+   "settings": {
+    "visualAids": {
+     "anatomy": false
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": true,
+    "anatomy": false
+   }
+  },
+  {
+   "name": "tone colours off alone, contour not stored: the contour goes off too (migration: before this, colours and contour were one switch)",
+   "settings": {
+    "visualAids": {
+     "toneColors": false
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": false,
+    "toneContour": false,
+    "anatomy": true
+   }
+  },
+  {
+   "name": "tone colours off, contour stored on: independent",
+   "settings": {
+    "visualAids": {
+     "toneColors": false,
+     "toneContour": true
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": false,
+    "toneContour": true,
+    "anatomy": true
+   }
+  },
+  {
+   "name": "contour off alone",
+   "settings": {
+    "visualAids": {
+     "toneContour": false
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": false,
+    "anatomy": true
+   }
+  },
+  {
+   "name": "all off",
+   "settings": {
+    "visualAids": {
+     "pictures": false,
+     "toneColors": false,
+     "toneContour": false,
+     "anatomy": false
+    }
+   },
+   "expect": {
+    "pictures": false,
+    "toneColors": false,
+    "toneContour": false,
+    "anatomy": false
+   }
+  },
+  {
+   "name": "a value that is not a boolean is the default",
+   "settings": {
+    "visualAids": {
+     "pictures": "no",
+     "anatomy": 0,
+     "toneColors": null,
+     "toneContour": 1
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": true,
+    "anatomy": true
+   }
+  },
+  {
+   "name": "unknown members are ignored",
+   "settings": {
+    "visualAids": {
+     "pitchAccent": true,
+     "anatomy": false
+    }
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": true,
+    "anatomy": false
+   }
+  },
+  {
+   "name": "not an object: the defaults",
+   "settings": {
+    "visualAids": [
+     false
+    ]
+   },
+   "expect": {
+    "pictures": true,
+    "toneColors": true,
+    "toneContour": true,
+    "anatomy": true
+   }
+  }
+ ],
+ "patch": [
+  {
+   "name": "a switch is written alone, by merge patch",
+   "aid": "anatomy",
+   "on": false,
+   "patch": {
+    "visualAids": {
+     "anatomy": false
+    }
+   }
+  },
+  {
+   "name": "the contour switch is written alone",
+   "aid": "toneContour",
+   "on": false,
+   "patch": {
+    "visualAids": {
+     "toneContour": false
+    }
+   }
+  }
+ ]
+}

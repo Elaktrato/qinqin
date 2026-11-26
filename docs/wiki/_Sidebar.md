@@ -13,6 +13,7 @@
 - [Scheduling and FSRS](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Grammar lessons](Grammar-lessons)
+- [Scripts trainer](Scripts-trainer)
 - [Journal and AI](Journal-and-AI)
 - [Stats and heatmap](Stats-and-heatmap)
 - [Weekly summary](Weekly-summary)

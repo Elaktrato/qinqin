@@ -110,6 +110,11 @@
 		"reason": "An SPDX-style licence name, shown verbatim (data)."
 	},
 	{
+		"file": "lib/features/scripts/manifest.ts",
+		"text": "CC BY 4.0",
+		"reason": "An SPDX-style licence name on the Sources page, shown verbatim (data)."
+	},
+	{
 		"file": "lib/pwa/sw/pushTexts.ts",
 		"text": "Time to study",
 		"reason": "The service worker's English fallback for a push notification when the page has stored no texts (docs/contracts/pwa/README.md, Push notifications); pushTexts.test.ts pins it to messages/en.json."

@@ -6,6 +6,8 @@
 /plugins/data-local/
 /plugins/data-audio/
 /plugins/data-strokes/
+# images packs built by scripts/prepare-images-pack.mjs (CC BY-SA 4.0 pictures; never committed)
+/plugins/data-images/
 # upstream downloads of data tooling (the pinned Tatoeba export of
 # server/tools/tatoeba, its reports and review samples; never committed)
 /plugins/upstream/

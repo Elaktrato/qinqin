@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/fonts"
+	"qinqin/internal/images"
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/pack"
 	"qinqin/internal/packs"
@@ -302,6 +303,14 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// broken pack is refused before the licence review, not after it.
 	if m.Type == pack.TypeFont {
 		if _, err := fonts.CheckPack(pk); err != nil {
+			writePackError(w, r, err, dir, s.dataDir)
+			return
+		}
+	}
+	// An images pack's lists and every picture (a drawing, no active content)
+	// are checked now: a broken pack is refused before the licence review.
+	if m.Type == pack.TypeImages {
+		if _, err := images.CheckPack(pk); err != nil {
 			writePackError(w, r, err, dir, s.dataDir)
 			return
 		}

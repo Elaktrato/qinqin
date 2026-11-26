@@ -26,7 +26,7 @@ export const S = {
 	failure: {
 		unreachable: 'Could not reach the server. Check the address and your connection.',
 		timeout: 'The server did not answer in time.',
-		tls: "The server's certificate is not trusted by this phone. Check the address, or install the certificate authority that signed it.",
+		tls: "The server's certificate is not trusted by this phone. Check the address, or install the certificate authority that signed it (Settings, Security, Encryption and credentials, Install a certificate, CA certificate).",
 		notQinqin: 'That address answers, but it is not a qinqin server (or it runs a version older than 0.7).',
 		redirect: (target: string) => `The address redirects to ${target}.`
 	},

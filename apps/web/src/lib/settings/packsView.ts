@@ -33,11 +33,12 @@ export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord(
 	strokes: 'packs.type.strokes',
 	'lemma-rules': 'packs.type.lemmaRules',
 	font: 'packs.type.font',
-	theme: 'packs.type.theme'
+	theme: 'packs.type.theme',
+	images: 'packs.type.images'
 });
 
 // The server's list order (docs/contracts/packages/pack-types.json).
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'lemma-rules', 'theme', 'font'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'lemma-rules', 'theme', 'font', 'images'];
 
 /** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
 export function packLanguages(pack: InstalledPack): string[] {
@@ -113,7 +114,8 @@ const UNINSTALL: Record<PackType, MessageKey> = {
 	'lemma-rules': 'packs.uninstall.lemmaRules',
 	audio: 'packs.uninstall.audio',
 	font: 'packs.uninstall.font',
-	theme: 'packs.uninstall.theme'
+	theme: 'packs.uninstall.theme',
+	images: 'packs.uninstall.images'
 };
 
 /** uninstallWarning says what an uninstall removes and what stays. */

@@ -1,8 +1,8 @@
 # Feature switches (`/api/features`)
 
-Issue #199, record 0006. qinqin has no code plugins: flashcards, the reader, the journal and grammar are core
+Issue #199, record 0006. qinqin has no code plugins: flashcards, the reader, the journal, grammar and the writing-system trainer (#204) are core
 features, each with a per-user switch (`server/internal/features/`, migration 047, table `feature_switches`).
-The ids and the order are fixed: `flashcards`, `reader`, `journal`, `grammar`.
+The ids and the order are fixed: `flashcards`, `reader`, `journal`, `grammar`, `scripts`.
 
 | Route | Answer |
 | --- | --- |

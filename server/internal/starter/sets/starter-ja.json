@@ -1,0 +1,506 @@
+{
+ "version": 1,
+ "id": "starter-ja",
+ "language": "ja",
+ "name": "Starter words (Japanese)",
+ "license": "CC-BY-4.0",
+ "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is by qinqin contributors, CC BY 4.0; the dictionaries and pictures it points at keep their own licences).",
+ "humanReviewed": false,
+ "words": [
+  {
+   "form": "犬",
+   "reading": "いぬ",
+   "gloss": "dog",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F415"
+   }
+  },
+  {
+   "form": "猫",
+   "reading": "ねこ",
+   "gloss": "cat",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F408"
+   }
+  },
+  {
+   "form": "魚",
+   "reading": "さかな",
+   "gloss": "fish",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F41F"
+   }
+  },
+  {
+   "form": "馬",
+   "reading": "うま",
+   "gloss": "horse",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F40E"
+   }
+  },
+  {
+   "form": "鳥",
+   "reading": "とり",
+   "gloss": "bird",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F426"
+   }
+  },
+  {
+   "form": "林檎",
+   "reading": "りんご",
+   "gloss": "apple",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F34E"
+   }
+  },
+  {
+   "form": "蜜柑",
+   "reading": "みかん",
+   "gloss": "mandarin orange",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F34A"
+   }
+  },
+  {
+   "form": "バナナ",
+   "gloss": "banana",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F34C",
+    "target": "j:1099420"
+   }
+  },
+  {
+   "form": "卵",
+   "reading": "たまご",
+   "gloss": "egg",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F95A"
+   }
+  },
+  {
+   "form": "ご飯",
+   "reading": "ごはん",
+   "gloss": "cooked rice",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F35A"
+   }
+  },
+  {
+   "form": "寿司",
+   "reading": "すし",
+   "gloss": "sushi",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F363"
+   }
+  },
+  {
+   "form": "パン",
+   "gloss": "bread",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F35E",
+    "target": "j:1103090"
+   }
+  },
+  {
+   "form": "ピザ",
+   "gloss": "pizza",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F355",
+    "target": "j:1106620"
+   }
+  },
+  {
+   "form": "ハンバーガー",
+   "gloss": "hamburger",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F354",
+    "target": "j:1096860"
+   }
+  },
+  {
+   "form": "アイスクリーム",
+   "gloss": "ice cream",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F368",
+    "target": "j:1013980"
+   }
+  },
+  {
+   "form": "クッキー",
+   "gloss": "cookie",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F36A",
+    "target": "j:1043760"
+   }
+  },
+  {
+   "form": "サンドイッチ",
+   "gloss": "sandwich",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F96A",
+    "target": "j:1058580"
+   }
+  },
+  {
+   "form": "牛乳",
+   "reading": "ぎゅうにゅう",
+   "gloss": "milk",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F95B"
+   }
+  },
+  {
+   "form": "茶",
+   "reading": "ちゃ",
+   "gloss": "tea",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F375"
+   }
+  },
+  {
+   "form": "水",
+   "reading": "みず",
+   "gloss": "water",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4A7"
+   }
+  },
+  {
+   "form": "手",
+   "reading": "て",
+   "gloss": "hand",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "270B"
+   }
+  },
+  {
+   "form": "目",
+   "reading": "め",
+   "gloss": "eye",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F440"
+   }
+  },
+  {
+   "form": "耳",
+   "reading": "みみ",
+   "gloss": "ear",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F442"
+   }
+  },
+  {
+   "form": "火",
+   "reading": "ひ",
+   "gloss": "fire",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F525"
+   }
+  },
+  {
+   "form": "雨",
+   "reading": "あめ",
+   "gloss": "rain",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F327"
+   }
+  },
+  {
+   "form": "雪",
+   "reading": "ゆき",
+   "gloss": "snow",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2744"
+   }
+  },
+  {
+   "form": "花",
+   "reading": "はな",
+   "gloss": "flower",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F33C"
+   }
+  },
+  {
+   "form": "木",
+   "reading": "き",
+   "gloss": "tree",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F333"
+   }
+  },
+  {
+   "form": "太陽",
+   "reading": "たいよう",
+   "gloss": "sun",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2600"
+   }
+  },
+  {
+   "form": "月",
+   "reading": "つき",
+   "gloss": "moon",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F319"
+   }
+  },
+  {
+   "form": "家",
+   "reading": "いえ",
+   "gloss": "house",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3E0"
+   }
+  },
+  {
+   "form": "扉",
+   "reading": "とびら",
+   "gloss": "door",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F6AA"
+   }
+  },
+  {
+   "form": "椅子",
+   "reading": "いす",
+   "gloss": "chair",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1FA91"
+   }
+  },
+  {
+   "form": "時計",
+   "reading": "とけい",
+   "gloss": "clock",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "23F0"
+   }
+  },
+  {
+   "form": "鍵",
+   "reading": "かぎ",
+   "gloss": "key",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F511"
+   }
+  },
+  {
+   "form": "本",
+   "reading": "ほん",
+   "gloss": "book",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4D6"
+   }
+  },
+  {
+   "form": "帽子",
+   "reading": "ぼうし",
+   "gloss": "hat",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F9E2"
+   }
+  },
+  {
+   "form": "靴",
+   "reading": "くつ",
+   "gloss": "shoes",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F45F"
+   }
+  },
+  {
+   "form": "贈り物",
+   "reading": "おくりもの",
+   "gloss": "gift",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F381"
+   }
+  },
+  {
+   "form": "カメラ",
+   "gloss": "camera",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4F7",
+    "target": "j:1038350"
+   }
+  },
+  {
+   "form": "ギター",
+   "gloss": "guitar",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3B8",
+    "target": "j:1042820"
+   }
+  },
+  {
+   "form": "テレビ",
+   "gloss": "television",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4FA",
+    "target": "j:1080510"
+   }
+  },
+  {
+   "form": "電話",
+   "reading": "でんわ",
+   "gloss": "telephone",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "260E"
+   }
+  },
+  {
+   "form": "車",
+   "reading": "くるま",
+   "gloss": "car",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F697"
+   }
+  },
+  {
+   "form": "バス",
+   "gloss": "bus",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F68C",
+    "target": "j:1098390"
+   }
+  },
+  {
+   "form": "タクシー",
+   "gloss": "taxi",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F695",
+    "target": "j:1076190"
+   }
+  },
+  {
+   "form": "電車",
+   "reading": "でんしゃ",
+   "gloss": "train",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F682"
+   }
+  },
+  {
+   "form": "自転車",
+   "reading": "じてんしゃ",
+   "gloss": "bicycle",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F6B2"
+   }
+  },
+  {
+   "form": "飛行機",
+   "reading": "ひこうき",
+   "gloss": "airplane",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2708"
+   }
+  },
+  {
+   "form": "学校",
+   "reading": "がっこう",
+   "gloss": "school",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3EB"
+   }
+  },
+  {
+   "form": "病院",
+   "reading": "びょういん",
+   "gloss": "hospital",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3E5"
+   }
+  },
+  {
+   "form": "ホテル",
+   "gloss": "hotel",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3E8",
+    "target": "j:1122650"
+   }
+  },
+  {
+   "form": "コンビニ",
+   "gloss": "convenience store",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3EA",
+    "target": "j:1053280"
+   }
+  },
+  {
+   "form": "サッカー",
+   "gloss": "soccer",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "26BD",
+    "target": "j:1056700"
+   }
+  },
+  {
+   "form": "音楽",
+   "reading": "おんがく",
+   "gloss": "music",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3B5"
+   }
+  }
+ ]
+}

@@ -46,7 +46,7 @@ func creditsURL(packID string) string {
 
 func packAttribution(code, packID string) string {
 	rs := readingSources[code]
-	return "Tatoeba (https://tatoeba.org) and its contributors; each sentence's owner and Tatoeba page: " + creditsURL(packID) +
+	return "Tatoeba (https://tatoeba.org) and its contributors; each sentence shows its owner and links to its Tatoeba page (full list: " + creditsURL(packID) + ")" +
 		"; readings from " + rs.name + " (" + rs.link + ")"
 }
 
@@ -63,10 +63,21 @@ type manifest struct {
 	Notice      string `json:"notice"`
 }
 
+// outSentence is one sentence of a word group, with its own credit (CC BY
+// 2.0 FR needs the author named where the sentence is shown): ID is its
+// Tatoeba id (its page is https://tatoeba.org/en/sentences/show/<id>), By its
+// owner as Tatoeba lists it, TID and TBy the id and owner of the translation
+// shown with it. The owners are left out where Tatoeba lists none. A sentence
+// listed under several words repeats its credit: the file has no second place
+// to look a credit up.
 type outSentence struct {
+	ID          int64  `json:"id"`
 	Hanzi       string `json:"hanzi"`
 	Pinyin      string `json:"pinyin,omitempty"`
 	Translation string `json:"translation"`
+	By          string `json:"by,omitempty"`
+	TID         int64  `json:"tid"`
+	TBy         string `json:"tby,omitempty"`
 }
 
 type outGroup struct {
@@ -84,7 +95,8 @@ func notice(code, packID, exportDate string) string {
 	return "Example sentences from [Tatoeba](https://tatoeba.org), export of " + exportDate +
 		", written by Tatoeba's contributors and shared under [CC BY 2.0 FR](" + byURI + "); " +
 		"some are [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). " +
-		"Each sentence's owner (as listed by Tatoeba) and its page on Tatoeba are listed in the pack's [credits.tsv](" + creditsURL(packID) + ").\n\n" +
+		"Each sentence shows its owner (as listed by Tatoeba) and links to its page on Tatoeba, where it is shown in the app; " +
+		"all of them are also listed in the pack's [credits.tsv](" + creditsURL(packID) + ").\n\n" +
 		"qinqin chose these sentences with a program: it kept sentences with an English translation, preferred native speakers, " +
 		"and dropped flagged, duplicate and unsuitable ones. " + readingNote[code] +
 		" The selection, the readings and the links to dictionary words were made automatically and may contain errors."
@@ -135,7 +147,8 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 	for i, g := range res.groups {
 		og := outGroup{Word: g.word}
 		for _, c := range g.sentences {
-			og.Sentences = append(og.Sentences, outSentence{Hanzi: c.s.Text, Pinyin: c.reading, Translation: c.tr.Text})
+			og.Sentences = append(og.Sentences, outSentence{ID: c.s.ID, Hanzi: c.s.Text, Pinyin: c.reading, Translation: c.tr.Text,
+				By: c.s.Owner, TID: c.tr.ID, TBy: c.tr.Owner})
 		}
 		if err := line.Encode(og); err != nil {
 			return "", err
@@ -213,7 +226,8 @@ file gives its Uniform Resource Identifier instead of a copy:
     https://creativecommons.org/licenses/by/2.0/fr/legalcode
 
 The owner of each sentence (as listed by Tatoeba) and its page are in
-credits.tsv. Sentences marked "CC0 1.0" there were also released by Tatoeba
+credits.tsv and, on every sentence of sentences.json, in "id" and "by" (and
+"tid" and "tby" for its translation), and qinqin shows them with the sentence. Sentences marked "CC0 1.0" there were also released by Tatoeba
 under CC0 1.0 Universal, whose legal code is at the end of this file.
 
 The readings ("pinyin" field) and the word filing derive from ` + rs.name + `
@@ -238,7 +252,10 @@ its contributors.
 - Licence: sentence text CC BY 2.0 FR
   (https://creativecommons.org/licenses/by/2.0/fr/); sentences Tatoeba also
   releases under CC0 1.0 are marked "CC0 1.0" in credits.tsv. See LICENSE.
-- Owners: credits.tsv lists every sentence of this pack with its Tatoeba id,
+- Owners: the app shows, under every Tatoeba sentence, "Tatoeba · <owner>"
+  linked to the sentence's page on Tatoeba; the pack carries them on every
+  sentence of sentences.json ("id" and "by": its Tatoeba id and owner; "tid" and
+  "tby": the id and owner of its translation), so they are available offline. credits.tsv lists every sentence of this pack with its Tatoeba id,
   page (https://tatoeba.org/en/sentences/show/<id>), licence and owner (the
   Tatoeba username listed for it), and the same for its English translation.
   Published copy: {{.CreditsURL}}

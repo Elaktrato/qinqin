@@ -26,6 +26,8 @@ export interface LanguageProfile {
 	variants: boolean;
 	cardKinds: readonly StudyCardKind[];
 	practiceModes: readonly PracticeMode[];
+	/** The scripts the writing-system trainer teaches (#204): ids of its script data. Empty: the trainer does not appear. */
+	writingSystems: readonly string[];
 }
 
 const ALL_PRACTICE: readonly PracticeMode[] = ['decks', 'levels', 'characterMap'];
@@ -43,7 +45,8 @@ export const PROFILES: readonly LanguageProfile[] = [
 		kana: false,
 		variants: true,
 		cardKinds: ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'],
-		practiceModes: ALL_PRACTICE
+		practiceModes: ALL_PRACTICE,
+		writingSystems: []
 	},
 	{
 		code: 'ja',
@@ -55,7 +58,8 @@ export const PROFILES: readonly LanguageProfile[] = [
 		kana: true,
 		variants: false,
 		cardKinds: ['vocab', 'sentence', 'writing', 'reverse', 'cloze'],
-		practiceModes: ALL_PRACTICE
+		practiceModes: ALL_PRACTICE,
+		writingSystems: ['hiragana', 'katakana']
 	},
 	{
 		code: 'es',
@@ -67,7 +71,34 @@ export const PROFILES: readonly LanguageProfile[] = [
 		kana: false,
 		variants: false,
 		cardKinds: PLAIN_KINDS,
-		practiceModes: ['decks', 'levels']
+		practiceModes: ['decks', 'levels'],
+		writingSystems: []
+	},
+	{
+		code: 'ko',
+		script: 'other',
+		readings: [],
+		segmentation: 'spaces',
+		tones: false,
+		strokes: false,
+		kana: false,
+		variants: false,
+		cardKinds: PLAIN_KINDS,
+		practiceModes: ['decks', 'levels'],
+		writingSystems: ['hangul']
+	},
+	{
+		code: 'ru',
+		script: 'other',
+		readings: [],
+		segmentation: 'spaces',
+		tones: false,
+		strokes: false,
+		kana: false,
+		variants: false,
+		cardKinds: PLAIN_KINDS,
+		practiceModes: ['decks', 'levels'],
+		writingSystems: ['cyrillic']
 	},
 	{
 		code: '*',
@@ -79,7 +110,8 @@ export const PROFILES: readonly LanguageProfile[] = [
 		kana: false,
 		variants: false,
 		cardKinds: PLAIN_KINDS,
-		practiceModes: ['decks', 'levels']
+		practiceModes: ['decks', 'levels'],
+		writingSystems: []
 	}
 ];
 
@@ -94,6 +126,11 @@ export function profileOf(code: string): LanguageProfile {
 /** hasCharacterMap: the language offers the character map (Stats → Characters, the map widget): `practiceModes`. */
 export function hasCharacterMap(code: string): boolean {
 	return profileOf(code).practiceModes.includes('characterMap');
+}
+
+/** writingSystemsOf: the scripts the trainer teaches in a language (empty: no trainer): `writingSystems`. */
+export function writingSystemsOf(code: string): readonly string[] {
+	return profileOf(code).writingSystems;
 }
 
 /** hasReadings: entries carry a reading system (pinyin, kana), so the reader's Display tab applies: `readings`. */

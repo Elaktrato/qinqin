@@ -1,0 +1,211 @@
+{
+ "version": 1,
+ "rule": "starter/stages",
+ "note": "The per-word stage of Starter mode (#214): derived from one card's review history, never stored. Web: apps/web/src/lib/study/starter.ts, decoded by starter.contract.test.ts. A review is {at, grade}; reviews are replayed in time order (a stable sort on `at`; a review with an unreadable time or a grade outside 1-4 is skipped).",
+ "minGapMinutes": 720,
+ "successGrades": [3, 4],
+ "pauseGrades": [2],
+ "lapseGrades": [1],
+ "ruleText": [
+  "points starts at 0 and lastAt at null.",
+  "A success (grade 3 or 4) adds 1 point when lastAt is null or at - lastAt >= minGapMinutes; then lastAt = at. A success that comes too soon changes nothing.",
+  "Hard (grade 2) changes nothing: the word pauses.",
+  "Again (grade 1): points = thresholds[max(1, stage - 1) - 1], where stage is the stage before the review; lastAt = at.",
+  "stage = the highest s with thresholds[s - 1] <= points, at most the final stage of the word.",
+  "justAdvanced: the stage after the last review is higher than the stage before it (the card shows its 'New' note once)."
+ ],
+ "thresholds": {
+  "ja": [0, 1, 2, 3, 5, 7],
+  "zh": [0, 1, 2, 4, 6]
+ },
+ "finalStage": {
+  "ja": { "normal": 6, "usuallyKana": 4 },
+  "zh": { "normal": 5 }
+ },
+ "stages": {
+  "ja": [
+   { "stage": 1, "picture": "shown", "main": "romanisation", "annotation": "none", "forced": { "picture": "always", "reading": "never" } },
+   { "stage": 2, "picture": "shown", "main": "reading", "annotation": "romanisation", "forced": { "picture": "always", "reading": "never" } },
+   { "stage": 3, "picture": "shown", "main": "reading", "annotation": "none", "forced": { "picture": "always", "reading": "never" } },
+   { "stage": 4, "picture": "hint", "main": "reading", "annotation": "none", "forced": { "picture": "hint", "reading": "never" } },
+   { "stage": 5, "picture": "hint", "main": "written", "annotation": "reading", "forced": { "picture": "hint", "reading": "never" } },
+   { "stage": 6, "picture": "normal", "main": "written", "annotation": "none", "forced": {} }
+  ],
+  "zh": [
+   { "stage": 1, "picture": "shown", "main": "reading", "annotation": "none", "forced": { "picture": "always", "reading": "never" } },
+   { "stage": 2, "picture": "shown", "main": "written", "annotation": "reading", "forced": { "picture": "always", "reading": "never" } },
+   { "stage": 3, "picture": "hint", "main": "written", "annotation": "reading", "forced": { "picture": "hint", "reading": "never" } },
+   { "stage": 4, "picture": "hint", "main": "written", "annotation": "none", "forced": { "picture": "hint", "reading": "hint" } },
+   { "stage": 5, "picture": "normal", "main": "written", "annotation": "none", "forced": {} }
+  ]
+ },
+ "usuallyKanaLastStage": { "stage": 4, "picture": "normal", "main": "reading", "annotation": "none", "forced": {} },
+ "histories": [
+  { "name": "no reviews: stage 1", "profile": "ja", "reviews": [], "expect": { "stage": 1, "points": 0, "justAdvanced": false } },
+  { "name": "one Good moves to stage 2", "profile": "ja", "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }], "expect": { "stage": 2, "points": 1, "justAdvanced": true } },
+  { "name": "Easy counts like Good", "profile": "ja", "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 4 }], "expect": { "stage": 2, "points": 1, "justAdvanced": true } },
+  {
+   "name": "a second Good ten minutes later does not count",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-01T09:10:00Z", "grade": 3 }],
+   "expect": { "stage": 2, "points": 1, "justAdvanced": false }
+  },
+  {
+   "name": "exactly twelve hours counts",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-01T21:00:00Z", "grade": 3 }],
+   "expect": { "stage": 3, "points": 2, "justAdvanced": true }
+  },
+  {
+   "name": "eleven hours fifty-nine does not",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-01T20:59:00Z", "grade": 3 }],
+   "expect": { "stage": 2, "points": 1, "justAdvanced": false }
+  },
+  {
+   "name": "Hard pauses the word",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-02T09:00:00Z", "grade": 2 }],
+   "expect": { "stage": 2, "points": 1, "justAdvanced": false }
+  },
+  {
+   "name": "three spaced Goods: stage 4",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-02T09:00:00Z", "grade": 3 }, { "at": "2026-03-03T09:00:00Z", "grade": 3 }],
+   "expect": { "stage": 4, "points": 3, "justAdvanced": true }
+  },
+  {
+   "name": "Again drops one stage",
+   "profile": "ja",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-04T09:00:00Z", "grade": 1 }
+   ],
+   "expect": { "stage": 3, "points": 2, "justAdvanced": false }
+  },
+  { "name": "Again at stage 1 stays at stage 1", "profile": "ja", "reviews": [{ "at": "2026-03-01T09:00:00Z", "grade": 1 }], "expect": { "stage": 1, "points": 0, "justAdvanced": false } },
+  {
+   "name": "relearning after a lapse does not count until twelve hours have passed",
+   "profile": "ja",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-04T09:00:00Z", "grade": 1 },
+    { "at": "2026-03-04T09:10:00Z", "grade": 3 },
+    { "at": "2026-03-05T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 4, "points": 3, "justAdvanced": true }
+  },
+  {
+   "name": "seven spaced Goods reach the normal card",
+   "profile": "ja",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-05T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-12T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-20T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 6, "points": 7, "justAdvanced": true }
+  },
+  {
+   "name": "an eighth Good at the normal card advances nothing",
+   "profile": "ja",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-05T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-12T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-20T09:00:00Z", "grade": 3 },
+    { "at": "2026-04-20T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 6, "points": 8, "justAdvanced": false }
+  },
+  {
+   "name": "Again at the normal card drops to stage 5",
+   "profile": "ja",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-05T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-12T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-20T09:00:00Z", "grade": 3 },
+    { "at": "2026-04-20T09:00:00Z", "grade": 1 }
+   ],
+   "expect": { "stage": 5, "points": 5, "justAdvanced": false }
+  },
+  {
+   "name": "a word usually written in kana stops at stage 4",
+   "profile": "ja",
+   "usuallyKana": true,
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-05T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-12T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-20T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 4, "points": 7, "justAdvanced": false }
+  },
+  {
+   "name": "a usually-kana word that lapses drops from its normal card",
+   "profile": "ja",
+   "usuallyKana": true,
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-03T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-04T09:00:00Z", "grade": 1 }
+   ],
+   "expect": { "stage": 3, "points": 2, "justAdvanced": false }
+  },
+  {
+   "name": "reviews are replayed in time order",
+   "profile": "ja",
+   "reviews": [{ "at": "2026-03-03T09:00:00Z", "grade": 3 }, { "at": "2026-03-01T09:00:00Z", "grade": 3 }, { "at": "2026-03-02T09:00:00Z", "grade": 3 }],
+   "expect": { "stage": 4, "points": 3, "justAdvanced": true }
+  },
+  { "name": "zh: no reviews", "profile": "zh", "reviews": [], "expect": { "stage": 1, "points": 0, "justAdvanced": false } },
+  {
+   "name": "zh: four spaced Goods reach stage 4",
+   "profile": "zh",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-04T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 4, "points": 4, "justAdvanced": true }
+  },
+  {
+   "name": "zh: six spaced Goods reach the normal card",
+   "profile": "zh",
+   "reviews": [
+    { "at": "2026-03-01T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-02T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-04T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-08T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-15T09:00:00Z", "grade": 3 },
+    { "at": "2026-03-25T09:00:00Z", "grade": 3 }
+   ],
+   "expect": { "stage": 5, "points": 6, "justAdvanced": true }
+  },
+  {
+   "name": "malformed reviews are skipped",
+   "profile": "ja",
+   "reviews": [{ "at": "not a time", "grade": 3 }, { "at": "2026-03-01T09:00:00Z", "grade": 9 }, { "at": "2026-03-01T09:00:00Z", "grade": 3 }],
+   "expect": { "stage": 2, "points": 1, "justAdvanced": true }
+  }
+ ]
+}
