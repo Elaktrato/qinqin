@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 type imagesEnv struct {
 	ts                     *httptest.Server
 	token                  string
+	db                     *sql.DB
 	apple, hit, kana, nope int64
 }
 
@@ -56,7 +58,7 @@ func newImagesEnv(t *testing.T) imagesEnv {
 		}
 		return id
 	}
-	env := imagesEnv{ts: ts, token: token}
+	env := imagesEnv{ts: ts, token: token, db: sqlDB}
 	env.apple = put("zh", "苹果", []string{"苹果", "蘋果"})
 	env.hit = put("zh", "打", []string{"打"})
 	env.kana = put("ja", "j:1", nil, "いぬ") // no written form: found by its kana reading
@@ -173,6 +175,28 @@ func TestEntryPictureBySense(t *testing.T) {
 	}
 	if code, _ := e.get(t, "/api/images/entries/abc", e.token); code != http.StatusNotFound {
 		t.Errorf("a bad id = %d, want 404", code)
+	}
+}
+
+// A pack installed before the canonical form existed holds the pack's own
+// bytes. The route must not serve them: it canonicalises what it reads, and
+// shows no picture for one that no longer passes (v0.8.0 review: stored XSS).
+func TestEntryPictureServesCanonicalSVGOnly(t *testing.T) {
+	e := newImagesEnv(t)
+	set := func(concept, svg string) {
+		t.Helper()
+		if _, err := e.db.Exec(`UPDATE image_pictures SET svg = ? WHERE concept = ?`, svg, concept); err != nil {
+			t.Fatal(err)
+		}
+	}
+	set("H", `<svg xmlns="http://www.w3.org/2000/svg"><!--><img/src="x"/onerror="alert(1)">--></svg>`)
+	if _, b := e.get(t, fmt.Sprintf("/api/images/entries/%d?sense=1", e.hit), e.token); picture(t, b) != nil {
+		t.Errorf("a stored picture that fails the check was served: %v", b)
+	}
+	set("P", `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#a"/></svg>`)
+	_, b := e.get(t, fmt.Sprintf("/api/images/entries/%d?sense=3", e.hit), e.token)
+	if p := picture(t, b); p == nil || p["svg"] != `<svg xmlns="http://www.w3.org/2000/svg"><use href="#a"/></svg>` {
+		t.Errorf("legacy stored picture = %v, want its canonical form", p)
 	}
 }
 

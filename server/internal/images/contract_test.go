@@ -90,16 +90,24 @@ func TestContractResolve(t *testing.T) {
 
 func TestContractSVG(t *testing.T) {
 	var fx struct {
-		Valid   []struct{ Name, SVG string } `json:"valid"`
-		Invalid []struct{ Name, SVG string } `json:"invalid"`
+		Valid   []struct{ Name, SVG, Canonical string } `json:"valid"`
+		Invalid []struct{ Name, SVG string }            `json:"invalid"`
 	}
 	readFixture(t, "svg.json", &fx)
 	if len(fx.Valid) == 0 || len(fx.Invalid) == 0 {
 		t.Fatal("no cases")
 	}
 	for _, c := range fx.Valid {
-		if err := images.CheckSVG([]byte(c.SVG)); err != nil {
+		got, err := images.CanonicalSVG([]byte(c.SVG))
+		if err != nil {
 			t.Errorf("valid %q: %v", c.Name, err)
+			continue
+		}
+		if string(got) != c.Canonical {
+			t.Errorf("valid %q: canonical = %s, want %s", c.Name, got, c.Canonical)
+		}
+		if again, err := images.CanonicalSVG(got); err != nil || string(again) != string(got) {
+			t.Errorf("valid %q: the canonical form is not stable: %s, %v", c.Name, again, err)
 		}
 	}
 	for _, c := range fx.Invalid {

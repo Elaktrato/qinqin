@@ -5,6 +5,7 @@ vi.mock('$app/navigation', () => ({ goto }));
 
 import svgFixture from '../../../../../docs/contracts/images/svg.json';
 import { entryPicture, imagePacks, pictureCreditLine, safeSvg, themeSvg, type EntryPicture } from './images';
+import { svgElement } from './svg';
 
 const APPLE =
 	'<svg id="emoji" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg"><g id="line"><path fill="none" stroke="#000" stroke-width="2" d="M1 2h3"/><path fill="#000000" d="M0 0"/><circle style="fill:#000;stroke:black" r="2"/><rect fill="#abda4d" width="1" height="1"/></g></svg>';
@@ -35,7 +36,8 @@ describe('images api client', () => {
 		vi.mocked(fetch).mockImplementation(async () => json({ picture: picture() }));
 		const p = await entryPicture(42);
 		expect(p?.concept).toBe('1F34E');
-		expect(p?.svg).toBe(APPLE);
+		expect(p?.svg).toBe(safeSvg(APPLE)); // canonical, not the pack's bytes
+		expect(p?.svg).not.toContain('style=');
 		const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
 		expect(url).toBe('/api/images/entries/42');
 		expect(new Headers(init.headers).get('authorization')).toBe('Bearer tok');
@@ -92,12 +94,15 @@ describe('themeSvg', () => {
 });
 
 describe('safeSvg', () => {
-	it('accepts a plain drawing, with or without an XML header', () => {
-		expect(safeSvg(APPLE)).toBe(APPLE);
+	it('accepts a plain drawing, with or without an XML header, and returns its canonical form', () => {
+		expect(safeSvg(APPLE)).toBe(
+			'<svg xmlns="http://www.w3.org/2000/svg" id="emoji" viewBox="0 0 72 72"><g id="line"><path fill="none" stroke="#000" stroke-width="2" d="M1 2h3"/><path fill="#000000" d="M0 0"/><circle fill="#000" stroke="black" r="2"/><rect fill="#abda4d" width="1" height="1"/></g></svg>'
+		);
 		expect(safeSvg('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"><use href="#a"/></svg>')).not.toBeNull();
 	});
 
 	it('refuses what can run code or load something', () => {
+		const open = '<svg xmlns="http://www.w3.org/2000/svg"';
 		for (const svg of [
 			'<svg><script>x</script></svg>',
 			'<svg><foreignObject/></svg>',
@@ -107,11 +112,35 @@ describe('safeSvg', () => {
 			'<svg><image href="data:image/png;base64,AA"/></svg>',
 			'<svg><style>a{}</style></svg>',
 			'<html></html>',
+			// review findings (v0.8.0): what the old regex gate let through
+			`${open}><!--><img/src="x"/onerror="alert(1)">--></svg>`,
+			`${open}><p><img src="x"onerror="alert(1)"/></p></svg>`,
+			`${open}><g><animateTransform attributeName="transform" type="rotate"/></g></svg>`,
+			`${open}"onload="alert(1)"><g/></svg>`,
+			`${open}><use href=#a /></svg>`,
+			`${open}><rect style="background-image:image-set('https://example.test/a.png' 1x)"/></svg>`,
+			`${open}><rect fill="u\\72l(https://example.test/a)"/></svg>`,
+			`${open}><g id="a"><use href="#b"/></g><g id="b"><use href="#a"/></g></svg>`,
 			null,
 			42
 		]) {
 			expect(safeSvg(svg), String(svg)).toBeNull();
 		}
+	});
+
+	it('the canonical form holds no comment and is stable', () => {
+		const once = safeSvg('<svg xmlns="http://www.w3.org/2000/svg"><title>a &lt;!--&gt; b</title></svg>');
+		expect(once).toBe('<svg xmlns="http://www.w3.org/2000/svg"><title>a &lt;!--&gt; b</title></svg>');
+		expect(safeSvg(once)).toBe(once);
+	});
+});
+
+describe('svgElement', () => {
+	it('builds nodes, and none for a refused picture', () => {
+		const el = svgElement(safeSvg(APPLE));
+		expect(el?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(el?.querySelectorAll('path').length).toBe(2);
+		expect(svgElement('<svg xmlns="http://www.w3.org/2000/svg"><!--><img/src="x"/onerror="alert(1)">--></svg>')).toBeNull();
 	});
 });
 
@@ -123,8 +152,8 @@ describe('pictureCreditLine', () => {
 
 // docs/contracts/images/svg.json: the vocabulary every client agrees on.
 describe('images/svg contract', () => {
-	it.each(svgFixture.valid)('safeSvg accepts: $name', (c) => {
-		expect(safeSvg(c.svg)).toBe(c.svg);
+	it.each(svgFixture.valid)('safeSvg accepts and canonicalises: $name', (c) => {
+		expect(safeSvg(c.svg)).toBe(c.canonical);
 	});
 	it.each(svgFixture.invalid.filter((c) => c.client))('safeSvg refuses: $name', (c) => {
 		expect(safeSvg(c.svg)).toBeNull();

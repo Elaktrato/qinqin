@@ -19,7 +19,7 @@ const picture: Picture = {
 	basis: 'gloss',
 	sense: 0,
 	score: 90,
-	svg: '<svg viewBox="0 0 72 72"><path fill="#000" stroke="#000000" d="M0 0"/></svg>'
+	svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><path fill="#000" stroke="#000000" d="M0 0"/></svg>'
 };
 
 let ctx: TestContext;
@@ -43,6 +43,15 @@ describe('EntryPicture (#212)', () => {
 		expect(art?.innerHTML).toContain('currentColor');
 		expect(art?.innerHTML).not.toContain('#000');
 		expect(figure.querySelector('figcaption')?.textContent).toBe('OpenMoji, Liz Bravo, CC BY-SA 4.0');
+	});
+
+	it('never turns a picture into HTML: a comment that HTML closes early draws nothing (v0.8.0 review)', async () => {
+		const hostile = '<svg xmlns="http://www.w3.org/2000/svg"><!--><img/src="x"/onerror="alert(1)">--></svg>';
+		entryPicture.mockResolvedValue({ ...picture, svg: hostile });
+		const view = open();
+		const figure = await view.findByTestId('entry-picture');
+		expect(figure.querySelector('img, script, [onerror]')).toBeNull();
+		expect(figure.querySelector('[role="img"]')?.innerHTML).toBe('');
 	});
 
 	it('asks once per entry for the whole session', async () => {
