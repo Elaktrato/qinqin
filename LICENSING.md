@@ -35,13 +35,16 @@ If you reuse this content, credit it as:
 
 and say if you changed it. The same credit line is used on the Sources page.
 
-### The script charts: CC0 1.0
+### The script charts and the Starter word lists: CC0 1.0
 
-The one exception to CC BY 4.0 is the data of the writing-system trainer (kana, Hangul and Cyrillic charts, their
-example words and keyboard key hints: `apps/web/src/lib/features/scripts/data/`). The project wrote it and releases
-it under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), a public domain dedication with no
-attribution requirement, as issue #204 states (the lists are facts about writing systems). Anything else the project
-writes stays CC BY 4.0.
+The exceptions to CC BY 4.0 are the data of the writing-system trainer (kana, Hangul and Cyrillic charts, their
+example words and keyboard key hints: `apps/web/src/lib/features/scripts/data/`) and the Starter word lists
+(`server/internal/starter/sets/starter-zh.json` and `starter-ja.json`, #214). The project wrote them and releases
+them under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), a public domain dedication with no
+attribution requirement, as issue #204 states for the charts (the lists are facts about writing systems). The Starter
+lists are the project's own selection of common, picturable words with short glosses and picture pairings; they
+copy no third-party text, and the dictionary entries and pictures they point at keep their own licences. Their
+extension to CC0 is awaiting the owner's confirmation. Anything else the project writes stays CC BY 4.0.
 
 ## Third-party data keeps its own licence
 

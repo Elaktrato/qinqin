@@ -1,14 +1,23 @@
 {"entries":[
-{"word":"一起","sentences":[{"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."}]},
-{"word":"吃饭","sentences":[{"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."},{"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
-{"word":"喜欢","sentences":[{"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."},{"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
-{"word":"喜歡","sentences":[{"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
-{"word":"学习","sentences":[{"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."}]},
-{"word":"我们","sentences":[{"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."}]},
-{"word":"我們","sentences":[{"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
-{"word":"朋友","sentences":[{"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
-{"word":"汉语","sentences":[{"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."}]},
-{"word":"漢語","sentences":[{"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
-{"word":"西安","sentences":[{"hanzi":"我们去西安。","pinyin":"wǒmen qù xī'ān.","translation":"We are going to Xi'an."}]},
-{"word":"银行","sentences":[{"hanzi":"他去了银行。","pinyin":"tā qù le yínháng.","translation":"He went to the bank."},{"hanzi":"银行很长。","translation":"The bank is long."}]}
-]}
+{"word":"一起","sentences":[{"id":1018,"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"id":1002,"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."}]},
+{"word":"吃饭","sentences":[{"id":1002,"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."},{"id":1013,"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
+{"word":"喜欢","sentences":[{"id":1001,"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."},{"id":1013,"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
+{"word":"喜歡","sentences":[{"id":1019,"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
+{"word":"学习","sentences":[{"id":1018,"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"id":1001,"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."}]},
+{"word":"我们","sentences":[{"id":1018,"hanzi":"我们一起学习。","pinyin":"wǒmen yīqǐ xuéxí.","translation":"Let's study together."},{"id":1002,"hanzi":"我们一起去吃饭吧。","pinyin":"wǒmen yīqǐ qù chīfàn ba.","translation":"Let's go and eat together."}]},
+{"word":"我們","sentences":[{"id":1019,"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
+{"word":"朋友","sentences":[{"id":1013,"hanzi":"朋友喜欢吃饭。","pinyin":"péngyou xǐhuan chīfàn.","translation":"Friends like to eat."}]},
+{"word":"汉语","sentences":[{"id":1001,"hanzi":"我喜欢学习汉语。","pinyin":"wǒ xǐhuan xuéxí hànyǔ.","translation":"I like studying Chinese."}]},
+{"word":"漢語","sentences":[{"id":1019,"hanzi":"我們喜歡漢語。","pinyin":"wǒmen xǐhuan hànyǔ.","translation":"We like Chinese."}]},
+{"word":"西安","sentences":[{"id":1011,"hanzi":"我们去西安。","pinyin":"wǒmen qù xī'ān.","translation":"We are going to Xi'an."}]},
+{"word":"银行","sentences":[{"id":1003,"hanzi":"他去了银行。","pinyin":"tā qù le yínháng.","translation":"He went to the bank."},{"id":1004,"hanzi":"银行很长。","translation":"The bank is long."}]}
+],"credits":{
+"1001":{"by":"lin","tid":2001,"tby":"emma"},
+"1002":{"by":"lin","tid":2002,"tby":"emma"},
+"1003":{"by":"wei","tid":2003,"tby":"tom"},
+"1004":{"by":"wei","tid":2004,"tby":"tom"},
+"1011":{"by":"wei","tid":2011,"tby":"tom"},
+"1013":{"by":"wei","tid":2015,"tby":"emma"},
+"1018":{"by":"lin","tid":2021,"tby":"emma"},
+"1019":{"by":"lin","tid":2022,"tby":"emma"}
+}}

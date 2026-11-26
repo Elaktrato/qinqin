@@ -147,6 +147,20 @@ Licence checks done at the time of writing (2026-11-26), for sources that were l
   data package `lemma-rules.ja-lemma`. Installed lemma-rules packs are credited
   on the Sources page (`GET /api/lemma-packs`).
 
+## Starter sets (Starter mode, #214)
+
+`server/internal/starter/sets/starter-zh.json` and `starter-ja.json` (embedded in
+the server) are short word lists for Starter mode: a written form, an optional
+reading, a one-word English gloss and the picture each word should have in an
+images pack. The **project wrote them**: the choice and order of words, the
+glosses and the picture pairing. They copy no third-party text; the dictionary
+entries and the pictures they point at stay under their own licences (see
+"Pictures"), and each file's `license` is **CC0 1.0** (`LICENSING.md` extends its
+CC0 exception to them). They are seeds, not reviewed lists: `humanReviewed` is
+`false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
+for 100 to 300; a person has not yet read every word against the dictionary.
+Owner confirmation pending (v0.8.0 spec, owner questions).
+
 ## Example sentences (Tatoeba)
 
 The example sentences on entry pages and in "Fill the gap" and "Build the
@@ -182,11 +196,23 @@ gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
   licence and owner (the Tatoeba username listed for it, which is not always the
   original author), and the same for its translation (columns `sentence`, `url`,
   `licence`, `owner`, `translation`, `translation_url`, `translation_licence`,
-  `translation_owner`). The manifest `attribution` and the Sources page `notice`
-  link the published copy of that file
+  `translation_owner`). The same credits travel with the pack data and the app
+  shows them: every sentence in `sentences.json` carries its Tatoeba `id`, and a
+  `credits` map of the file gives, per id, the owner, the translation's id and
+  the translation's owner (`by`, `tid`, `tby`). The importer stores them with the
+  sentence (migration 054), the entry API serves them as `credit` (`source`,
+  `id`, `owner`, `url`, `translationId`, `translationOwner`, `translationUrl`),
+  and the app shows, under every Tatoeba sentence (entry page examples and the
+  answer side of sentence cards), a small "Tatoeba · <owner>" linked to
+  `https://tatoeba.org/sentences/show/<id>` and "translation <owner>" linked to
+  the translation's page; the Share text carries the same credit and links. The
+  per-sentence credit is therefore available offline and one click from the
+  sentence itself. The manifest `attribution` and the Sources page `notice` still
+  link the published copy of `credits.tsv`
   (`https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<pack id>/credits.tsv`),
-  so the per-sentence credits are one click from the app; the app does not show
-  a credit next to each sentence yet (deferred, see the spec's Ruling).
+  the aggregate list. The offline data package of a sentence pack (`qqpkg`,
+  format 1) does not carry the credit columns yet (no client installs it; a
+  format change is an owner decision, see the spec's owner questions).
   `ATTRIBUTION.md` gives the export date, archive hashes, licence check and what
   was changed; `LICENSE` gives the CC BY 2.0 FR URI (which that licence allows
   instead of a copy) and the CC0 1.0 legal code.
@@ -989,8 +1015,8 @@ never bundled in the web build or the APK's web assets: the web app and the APK 
   selection gate at build time; no list data is copied); for Japanese, only JMdict words with a priority marking.
 - **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
 - **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are
-  mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) still need
-  hand review (100-300 words per language).
+  mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) are
+  described under "Starter sets" (47 and 55 words so far, not yet hand-reviewed; the issue asks for 100-300 per language).
 - **Not bundled:** ARASAAC (CC BY-NC-SA, non-commercial); Wikimedia Commons pictures via Wikidata (per-file
   licences, later); OpenMoji's colour set (a later per-user choice).
 

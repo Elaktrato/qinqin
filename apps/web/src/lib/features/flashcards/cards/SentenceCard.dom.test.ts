@@ -46,6 +46,18 @@ describe('SentenceCard and an AI example (#186)', () => {
 	});
 });
 
+describe('SentenceCard and the credit of a Tatoeba sentence', () => {
+	it('credits the author on the answer side only', async () => {
+		const credit = { source: 'Tatoeba', id: 4706, owner: 'bunbuku', url: 'https://tatoeba.org/sentences/show/4706', translationId: 1, translationOwner: 'CK', translationUrl: 'https://tatoeba.org/sentences/show/1' };
+		await setup({ sentence: { ...sentence, credit } });
+		expect(screen.queryByRole('link', { name: 'Tatoeba · bunbuku' })).toBeNull();
+		cleanup();
+		await setup({ sentence: { ...sentence, credit }, done: true });
+		const a = screen.getByRole('link', { name: 'Tatoeba · bunbuku' }) as HTMLAnchorElement;
+		expect(a.href).toBe('https://tatoeba.org/sentences/show/4706');
+	});
+});
+
 describe('SentenceCard on the open page (#101)', () => {
 	it('prompt is the translation and "Uses <word>"', async () => {
 		await setup();

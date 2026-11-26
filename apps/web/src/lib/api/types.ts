@@ -34,6 +34,19 @@ export interface Sentence {
 	translation: string;
 	/** Who wrote a kept AI example (#186); null (or absent in an old cached answer) for every other sentence. Read it with `aiMark`. */
 	ai?: SentenceAi | null;
+	/** Who wrote a pack sentence and its translation (Tatoeba); absent for a sentence without a credit. */
+	credit?: SentenceCredit | null;
+}
+
+/** The credit of a pack sentence: the source, the sentence's id, owner and page, and the same for its translation. */
+export interface SentenceCredit {
+	source: string;
+	id: number;
+	owner: string;
+	url: string;
+	translationId: number;
+	translationOwner: string;
+	translationUrl: string;
 }
 
 /** The mark of an AI example: the provider id and the model (docs/contracts/examples/). */
