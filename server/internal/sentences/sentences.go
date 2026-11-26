@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,7 +128,25 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error
 
 // sentenceColumns is the column list every sentence read selects, in the
 // order scanSentence expects.
-const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model`
+const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model,
+	credit_id, credit_owner, credit_tr_id, credit_tr_owner`
+
+// tatoebaPage is the page of a sentence on Tatoeba; a credited pack
+// sentence's id is its Tatoeba id.
+const tatoebaPage = "https://tatoeba.org/sentences/show/"
+
+// creditOf is the credit of a stored sentence, nil when it has none.
+func creditOf(id int64, owner string, trID int64, trOwner string) *model.SentenceCredit {
+	if id == 0 {
+		return nil
+	}
+	c := &model.SentenceCredit{Source: "Tatoeba", ID: id, Owner: owner, URL: tatoebaPage + strconv.FormatInt(id, 10),
+		TranslationID: trID, TranslationOwner: trOwner}
+	if trID != 0 {
+		c.TranslationURL = tatoebaPage + strconv.FormatInt(trID, 10)
+	}
+	return c
+}
 
 // scanSentence reads one row of sentenceColumns.
 func scanSentence(row interface{ Scan(...any) error }) (model.Sentence, error) {
@@ -136,11 +155,15 @@ func scanSentence(row interface{ Scan(...any) error }) (model.Sentence, error) {
 		userID              sql.NullInt64
 		updatedAt           string
 		aiProvider, aiModel string
+		creditID, trID      int64
+		owner, trOwner      string
 	)
 	if err := row.Scan(&s.ID, &s.EntryID, &s.SourcePack, &userID,
-		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt, &aiProvider, &aiModel); err != nil {
+		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt, &aiProvider, &aiModel,
+		&creditID, &owner, &trID, &trOwner); err != nil {
 		return s, err
 	}
+	s.Credit = creditOf(creditID, owner, trID, trOwner)
 	s.AI = AIMark(aiProvider, aiModel)
 	updated, err := time.Parse(time.RFC3339, updatedAt)
 	if err != nil {
@@ -274,6 +297,17 @@ func upsertRegistry(ctx context.Context, tx *sql.Tx, m pack.Manifest, stamp stri
 // packData is the decoded sentences.json of a pack.
 type packData struct {
 	Entries []packEntry `json:"entries"`
+	// Credits is the credit of each sentence id the entries use, keyed by the
+	// id as text (one credit however many words list the sentence).
+	Credits map[string]packCredit `json:"credits"`
+}
+
+// packCredit is one sentence's credit in the pack: its owner, and the id and
+// owner of its translation.
+type packCredit struct {
+	By  string `json:"by"`
+	TID int64  `json:"tid"`
+	TBy string `json:"tby"`
 }
 
 // packEntry is one word group of sentences.json: the word its
@@ -286,9 +320,13 @@ type packEntry struct {
 // packSentence is one sentence of a word group. Pinyin is its reading
 // (pinyin, or kana for Japanese) and may be empty.
 type packSentence struct {
-	Hanzi       string `json:"hanzi"`
-	Pinyin      string `json:"pinyin"`
-	Translation string `json:"translation"`
+	// ID is the sentence's id at its source (Tatoeba); 0 for none. A sentence
+	// with an id has an entry in the pack's "credits", joined into Credit.
+	ID          int64      `json:"id"`
+	Hanzi       string     `json:"hanzi"`
+	Pinyin      string     `json:"pinyin"`
+	Translation string     `json:"translation"`
+	Credit      packCredit `json:"-"`
 }
 
 // readPack reads and validates the sentences.json in dir, rejecting
@@ -306,6 +344,7 @@ func readPack(dir string) ([]packEntry, error) {
 	if len(p.Entries) == 0 {
 		return nil, fmt.Errorf("%w: %s of %s: at least one entry is required", pack.ErrInvalidPack, sentencesFile, dir)
 	}
+	used := map[string]bool{}
 	for i, g := range p.Entries {
 		if strings.TrimSpace(g.Word) == "" {
 			return nil, fmt.Errorf("%w: %s of %s: entry %d needs a word", pack.ErrInvalidPack, sentencesFile, dir, i)
@@ -324,6 +363,24 @@ func readPack(dir string) ([]packEntry, error) {
 			if strings.TrimSpace(s.Pinyin) == "" {
 				p.Entries[i].Sentences[j].Pinyin = ""
 			}
+			// A sentence with an id is credited by the pack's credits: the
+			// translation's id is required too, the owners may be empty
+			// (Tatoeba lists none for some CC0 sentences).
+			if s.ID != 0 {
+				key := strconv.FormatInt(s.ID, 10)
+				c, ok := p.Credits[key]
+				if !ok || c.TID == 0 {
+					return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s has no complete entry in credits",
+						pack.ErrInvalidPack, sentencesFile, dir, s.ID, g.Word)
+				}
+				used[key] = true
+				p.Entries[i].Sentences[j].Credit = c
+			}
+		}
+	}
+	for id := range p.Credits {
+		if !used[id] {
+			return nil, fmt.Errorf("%w: %s of %s: credits lists sentence %s, which no entry uses", pack.ErrInvalidPack, sentencesFile, dir, id)
 		}
 	}
 	return p.Entries, nil
@@ -360,9 +417,11 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sente
 		id     int64
 		pinyin string
 		active bool
+		credit [4]string // credit id, owner, translation id, owner
 	}
 	cur, err := tx.QueryContext(ctx, `
-		SELECT id, entry_id, hanzi, pinyin, translation, deleted_at IS NULL FROM sentences
+		SELECT id, entry_id, hanzi, pinyin, translation, deleted_at IS NULL,
+			credit_id, credit_owner, credit_tr_id, credit_tr_owner FROM sentences
 		WHERE source_pack = ? AND user_id IS NULL
 		ORDER BY deleted_at IS NULL DESC, id`, m.ID)
 	if err != nil {
@@ -375,10 +434,13 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sente
 			k key
 			s stored
 		)
-		if err := cur.Scan(&s.id, &k.entryID, &k.hanzi, &s.pinyin, &k.translate, &s.active); err != nil {
+		var cid, ctid int64
+		var cowner, ctowner string
+		if err := cur.Scan(&s.id, &k.entryID, &k.hanzi, &s.pinyin, &k.translate, &s.active, &cid, &cowner, &ctid, &ctowner); err != nil {
 			cur.Close()
 			return fmt.Errorf("read sentences of pack %s: %w", m.ID, err)
 		}
+		s.credit = [4]string{strconv.FormatInt(cid, 10), cowner, strconv.FormatInt(ctid, 10), ctowner}
 		if _, dup := existing[k]; dup {
 			if s.active {
 				extras = append(extras, s.id)
@@ -401,18 +463,23 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sente
 		}
 		wanted[k] = true
 		pinyin := r.sentence.Pinyin
+		sc := r.sentence
+		credit := [4]string{strconv.FormatInt(sc.ID, 10), sc.Credit.By, strconv.FormatInt(sc.Credit.TID, 10), sc.Credit.TBy}
 		switch have, ok := existing[k]; {
 		case !ok:
 			if _, err := tx.ExecContext(ctx, `
-				INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-				VALUES (?, ?, NULL, ?, ?, ?, ?)`,
-				r.entryID, m.ID, k.hanzi, pinyin, k.translate, stamp); err != nil {
+				INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at,
+					credit_id, credit_owner, credit_tr_id, credit_tr_owner)
+				VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				r.entryID, m.ID, k.hanzi, pinyin, k.translate, stamp,
+				sc.ID, sc.Credit.By, sc.Credit.TID, sc.Credit.TBy); err != nil {
 				return fmt.Errorf("insert sentence of pack %s: %w", m.ID, err)
 			}
-		case !have.active || have.pinyin != pinyin:
+		case !have.active || have.pinyin != pinyin || have.credit != credit:
 			if _, err := tx.ExecContext(ctx, `
-				UPDATE sentences SET deleted_at = NULL, pinyin = ?, updated_at = ? WHERE id = ?`,
-				pinyin, stamp, have.id); err != nil {
+				UPDATE sentences SET deleted_at = NULL, pinyin = ?, updated_at = ?,
+					credit_id = ?, credit_owner = ?, credit_tr_id = ?, credit_tr_owner = ? WHERE id = ?`,
+				pinyin, stamp, sc.ID, sc.Credit.By, sc.Credit.TID, sc.Credit.TBy, have.id); err != nil {
 				return fmt.Errorf("update sentence %d of pack %s: %w", have.id, m.ID, err)
 			}
 		}

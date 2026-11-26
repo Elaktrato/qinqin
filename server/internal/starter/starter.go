@@ -1,7 +1,9 @@
-// Package starter holds the Starter sets (#214): a short, hand-reviewed list of
-// common, picturable words per language, written for this project and released
-// with it (the word choice is ours; the dictionary data it points at stays in
-// the dictionaries). A set names words the way a level or frequency list does
+// Package starter holds the Starter sets (#214): a short list of common,
+// picturable words per language, written for this project and released under
+// CC0 1.0 (LICENSING.md; the word choice is ours; the dictionary data it points
+// at stays in the dictionaries). A set says through humanReviewed whether a
+// person has read every word against the dictionary; the shipped seeds say
+// false. A set names words the way a level or frequency list does
 // (a written form and optionally a reading) and the picture each word is
 // expected to have in an images pack; the server resolves the words to
 // dictionary entries and the web client copies them into the learner's own deck.

@@ -144,3 +144,77 @@ becomes a gitignored local-only fetch script.
   sets, #62 under the 3.0 precedent), but each needs infrastructure beyond a fetch script (a new stroke
   format and player; a maintainer-built pack with a hosted asset; a new `images` pack type), so no data was
   added and the existing local-only Commons tool is unchanged.
+
+## Review fixes (v0.8.0)
+
+Independent review, attribution findings (branch `fix/v080-attribution`).
+
+### Tatoeba per-sentence credit (finding 4)
+
+The review was right: `credits.tsv` held ids and owners with no key to join to a displayed sentence, and the only
+in-app route was a GitHub blob that does not exist before the branch reaches `main`. Fixed in the data, the importer,
+the API and the UI.
+
+- Ruling: each pack sentence carries its Tatoeba id (`id` in `sentences.json`), and a `credits` map of the same file
+  gives per id the owner, the translation's id and the translation's owner (`by`, `tid`, `tby`) — one credit per
+  sentence however many words list it (a sentence is filed under several words), so the repeat costs an integer, not a
+  name — a map beside the entries keeps the one-group-per-line diff and grows the two files by about 1.7 MB gzip in
+  total (measured, below); cost if wrong: the pack format gains two fields
+  that other pack authors may ignore (a pack without ids is read as before).
+- Ruling: the importer stores the credit in four columns of `sentences` (migration 054) and a changed credit updates
+  the row in place (same id, so sentence cards keep it) — the sentence API (`GET /api/entries/{id}`,
+  `POST /api/entries/{id}/sentences`) serves it as `credit` `{source, id, owner, url, translationId, translationOwner,
+  translationUrl}`, omitted when a sentence has none — credits that ship inside the installed pack data work offline and
+  need no GitHub; cost if wrong: four columns on a table that a later sentence source would reuse (source is fixed to
+  "Tatoeba" in the server for now, which a second credited source would have to generalise).
+- Ruling: no contract version bump — `credit` is an additive optional field of the entry answer, which no
+  `docs/contracts` fixture covers; the sync pull ships own sentences only and is unchanged (the key is omitted) —
+  keeps contract 10 free for the other fix branches; cost if wrong: a client that validates entry answers strictly
+  would reject the new key (none does).
+- Ruling: the app shows "Tatoeba · <owner>" (link to `https://tatoeba.org/sentences/show/<id>`) and
+  "translation <owner>" (link to the translation's page) in small muted text under every Tatoeba sentence on the entry
+  page, and under the answer of a sentence card; the Share text carries the credit with both links — the BY condition
+  names the author, and the translation has its own author; cost if wrong: one more small line per example.
+- Ruling: `credits.tsv`, the manifest attribution and the Sources page entry stay as the aggregate list; their wording
+  now says the app shows each credit — the owner asked for the aggregate to remain; cost if wrong: 8.2 MB + 4.9 MB
+  duplicate data in the repository (the TSV is derived from the same rows).
+- Sizes (committed files, raw / gzip -9): `zh-sentences-tatoeba/sentences.json` 7,870,976 / 2,764,249 -> 10,384,518 /
+  3,437,857; `ja-sentences-tatoeba/sentences.json` 13,500,518 / 3,730,981 -> 17,564,215 / 4,698,544; `credits.tsv`
+  unchanged (4,875,264 and 8,213,396). Both are under the tool's 24 MiB per-file cap. The packs were regenerated from
+  the pinned export (re-downloaded; the old-code build first reproduced the committed packs byte for byte); 49,130
+  Mandarin pack sentences, every one credited after `qinqin seed` (0 unknown words skipped).
+- Not done: the offline data package (`qqpkg`, format 1) of a sentence pack does not carry the credit columns —
+  changing a documented format 1 is an owner decision (see the questions below).
+
+### Starter sets (finding 5)
+
+- Ruling: the Starter word lists stay CC0 1.0 and `LICENSING.md` now names them as a second CC0 exception next to the
+  script charts — they are the project's own selection (words, order, one-word glosses, picture pairing) and copy no
+  third-party text; the dictionary entries and pictures they name keep their own licences; cost if wrong: if the owner
+  wants CC BY 4.0 for everything but the charts, two JSON files change their `license` string and the sentence in
+  `LICENSING.md`.
+- Ruling: the package doc no longer says "hand-reviewed", and `docs/sources.md` gains a "Starter sets" section saying
+  `humanReviewed: false`, 47 (zh) and 55 (ja) words against the issue's 100-300, and the stale "still need hand
+  review" line points to it — the files and the prose now agree; cost if wrong: none (wording).
+- Owner confirmation needed: CC0 for the Starter lists, and whether to ship them at 47/55 words unreviewed.
+
+### Picture-map notices (finding 6)
+
+- Ruling: `NOTICE.md` (licence CC BY-SA 4.0, the sources the rows derive from, the changes) and
+  `LICENSE-UNICODE.txt` (the CLDR 49.0.0 Unicode License v3, verbatim, SHA-256 equal to the pin in `pins.json`) sit
+  beside `scripts/images/openmoji/map.tsv` and `scripts/images/mulberry/map.tsv` — the TSVs carry CC-CEDICT and
+  JMdict glosses (CC BY-SA 4.0), OpenMoji or Mulberry names and CLDR keywords, and a reader of the repository saw no
+  notice; cost if wrong: two small files per directory.
+- No data was changed.
+
+### Owner questions
+
+1. Starter sets: confirm CC0 1.0 for `starter-zh.json` and `starter-ja.json` (finding 5), and ship them at 47/55 words
+   with `humanReviewed: false`?
+2. Mulberry rows for Chinese (`scripts/images/mulberry/map.tsv`, 541 `zh` rows) are admitted by a membership test
+   against the HSK 3.0 word list at build time. Which copy of the list the gate reads, and whether a checkout without
+   it can rebuild those rows, is not settled here (the project's HSK decisions moved more than once); decide whether
+   the gate should use the bundled official HSK list, so that the committed rows are reproducible and the list's terms
+   are covered by the attribution. Data not changed here.
+3. Package format 1 of sentence packs lacks the credit columns: extend format 1 now (nothing installs packages yet) or
+   add a format 2?

@@ -7,7 +7,10 @@ its contributors.
 - Licence: sentence text CC BY 2.0 FR
   (https://creativecommons.org/licenses/by/2.0/fr/); sentences Tatoeba also
   releases under CC0 1.0 are marked "CC0 1.0" in credits.tsv. See LICENSE.
-- Owners: credits.tsv lists every sentence of this pack with its Tatoeba id,
+- Owners: the app shows, under every Tatoeba sentence, "Tatoeba · <owner>"
+  linked to the sentence's page on Tatoeba; the pack carries them in
+  sentences.json ("id" on each sentence, "credits" by id: owner, translation id,
+  translation owner), so they are available offline. credits.tsv lists every sentence of this pack with its Tatoeba id,
   page (https://tatoeba.org/en/sentences/show/<id>), licence and owner (the
   Tatoeba username listed for it), and the same for its English translation.
   Published copy: https://github.com/Elaktrato/qinqin/blob/main/plugins/data/zh-sentences-tatoeba/credits.tsv

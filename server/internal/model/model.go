@@ -176,6 +176,22 @@ type Sentence struct {
 	// learner's own kept example, with the provider and model; nil for every
 	// other sentence.
 	AI *SentenceAI `json:"ai"`
+	// Credit says who wrote a pack sentence and its translation (Tatoeba, CC BY
+	// 2.0 FR needs the author named); absent for a sentence without one.
+	Credit *SentenceCredit `json:"credit,omitempty"`
+}
+
+// SentenceCredit is the credit of a pack sentence: the source, the sentence's
+// id on it, its owner (as the source lists it; empty when none is listed) and
+// the page of the sentence, and the same for its translation.
+type SentenceCredit struct {
+	Source           string `json:"source"`
+	ID               int64  `json:"id"`
+	Owner            string `json:"owner"`
+	URL              string `json:"url"`
+	TranslationID    int64  `json:"translationId"`
+	TranslationOwner string `json:"translationOwner"`
+	TranslationURL   string `json:"translationUrl"`
 }
 
 // SentenceAI is who wrote an AI example: the provider id and the model.
