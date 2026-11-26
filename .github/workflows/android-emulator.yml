@@ -20,6 +20,27 @@ on:
         description: "Suites to run in ONE emulator (shell,core,pages,ime,touch,perf); empty runs both matrix jobs"
         required: false
         default: ""
+      # Experiment knobs for the flake work (#37): empty keeps the defaults of the workflow.
+      target:
+        description: "System image target (google_apis or default); empty: google_apis"
+        required: false
+        default: ""
+      cores:
+        description: "Emulator cores; empty: 2"
+        required: false
+        default: ""
+      ram:
+        description: "Emulator RAM, e.g. 4096M; empty: 3072M"
+        required: false
+        default: ""
+      recover:
+        description: "0 turns the driver's recovery from an unplanned activity relaunch off (A/B runs)"
+        required: false
+        default: ""
+      diag:
+        description: "1 logs every change of the device configuration (config-watch.log in the artifact)"
+        required: false
+        default: ""
   schedule:
     - cron: "17 3 * * *"
   pull_request:
@@ -51,7 +72,8 @@ jobs:
     strategy:
       fail-fast: false
       # Pull requests run only the core job; the extended suites (flaky about one run in two) run nightly and by hand.
-      matrix: ${{ fromJSON(github.event_name == 'pull_request' && '{"include":[{"name":"core","suites":"shell,core"}]}' || '{"include":[{"name":"core","suites":"shell,core"},{"name":"extended","suites":"pages,ime,touch,perf"}]}') }}
+      # A dispatch with `suites` runs those suites in one emulator (a matrix entry named `custom`).
+      matrix: ${{ fromJSON(github.event_name == 'pull_request' && '{"include":[{"name":"core","suites":"shell,core"}]}' || (inputs.suites != '' && '{"include":[{"name":"custom","suites":""}]}' || '{"include":[{"name":"core","suites":"shell,core"},{"name":"extended","suites":"pages,ime,touch,perf"}]}')) }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -79,14 +101,30 @@ jobs:
       - name: Build server
         run: apps/android/e2e/build-server.sh "$RUNNER_TEMP/qinqin"
 
-      # The app: the first-run screen, cap sync, the debug APK.
+      # The app: the first-run screen, cap sync, the debug APK. Maven Central answers 429 to shared runner addresses
+      # now and then: the dependencies are cached, and a build that failed on the network is tried again (twice);
+      # any other failure (a compile error, a unit test) stops at once.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('apps/android/android/**/*.gradle', 'apps/android/android/gradle/wrapper/gradle-wrapper.properties', 'apps/android/package-lock.json') }}
+          restore-keys: gradle-${{ runner.os }}-
       - name: Build debug APK
         working-directory: apps/android
         run: |
+          set -o pipefail
           npm ci
           npm run sync
           cd android
-          ./gradlew --no-daemon testDebugUnitTest assembleDebug
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon testDebugUnitTest assembleDebug 2>&1 | tee "$RUNNER_TEMP/gradle.log"; then exit 0; fi
+            grep -qE 'Could not (GET|HEAD|resolve)|status code (429|5[0-9][0-9])|Read timed out|Connection (reset|refused)|Premature end of Content-Length' "$RUNNER_TEMP/gradle.log" || exit 1
+            echo "::warning::Gradle failed on the network (attempt $attempt of 3)"
+            sleep $((attempt * 60))
+          done
+          exit 1
       - name: Locate the APK
         run: echo "APK=$(realpath apps/android/android/app/build/outputs/apk/debug/app-debug.apk)" >> "$GITHUB_ENV"
 
@@ -105,12 +143,15 @@ jobs:
           E2E_APK: ${{ env.APK }}
           E2E_OUT: ${{ github.workspace }}/apps/android/e2e-out
           E2E_SUITES: ${{ inputs.suites || matrix.suites }}
+          E2E_RECOVER: ${{ inputs.recover }}
+          E2E_DIAG: ${{ inputs.diag }}
         with:
           api-level: 34
-          target: google_apis
+          target: ${{ inputs.target || 'google_apis' }}
           arch: x86_64
           profile: pixel_6
-          ram-size: 3072M
+          cores: ${{ inputs.cores || 2 }}
+          ram-size: ${{ inputs.ram || '3072M' }}
           disk-size: 8192M
           force-avd-creation: false
           avd-name: qinqin-e2e
