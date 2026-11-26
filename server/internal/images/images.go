@@ -6,7 +6,7 @@
 //
 //	manifest.json   type images, format images-svg, languages [...], licence
 //	pictures.tsv    concept, file, label, credit: one row per picture
-//	pictures/<concept>.svg   the pictures, stored and served byte for byte
+//	pictures/<concept>.svg   the pictures, checked and stored in canonical form (CanonicalSVG)
 //	map.tsv         language, target, sense, concept, score, basis, note
 //
 // and the pack's licence (LICENSE, ATTRIBUTION.md). The files are data, never
@@ -244,13 +244,14 @@ func Load(dir string, languages []string) (Content, error) {
 		if err != nil {
 			return Content{}, fmt.Errorf("%s/%s.svg: %w", PicturesDir, p.Concept, err)
 		}
-		if err := CheckSVG(svg); err != nil {
+		canon, err := CanonicalSVG(svg)
+		if err != nil {
 			return Content{}, fmt.Errorf("%s/%s.svg: %w", PicturesDir, p.Concept, err)
 		}
-		if total += len(svg); total > maxTotalBytes {
+		if total += len(canon); total > maxTotalBytes {
 			return Content{}, fmt.Errorf("%s: the pictures are larger than %d MiB together", PicturesDir, maxTotalBytes>>20)
 		}
-		p.SVG = svg
+		p.SVG = canon
 	}
 	raw, err = readCapped(filepath.Join(dir, MapFile), maxFileBytes)
 	if err != nil {

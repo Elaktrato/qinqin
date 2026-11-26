@@ -1,29 +1,201 @@
 {
- "version": 1,
+ "version": 2,
  "rule": "images/svg",
- "note": "The picture vocabulary (docs/contracts/images/README.md, Pictures are drawings). valid: the server accepts them when a pack is installed and a client may draw them. invalid: the server refuses them; client says whether a client must refuse them too (active content: yes; a wrong namespace is only the server's business). theme: themeSvg(input) is output, byte for byte. Go: server/internal/images/contract_test.go; web: lib/api/images.test.ts.",
+ "note": "The picture vocabulary (docs/contracts/images/README.md, Pictures are drawings). valid: the server accepts them, stores canonical (the canonical form, byte for byte) and a client draws them. invalid: the server refuses them; client says whether a client must refuse them too (active content: yes; a wrong namespace is only the server's business). theme: themeSvg(input) is output, byte for byte. Go: server/internal/images/contract_test.go; web: lib/api/images.dom.test.ts.",
  "valid": [
-  {"name": "an OpenMoji black outline", "svg": "<svg id=\"emoji\" viewBox=\"0 0 72 72\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"line\"><path fill=\"none\" stroke=\"#000\" stroke-width=\"2\" d=\"M1 2h3\"/><circle cx=\"1\" cy=\"1\" r=\"2\"/></g></svg>"},
-  {"name": "a Mulberry colour symbol", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"850.394\" height=\"850.394\" viewBox=\"0 0 850.394 850.394\" overflow=\"visible\"><path d=\"M0 0\" fill=\"#abda4d\"/><path class=\"aac-skin-fill\" fill=\"#ffeec8\" d=\"M1 1\"/></svg>"},
-  {"name": "an XML header, a gradient and a same-document reference", "svg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><svg xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"a\"><stop offset=\"0\" stop-color=\"#fff\"/></linearGradient></defs><rect fill=\"url(#a)\" width=\"1\" height=\"1\"/><use href=\"#a\"/></svg>"}
+  {
+   "name": "an OpenMoji black outline",
+   "svg": "<svg id=\"emoji\" viewBox=\"0 0 72 72\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"line\"><path fill=\"none\" stroke=\"#000\" stroke-width=\"2\" d=\"M1 2h3\"/><circle cx=\"1\" cy=\"1\" r=\"2\"/></g></svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\" id=\"emoji\" viewBox=\"0 0 72 72\"><g id=\"line\"><path fill=\"none\" stroke=\"#000\" stroke-width=\"2\" d=\"M1 2h3\"/><circle cx=\"1\" cy=\"1\" r=\"2\"/></g></svg>"
+  },
+  {
+   "name": "a Mulberry colour symbol",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"850.394\" height=\"850.394\" viewBox=\"0 0 850.394 850.394\" overflow=\"visible\"><path d=\"M0 0\" fill=\"#abda4d\"/><path class=\"aac-skin-fill\" fill=\"#ffeec8\" d=\"M1 1\"/></svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"850.394\" height=\"850.394\" viewBox=\"0 0 850.394 850.394\" overflow=\"visible\"><path d=\"M0 0\" fill=\"#abda4d\"/><path class=\"aac-skin-fill\" fill=\"#ffeec8\" d=\"M1 1\"/></svg>"
+  },
+  {
+   "name": "an XML header, a gradient and a same-document reference",
+   "svg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><svg xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"a\"><stop offset=\"0\" stop-color=\"#fff\"/></linearGradient></defs><rect fill=\"url(#a)\" width=\"1\" height=\"1\"/><use href=\"#a\"/></svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"a\"><stop offset=\"0\" stop-color=\"#fff\"/></linearGradient></defs><rect fill=\"url(#a)\" width=\"1\" height=\"1\"/><use href=\"#a\"/></svg>"
+  },
+  {
+   "name": "a style attribute becomes attributes",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path style=\"fill:#ffeec8;fill-opacity:1\" d=\"M0 0\"/></svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path fill=\"#ffeec8\" fill-opacity=\"1\" d=\"M0 0\"/></svg>"
+  },
+  {
+   "name": "xlink:href is written as href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><g id=\"a\"/><use xlink:href=\"#a\"/></svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\"><g id=\"a\"/><use href=\"#a\"/></svg>"
+  },
+  {
+   "name": "title text is escaped, whitespace elsewhere and unquoted-looking text are dropped",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\">\n <title>a &lt;b&gt; &amp; c</title>\n</svg>",
+   "canonical": "<svg xmlns=\"http://www.w3.org/2000/svg\"><title>a &lt;b&gt; &amp; c</title></svg>"
+  }
  ],
  "invalid": [
-  {"name": "a script element", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>", "client": true},
-  {"name": "foreignObject", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><foreignObject><div/></foreignObject></svg>", "client": true},
-  {"name": "an event handler attribute", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path onload=\"x()\" d=\"M0 0\"/></svg>", "client": true},
-  {"name": "a link to another document", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><use href=\"https://example.test/x.svg#a\"/></svg>", "client": true},
-  {"name": "an embedded bitmap", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"data:image/png;base64,AAAA\"/></svg>", "client": true},
-  {"name": "a style element", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>@import url(https://example.test/a.css)</style></svg>", "client": true},
-  {"name": "an animation that sets a link", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><animate attributeName=\"href\" to=\"javascript:alert(1)\"/></svg>", "client": true},
-  {"name": "a DOCTYPE with an entity", "svg": "<!DOCTYPE svg [<!ENTITY a \"b\">]><svg xmlns=\"http://www.w3.org/2000/svg\">&a;</svg>", "client": false},
-  {"name": "not an SVG", "svg": "<html><body/></html>", "client": true},
-  {"name": "the wrong namespace", "svg": "<svg xmlns=\"http://example.test/\"><path d=\"M0 0\"/></svg>", "client": false},
-  {"name": "empty", "svg": "", "client": true}
+  {
+   "name": "a script element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>",
+   "client": true
+  },
+  {
+   "name": "foreignObject",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><foreignObject><div/></foreignObject></svg>",
+   "client": true
+  },
+  {
+   "name": "an event handler attribute",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path onload=\"x()\" d=\"M0 0\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "a link to another document",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><use href=\"https://example.test/x.svg#a\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an embedded bitmap",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"data:image/png;base64,AAAA\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "a style element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><style>@import url(https://example.test/a.css)</style></svg>",
+   "client": true
+  },
+  {
+   "name": "an animation that sets a link",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><animate attributeName=\"href\" to=\"javascript:alert(1)\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "a DOCTYPE with an entity",
+   "svg": "<!DOCTYPE svg [<!ENTITY a \"b\">]><svg xmlns=\"http://www.w3.org/2000/svg\">&a;</svg>",
+   "client": false
+  },
+  {
+   "name": "not an SVG",
+   "svg": "<html><body/></html>",
+   "client": true
+  },
+  {
+   "name": "the wrong namespace",
+   "svg": "<svg xmlns=\"http://example.test/\"><path d=\"M0 0\"/></svg>",
+   "client": false
+  },
+  {
+   "name": "empty",
+   "svg": "",
+   "client": true
+  },
+  {
+   "name": "a comment that HTML ends at once (the stored XSS)",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><!--><img/src=\"x\"/onerror=\"alert(1)\">--></svg>",
+   "client": true
+  },
+  {
+   "name": "a plain comment",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><!-- hi --></svg>",
+   "client": true
+  },
+  {
+   "name": "a processing instruction",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><?php echo 1 ?></svg>",
+   "client": true
+  },
+  {
+   "name": "a style attribute with image-set",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect style=\"background-image:image-set('https://example.test/a.png' 1x)\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "a style attribute with a CSS escape",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect style=\"fill:u\\72l(https://example.test/a)\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an escaped url() in an attribute",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect fill=\"u\\72l(https://example.test/a)\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an animateTransform",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><g><animateTransform attributeName=\"transform\" type=\"rotate\" from=\"0\" to=\"1\"/></g></svg>",
+   "client": true
+  },
+  {
+   "name": "an HTML element inside",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><p><img src=\"x\" onerror=\"alert(1)\"/></p></svg>",
+   "client": true
+  },
+  {
+   "name": "an HTML element in the SVG namespace",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><img src=\"x\" onerror=\"alert(1)\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "nested use that multiplies",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><g id=\"a\"><use href=\"#b\"/></g><g id=\"b\"><use href=\"#a\"/></g><use href=\"#a\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "a use of a use",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path id=\"p\" d=\"M0 0\"/><use id=\"u1\" href=\"#p\"/><use href=\"#u1\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an unknown attribute",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0\" onmouseover=\"x()\" foo=\"1\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an attribute in another namespace",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://example.test/x\"><path x:d=\"1\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "two elements with one id",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><g id=\"a\"/><g id=\"a\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "an href that is not a plain fragment",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><use href=\"#a b\"/></svg>",
+   "client": true
+  },
+  {
+   "name": "text outside title and desc",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><g>hello</g></svg>",
+   "client": true
+  },
+  {
+   "name": "a use with a script: href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"><use href=\"javascript:alert(1)\"/></svg>",
+   "client": true
+  }
  ],
  "theme": [
-  {"name": "black strokes and fills become currentColor, other colours stay", "input": "<svg><path fill=\"none\" stroke=\"#000\" d=\"M0\"/><path fill=\"#000000\" d=\"M1\"/><path fill=\"black\"/><rect fill=\"#abda4d\"/></svg>", "output": "<svg><path fill=\"none\" stroke=\"currentColor\" d=\"M0\"/><path fill=\"currentColor\" d=\"M1\"/><path fill=\"currentColor\"/><rect fill=\"#abda4d\"/></svg>"},
-  {"name": "style declarations too", "input": "<svg><circle style=\"fill:#000;stroke:black\" r=\"2\"/></svg>", "output": "<svg><circle style=\"fill:currentColor;stroke:currentColor\" r=\"2\"/></svg>"},
-  {"name": "a colour that only starts like black is left alone", "input": "<svg><path fill=\"#0a0a0a\"/><path style=\"fill:#000fff\"/></svg>", "output": "<svg><path fill=\"#0a0a0a\"/><path style=\"fill:#000fff\"/></svg>"},
-  {"name": "a picture with its own colours passes through", "input": "<svg><path fill=\"#abda4d\"/></svg>", "output": "<svg><path fill=\"#abda4d\"/></svg>"}
+  {
+   "name": "black strokes and fills become currentColor, other colours stay",
+   "input": "<svg><path fill=\"none\" stroke=\"#000\" d=\"M0\"/><path fill=\"#000000\" d=\"M1\"/><path fill=\"black\"/><rect fill=\"#abda4d\"/></svg>",
+   "output": "<svg><path fill=\"none\" stroke=\"currentColor\" d=\"M0\"/><path fill=\"currentColor\" d=\"M1\"/><path fill=\"currentColor\"/><rect fill=\"#abda4d\"/></svg>"
+  },
+  {
+   "name": "style declarations too",
+   "input": "<svg><circle style=\"fill:#000;stroke:black\" r=\"2\"/></svg>",
+   "output": "<svg><circle style=\"fill:currentColor;stroke:currentColor\" r=\"2\"/></svg>"
+  },
+  {
+   "name": "a colour that only starts like black is left alone",
+   "input": "<svg><path fill=\"#0a0a0a\"/><path style=\"fill:#000fff\"/></svg>",
+   "output": "<svg><path fill=\"#0a0a0a\"/><path style=\"fill:#000fff\"/></svg>"
+  },
+  {
+   "name": "a picture with its own colours passes through",
+   "input": "<svg><path fill=\"#abda4d\"/></svg>",
+   "output": "<svg><path fill=\"#abda4d\"/></svg>"
+  }
  ]
 }

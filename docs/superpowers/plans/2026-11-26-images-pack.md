@@ -150,3 +150,63 @@ Dictionaries read: CC-CEDICT 121,635 words, JMdict 30,173 priority words (of 219
 - The 90% precision figure is one person's glance at 60 rows, not a benchmark.
 - Sense numbers were checked against a real seed of CC-CEDICT and JMdict (97% consistent, none unresolved) but not against a
   second dictionary of a language.
+
+## Review fixes (v0.8.0)
+
+Independent review: a stored XSS through a pack's SVG (`<svg xmlns="http://www.w3.org/2000/svg"><!--><img/src="x"/onerror="alert(1)">--></svg>`:
+XML reads one comment, the HTML parser closes `<!-->` at once and builds an `<img onerror>`), plus CSS `image-set`,
+`u\72l(...)`, exponential nested `<use>` and a regex `safeSvg` that `<p><img ...>`, a quote-less attribute and
+`animateTransform` got past. Branch `fix/v080-svg-security`.
+
+1. Ruling: **The server stores and serves a re-serialised canonical form (`images.CanonicalSVG`), not the pack's
+   bytes** — a gate that checks tokens and then keeps the original bytes can always be out-voted by a second parser (XML
+   vs HTML); rebuilding from the parsed tree (strict element and attribute allowlist, no comment/PI/DOCTYPE, escaped
+   text) leaves nothing for a second parser to read differently — a legitimate picture with an attribute outside the
+   allowlist is refused at install (the CI stage run below catches it before a release; widen `allowedAttrs` in Go and
+   `ATTRS` in `svg.ts` together).
+2. Ruling: **A `style` attribute is converted, not refused outright** (declarations of paint properties become the
+   attributes of the same name; any other declaration, `!important`, a backslash or a `url(` outside `#id` refuses the
+   picture) — the real Mulberry file `carpenter_1a.svg` carries `style="fill:#ffeec8;fill-opacity:1"`; refusing it drops a
+   picture for no gain, the converted output holds no `style` — cost if wrong: a CSS property added to the list later
+   must be proven inert first (the list is short and paint-only). `<style>` elements stay refused.
+3. Ruling: **`<use>` is bounded by structure, not by a depth counter**: at most 64 `<use>`, unique ids, and a `<use>`
+   may not target a `<use>` or an element that contains one — that makes the expanded cost linear (nesting and cycles
+   are impossible) — a pack that legitimately nests `<use>` is refused (none of the 1673 real pictures has any).
+4. Ruling: **The web client parses with `DOMParser('image/svg+xml')`, walks the same allowlist and draws created nodes
+   (`svgElement`, a Svelte action in `EntryPicture.svelte`); `{@html}` is gone** — nothing parsed from markup means no
+   parser differential; `safeSvg` stays as the canonical string producer (same bytes as Go, pinned by `svg.json`) for
+   callers that need a string — jsdom/browser XML parser differences from Go on exotic whitespace (Unicode spaces) are
+   not pinned by a fixture; the server's canonical form contains none of it.
+5. Ruling: **The route re-canonicalises what it reads and answers `{"picture": null}` for a stored picture that no
+   longer passes** — packs installed before this change hold the pack's raw bytes in `image_pictures.svg`, and the
+   install hash (`Hash`) only changes when the pack is re-imported — a deployment shows no picture until its images packs
+   are reinstalled if a stored one is hostile; a clean one is served at once, canonical.
+6. Ruling: **No `Content-Security-Policy`/`nosniff` on an image route: there is none.** The picture travels inside a JSON
+   answer (`application/json`, drawn from created nodes), no URL ever serves an SVG document, so there is no document
+   for a CSP `sandbox` to apply to — adding the header to the JSON route would protect nothing; should a route that
+   serves `image/svg+xml` directly be added, it must send `default-src 'none'; style-src 'unsafe-inline'; sandbox` and
+   `nosniff`.
+7. Ruling: **`GET /api/images/entries/{id}` stays `noTok`** — audio routes take read tokens because external players
+   fetch files with them; only the web app and the APK draw pictures, and the picture carries a BY-SA credit that the
+   app shows — a read-token client (an exporter) that wants pictures needs a one-line `tokReadGlobal` change plus a
+   contract line; documented in `docs/contracts/images/README.md`.
+8. Ruling: **No contract renumbering** (stays 10; a CHANGELOG amendment to #216, `svg.json` version 2) — none of
+   contract 8-10 is released, and a bump would touch the Android verifier and every concurrent branch — if the lead wants a
+   number per change, bump `api.ContractVersion` and the heading in one commit.
+9. Ruling: **CI runs the Go gate on the real packs** (`images-stage.yml` copies `/out` of the stage image and runs
+   `TestBuiltPacks`; the workflow also triggers on `server/internal/images/**`) — a tightened `CanonicalSVG` cannot break
+   seeding in a release image unseen — adds a Go toolchain to a workflow that was docker-only (about a minute).
+10. Ruling: **`.dockerignore` excludes `plugins/data-images` and `plugins/upstream`** (both are gitignored local
+    downloads and were sent to the build context); every `COPY` of the Dockerfile reads `plugins/data`, `scripts/`,
+    `server/`, `apps/web/`, none of the two — if a stage needs one later, remove the line.
+
+Numbers (built locally from the pins, `scripts/prepare-images-pack.mjs`): OpenMoji 962 and Mulberry 711 pictures, **1673
+kept, 0 dropped** by the Go `CanonicalSVG` (`TestBuiltPacks`) and by the web `sanitizeSvg` (temporary run over the same
+files). Attributes in the real files: `d fill stroke stroke-width stroke-linecap stroke-linejoin stroke-miterlimit id cx
+cy r xmlns viewBox height width points overflow class y x rx ry version transform stroke-dasharray clip-rule paint-order
+stop-color fill-rule` and one `style`; elements `svg g path circle line polyline rect polygon ellipse` — all inside the
+allowlist, so the canonicaliser needed no widening.
+
+Not verified here: nothing ran in a browser (rule), so `svgElement` is exercised by jsdom's XML parser only; the
+workflow change itself runs on CI only; a database that already holds old image rows was simulated by a handler test
+(rows rewritten by `UPDATE`), not by an upgrade from a real earlier build.

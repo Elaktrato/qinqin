@@ -1,15 +1,26 @@
 <script lang="ts">
 	// The picture of an entry (#212, images packs #216), drawn from the theme (black outlines take the text
 	// colour) with its credit. Nothing is drawn when the Pictures aid is off, no installed images pack maps the
-	// entry, or the request fails; the layout does not wait for it. The svg passed safeSvg in entryPicture and
-	// is inlined, not loaded from a URL.
+	// entry, or the request fails; the layout does not wait for it. The svg passed safeSvg in entryPicture; it
+	// is drawn from DOM nodes built by svgElement (checked against an allowlist again, never {@html}).
 	import { pictureCreditLine, themeSvg, type EntryPicture } from '$lib/api/images';
+	import { svgElement } from '$lib/api/svg';
 	import { glossLang } from '$lib/i18n/lang';
 	import { pictureFor } from './pictures';
 	import { useVisualAids } from './useAids';
 
 	let { entryId, size = 7 }: { entryId: number; /** Edge of the picture in rem. */ size?: number } = $props();
 	const view = useVisualAids();
+
+	/** Svelte action: draws the picture as created nodes (nothing is parsed as HTML); nothing when it is refused. */
+	function draw(node: HTMLElement, svg: string) {
+		const apply = (value: string) => {
+			const el = svgElement(value);
+			node.replaceChildren(...(el ? [el] : []));
+		};
+		apply(svg);
+		return { update: apply };
+	}
 	let picture = $state<EntryPicture | null>(null);
 
 	$effect(() => {
@@ -32,7 +43,7 @@
 
 {#if picture}
 	<figure class="picture" data-testid="entry-picture" style:--picture-size={`${size}rem`}>
-		<div class="art" role="img" aria-label={picture.label} lang={glossLang(undefined)}>{@html themeSvg(picture.svg)}</div>
+		<div class="art" role="img" aria-label={picture.label} lang={glossLang(undefined)} use:draw={themeSvg(picture.svg)}></div>
 		<figcaption>{pictureCreditLine(picture)}</figcaption>
 	</figure>
 {/if}

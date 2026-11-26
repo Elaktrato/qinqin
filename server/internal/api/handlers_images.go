@@ -47,7 +47,7 @@ func pictureTargets(e *lexicon.Entry) []string {
 // {"picture": null} when no installed images pack maps the entry (the usual
 // answer for most words). sense (1..999) asks for the picture of that sense
 // of the entry (and entry-wide ones); without it every mapping counts.
-// The picture's svg is the file of the pack, byte for byte; clients draw it
+// The picture's svg is the pack's file in canonical form (images.CanonicalSVG); clients draw it
 // themselves (docs/contracts/images/). Signed-in users only.
 func (s *server) handleEntryPicture(w http.ResponseWriter, r *http.Request) {
 	if s.requireUser(w, r) == nil {
@@ -75,7 +75,16 @@ func (s *server) handleEntryPicture(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"picture": nil})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"picture": pictureJSON{f.PackID, f.Concept, f.Label, f.Credit, f.License, f.Attribution, f.Basis, f.Sense, f.Score, f.SVG}})
+	// A pack installed before the canonical form existed holds the pack's own
+	// bytes: never serve those, only what CanonicalSVG makes of them (it is the
+	// identity on a stored canonical picture). One that fails the check is
+	// treated as no picture; a re-install of the pack repairs it.
+	svg, err := images.CanonicalSVG([]byte(f.SVG))
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"picture": nil})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"picture": pictureJSON{f.PackID, f.Concept, f.Label, f.Credit, f.License, f.Attribution, f.Basis, f.Sense, f.Score, string(svg)}})
 }
 
 // handleListImagePacks serves GET /api/image-packs: the installed images
