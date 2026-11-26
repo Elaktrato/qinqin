@@ -1,0 +1,20 @@
+{
+  "rule": "strokes/lookup",
+  "doc": "Which installed strokes pack serves a character for a reader of a language (GET /hanzi/U<HEX>.json?lang=<code>). Packs are listed in order of registration (ord). A pack that lists the language comes first; among those the pack with the fewest languages (made for that language) wins; then the earlier pack. A character only one pack has is served whatever the language; an absent or unlisted language falls back to the order of registration. data is a label for the pack's data for the character. Go: server/internal/strokes/contract_test.go.",
+  "packs": [
+    { "id": "shared", "languages": ["zh", "ja"], "chars": { "好": "shared-hao", "一": "shared-yi" } },
+    { "id": "japanese", "languages": ["ja"], "chars": { "好": "japanese-hao", "あ": "japanese-a" } },
+    { "id": "korean-demo", "languages": ["ko"], "chars": { "好": "korean-hao", "한": "korean-han" } }
+  ],
+  "cases": [
+    { "char": "好", "lang": null, "want": "shared-hao", "why": "no language: the first pack registered" },
+    { "char": "好", "lang": "zh", "want": "shared-hao", "why": "the Japanese pack does not list zh" },
+    { "char": "好", "lang": "ja", "want": "japanese-hao", "why": "made for ja alone beats the shared pack" },
+    { "char": "好", "lang": "ko", "want": "korean-hao", "why": "a pack that lists ko beats one that does not" },
+    { "char": "好", "lang": "fr", "want": "shared-hao", "why": "no pack lists fr: the order of registration" },
+    { "char": "一", "lang": "ja", "want": "shared-yi", "why": "only one pack has it" },
+    { "char": "あ", "lang": "zh", "want": "japanese-a", "why": "a character only one pack has is served whatever the language" },
+    { "char": "한", "lang": "ja", "want": "korean-han", "why": "likewise" },
+    { "char": "龍", "lang": "ja", "want": null, "why": "no pack has it: 404" }
+  ]
+}

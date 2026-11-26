@@ -311,18 +311,51 @@ func Live(ctx context.Context, q Querier) (bool, error) {
 // Lookup returns the stroke JSON of char from the first live pack (by ord)
 // that has it, byte for byte as imported; ok is false when none has it.
 func Lookup(ctx context.Context, q Querier, char string) (data json.RawMessage, ok bool, err error) {
-	var s string
-	err = q.QueryRowContext(ctx, `
-		SELECT s.data FROM strokes s JOIN stroke_packs p ON p.pack_id = s.pack_id
+	return LookupFor(ctx, q, char, "")
+}
+
+// LookupFor is Lookup for a reader of one language (a code like "ja"): the
+// same character is drawn differently in Chinese and Japanese, so a live pack
+// that lists lang comes first, and among those the one with the fewest
+// languages (a pack made for Japanese alone beats a shared pack); then the
+// order of registration (ord) decides. A character only one pack has is
+// served whatever the language, and an empty or unlisted lang is plain Lookup.
+func LookupFor(ctx context.Context, q Querier, char, lang string) (data json.RawMessage, ok bool, err error) {
+	rows, err := q.QueryContext(ctx, `
+		SELECT s.data, p.languages FROM strokes s JOIN stroke_packs p ON p.pack_id = s.pack_id
 		WHERE s.char = ? AND p.deleted_at IS NULL
-		ORDER BY p.ord LIMIT 1`, char).Scan(&s)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, false, nil
-	}
+		ORDER BY p.ord`, char)
 	if err != nil {
 		return nil, false, fmt.Errorf("strokes: lookup %q: %w", char, err)
 	}
-	return json.RawMessage(s), true, nil
+	defer rows.Close()
+	best, bestRank := "", -1 // rank 0: lang not listed; else 1 + (100 - the number of languages listed)
+	for rows.Next() {
+		var d, langs string
+		if err := rows.Scan(&d, &langs); err != nil {
+			return nil, false, fmt.Errorf("strokes: lookup %q: %w", char, err)
+		}
+		rank := 0
+		if lang != "" {
+			var list []string
+			if err := json.Unmarshal([]byte(langs), &list); err != nil {
+				return nil, false, fmt.Errorf("strokes: lookup %q: languages: %w", char, err)
+			}
+			if slices.Contains(list, lang) {
+				rank = 1 + max(0, 100-len(list))
+			}
+		}
+		if bestRank < 0 || rank > bestRank { // strictly better only: ties keep the earlier ord
+			best, bestRank = d, rank
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, fmt.Errorf("strokes: lookup %q: %w", char, err)
+	}
+	if bestRank < 0 {
+		return nil, false, nil
+	}
+	return json.RawMessage(best), true, nil
 }
 
 // Packs returns the live strokes packs in lookup order (ord).

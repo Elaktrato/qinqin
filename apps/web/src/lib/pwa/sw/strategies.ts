@@ -160,9 +160,16 @@ async function shellRequest(req: Request, d: Deps): Promise<Response> {
 }
 
 /** cacheFirst: a public, immutable file kept on demand in a shared cache of at most `cap` entries, oldest out first. */
-async function cacheFirst(req: Request, d: Deps, name: string, cap: number): Promise<Response> {
+async function cacheFirst(req: Request, d: Deps, name: string, cap: number, keepLang = false): Promise<Response> {
 	const cache = await d.caches.open(name);
-	const key = new URL(new URL(req.url).pathname, d.origin).href;
+	const keyUrl = new URL(new URL(req.url).pathname, d.origin);
+	if (keepLang) {
+		// The shapes of a character depend on the language asked for (?lang=ja, docs/contracts/strokes): it is the one
+		// query parameter that belongs to the key, and only when well formed.
+		const lang = new URL(req.url).searchParams.get('lang');
+		if (lang !== null && /^[a-z]{2,3}$/.test(lang)) keyUrl.searchParams.set('lang', lang);
+	}
+	const key = keyUrl.href;
 	const hit = await cache.match(key);
 	if (hit) return hit;
 	const res = await d.fetch(req);
@@ -188,7 +195,7 @@ export function handleFetch(kind: Exclude<Kind, 'bypass'>, req: Request, d: Deps
 		case 'shell':
 			return shellRequest(req, d);
 		case 'hanzi':
-			return cacheFirst(req, d, HANZI_CACHE, HANZI_CAP);
+			return cacheFirst(req, d, HANZI_CACHE, HANZI_CAP, true);
 		case 'font':
 			return cacheFirst(req, d, FONT_CACHE, FONT_CAP);
 	}

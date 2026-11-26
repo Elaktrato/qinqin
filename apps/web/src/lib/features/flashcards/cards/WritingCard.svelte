@@ -76,13 +76,13 @@
 		current = null;
 		try {
 			const ch = chars[index];
-			const parsed = parseStrokeData(ch, await loadStrokeData(session.caches.strokes, ch));
+			const parsed = parseStrokeData(ch, await loadStrokeData(session.caches.strokes, ch, undefined, entry.language));
 			if (!alive) return;
 			if (parsed === null) throw new Error(`No stroke data for ${ch}`);
 			current = parsed;
 			busy = false;
 			// Warm the cache for the next character of the word.
-			if (index + 1 < chars.length) void loadStrokeData(session.caches.strokes, chars[index + 1]);
+			if (index + 1 < chars.length) void loadStrokeData(session.caches.strokes, chars[index + 1], undefined, entry.language);
 		} catch {
 			fail();
 		}

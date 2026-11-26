@@ -152,3 +152,66 @@ func TestStrokePacksList(t *testing.T) {
 		t.Errorf("after uninstall: %s", rec.Body)
 	}
 }
+
+// installStrokesFor imports a strokes pack for the given languages carrying 好 with different data.
+func installStrokesFor(t *testing.T, s *server, id string, languages []string, hao string) {
+	t.Helper()
+	dir := t.TempDir()
+	m, _ := json.Marshal(map[string]any{
+		"id": id, "name": "Stroke data", "version": "1", "type": "strokes", "languages": languages,
+		"license": "CC BY-SA 3.0", "attribution": "KanjiVG", "format": "hanzi-writer-jsonl-gz",
+	})
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	zw.Write([]byte(`{"char":"好","data":` + hao + "}\n" + `{"char":"あ","data":{"strokes":["M 5 6"]}}` + "\n"))
+	zw.Close()
+	for name, body := range map[string][]byte{"manifest.json": m, strokes.DataFile: gz.Bytes()} {
+		if err := os.WriteFile(filepath.Join(dir, name), body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, err := pack.LoadPack(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := packs.Import(context.Background(), s.db, p); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestStrokeFileLanguage: GET /hanzi/U<HEX>.json?lang=ja picks the pack made for Japanese; a malformed language
+// is a 400; a character only one pack has is served whatever the language.
+func TestStrokeFileLanguage(t *testing.T) {
+	s, h, _, _, _ := newGateServerFresh(t)
+	s.limits = newAuthLimits(walkPolicy())
+	installStrokes(t, s, "hw") // zh + ja, 好 and 一
+	const jaHao = `{"strokes":["M 9 9"],"medians":[[[9,9],[8,8]]]}`
+	installStrokesFor(t, s, "kvg", []string{"ja"}, jaHao)
+
+	get := func(path string) *httptest.ResponseRecorder { return serveGet(h, "GET", path, "", nil) }
+	if rec := get("/hanzi/U597D.json"); rec.Code != 200 || rec.Body.String() != strokeHao {
+		t.Errorf("no language: %d %q", rec.Code, rec.Body)
+	}
+	if rec := get("/hanzi/U597D.json?lang=zh"); rec.Code != 200 || rec.Body.String() != strokeHao {
+		t.Errorf("lang=zh: %d %q", rec.Code, rec.Body)
+	}
+	ja := get("/hanzi/U597D.json?lang=ja")
+	if ja.Code != 200 || ja.Body.String() != jaHao {
+		t.Errorf("lang=ja: %d %q", ja.Code, ja.Body)
+	}
+	if plain := get("/hanzi/U597D.json"); plain.Header().Get("ETag") == ja.Header().Get("ETag") {
+		t.Error("the Japanese and the shared data must not share an ETag")
+	}
+	if rec := get("/hanzi/U3042.json?lang=zh"); rec.Code != 200 || rec.Body.String() != `{"strokes":["M 5 6"]}` {
+		t.Errorf("あ with lang=zh: %d %q", rec.Code, rec.Body)
+	}
+	for _, q := range []string{"?lang=", "?lang=JA", "?lang=japanese", "?lang=j", "?lang=ja&lang=zh", "?lang=ja-JP", "?lang=%00"} {
+		if rec := get("/hanzi/U597D.json" + q); rec.Code != 400 || errCode(rec) != "bad_request" {
+			t.Errorf("%s: %d %s, want 400 bad_request", q, rec.Code, rec.Body)
+		}
+	}
+	// Other query parameters are ignored, as before.
+	if rec := get("/hanzi/U597D.json?v=1"); rec.Code != 200 {
+		t.Errorf("?v=1: %d", rec.Code)
+	}
+}
