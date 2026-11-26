@@ -1,27 +1,39 @@
 <script lang="ts">
-	// A reading's text. A pinyin reading is drawn with each syllable in the colour of its tone and its contour
-	// under it when the Tone colours aid is on (#212); any other reading, or the aid off, is the plain text.
+	// A reading's text. A pinyin reading is drawn with each syllable in the colour of its tone when the Tone
+	// colours aid is on, and with its contour under it when the Tone contour aid is on (#212; two switches since
+	// the owner ruling of 2026-11-26); any other reading, or both off, is the plain text.
 	// The contour is the cue that is not a colour: it stays when colours are forced or cannot be told apart.
 	// The colours come from the painted theme (aids/tones.ts). Motion: none.
 	import { TONE_CONTOURS, toneName, toneSegments } from './tones';
 	import { useVisualAids } from './useAids';
 
-	// `force` draws the colours whatever the switch says (the preview in Settings).
-	let { value, type = 'pinyin', force = false }: { value: string; type?: string; force?: boolean } = $props();
+	// `force` draws colours and contour whatever the switches say; `colors` and `contour` decide one each (the
+	// previews in Settings).
+	let {
+		value,
+		type = 'pinyin',
+		force = false,
+		colors,
+		contour
+	}: { value: string; type?: string; force?: boolean; colors?: boolean; contour?: boolean } = $props();
 	const view = useVisualAids();
-	const on = $derived(type.trim().toLowerCase() === 'pinyin' && (force || view.aids.toneColors));
+	const pinyin = $derived(type.trim().toLowerCase() === 'pinyin');
+	const withColors = $derived(pinyin && (colors ?? (force || view.aids.toneColors)));
+	const withContour = $derived(pinyin && (contour ?? (force || view.aids.toneContour)));
+	const on = $derived(withColors || withContour);
 	const segments = $derived(on ? toneSegments(value) : []);
 </script>
 
 {#if !on}{value}{:else}<span class="tones" style={view.toneStyle}
 		>{#each segments as segment, i (i)}{#if segment.tone === null}{segment.text}{:else}<span
 					class="syl"
+					class:with-contour={withContour}
 					data-tone={segment.tone}
-					style:color={`var(--tone-${segment.tone})`}
+					style:color={withColors ? `var(--tone-${segment.tone})` : undefined}
 					title={toneName(segment.tone)}
-					>{segment.text}<svg class="contour" viewBox="0 0 10 10" aria-hidden="true" focusable="false"
-						><path d={TONE_CONTOURS[segment.tone].path} /></svg
-					></span
+					>{segment.text}{#if withContour}<svg class="contour" viewBox="0 0 10 10" aria-hidden="true" focusable="false"
+							><path d={TONE_CONTOURS[segment.tone].path} /></svg
+						>{/if}</span
 				>{/if}{/each}</span
 	>{/if}
 
@@ -29,6 +41,8 @@
 	.syl {
 		position: relative;
 		display: inline-block;
+	}
+	.with-contour {
 		padding-bottom: 0.3em;
 	}
 	.contour {
