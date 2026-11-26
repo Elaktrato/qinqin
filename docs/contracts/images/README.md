@@ -9,7 +9,7 @@ Fixtures:
 
 - `resolve.json` — which mapping the server picks for an entry (Go: `server/internal/images/contract_test.go`).
 - `svg.json` — the picture vocabulary the server accepts, what a client must refuse, and `themeSvg` (Go: the same
-  test; web: `lib/api/images.test.ts`).
+  test; web: `lib/api/images.dom.test.ts`).
 
 Owner code: `server/internal/images` (import, validation, resolution), `server/internal/api/handlers_images.go`
 (routes). Web: `apps/web/src/lib/api/images.ts` (`entryPicture`, `imagePacks`, `safeSvg`, `themeSvg`,
@@ -24,7 +24,7 @@ languages its map covers, `license`, `attribution`, optional `notice`), the lice
 | File | Content |
 | --- | --- |
 | `pictures.tsv` | header `concept\tfile\tlabel\tcredit`; one row per picture. `concept` is the id in the pack (`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`: an emoji code point such as `1F34E`, a Mulberry symbol name), `file` must be `pictures/<concept>.svg`, `label` the English name, `credit` the designer line |
-| `pictures/<concept>.svg` | the picture, at most 256 KiB, stored and served byte for byte |
+| `pictures/<concept>.svg` | the picture, at most 256 KiB; checked and stored in its canonical form (see "Pictures are drawings"), not byte for byte |
 | `map.tsv` | header `language\ttarget\tsense\tconcept\tscore\tbasis\tnote`; one row per mapping |
 
 `map.tsv` columns: `language` (one of the manifest's), `target` (the word: a dictionary entry's key, or one of its
@@ -46,15 +46,37 @@ server per entry. An offline client keeps what it fetched (a later change may ad
 
 ## Pictures are drawings
 
-The server checks every picture when a pack is installed (`images.CheckSVG`; fixture `svg.json`): well-formed
-UTF-8 XML, root `<svg>` in the SVG namespace, only drawing elements (`svg g path circle ellipse rect line polyline
-polygon defs clipPath mask use linearGradient radialGradient stop title desc`), no DOCTYPE or entities, no
-attribute starting with `on`, `href`/`xlink:href` and `url(...)` only to `#fragment`, no `javascript:`/`data:`
-value, nesting at most 64. A client that inlines a picture still refuses active content (`safeSvg`).
+The server checks every picture when a pack is installed (`images.CanonicalSVG`; fixture `svg.json`) and **stores
+and serves its canonical form, never the pack's bytes**. Accepted: at most 256 KiB of well-formed UTF-8 XML, root
+`<svg>` in the SVG namespace, only drawing elements (`svg g path circle ellipse rect line polyline polygon defs
+clipPath mask use linearGradient radialGradient stop title desc`) with only the attributes in the allowlist
+(geometry, paint, gradient, clip and mask attributes, `id`, `class`; the list is `allowedAttrs` in
+`server/internal/images/svg.go` and `ATTRS` in `apps/web/src/lib/api/svg.ts`), nesting at most 64. Refused: a
+comment, processing instruction (the XML header aside), DOCTYPE or entity; a `style` element; an `on*` or any
+other attribute; `href`/`xlink:href` that is not a plain `#id`; `url(...)` that is not `#id` or sits outside
+`fill`, `stroke`, `clip-path`, `mask`; `javascript:`, `data:`, `@import`, `image-set`, a backslash (CSS escape) in
+a value; duplicate ids; text outside `title` and `desc`; more than 64 `<use>`, a `<use>` of a `<use>` or of an
+element that holds one (the cost of nested uses cannot multiply). A `style` attribute is not kept: its
+declarations for paint properties (`fill`, `stroke`, ...) become attributes of the same name, any other declaration
+refuses the picture.
+
+The canonical form is rebuilt from the parsed tree: `<svg xmlns="http://www.w3.org/2000/svg" ...>`, attributes in
+source order and double-quoted, `&`, `<`, `>` (and `"` in attributes) escaped, no comment, no XML header, no
+whitespace between elements, `xlink:href` written `href`, an element without children written `<x/>`. It cannot
+re-parse as HTML into other elements (HTML ends the comment `<!-->` at once, XML does not: that difference made a
+comment a stored XSS, v0.8.0 review). `svg.json` gives each valid picture's `canonical` form; Go and web must
+produce it byte for byte.
+
+A client **never** puts a picture into `innerHTML`/`{@html}`. It parses the svg as XML, walks it against the same
+allowlist, and draws created nodes (`svgElement`), or a canonical string it made itself (`safeSvg`). The route
+re-canonicalises what it reads (a pack installed before the canonical form held the pack's bytes); a stored
+picture that no longer passes is answered as `{"picture": null}`.
 
 ## `GET /api/images/entries/{id}[?sense=N]`
 
-Signed-in users (not access tokens). `{"picture": {...}}` or `{"picture": null}` (no installed pack maps the entry:
+Signed-in users (not access tokens: unlike the audio routes, whose files external players fetch with a read token, nothing but
+the web app and the APK draws these pictures, so the route keeps the smaller surface; allowing a read token is one line,
+`tokReadGlobal`, when a client needs it). `{"picture": {...}}` or `{"picture": null}` (no installed pack maps the entry:
 the usual answer; not a 404). A picture:
 
 ```jsonc
