@@ -171,8 +171,8 @@ plan. Native pieces only where the WebView falls short.
   [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study,
   [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC BY 4.0 data; kana write mode with KanjiVG strokes, #62)
 - Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
-  [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order (the pack `kanjivg-strokes`, CC BY-SA 3.0 accepted by the owner; `?lang=` on `/hanzi/`, the kana Write mode; plan `docs/superpowers/plans/2026-11-26-kanjivg-strokes.md`),
-  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio
+  [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order (the pack `kanjivg-strokes`, CC BY-SA 3.0 accepted by the owner; `?lang=` on `/hanzi/`, the kana Write mode; plan `docs/superpowers/plans/2026-11-26-kanjivg-strokes.md`);
+  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio moved to v0.9.0 (owner, 2026-11-26)
 
 ### v0.9.0 — courses (milestone 8)
 
@@ -186,7 +186,12 @@ plan. Native pieces only where the WebView falls short.
   [#220](https://github.com/Elaktrato/qinqin/issues/220) topic labels,
   [#226](https://github.com/Elaktrato/qinqin/issues/226) exam target and study plan,
   [#231](https://github.com/Elaktrato/qinqin/issues/231) graded reading library,
-  [#183](https://github.com/Elaktrato/qinqin/issues/183) "read next" suggestions
+  [#183](https://github.com/Elaktrato/qinqin/issues/183) "read next" suggestions,
+  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio (moved here from v0.8.0, optional)
+- Plan: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (order, shared design, open owner decisions) and
+  one plan per issue in `docs/superpowers/plans/` (`2026-11-26-jlpt-words.md`, `topic-labels`, `course-pack-fill-progress`,
+  `course-roadmap-player`, `course-skeletons-texts`, `course-tests-exams`, `course-milestones-home-onboarding`,
+  `study-plan-target`, `read-next`, `graded-reading-library`, `mandarin-recordings`).
 
 ### v1.0.0 — ready for daily use (milestone 9)
 
