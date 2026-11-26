@@ -230,17 +230,18 @@ Optional help a learner asks for during a review instead of looking at the answe
   the start and are not counted. Web: a Hint button and the H key (Alt+H inside a text field, where H is a letter).
   Android implements the same control with its own widget.
 - **Grade rule** (`lowerForHints(suggested, used)`, `used` = hints revealed with the control): with `used = 0`
-  nothing changes; with `used >= 1` a suggestion of Again stays Again and any other suggestion, including none (a
-  self-graded card), becomes Hard (2). A second hint lowers no further. The learner can still pick any grade; this
+  nothing changes; with `used >= 1` the suggestion goes down one step: Easy (4) to Good (3), Good (3) to Hard (2);
+  Hard and Again stay, and no suggestion (a self-graded card) counts as Good and becomes Hard (2). A second hint
+  lowers no further. The learner can still pick any grade; this
   only moves the suggestion. Cases: `grades`.
 - **Recording** (`applyHints(result, used)`): the review's `meta.hints` is the card's own help count plus `used`
   (writing: stroke hints and shown strokes; sentence: the translation shown and giving up). The card's own help is
   not changed by this rule and, as before, does not lower the suggestion by itself. Cases: `results`.
 
-Ruling: the suggestion is capped at Hard, not lowered one step, and a card without a suggestion gets Hard — the
-issue says hints lower the suggested grade like the earlier Recall "Show reading" (right answer: Good to Hard),
-and a single cap is one rule for every kind, including self-graded Recognise cards — cost: a learner who knew the
-word and only peeked sees Hard preselected and must pick Good themselves.
+Ruling (owner, 2026-11-26; replaces "capped at Hard") — a hint lowers the suggestion by one step, a card without a
+suggestion counts as Good — a peek at a word the learner nearly knew no longer drops an Easy suggestion to Hard,
+and Again and Hard are not lowered further — cost: where the suggested grade was Easy the learner still sees Good,
+and the stored reviews of earlier builds (suggestion capped at Hard) are not rewritten.
 
 Ruling: the control's hints lower the suggestion but the earlier in-card helps (stroke hint, translation, give-up)
 keep their own suggestions — those were never part of the grade and changing them would shift every writing and

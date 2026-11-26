@@ -5,7 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## Tatoeba credits on every sentence (contract 11)
+## Tatoeba credits on every sentence (contract 12)
 
 - **Sentence pack file (`sentences.json`):** each sentence carries its own credit: `id` (its Tatoeba id), `by` (its
   owner as Tatoeba lists it, left out when none), `tid` (the id of the translation shown with it, required with an `id`)
@@ -18,6 +18,17 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `unsupported` from `packageAction` for them and keeps what it has. The other package types stay format 1;
   `schemas.json` states a type's own `formatVersion` when it differs. No client installs data packages yet.
 - **Unchanged:** the entry answer's `credit` object, the stored columns (migration 054) and the pack licence notices.
+
+## Owner rulings on hints and tone aids (contract 11)
+
+- **Changed rule:** the hint grade rule of `cards/hints.json` (`grades`): a hint asked for with the Hint control
+  lowers the suggested grade **one step** (Easy to Good, Good to Hard; Hard and Again stay; a self-graded card counts
+  as Good and becomes Hard), once however many hints were used. It used to cap at Hard. Clients implement the new
+  table; stored reviews are not rewritten (`cards/README.md` "Hints").
+- **Changed setting:** the `visualAids` member `toneContour` (boolean, default `true`), new beside `toneColors`:
+  colours and contour are separate switches. A stored `toneColors: false` without a stored `toneContour` reads as
+  contour off too (they used to be one switch). Older clients ignore the new member and keep it on write
+  (`aids/visual-aids.json`, `aids/README.md`, `settings/`).
 
 ## #214 — Starter mode: per-word stages and Starter sets (contract 10)
 

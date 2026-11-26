@@ -39,9 +39,21 @@ describe('ToneText (#212)', () => {
 	});
 
 	it('is the plain text when the aid is off', () => {
-		const { container } = open({ value: 'nǐ hǎo' }, { visualAids: { toneColors: false } });
+		const { container } = open({ value: 'nǐ hǎo' }, { visualAids: { toneColors: false, toneContour: false } });
 		expect(container.querySelector('.syl')).toBeNull();
 		expect(container.textContent).toBe('nǐ hǎo');
+	});
+
+	it('colours and contour are independent switches', () => {
+		const colourOnly = open({ value: 'nǐ hǎo' }, { visualAids: { toneContour: false } }).container;
+		expect(colourOnly.querySelectorAll('.syl')).toHaveLength(2);
+		expect(colourOnly.querySelector('.contour')).toBeNull();
+		expect((colourOnly.querySelector('.syl') as HTMLElement).style.color).toBe('var(--tone-3)');
+		cleanup();
+		const contourOnly = open({ value: 'nǐ hǎo' }, { visualAids: { toneColors: false, toneContour: true } }).container;
+		expect(contourOnly.querySelectorAll('.contour')).toHaveLength(2);
+		expect((contourOnly.querySelector('.syl') as HTMLElement).style.color).toBe('');
+		expect(contourOnly.textContent).toBe('nǐ hǎo');
 	});
 
 	it('is the plain text for a reading that is not pinyin', () => {
@@ -51,7 +63,7 @@ describe('ToneText (#212)', () => {
 	});
 
 	it('force draws the colours although the switch is off (the preview)', () => {
-		const { container } = open({ value: 'mā', force: true }, { visualAids: { toneColors: false } });
+		const { container } = open({ value: 'mā', force: true }, { visualAids: { toneColors: false, toneContour: false } });
 		expect(container.querySelectorAll('.syl')).toHaveLength(1);
 	});
 

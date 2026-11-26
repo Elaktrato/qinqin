@@ -12,7 +12,7 @@ question 6, which asked whether the credits go into the sentence-package format 
 2. **Data package** (`sentences.<packId>`): the `sentences` table gains `credit_id`, `credit_owner`, `credit_tr_id`,
    `credit_tr_owner`. The package type is **format 2**; every other type stays format 1 (`datapkg.FormatVersionOf`).
 3. **Docs and contract:** `docs/contracts/packages/` (README, `schemas.json`, `catalogue.json`), CHANGELOG entry
-   (contract 11), wiki Data-pack-format and Data-and-licences, `docs/sources.md`, pack `LICENSE` and `ATTRIBUTION.md`.
+   (contract 12), wiki Data-pack-format and Data-and-licences, `docs/sources.md`, pack `LICENSE` and `ATTRIBUTION.md`.
 
 Not changed: migration 054 (the stored columns are exactly what the entry answer needs), the entry API's `credit`
 object, the web app (it reads the entry answer, not the pack file), `credits.tsv`, the manifest notices.

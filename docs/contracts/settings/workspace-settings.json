@@ -48,7 +48,7 @@
   },
   {
    "key": "visualAids",
-   "shape": "object: aid (pictures, toneColors, anatomy) -> boolean",
+   "shape": "object: aid (pictures, toneColors, toneContour, anatomy) -> boolean",
    "default": "each switch true; see aids/visual-aids.json",
    "owner": "apps/web/src/lib/aids/visualAids.ts"
   }
