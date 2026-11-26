@@ -172,7 +172,7 @@ plan. Native pieces only where the WebView falls short.
   [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC BY 4.0 data; kana write mode with KanjiVG strokes, #62)
 - Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
   [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order (the pack `kanjivg-strokes`, CC BY-SA 3.0 accepted by the owner; `?lang=` on `/hanzi/`, the kana Write mode; plan `docs/superpowers/plans/2026-11-26-kanjivg-strokes.md`);
-  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio moved to v0.9.0 (owner, 2026-11-26)
+  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio: not in v0.9.0, parked in "After v1.0" (owner, 2026-11-26)
 
 ### v0.9.0 — courses (milestone 8)
 
@@ -186,12 +186,11 @@ plan. Native pieces only where the WebView falls short.
   [#220](https://github.com/Elaktrato/qinqin/issues/220) topic labels,
   [#226](https://github.com/Elaktrato/qinqin/issues/226) exam target and study plan,
   [#231](https://github.com/Elaktrato/qinqin/issues/231) graded reading library,
-  [#183](https://github.com/Elaktrato/qinqin/issues/183) "read next" suggestions,
-  [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio (moved here from v0.8.0, optional)
-- Plan: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (order, shared design, open owner decisions) and
+  [#183](https://github.com/Elaktrato/qinqin/issues/183) "read next" suggestions
+- Plan: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (order, shared design, the owner's decisions of 2026-11-26) and
   one plan per issue in `docs/superpowers/plans/` (`2026-11-26-jlpt-words.md`, `topic-labels`, `course-pack-fill-progress`,
   `course-roadmap-player`, `course-skeletons-texts`, `course-tests-exams`, `course-milestones-home-onboarding`,
-  `study-plan-target`, `read-next`, `graded-reading-library`, `mandarin-recordings`).
+  `study-plan-target`, `read-next`, `graded-reading-library`; `mandarin-recordings` is parked with #237).
 
 ### v1.0.0 — ready for daily use (milestone 9)
 
@@ -217,6 +216,9 @@ Ideas, not scheduled; each issue holds the detail.
   [#202](https://github.com/Elaktrato/qinqin/issues/202) Wiktionary importer,
   [#203](https://github.com/Elaktrato/qinqin/issues/203) frequency lists and CEFR estimates
 - Interface languages: #143, #145, #146 (Japanese, Simplified Chinese and the rest)
+- Data: [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin recordings (words only; plan parked in
+  `docs/superpowers/plans/2026-11-26-mandarin-recordings.md`), a Chinese word frequency pack (follow-up to the
+  character-frequency fallback of v0.9.0)
 - Study: #76 focus sessions, #134–#136 listening and speaking, #141/#142 deck export and shared decks,
   #140, #178 conjugation trainer, #179 counters, #180 tone pairs, #181 grammar review, #213 pronunciation
   feedback, #228 look-alike characters, #229 dictation, #60 Anki import

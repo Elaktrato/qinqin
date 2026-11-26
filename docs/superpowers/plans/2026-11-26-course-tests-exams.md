@@ -8,13 +8,13 @@ holds the event kinds and `passMark` fields (it does); otherwise the test-compos
 `docs/contracts/courses/tests.json` (expected contract 15). Builder: one agent, branch `feature/v090-course-tests`.
 Test first in every task; one commit per task.
 
-## Decision this plan assumes (overview decision 2)
+## Decision (owner, 2026-11-26: overview decision 2)
 
 The level check (#82) and placement (#74) are **self-reported** ("do you know this word?"). A test that lets a
 learner skip a unit must be **graded**: a learner who clicks "I know" on everything would otherwise skip the
 whole course. So tests ask real questions; the level check's *sampler* (seeded, stratified) is reused, its
-*answer model* is not. If the owner chooses self-report, tasks 3–4 shrink to a thin wrapper around the existing
-`SelfAssessQuestion`.
+*answer model* is not. The owner chose graded questions for unit tests and section exams; self-report stays for
+placement (#74) and the level check (#82).
 
 ## Shape
 
@@ -50,8 +50,10 @@ whole course. So tests ask real questions; the level check's *sampler* (seeded, 
 5. **Skip on pass-early:** the batch of known marks for skipped units through the declaration helpers (#74);
    Undo through the roadmap; the derivation (#221 `path.ts`) already unlocks; a contract test exercises "pass a
    later test → earlier units skipped".
-6. **Roadmap wiring:** the "Take the unit test / section exam" buttons of #222 become live; a
-   locked unit's test is available any time.
+6. **Roadmap wiring:** the unit-test circle (the check-badge circle at the end of each unit) and the section-exam
+   wall of #222 become live; a locked unit's test and any section's exam are available any time (test out). Passing a
+   section exam opens the wall and unlocks the next section (the section gate of #221's `path.ts`); failing changes
+   nothing and the wall stays closed; the result screen offers "Try again" and links to the lessons to review.
 7. **E2E** `e2e/tests/course-tests.spec.ts` (written here, run in CI only): take a unit test, fail, retry, pass.
 8. **Docs:** wiki `Courses` (tests, skipping, undo), the contracts README if a fixture was added, ROADMAP.
 9. **Verify:** `npm run check`, `npm test`, merge `origin/develop`, PR; core emulator job passes.

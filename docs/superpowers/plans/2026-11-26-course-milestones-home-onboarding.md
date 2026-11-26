@@ -18,9 +18,12 @@ Contract: milestone catalogue and weekly rows change (expected contract 16). Bui
 - **Goals, heatmap, weekly summary:** a finished lesson counts as study activity in the activity rules (one
   fixture case per rule in `events/activity.json`); the weekly summary gets a "Course" line (lessons finished,
   units completed, the current section) behind the `courses` feature (`weekly/week-summary.json`).
-- **Home:** a "Continue course" widget (`lib/widgets/`): the next lesson's title, the unit and section, one tap to
-  start (`/course?lesson=<id>`); hidden when the feature is off, no course is installed or the course is finished;
-  on a finished course it shows the graduation card once (below).
+- **Home:** a "Continue course" widget (`lib/widgets/`): the title of the lesson from `resume` (#221) — "Continue:
+  <lesson>" when `resume.why` is `started`, "Next: <lesson>" when it is `next` — with the unit and section, one tap to
+  open the roadmap scrolled to that row (`/course?at=<resume.ref>`, the same landing as the roadmap's own
+  "Continue course" button, #222); it never starts a lesson itself. Hidden when the feature is off, no course is
+  installed or the course is finished; on a finished course it shows the graduation card once (below). A
+  section exam as the next step reads "Next: Section exam" and lands on the wall.
 - **Workspace creation:** the "I'm new to this language" choice offers *Start the course (with Starter mode)*;
   "I know some already" offers the **placement test** (#74) and, after it, "Start the course at the placed
   section" (a `placement` event marks earlier units skipped, words known via #74's batch). Where the existing
@@ -38,13 +41,16 @@ Contract: milestone catalogue and weekly rows change (expected contract 16). Bui
    the three fixtures decode in web tests; no server code (milestones are derived).
 3. **Activity and weekly rules**: fixture cases and code; the heatmap counts a lesson once per day at least; the
    weekly summary line.
-4. **Home widget** + jsdom tests: loading, no course, current lesson, finished course, feature off.
+4. **Home widget** + jsdom tests: loading, no course, a started lesson ("Continue"), a next lesson ("Next"), only an
+   exam left, finished course, feature off; the link carries `resume.ref` and equals what the roadmap's button
+   uses (one shared function).
 5. **Onboarding:** the new-language flow and the placement follow-on; jsdom tests for both paths; no change to
    the flow when the course is not installed.
 6. **Graduation card and guide**; a test that it shows once (a seen row like the other milestone cards).
 7. **Docs:** wiki `Courses` and `Milestones` pages, `docs/contracts/milestones/README.md`, CHANGELOG (expected 16),
    ROADMAP.
-8. **E2E** `e2e/tests/course-home.spec.ts` (CI only): new workspace → course offered → widget on Home → continue.
+8. **E2E** `e2e/tests/course-home.spec.ts` (CI only): new workspace → course offered → widget on Home → continue →
+   the roadmap opens on the right circle.
 9. **Verify:** `npm run check`, `npm test`, Go contract test for the version agreement, merge `origin/develop`,
    PR; core emulator job passes.
 
@@ -60,6 +66,10 @@ Contract: milestone catalogue and weekly rows change (expected contract 16). Bui
 - Ruling: the Home widget is on by default for a workspace with an installed course and an unfinished course;
   the roadmap entry in the bottom bar is the learner's choice (#188) — decision 10 of the overview — if wrong, the
   roadmap is harder to find (cost: a default change).
+- Ruling: the widget **opens the roadmap at the resume row** instead of starting the lesson — the owner described
+  "Continue course" as getting back to the path at the right place; one extra tap shows the learner where they
+  are — if wrong, the tap count is higher than a direct start (cost: the widget can deep-link into the player later;
+  the `resume` function is the same).
 - Ruling: onboarding extends the existing decision point instead of adding a wizard — fewer new screens to
   verify without a browser — if wrong, the offer is easy to miss (cost: a Home nudge, as the level check has).
 

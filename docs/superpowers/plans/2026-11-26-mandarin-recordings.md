@@ -1,7 +1,12 @@
-# Mandarin recordings — plan (issue #237, optional in v0.9.0)
+# Mandarin recordings — plan (issue #237) — PARKED
 
-Overview: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (stage A, independent; **decision 1: is this in v0.9.0
-at all?** The owner said "later" for v0.8.0, and the issue now sits in the v0.9.0 milestone). Licence audit:
+> **Parked (owner, 2026-11-26): #237 is not in v0.9.0.** It moved to the milestone "After v1.0". This plan stays as
+> written so the work can start later without redoing the audit. The owner's answer to the syllable question: the
+> BY-SA 3.0 acceptance for KanjiVG does **not** extend to the Mandarin syllable recordings, so if the work is ever
+> done it ships Lingua Libre **words** only (the plan's recommended scope) and no syllable playback.
+
+Overview: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (stage A, independent; **decision 1: not in v0.9.0**,
+parked after v1.0). Licence audit:
 `docs/superpowers/specs/2026-11-26-v080-data-sources.md` (the #237 section) and the v0.8.0 handoff §4.4: Lingua Libre
 **words** pass the owner's rule (2,976 CC BY-SA 4.0 and 1,132 CC0; about 55 % of HSK 1–4), the `Zh-<pinyin>`
 **syllables** do not (mixed 3.0, 2.0 and 2.0-UK; only about 301 of 2,610 pass the rule) and stay local-only.
@@ -76,4 +81,4 @@ claimed.
 
 Chinese entries and cards play real recordings for the HSK 1–4 words the pack covers, every bundled clip has a
 checked licence and credit, the coverage numbers are in `docs/sources.md`, the image builds with and without
-the asset, and CI is green. If decision 1 moves the issue to "After v1.0", this plan stays as written.
+the asset, and CI is green. The issue is parked after v1.0 (decision 1), and this plan stays as written.

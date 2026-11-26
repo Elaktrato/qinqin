@@ -2,7 +2,7 @@
 
 Overview: `docs/superpowers/specs/2026-11-26-v090-courses-overview.md` (stage A). The fill rule (#221) places words
 into themed units, so words need topic labels. Owner decision: OpenMoji categories plus agent-suggested labels,
-**reviewed by the owner; only reviewed labels ship**. No contract change here; the files are packaged into the
+**reviewed by the owner (low-confidence labels in full, a 10 % sample of the rest); only reviewed or sample-passed labels ship**. No contract change here; the files are packaged into the
 course pack by #221/#223. Builder: one agent, branch `feature/v090-topic-labels` from `develop`; needs the images
 pack mapping (#216, merged in v0.8.0).
 
@@ -17,7 +17,7 @@ exist until #221; `scripts/check-sources.mjs` must skip a directory with no mani
   (`apps/web/src/lib/i18n/messages/en.json`, keys `topic.<id>`); `topics.json` holds ids and the OpenMoji
   mapping only.
 - `labels.tsv`: `form`, `reading`, `senseIdx` (empty = the whole word), `topics` (comma-separated, first is the
-  primary), `source` (`openmoji` | `agent`), `confidence` (0–1), `reviewed` (`yes` | empty). Sorted by form, then
+  primary), `source` (`openmoji` | `agent`), `confidence` (0–1), `reviewed` (`yes` | `sampled` | empty). Sorted by form, then
   reading. A header comment records the model, date and prompt version of the agent run.
 - `LICENSE` (CC BY 4.0), `ATTRIBUTION.md` (OpenMoji group credit if used, see Ruling 2).
 
@@ -47,7 +47,7 @@ exist until #221; `scripts/check-sources.mjs` must skip a directory with no mani
    committed file): the share of HSK 1–4 and ≈ N5–N3 words with a reviewed topic. The course fill rule works well
    at ≥ 70 % per section; report the gap and the 20 most frequent unlabelled words per level.
 7. **Ship rule.** A script option `--ship` writes `labels.tsv` with only `reviewed=yes` rows (or `source=openmoji`
-   rows when decision 3 lets them ship after a sample); everything else stays in `labels.candidates.tsv` (not
+   rows whose confidence is 0.85 or more, once their 10 % sample passes: decision 3); everything else stays in `labels.candidates.tsv` (not
    packaged). Test: the committed `labels.tsv` has no row without `reviewed=yes` (or the sampled exception).
 8. **Docs.** `docs/sources.md` (how the labels were made and reviewed), `LICENSING.md` mention, wiki
    Data-and-licences, ROADMAP.
@@ -61,16 +61,18 @@ exist until #221; `scripts/check-sources.mjs` must skip a directory with no mani
 - Ruling 2: the **assignment** (word → topic) is project content under CC BY 4.0, with an OpenMoji credit in the
   notice and no emoji group names in the file — a classification is a fact about the word, but a strict reading
   could call it an adaptation of OpenMoji metadata — if wrong, the labels file must be CC BY-SA 4.0
-  (cost: a second licence in the course pack; decision 4 of the overview).
-- Ruling 3: only `reviewed` labels ship — the owner's instruction — if wrong, nothing ships until reviewed
-  (cost: delays #223's fill check; mitigated by the confidence-sorted view).
+  (cost: a second licence in the course pack; the owner decided on CC BY 4.0 with an OpenMoji credit, decision 4 of the overview).
+- Ruling 3: only labels that are `reviewed=yes` or in a source whose 10 % sample passed (`reviewed=sampled`, confidence
+  0.85 or more) ship — the owner's decision of 2026-11-26 — if wrong, a wrong label ships (cost: a re-review of that
+  source and a pack update; the confidence column and the `--check` rule keep the exception narrow).
 - Ruling 4: the topic list is **fixed per release**; adding a topic is allowed, renaming or removing an id needs a
   migration note in the course contract — units refer to ids — if wrong, a unit loses its theme match
   (cost: one fill-rule report line).
 
 ## Needs human review
 
-**Every shipped label** (decision 3: all, or low-confidence plus a 10 % sample). Chinese labels for polysemous
+**The low-confidence labels in full, plus a 10 % sample of the rest** (decision 3, owner, 2026-11-26). A sample
+(seeded, stratified by source and level) with more than 5 % wrong rows sends that source back for full review. Chinese labels for polysemous
 words and Japanese labels for kana-only words are the risky ones; a native-speaker pass is not planned before the
 release.
 
