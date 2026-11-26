@@ -775,6 +775,27 @@ committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
 
+- **KanjiVG stroke data** (`kanjivg-strokes`, Japanese, fetched at build time; #62): the stroke order of kana, the
+  Japanese forms of kanji and the iteration marks (6,614 characters) from
+  [KanjiVG](https://kanjivg.tagaini.net), © Ulrich Apel, tag `r20260714`, commit
+  `d95a97627fd9fe5b2c8d06ca81e38149609c0c1e`, licensed **CC BY-SA 3.0** (README and `COPYING`, checked 2026-11-26). 3.0 is
+  below the project's usual CC BY-SA 4.0 floor; the owner accepted it for KanjiVG on 2026-11-26 (`LICENSING.md`).
+  KanjiVG stores each stroke as the centre line of the pen. The pack is an **adaptation**: `scripts/prepare-kanjivg-strokes.mjs`
+  samples each path into a median (a short polyline) and widens it by 2.75 KanjiVG units on each side, with round caps,
+  into the outline the stroke-data format needs (Hanzi Writer's: strokes and medians in a 1024 box, y up, baseline 900),
+  so the writing pad and the stroke player read it like any other strokes pack. Stroke order and direction are
+  KanjiVG's own; variant drawings (`-Kaisho` and so on), Latin and symbols are not included. The pack says it was
+  changed (manifest `notice`, `ATTRIBUTION.md`) and stays under CC BY-SA 3.0.
+
+It is a data pack of type `strokes` with `languages: ["ja"]`, built by `scripts/fetch-kanjivg-strokes.sh` (a pinned
+clone: the tag's commit, the SHA-256 of `COPYING` from `plugins/data/UPSTREAM.sha256` and the README's licence line are
+checked, and any difference stops the build) into the gitignored `plugins/data-strokes/kanjivg-strokes`; the Docker
+image builds it in its own `kanjivg` stage and ships it under `/opt/qinqin/kanjivg` (`--build-arg WITH_KANJIVG=0`
+skips it). The share-alike position of the project: like every BY-SA pack it stays its own data pack, served by the
+running server (`GET /hanzi/U<HEX>.json?lang=ja`, `docs/contracts/strokes/`), and is **never** compiled into the Go
+binary (`go:embed`), put in the web build or bundled in the Android app. For a character both packs carry, the
+language decides which serves it: a Japanese reader gets KanjiVG's shapes, a Chinese one the Make Me a Hanzi shapes.
+
 ## Themes
 
 Colour themes are packs of type `theme` (format `themes-json`, see

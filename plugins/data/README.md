@@ -106,6 +106,7 @@ directory):
 | `jmdict` | dictionary | ja | JMdict words (`jmdict.xml.gz`) |
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
+| `kanjivg-strokes` (not committed: `scripts/fetch-kanjivg-strokes.sh` builds it into `plugins/data-strokes`, the image builds it) | strokes | ja | the stroke order of kana and Japanese kanji forms from KanjiVG `r20260714` (CC BY-SA 3.0, © Ulrich Apel), pen centre lines widened into outlines (an adaptation, same licence) |
 | `kanjivg-components` | components | ja | the parts each kanji is drawn from, derived from KanjiVG `r20260714` (CC BY-SA 3.0, © Ulrich Apel), for the radical and part lookup: `components.tsv` (`語<TAB>言 口 吾 五 二`, 6,312 kanji) and `parts.tsv` (part stroke counts); `LICENSE` is KanjiVG's `COPYING`; rebuilt by `scripts/fetch-kanjivg-components.sh` |
 
 Committed level lists (converted; each with an `ATTRIBUTION.md`, and the

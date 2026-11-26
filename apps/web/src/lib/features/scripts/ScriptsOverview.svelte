@@ -2,6 +2,8 @@
 	// One writing system: its progress, the practice modes and the chart. A cell opens its detail (sound, key,
 	// notes); Hangul also shows how a syllable block is built.
 	import { t } from '$lib/i18n';
+	import { useSession } from '$lib/context/context';
+	import { fetchStrokeData } from '$lib/study/strokeData';
 	import { formatNumber } from '$lib/i18n/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -13,7 +15,7 @@
 	import { summarise, type ItemState } from './progress';
 	import { scriptsHref } from './route';
 	import SyllableBuilder from './SyllableBuilder.svelte';
-	import { MODES, type ScriptItem, type ScriptSystem } from './types';
+	import { canWrite, MODES, type ScriptItem, type ScriptSystem } from './types';
 
 	let {
 		system,
@@ -26,6 +28,27 @@
 		progress: ReadonlyMap<string, ItemState>;
 		deviceVoice: boolean;
 	} = $props();
+
+	const session = useSession();
+
+	// The write mode needs the server's Japanese stroke pack (KanjiVG): ask for the first letter once and offer
+	// the mode only when it is there. Until the answer is known the mode is not shown; a failed ask counts as no.
+	let strokesReady = $state<boolean | null>(null);
+	$effect(() => {
+		const probe = system.items[0];
+		const lang = system.language;
+		if (!canWrite(system.id) || probe === undefined) return;
+		let cancelled = false;
+		strokesReady = null;
+		void fetchStrokeData(session.caches.strokes, probe.glyph, undefined, lang).then((r) => {
+			if (!cancelled) strokesReady = r.kind === 'ok';
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
+	const modes = $derived(MODES.filter((m) => m !== 'write' || (canWrite(system.id) && strokesReady === true)));
+	const writeMissing = $derived(canWrite(system.id) && strokesReady === false);
 
 	const now = Date.now();
 	const summary = $derived(summarise(system.items, progress, now));
@@ -60,13 +83,16 @@
 
 <Section title={t('scripts.practice.title')}>
 	<ul class="modes">
-		{#each MODES as mode (mode)}
+		{#each modes as mode (mode)}
 			<li>
 				<Button variant={mode === 'recognise' ? 'primary' : 'secondary'} href={scriptsHref({ view: 'practice', system: system.id, mode })}>{modeLabel(mode)}</Button>
 				<span class="hint">{modeHint(mode)}</span>
 			</li>
 		{/each}
 	</ul>
+	{#if writeMissing}
+		<p class="hint">{t('scripts.mode.writeMissing')}</p>
+	{/if}
 	<p class="hint">{keyboardNote(system.id)}</p>
 </Section>
 

@@ -2,7 +2,7 @@
 
 import { composeSyllable, FINALS, INITIALS, MEDIALS, romanSyllable } from './hangul';
 import { isDue, type ItemState } from './progress';
-import type { Mode, Question, ScriptItem, ScriptSystem, ScriptWord } from './types';
+import { canWrite, type Mode, type Question, type ScriptItem, type ScriptSystem, type ScriptWord } from './types';
 
 export type Rng = () => number;
 
@@ -100,6 +100,10 @@ export function itemQuestion(system: ScriptSystem, mode: Exclude<Mode, 'read'>, 
 		const options = shuffle([item, ...distractors(item, system.items, OPTIONS - 1, rng)], rng).map(shows);
 		return { ...base, prompt: item.roman, speak: item.sound, options, answer: shows(item), accepts: [shows(item)] };
 	}
+	if (mode === 'write') {
+		// Drawn, so one glyph: the sound is the prompt, the glyph the only answer (じ and ぢ are told apart by their strokes).
+		return { ...base, prompt: item.roman, speak: item.sound, options: [], answer: item.glyph, accepts: [item.glyph] };
+	}
 	// Every glyph of the system that reads the same (じ and ぢ are both "ji") is a right answer to the prompt.
 	const twins = system.items.filter((i) => i.id !== item.id && i.roman === item.roman);
 	const accepts = [item, ...twins].flatMap((i) => (i.lower === undefined ? [i.glyph] : [i.glyph, i.lower]));
@@ -181,7 +185,7 @@ export function readIds(system: ScriptSystem): string[] {
 }
 
 /**
- * buildRound: the questions of one round. Recognise, recall and type ask chart items; read asks example words
+ * buildRound: the questions of one round. Recognise, recall, type and write ask chart items; read asks example words
  * (and, for Hangul, half of it blocks built from the learner's jamo).
  */
 export function buildRound(
@@ -192,6 +196,13 @@ export function buildRound(
 	rng: Rng,
 	size = ROUND_SIZE
 ): Question[] {
+	if (mode === 'write') {
+		// Only a system with stroke data, and only single glyphs (a digraph such as きゃ is two pads; it is practised in the other modes).
+		if (!canWrite(system.id)) return [];
+		const writable = system.items.filter((i) => [...i.glyph].length === 1);
+		const ids = pickIds(writable.map((i) => i.id), map, now, size, NEW_PER_ROUND, rng);
+		return ids.map((id) => itemQuestion(system, mode, writable.find((i) => i.id === id)!, rng));
+	}
 	if (mode !== 'read') {
 		const ids = pickIds(system.items.map((i) => i.id), map, now, size, NEW_PER_ROUND, rng);
 		return ids.map((id) => itemQuestion(system, mode, system.items.find((i) => i.id === id)!, rng));

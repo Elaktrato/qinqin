@@ -1,5 +1,5 @@
 <script lang="ts">
-	// One practice round (recognise, recall, read or type): ten questions, feedback after each, a score at the end.
+	// One practice round (recognise, recall, read, type or write): ten questions, feedback after each, a score at the end.
 	// The round is built once from the progress at its start; each answer goes to `onanswer`, which records it.
 	import { untrack } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -9,10 +9,13 @@
 	import { isImeKey } from '$lib/ui/ime';
 	import { keyboardNote, modeLabel, promptLabel, systemLabel } from './labels';
 	import { buildRound } from './queue';
+	import type { CharOutcome } from '$lib/study/writing';
 	import { advance, startRun, submit, type RunState } from './run';
 	import { scriptsHref } from './route';
 	import type { ItemState } from './progress';
 	import type { Mode, Question, ScriptSystem } from './types';
+	import ScriptsWritePad from './ScriptsWritePad.svelte';
+	import { writeAnswer, writeVerdict } from './write';
 
 	let {
 		system,
@@ -42,6 +45,19 @@
 		given = text;
 		run = submit(run, text);
 		onanswer(current, run.ok === true);
+	}
+
+	// The write mode: the pad reports a finished glyph; the verdict is the answer. A letter the server has no strokes for is skipped uncounted.
+	function finishWrite(outcome: CharOutcome, hints: number): void {
+		const current = q;
+		if (current === null) return;
+		answer(writeAnswer(current, writeVerdict(outcome, hints)));
+	}
+
+	function skipWrite(): void {
+		if (run.answered || run.done) return;
+		run = advance({ ...run, answered: true, ok: null });
+		given = '';
 	}
 
 	function next(): void {
@@ -106,6 +122,10 @@
 			{#if !run.answered}
 				<Button variant="primary" disabled={typed.trim() === ''} onclick={() => answer(typed)}>{t('scripts.run.check')}</Button>
 			{/if}
+		{:else if q.mode === 'write'}
+			{#key run.index}
+				<ScriptsWritePad glyph={q.answer} sound={q.prompt} language={system.language} done={run.answered} onfinish={finishWrite} onskip={skipWrite} />
+			{/key}
 		{:else}
 			<ul class="options">
 				{#each q.options as option (option)}

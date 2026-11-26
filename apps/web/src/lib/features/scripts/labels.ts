@@ -41,21 +41,24 @@ const MODES = labelRecord({
 	recognise: 'scripts.mode.recognise',
 	recall: 'scripts.mode.recall',
 	read: 'scripts.mode.read',
-	type: 'scripts.mode.type'
+	type: 'scripts.mode.type',
+	write: 'scripts.mode.write'
 } as const);
 
 const MODE_HINTS = labelRecord({
 	recognise: 'scripts.mode.recogniseHint',
 	recall: 'scripts.mode.recallHint',
 	read: 'scripts.mode.readHint',
-	type: 'scripts.mode.typeHint'
+	type: 'scripts.mode.typeHint',
+	write: 'scripts.mode.writeHint'
 } as const);
 
 const PROMPTS = labelRecord({
 	recognise: 'scripts.run.prompt.recognise',
 	recall: 'scripts.run.prompt.recall',
 	read: 'scripts.run.prompt.read',
-	type: 'scripts.run.prompt.type'
+	type: 'scripts.run.prompt.type',
+	write: 'scripts.run.prompt.write'
 } as const);
 
 const KEYBOARD = labelRecord({
