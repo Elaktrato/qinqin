@@ -18,7 +18,7 @@ Branch `feature/v080-kanjivg-licence` (from `feature/v0.8.0`). Owner decisions t
   outlines and medians; `scripts/fetch-kanjivg-strokes.sh` (pinned commit and licence text); Dockerfile stage `kanjivg`;
   `FETCHED_PACKS` in `check-sources`.
 - [x] 3. Server: `strokes.LookupFor(lang)` and `GET /hanzi/U<HEX>.json?lang=` (test-first; fixture
-  `docs/contracts/strokes/lookup.json`, Go test); contract 12.
+  `docs/contracts/strokes/lookup.json`, Go test); contract 13.
 - [x] 4. Web: language through `strokeUrl`/`fetchStrokeData`, the stroke player, the writing card, the study session and
   the offline preparation; the service worker's cache key keeps a well-formed `lang` (test-first).
 - [x] 5. The kana **Write** mode in the trainer (`write.ts`, `ScriptsWritePad.svelte`, queue, labels, overview, events

@@ -36,8 +36,21 @@ const (
 	TypeLemmaRules Type = "lemma-rules"
 )
 
-// FormatVersion is the data.sqlite schema version of every type.
+// FormatVersion is the data.sqlite schema version of a type that has not
+// changed since the first format; FormatVersionOf gives a type's own.
 const FormatVersion = 1
+
+// FormatVersionOf is the data.sqlite schema version of a type: 1 for every type
+// except sentences, which is 2 (every sentence carries its credit: Tatoeba id
+// and owner, and its translation's id and owner). There is no reading of the
+// older shape: a package of an old format version is rebuilt at the next
+// reconcile and a client that knows only format 1 meets "unsupported".
+func FormatVersionOf(t Type) int {
+	if t == TypeSentences {
+		return 2
+	}
+	return FormatVersion
+}
 
 // Types returns every package type in contract order.
 func Types() []Type {

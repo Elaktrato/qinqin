@@ -197,10 +197,10 @@ gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
   original author), and the same for its translation (columns `sentence`, `url`,
   `licence`, `owner`, `translation`, `translation_url`, `translation_licence`,
   `translation_owner`). The same credits travel with the pack data and the app
-  shows them: every sentence in `sentences.json` carries its Tatoeba `id`, and a
-  `credits` map of the file gives, per id, the owner, the translation's id and
-  the translation's owner (`by`, `tid`, `tby`). The importer stores them with the
-  sentence (migration 054), the entry API serves them as `credit` (`source`,
+  shows them: every sentence in `sentences.json` carries its own credit: its Tatoeba `id`,
+  its owner `by`, the translation's id `tid` and the translation's owner `tby`
+  (no separate credits list; a sentence under several words repeats them). The
+  importer stores them with the sentence (migration 054), the entry API serves them as `credit` (`source`,
   `id`, `owner`, `url`, `translationId`, `translationOwner`, `translationUrl`),
   and the app shows, under every Tatoeba sentence (entry page examples and the
   answer side of sentence cards), a small "Tatoeba · <owner>" linked to
@@ -210,9 +210,10 @@ gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
   sentence itself. The manifest `attribution` and the Sources page `notice` still
   link the published copy of `credits.tsv`
   (`https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<pack id>/credits.tsv`),
-  the aggregate list. The offline data package of a sentence pack (`qqpkg`,
-  format 1) does not carry the credit columns yet (no client installs it; a
-  format change is an owner decision, see the spec's owner questions).
+  the aggregate list. The offline data package of a sentence pack carries the
+  same credit on every sentence row (`credit_id`, `credit_owner`, `credit_tr_id`,
+  `credit_tr_owner`, package format 2; owner decision of 2026-11-26: no
+  compatibility with the old shape), and a link is the source's page of the id.
   `ATTRIBUTION.md` gives the export date, archive hashes, licence check and what
   was changed; `LICENSE` gives the CC BY 2.0 FR URI (which that licence allows
   instead of a copy) and the CC0 1.0 legal code.

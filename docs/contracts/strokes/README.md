@@ -33,7 +33,7 @@ language of the entry or the workspace). The server chooses among the packs that
 
 A character only one pack has is served whatever the language, and a language no pack lists is the order of
 registration, so a client may always pass the language of its workspace. Without `lang` the order of registration
-decides (the behaviour before contract 12). A `lang` that is empty, repeated or not two or three lower-case letters is `400 bad_request`;
+decides (the behaviour before contract 13). A `lang` that is empty, repeated or not two or three lower-case letters is `400 bad_request`;
 other query parameters are ignored.
 
 ## Client rules
