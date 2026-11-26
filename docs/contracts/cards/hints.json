@@ -147,12 +147,13 @@
  "grades": [
   { "suggested": null, "used": 0, "expect": null },
   { "suggested": 3, "used": 0, "expect": 3 },
-  { "suggested": null, "used": 1, "expect": 2, "note": "a self-graded card with a hint is suggested Hard" },
+  { "suggested": null, "used": 1, "expect": 2, "note": "a self-graded card is treated as Good, so a hint suggests Hard" },
   { "suggested": 3, "used": 1, "expect": 2 },
   { "suggested": 3, "used": 2, "expect": 2, "note": "a second hint lowers no further" },
   { "suggested": 2, "used": 1, "expect": 2 },
   { "suggested": 1, "used": 1, "expect": 1, "note": "Again stays Again" },
-  { "suggested": 4, "used": 1, "expect": 2, "note": "Easy is never suggested; a stray 4 is lowered too" }
+  { "suggested": 4, "used": 1, "expect": 3, "note": "Easy goes down one step to Good" },
+  { "suggested": 4, "used": 2, "expect": 3, "note": "a second hint lowers no further" }
  ],
  "results": [
   {

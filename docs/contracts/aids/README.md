@@ -8,10 +8,12 @@ the dictionary's readings and glosses).
 
 ## The setting (`visual-aids.json`)
 
-The workspace-settings key `visualAids` (`settings/`): `{<aid>: boolean}` with the aids `pictures`, `toneColors` and
-`anatomy`. **Defaults: all three on** (a picture shows only where an installed images pack maps the word, anatomy
+The workspace-settings key `visualAids` (`settings/`): `{<aid>: boolean}` with the aids `pictures`, `toneColors`, `toneContour` and
+`anatomy`. **Defaults: all four on** (a picture shows only where an installed images pack maps the word, anatomy
 only where a components pack has the character, tone colours only on pinyin). Each switch is read alone: an absent
-member, a non-boolean, an unknown member or a non-object value is the default (never an error). A client writes one
+member, a non-boolean, an unknown member or a non-object value is the default (never an error); one exception: a
+stored `toneColors: false` with no stored `toneContour` reads as `toneContour: false` (before the contour had its
+own switch, `toneColors` drew both, so a learner who turned it off keeps seeing no tone marks). A client writes one
 switch at a time by merge patch (`{"visualAids": {"anatomy": false}}`) and keeps members it does not know. Because it is
 a workspace setting it is synced with the workspace and part of a backup (a restore keeps unknown members). Aids that
 are not built yet (pitch accent, grammar diagrams, word maps, gender and case colours; spec "Follow-ups") add a key
@@ -34,8 +36,8 @@ picture. A client asks once per entry per session and remembers "none".
 ## Tone colours (`tones.json`)
 
 With `toneColors` on, every syllable of a **pinyin** reading (type `pinyin`, any screen that shows a reading: the
-entry page, the hint, the answer of a card) is drawn in the colour of its tone **and** with the tone's contour under
-it. The contour is the cue that is not a colour.
+entry page, the hint, the answer of a card) is drawn in the colour of its tone; with `toneContour` on it is drawn
+with the tone's contour under it. The two switches are independent. The contour is the cue that is not a colour.
 
 - **Syllables** (`segments`): the value is split at whitespace and apostrophes (kept, uncoloured); a token made of
   Latin letters and combining marks is cut into syllables, a run-together word (`Běijīng`, `tāmen`) between vowel
@@ -70,5 +72,5 @@ local one. Nothing new is bundled for this aid.
 
 ## Where the switches are
 
-Settings > Study > Visual aids: one switch per aid, a note, and a preview of the tone colours and of an anatomy
+Settings > Study > Visual aids: one switch per aid, a note, and a preview of the tone colours, of the contour and of an anatomy
 example that is drawn whatever the switch says.

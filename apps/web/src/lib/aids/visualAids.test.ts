@@ -3,8 +3,8 @@ import { AID_DEFAULTS, AID_KEYS, VISUAL_AIDS_KEY, readVisualAids, visualAidPatch
 
 describe('visual aids setting (#212)', () => {
 	it('has the pinned defaults: tone colours, anatomy and pictures on', () => {
-		expect([...AID_KEYS]).toEqual(['pictures', 'toneColors', 'anatomy']);
-		expect(AID_DEFAULTS).toEqual({ pictures: true, toneColors: true, anatomy: true });
+		expect([...AID_KEYS]).toEqual(['pictures', 'toneColors', 'toneContour', 'anatomy']);
+		expect(AID_DEFAULTS).toEqual({ pictures: true, toneColors: true, toneContour: true, anatomy: true });
 		expect(VISUAL_AIDS_KEY).toBe('visualAids');
 	});
 
@@ -18,8 +18,13 @@ describe('visual aids setting (#212)', () => {
 		expect(readVisualAids({ visualAids: { toneColors: false, pictures: 'no', anatomy: 0, extra: false } })).toEqual({
 			pictures: true,
 			toneColors: false,
+			toneContour: false,
 			anatomy: true
 		});
+	});
+
+	it('keeps the contour on when it is stored on beside tone colours off', () => {
+		expect(readVisualAids({ visualAids: { toneColors: false, toneContour: true } })).toMatchObject({ toneColors: false, toneContour: true });
 	});
 
 	it('writes one switch as a merge patch', () => {

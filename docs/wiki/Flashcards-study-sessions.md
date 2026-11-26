@@ -106,7 +106,7 @@ Every card can offer a small **Hint** button (and the H key) that shows one more
 
 What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
 
-Asking for a hint costs a little: the suggested grade becomes **Hard** instead of Good (a wrong answer stays Again). You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
+Asking for a hint costs a little: the suggested grade goes down one step (Easy to Good, Good to Hard; a card you grade yourself is suggested Hard, and Hard and Again stay as they are). One hint or three, the suggestion drops once. You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
 
 ## Starter mode
 
