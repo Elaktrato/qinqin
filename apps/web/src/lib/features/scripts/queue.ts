@@ -70,7 +70,7 @@ export function shows(item: ScriptItem): string {
 }
 
 function confusable(a: ScriptItem, b: ScriptItem): boolean {
-	return a.id === b.id || a.sounds.some((s) => b.sounds.includes(s));
+	return a.id === b.id || a.roman === b.roman || a.sounds.some((s) => b.sounds.includes(s));
 }
 
 /**
@@ -100,8 +100,10 @@ export function itemQuestion(system: ScriptSystem, mode: Exclude<Mode, 'read'>, 
 		const options = shuffle([item, ...distractors(item, system.items, OPTIONS - 1, rng)], rng).map(shows);
 		return { ...base, prompt: item.roman, speak: item.sound, options, answer: shows(item), accepts: [shows(item)] };
 	}
-	const accepts = item.lower === undefined ? [item.glyph] : [item.glyph, item.lower];
-	return { ...base, prompt: item.roman, speak: item.sound, options: [], answer: accepts[accepts.length - 1], accepts, ...(item.key === undefined ? {} : { key: item.key }) };
+	// Every glyph of the system that reads the same (じ and ぢ are both "ji") is a right answer to the prompt.
+	const twins = system.items.filter((i) => i.id !== item.id && i.roman === item.roman);
+	const accepts = [item, ...twins].flatMap((i) => (i.lower === undefined ? [i.glyph] : [i.glyph, i.lower]));
+	return { ...base, prompt: item.roman, speak: item.sound, options: [], answer: item.lower ?? item.glyph, accepts, ...(item.key === undefined ? {} : { key: item.key }) };
 }
 
 export function wordId(system: ScriptSystem, word: ScriptWord): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveProgress } from './progress';
-import { mergeLog, readPending, withoutSent, writePending } from './pending';
+import { MAX_PENDING, clearDropped, flushPending, mergeLog, readDropped, readPending, withoutSent, writePending } from './pending';
 import { scriptPayload } from './events';
 
 function memory(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> & { data: Map<string, string> } {
@@ -28,6 +28,42 @@ describe('pending answers', () => {
 		writePending(s, 3, [ev('a'), ev('b')]);
 		expect(readPending(s, 3).map((e) => e.id)).toEqual(['a', 'b']);
 		expect(readPending(s, 4)).toEqual([]);
+	});
+
+	it('never drops past the limit silently: the dropped count is kept for a warning until cleared', () => {
+		const s = memory();
+		const list = Array.from({ length: MAX_PENDING + 3 }, (_, i) => ev(`e${i}`));
+		expect(writePending(s, 3, list)).toBe(3);
+		expect(readPending(s, 3)).toHaveLength(MAX_PENDING);
+		expect(readPending(s, 3)[0].id).toBe('e3');
+		expect(readDropped(s, 3)).toBe(3);
+		expect(readDropped(s, 4)).toBe(0);
+		clearDropped(s, 3);
+		expect(readDropped(s, 3)).toBe(0);
+	});
+
+	it('flushPending sends what waits, removes what was taken and keeps it when the post fails', async () => {
+		const s = memory();
+		writePending(s, 3, [ev('a'), ev('b')]);
+		expect(await flushPending(s, 3, () => Promise.reject(new Error('offline')))).toBe(false);
+		expect(readPending(s, 3)).toHaveLength(2);
+		let sent: string[] = [];
+		expect(await flushPending(s, 3, async (events) => void (sent = events.map((e) => e.id)))).toBe(true);
+		expect(sent).toEqual(['a', 'b']);
+		expect(readPending(s, 3)).toEqual([]);
+	});
+
+	it('flushPending runs once at a time per workspace', async () => {
+		const s = memory();
+		writePending(s, 3, [ev('a')]);
+		let release = () => {};
+		let calls = 0;
+		const post = () => new Promise<void>((r) => { calls += 1; release = r; });
+		const first = flushPending(s, 3, post);
+		await flushPending(s, 3, post);
+		release();
+		await first;
+		expect(calls).toBe(1);
 	});
 
 	it('removes the key when the list is empty', () => {

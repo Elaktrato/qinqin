@@ -84,6 +84,25 @@ describe('the Hint control (#215)', () => {
 		field.remove();
 	});
 
+	it('keeps focus on the page when the last hint is revealed with the button', async () => {
+		setup({ always: [], onRequest: ['reading'] });
+		const button = screen.getByRole('button', { name: 'Hint' });
+		button.focus();
+		await fireEvent.click(button);
+		await vi.waitFor(() => expect(document.activeElement).toBe(screen.getByTestId('hint-note')));
+		expect(document.activeElement).not.toBe(document.body);
+	});
+
+	it('advertises H, and only Alt+H while focus is in a text field', async () => {
+		setup({ always: [], onRequest: ['reading', 'picture'] });
+		expect(screen.getByRole('button', { name: 'Hint' }).getAttribute('aria-keyshortcuts')).toBe('H Alt+H');
+		const field = document.createElement('input');
+		document.body.append(field);
+		field.focus();
+		await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Hint' }).getAttribute('aria-keyshortcuts')).toBe('Alt+H'));
+		field.remove();
+	});
+
 	it('is gone once the card is answered', () => {
 		setup({ always: [], onRequest: ['reading'] }, true);
 		expect(screen.queryByRole('button', { name: 'Hint' })).toBeNull();

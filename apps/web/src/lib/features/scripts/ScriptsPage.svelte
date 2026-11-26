@@ -9,10 +9,11 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import { newUlid } from '$lib/events/ulid';
 	import type { StudyEventBody } from '$lib/api/types';
+	import { Button } from '$lib/ui';
 	import { scriptPayload } from './events';
 	import { systemLabel } from './labels';
 	import { systemsFor } from './packs';
-	import { mergeLog, readPending, withoutSent, writePending } from './pending';
+	import { clearDropped, flushPending, mergeLog, readDropped, readPending, withoutSent, writePending } from './pending';
 	import { applyAnswer, deriveProgress, type ItemState } from './progress';
 	import { parseScriptsRoute } from './route';
 	import ScriptsOverview from './ScriptsOverview.svelte';
@@ -40,16 +41,13 @@
 		}
 	}
 
-	// Send what waited from an earlier, offline round; the ids make a retry harmless.
-	async function flushPending(workspaceId: number): Promise<void> {
-		const waiting = readPending(storage(), workspaceId);
-		if (waiting.length === 0) return;
-		try {
-			await session.events.post(waiting);
-			writePending(storage(), workspaceId, withoutSent(readPending(storage(), workspaceId), new Set(waiting.map((e) => e.id))));
-		} catch {
-			// Still offline: they stay.
-		}
+	// What waited from an earlier, offline round is also sent by the app shell on start, on coming online and on coming back to the front.
+	let dropped = $state(0);
+
+	function dismissDropped(): void {
+		if (workspace === null) return;
+		clearDropped(storage(), workspace.id);
+		dropped = 0;
 	}
 
 	$effect(() => {
@@ -58,7 +56,8 @@
 		const mine = ++seq;
 		status = 'loading';
 		void (async () => {
-			await flushPending(id);
+			await flushPending(storage(), id, (events) => session.events.post(events));
+			dropped = readDropped(storage(), id);
 			try {
 				const log = await session.events.load(id, { force: true });
 				if (mine !== seq) return;
@@ -89,7 +88,7 @@
 			type: 'script',
 			payload: scriptPayload(q.system, q.itemId, q.mode, ok)
 		};
-		writePending(storage(), ws.id, [...readPending(storage(), ws.id), event]);
+		dropped += writePending(storage(), ws.id, [...readPending(storage(), ws.id), event]);
 		void session.events.post([event]).then(
 			() => writePending(storage(), ws.id, withoutSent(readPending(storage(), ws.id), new Set([event.id]))),
 			() => undefined
@@ -105,6 +104,13 @@
 
 <div class="page-body scripts">
 	<h1>{t('scripts.title')}</h1>
+
+	{#if dropped > 0 && workspace !== null}
+		<p class="warn" role="alert" data-testid="scripts-pending-dropped">
+			{t('scripts.pendingDropped', { count: dropped })}
+			<Button variant="plain" onclick={dismissDropped}>{t('scripts.pendingDroppedDismiss')}</Button>
+		</p>
+	{/if}
 
 	{#if workspace === null}
 		<p>{t('scripts.chooseWorkspace')}</p>
@@ -127,6 +133,9 @@
 </div>
 
 <style>
+	.warn {
+		color: var(--readable-muted);
+	}
 	.notice {
 		color: var(--readable-muted);
 	}

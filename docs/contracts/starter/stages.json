@@ -35,7 +35,7 @@
    { "stage": 1, "picture": "shown", "main": "reading", "annotation": "none", "forced": { "picture": "always", "reading": "never" } },
    { "stage": 2, "picture": "shown", "main": "written", "annotation": "reading", "forced": { "picture": "always", "reading": "never" } },
    { "stage": 3, "picture": "hint", "main": "written", "annotation": "reading", "forced": { "picture": "hint", "reading": "never" } },
-   { "stage": 4, "picture": "hint", "main": "written", "annotation": "none", "forced": { "picture": "hint" } },
+   { "stage": 4, "picture": "hint", "main": "written", "annotation": "none", "forced": { "picture": "hint", "reading": "hint" } },
    { "stage": 5, "picture": "normal", "main": "written", "annotation": "none", "forced": {} }
   ]
  },

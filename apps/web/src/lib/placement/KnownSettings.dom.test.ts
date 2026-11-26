@@ -127,7 +127,24 @@ describe('KnownSettings', () => {
 		expect(call[4].batch.source).toBe('placement');
 	});
 
-	it('placement: the proposal can be lowered, or dropped, before marking', async () => {
+	it('placement: the proposal can be lowered before marking, and dropped', async () => {
+		study();
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByText('5 new entries would be marked as known.');
+		await fireEvent.click(screen.getByTestId('placement-start'));
+		for (let i = 0; i < 12 && screen.queryByTestId('placement-question'); i++) {
+			await fireEvent.click(screen.getByTestId('placement-know'));
+		}
+		await screen.findByText('Your level looks like HSK 3.');
+		// Lower the proposal from HSK 3 to HSK 1: only its 3 entries are written.
+		await fireEvent.change(screen.getByLabelText('Everything up to'), { target: { value: '1' } });
+		await screen.findByText('3 new entries would be marked as known.');
+		await fireEvent.click(screen.getByTestId('placement-confirm'));
+		await waitFor(() => expect(setKnownMarks).toHaveBeenCalledTimes(1));
+		expect((vi.mocked(setKnownMarks).mock.calls[0] as unknown as [unknown, number, number[]])[2]).toEqual([1, 2, 3]);
+	});
+
+	it('placement: a result with no level passed cannot be marked and can be dropped', async () => {
 		study();
 		render(KnownSettings, { context: ctx.context });
 		await screen.findByText('5 new entries would be marked as known.');
@@ -141,6 +158,79 @@ describe('KnownSettings', () => {
 		await fireEvent.click(screen.getByRole('button', { name: "Don't mark anything" }));
 		expect(setKnownMarks).not.toHaveBeenCalled();
 		expect(screen.getByTestId('known-mark')).toBeTruthy();
+	});
+
+	it('a double tap on confirm writes one batch', async () => {
+		study();
+		let release = () => {};
+		vi.mocked(setKnownMarks).mockImplementationOnce(() => new Promise<void>((r) => (release = r)));
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByText('5 new entries would be marked as known.');
+		await fireEvent.click(screen.getByTestId('known-mark'));
+		const confirm = screen.getByTestId('known-confirm') as HTMLButtonElement;
+		await fireEvent.click(confirm);
+		await fireEvent.click(confirm);
+		expect(confirm.disabled).toBe(true);
+		expect(setKnownMarks).toHaveBeenCalledTimes(1);
+		release();
+		await screen.findByText('5 entries marked as known.');
+	});
+
+	it('the placement confirm waits while a declaration is written', async () => {
+		study();
+		let release = () => {};
+		vi.mocked(setKnownMarks).mockImplementationOnce(() => new Promise<void>((r) => (release = r)));
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByText('5 new entries would be marked as known.');
+		await fireEvent.click(screen.getByTestId('placement-start'));
+		for (let i = 0; i < 12 && screen.queryByTestId('placement-question'); i++) {
+			await fireEvent.click(screen.getByTestId('placement-know'));
+		}
+		const confirm = await screen.findByTestId('placement-confirm');
+		await fireEvent.click(confirm);
+		await fireEvent.click(confirm);
+		expect((confirm as HTMLButtonElement).disabled).toBe(true);
+		expect(setKnownMarks).toHaveBeenCalledTimes(1);
+		release();
+	});
+
+	it('does not declare until the existing marks loaded; says so and retries', async () => {
+		vi.mocked(getStudyData).mockRejectedValueOnce(new Error('offline'));
+		study({ known: [1] });
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByText(/could not be loaded, so nothing can be declared/);
+		expect((screen.queryByTestId('known-mark') as HTMLButtonElement | null)?.disabled ?? true).toBe(true);
+		expect(setKnownMarks).not.toHaveBeenCalled();
+		await fireEvent.click(screen.getByTestId('known-reload'));
+		await screen.findByText('4 new entries would be marked as known.');
+		expect((screen.getByTestId('known-mark') as HTMLButtonElement).disabled).toBe(false);
+	});
+
+	it('shows progress, and a retry after a failure midway reuses the batch id', async () => {
+		study();
+		vi.mocked(setKnownMarks).mockImplementationOnce(async (_s, _w, _ids, _on, opts) => {
+			opts?.onProgress?.(2, 5);
+			throw new Error('offline');
+		});
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByText('5 new entries would be marked as known.');
+		await fireEvent.click(screen.getByTestId('known-mark'));
+		await fireEvent.click(screen.getByTestId('known-confirm'));
+		await screen.findByText(/Not everything could be saved/);
+		await fireEvent.click(screen.getByTestId('known-mark'));
+		await fireEvent.click(screen.getByTestId('known-confirm'));
+		await waitFor(() => expect(setKnownMarks).toHaveBeenCalledTimes(2));
+		const batches = vi.mocked(setKnownMarks).mock.calls.map((c) => (c as unknown as [unknown, number, number[], boolean, { batch: { id: string } }])[4].batch.id);
+		expect(batches[1]).toBe(batches[0]);
+	});
+
+	it('a level list without entries disables marking and the test, with a message', async () => {
+		vi.mocked(getSchemeEntries).mockResolvedValue([]);
+		study();
+		render(KnownSettings, { context: ctx.context });
+		await screen.findByTestId('known-no-entries');
+		expect((screen.getByTestId('placement-start') as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByTestId('known-mark') as HTMLButtonElement).disabled).toBe(true);
 	});
 
 	it('says so when no level list is installed', async () => {

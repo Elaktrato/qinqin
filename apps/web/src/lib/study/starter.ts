@@ -5,7 +5,9 @@
 // shows every card normally and loses nothing.
 //
 // The model: a word earns a POINT for a success (Good or Easy) that comes at least MIN_GAP_MINUTES after the
-// last counted review, so the learning steps of one sitting do not count and a stage takes a real day.
+// last counted review, so the learning steps of one sitting do not count. The FIRST success always counts
+// (nothing came before it), so a new word moves from stage 1 to stage 2 on its first Good, in the same sitting;
+// every later stage needs a success at least MIN_GAP_MINUTES after the one before.
 // Hard pauses the word. Again drops it one stage (to the entry point of the previous stage). The stage is the
 // highest one whose threshold the points reach, up to the word's final stage (its normal card).
 
@@ -135,7 +137,7 @@ const ZH_STAGES: readonly StageSpec[] = [
 	{ stage: 1, picture: 'shown', main: 'reading', annotation: 'none', forced: { picture: 'always', reading: 'never' } },
 	{ stage: 2, picture: 'shown', main: 'written', annotation: 'reading', forced: { picture: 'always', reading: 'never' } },
 	{ stage: 3, picture: 'hint', main: 'written', annotation: 'reading', forced: { picture: 'hint', reading: 'never' } },
-	{ stage: 4, picture: 'hint', main: 'written', annotation: 'none', forced: { picture: 'hint' } },
+	{ stage: 4, picture: 'hint', main: 'written', annotation: 'none', forced: { picture: 'hint', reading: 'hint' } },
 	{ stage: 5, picture: 'normal', main: 'written', annotation: 'none', forced: {} }
 ];
 

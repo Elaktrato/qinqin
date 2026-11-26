@@ -198,7 +198,9 @@
 					<p class="headline" data-testid="level-check-estimate">
 						{t('settings.levelCheck.estimate', { share: pct(estimate.share), level: targetName })}
 					</p>
-					{#if estimate.asked > 0}
+					{#if estimate.exact}
+						<p class="hint" data-testid="level-check-exact">{t('settings.levelCheck.exact', { count: estimate.asked })}</p>
+					{:else if estimate.asked > 0}
 						<p class="hint">{t('settings.levelCheck.range', { low: pct(estimate.low), high: pct(estimate.high), count: estimate.asked })}</p>
 					{/if}
 					<p>{bandText(estimate.band)}</p>
@@ -214,7 +216,17 @@
 					<h5 class="list-title">{t('settings.levelCheck.perLevel')}</h5>
 					<ul class="levels">
 						{#each estimate.perLevel as row (row.name)}
-							<li><span>{row.name}</span><span>{pct(row.share)}</span></li>
+							<li>
+								<span>{row.name}</span>
+								<span>
+									{pct(row.share)}
+									{#if row.pooled}
+										<small>{t('settings.levelCheck.levelPooled')}</small>
+									{:else if !row.exact}
+										<small>{t('settings.levelCheck.levelRange', { low: pct(row.low), high: pct(row.high), count: row.asked })}</small>
+									{/if}
+								</span>
+							</li>
 						{/each}
 					</ul>
 

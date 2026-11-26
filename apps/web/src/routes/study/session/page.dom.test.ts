@@ -526,6 +526,35 @@ describe('the open page (#101)', () => {
 		expect(document.activeElement?.tagName).toBe('H1');
 	});
 
+	it('a hint asked for before the answer lowers the suggestion to Hard and is recorded in meta.hints (#215)', async () => {
+		configure(['vocab']);
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(await screen.findByRole('button', { name: 'Hint' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		// Hard is the suggestion (a self-graded card has none otherwise), and the review carries the count.
+		await screen.findByRole('button', { name: /^Hard \(suggested\)/ });
+		// A click right after the suggestion took focus is ignored on purpose (shouldIgnoreGrade): retry until it counts.
+		await waitFor(async () => {
+			await fireEvent.click(screen.getByRole('button', { name: /^Hard \(suggested\)/ }));
+			expect(recordReview).toHaveBeenCalledTimes(1);
+		});
+		expect(recordReview).toHaveBeenCalledWith(1, 'c-vocab-11', 2, 'vocab', expect.objectContaining({ hints: 1 }));
+	});
+
+	it('without a hint nothing is suggested and meta.hints is absent', async () => {
+		configure(['vocab']);
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(screen.queryByRole('button', { name: /\(suggested\)/ })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /^Good, next review/ }));
+		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
+		expect(vi.mocked(recordReview).mock.calls[0][4]).not.toHaveProperty('hints');
+	});
+
 	it('Space reveals and 1–4 grade (unchanged)', async () => {
 		configure(['vocab']);
 		render(Page, { context: ctx.context });

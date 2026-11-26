@@ -11,7 +11,8 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   own reviews (a success counts one point at least twelve hours after the last counted review, Hard pauses, Again drops
   one stage, per-profile thresholds `ja` 0,1,2,3,5,7 and `zh` 0,1,2,4,6, words usually written in kana stop at stage 4),
   what the front shows at each stage and the hint modes it forces; and `starter/set.json` (rule `starter/set`): the
-  Starter set file format. Clients that show Starter mode implement the rule the same way (`starter/README.md`).
+  Starter set file format. Chinese stage 4 forces the reading hint to `hint` (it announced "no pinyin" while a
+  `reading: always` setting still showed it). Clients that show Starter mode implement the rule the same way (`starter/README.md`).
 - **New routes:** `GET /api/starter-sets` (public, not access tokens) and `GET /api/starter-sets/{id}` (signed-in users,
   not access tokens): the shipped sets, and one set's words resolved to dictionary entries in the set's order. Neither
   is cached offline by the service worker beyond the default (`routes.fixture.json`).

@@ -22,7 +22,9 @@ time order (a stable sort on the time; a review with an unreadable time or a gra
 1. `points` = 0, `lastAt` = none.
 2. A success (grade 3 Good or 4 Easy) adds one point when `lastAt` is none or at least `minGapMinutes` (720, twelve
    hours) have passed since it; then `lastAt` is this review. A success that comes sooner changes nothing, so the
-   learning steps of one sitting do not count and a stage takes a real day.
+   learning steps of one sitting do not count, and every stage after the first needs a success on a later day. The
+   first success of a card always counts (`lastAt` is none), so a new word reaches stage 2 on its first Good, even in
+   the same sitting.
 3. Hard (2) changes nothing: the word **pauses**.
 4. Again (1) **drops the word one stage** (to the entry point of the previous stage, never below stage 1) and sets
    `lastAt`, so the relearning steps of that sitting do not count either.
@@ -45,7 +47,8 @@ Each stage row names the large text (`main`: `romanisation`, `reading` or `writt
 `romanisation`, `reading`), the picture (`shown`, `hint`, `normal`) and the hint modes it forces
 (`forced`, the `forced` argument of `resolveHints` in `cards/hints.json`): the picture is `always` on the front, a `hint`
 behind the one Hint control (same button, key and grade rule as every hint, #215), or the settings' own choice
-(`normal`); the reading hint is `never` where the front already shows a reading. The meaning is on the back at every
+(`normal`); the reading hint is `never` where the front already shows a reading, and at Chinese stage 4 (no pinyin on the front)
+it is `hint`, so a reading setting of `always` cannot show pinyin there. The meaning is on the back at every
 stage. Japanese: 1 picture + romaji, 2 picture + kana with romaji, 3 picture + kana, 4 kana (picture a hint),
 5 the word with furigana (picture a hint), 6 the normal card. Chinese: 1 picture + pinyin, 2 picture + hanzi with
 pinyin, 3 hanzi with pinyin (picture a hint), 4 hanzi (picture a hint), 5 the normal card.

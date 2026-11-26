@@ -41,7 +41,7 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
   could show one.
 - [x] 7. Add-to-deck plan for the set (`starterSet.ts`), `StarterAdd`, `StarterSettings`, `StarterOffer`, pages wired.
 - [x] 8. Catalogue keys, sentence-case name, repo guards (folder rules, overview read order, generated API docs).
-- [x] 9. Docs: README, CHANGELOG (contract 9, `ContractVersion` 9, `version.json`), wiki, ROADMAP, spec, this plan.
+- [x] 9. Docs: README, CHANGELOG (contract 10, `ContractVersion` 10, `version.json`), wiki, ROADMAP, spec, this plan.
 - [x] 10. Tests: pure (starter, contract, pictureCache, offer), dom (VocabCard Starter, settings, offer, session page),
   Go (format, resolve, handlers, real data), e2e spec `e2e/tests/starter.spec.ts` (written, run only by CI).
 - [ ] 11. Owner and a person: review and extend the Starter sets to 100-300 words per language (see below).
@@ -75,3 +75,12 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
   synthetic SVG; the set-to-mapping consistency is checked against the committed `map.tsv`, not against built packs.
 - The real-dictionary resolution ran against a database seeded from the local JMdict and CC-CEDICT files, not against a
   deployed instance; the Android client was not touched.
+
+## Review fixes (v0.8.0)
+
+Branch `fix/v080-web-correctness`.
+
+- Ruling: the rule stays as the fixture has it: the FIRST success of a card always counts (`lastAt` is none), so a new word reaches stage 2 on its first Good in the same sitting; every later stage needs a success 12 hours after the last counted one. The comments in `starter.ts` and `starter/README.md` said "a stage takes a real day", which the code and fixture contradict — the fixture wins, the wording is fixed — if wrong, the fixture would have to change on web and Android.
+- Ruling: Chinese stage 4 forces the reading hint to `hint` (fixture `starter/stages.json` and `starter.ts`, CHANGELOG contract 10 entry amended, no version bump: contract 10 is unreleased) — the stage announces "no pinyin" but a `reading: always` setting still showed it; Starter's forced hints must win for the stage — if wrong, a learner who wants pinyin always on loses it at that stage only (it stays one Hint press away).
+- Doc drift: this plan said contract 9; it is 10.
+- Also here: hint focus and shortcut fixes are in [hints.md](2026-11-26-hints.md); the backup remap fixture now has `starter` and `visualAids` cases (`docs/contracts/backup/remap.json`, Go test `internal/backup`).

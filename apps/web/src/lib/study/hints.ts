@@ -1,8 +1,8 @@
 // Hints on a flashcard (#215): optional help the learner may ask for, one at a time, instead of
 // looking at the answer. The rules are pure and shared with Android (docs/contracts/cards/, hints.json).
 //
-// A hint KIND is registered once below (reading now; picture is defined and waits for the pictures of
-// #212/#216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
+// A hint KIND is registered once below (reading and picture, the picture when an images pack maps the entry and the
+// Pictures visual aid is on, #212/#216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
 // or never. Starter mode (#214) reuses this: it passes `forced` modes per stage instead of the settings.
 
 import { CARD_KINDS, type ReviewGrade, type ReviewMeta, type StudyCardKind } from './types';
