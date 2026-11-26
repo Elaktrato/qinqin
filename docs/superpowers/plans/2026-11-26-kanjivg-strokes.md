@@ -18,7 +18,7 @@ Branch `feature/v080-kanjivg-licence` (from `feature/v0.8.0`). Owner decisions t
   outlines and medians; `scripts/fetch-kanjivg-strokes.sh` (pinned commit and licence text); Dockerfile stage `kanjivg`;
   `FETCHED_PACKS` in `check-sources`.
 - [x] 3. Server: `strokes.LookupFor(lang)` and `GET /hanzi/U<HEX>.json?lang=` (test-first; fixture
-  `docs/contracts/strokes/lookup.json`, Go test); contract 11.
+  `docs/contracts/strokes/lookup.json`, Go test); contract 12.
 - [x] 4. Web: language through `strokeUrl`/`fetchStrokeData`, the stroke player, the writing card, the study session and
   the offline preparation; the service worker's cache key keeps a well-formed `lang` (test-first).
 - [x] 5. The kana **Write** mode in the trainer (`write.ts`, `ScriptsWritePad.svelte`, queue, labels, overview, events
@@ -42,7 +42,7 @@ Branch `feature/v080-kanjivg-licence` (from `feature/v0.8.0`). Owner decisions t
 - Ruling: `?lang=` on the existing `/hanzi/` route, not a new route, and the pack with the **fewest** languages among
   those that list the language wins (a Japanese-only pack beats the shared zh+ja pack); with no language the order of
   registration decides as before; a character only one pack has is served whatever the language — the same code point is
-  drawn differently in Chinese and Japanese, and Chinese keeps working unchanged — cost if wrong: contract 11; a client
+  drawn differently in Chinese and Japanese, and Chinese keeps working unchanged — cost if wrong: contract 12; a client
   that never passes `lang` sees no change.
 - Ruling: the web passes the language of the entry (entry page, writing card, session) or workspace (offline
   preparation), only when it is two or three lower-case letters (a region code such as `zh-TW` is left out) — cost if
@@ -65,8 +65,8 @@ Branch `feature/v080-kanjivg-licence` (from `feature/v0.8.0`). Owner decisions t
   fresh image installs both and `autoInstallStrokes` (which installs the first strokes pack when none is live) still
   prefers the Hanzi Writer pack — cost if wrong: the image build needs network access to GitHub for the clone
   (`--build-arg WITH_KANJIVG=0` skips it).
-- Ruling: contract version 11 (an optional query parameter and a new event mode are things a second client must
-  know) — cost if wrong: another branch may also claim 11; renumber at merge.
+- Ruling: contract version 12 (an optional query parameter and a new event mode are things a second client must
+  know); the owner-ux branch merged first and holds 11 — cost if wrong: another branch may also claim 12; renumber at merge.
 
 ## Not verified
 

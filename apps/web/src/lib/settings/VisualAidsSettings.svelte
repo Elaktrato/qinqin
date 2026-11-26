@@ -18,11 +18,13 @@
 	const LABELS: Record<AidKey, string> = {
 		pictures: t('settings.aids.pictures'),
 		toneColors: t('settings.aids.toneColors'),
+		toneContour: t('settings.aids.toneContour'),
 		anatomy: t('settings.aids.anatomy')
 	};
 	const NOTES: Record<AidKey, string> = {
 		pictures: t('settings.aids.picturesNote'),
 		toneColors: t('settings.aids.toneColorsNote'),
+		toneContour: t('settings.aids.toneContourNote'),
 		anatomy: t('settings.aids.anatomyNote')
 	};
 
@@ -52,7 +54,11 @@
 				<p class="note">{NOTES[key]}</p>
 				{#if key === 'toneColors'}
 					<p class="preview" role="group" data-testid="tone-preview" aria-label={t('settings.aids.preview')}>
-						<span lang={readingLang('pinyin', 'zh')}><ToneText force value="mā má mǎ mà ma" /></span>
+						<span lang={readingLang('pinyin', 'zh')}><ToneText colors={true} contour={false} value="mā má mǎ mà ma" /></span>
+					</p>
+				{:else if key === 'toneContour'}
+					<p class="preview" role="group" data-testid="contour-preview" aria-label={t('settings.aids.preview')}>
+						<span lang={readingLang('pinyin', 'zh')}><ToneText colors={false} contour={true} value="mā má mǎ mà ma" /></span>
 					</p>
 				{:else if key === 'anatomy'}
 					<p class="preview" role="group" data-testid="anatomy-preview" aria-label={t('settings.aids.preview')}>

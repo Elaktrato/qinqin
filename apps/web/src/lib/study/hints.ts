@@ -140,14 +140,17 @@ export function nextHint(plan: HintPlan, revealed: number): HintKind | null {
 }
 
 /**
- * lowerForHints: a card answered after asking for a hint is suggested at most Hard (2). Again stays Again; a
- * card without a suggestion (self-graded) is suggested Hard. Hints shown "always" are part of the front and
- * are not counted.
+ * lowerForHints: a card answered after asking for a hint is suggested one step lower (owner ruling 2026-11-26):
+ * Easy (4) becomes Good (3), Good (3) becomes Hard (2); Hard stays Hard and Again stays Again. A card without a
+ * suggestion (self-graded) counts as Good and so is suggested Hard. A second hint lowers no further. Hints shown
+ * "always" are part of the front and are not counted.
  */
 export function lowerForHints(suggested: ReviewGrade | null, used: number): ReviewGrade | null {
 	if (used <= 0) return suggested;
-	if (suggested === 1) return 1;
-	return 2;
+	if (suggested === null) return 2;
+	if (suggested === 4) return 3;
+	if (suggested === 3) return 2;
+	return suggested;
 }
 
 /** applyHints: the card's result with the hint rule applied and the hints added to `meta.hints`. */

@@ -5,7 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #62 — Japanese stroke order: the language of a stroke request (contract 11)
+## #62 — Japanese stroke order: the language of a stroke request (contract 12)
 
 - **New query parameter:** `GET /hanzi/U<HEX>.json?lang=<code>` (two or three lower-case letters) asks for the shapes
   of one language where the installed strokes packs differ: a pack that lists the language comes first, then the pack
@@ -18,6 +18,17 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `scripts/fetch-kanjivg-strokes.sh`, shipped beside the binary and never in it or in the web build). It carries kana,
   Japanese kanji forms and the iteration marks in the stroke-data format the app already reads; kana have stroke data
   for the first time, so the writing pad works on them. `GET /api/stroke-packs` lists it with the others.
+
+## Owner rulings on hints and tone aids (contract 11)
+
+- **Changed rule:** the hint grade rule of `cards/hints.json` (`grades`): a hint asked for with the Hint control
+  lowers the suggested grade **one step** (Easy to Good, Good to Hard; Hard and Again stay; a self-graded card counts
+  as Good and becomes Hard), once however many hints were used. It used to cap at Hard. Clients implement the new
+  table; stored reviews are not rewritten (`cards/README.md` "Hints").
+- **Changed setting:** the `visualAids` member `toneContour` (boolean, default `true`), new beside `toneColors`:
+  colours and contour are separate switches. A stored `toneColors: false` without a stored `toneContour` reads as
+  contour off too (they used to be one switch). Older clients ignore the new member and keep it on write
+  (`aids/visual-aids.json`, `aids/README.md`, `settings/`).
 
 ## #214 — Starter mode: per-word stages and Starter sets (contract 10)
 
