@@ -26,6 +26,9 @@ const (
 	// FormatFontSlices is a font pack: faces.json plus slices/<sha256>.woff2
 	// (docs/contracts/fonts/).
 	FormatFontSlices = "font-slices"
+	// FormatImagesSVG is an images pack: pictures.tsv, map.tsv and
+	// pictures/<concept>.svg (docs/contracts/images/).
+	FormatImagesSVG = "images-svg"
 	// FormatRulesJSON is a lemma-rules pack: rules.json, one lemmatizer rule
 	// table (docs/contracts/lemma/).
 	FormatRulesJSON = "rules-json"
@@ -36,5 +39,5 @@ const (
 var Formats = []string{
 	FormatJSON, FormatCedict, FormatUnihan, FormatJMdict, FormatKanjidic2,
 	FormatYomitanFreq, FormatFreqCSV,
-	FormatAudioIndex, FormatComponentsTSV, FormatStrokesJSONLGz, FormatThemesJSON, FormatFontSlices, FormatRulesJSON,
+	FormatAudioIndex, FormatComponentsTSV, FormatStrokesJSONLGz, FormatThemesJSON, FormatFontSlices, FormatRulesJSON, FormatImagesSVG,
 }

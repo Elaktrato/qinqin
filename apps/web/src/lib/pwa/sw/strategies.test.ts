@@ -330,6 +330,24 @@ describe('hanzi', () => {
 		expect(cache.entries.has(`${ORIGIN}/hanzi/UFFFF.json`)).toBe(true);
 	});
 
+	it('keeps the shapes of each language apart: the language is part of the cache key, other parameters are not', async () => {
+		const cache = await caches.open(HANZI_CACHE);
+		fetchMock.mockImplementation(async (req: Request) => json({ lang: new URL(req.url).searchParams.get('lang') }));
+		await run(request('/hanzi/U6D77.json'));
+		await run(request('/hanzi/U6D77.json?lang=ja'));
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect([...cache.entries.keys()].sort()).toEqual([`${ORIGIN}/hanzi/U6D77.json`, `${ORIGIN}/hanzi/U6D77.json?lang=ja`]);
+		// Served from the cache the second time, each its own data.
+		expect(await (await run(request('/hanzi/U6D77.json?lang=ja'))).json()).toEqual({ lang: 'ja' });
+		expect(await (await run(request('/hanzi/U6D77.json'))).json()).toEqual({ lang: null });
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		// Another parameter makes no new entry, and a malformed language is not part of the key (it falls back to the plain one).
+		await run(request('/hanzi/U6D77.json?lang=ja&v=2'));
+		await run(request('/hanzi/U6D77.json?lang=JA'));
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(cache.entries.size).toBe(2);
+	});
+
 	it('does not store a failed fetch', async () => {
 		fetchMock.mockResolvedValue(new Response('nope', { status: 404 }));
 		await run(request('/hanzi/U1.json'));

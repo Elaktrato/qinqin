@@ -291,6 +291,15 @@ describe("known marks", () => {
     expect(bodies[0].rows[0].deletedAt).toBeUndefined();
   });
 
+  it("setKnownMarks writes the declaration batch on every row it marks (#74)", async () => {
+    accept();
+    const batch = { id: "01JBATCH0000000000000000AA", source: "placement" as const, scope: "HSK · HSK 2" };
+    await setKnownMarks(ctx.session.study, 3, [1, 2], true, { batch });
+    const rows = pushBodies().flatMap((b) => b.rows);
+    expect(rows).toHaveLength(2);
+    for (const r of rows) expect(r.data).toMatchObject({ version: 1, batch: batch.id, source: "placement", scope: "HSK · HSK 2" });
+  });
+
   it("setKnownMarks off sends tombstones with deletedAt", async () => {
     accept();
     await setKnownMarks(ctx.session.study, 3, [4, 5, 4], false);

@@ -114,6 +114,26 @@ unverified facts marked unverified) must stay the same in both places.
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
 
+## Writing-system trainer data (kana, Hangul, Cyrillic)
+
+The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
+`apps/web/src/lib/features/scripts/data/kana.json`, `hangul.json` and `cyrillic.json`, with their own
+`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC BY 4.0** like the
+project's other written content (`LICENSING.md`; issue #204 asked for CC0, the owner decided on 2026-11-26 that
+there is no exception). Nothing in them is copied from another
+source: the charts are tables of facts about writing systems (modified Hepburn, Revised Romanization, a plain
+Cyrillic transliteration), the example words are common words with an English gloss, and the keyboard keys are
+layout facts (Korean 2-set, Russian ЙЦУКЕН). The Sources page lists them under the feature (`FeatureDef.sources`).
+
+Licence checks done at the time of writing (2026-11-26), for sources that were looked at and **not bundled**:
+
+- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`), below the project's usual
+  floor of CC BY-SA 4.0. The owner accepted it on 2026-11-26: the `kanjivg-strokes` pack (see "Stroke-order data")
+  gives the kana trainer its write mode, and `kanjivg-components` stays.
+- **Lingua Libre / Wikimedia Commons** (sound recordings): the licence is per file (often CC BY-SA 4.0, some
+  CC BY-SA 3.0 or CC0). Nothing was downloaded; each file would have to be checked at download time. The trainer
+  speaks with the device voice meanwhile.
+
 ## Lemmatizer rules
 
 - **Japanese lemmatizer rules** (`ja-lemma`, type `lemma-rules`; bundled): the
@@ -127,15 +147,34 @@ unverified facts marked unverified) must stay the same in both places.
   data package `lemma-rules.ja-lemma`. Installed lemma-rules packs are credited
   on the Sources page (`GET /api/lemma-packs`).
 
+## Starter sets (Starter mode, #214)
+
+`server/internal/starter/sets/starter-zh.json` and `starter-ja.json` (embedded in
+the server) are short word lists for Starter mode: a written form, an optional
+reading, a one-word English gloss and the picture each word should have in an
+images pack. The **project wrote them**: the choice and order of words, the
+glosses and the picture pairing. They copy no third-party text; the dictionary
+entries and the pictures they point at stay under their own licences (see
+"Pictures"), and each file's `license` is **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0";
+the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They are seeds, not reviewed lists: `humanReviewed` is
+`false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
+for 100 to 300; a person has not yet read every word against the dictionary.
+Licence confirmed by the owner on 2026-11-26.
+
 ## Example sentences (Tatoeba)
 
 The example sentences on entry pages and in "Fill the gap" and "Build the
 sentence" cards come from **Tatoeba** (<https://tatoeba.org>), a collection of
 sentences and translations written by its contributors. Two packs are bundled
-in `plugins/data/` **once generated** (issue #133): the repository holds the
-tool that makes them, `server/tools/tatoeba`, and the owner generates and
-commits them from a pinned export (they are absent until then, and
-`scripts/check-sources.mjs` accepts that through its `GENERATED_PACKS` list).
+in `plugins/data/` (issue #133): the repository holds the tool that makes
+them, `server/tools/tatoeba`, and the packs generated from the pinned export of
+**2026-11-21** (licence re-read 2026-11-25, see the spec
+`docs/superpowers/specs/2026-11-26-v080-data-sources.md`).
+Sizes: Mandarin 32,810 sentences under 20,226 words, 12.8 MB raw (3.4 MB
+gzip); Japanese 55,871 sentences under 28,100 words, about 21 MB raw. A full
+`qinqin seed` of `plugins/data` took 3 min 20 s on the development machine.
+`scripts/check-sources.mjs` ties both packs to the pin through its
+`GENERATED_PACKS` list.
 
 | Pack | Provides | License | Upstream |
 |---|---|---|---|
@@ -157,11 +196,24 @@ commits them from a pinned export (they are absent until then, and
   licence and owner (the Tatoeba username listed for it, which is not always the
   original author), and the same for its translation (columns `sentence`, `url`,
   `licence`, `owner`, `translation`, `translation_url`, `translation_licence`,
-  `translation_owner`). The manifest `attribution` and the Sources page `notice`
-  link the published copy of that file
+  `translation_owner`). The same credits travel with the pack data and the app
+  shows them: every sentence in `sentences.json` carries its own credit: its Tatoeba `id`,
+  its owner `by`, the translation's id `tid` and the translation's owner `tby`
+  (no separate credits list; a sentence under several words repeats them). The
+  importer stores them with the sentence (migration 054), the entry API serves them as `credit` (`source`,
+  `id`, `owner`, `url`, `translationId`, `translationOwner`, `translationUrl`),
+  and the app shows, under every Tatoeba sentence (entry page examples and the
+  answer side of sentence cards), a small "Tatoeba · <owner>" linked to
+  `https://tatoeba.org/sentences/show/<id>` and "translation <owner>" linked to
+  the translation's page; the Share text carries the same credit and links. The
+  per-sentence credit is therefore available offline and one click from the
+  sentence itself. The manifest `attribution` and the Sources page `notice` still
+  link the published copy of `credits.tsv`
   (`https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<pack id>/credits.tsv`),
-  so the per-sentence credits are one click from the app; the app does not show
-  a credit next to each sentence yet (deferred, see the spec's Ruling).
+  the aggregate list. The offline data package of a sentence pack carries the
+  same credit on every sentence row (`credit_id`, `credit_owner`, `credit_tr_id`,
+  `credit_tr_owner`, package format 2; owner decision of 2026-11-26: no
+  compatibility with the old shape), and a link is the source's page of the id.
   `ATTRIBUTION.md` gives the export date, archive hashes, licence check and what
   was changed; `LICENSE` gives the CC BY 2.0 FR URI (which that licence allows
   instead of a copy) and the CC0 1.0 legal code.
@@ -543,8 +595,8 @@ day are marked unverified):
 | Source | Evidence | Verdict |
 |---|---|---|
 | **Kanji alive** example-word audio (ja; 10,156 clips in the zip, 10,187 claimed by the README; male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
-| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
-| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Files carry CC BY-SA 4.0, CC BY 4.0 or CC0 per Commons metadata; the default "CC BY-SA 4.0" comes from a snippet of the RecordWizard manual (site 503, unverified). | **LOCAL-ONLY** through the same Commons tool |
+| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. Re-checked 2026-11-25 over all expected syllable titles: 301 files exist, 224 CC BY-SA 3.0 us, 51 CC BY-SA 3.0, 17 CC BY-SA 2.0 uk, 9 CC BY 2.0 fr, 50 without an author. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
+| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Checked 2026-11-25 through the Commons API for cmn: 2,976 files "CC BY-SA 4.0" and 1,132 "CC0", none other, every file with an author (jpn not re-checked). Whole-word coverage of HSK 1-4: 1,100 of 1,992 words. Details: `docs/superpowers/specs/2026-11-26-v080-data-sources.md`. | **BUNDLE-eligible** for cmn (licence), not built yet (needs a maintainer-built pack, see the spec); **LOCAL-ONLY** through the Commons tool until then |
 | **hugolpz/audio-cmn** (1,707 syllables, ~8k HSK words) | README: "CC-by-sa. See table upper for authors."; no version; refers to an unreachable Shtooka readme; GitHub shows no licence. | **LOCAL-ONLY** (version unverified) |
 | **cjhoward/cedict-tts** | Audio "CC0 1.0 Universal", but "Baidu Speech-generated TTS MP3s"; Baidu's output terms unchecked. | **LOCAL-ONLY** |
 | **Tatoeba** audio | https://tatoeba.org/en/downloads: "If the license field is empty, you may not reuse the audio outside the Tatoeba project"; others vary (incl. NC/ND). Sentences, not words. | Out of scope (sentences); LOCAL-ONLY if ever |
@@ -723,6 +775,27 @@ committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
+
+- **KanjiVG stroke data** (`kanjivg-strokes`, Japanese, fetched at build time; #62): the stroke order of kana, the
+  Japanese forms of kanji and the iteration marks (6,614 characters) from
+  [KanjiVG](https://kanjivg.tagaini.net), © Ulrich Apel, tag `r20260714`, commit
+  `d95a97627fd9fe5b2c8d06ca81e38149609c0c1e`, licensed **CC BY-SA 3.0** (README and `COPYING`, checked 2026-11-26). 3.0 is
+  below the project's usual CC BY-SA 4.0 floor; the owner accepted it for KanjiVG on 2026-11-26 (`LICENSING.md`).
+  KanjiVG stores each stroke as the centre line of the pen. The pack is an **adaptation**: `scripts/prepare-kanjivg-strokes.mjs`
+  samples each path into a median (a short polyline) and widens it by 2.75 KanjiVG units on each side, with round caps,
+  into the outline the stroke-data format needs (Hanzi Writer's: strokes and medians in a 1024 box, y up, baseline 900),
+  so the writing pad and the stroke player read it like any other strokes pack. Stroke order and direction are
+  KanjiVG's own; variant drawings (`-Kaisho` and so on), Latin and symbols are not included. The pack says it was
+  changed (manifest `notice`, `ATTRIBUTION.md`) and stays under CC BY-SA 3.0.
+
+It is a data pack of type `strokes` with `languages: ["ja"]`, built by `scripts/fetch-kanjivg-strokes.sh` (a pinned
+clone: the tag's commit, the SHA-256 of `COPYING` from `plugins/data/UPSTREAM.sha256` and the README's licence line are
+checked, and any difference stops the build) into the gitignored `plugins/data-strokes/kanjivg-strokes`; the Docker
+image builds it in its own `kanjivg` stage and ships it under `/opt/qinqin/kanjivg` (`--build-arg WITH_KANJIVG=0`
+skips it). The share-alike position of the project: like every BY-SA pack it stays its own data pack, served by the
+running server (`GET /hanzi/U<HEX>.json?lang=ja`, `docs/contracts/strokes/`), and is **never** compiled into the Go
+binary (`go:embed`), put in the web build or bundled in the Android app. For a character both packs carry, the
+language decides which serves it: a Japanese reader gets KanjiVG's shapes, a Chinese one the Make Me a Hanzi shapes.
 
 ## Themes
 
@@ -924,3 +997,56 @@ Entries must already exist in an imported dictionary; unknown ones are skipped a
 reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
 offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in
 `plugins/samples/`).
+
+## Pictures
+
+Visual aids (issue #212) add no data: pictures are shown from the packs below, tone colours are drawn from the pinyin readings already in the dictionaries, and character anatomy reads the installed components packs (see "Character components") and the dictionary glosses.
+
+Bundled pictures for words (issue #216): two **images packs**, each its own pack with its licence, notice and
+credit. They are data packs of type `images` (see the wiki's Data-pack-format page and
+`docs/contracts/images/README.md`), fetched at image build time, never committed, never compiled into the binary and
+never bundled in the web build or the APK's web assets: the web app and the APK get pictures from the server
+(`GET /api/images/entries/{id}`). Licence evidence checked 2026-11-25 against the upstream files.
+
+| Pack | Upstream | Licence | Pictures | Word mappings |
+|---|---|---|---|---|
+| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 962 (1.7 MB of SVG) | 3,172 (zh 1,936, ja 1,236) |
+| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 711 (4.6 MB of SVG, in colour) | 2,570 (zh 541, ja 2,029) |
+
+- **Credit** (shown on the Sources page and in each pack's `ATTRIBUTION.md`): OpenMoji's own wording, "All emojis
+  designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0"; Mulberry's, "Mulberry Symbols
+  by Steve Lee are licenced under the Creative Commons Attribution-ShareAlike 4.0 License". Every picture is also
+  credited in the pack's `pictures.tsv` (OpenMoji's designer per emoji) and next to the picture where the app draws it.
+- **Pins:** `scripts/images/pins.json` (upstream URLs, SHA-256 and sizes of every file used: the two zips,
+  `data/openmoji.json`, `symbol-info.csv`, the OpenMoji `LICENSE.txt` that carries the CC BY-SA 4.0 legal code, the
+  Mulberry `LICENSE.txt` inside the zip, and the CLDR files below). A mismatch stops the build.
+- **ShareAlike.** Both sets are CC BY-SA 4.0 and so is anything adapted from them: the pack says so, and the
+  recoloured copy the web app draws (the black outline takes the text colour; the file itself is never modified) is
+  covered by the same licence. The position this project takes (owner-unconfirmed, flagged in the #216 plan): the
+  pictures are a collection next to the MIT code, as the dictionaries are; to keep that true each set stays in its
+  own pack directory with its licence text, is never `go:embed`ded (a Dockerfile test checks this), and is not part of
+  the web build. Whether pictures inside an Android APK's assets would be more than a collection is unsettled (see
+  the v0.8.0 data-sources audit); the APK's web assets carry none, it asks the server.
+- **The mapping** (`scripts/images/<pack>/map.tsv`, committed, 130 KB and 98 KB) is derived data: the Unicode CLDR
+  emoji annotations of Chinese and Japanese (CLDR 49.0.0, Copyright Unicode, Inc., [Unicode License v3](https://www.unicode.org/license.txt);
+  the annotations' names and keywords), the English glosses of CC-CEDICT and JMdict, OpenMoji's English annotations
+  and tags, and Mulberry's English symbol names; it is distributed with the packs under CC BY-SA 4.0 and carries the
+  Unicode notice. `scripts/build-picture-map.mjs` makes it (rules in `scripts/picture-match.mjs`, tested); 92 rows are
+  hand-checked overrides (`scripts/images/openmoji/manual.tsv`). Only words an unambiguous match covers have a
+  picture; the rest wait on a review list. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
+  selection gate at build time; no list data is copied); for Japanese, only JMdict words with a priority marking.
+- **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
+- **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are
+  mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) are
+  described under "Starter sets" (47 and 55 words so far, not yet hand-reviewed; the issue asks for 100-300 per language).
+- **Not bundled:** ARASAAC (CC BY-NC-SA, non-commercial); Wikimedia Commons pictures via Wikidata (per-file
+  licences, later); OpenMoji's colour set (a later per-user choice).
+
+Build a pack into the gitignored `plugins/data-images/` (a default seed root when present) with
+
+    node scripts/prepare-images-pack.mjs --pack openmoji --out plugins/data-images/images-openmoji
+    node scripts/prepare-images-pack.mjs --pack mulberry --out plugins/data-images/images-mulberry
+
+(needs Node 22 or newer and `unzip`; the Docker image does it in its `images` stage, `--build-arg WITH_IMAGES=0`
+skips it, and ships the packs under `/opt/qinqin/images`). `node scripts/build-picture-map.mjs --cache <dir>
+[--report <dir>]` rebuilds the mappings after a new pin or a changed dictionary.

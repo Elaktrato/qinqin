@@ -47,16 +47,21 @@ const audioPacks = "plugins/data-audio"
 // when it exists.
 const strokePacks = "plugins/data-strokes"
 
+// imagePacks is the default root of the images packs built by
+// scripts/prepare-images-pack.mjs (CC BY-SA 4.0 pictures, gitignored for
+// size, never embedded in the binary); it is used only when it exists.
+const imagePacks = "plugins/data-images"
+
 // defaultPacks is the --packs default: $QINQIN_PACKS (comma-separated; the
 // image sets it to the packs it ships), or the repo's plugins/data followed
-// by plugins/data-audio, plugins/data-strokes, then plugins/data-local, when
-// those directories exist.
+// by plugins/data-audio, plugins/data-strokes, plugins/data-images, then
+// plugins/data-local, when those directories exist.
 func defaultPacks() []string {
 	if p := os.Getenv("QINQIN_PACKS"); p != "" {
 		return splitRoots(p)
 	}
 	roots := []string{"plugins/data"}
-	for _, extra := range []string{audioPacks, strokePacks, localPacks} {
+	for _, extra := range []string{audioPacks, strokePacks, imagePacks, localPacks} {
 		if info, err := os.Stat(extra); err == nil && info.IsDir() {
 			roots = append(roots, extra)
 		}

@@ -5,6 +5,143 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #62 — Japanese stroke order: the language of a stroke request (contract 13)
+
+- **New query parameter:** `GET /hanzi/U<HEX>.json?lang=<code>` (two or three lower-case letters) asks for the shapes
+  of one language where the installed strokes packs differ: a pack that lists the language comes first, then the pack
+  with the fewest languages (a pack made for Japanese alone beats the shared Chinese-and-Japanese one), then the order of
+  registration. A character only one pack has is served whatever the language; a malformed `lang` is `400 bad_request`;
+  without it nothing changes. New fixture `strokes/lookup.json` (rule `strokes/lookup`) and `strokes/README.md`.
+- **Clients:** the web app passes the language of the entry or workspace and keys its stroke cache by language and
+  character; the service worker's `/hanzi/` cache keeps a well-formed `lang` in its key (the one query parameter it keeps).
+- **New pack, no new type or route:** `kanjivg-strokes` (KanjiVG, CC BY-SA 3.0, languages `["ja"]`, built by
+  `scripts/fetch-kanjivg-strokes.sh`, shipped beside the binary and never in it or in the web build). It carries kana,
+  Japanese kanji forms and the iteration marks in the stroke-data format the app already reads; kana have stroke data
+  for the first time, so the writing pad works on them. `GET /api/stroke-packs` lists it with the others.
+
+## Tatoeba credits on every sentence (contract 12)
+
+- **Sentence pack file (`sentences.json`):** each sentence carries its own credit: `id` (its Tatoeba id), `by` (its
+  owner as Tatoeba lists it, left out when none), `tid` (the id of the translation shown with it, required with an `id`)
+  and `tby` (the translation's owner, left out when none). The separate top-level `credits` map is gone: a pack that
+  still has it is refused at import, and so is a sentence with a credit but no `id`. A sentence listed under several
+  words repeats its credit. The link of a credit is not stored: it is `https://tatoeba.org/en/sentences/show/<id>`.
+- **Sentences data package (`sentences.<packId>`): format 2.** The `sentences` table gains `credit_id`, `credit_owner`,
+  `credit_tr_id` and `credit_tr_owner` (all `NOT NULL`; `0` and `""` for a sentence without a credit). Format 1 is not
+  read: a server rebuilds its sentences packages at the next reconcile, a client that knows only format 1 gets
+  `unsupported` from `packageAction` for them and keeps what it has. The other package types stay format 1;
+  `schemas.json` states a type's own `formatVersion` when it differs. No client installs data packages yet.
+- **Unchanged:** the entry answer's `credit` object, the stored columns (migration 054) and the pack licence notices.
+
+## Owner rulings on hints and tone aids (contract 11)
+
+- **Changed rule:** the hint grade rule of `cards/hints.json` (`grades`): a hint asked for with the Hint control
+  lowers the suggested grade **one step** (Easy to Good, Good to Hard; Hard and Again stay; a self-graded card counts
+  as Good and becomes Hard), once however many hints were used. It used to cap at Hard. Clients implement the new
+  table; stored reviews are not rewritten (`cards/README.md` "Hints").
+- **Changed setting:** the `visualAids` member `toneContour` (boolean, default `true`), new beside `toneColors`:
+  colours and contour are separate switches. A stored `toneColors: false` without a stored `toneContour` reads as
+  contour off too (they used to be one switch). Older clients ignore the new member and keep it on write
+  (`aids/visual-aids.json`, `aids/README.md`, `settings/`).
+
+## #214 — Starter mode: per-word stages and Starter sets (contract 10)
+
+- **New fixtures:** `starter/stages.json` (rule `starter/stages`): the stage of a word derived from its vocab card's
+  own reviews (a success counts one point at least twelve hours after the last counted review, Hard pauses, Again drops
+  one stage, per-profile thresholds `ja` 0,1,2,3,5,7 and `zh` 0,1,2,4,6, words usually written in kana stop at stage 4),
+  what the front shows at each stage and the hint modes it forces; and `starter/set.json` (rule `starter/set`): the
+  Starter set file format. Chinese stage 4 forces the reading hint to `hint` (it announced "no pinyin" while a
+  `reading: always` setting still showed it). Clients that show Starter mode implement the rule the same way (`starter/README.md`).
+- **New routes:** `GET /api/starter-sets` (public, not access tokens) and `GET /api/starter-sets/{id}` (signed-in users,
+  not access tokens): the shipped sets, and one set's words resolved to dictionary entries in the set's order. Neither
+  is cached offline by the service worker beyond the default (`routes.fixture.json`).
+- **Workspace setting:** the key `starter`, `{enabled, scope}`, read member by member with the defaults off and `base`
+  (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **Deck id:** the Starter set is copied into the plain deck `d-starter-<ja|zh>` (no `source`, so no deck row shape
+  changes); `decks/README.md` lists the id.
+- **Catalogue keys:** `flashcards.starter.new.*`, `flashcards.starterSet.*`, `app.home.starter*`, `settings.starter.*`;
+  the picture is #212's Picture hint (gated by the `visualAids.pictures` switch); Starter mode only forces its mode.
+
+## #212 — visual aids: pictures, tone colours, character anatomy (contract 9)
+
+- **Workspace setting:** the key `visualAids`, `{pictures, toneColors, anatomy}` booleans, all on by default, read
+  switch by switch (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **New fixtures:** `aids/visual-aids.json` (rule `aids/visual-aids`: the key, the defaults, how it is read and
+  written), `aids/tones.json` (rule `aids/tones`: the syllable split of a pinyin reading, the five tone contours,
+  the Okabe-Ito based colour set and how it is made readable on a theme) and `aids/anatomy.json` (rule
+  `aids/anatomy`: parts of a character from the components index with meanings from the character universe). The
+  rules are in `aids/README.md`.
+- **Hints:** the `picture` kind of `cards/hints.json` is ready: an entry offers it when `hasPicture` (an images pack
+  maps it and `pictures` is on). Defaults and plans are unchanged.
+- **No new route, row or pack type.** A client that draws none of these changes nothing; a client that does reads
+  `GET /api/images/entries/{id}`, `GET /api/components` and `GET /api/characters` as before.
+- **Catalogue keys:** `settings` gains `settings.aids.*`, `study` gains `study.aids.*`; `settings.hints.kind.pictureNote`
+  now describes the ready picture hint.
+
+## #216 — images packs: bundled pictures for words (contract 8)
+
+- **New pack type:** `images` (format `images-svg`, `languages` like a strokes pack, uploadable, no data package),
+  last in `packages/pack-types.json` (`type`, `registry` `image_packs`, `languages: "many"`, `package: null`). A
+  client that lists packs meets the type in the admin list and the Sources page only.
+- **New routes:** `GET /api/images/entries/{id}[?sense=N]` (signed-in users, not access tokens): the best bundled
+  picture of an entry as `{"picture": {packId, concept, label, credit, license, attribution, basis, sense, score,
+  svg}}` or `{"picture": null}`; and `GET /api/image-packs` (public, not access tokens): the installed packs for the
+  Sources page. Neither is cached offline by the service worker (`routes.fixture.json`).
+- **New fixtures:** `images/resolve.json` (rule `images/resolve`: which mapping wins for an entry, sense and
+  targets) and `images/svg.json` (rule `images/svg`: the picture vocabulary, what a client must refuse, and
+  `themeSvg`). The pack format and the licence position (BY-SA data in its own packs, never compiled in or bundled
+  in the web build) are in `images/README.md`.
+- **Clients** that do not draw pictures change nothing. A client that does calls `GET /api/images/entries/{id}`
+  (web: `entryPicture`), refuses active content in the svg (`safeSvg`), draws black outlines in the text colour
+  (`themeSvg`) and shows the credit (`pictureCreditLine`).
+- **Amendment (v0.8.0 review, stored XSS; no contract renumbering, nothing of it was released):** the server stores
+  and serves the picture's *canonical form* (`images/README.md`, "Pictures are drawings"), no longer the pack's bytes:
+  a comment, `style` element, unknown element or attribute, a non-`#id` reference, an escaped `url(` and nested
+  `<use>` are refused. `images/svg.json` is version 2: each valid case carries its `canonical` form (Go and web must
+  produce it byte for byte) and the payloads of the review are invalid cases. A client draws created DOM nodes
+  (`svgElement`), never `{@html}`.
+
+## #215 — hints on every flashcard (contract 7)
+
+- **New fixture:** `cards/hints.json` (rule `cards/hints`): the hint kinds (`reading`, then `picture`, a registry in
+  a fixed order), the three modes (`always`, `hint`, `never`), the defaults per card kind, how the setting is read,
+  the plan of one card, and the grade rule: a hint asked for with the Hint control lowers the suggested grade to
+  Hard (Again stays Again; a self-graded card is suggested Hard), once, however many hints were used. Clients
+  implement the plan, the rule and the recording the same way (`cards/README.md` "Hints").
+- **Workspace setting:** the key `hints`, `{<kind>: {<card kind>: <mode>}}`, read cell by cell with defaults
+  (`settings/workspace-settings.json` key table). Older clients ignore it and keep it on write.
+- **Review event:** `meta.hints` now also counts the hints asked for with the Hint control (`events/README.md`);
+  the shape is unchanged.
+- **Behaviour change:** the Recall card's "Show reading" is the reading hint; its suggestion (Hard after a right
+  answer with the reading shown) is now the general rule. The message `flashcards.card.showReading` is retired
+  (`i18n/retired-keys.json`); the writing card's stroke button reads "Next stroke hint" (key
+  `flashcards.writing.strokeHint`, replacing `flashcards.writing.hint`).
+- **Catalogue keys:** the area `flashcards` gains `flashcards.hint.*`; `settings` gains `settings.hints.*`.
+
+## #204, #63 — writing-system trainer (scripts) (contract 6)
+
+- **Feature switch:** a fifth core feature id `scripts`, last in the order (`features/switches.json`:
+  `features`, the fresh list). `GET /api/features` answers five rows; clients keep reading a missing row as on.
+- **Event type:** `script`, written by the web app, one per practice answer: `{system, item, mode, ok}`
+  (`events/payloads.json`, builder `scriptPayload`). The server stores it like any event; payload ids need no
+  remapping on restore.
+- **Activity rule:** `script` is a count rule of the feature `scripts` (`events/activity.json`: `rules`, a case), so
+  every answer is a heatmap, goal and weekly-summary activity. `GET /api/stats/activity` lists it among the sources.
+- **Language profiles:** the new member `writingSystems` (a list of ids, empty for no trainer) on every profile, and
+  new profiles `ko` (`hangul`) and `ru` (`cyrillic`) (`languages/profiles.json`; `ko` resolved to the fallback
+  before). Readers that ignore unknown members are unaffected.
+- **Catalogue keys:** the key area `scripts` (`i18n/README.md`).
+
+## #74 — "I already know this": declaration batches on known marks (contract 5)
+
+No route, key family or fixture file changes. The reader's manual mark `known:<entryId>` (`reader/`) may now
+carry three optional fields: `batch` (a ULID), `source` (`range` | `placement`) and `scope` (a label, at most
+120 code points). A declaration ("everything up to HSK 3", a placement result) writes one such mark per entry
+that has no live mark, all with the same `batch`; undoing it tombstones exactly the live marks still carrying
+that batch. Clients that do not know the fields ignore them, keep them on rewrite and restore (the backup remap
+keeps the other bytes), and treat the mark as any other. `reader/word-states.json` gains `rowCases` for the
+fields. The placement test itself is client-side (pure, seeded) and has no contract.
+
 ## #36 — native device features advertised on the bridge (contract 4)
 
 - **Bridge:** `GET /api/version` now answers `bridge: {level: 1, features: ["files", "haptics", "keep-awake",

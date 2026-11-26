@@ -40,7 +40,7 @@ import {
 } from './rows';
 import { rawIdentity, type UnreadableCounts } from './unreadable';
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from './vacation';
-import { KNOWN_PREFIX, parseKnownMark } from './knownMarks';
+import { KNOWN_PREFIX, parseKnownBatch, parseKnownMark } from './knownMarks';
 import type { StudySnapshot } from './plan';
 import { GOALS_KEY, parseGoalsRow, type ParsedGoals } from '../goals/goals';
 import { MILESTONE_KEY_PREFIX } from '../milestones/catalogue';
@@ -273,6 +273,7 @@ export function viewOf(rows: StudyRows): StudyView {
 	let activeRaw: unknown = null;
 	let goals: ParsedGoals = null;
 	const known: number[] = [];
+	const declared: NonNullable<StudyData['knownDeclared']> = [];
 	const milestoneRows: { key: string; data: unknown; deletedAt: string | null; updatedAt?: string }[] = [];
 	const counts: UnreadableCounts = {};
 	const unreadableKeys: string[] = [];
@@ -350,8 +351,14 @@ export function viewOf(rows: StudyRows): StudyView {
 			if (goals === null) unreadableKeyed(slot);
 		} else if (row.key.startsWith(KNOWN_PREFIX)) {
 			const entryId = parseKnownMark(row.key, row.data);
-			if (entryId !== null) known.push(entryId);
-			else unreadableKeyed(slot);
+			if (entryId !== null) {
+				known.push(entryId);
+				const batch = parseKnownBatch(row.data);
+				if (batch !== null) {
+					const createdAt = (row.data as { createdAt?: unknown }).createdAt;
+					declared.push({ entryId, createdAt: typeof createdAt === 'string' ? createdAt : '', batch });
+				}
+			} else unreadableKeyed(slot);
 		}
 	}
 
@@ -384,6 +391,7 @@ export function viewOf(rows: StudyRows): StudyView {
 			: {}),
 		...(goals === null ? {} : { goals }),
 		...(known.length > 0 ? { known } : {}),
+		...(declared.length > 0 ? { knownDeclared: declared } : {}),
 		...(seenMilestones.size > 0 ? { seenMilestones } : {}),
 		...(milestoneTombstones.size > 0 ? { milestoneTombstones } : {})
 	};

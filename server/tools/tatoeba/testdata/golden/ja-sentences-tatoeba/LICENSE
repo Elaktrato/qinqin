@@ -10,7 +10,8 @@ file gives its Uniform Resource Identifier instead of a copy:
     https://creativecommons.org/licenses/by/2.0/fr/legalcode
 
 The owner of each sentence (as listed by Tatoeba) and its page are in
-credits.tsv. Sentences marked "CC0 1.0" there were also released by Tatoeba
+credits.tsv and, on every sentence of sentences.json, in "id" and "by" (and
+"tid" and "tby" for its translation), and qinqin shows them with the sentence. Sentences marked "CC0 1.0" there were also released by Tatoeba
 under CC0 1.0 Universal, whose legal code is at the end of this file.
 
 The readings ("pinyin" field) and the word filing derive from JMdict

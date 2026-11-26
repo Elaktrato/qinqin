@@ -67,13 +67,12 @@ describe('acceptedReverseAnswers', () => {
 describe('suggestReverseGrade', () => {
 	const accepted = new Set(['喜欢']);
 	it('is null for nothing typed', () => {
-		expect(suggestReverseGrade({ typed: '', accepted, readingShown: false })).toBeNull();
-		expect(suggestReverseGrade({ typed: '  　', accepted, readingShown: false })).toBeNull();
+		expect(suggestReverseGrade({ typed: '', accepted })).toBeNull();
+		expect(suggestReverseGrade({ typed: '  　', accepted })).toBeNull();
 	});
-	it('is Good, Hard with the reading shown, and Again when wrong', () => {
-		expect(suggestReverseGrade({ typed: ' 喜 欢 ', accepted, readingShown: false })).toBe(3);
-		expect(suggestReverseGrade({ typed: '喜欢', accepted, readingShown: true })).toBe(2);
-		expect(suggestReverseGrade({ typed: '高兴', accepted, readingShown: false })).toBe(1);
+	it('is Good when right and Again when wrong (a hint lowers it later, hints.ts)', () => {
+		expect(suggestReverseGrade({ typed: ' 喜 欢 ', accepted })).toBe(3);
+		expect(suggestReverseGrade({ typed: '高兴', accepted })).toBe(1);
 	});
 });
 
@@ -81,10 +80,10 @@ describe('typed answers with symbols', () => {
 	it('keeps symbols and stays gradable for a symbol-only answer', () => {
 		const e = entry({ written: 'C++', forms: [], variants: [] });
 		const accepted = acceptedReverseAnswers(e);
-		expect(suggestReverseGrade({ typed: 'C++', accepted, readingShown: false })).toBe(3);
-		expect(suggestReverseGrade({ typed: 'C', accepted, readingShown: false })).toBe(1);
+		expect(suggestReverseGrade({ typed: 'C++', accepted })).toBe(3);
+		expect(suggestReverseGrade({ typed: 'C', accepted })).toBe(1);
 		const plus = acceptedReverseAnswers(entry({ written: '+' }));
-		expect(suggestReverseGrade({ typed: '＋', accepted: plus, readingShown: false })).toBe(3);
-		expect(suggestReverseGrade({ typed: '$5', accepted: acceptedReverseAnswers(entry({ written: '5' })), readingShown: false })).toBe(1);
+		expect(suggestReverseGrade({ typed: '＋', accepted: plus })).toBe(3);
+		expect(suggestReverseGrade({ typed: '$5', accepted: acceptedReverseAnswers(entry({ written: '5' })) })).toBe(1);
 	});
 });

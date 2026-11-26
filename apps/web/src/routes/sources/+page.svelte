@@ -9,6 +9,8 @@
 	import type { ComponentPack, Dictionary, FrequencyPack, LemmaPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks, getLemmaPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
+	import { imagePacks, type ImagePackInfo } from '$lib/api/images';
+	import { imagesSection } from '$lib/sources/imagesSection';
 	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
@@ -151,6 +153,21 @@
 		}
 	}
 
+	// The Pictures section exists only while an images pack is installed (#216).
+	let imagePackList = $state<ImagePackInfo[]>([]);
+	let imagesError = $state('');
+	const images = $derived(imagesSection(imagePackList, imagesError));
+
+	async function loadImages(): Promise<void> {
+		imagesError = '';
+		try {
+			imagePackList = await imagePacks();
+		} catch (err) {
+			imagePackList = [];
+			imagesError = message(err, t('sources.error.images'));
+		}
+	}
+
 	// Theme packs (#96): the built-in ones are always listed.
 	let themesAnswer = $state<ThemesAnswer>({ themes: [], packs: [] });
 	let themesError = $state('');
@@ -233,6 +250,7 @@
 		loadComponents();
 		loadLemma();
 		loadStrokes();
+		loadImages();
 		loadThemes();
 		loadFonts();
 	});
@@ -644,6 +662,54 @@
 			{/if}
 			<p class="notice">
 				{t('sources.strokes.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if images.show}
+		<section>
+			<h2 id="sources-images">{t('sources.images.title')}</h2>
+			{#if imagesError}
+				<p class="error" role="alert">{imagesError}</p>
+				<Button onclick={loadImages}>{t('sources.retry')}</Button>
+			{:else}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-images">
+					<table class="ui-table" aria-labelledby="sources-images">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(images.table)}
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each images.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(images.table, row.noteId, row.name)}
+									<td title={(images.languages[row.key] ?? []).join(', ')}>{(images.languages[row.key] ?? []).map((code) => languageLabel(code)).join(', ')}</td>
+									<td>{row.version}</td>
+									<td>
+										{#if images.licenseHref[row.key]}
+											<a href={images.licenseHref[row.key]} rel="noopener">{row.license}</a>
+										{:else}
+											{@render cell(row.license, row.language)}
+										{/if}
+									</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(images.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.images.notice')}
 			</p>
 		</section>
 	{/if}

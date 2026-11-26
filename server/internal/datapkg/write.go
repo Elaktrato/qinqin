@@ -241,7 +241,7 @@ func writeDatabase(ctx context.Context, sqlDB *sql.DB, spec Spec, def typeDef, a
 	values := [][2]string{
 		{"id", spec.ID},
 		{"type", string(spec.Type)},
-		{"formatVersion", strconv.Itoa(FormatVersion)},
+		{"formatVersion", strconv.Itoa(FormatVersionOf(spec.Type))},
 		{"revision", strconv.Itoa(meta.Revision)},
 		{"contentHash", hash},
 		{"instanceId", meta.InstanceID},

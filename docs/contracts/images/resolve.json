@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "rule": "images/resolve",
+ "note": "The picture of an entry: which mapping the server picks (docs/contracts/images/README.md, Resolution). packs holds the installed packs' rows; each case asks for language, targets (the entry key, its written forms, its kana reading when it has no written form) and sense (0: the whole entry) and names the expected pack and concept, or null for no picture. Go: server/internal/images/contract_test.go.",
+ "packs": [
+  {
+   "packId": "images-a",
+   "live": true,
+   "pictures": ["A", "H", "P", "D"],
+   "map": [
+    {"language": "zh", "target": "苹果", "sense": 0, "concept": "A", "score": 100},
+    {"language": "zh", "target": "狗", "sense": 1, "concept": "D", "score": 100},
+    {"language": "zh", "target": "打", "sense": 1, "concept": "H", "score": 80},
+    {"language": "zh", "target": "打", "sense": 3, "concept": "P", "score": 80},
+    {"language": "zh", "target": "球", "sense": 0, "concept": "A", "score": 70},
+    {"language": "ja", "target": "いぬ", "sense": 0, "concept": "D", "score": 90},
+    {"language": "ja", "target": "j:1", "sense": 0, "concept": "A", "score": 70}
+   ]
+  },
+  {
+   "packId": "images-b",
+   "live": true,
+   "pictures": ["A", "D"],
+   "map": [
+    {"language": "zh", "target": "球", "sense": 0, "concept": "D", "score": 85},
+    {"language": "zh", "target": "苹果", "sense": 0, "concept": "D", "score": 90}
+   ]
+  },
+  {
+   "packId": "images-gone",
+   "live": false,
+   "pictures": ["A"],
+   "map": [{"language": "zh", "target": "桌子", "sense": 0, "concept": "A", "score": 100}]
+  }
+ ],
+ "cases": [
+  {"name": "an entry-wide mapping", "language": "zh", "targets": ["苹果"], "sense": 0, "pack": "images-a", "concept": "A", "note": "images-a scores 100, images-b 90: the higher score wins"},
+  {"name": "any of the forms counts", "language": "zh", "targets": ["x", "", "苹果", "蘋果"], "sense": 0, "pack": "images-a", "concept": "A", "note": "blank and unknown targets are ignored"},
+  {"name": "a mapping of sense 1 is found without a sense", "language": "zh", "targets": ["狗"], "sense": 0, "pack": "images-a", "concept": "D"},
+  {"name": "no sense: the best score of all senses", "language": "zh", "targets": ["打"], "sense": 0, "pack": "images-a", "concept": "H", "note": "equal scores: the lower sense wins"},
+  {"name": "sense 1", "language": "zh", "targets": ["打"], "sense": 1, "pack": "images-a", "concept": "H"},
+  {"name": "sense 3", "language": "zh", "targets": ["打"], "sense": 3, "pack": "images-a", "concept": "P"},
+  {"name": "a sense with no picture of its own and no entry-wide one", "language": "zh", "targets": ["打"], "sense": 2, "pack": null, "concept": null},
+  {"name": "an entry-wide picture serves every sense", "language": "zh", "targets": ["苹果"], "sense": 2, "pack": "images-a", "concept": "A"},
+  {"name": "the higher score wins across packs", "language": "zh", "targets": ["球"], "sense": 0, "pack": "images-b", "concept": "D", "note": "85 over 70"},
+  {"name": "a Japanese word by its kana reading", "language": "ja", "targets": ["いぬ"], "sense": 0, "pack": "images-a", "concept": "D"},
+  {"name": "a Japanese word by its entry key", "language": "ja", "targets": ["j:1"], "sense": 0, "pack": "images-a", "concept": "A"},
+  {"name": "another language is another table", "language": "ja", "targets": ["苹果"], "sense": 0, "pack": null, "concept": null},
+  {"name": "an uninstalled pack maps nothing", "language": "zh", "targets": ["桌子"], "sense": 0, "pack": null, "concept": null},
+  {"name": "an unknown word", "language": "zh", "targets": ["椅子"], "sense": 0, "pack": null, "concept": null},
+  {"name": "no targets", "language": "zh", "targets": [], "sense": 0, "pack": null, "concept": null}
+ ]
+}

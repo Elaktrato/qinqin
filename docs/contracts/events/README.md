@@ -204,7 +204,9 @@ event as a review in two steps, both pinned by `review-parse.json`:
    `cloze`; missing, unknown or non-string reads as `vocab` (events from before kinds existed). `meta` is kept
    only when every present member is valid — `tier` 0, 1 or 2; `mistakes` and `hints` integers ≥ 0;
    `durationMs` a finite number ≥ 0 — else it is dropped whole (the review stays); unknown `meta` members and
-   extra payload members are dropped. The envelope is kept as stored. `ts` is not read here.
+   extra payload members are dropped. The envelope is kept as stored. `ts` is not read here. `meta.hints` is the
+   number of helps used on the card: hints asked for with the Hint control (`cards/` `hints.json`, #215) plus the
+   card's own help (writing: stroke hints and revealed characters; sentence: the translation shown and giving up).
 2. **Validity** (`isValidReview`, the same test in `exp.ts`): `ts` parses as an instant, `cardId` a non-empty
    string, `grade` 1–4. An event whose `ts` does not parse is parsed but never counted (no replay, no XP).
 

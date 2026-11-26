@@ -100,3 +100,20 @@ func TestReadRowsUnescapes(t *testing.T) {
 		t.Errorf("fields %q, want %q", got, want)
 	}
 }
+
+// TestReadRowsEscapedNewline: a backslash directly before a line feed
+// escapes it, so a field (the profile text of user_languages) may span
+// physical lines; an escaped backslash before the line feed does not.
+func TestReadRowsEscapedNewline(t *testing.T) {
+	var got [][]string
+	in := "abk\t5\tuser1\tfirst line\r\\\nsecond line\\\nthird\nabk\t4\tuser2\tend\\\\\nabk\t3\tuser3\t\n"
+	if err := readRows(strings.NewReader(in), "user_languages", 4, func(c []string) error { got = append(got, c); return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("rows = %q, want 3", got)
+	}
+	if got[0][3] != "first line\r\nsecond line\nthird" || got[1][3] != `end\` || got[2][2] != "user3" {
+		t.Errorf("fields = %q", got)
+	}
+}

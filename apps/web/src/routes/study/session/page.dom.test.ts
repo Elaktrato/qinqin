@@ -13,6 +13,10 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({ getEntry: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
 vi.mock('$lib/api/audio', () => ({ resolveAudio: vi.fn(async () => ({})) }));
+vi.mock('$lib/api/images', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/api/images')>()),
+	entryPicture: vi.fn(async () => null)
+}));
 // The session's outbox, faked (record 0009: the page records through useSession().outbox).
 const outboxFakes = vi.hoisted(() => ({
 	flush: vi.fn(async () => {}),
@@ -52,6 +56,7 @@ vi.mock('$lib/study/sessionMix', async (importOriginal) => {
 });
 
 import { getEntry } from '$lib/api/entries';
+import { entryPicture } from '$lib/api/images';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 const { recordReplacement, recordReview } = outboxFakes;
@@ -521,6 +526,35 @@ describe('the open page (#101)', () => {
 		expect(document.activeElement?.tagName).toBe('H1');
 	});
 
+	it('a hint asked for before the answer lowers the suggestion to Hard and is recorded in meta.hints (#215)', async () => {
+		configure(['vocab']);
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(await screen.findByRole('button', { name: 'Hint' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		// Hard is the suggestion (a self-graded card has none otherwise), and the review carries the count.
+		await screen.findByRole('button', { name: /^Hard \(suggested\)/ });
+		// A click right after the suggestion took focus is ignored on purpose (shouldIgnoreGrade): retry until it counts.
+		await waitFor(async () => {
+			await fireEvent.click(screen.getByRole('button', { name: /^Hard \(suggested\)/ }));
+			expect(recordReview).toHaveBeenCalledTimes(1);
+		});
+		expect(recordReview).toHaveBeenCalledWith(1, 'c-vocab-11', 2, 'vocab', expect.objectContaining({ hints: 1 }));
+	});
+
+	it('without a hint nothing is suggested and meta.hints is absent', async () => {
+		configure(['vocab']);
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(screen.queryByRole('button', { name: /\(suggested\)/ })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /^Good, next review/ }));
+		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
+		expect(vi.mocked(recordReview).mock.calls[0][4]).not.toHaveProperty('hints');
+	});
+
 	it('Space reveals and 1–4 grade (unchanged)', async () => {
 		configure(['vocab']);
 		render(Page, { context: ctx.context });
@@ -965,5 +999,119 @@ describe('leaving the session (the study modal)', () => {
 		await fireEvent.click(await screen.findByRole('link', { name: 'End session' }));
 		expect(goto).toHaveBeenCalledWith('/');
 		await waitFor(() => expect(ctx.session.studyModal.open).toBe(true));
+	});
+});
+
+describe('Starter mode on the session page (#214)', () => {
+	const apple = {
+		id: 51,
+		language: 'ja',
+		kind: 'word',
+		written: '林檎',
+		readings: [
+			{ type: 'kana', value: 'りんご', plain: 'ringo', ord: 0 },
+			{ type: 'romaji', value: 'ringo', plain: 'ringo', ord: 1 }
+		],
+		badges: [],
+		variants: [],
+		sentences: [],
+		senseGroups: [{ dictionaryId: 1, dictionaryName: 'JMdict', packId: 'j', license: 'x', attribution: 'x', pos: [], tags: [], glosses: ['apple'], xrefs: [] }],
+		senses: [{ dictionaryId: 1, dictionaryName: 'JMdict', packId: 'j', license: 'x', attribution: 'x', gloss: 'apple' }]
+	} as unknown as Entry;
+	const card = (deckIds: string[]): StudyCard =>
+		({ id: 'c-vocab-51', kind: 'vocab', entryId: 51, written: '林檎', deckIds, createdAt: '2026-01-01T00:00:00.000Z' }) as StudyCard;
+	const review = (day: number, grade: number): ReviewEvent => ({
+		id: `r${day}`,
+		workspaceId: 1,
+		device: 'd',
+		ts: `2026-01-${String(day).padStart(2, '0')}T09:00:00.000Z`,
+		type: 'review',
+		payload: { cardId: 'c-vocab-51', mode: 'vocab', grade: grade as 1 }
+	});
+	const picture = {
+		packId: 'images-openmoji',
+		concept: '1F34E',
+		label: 'red apple',
+		credit: 'OpenMoji, Liz Bravo',
+		license: 'CC BY-SA 4.0',
+		attribution: 'x',
+		basis: 'manual',
+		sense: 0,
+		score: 100,
+		svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><path fill="none" stroke="#000" d="M1 2h3"/></svg>'
+	};
+
+	function start(opts: { settings?: Record<string, unknown>; deckIds?: string[]; reviews?: ReviewEvent[] }): void {
+		const settings = opts.settings ?? { starter: { enabled: true } };
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general', 'd-starter-ja'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] })
+		);
+		vi.mocked(getEntry).mockResolvedValue(apple);
+		vi.mocked(entryPicture).mockResolvedValue(picture);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [{ id: 'd-starter-ja', name: 'Starter words (Japanese)', createdAt: '2026-01-01T00:00:00.000Z' }],
+			cards: [card(opts.deckIds ?? ['d-starter-ja'])],
+			reviews: opts.reviews ?? [],
+			merged: 0
+		} as never);
+		ctx.session.workspaces.set({
+			list: [{ id: 1, language: 'ja', name: 'ja', settings } as never],
+			current: { id: 1, language: 'ja', name: 'ja', settings } as never
+		});
+	}
+
+	it('a new word of the Starter deck shows its picture and romaji, no kana, no kanji', async () => {
+		start({});
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await waitFor(() => expect(screen.getByRole('img', { name: 'red apple' })).toBeTruthy());
+		const front = document.querySelector('.face-prompt')!;
+		expect(front.textContent).toContain('ringo');
+		expect(front.textContent).not.toContain('りんご');
+		expect(front.textContent).not.toContain('林檎');
+		expect(screen.queryByRole('button', { name: 'Hint' })).toBeNull();
+	});
+
+	it('shows the answer in full after the reveal', async () => {
+		start({});
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(screen.getByText('apple')).toBeTruthy();
+	});
+
+	it('moves up from the card own review history: three spaced Goods put the picture behind the Hint button', async () => {
+		start({ reviews: [review(1, 3), review(2, 3), review(3, 3)] });
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		const front = document.querySelector('.face-prompt')!;
+		expect(front.textContent).toContain('りんご');
+		expect(front.textContent).not.toContain('ringo');
+		await waitFor(() => expect(screen.getByRole('button', { name: 'Hint' })).toBeTruthy());
+		expect(screen.queryByRole('img', { name: 'red apple' })).toBeNull();
+		expect(screen.getByTestId('starter-note').textContent).toBe('New: the picture is now a hint. Press Hint to see it.');
+	});
+
+	it('is the normal card when Starter mode is off', async () => {
+		start({ settings: {} });
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		expect(document.querySelector('.face-prompt')?.textContent).toContain('林檎');
+		expect(screen.queryByTestId('starter-front')).toBeNull();
+	});
+
+	it('leaves a card outside the Starter deck alone unless the scope is every card', async () => {
+		start({ deckIds: ['general'] });
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		await waitFor(() => expect(document.querySelector('.face-prompt')?.textContent).toContain('林檎'));
+		expect(screen.queryByTestId('starter-front')).toBeNull();
+		cleanup();
+		start({ deckIds: ['general'], settings: { starter: { enabled: true, scope: 'all' } } });
+		render(Page, { context: ctx.context });
+		await screen.findByLabelText('Recognise card');
+		expect(await screen.findByTestId('starter-front')).toBeTruthy();
 	});
 });

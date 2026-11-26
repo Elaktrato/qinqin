@@ -73,6 +73,13 @@ func readRows(r io.Reader, what string, n int, fn func(cols []string) error) err
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("%s line %d: %w", what, line, err)
 		}
+		// A backslash directly before the line feed escapes it: the field
+		// goes on in the next physical line (a user's profile text).
+		for err == nil && strings.HasSuffix(s, "\\\n") && oddBackslashes(strings.TrimSuffix(s, "\n")) {
+			var more string
+			more, err = br.ReadString('\n')
+			s = strings.TrimSuffix(s, "\\\n") + "\n" + more
+		}
 		s = strings.TrimRight(s, "\r\n")
 		if s != "" {
 			cols := strings.Split(s, "\t")
@@ -90,6 +97,13 @@ func readRows(r io.Reader, what string, n int, fn func(cols []string) error) err
 			return nil
 		}
 	}
+}
+
+// oddBackslashes reports whether s ends in an odd number of backslashes,
+// so the last one escapes what follows.
+func oddBackslashes(s string) bool {
+	n := len(s) - len(strings.TrimRight(s, `\`))
+	return n%2 == 1
 }
 
 // unescapeField undoes the export's MySQL-style escaping: a whole field

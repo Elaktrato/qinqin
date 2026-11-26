@@ -22,7 +22,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, mkdtempSync, createWriteStream, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { PKG, OUT, Recorder, adb, appPid, connectPage, gmsSettled, logcatTail, screenshot, sleep, waitFor } from './lib.mjs';
+import { PKG, OUT, Recorder, adb, appPid, connectPage, gmsSettled, logcatTail, screenshot, sleep, startRelaunchWatch, waitFor } from './lib.mjs';
 import { strokesPack } from './suites/common.mjs';
 import * as core from './suites/core.mjs';
 import * as pages from './suites/pages.mjs';
@@ -51,6 +51,8 @@ const FILL_CAP_MB = Number(process.env.E2E_FILL_CAP_MB || 1024);
 
 const rec = new Recorder();
 const num = rec.numbers;
+// E2E_RECOVER=0 turns the recovery from an unplanned activity relaunch off (recover.mjs): for A/B runs of the flake.
+const RECOVER = process.env.E2E_RECOVER !== '0';
 const work = mkdtempSync(join(tmpdir(), 'qinqin-android-e2e-'));
 const dataDir = join(work, 'data');
 const emptyPacks = join(work, 'no-packs');
@@ -183,9 +185,53 @@ async function coldStart(label) {
 }
 
 let cdp = null;
+let stopRelaunchWatch = () => {};
+
+/** After an unplanned relaunch of the shell's activity: attach to the page that is on screen now (recover.mjs). */
+async function reattach() {
+	const was = cdp?.prefix || ORIGIN + '/';
+	cdp?.close();
+	await sleep(1500);
+	try {
+		cdp = await connectPage(was, { timeout: 40_000 });
+	} catch (err) {
+		// The relaunch may have changed the page (the first-run screen instead of the server, or the other way round).
+		console.log(`no page at ${was} (${err.message}); trying the server origin`);
+		cdp = await connectPage(ORIGIN + '/', { timeout: 40_000 });
+	}
+	await waitFor('the page to render', async () => (await bodyText(cdp)).trim().length > 20, { timeout: 45_000 });
+	num.recoveries = (num.recoveries || 0) + 1;
+}
+
+/** E2E_DIAG=1: logs every change of the device configuration (`am get-config`) with the time: which bit relaunches the activity. */
+function startConfigWatch() {
+	const lines = [];
+	let last = '';
+	const t0 = Date.now();
+	const timer = setInterval(() => {
+		const now = adb(['shell', 'am', 'get-config'], { soft: true, timeout: 10_000 }).split('\n').find((l) => /^config:/.test(l)) || '';
+		if (now && now !== last) {
+			lines.push(`${((Date.now() - t0) / 1000).toFixed(1)}s ${now}`);
+			if (last) console.log(`device configuration changed: ${last} -> ${now}`);
+			last = now;
+			writeFileSync(join(OUT, 'config-watch.log'), lines.join('\n') + '\n');
+		}
+	}, 1000);
+	return () => clearInterval(timer);
+}
 
 async function main() {
 	let cards = 0;
+	if (RECOVER) rec.recover = reattach;
+	stopRelaunchWatch = startRelaunchWatch();
+	if (process.env.E2E_DIAG === '1') {
+		const stopConfig = startConfigWatch();
+		const stopRelaunch = stopRelaunchWatch;
+		stopRelaunchWatch = () => {
+			stopConfig();
+			stopRelaunch();
+		};
+	}
 
 	await rec.step('server: seed packs, create a learner with four cards', async () => {
 		// The fixture dictionaries plus a tiny generated strokes pack (two characters with two strokes each; the touch suite).
@@ -256,7 +302,8 @@ async function main() {
 				const notes = await cdp.eval('document.getElementById("notes").innerText');
 				screenshot('02-address-checked');
 				if (!/plain http|http/i.test(notes) || !/Found qinqin/.test(notes)) throw new Error(`unexpected notes: ${notes}`);
-				await cdp.eval('document.querySelector("#actions button.primary").click()');
+				// The click recreates the activity: answer first, click in the next task (a reply raced the destroyed page).
+				await cdp.eval('setTimeout(() => document.querySelector("#actions button.primary").click(), 50); true');
 				cdp.close();
 				const t0 = Date.now();
 				cdp = await connectPage(ORIGIN + '/', { timeout: 90_000 });
@@ -677,6 +724,7 @@ try {
 		console.log(`cannot write ${OUT}: ${err.message}`);
 	}
 	await stopServer();
+	stopRelaunchWatch();
 	console.log(`out dir: ${OUT}`);
 	rec.write();
 	process.exit(rec.summary().ok ? 0 : 1);

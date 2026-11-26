@@ -57,4 +57,5 @@ var Rules = []Rule{
 	{Type: "review", Feature: "flashcards"},
 	{Type: "read", Feature: "reader", Measure: &Measure{Field: "seconds", Min: 30, Max: 7200}, PointsPer: 300},
 	{Type: "journal", Feature: "journal", DistinctBy: "entryId"},
+	{Type: "script", Feature: "scripts"},
 }

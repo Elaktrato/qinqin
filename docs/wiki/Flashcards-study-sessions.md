@@ -53,7 +53,7 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, 通用�
 | Word Salad | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, then **Check** (or **Show answer**) | an example sentence |
 | Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character; kana stay visible | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |
-| Reverse | See the meaning, recall the word; optional **Show reading** hint and typing, then **Show answer** | a word (not a character) with a meaning |
+| Reverse | See the meaning, recall the word; typing, then **Show answer**; the reading is a [hint](#hints) | a word (not a character) with a meaning |
 | Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
 
 - **Word Salad** gets harder as a card settles: new or short-memory cards (stability under 4 days) show word tiles with the translation; middle cards (under 21 days) hide the translation behind **Show translation**, which counts as a hint; long-memory cards (21 days or more) split every word into single characters. The tier is named on the card. If the sentence cannot be cut into words, each character becomes a tile.
@@ -97,7 +97,35 @@ The actions sit at the bottom of the screen. Before the answer there is one butt
 | Build the sentence | tap the tiles in order (or Tab and Enter), then **Check**; 1 to 4 grade once checked |
 | Write | draw with mouse, pen or touch; 1 to 4 grade once every character is done |
 | Tones | 1 to 5 set the highlighted syllable's tone (5 is neutral), ← and → move, Backspace clears, Enter checks; then 1 to 4 grade |
+| Every card with a hint left | H asks for the next hint (Alt+H inside a text field, where H is a letter) |
 | Every card, once one was graded | Z goes back to the card graded before (see [Changing a grade](#changing-a-grade)); there 1 to 4 change its grade and Esc returns |
+
+## Hints
+
+Every card can offer a small **Hint** button (and the H key) that shows one more piece of help each time you press it, in a fixed order: the word's **reading** (kana, pinyin or zhuyin, above the word like furigana), then its **picture**. The picture is offered only for words that have one (a bundled picture set is installed on the server) and while the **Pictures** visual aid is on ([Settings tour](Settings-tour)). The answer of a Recognise, Recall or writing card also shows the picture, with its credit, unless the hint already showed it. The Hint button disappears when no hint is left, and after you answer.
+
+What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
+
+Asking for a hint costs a little: the suggested grade goes down one step (Easy to Good, Good to Hard; a card you grade yourself is suggested Hard, and Hard and Again stay as they are). One hint or three, the suggestion drops once. You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
+
+## Starter mode
+
+For people who are new to a language (Japanese and Chinese so far). You get a short set of common, picturable words, the **Starter words**, in your own decks, and each word starts as a picture with its pronunciation. The more you get to know **that word**, the more of the real script it shows. It is a display rule only: the cards, their history and their schedules are the same with Starter mode on or off.
+
+| Stage | Japanese front | Chinese front |
+|---|---|---|
+| 1 | picture and romaji | picture and pinyin |
+| 2 | picture and hiragana with romaji | picture and hanzi with pinyin |
+| 3 | picture and hiragana | hanzi with pinyin, picture as a hint |
+| 4 | hiragana, picture as a hint | hanzi, picture as a hint |
+| 5 | kanji with hiragana above (furigana), picture as a hint | the normal card |
+| 6 | the normal card | |
+
+Loanwords show katakana where hiragana is used above. Words that are normally written in kana stop at stage 4, which is their normal card. "Picture as a hint" means the picture is hidden until you press **Hint** (or H), the same control and the same grading rule as every other hint. The meaning is always on the back, and the play button is on the front at every stage.
+
+A word moves up when you answer it **Good or Easy on a different day** (at least twelve hours after the last answer that counted): one step for the first answer, then at 2, 3, 5 and 7 such answers for Japanese (1, 2, 4 and 6 for Chinese). **Hard** keeps the word where it is, and **Again** drops it one stage. The first time a word reaches a new stage its card says what changed ("New: now with hiragana").
+
+Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are a seed list that has not yet been read through by a person.
 
 ## Your notes on the answer side
 

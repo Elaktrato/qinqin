@@ -21,6 +21,8 @@ var strokeFile = regexp.MustCompile(`^U([1-9A-F][0-9A-F]{0,5})\.json$`)
 // character from the installed strokes packs, byte for byte as the
 // hanzi-writer-data file. Public and token-free like the static files it
 // replaces; anything but the canonical name of a code point with data is 404.
+// The optional ?lang=ja asks for the shapes of that language where packs differ
+// (strokes.LookupFor); a malformed code is 400.
 func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 	m := strokeFile.FindStringSubmatch(r.PathValue("file"))
 	if m == nil {
@@ -32,7 +34,12 @@ func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "No such stroke file.")
 		return
 	}
-	data, ok, err := strokes.Lookup(r.Context(), s.db, string(rune(cp)))
+	lang, valid := strokeLang(r)
+	if !valid {
+		writeError(w, http.StatusBadRequest, "bad_request", "The language is a lower-case code of two or three letters.")
+		return
+	}
+	data, ok, err := strokes.LookupFor(r.Context(), s.db, string(rune(cp)), lang)
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -48,6 +55,22 @@ func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 	h.Set("Cache-Control", "public, max-age=86400")
 	h.Set("ETag", `"`+hex.EncodeToString(sum[:16])+`"`)
 	serveContent(w, r, time.Time{}, strings.NewReader(string(data)))
+}
+
+// strokeLangRE is a language code the stroke lookup accepts: two or three lower-case letters.
+var strokeLangRE = regexp.MustCompile(`^[a-z]{2,3}$`)
+
+// strokeLang reads the optional ?lang= of a stroke request: "" when it is absent, the code when it is well
+// formed, valid false when it is empty, repeated or malformed. Other parameters are ignored.
+func strokeLang(r *http.Request) (lang string, valid bool) {
+	vals, present := r.URL.Query()["lang"]
+	if !present {
+		return "", true
+	}
+	if len(vals) != 1 || !strokeLangRE.MatchString(vals[0]) {
+		return "", false
+	}
+	return vals[0], true
 }
 
 // strokePackBody is one row of GET /api/stroke-packs: the credits of an

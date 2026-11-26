@@ -1,8 +1,9 @@
-# Card ids, burying, cloze, deck sessions, the session queue and the session mix (reverse and cloze cards, #65; #132; #175)
+# Card ids, burying, cloze, deck sessions, the session queue, the session mix and hints (reverse and cloze cards, #65; #132; #175; #215)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
 `deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
-`gaps`, `queues`; `session-queue.json` has `noLimit` and `cases`.
+`gaps`, `queues`; `session-queue.json` has `noLimit` and `cases`; `hints.json` has `kinds`, `modes`, `notApplicable`,
+`defaults`, `settings`, `plans`, `grades`, `results` (below).
 
 ## Card kinds and ids
 
@@ -200,3 +201,48 @@ reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`,
 
 Case: `keys`: `{cardId, seed, fnv, key}` (exact doubles); `gaps`: `{n, gap}`; `queues`: `{name, note?, seed, order,
 vocabFirst, items: [{cardId, kind, entryId, review}], expect: [cardId]}` (`items` in plan order).
+
+## Hints (`hints.json`, #215)
+
+Optional help a learner asks for during a review instead of looking at the answer, on every card kind. Web:
+`lib/study/hints.ts` (`HINT_REGISTRY`, `readHintSettings`, `resolveHints`, `lowerForHints`, `applyHints`), decoded by
+`apps/web/src/lib/study/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
+
+- **Hint kinds** (the registry, in the fixed order they are revealed in): `reading` (the entry's readings: kana,
+  pinyin, zhuyin, romaji, on and kun), then `picture` (ready since #212: an entry
+  offers it only when it has one, `hasPicture`: an images pack maps it, #216, and the Pictures visual aid is on,
+  `aids/README.md`). A new kind is a new registry row with its own defaults; Starter mode
+  (#214) uses the same kinds, rules and display, and replaces the modes of one card with `forced` ones (its stages).
+- **Modes**, per hint kind and card kind: `always` (part of the front, shown from the start), `hint` (hidden until the
+  learner asks), `never`. **Defaults** are the table `defaults` in the fixture: reading is a hint on `vocab`
+  (Recognise), `sentence`, `reverse` (Recall) and `cloze`, always on `writing` (the writing card has always shown
+  it), never on `tone` (there it is the answer: `notApplicable`); picture is a hint on `vocab`, `writing`, `tone` and
+  `reverse`, never on `sentence` and `cloze`.
+- **Setting**: the workspace-settings key `hints` (`settings/`): `{<kind>: {<card kind>: <mode>}}`, written one cell at
+  a time by merge patch. Read cell by cell: an absent cell, an unknown mode, a non-object member, an unknown kind or
+  card kind is the default (never an error); a pair in `notApplicable` is `never` whatever is stored. Because it is a
+  workspace setting it is synced with the workspace and part of a backup (a restore keeps unknown members).
+- **Plan of one card** (`resolveHints`): for each registry kind in order, skip it when it does not apply to the card
+  kind or the entry cannot offer it (`hasReading`: the entry has at least one reading; `hasPicture`), else its mode
+  (`forced` over the setting) puts it in `always` or `onRequest`; `never` leaves it out. Cases: `plans`.
+- **The control**: one Hint control per card, offered while `onRequest` has a kind left and the card is not answered.
+  Each press reveals the next kind of `onRequest`, one at a time, in the fixed order. `always` kinds are on view from
+  the start and are not counted. Web: a Hint button and the H key (Alt+H inside a text field, where H is a letter).
+  Android implements the same control with its own widget.
+- **Grade rule** (`lowerForHints(suggested, used)`, `used` = hints revealed with the control): with `used = 0`
+  nothing changes; with `used >= 1` the suggestion goes down one step: Easy (4) to Good (3), Good (3) to Hard (2);
+  Hard and Again stay, and no suggestion (a self-graded card) counts as Good and becomes Hard (2). A second hint
+  lowers no further. The learner can still pick any grade; this
+  only moves the suggestion. Cases: `grades`.
+- **Recording** (`applyHints(result, used)`): the review's `meta.hints` is the card's own help count plus `used`
+  (writing: stroke hints and shown strokes; sentence: the translation shown and giving up). The card's own help is
+  not changed by this rule and, as before, does not lower the suggestion by itself. Cases: `results`.
+
+Ruling (owner, 2026-11-26; replaces "capped at Hard") — a hint lowers the suggestion by one step, a card without a
+suggestion counts as Good — a peek at a word the learner nearly knew no longer drops an Easy suggestion to Hard,
+and Again and Hard are not lowered further — cost: where the suggested grade was Easy the learner still sees Good,
+and the stored reviews of earlier builds (suggestion capped at Hard) are not rewritten.
+
+Ruling: the control's hints lower the suggestion but the earlier in-card helps (stroke hint, translation, give-up)
+keep their own suggestions — those were never part of the grade and changing them would shift every writing and
+word-order suggestion in already-tested sessions — cost: a stroke hint still leaves the suggestion at Good.

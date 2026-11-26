@@ -3,7 +3,7 @@
 // main (v0.6.0: the plugin manifests #199 removed were still copied):
 // node --test scripts/dockerfile.test.mjs
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -79,4 +79,27 @@ test('the image takes its build metadata from build args (#154)', () => {
 	assert.match(wf, /version=dev\n\s+case "\$REF" in refs\/tags\/v\*\) version="\$\{REF_NAME#v\}"/);
 	// ...and a v* tag that is not semver fails the job instead of reporting dev.
 	assert.match(wf, /is not semver/);
+});
+
+// The pictures are CC BY-SA 4.0 and stay separate packs (#216): built in their own stage,
+// copied into the runtime image as data, never into the Go build (go:embed) or the web build.
+test('the pictures stay out of the binary and the web build (#216)', () => {
+	const df = readFileSync(join(root, 'Dockerfile'), 'utf8');
+	const stage = (name) => {
+		const parts = df.split(/^FROM /m).filter((p) => new RegExp(`^\\S+ AS ${name}\\b`).test(p));
+		assert.equal(parts.length, 1, `stage ${name} exists`);
+		return parts[0];
+	};
+	assert.match(stage('images'), /prepare-images-pack\.mjs/);
+	for (const name of ['web', 'build']) assert.doesNotMatch(stage(name), /images|openmoji|mulberry/i, `the ${name} stage takes no pictures`);
+	assert.match(df, /^COPY --from=images \/out \/opt\/qinqin\/images$/m);
+	assert.match(df, /QINQIN_PACKS=[^\n]*\/opt\/qinqin\/images/);
+	// no Go source embeds a picture or the images directory
+	const goSources = readdirSync(join(root, 'server'), { recursive: true }).filter((f) => String(f).endsWith('.go') && !String(f).endsWith('_test.go'));
+	const embeds = goSources.flatMap((f) =>
+		readFileSync(join(root, 'server', String(f)), 'utf8')
+			.split('\n')
+			.filter((l) => /^\s*\/\/go:embed/.test(l) && /svg|image|openmoji|mulberry/i.test(l))
+	);
+	assert.deepEqual(embeds, [], 'no go:embed of a picture');
 });

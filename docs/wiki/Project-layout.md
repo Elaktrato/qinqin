@@ -45,6 +45,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 | `scripts/prepare-strokes-pack.mjs` | Builds the stroke-order pack from the pinned `hanzi-writer-data` package |
+| `scripts/fetch-kanjivg-strokes.sh`, `scripts/prepare-kanjivg-strokes.mjs` | Build the Japanese stroke pack `kanjivg-strokes` from the pinned KanjiVG checkout |
 | `scripts/prepare-font-pack.mjs` | Builds a hanzi/kanji font pack from a pinned upstream face (needs `npm --prefix scripts/fonts ci`) |
 | `server/tools/tatoeba` | Builds the example sentence packs `zh-sentences-tatoeba` and `ja-sentences-tatoeba` from a pinned Tatoeba export (`go run ./tools/tatoeba pin`, then `build`, from `server/`; rules in `rules.json`; see [Data and licences](Data-and-licences#example-sentences-tatoeba)) |
 | `scripts/fetch-audio-kanjialive.sh`, `prepare-audio-kanjialive.mjs`, `fetch-audio-commons.mjs` | The Kanji alive audio pack (used by the image build) and local-only Commons audio |

@@ -1,0 +1,3173 @@
+language	target	sense	concept	score	basis	note
+ja	j:1000160	1	1F455	100	name+gloss	Ｔシャツ
+ja	j:1001120	1	1F4A9	100	name+gloss	ウンチ
+ja	j:1001390	1	1F362	100	name+gloss	御田
+ja	j:1001620	1	1F359	100	name+gloss	お握り
+ja	j:1001670	1	1F47B	100	name+gloss	お化け
+ja	j:1002010	1	1F9D2	80	gloss	お子様
+ja	j:1002010	2	1F9D2	80	gloss	お子様
+ja	j:1002100	1	1F6BD	80	gloss	お手洗い
+ja	j:1002120	1	1F46E	80	gloss	お巡りさん
+ja	j:1002320	1	1F474	100	name+gloss	お祖父さん
+ja	j:1002320	2	1F474	100	name+gloss	お祖父さん
+ja	j:1002330	1	1F475	100	name+gloss	お祖母さん
+ja	j:1002330	2	1F475	100	name+gloss	お祖母さん
+ja	j:1002680	2	1F44D	80	gloss	お墨付き
+ja	j:1003500	0	2728	90	name	キラキラ
+ja	j:1005930	1	1F954	100	name+gloss	じゃが芋
+ja	j:1013560	1	1F9D1-200D-1F3A8	80	gloss	アーティスト
+ja	j:1013970	1	1F9CA	80	gloss	アイス
+ja	j:1013970	2	1F368	80	gloss	アイス
+ja	j:1013970	5	1F9CA	80	gloss	アイス
+ja	j:1013980	1	1F368	100	name+gloss	アイスクリーム
+ja	j:1014060	1	1F3D2	100	name+gloss	アイスホッケー
+ja	j:1014680	4	E10D	80	gloss	ＯＵＴ
+ja	j:1014900	1	E144	80	gloss	アウトレット
+ja	j:1014900	2	E144	80	gloss	アウトレット
+ja	j:1015630	1	1FA97	100	name+gloss	アコーディオン
+ja	j:1018770	0	1F3C8	90	name	アメフト
+ja	j:1019850	1	2693	80	gloss	アンカー
+ja	j:1019850	2	2693	80	gloss	アンカー
+ja	j:1019850	3	2693	80	gloss	アンカー
+ja	j:1019850	4	2693	80	gloss	アンカー
+ja	j:1019850	6	2693	80	gloss	アンカー
+ja	j:1019850	8	2693	80	gloss	アンカー
+ja	j:1020770	1	1F985	90	name+gloss	イーグル
+ja	j:1020770	2	1F985	90	name+gloss	イーグル
+ja	j:1024190	1	2139	90	name+gloss	インフォメーション
+ja	j:1024950	1	1F469	80	gloss	ウーマン
+ja	j:1025220	1	1FA9F	90	name+gloss	ウィンドウ
+ja	j:1025220	2	1FA9F	90	name+gloss	ウィンドウ
+ja	j:1025225	3	1FA9F	80	gloss	ウインド
+ja	j:1025470	0	1F609	90	name	ウインク
+ja	j:1025480	1	1FABD	80	gloss	ウイング
+ja	j:1025480	2	1FABD	80	gloss	ウイング
+ja	j:1025480	3	1FABD	80	gloss	ウイング
+ja	j:1025600	1	E189	80	gloss	ウインドサーフィン
+ja	j:1026760	1	1FAB5	80	gloss	ウッド
+ja	j:1026760	2	1FAB5	80	gloss	ウッド
+ja	j:1027660	1	1F47D	100	name+gloss	エイリアン
+ja	j:1028990	2	1F3F7	80	gloss	エチケット
+ja	j:1029030	1	1FA7B	100	name+gloss	Ｘ線
+ja	j:1029150	8	1F573	80	gloss	Ｈ
+ja	j:1032030	1	1F3CD	100	name+gloss	オートバイ
+ja	j:1034420	1	1F913	100	name+gloss	オタク
+ja	j:1034500	1	1F9C5	80	gloss	オニオン
+ja	j:1035510	1	1F9A7	100	name+gloss	オランウータン
+ja	j:1036400	4	1F4B3	80	gloss	カード
+ja	j:1036740	1	1F94C	100	name+gloss	カーリング
+ja	j:1036800	1	1FA81	90	name+gloss	カイト
+ja	j:1037310	3	1F6C3	80	gloss	カスタム
+ja	j:1037930	1	1F6F6	100	name+gloss	カヌー
+ja	j:1038120	1	E200	80	gloss	カフェテリア
+ja	j:1038350	1	1F4F7	100	name+gloss	カメラ
+ja	j:1039220	1	1F4C5	100	name+gloss	カレンダー
+ja	j:1039330	1	1F998	100	name+gloss	カンガルー
+ja	j:1039820	1	1F467	80	gloss	ガール
+ja	j:1040260	0	26FD	90	name	ガソリンスタンド
+ja	j:1040680	1	1F511	80	gloss	キー
+ja	j:1040680	2	1F511	80	gloss	キー
+ja	j:1040680	3	1F511	80	gloss	キー
+ja	j:1040680	4	1F511	80	gloss	キー
+ja	j:1040680	5	1F511	80	gloss	キー
+ja	j:1040910	0	2328	90	name	キーボード
+ja	j:1041890	1	1F42A	80	gloss	キャメル
+ja	j:1042080	1	1F36C	100	name+gloss	キャンディ
+ja	j:1042100	1	1F56F	90	name+gloss	キャンドル
+ja	j:1042180	1	1F3D5	80	gloss	キャンピング
+ja	j:1042200	1	1F3D5	100	name+gloss	キャンプ
+ja	j:1042770	1	2699	90	name+gloss	ギア
+ja	j:1042820	1	1F3B8	100	name+gloss	ギター
+ja	j:1043260	2	1F36A	80	gloss	クーキー
+ja	j:1043760	1	1F36A	100	name+gloss	クッキー
+ja	j:1043760	2	1F36A	100	name+gloss	クッキー
+ja	j:1043770	1	1F373	80	gloss	クッキング
+ja	j:1043980	1	1F451	90	name+gloss	クラウン
+ja	j:1043980	2	1F451	90	name+gloss	クラウン
+ja	j:1043980	3	1F451	90	name+gloss	クラウン
+ja	j:1044180	2	1F389	100	name+gloss	クラッカー
+ja	j:1044310	4	2663	100	name+gloss	クラブ
+ja	j:1044480	2	1F368	80	gloss	クリーム
+ja	j:1045330	3	1F4B3	80	gloss	クレジット
+ja	j:1045340	1	1F4B3	100	name+gloss	クレジットカード
+ja	j:1046430	3	1F453	80	gloss	グラス
+ja	j:1047860	1	E0C7	80	gloss	ケーキ
+ja	j:1048000	1	E1CB	80	gloss	ケーブル
+ja	j:1048860	2	1F3A2	80	gloss	コースター
+ja	j:1049000	1	1F9E5	100	name+gloss	コート
+ja	j:1049830	1	1F428	100	name+gloss	コアラ
+ja	j:1049870	1	1FA99	100	name+gloss	コイン
+ja	j:1050310	1	1F9D1-200D-1F373	100	name+gloss	コック
+ja	j:1050610	1	00A9	90	name+gloss	コピーライト
+ja	j:1053130	1	1F9ED	100	name+gloss	コンパス
+ja	j:1053130	2	1F9ED	100	name+gloss	コンパス
+ja	j:1053280	1	1F3EA	100	name+gloss	コンビニ
+ja	j:1054110	1	1F97D	100	name+gloss	ゴーグル
+ja	j:1054170	1	1F47B	90	name+gloss	ゴースト
+ja	j:1054400	1	1FAB3	100	name+gloss	蜚蠊
+ja	j:1054600	1	1F98D	100	name+gloss	ゴリラ
+ja	j:1054620	0	26F3	90	name	ゴルフ
+ja	j:1054750	1	1F3AA	100	name+gloss	サーカス
+ja	j:1054780	1	E1D7	80	gloss	サーキット
+ja	j:1054780	2	E1D7	80	gloss	サーキット
+ja	j:1054780	3	E1D7	80	gloss	サーキット
+ja	j:1055220	1	E1C4	80	gloss	サーベイランス
+ja	j:1055630	1	1F300	90	name+gloss	サイクロン
+ja	j:1056490	1	1F3B7	90	name+gloss	サクソフォン
+ja	j:1056700	1	26BD	100	name+gloss	サッカー
+ja	j:1056740	1	1F3B7	100	name+gloss	サックス
+ja	j:1056800	1	1F6F0	80	gloss	サテライト
+ja	j:1057960	1	1F9D1-200D-1F4BC	80	gloss	サラリーマン
+ja	j:1057980	1	1F97B	100	name+gloss	サリー
+ja	j:1058300	1	1F576	100	name+gloss	サングラス
+ja	j:1058480	0	1F461	90	name	サンダル
+ja	j:1058580	1	1F96A	100	name+gloss	サンドイッチ
+ja	j:1059040	0	1F99E	90	name	蝲蛄
+ja	j:1059450	1	1F4BA	80	gloss	シート
+ja	j:1059670	1	1F9AD	80	gloss	シール
+ja	j:1059680	1	1F6E1	90	name+gloss	シールド
+ja	j:1060060	1	E098	80	gloss	シェルター
+ja	j:1060660	1	1F6A2	80	gloss	シップ
+ja	j:1060950	1	1F3A6	80	gloss	シネマ
+ja	j:1061570	4	E20B	80	gloss	シャトル
+ja	j:1061710	1	1FA8F	100	name+gloss	シャベル
+ja	j:1061820	1	1F6BF	100	name+gloss	シャワー
+ja	j:1061910	0	1F37E	90	name	三鞭酒
+ja	j:1062290	1	1FA73	100	name+gloss	ショーツ
+ja	j:1062460	1	1FA73	80	gloss	ショートパンツ
+ja	j:1062770	1	1F6D2	100	name+gloss	ショッピングカート
+ja	j:1063090	1	1F489	80	gloss	シリンジ
+ja	j:1063390	1	1F9D1-200D-1F3A4	80	gloss	シンガー
+ja	j:1064050	1	1F456	80	gloss	Ｇパン
+ja	j:1064120	1	1F456	100	name+gloss	ジーンズ
+ja	j:1064120	2	1F456	100	name+gloss	ジーンズ
+ja	j:1064200	1	1F3A2	100	name+gloss	ジェットコースター
+ja	j:1064620	1	1F9E9	100	name+gloss	ジグソーパズル
+ja	j:1064920	2	1FAD9	90	name+gloss	ジャー
+ja	j:1065450	1	1F9D1-200D-2696-FE0F	80	gloss	ジャッジ
+ja	j:1066220	1	1F0CF	100	name+gloss	ジョーカー
+ja	j:1066220	2	1F0CF	100	name+gloss	ジョーカー
+ja	j:1066390	1	1F37A	80	gloss	ジョッキ
+ja	j:1066510	1	1F992	80	gloss	ジラフ
+ja	j:1066690	1	1F9F3	100	name+gloss	スーツケース
+ja	j:1067210	1	E1C3	80	gloss	スイッチ
+ja	j:1067210	2	E1C3	80	gloss	スイッチ
+ja	j:1067210	3	E1C3	80	gloss	スイッチ
+ja	j:1067480	1	1F9E3	80	gloss	スカーフ
+ja	j:1067740	1	1F9A8	100	name+gloss	スカンク
+ja	j:1067740	2	1F9A8	100	name+gloss	スカンク
+ja	j:1067770	1	1F3BF	100	name+gloss	スキー
+ja	j:1067770	2	1F3BF	100	name+gloss	スキー
+ja	j:1067830	1	26F7	100	name+gloss	スキーヤー
+ja	j:1068190	0	1F6F5	90	name	スクーター
+ja	j:1068230	1	1F3EB	80	gloss	スクール
+ja	j:1069160	1	1FA8F	90	name+gloss	スコップ
+ja	j:1069210	1	2B50	100	name+gloss	スター
+ja	j:1069210	2	2B50	100	name+gloss	スター
+ja	j:1069210	3	2B50	100	name+gloss	スター
+ja	j:1069570	1	1F3DF	90	name+gloss	スタジアム
+ja	j:1069930	5	1F689	80	gloss	スタンド
+ja	j:1070300	1	1F689	90	name+gloss	ステーション
+ja	j:1071110	1	23F1	100	name+gloss	ストップウォッチ
+ja	j:1071590	1	1F353	90	name+gloss	ストロベリー
+ja	j:1071680	1	1F45F	100	name+gloss	スニーカー
+ja	j:1071720	1	1F40D	80	gloss	スネーク
+ja	j:1072080	1	1F35D	100	name+gloss	スパゲティ
+ja	j:1072240	0	1F508	90	name	スピーカー
+ja	j:1072590	1	1F944	100	name+gloss	スプーン
+ja	j:1072870	1	E20B	80	gloss	スペースシャトル
+ja	j:1073530	1	1F9FD	100	name+gloss	スポンジ
+ja	j:1074090	2	1F3B0	90	name+gloss	スロット
+ja	j:1074170	1	1F9A2	80	gloss	スワン
+ja	j:1075340	1	1F9FC	90	name+gloss	ソープ
+ja	j:1075420	1	1F9E6	100	name+gloss	ソックス
+ja	j:1075500	5	1F94E	80	gloss	ソフト
+ja	j:1075550	1	1F94E	100	name+gloss	ソフトボール
+ja	j:1076160	1	E203	80	gloss	タウン
+ja	j:1076190	1	1F695	100	name+gloss	タクシー
+ja	j:1076340	1	E100	80	gloss	タップ
+ja	j:1076340	2	E100	80	gloss	タップ
+ja	j:1076340	4	E100	80	gloss	タップ
+ja	j:1076480	1	1F445	80	gloss	タン
+ja	j:1076480	2	1F445	80	gloss	タン
+ja	j:1077440	1	1FA91	90	name+gloss	チェア
+ja	j:1077680	1	1F414	80	gloss	チキン
+ja	j:1077720	1	1F3AB	100	name+gloss	チケット
+ja	j:1077800	1	26EA	80	gloss	チャーチ
+ja	j:1077900	1	1F9D2	80	gloss	チャイルド
+ja	j:1078160	1	1F337	100	name+gloss	チューリップ
+ja	j:1078270	0	1F36B	90	name	チョコレート
+ja	j:1078490	3	1F9F5	80	gloss	ツリー
+ja	j:1080000	1	1F3BE	100	name+gloss	テニス
+ja	j:1080510	1	1F4FA	100	name+gloss	テレビ
+ja	j:1080520	1	1F3AE	100	name+gloss	ＴＶゲーム
+ja	j:1080550	1	1F4FA	80	gloss	テレビジョン
+ja	j:1080690	1	260E	80	gloss	テレホン
+ja	j:1081040	1	26FA	100	name+gloss	テント
+ja	j:1083450	2	1F456	90	name+gloss	デニム
+ja	j:1083590	1	1F3EC	100	name+gloss	デパート
+ja	j:1083590	2	1F3EC	100	name+gloss	デパート
+ja	j:1084810	1	1F6BB	100	name+gloss	トイレ
+ja	j:1084830	1	1F6BD	80	gloss	トイレット
+ja	j:1084870	0	1F9FB	90	name	トイレットペーパー
+ja	j:1085420	1	1F345	100	name+gloss	トマト
+ja	j:1085660	1	1F69C	100	name+gloss	トラクター
+ja	j:1085760	0	1F69A	90	name	トラック
+ja	j:1086440	1	1F3BA	100	name+gloss	トランペット
+ja	j:1087370	0	1F9CC	90	name	トロール
+ja	j:1087510	1	1F3C6	100	name+gloss	トロフィー
+ja	j:1087550	1	1FA8A	100	name+gloss	トロンボーン
+ja	j:1087690	1	1F369	100	name+gloss	ドーナツ
+ja	j:1087820	1	1F6AA	100	name+gloss	ドア
+ja	j:1088560	2	1FA9B	90	name+gloss	ドライバー
+ja	j:1088740	1	1F409	100	name+gloss	ドラゴン
+ja	j:1088890	1	1F941	100	name+gloss	ドラム
+ja	j:1089280	1	1F457	80	gloss	ドレス
+ja	j:1091130	0	1F60A	90	name	ニコニコ
+ja	j:1092820	1	1F454	100	name+gloss	ネクタイ
+ja	j:1093450	1	1F4D3	100	name+gloss	ノート
+ja	j:1093450	4	1F4D3	100	name+gloss	ノート
+ja	j:1093920	3	E100	80	gloss	ノック
+ja	j:1094790	1	1F33F	100	name+gloss	ハーブ
+ja	j:1094810	1	1FA89	100	name+gloss	ハープ
+ja	j:1095360	0	1F460	90	name	ハイヒール
+ja	j:1095380	1	1F33A	100	name+gloss	ハイビスカス
+ja	j:1095670	1	1F3E0	80	gloss	ハウス
+ja	j:1096210	1	1F439	90	name+gloss	ハムスター
+ja	j:1096770	1	1F45C	100	name+gloss	ハンドバッグ
+ja	j:1096860	1	1F354	100	name+gloss	ハンバーガー
+ja	j:1096910	1	1F528	100	name+gloss	ハンマー
+ja	j:1097050	1	E1D9	80	gloss	バーコード
+ja	j:1097740	1	1F3BB	100	name+gloss	バイオリン
+ja	j:1097810	1	1F3CD	80	gloss	バイク
+ja	j:1097810	2	1F6B2	80	gloss	バイク
+ja	j:1098340	1	1FAA3	100	name+gloss	馬穴
+ja	j:1098390	1	1F68C	100	name+gloss	バス
+ja	j:1098390	2	1F68C	100	name+gloss	バス
+ja	j:1098430	1	1F9FA	80	gloss	バスケット
+ja	j:1098430	2	1F3C0	80	gloss	バスケット
+ja	j:1098440	1	1F3C0	100	name+gloss	バスケットボール
+ja	j:1098580	1	1F68F	100	name+gloss	バス停
+ja	j:1098620	1	1F9C8	100	name+gloss	バター
+ja	j:1098660	6	1F3CD	80	gloss	バタバタ
+ja	j:1098670	1	1F98B	90	name+gloss	バタフライ
+ja	j:1099210	1	1F50B	80	gloss	バッテリー
+ja	j:1099210	2	1F50B	80	gloss	バッテリー
+ja	j:1099230	1	1F987	80	gloss	バット
+ja	j:1099390	1	1F3F8	100	name+gloss	バドミントン
+ja	j:1099420	1	1F34C	100	name+gloss	バナナ
+ja	j:1099840	1	1F388	90	name+gloss	バルーン
+ja	j:1099950	1	1F3D0	90	name+gloss	バレー
+ja	j:1099960	1	1F3D0	100	name+gloss	バレーボール
+ja	j:1100130	1	1F3E6	80	gloss	バンク
+ja	j:1100130	2	1F3E6	80	gloss	バンク
+ja	j:1100130	3	1F3E6	80	gloss	バンク
+ja	j:1100130	4	1F3E6	80	gloss	バンク
+ja	j:1100130	5	1F3E6	80	gloss	バンク
+ja	j:1101070	1	1F967	100	name+gloss	パイ
+ja	j:1101100	1	1F34D	100	name+gloss	パイナップル
+ja	j:1101260	1	1F9D1-200D-2708-FE0F	100	name+gloss	パイロット
+ja	j:1101700	4	1F4E6	80	gloss	パック
+ja	j:1101710	1	1F4E6	80	gloss	パッケージ
+ja	j:1101950	1	1F693	100	name+gloss	パトカー
+ja	j:1102450	1	1FA82	100	name+gloss	パラシュート
+ja	j:1102490	0	26F1	90	name	パラソル
+ja	j:1102620	0	1F4E1	90	name	パラボラアンテナ
+ja	j:1103090	1	1F35E	80	gloss	パン
+ja	j:1103210	1	1F43C	90	name+gloss	パンダ
+ja	j:1104470	1	1F9AB	100	name+gloss	ビーバー
+ja	j:1104660	1	1F459	100	name+gloss	ビキニ
+ja	j:1105100	1	1F36A	80	gloss	ビスケット
+ja	j:1105470	0	1F4FC	90	name	ビデオテープ
+ja	j:1106000	1	1F3B1	100	name+gloss	ビリヤード
+ja	j:1106250	1	1F351	90	name+gloss	ピーチ
+ja	j:1106260	1	1F95C	100	name+gloss	ピーナッツ
+ja	j:1106340	1	1FAD1	100	name+gloss	ピーマン
+ja	j:1106510	1	E142	80	gloss	ピクチャー
+ja	j:1106620	1	1F355	100	name+gloss	ピザ
+ja	j:1106710	1	26CF	80	gloss	ピック
+ja	j:1106710	4	26CF	80	gloss	ピック
+ja	j:1106710	5	26CF	80	gloss	ピック
+ja	j:1107030	1	1F48A	80	gloss	ピル
+ja	j:1107620	1	1F525	90	name+gloss	ファイア
+ja	j:1108010	1	1F3ED	90	name+gloss	ファクトリー
+ja	j:1108180	1	1F4E0	100	name+gloss	ＦＡＸ
+ja	j:1108180	2	1F4E0	100	name+gloss	ＦＡＸ
+ja	j:1108370	1	1F46A	80	gloss	ファミリー
+ja	j:1109110	1	1F41F	80	gloss	フィッシュ
+ja	j:1109880	1	1F426-200D-1F525	100	name+gloss	フェニックス
+ja	j:1109880	2	1F426-200D-1F525	100	name+gloss	フェニックス
+ja	j:1109980	1	26F4	100	name+gloss	フェリー
+ja	j:1110940	1	1FA9D	100	name+gloss	フック
+ja	j:1110940	2	1FA9D	100	name+gloss	フック
+ja	j:1110940	3	1FA9D	100	name+gloss	フック
+ja	j:1112100	1	1FA88	90	name+gloss	フルート
+ja	j:1112880	1	1F4BE	100	name+gloss	フロッピー
+ja	j:1112890	1	1F4BE	90	name+gloss	フロッピーディスク
+ja	j:1113080	1	1F490	90	name+gloss	ブーケ
+ja	j:1113130	0	1F462	90	name	ブーツ
+ja	j:1113170	1	1FA83	100	name+gloss	ブーメラン
+ja	j:1113530	2	1F492	80	gloss	ブライダル
+ja	j:1114180	1	1FA72	100	name+gloss	ブリーフ
+ja	j:1114820	1	1F35E	80	gloss	ブレッド
+ja	j:1115550	1	1FAA7	100	name+gloss	プラカード
+ja	j:1115630	1	2795	100	name+gloss	プラス
+ja	j:1115630	4	2795	100	name+gloss	プラス
+ja	j:1116190	1	1F36E	100	name+gloss	プリン
+ja	j:1116210	1	1F934	100	name+gloss	プリンス
+ja	j:1116240	1	1F478	100	name+gloss	プリンセス
+ja	j:1116270	1	1F5A8	100	name+gloss	プリンタ
+ja	j:1116840	0	1F381	90	name	プレゼント
+ja	j:1118490	1	1F3A7	100	name+gloss	ヘッドホン
+ja	j:1118730	1	1F681	90	name+gloss	ヘリ
+ja	j:1118780	1	1F681	100	name+gloss	ヘリコプター
+ja	j:1119160	1	1F953	100	name+gloss	ベーコン
+ja	j:1119650	1	1F6CF	100	name+gloss	ベッド
+ja	j:1119820	1	1F476	80	gloss	ベビー
+ja	j:1120010	1	1F514	100	name+gloss	ベル
+ja	j:1120180	1	1F445	80	gloss	ベロ
+ja	j:1120180	2	1F445	80	gloss	ベロ
+ja	j:1120990	2	1F3BA	80	gloss	ペット
+ja	j:1121380	1	1F58A	100	name+gloss	ペン
+ja	j:1121410	1	1F427	100	name+gloss	ペンギン
+ja	j:1121610	0	2712	90	name	ペン先
+ja	j:1122200	1	1F6DE	100	name+gloss	ホイール
+ja	j:1122400	1	1FA9D	80	gloss	ホック
+ja	j:1122410	0	1F3D1	90	name	ホッケー
+ja	j:1122650	1	1F3E8	100	name+gloss	ホテル
+ja	j:1123230	1	1F466	80	gloss	ボーイ
+ja	j:1123540	1	1F3B3	100	name+gloss	ボウリング
+ja	j:1123640	1	1F9B4	80	gloss	ボーン
+ja	j:1123800	1	1F94A	100	name+gloss	ボクシング
+ja	j:1124310	5	E1D5	80	gloss	ボリューム
+ja	j:1124860	7	E1C3	80	gloss	ポイント
+ja	j:1125000	1	1F4DF	90	name+gloss	ポケットベル
+ja	j:1125150	1	1F4EE	80	gloss	ポスト
+ja	j:1125400	1	1F954	80	gloss	ポテト
+ja	j:1126550	1	1F9DC-200D-2640-FE0F	100	name+gloss	マーメイド
+ja	j:1126590	1	1F3A4	100	name+gloss	マイク
+ja	j:1126600	2	1F690	80	gloss	マイクロ
+ja	j:1126740	1	1F690	100	name+gloss	マイクロバス
+ja	j:1126980	1	2796	100	name+gloss	マイナス
+ja	j:1127180	1	26F0	80	gloss	マウンテン
+ja	j:1127470	1	1F9F2	90	name+gloss	マグネット
+ja	j:1128780	2	1F485	90	name+gloss	マニキュア
+ja	j:1129210	1	1F9E3	100	name+gloss	マフラー
+ja	j:1129270	1	1FA87	100	name+gloss	マラカス
+ja	j:1129940	1	1F330	80	gloss	マロン
+ja	j:1129970	1	1F468	80	gloss	マン
+ja	j:1130020	1	1F96D	100	name+gloss	芒果
+ja	j:1130320	1	1F9A3	100	name+gloss	マンモス
+ja	j:1130990	5	E0A1	80	gloss	ミッション
+ja	j:1131750	1	1FA9E	90	name+gloss	ミラー
+ja	j:1132560	1	1F9C9	80	gloss	メート
+ja	j:1132920	2	1F9D1-200D-1F527	80	gloss	メカ
+ja	j:1132970	1	1F9D1-200D-1F527	80	gloss	メカニック
+ja	j:1133060	1	1F4E3	100	name+gloss	メガホン
+ja	j:1133250	1	1F3E0	80	gloss	メゾン
+ja	j:1133500	0	1F3C5	90	name	メダル
+ja	j:1133720	1	1F687	90	name+gloss	メトロ
+ja	j:1134190	1	1F348	100	name+gloss	メロン
+ja	j:1134480	1	E1C8	80	gloss	モーター
+ja	j:1134510	1	1F3CD	80	gloss	モーターサイクル
+ja	j:1134910	1	1F54C	100	name+gloss	モスク
+ja	j:1135680	1	1F69D	100	name+gloss	モノレール
+ja	j:1136000	1	1F412	80	gloss	モンキー
+ja	j:1137620	1	26F5	100	name+gloss	ヨット
+ja	j:1137720	1	1F35C	100	name+gloss	拉麺
+ja	j:1137760	1	1F981	90	name+gloss	ライオン
+ja	j:1137880	1	E143	80	gloss	ライター
+ja	j:1138530	1	1F4E2	80	gloss	ラウドスピーカー
+ja	j:1138690	1	1F3C9	100	name+gloss	ラグビー
+ja	j:1138860	1	1F4FB	100	name+gloss	ラジオ
+ja	j:1139670	1	1F48C	100	name+gloss	ラブレター
+ja	j:1139720	1	1F3F7	90	name+gloss	ラベル
+ja	j:1139720	2	1F3F7	90	name+gloss	ラベル
+ja	j:1139790	1	1F999	100	name+gloss	ラマ
+ja	j:1140830	1	1F9D1-200D-1F4BC	80	gloss	リーマン
+ja	j:1142880	1	1F380	100	name+gloss	リボン
+ja	j:1143400	1	1F517	90	name+gloss	リンク
+ja	j:1143400	2	1F517	90	name+gloss	リンク
+ja	j:1143430	1	1F48D	80	gloss	リング
+ja	j:1144370	1	1F3CE	100	name+gloss	レーシングカー
+ja	j:1145060	1	1F9FE	100	name+gloss	レシート
+ja	j:1145530	1	1F3F7	80	gloss	レッテル
+ja	j:1145720	1	E312	80	gloss	レバー
+ja	j:1146020	1	1F34B	100	name+gloss	檸檬
+ja	j:1146230	1	1FA7B	90	name+gloss	レントゲン
+ja	j:1146400	1	1F9F4	100	name+gloss	ローション
+ja	j:1146470	1	1F339	90	name+gloss	ローズ
+ja	j:1146510	1	1FAB7	80	gloss	ロータス
+ja	j:1146760	1	1F6A1	100	name+gloss	ロープウェイ
+ja	j:1146880	0	1F6FC	90	name	ローラースケート
+ja	j:1147220	1	1F680	100	name+gloss	ロケット
+ja	j:1147870	1	1F916	100	name+gloss	ロボット
+ja	j:1148760	1	E1D4	80	gloss	ワイヤ
+ja	j:1148810	1	1F6DC	80	gloss	ワイヤレス
+ja	j:1149240	1	1F457	100	name+gloss	ワンピース
+ja	j:1152540	0	1F9B9	90	name	悪役
+ja	j:1152730	1	1F91D	100	name+gloss	握手
+ja	j:1153520	1	1F36C	80	gloss	飴
+ja	j:1154860	2	2139	80	gloss	案内
+ja	j:1155950	5	1F3F0	80	gloss	囲い
+ja	j:1157070	1	1FA91	100	name+gloss	椅子
+ja	j:1157080	2	1F376	80	gloss	為
+ja	j:1158500	1	E313	80	gloss	胃
+ja	j:1158600	1	E313	80	gloss	胃袋
+ja	j:1161400	5	E006	80	gloss	一角
+ja	j:1161550	1	1F517	80	gloss	一環
+ja	j:1164440	1	1F46A	80	gloss	一族
+ja	j:1164720	1	1F466	80	gloss	一男
+ja	j:1166490	1	2139	80	gloss	一報
+ja	j:1167020	1	1F46A	80	gloss	一門
+ja	j:1167270	3	1F3EB	80	gloss	一流
+ja	j:1167350	3	1F315	80	gloss	一輪
+ja	j:1167820	0	1F33E	90	name	稲
+ja	j:1170000	0	1F6B0	90	name	飲料水
+ja	j:1171400	1	1F9D1-200D-1F680	100	name+gloss	宇宙飛行士
+ja	j:1171570	1	1F991	100	name+gloss	烏賊
+ja	j:1171680	1	1FAB6	100	name+gloss	羽
+ja	j:1171810	1	1FAB6	90	name+gloss	羽毛
+ja	j:1171910	0	1F327	90	name	雨雲
+ja	j:1172250	1	1F402	80	gloss	丑
+ja	j:1172570	1	1F348	80	gloss	瓜
+ja	j:1172840	2	1F9C9	80	gloss	運転士
+ja	j:1173100	1	2601	80	gloss	雲
+ja	j:1173790	1	1F4FD	100	name+gloss	映写機
+ja	j:1174760	1	1F6F0	80	gloss	衛星
+ja	j:1174760	2	1F6F0	80	gloss	衛星
+ja	j:1174790	2	1F6BD	80	gloss	衛生
+ja	j:1174810	1	1F482	100	name+gloss	衛兵
+ja	j:1175140	1	1F689	100	name+gloss	駅
+ja	j:1176120	2	1F6F8	80	gloss	円盤
+ja	j:1177390	1	1F412	100	name+gloss	猿
+ja	j:1178590	1	270F	100	name+gloss	鉛筆
+ja	j:1178870	1	1F9C2	80	gloss	塩分
+ja	j:1180130	3	E08F	80	gloss	押し
+ja	j:1181450	1	1F451	100	name+gloss	王冠
+ja	j:1181500	1	1F934	90	name+gloss	王子
+ja	j:1181560	1	1F478	90	name+gloss	王女
+ja	j:1182720	5	1F3E0	80	gloss	屋台
+ja	j:1182830	1	1FAA3	90	name+gloss	桶
+ja	j:1182920	1	1F9AA	100	name+gloss	牡蠣
+ja	j:1183160	1	1F9D1-200D-1F3EB	80	gloss	恩師
+ja	j:1183520	1	1F321	100	name+gloss	温度計
+ja	j:1184040	1	1F3B5	100	name+gloss	音符
+ja	j:1191720	2	1F492	80	gloss	嫁入り
+ja	j:1191730	1	1F3E0	100	name+gloss	家
+ja	j:1191740	2	1F3E0	100	name+gloss	家
+ja	j:1191750	1	1F3E0	100	name+gloss	家
+ja	j:1191780	1	1F3E0	80	gloss	家屋
+ja	j:1192150	1	1F46A	100	name+gloss	家族
+ja	j:1192680	3	1F46A	80	gloss	科
+ja	j:1192750	1	1F9D1-200D-1F52C	100	name+gloss	科学者
+ja	j:1193150	1	1F6A7	80	gloss	架設
+ja	j:1193290	1	1F9D1-200D-1F3A4	100	name+gloss	歌手
+ja	j:1193540	3	1F952	80	gloss	河童
+ja	j:1193610	1	1F525	100	name+gloss	火
+ja	j:1193790	1	1F525	80	gloss	火気
+ja	j:1193910	1	1F30B	100	name+gloss	火山
+ja	j:1193950	1	1F525	80	gloss	火事
+ja	j:1194500	2	1F338	80	gloss	花
+ja	j:1194580	1	1F386	80	gloss	花火
+ja	j:1194640	2	2B50	80	gloss	花形
+ja	j:1194790	1	1F490	100	name+gloss	花束
+ja	j:1195240	1	1F346	100	name+gloss	茄子
+ja	j:1195280	1	1F3F7	100	name+gloss	荷札
+ja	j:1195430	1	1F4E6	100	name+gloss	荷物
+ja	j:1196540	1	1F99F	100	name+gloss	蚊
+ja	j:1198560	1	1F9D1-200D-1F4BC	100	name+gloss	会社員
+ja	j:1198810	1	26EA	80	gloss	会堂
+ja	j:1199570	1	E1D7	80	gloss	回線
+ja	j:1199830	1	E1D7	80	gloss	回路
+ja	j:1200600	1	1F526	100	name+gloss	懐中電灯
+ja	j:1200620	1	1F5E1	80	gloss	懐刀
+ja	j:1201670	1	1F42C	100	name+gloss	海豚
+ja	j:1202270	1	E142	80	gloss	絵
+ja	j:1202300	0	1F5BC	90	name	絵画
+ja	j:1202410	1	1F980	100	name+gloss	蟹
+ja	j:1205510	8	1F48D	80	gloss	核
+ja	j:1206730	1	1F3EB	100	name+gloss	学校
+ja	j:1206790	1	1F3EB	80	gloss	学舎
+ja	j:1206900	1	1F9D1-200D-1F393	100	name+gloss	学生
+ja	j:1207000	1	1F9D1-200D-1F393	80	gloss	学徒
+ja	j:1207040	1	1F3EB	80	gloss	学派
+ja	j:1207210	1	26F0	80	gloss	岳
+ja	j:1207490	0	1F3BC	90	name	楽譜
+ja	j:1208120	1	1F373	80	gloss	割烹
+ja	j:1208890	0	1F99B	90	name	樺
+ja	j:1209250	1	1F986	100	name+gloss	鴨
+ja	j:1210480	1	1F321	90	name+gloss	寒暖計
+ja	j:1214540	2	1F96B	90	name+gloss	缶
+ja	j:1214560	1	1F96B	100	name+gloss	缶詰
+ja	j:1214630	1	E312	80	gloss	肝
+ja	j:1214660	1	E312	80	gloss	肝臓
+ja	j:1215930	1	1F6C3	80	gloss	関税
+ja	j:1216560	1	1FAB5	100	name+gloss	丸太
+ja	j:1217040	1	1F3E6	80	gloss	岸
+ja	j:1217270	1	1FAA8	90	name+gloss	岩
+ja	j:1217360	1	1FAA8	100	name+gloss	岩石
+ja	j:1220880	1	1F682	90	name+gloss	機関車
+ja	j:1220990	1	1F443	80	gloss	機首
+ja	j:1222080	1	1F388	80	gloss	気球
+ja	j:1222700	2	1F686	80	gloss	汽車
+ja	j:1222760	0	1F64F	90	name	祈り
+ja	j:1224160	1	E184	80	gloss	騎馬
+ja	j:1224190	1	1F479	100	name+gloss	鬼
+ja	j:1224260	1	1F422	100	name+gloss	亀
+ja	j:1225170	0	1F9D1-200D-1F4BB	90	name	技術者
+ja	j:1225840	0	1F9BF	90	name	義足
+ja	j:1225940	1	1F41C	100	name+gloss	蟻
+ja	j:1226030	2	1F3E0	80	gloss	議院
+ja	j:1226140	1	1FA91	80	gloss	議長
+ja	j:1226770	0	1F6F3	90	name	客船
+ja	j:1228310	1	1F9DB	100	name+gloss	吸血鬼
+ja	j:1228550	1	1F3F9	100	name+gloss	弓矢
+ja	j:1229100	1	1F691	100	name+gloss	救急車
+ja	j:1233220	1	1F41F	80	gloss	魚類
+ja	j:1234210	1	1F3C7	100	name+gloss	競馬
+ja	j:1236750	0	1F631	90	name	恐怖
+ja	j:1236980	1	1F9D1-200D-1F3EB	80	gloss	教員
+ja	j:1237030	1	26EA	100	name+gloss	教会
+ja	j:1237050	1	1F9D1-200D-1F3EB	80	gloss	教官
+ja	j:1237130	1	1F9D1-200D-1F3EB	100	name+gloss	教師
+ja	j:1237150	4	1F3EB	80	gloss	教室
+ja	j:1237360	1	1F9D1-200D-1F3EB	80	gloss	教諭
+ja	j:1237820	4	1FAC1	80	gloss	胸
+ja	j:1237820	5	E313	80	gloss	胸
+ja	j:1238550	1	1FA9E	100	name+gloss	鏡
+ja	j:1240530	12	1F9D1	80	gloss	玉
+ja	j:1240530	14	1F95A	80	gloss	玉
+ja	j:1240530	16	1FA99	80	gloss	玉
+ja	j:1240670	1	1F9C5	100	name+gloss	玉ねぎ
+ja	j:1240700	1	1F33D	100	name+gloss	玉蜀黍
+ja	j:1240890	1	1F9D1-200D-1F4BC	80	gloss	勤め人
+ja	j:1241750	8	1F3EB	80	gloss	筋
+ja	j:1241990	1	1F9E3	90	name+gloss	襟巻き
+ja	j:1242750	1	E000	80	gloss	金魚
+ja	j:1243490	1	1F3E6	100	name+gloss	銀行
+ja	j:1244930	2	1F40E	80	gloss	駒
+ja	j:1246740	1	1F9E6	90	name+gloss	靴下
+ja	j:1246850	1	1F43B	80	gloss	熊
+ja	j:1246880	0	1F330	90	name	栗
+ja	j:1247240	0	1F396	90	name	勲章
+ja	j:1247400	1	26A0	80	gloss	訓戒
+ja	j:1249660	1	1F575	80	gloss	刑事
+ja	j:1249960	3	1F9C9	80	gloss	兄弟
+ja	j:1250680	2	1F4F1	80	gloss	携帯
+ja	j:1250690	1	1F4F1	100	name+gloss	携帯電話
+ja	j:1252330	1	1F46E	80	gloss	警官
+ja	j:1252360	1	26A0	100	name+gloss	警告
+ja	j:1252390	2	1F46E	80	gloss	警察
+ja	j:1252400	1	1F46E	100	name+gloss	警察官
+ja	j:1252470	2	26A0	80	gloss	警鐘
+ja	j:1252520	1	26A0	80	gloss	警報
+ja	j:1252990	1	1F414	100	name+gloss	鶏
+ja	j:1253070	1	1F9D1-200D-1F3A8	100	name+gloss	芸術家
+ja	j:1253270	1	1F40B	100	name+gloss	鯨
+ja	j:1254480	1	1F573	100	name+gloss	穴
+ja	j:1254480	2	1F573	100	name+gloss	穴
+ja	j:1254480	3	1F573	100	name+gloss	穴
+ja	j:1254480	4	1F573	100	name+gloss	穴
+ja	j:1254480	6	1F573	100	name+gloss	穴
+ja	j:1254550	1	1F9A1	100	name+gloss	穴熊
+ja	j:1254610	3	1FAA2	80	gloss	結び
+ja	j:1254810	1	1F492	100	name+gloss	結婚式
+ja	j:1254920	1	1FAA2	80	gloss	結節
+ja	j:1255120	0	1FA78	90	name	血液
+ja	j:1255630	0	1F391	90	name	月見
+ja	j:1256730	1	1F3AB	80	gloss	券
+ja	j:1257420	1	1F6A7	80	gloss	建設
+ja	j:1257500	1	1F6A7	80	gloss	建築
+ja	j:1257750	0	270A	90	name	拳骨
+ja	j:1257830	1	E0AF	80	gloss	検疫
+ja	j:1258080	2	E08F	80	gloss	権
+ja	j:1258090	1	E08F	80	gloss	権威
+ja	j:1258090	2	E08F	80	gloss	権威
+ja	j:1260030	1	2139	80	gloss	見聞
+ja	j:1260040	1	2139	80	gloss	見聞き
+ja	j:1260490	1	1F511	100	name+gloss	鍵
+ja	j:1260490	3	1F511	100	name+gloss	鍵
+ja	j:1260520	0	1F3B9	90	name	鍵盤
+ja	j:1260660	1	1F52C	100	name+gloss	顕微鏡
+ja	j:1260970	1	1F4D2	80	gloss	元帳
+ja	j:1262200	1	E1C8	80	gloss	原動機
+ja	j:1262240	1	E2D4	80	gloss	原発
+ja	j:1262350	1	1F4D2	80	gloss	原簿
+ja	j:1266970	1	1F6AA	90	name+gloss	戸
+ja	j:1267000	1	1F6AA	80	gloss	戸口
+ja	j:1267340	1	1F98A	80	gloss	狐
+ja	j:1267340	2	1F98A	80	gloss	狐
+ja	j:1267610	1	1F405	100	name+gloss	虎
+ja	j:1267900	2	1F941	80	gloss	鼓
+ja	j:1268970	1	1F40E	80	gloss	午
+ja	j:1270590	1	1F35A	100	name+gloss	ご飯
+ja	j:1271510	1	1F482	80	gloss	護衛
+ja	j:1273880	1	1F934	80	gloss	公爵
+ja	j:1275640	1	1F444	100	name+gloss	口
+ja	j:1275640	3	1F444	100	name+gloss	口
+ja	j:1275640	7	1F444	100	name+gloss	口
+ja	j:1276110	1	1F484	100	name+gloss	口紅
+ja	j:1277040	5	1F9D1	80	gloss	向き
+ja	j:1277820	0	1F99A	90	name	孔雀
+ja	j:1277980	1	1F9D1-200D-1F3ED	80	gloss	工員
+ja	j:1278150	0	1F6A7	90	name	工事中
+ja	j:1278350	4	2797	80	gloss	巷
+ja	j:1278780	1	2B50	80	gloss	恒星
+ja	j:1279810	1	1F6A7	80	gloss	構築
+ja	j:1279930	1	E09F	80	gloss	洪水
+ja	j:1280530	1	1FA99	90	name+gloss	硬貨
+ja	j:1280560	1	1F9B4	80	gloss	硬骨
+ja	j:1283250	1	26A1	80	gloss	高圧
+ja	j:1283720	1	1F6E3	100	name+gloss	高速道路
+ja	j:1286160	2	1F451	80	gloss	国王
+ja	j:1288060	1	1F408-200D-2B1B	100	name+gloss	黒猫
+ja	j:1288370	1	1F4BA	80	gloss	腰掛け
+ja	j:1288550	1	1F9B4	100	name+gloss	骨
+ja	j:1290560	0	1F615	90	name	混乱
+ja	j:1291540	0	231B	90	name	砂時計
+ja	j:1291660	2	1F9D2	80	gloss	砂利
+ja	j:1291730	1	26D3	100	name+gloss	鎖
+ja	j:1291770	1	1F4BA	80	gloss	座
+ja	j:1291880	1	1F4BA	100	name+gloss	座席
+ja	j:1295160	1	1F98F	100	name+gloss	犀
+ja	j:1296130	1	1F9D1-200D-2696-FE0F	100	name+gloss	裁判官
+ja	j:1296660	1	1FAB5	90	name+gloss	材木
+ja	j:1298460	0	1F352	90	name	桜ん坊
+ja	j:1298540	4	1F4D3	80	gloss	草紙
+ja	j:1298970	1	1F3AB	80	gloss	札
+ja	j:1298970	2	1F3F7	80	gloss	札
+ja	j:1299670	1	1F988	100	name+gloss	鮫
+ja	j:1301340	1	1F319	100	name+gloss	三日月
+ja	j:1301940	1	2602	100	name+gloss	傘
+ja	j:1302680	1	26F0	100	name+gloss	山
+ja	j:1302680	4	26F0	100	name+gloss	山
+ja	j:1303180	1	1F6D8	90	name+gloss	山崩れ
+ja	j:1303710	1	1FAB8	100	name+gloss	珊瑚
+ja	j:1307230	0	1F553	90	name	４時
+ja	j:1307410	1	1F697	80	gloss	四輪車
+ja	j:1307770	1	1F9D2	80	gloss	子
+ja	j:1307770	2	1F9D2	80	gloss	子
+ja	j:1307780	1	1F400	80	gloss	子
+ja	j:1307780	3	E0A0	80	gloss	子
+ja	j:1307850	1	1F9D2	100	name+gloss	子供
+ja	j:1307970	2	1F467	80	gloss	子女
+ja	j:1310040	1	1FAC6	100	name+gloss	指紋
+ja	j:1310050	1	1F48D	100	name+gloss	指輪
+ja	j:1311070	1	1F981	80	gloss	獅子
+ja	j:1311450	1	1F9F5	100	name+gloss	糸
+ja	j:1311580	0	1F6CD	90	name	紙袋
+ja	j:1312370	1	1F9EA	100	name+gloss	試験管
+ja	j:1313000	1	1F9B7	100	name+gloss	歯
+ja	j:1313000	2	1F9B7	100	name+gloss	歯
+ja	j:1313070	1	1FAA5	100	name+gloss	歯ブラシ
+ja	j:1313350	1	2699	100	name+gloss	歯車
+ja	j:1313350	2	2699	100	name+gloss	歯車
+ja	j:1317080	1	1F9F2	80	gloss	磁石
+ja	j:1317080	2	1F9ED	80	gloss	磁石
+ja	j:1317170	1	1F442	100	name+gloss	耳
+ja	j:1317170	3	1F442	100	name+gloss	耳
+ja	j:1317170	5	1F442	100	name+gloss	耳
+ja	j:1318290	1	1F6B2	100	name+gloss	自転車
+ja	j:1318400	1	1F697	100	name+gloss	自動車
+ja	j:1319030	1	1F98C	100	name+gloss	鹿
+ja	j:1319060	3	1F492	80	gloss	式
+ja	j:1319520	1	1F983	100	name+gloss	七面鳥
+ja	j:1322990	1	1F9D1	80	gloss	者
+ja	j:1323080	2	1F6DE	80	gloss	車
+ja	j:1323090	0	267F	90	name	車椅子
+ja	j:1323280	1	1F6DE	90	name+gloss	車輪
+ja	j:1323350	1	1F40D	100	name+gloss	蛇
+ja	j:1323350	2	1F40D	100	name+gloss	蛇
+ja	j:1327130	1	1F482	80	gloss	守衛
+ja	j:1327190	13	E103	80	gloss	手
+ja	j:1327250	0	1F91A	90	name	手の甲
+ja	j:1328020	2	1F6BB	80	gloss	手洗い
+ja	j:1328090	0	1F9E4	90	name	手袋
+ja	j:1328160	1	1F45C	80	gloss	手提げ
+ja	j:1330080	1	1F9FE	80	gloss	受領
+ja	j:1330090	1	1F4DE	100	name+gloss	受話器
+ja	j:1330350	0	1F931	90	name	授乳
+ja	j:1330830	2	1F9FE	80	gloss	収納
+ja	j:1331490	2	1F3EB	80	gloss	宗派
+ja	j:1334160	0	1F3D8	90	name	住宅街
+ja	j:1334650	0	271D	90	name	十字架
+ja	j:1337190	2	1F3E0	80	gloss	宿
+ja	j:1338850	1	E10D	80	gloss	出口
+ja	j:1338850	2	E144	80	gloss	出口
+ja	j:1341840	1	1F6E1	100	name+gloss	盾
+ja	j:1342110	1	1F46E	80	gloss	巡査
+ja	j:1344080	1	1F9D1-200D-1F393	80	gloss	書生
+ja	j:1344930	1	1F469	80	gloss	女
+ja	j:1344970	1	1F467	100	name+gloss	女の子
+ja	j:1344980	1	1F469	80	gloss	女の人
+ja	j:1345000	1	E300	80	gloss	女医
+ja	j:1345020	4	1F478	80	gloss	女王
+ja	j:1345140	1	1F469	80	gloss	女子
+ja	j:1345180	1	1F467	80	gloss	女児
+ja	j:1345230	1	1F469	80	gloss	女人
+ja	j:1345250	1	1F469	100	name+gloss	女性
+ja	j:1345420	3	1F469	80	gloss	女房
+ja	j:1345440	1	1F469	80	gloss	女流
+ja	j:1347830	1	1F6D6	90	name+gloss	小屋
+ja	j:1348350	1	1F9D2	80	gloss	小人
+ja	j:1349170	1	1F466	90	name+gloss	少年
+ja	j:1349370	1	1F6CF	80	gloss	床
+ja	j:1349410	0	1F488	90	name	床屋
+ja	j:1350170	1	1F9EF	100	name+gloss	消火器
+ja	j:1350350	1	1F9D1-200D-1F692	100	name+gloss	消防士
+ja	j:1350360	1	1F692	100	name+gloss	消防車
+ja	j:1350460	1	1F360	100	name+gloss	焼き芋
+ja	j:1351560	1	1F4A5	100	name+gloss	衝突
+ja	j:1351830	1	1F418	100	name+gloss	象
+ja	j:1352030	1	1F514	80	gloss	鐘
+ja	j:1355290	1	1F3AB	80	gloss	乗車券
+ja	j:1355360	2	1F6A2	80	gloss	乗船
+ja	j:1355390	1	E184	80	gloss	乗馬
+ja	j:1355710	1	1F3F0	90	name+gloss	城
+ja	j:1355740	1	1F3F0	80	gloss	城郭
+ja	j:1356190	1	1F332	100	name+gloss	常緑樹
+ja	j:1356370	1	2139	90	name+gloss	情報
+ja	j:1356370	2	2139	90	name+gloss	情報
+ja	j:1357120	1	1F48A	80	gloss	錠剤
+ja	j:1358400	1	1F35E	100	name+gloss	食パン
+ja	j:1360050	1	1F634	90	name+gloss	寝顔
+ja	j:1360150	1	1F6CF	80	gloss	寝床
+ja	j:1361540	0	1F331	90	name	新芽
+ja	j:1361590	0	1F684	90	name	新幹線
+ja	j:1362360	1	1F4F0	100	name+gloss	新聞
+ja	j:1362390	2	1F4F0	80	gloss	新聞紙
+ja	j:1362820	1	1F412	100	name+gloss	申
+ja	j:1362900	2	1F9D2	80	gloss	申し子
+ja	j:1365040	5	1F511	80	gloss	親
+ja	j:1365570	1	1F457	80	gloss	身なり
+ja	j:1366210	2	1FA9D	80	gloss	針
+ja	j:1366250	1	E1D4	80	gloss	針金
+ja	j:1366410	3	1F468	80	gloss	人
+ja	j:1366650	1	1F3E0	80	gloss	人家
+ja	j:1367430	0	1F6F0	90	name	人工衛星
+ja	j:1367800	1	1F955	100	name+gloss	人参
+ja	j:1369070	1	1F9D1	80	gloss	人物
+ja	j:1370110	1	E316	80	gloss	腎臓
+ja	j:1370410	1	1F4DA	80	gloss	図書
+ja	j:1370550	2	1F9CC	80	gloss	厨房
+ja	j:1370860	5	1F469	80	gloss	垂れ
+ja	j:1371260	3	E09F	80	gloss	水
+ja	j:1371400	1	1F403	100	name+gloss	水牛
+ja	j:1372350	1	1F373	80	gloss	炊事
+ja	j:1372660	1	E181	80	gloss	酔っ払い
+ja	j:1373080	0	1F4FF	90	name	数珠
+ja	j:1373610	3	1F9B6	80	gloss	裾
+ja	j:1376310	1	2B50	80	gloss	星
+ja	j:1376310	2	2B50	80	gloss	星
+ja	j:1376310	3	2B50	80	gloss	星
+ja	j:1376310	5	1F3AF	80	gloss	星
+ja	j:1376310	10	2B50	80	gloss	星
+ja	j:1379620	1	1FADA	100	name+gloss	生姜
+ja	j:1380890	1	1F349	100	name+gloss	西瓜
+ja	j:1382090	1	1F6C3	100	name+gloss	税関
+ja	j:1382250	1	1F4BA	90	name+gloss	席
+ja	j:1382530	1	1F34B-200D-1F7E9	80	gloss	石灰
+ja	j:1382590	1	1F9FC	100	name+gloss	石鹸
+ja	j:1383260	1	1F476	80	gloss	赤ちゃん
+ja	j:1383310	1	1F476	100	name+gloss	赤ん坊
+ja	j:1385170	1	1F3AB	90	name+gloss	切符
+ja	j:1385680	1	1F48F	80	gloss	接吻
+ja	j:1386140	8	1FAA2	80	gloss	節
+ja	j:1386690	1	E09E	80	gloss	雪崩
+ja	j:1386690	2	E09E	80	gloss	雪崩
+ja	j:1387010	1	1F445	100	name+gloss	舌
+ja	j:1387990	1	1F9D1-200D-1F3EB	80	gloss	先生
+ja	j:1390790	2	26F2	80	gloss	泉水
+ja	j:1390990	1	E1CF	80	gloss	洗濯機
+ja	j:1391560	1	1F358	100	name+gloss	煎餅
+ja	j:1391880	1	1F6E4	100	name+gloss	線路
+ja	j:1396840	2	1F474	80	gloss	祖父
+ja	j:1397840	1	1F400	100	name+gloss	鼠
+ja	j:1399920	1	1F367	100	name+gloss	かき氷
+ja	j:1401400	1	1FA9F	100	name+gloss	窓
+ja	j:1401910	2	1F977	80	gloss	草
+ja	j:1402820	1	E0A1	80	gloss	送信
+ja	j:1404630	1	1F9B6	80	gloss	足
+ja	j:1404630	2	1F9B5	80	gloss	足
+ja	j:1406000	2	1FABD	80	gloss	袖
+ja	j:1408280	1	1F941	80	gloss	太鼓
+ja	j:1409270	1	1F321	80	gloss	体温計
+ja	j:1410600	2	E0AF	80	gloss	待機
+ja	j:1410670	0	1F9A5	90	name	怠け者
+ja	j:1414170	0	1F9D1	90	name	大人
+ja	j:1414210	1	E09F	80	gloss	大水
+ja	j:1414560	1	E314	80	gloss	大腸
+ja	j:1415610	1	1F3D3	100	name+gloss	卓球
+ja	j:1415750	1	1F3E0	80	gloss	宅
+ja	j:1416010	1	1F344	80	gloss	茸
+ja	j:1416290	1	1F409	80	gloss	辰
+ja	j:1418150	1	E328	80	gloss	担架
+ja	j:1418380	1	1F575	100	name+gloss	探偵
+ja	j:1418800	1	1F5E1	100	name+gloss	短刀
+ja	j:1419240	1	1F361	100	name+gloss	団子
+ja	j:1419240	4	1F361	100	name+gloss	団子
+ja	j:1419990	1	1F468	80	gloss	男
+ja	j:1420010	1	1F466	100	name+gloss	男の子
+ja	j:1420020	1	1F468	80	gloss	男の人
+ja	j:1420070	1	1F466	80	gloss	男子
+ja	j:1420070	2	1F468	80	gloss	男子
+ja	j:1420160	1	1F468	100	name+gloss	男性
+ja	j:1420900	1	1F687	100	name+gloss	地下鉄
+ja	j:1420960	1	1F6D8	100	name+gloss	地すべり
+ja	j:1421210	1	E09C	80	gloss	地震
+ja	j:1421960	1	1F577	100	name+gloss	蜘蛛
+ja	j:1423240	1	1F458	100	name+gloss	着物
+ja	j:1426680	2	1FAB1	80	gloss	虫
+ja	j:1427010	0	1F417	90	name	猪
+ja	j:1427100	1	00A9	90	name+gloss	著作権
+ja	j:1428920	1	1FA7A	100	name+gloss	聴診器
+ja	j:1429010	1	1F98B	100	name+gloss	蝶
+ja	j:1429280	2	1F3F9	80	gloss	調度
+ja	j:1429310	1	1F373	80	gloss	調理
+ja	j:1430200	1	1F451	80	gloss	頂
+ja	j:1430250	1	1F426	100	name+gloss	鳥
+ja	j:1430280	0	26E9	90	name	鳥居
+ja	j:1432220	1	E09B	80	gloss	津波
+ja	j:1432840	1	E08F	80	gloss	通
+ja	j:1432920	4	E0A1	80	gloss	通り
+ja	j:1433880	3	1FA9D	80	gloss	爪
+ja	j:1435180	1	1FA92	100	name+gloss	剃刀
+ja	j:1435180	2	1FA92	100	name+gloss	剃刀
+ja	j:1435340	1	1F3E6	80	gloss	堤
+ja	j:1435350	1	1F3E6	80	gloss	堤防
+ja	j:1435520	0	1F4CF	90	name	定規
+ja	j:1436150	1	1F3BE	80	gloss	庭球
+ja	j:1436280	3	1F4A5	80	gloss	抵触
+ja	j:1436480	1	1FA9C	100	name+gloss	梯子
+ja	j:1436820	1	1F3E0	80	gloss	邸宅
+ja	j:1437270	1	1F3AF	100	name+gloss	的
+ja	j:1437310	1	1FA88	100	name+gloss	笛
+ja	j:1439170	0	1F47C	90	name	天使
+ja	j:1440090	1	2600	80	gloss	天日
+ja	j:1440370	2	26FA	80	gloss	天幕
+ja	j:1442160	1	E0A1	80	gloss	伝送
+ja	j:1442240	1	E0A1	80	gloss	伝達
+ja	j:1442370	1	E0A1	80	gloss	伝播
+ja	j:1442450	2	E0A1	80	gloss	伝来
+ja	j:1443170	1	1F4A1	100	name+gloss	電球
+ja	j:1443620	1	1F50B	100	name+gloss	電池
+ja	j:1443840	2	260E	80	gloss	電話
+ja	j:1443870	1	260E	80	gloss	電話機
+ja	j:1443970	1	1F407	100	name+gloss	兎
+ja	j:1444600	1	26F4	80	gloss	渡し船
+ja	j:1444990	1	E203	80	gloss	都市
+ja	j:1445550	1	1F48D	80	gloss	土俵
+ja	j:1448290	1	1F351	100	name+gloss	桃
+ja	j:1448650	1	1F6C1	80	gloss	湯船
+ja	j:1450850	1	1F480	80	gloss	頭骨
+ja	j:1450890	1	E31D	80	gloss	頭痛
+ja	j:1453960	1	1F466	80	gloss	童子
+ja	j:1457270	1	1F405	100	name+gloss	寅
+ja	j:1457290	1	1F413	80	gloss	酉
+ja	j:1457390	1	1F416	100	name+gloss	豚
+ja	j:1459720	2	1F372	100	name+gloss	鍋
+ja	j:1463740	1	1F308	100	name+gloss	虹
+ja	j:1463770	2	2600	80	gloss	日
+ja	j:1463790	1	1F305	100	name+gloss	日の出
+ja	j:1463800	1	1F307	80	gloss	日の入り
+ja	j:1464450	1	1F307	90	name+gloss	日没
+ja	j:1464670	1	1F376	90	name+gloss	日本酒
+ja	j:1467370	1	1F930	100	name+gloss	妊婦
+ja	j:1467400	4	1F977	90	name+gloss	忍び
+ja	j:1467470	1	1F977	100	name+gloss	忍者
+ja	j:1467640	1	1F408	100	name+gloss	猫
+ja	j:1467940	1	1F420	100	name+gloss	熱帯魚
+ja	j:1470620	1	1F9D1-200D-1F33E	100	name+gloss	農家
+ja	j:1470760	1	1F9D1-200D-1F33E	80	gloss	農夫
+ja	j:1470770	1	1F9D1-200D-1F33E	80	gloss	農民
+ja	j:1471120	3	1F3EB	80	gloss	派
+ja	j:1471500	2	1F0CF	90	name+gloss	婆
+ja	j:1471520	0	1F92C	90	name	罵る
+ja	j:1471560	1	1F40E	100	name+gloss	馬
+ja	j:1472870	1	1FAC1	100	name+gloss	肺
+ja	j:1474210	1	1FAB0	100	name+gloss	蠅
+ja	j:1474220	1	E32B	80	gloss	秤
+ja	j:1474820	1	1F44F	100	name+gloss	拍手
+ja	j:1475330	1	1F9A2	100	name+gloss	白鳥
+ja	j:1475870	1	1F4A3	100	name+gloss	爆弾
+ja	j:1475880	1	1F9E8	100	name+gloss	爆竹
+ja	j:1476410	1	1F962	100	name+gloss	箸
+ja	j:1477090	3	1F451	80	gloss	鉢
+ja	j:1477110	1	1FAB4	100	name+gloss	鉢植え
+ja	j:1478330	1	1F54A	100	name+gloss	鳩
+ja	j:1478440	1	1F9AD	80	gloss	判
+ja	j:1478550	1	1F9AD	80	gloss	判子
+ja	j:1478560	1	1F9D1-200D-2696-FE0F	80	gloss	判事
+ja	j:1478810	1	1FA73	80	gloss	半ズボン
+ja	j:1481520	1	00A9	80	gloss	版権
+ja	j:1482010	1	1F35A	80	gloss	飯
+ja	j:1482320	1	1F482	80	gloss	番人
+ja	j:1483050	1	1F478	80	gloss	妃殿下
+ja	j:1483380	1	1F6AA	90	name+gloss	扉
+ja	j:1484950	1	E201	80	gloss	非常口
+ja	j:1485470	1	2708	100	name+gloss	飛行機
+ja	j:1485500	1	1F9D1-200D-2708-FE0F	80	gloss	飛行士
+ja	j:1486030	0	1F642	90	name	微笑む
+ja	j:1486090	0	1F9A0	90	name	微生物
+ja	j:1486720	1	1F443	100	name+gloss	鼻
+ja	j:1488090	1	1F3EC	90	name+gloss	百貨店
+ja	j:1488250	1	1F9D1-200D-1F33E	80	gloss	百姓
+ja	j:1488840	1	1F9CA	80	gloss	氷
+ja	j:1488840	2	1F367	80	gloss	氷
+ja	j:1489030	1	E2C0	80	gloss	氷山
+ja	j:1490220	1	1F3E5	100	name+gloss	病院
+ja	j:1490470	1	1F331	80	gloss	苗
+ja	j:1490500	1	1F331	80	gloss	苗木
+ja	j:1491120	1	1FAD9	100	name+gloss	瓶
+ja	j:1492610	1	1F426-200D-1F525	90	name+gloss	不死鳥
+ja	j:1496650	1	1F469	80	gloss	婦女
+ja	j:1496660	2	1F469	80	gloss	婦女子
+ja	j:1496670	1	1F469	80	gloss	婦人
+ja	j:1496800	0	1F5FB	90	name	富士山
+ja	j:1497080	1	1FA93	100	name+gloss	斧
+ja	j:1499580	1	1F9AD	80	gloss	封
+ja	j:1499610	1	1F9AD	80	gloss	封印
+ja	j:1499690	1	2709	100	name+gloss	封筒
+ja	j:1499940	1	1F388	100	name+gloss	風船
+ja	j:1499940	2	1F388	100	name+gloss	風船
+ja	j:1500090	1	1F390	100	name+gloss	風鈴
+ja	j:1504610	0	26F2	90	name	噴水
+ja	j:1509010	1	1F35A	80	gloss	米飯
+ja	j:1512470	0	1F6BD	90	name	便器
+ja	j:1512520	1	1F6BD	80	gloss	便所
+ja	j:1513060	1	1F371	100	name+gloss	弁当
+ja	j:1514780	1	1F442	80	gloss	穂
+ja	j:1514950	1	1F307	80	gloss	暮れ
+ja	j:1515530	1	1F52A	100	name+gloss	包丁
+ja	j:1515620	1	2139	80	gloss	報
+ja	j:1515720	1	2139	80	gloss	報知
+ja	j:1516220	1	1F48E	100	name+gloss	宝石
+ja	j:1516610	1	2622	90	name+gloss	放射性
+ja	j:1516925	2	1F9D1	80	gloss	方
+ja	j:1517280	3	1F9D1	80	gloss	法師
+ja	j:1517860	0	1F36F	90	name	蜂蜜
+ja	j:1518760	2	1F47B	80	gloss	亡霊
+ja	j:1519050	2	1F466	80	gloss	坊さん
+ja	j:1519060	1	1F466	80	gloss	坊や
+ja	j:1519080	3	1F466	80	gloss	坊主
+ja	j:1519650	1	1F52D	100	name+gloss	望遠鏡
+ja	j:1519680	1	1F315	80	gloss	望月
+ja	j:1520670	1	E0A0	80	gloss	北
+ja	j:1520670	2	E0A0	80	gloss	北
+ja	j:1521310	1	E0A0	80	gloss	北方
+ja	j:1523700	2	1F46A	80	gloss	盆
+ja	j:1524240	1	1F9D9	100	name+gloss	魔法使い
+ja	j:1524370	1	1F004	100	name+gloss	麻雀
+ja	j:1526360	1	1F58B	100	name+gloss	万年筆
+ja	j:1526770	1	1F315	100	name+gloss	満月
+ja	j:1528180	1	1F40D	80	gloss	巳
+ja	j:1528410	1	1F34A	100	name+gloss	蜜柑
+ja	j:1528440	5	1F9F5	80	gloss	脈
+ja	j:1529330	0	1F62A	90	name	眠い
+ja	j:1529880	1	267E	90	name+gloss	無限
+ja	j:1530380	2	1F6DC	90	name+gloss	無線
+ja	j:1530940	4	1F6AB	80	gloss	無用
+ja	j:1531110	1	1F32B	100	name+gloss	霧
+ja	j:1531190	2	1F467	90	name+gloss	娘
+ja	j:1531510	0	1F4DB	90	name	名札
+ja	j:1533860	0	1F9F6	90	name	毛糸
+ja	j:1533960	1	1F9E5	80	gloss	毛並み
+ja	j:1534290	1	1F9AE	100	name+gloss	盲導犬
+ja	j:1534520	2	1FAB5	80	gloss	木
+ja	j:1534820	3	1F40E	80	gloss	木馬
+ja	j:1535340	1	23F0	90	name+gloss	目覚まし
+ja	j:1536180	1	1F6AA	80	gloss	門戸
+ja	j:1536210	0	1F38D	90	name	門松
+ja	j:1537300	1	26BE	100	name+gloss	野球
+ja	j:1538160	1	1F48A	100	name+gloss	薬
+ja	j:1538810	1	E30D	80	gloss	輸血
+ja	j:1540590	1	1F47B	90	name+gloss	幽霊
+ja	j:1542430	1	1F3E4	80	gloss	郵便局
+ja	j:1542750	0	1F307	90	name	夕日
+ja	j:1542820	1	1F6BF	80	gloss	夕立
+ja	j:1545300	1	1F47B	80	gloss	妖怪
+ja	j:1545330	1	1F9DA	100	name+gloss	妖精
+ja	j:1546590	2	1F4DD	80	gloss	葉書
+ja	j:1547480	1	1F6C1	80	gloss	浴槽
+ja	j:1547530	1	1FABD	100	name+gloss	翼
+ja	j:1547570	1	1F9ED	80	gloss	羅針盤
+ja	j:1548420	1	26C8	100	name+gloss	雷雨
+ja	j:1548660	1	1FA82	80	gloss	落下傘
+ja	j:1549140	1	1F95A	100	name+gloss	卵
+ja	j:1549140	2	1F95A	100	name+gloss	卵
+ja	j:1552090	2	1F3EB	80	gloss	流
+ja	j:1552200	1	1F320	100	name+gloss	流れ星
+ja	j:1552260	2	1F3EB	80	gloss	流儀
+ja	j:1552520	1	1F3EB	80	gloss	流派
+ja	j:1552650	0	1FAD4	90	name	溜まる
+ja	j:1554310	1	1F373	100	name+gloss	料理
+ja	j:1554750	1	1F9FE	80	gloss	領収
+ja	j:1555440	1	1FAB5	80	gloss	林
+ja	j:1555710	1	1F48D	80	gloss	輪
+ja	j:1555710	3	1F6DE	80	gloss	輪
+ja	j:1557580	1	1F514	80	gloss	鈴
+ja	j:1557820	1	1F451	80	gloss	霊長
+ja	j:1557950	1	1F4C5	80	gloss	暦
+ja	j:1558370	1	1F686	80	gloss	列車
+ja	j:1559040	1	1F48C	90	name+gloss	恋文
+ja	j:1559090	1	1F9F1	100	name+gloss	煉瓦
+ja	j:1560940	1	1F43A	90	name+gloss	狼
+ja	j:1561130	1	1F475	80	gloss	老婆
+ja	j:1561240	1	1F56F	100	name+gloss	蝋燭
+ja	j:1562490	3	1F9D1-200D-1F373	80	gloss	賄い
+ja	j:1562630	1	1F985	100	name+gloss	鷲
+ja	j:1562870	1	231A	100	name+gloss	腕時計
+ja	j:1566500	1	1F9F9	100	name+gloss	箒
+ja	j:1566680	1	2604	100	name+gloss	彗星
+ja	j:1567040	1	1F415	100	name+gloss	戌
+ja	j:1568080	1	1F989	100	name+gloss	梟
+ja	j:1568330	1	1F334	80	gloss	椰子
+ja	j:1569810	0	1F635	90	name	眩暈
+ja	j:1571460	1	1F353	100	name+gloss	苺
+ja	j:1571760	1	1F339	100	name+gloss	薔薇
+ja	j:1572070	1	1F40C	100	name+gloss	蝸牛
+ja	j:1573820	1	2702	100	name+gloss	鋏
+ja	j:1575200	1	1F992	100	name+gloss	麒麟
+ja	j:1575920	1	1F417	80	gloss	亥
+ja	j:1575940	1	1F46A	80	gloss	一家
+ja	j:1576460	1	1F407	80	gloss	卯
+ja	j:1576630	1	1F9C2	100	name+gloss	塩
+ja	j:1576720	1	1F474	80	gloss	翁
+ja	j:1577460	1	1F438	90	name+gloss	蛙
+ja	j:1577620	2	1F451	80	gloss	冠
+ja	j:1577670	1	1F453	100	name+gloss	眼鏡
+ja	j:1578010	1	1F41F	100	name+gloss	魚
+ja	j:1578590	3	1F348	80	gloss	五色
+ja	j:1578700	1	1F3ED	100	name+gloss	工場
+ja	j:1579290	1	1F338	80	gloss	桜花
+ja	j:1579640	0	1F38B	90	name	七夕
+ja	j:1579660	1	1F6D6	80	gloss	舎
+ja	j:1580040	1	E09F	80	gloss	出水
+ja	j:1580290	1	1F467	90	name+gloss	少女
+ja	j:1580340	1	1F9E5	80	gloss	上着
+ja	j:1580570	1	1F6CF	80	gloss	寝台
+ja	j:1580640	1	1F9D1	80	gloss	人
+ja	j:1581330	1	1F463	100	name+gloss	足跡
+ja	j:1581560	1	1FA81	80	gloss	凧
+ja	j:1581690	1	1F595	90	name+gloss	中指
+ja	j:1582020	0	1F30C	90	name	天の川
+ja	j:1583420	2	1F367	80	gloss	氷水
+ja	j:1583430	3	1F9CA	80	gloss	氷柱
+ja	j:1584030	1	1FAA6	100	name+gloss	墓石
+ja	j:1584870	1	1F474	80	gloss	爺
+ja	j:1585010	2	1F511	80	gloss	螺子
+ja	j:1585630	1	1F944	80	gloss	匙
+ja	j:1586220	1	1FAB9	80	gloss	空き巣
+ja	j:1587840	2	26B0	80	gloss	入れ物
+ja	j:1587970	2	1FAB4	80	gloss	植木
+ja	j:1588060	2	1F9FE	80	gloss	受付
+ja	j:1588720	1	1F990	100	name+gloss	海老
+ja	j:1589300	1	1F4DD	80	gloss	覚書
+ja	j:1590080	0	2716	90	name	掛け算
+ja	j:1590200	1	1F9FA	100	name+gloss	籠
+ja	j:1590720	2	1FABE	100	name+gloss	枯れ木
+ja	j:1591500	1	1F952	100	name+gloss	胡瓜
+ja	j:1591870	1	E183	80	gloss	切り札
+ja	j:1592310	1	1F6A7	80	gloss	組み立て
+ja	j:1592340	2	1F32B	80	gloss	曇り
+ja	j:1592420	1	1FABC	100	name+gloss	水母
+ja	j:1593710	1	1F338	100	name+gloss	桜
+ja	j:1593800	1	1F3DC	100	name+gloss	砂漠
+ja	j:1594660	1	1F4F7	80	gloss	写真機
+ja	j:1595090	6	1F3E6	80	gloss	銀
+ja	j:1595650	1	1F363	100	name+gloss	寿司
+ja	j:1596700	1	1F9EE	100	name+gloss	算盤
+ja	j:1596700	2	1F9EE	100	name+gloss	算盤
+ja	j:1596910	1	1F419	80	gloss	蛸
+ja	j:1597060	1	1F32A	100	name+gloss	竜巻
+ja	j:1597150	1	1F6AC	100	name+gloss	煙草
+ja	j:1597640	1	1F98B	80	gloss	蝶々
+ja	j:1598330	1	1F4D3	90	name+gloss	手帳
+ja	j:1599940	1	1F9C4	100	name+gloss	大蒜
+ja	j:1599950	1	1FAA1	100	name+gloss	縫い針
+ja	j:1600460	2	E1C3	80	gloss	乗り換え
+ja	j:1601300	1	1F47A	80	gloss	化け物
+ja	j:1601350	1	1F64C	100	name+gloss	万歳
+ja	j:1602150	2	1F467	80	gloss	姫
+ja	j:1602800	1	1F6A2	100	name+gloss	船
+ja	j:1603860	1	1F41A	100	name+gloss	巻き貝
+ja	j:1603990	1	E203	80	gloss	町
+ja	j:1604890	3	1F440	100	name+gloss	目
+ja	j:1604890	4	1F440	100	name+gloss	目
+ja	j:1604940	1	23F0	100	name+gloss	目覚まし時計
+ja	j:1606880	1	2797	100	name+gloss	割り算
+ja	j:1606940	2	1F962	80	gloss	割り箸
+ja	j:1608030	3	1F98A	80	gloss	稲荷
+ja	j:1609110	1	2693	100	name+gloss	錨
+ja	j:1610620	2	1F516	80	gloss	お気に入り
+ja	j:1610810	1	1F35B	100	name+gloss	カレーライス
+ja	j:1610970	1	1F622	100	name+gloss	泣き顔
+ja	j:1611140	2	1F475	80	gloss	婆さん
+ja	j:1611220	1	274C	80	gloss	罰点
+ja	j:1611440	1	1F9B6	80	gloss	麓
+ja	j:1612130	1	1F375	100	name+gloss	湯のみ
+ja	j:1613220	1	1F680	80	gloss	ロケット弾
+ja	j:1613920	1	1F58C	100	name+gloss	絵筆
+ja	j:1618920	1	1F6A7	80	gloss	施工
+ja	j:1619510	2	E10D	80	gloss	退場
+ja	j:1622720	1	1F6A7	80	gloss	築造
+ja	j:1623610	1	1F466	80	gloss	男児
+ja	j:1623610	2	1F468	80	gloss	男児
+ja	j:1623990	1	1F477	80	gloss	土方
+ja	j:1624410	1	1F476	80	gloss	赤子
+ja	j:1625680	0	1F3DA	90	name	廃屋
+ja	j:1626800	1	1FAB0	80	gloss	飛球
+ja	j:1628240	1	1F475	80	gloss	老婦
+ja	j:1629070	1	1F406	100	name+gloss	豹
+ja	j:1629170	1	1F409	80	gloss	竜
+ja	j:1630860	1	231A	80	gloss	見張り
+ja	j:1634260	1	1FAD2	80	gloss	オリーブ色
+ja	j:1641780	2	26F0	80	gloss	深山
+ja	j:1643820	0	1F329	90	name	雷雲
+ja	j:1644930	1	1F9D1-200D-1F373	80	gloss	料理人
+ja	j:1646000	1	1F9D1-200D-2696-FE0F	80	gloss	選者
+ja	j:1646500	1	1F9D1-200D-2696-FE0F	80	gloss	司直
+ja	j:1649040	1	1F479	80	gloss	オーガ
+ja	j:1649340	1	1F9DB	80	gloss	ヴァンパイア
+ja	j:1654130	1	26E9	80	gloss	社殿
+ja	j:1655150	1	1F3D5	80	gloss	野営
+ja	j:1656220	1	1F689	80	gloss	詰め所
+ja	j:1659510	2	1F3E8	80	gloss	酒店
+ja	j:1660170	1	1F3C6	90	name+gloss	賞杯
+ja	j:1662010	1	1F9D1-200D-1F3A4	80	gloss	歌い手
+ja	j:1665480	2	1F9FB	80	gloss	巻紙
+ja	j:1668160	0	26B1	90	name	骨壷
+ja	j:1672310	0	1F611	90	name	無表情
+ja	j:1692720	0	1F5F3	90	name	投票箱
+ja	j:1705810	1	1F457	80	gloss	身支度
+ja	j:1710450	1	1F50B	80	gloss	放列
+ja	j:1720200	1	1F311	100	name+gloss	新月
+ja	j:1720470	1	1F6A7	80	gloss	新造
+ja	j:1722070	2	1FAA2	80	gloss	節目
+ja	j:1737690	1	1F52B	100	name+gloss	水鉄砲
+ja	j:1747840	1	1F50B	80	gloss	砲台
+ja	j:1759580	1	E103	80	gloss	指し手
+ja	j:1766040	1	1F4DE	80	gloss	電話口
+ja	j:1775740	1	1F333	100	name+gloss	落葉樹
+ja	j:1776460	0	1F386	90	name	打ち上げ花火
+ja	j:1779450	2	1F916	80	gloss	鉄人
+ja	j:1779760	1	1F528	80	gloss	金槌
+ja	j:1787470	1	E1D6	80	gloss	太陽電池
+ja	j:1800030	1	1F3DF	100	name+gloss	競技場
+ja	j:1834310	1	2797	80	gloss	振り分け
+ja	j:1841410	1	26AA	80	gloss	白星
+ja	j:1841670	1	1F43B-200D-2744-FE0F	100	name+gloss	白熊
+ja	j:1855000	1	26F4	80	gloss	渡し
+ja	j:1855190	1	1F457	80	gloss	装い
+ja	j:1955980	1	26B0	90	name+gloss	棺
+ja	j:1956530	1	2600	80	gloss	寸
+ja	j:1956550	2	E100	80	gloss	栓
+ja	j:1956700	1	1F528	80	gloss	槌
+ja	j:1956860	1	1F478	80	gloss	妃
+ja	j:1970720	1	1F9F7	100	name+gloss	安全ピン
+ja	j:2002150	1	1FA73	80	gloss	短パン
+ja	j:2022640	3	231A	80	gloss	番
+ja	j:2026830	5	1FA9D	80	gloss	引き
+ja	j:2027290	1	1F4F3	100	name+gloss	マナーモード
+ja	j:2074740	1	1F37F	100	name+gloss	ポップコーン
+ja	j:2080510	1	2702	80	gloss	チョキ
+ja	j:2107320	1	1F516	90	name+gloss	ブックマーク
+ja	j:2107320	2	1F516	90	name+gloss	ブックマーク
+ja	j:2187310	0	1F570	90	name	置き時計
+ja	j:2242640	1	1FAD8	90	name+gloss	ビーンズ
+ja	j:2465690	1	1FA74	100	name+gloss	ビーチサンダル
+ja	j:2508400	1	1F5D2	100	name+gloss	メモ帳
+ja	j:2560520	1	1F415	80	gloss	ワン子
+ja	j:2662230	1	1F441	80	gloss	眼
+ja	j:2768740	2	1F4A7	80	gloss	飛沫
+ja	j:2815550	2	1F468	80	gloss	士
+ja	j:2841290	1	1F573	80	gloss	ホール
+ja	j:2841290	2	1F573	80	gloss	ホール
+ja	j:2841290	3	1F573	80	gloss	ホール
+ja	j:2843688	1	1F96A	80	gloss	サンド
+ja	j:2845363	0	1F556	90	name	７時
+ja	j:2846323	1	1FAA8	80	gloss	ロック
+ja	j:2846323	2	1FAA8	80	gloss	ロック
+ja	j:2855111	1	1F34B-200D-1F7E9	100	name+gloss	ライム
+ja	j:2855111	2	1F34B-200D-1F7E9	100	name+gloss	ライム
+ja	j:2855138	2	1F579	80	gloss	レバー
+ja	j:2857908	1	1F45D	100	name+gloss	ポーチ
+ja	j:2859199	0	1F9D3	90	name	お年寄り
+ja	ご飯	0	1F35A	100	manual	cooked rice
+ja	卵	0	1F95A	100	manual	egg
+ja	太陽	0	2600	100	manual	sun
+ja	学校	0	1F3EB	100	manual	school
+ja	家	0	1F3E0	100	manual	house
+ja	寿司	0	1F363	100	manual	sushi
+ja	帽子	0	1F9E2	100	manual	billed cap
+ja	心	0	2764	100	manual	red heart
+ja	扉	0	1F6AA	100	manual	door
+ja	手	0	270B	100	manual	raised hand
+ja	時計	0	23F0	100	manual	alarm clock
+ja	月	0	1F319	100	manual	crescent moon
+ja	木	0	1F333	100	manual	deciduous tree
+ja	本	0	1F4D6	100	manual	open book
+ja	林檎	0	1F34E	100	manual	red apple
+ja	椅子	0	1FA91	100	manual	chair
+ja	水	0	1F4A7	100	manual	droplet
+ja	火	0	1F525	100	manual	fire
+ja	牛乳	0	1F95B	100	manual	glass of milk
+ja	犬	0	1F415	100	manual	dog
+ja	猫	0	1F408	100	manual	cat
+ja	病院	0	1F3E5	100	manual	hospital
+ja	目	0	1F440	100	manual	eyes
+ja	耳	0	1F442	100	manual	ear
+ja	自転車	0	1F6B2	100	manual	bicycle
+ja	花	0	1F33C	100	manual	blossom
+ja	茶	0	1F375	100	manual	teacup without handle
+ja	蜜柑	0	1F34A	100	manual	tangerine
+ja	贈り物	0	1F381	100	manual	wrapped gift
+ja	車	0	1F697	100	manual	automobile
+ja	鍵	0	1F511	100	manual	key
+ja	雨	0	1F327	100	manual	cloud with rain
+ja	雪	0	2744	100	manual	snowflake
+ja	電話	0	260E	100	manual	telephone
+ja	電車	0	1F682	100	manual	locomotive
+ja	靴	0	1F45F	100	manual	running shoe
+ja	音楽	0	1F3B5	100	manual	musical note
+ja	飛行機	0	2708	100	manual	airplane
+ja	馬	0	1F40E	100	manual	horse
+ja	魚	0	1F41F	100	manual	fish
+ja	鳥	0	1F426	100	manual	bird
+zh	QR扣	1	E1D8	80	gloss	Q R kou4
+zh	T恤	1	1F455	100	name+gloss	T xu4
+zh	X光	1	1FA7B	80	gloss	X guang1
+zh	一举	1	E103	80	gloss	yi1 ju3
+zh	一点	0	1F550	90	name	yi1 dian3
+zh	一角鲸	1	E006	80	gloss	yi1 jiao3 jing1
+zh	三叶草	0	2618	90	name	san1 ye4 cao3
+zh	三号木杆	1	1F944	80	gloss	san1 hao4 mu4 gan1
+zh	三文治	1	1F96A	80	gloss	san1 wen2 zhi4
+zh	三明治	1	1F96A	100	name+gloss	san1 ming2 zhi4
+zh	三角裤	1	1FA72	100	name+gloss	san1 jiao3 ku4
+zh	三角裤衩	1	1FA72	80	gloss	san1 jiao3 ku4 cha3
+zh	上弦月	1	1F313	100	name+gloss	shang4 xian2 yue4
+zh	下弦月	0	1F317	90	name	xia4 xian2 yue4
+zh	下雨	0	1F327	90	name	xia4 yu3
+zh	下雪	0	1F328	90	name	xia4 xue3
+zh	不满	0	2639	90	name	bu4 man3
+zh	业师	1	1F9D1-200D-1F3EB	80	gloss	ye4 shi1
+zh	丝带	1	1F380	80	gloss	si1 dai4
+zh	丧尸	1	1F9DF	80	gloss	sang1 shi1
+zh	丫头	1	1F467	80	gloss	ya1 tou5
+zh	中巴	2	1F690	80	gloss	Zhong1 Ba1
+zh	中巴士	1	1F690	80	gloss	zhong1 ba1 shi4
+zh	中指	1	1F595	90	name+gloss	zhong1 zhi3
+zh	丸剂	1	1F48A	80	gloss	wan2 ji4
+zh	丸子	1	E305	80	gloss	wan2 zi5
+zh	举手	0	1F64B	90	name	ju3 shou3
+zh	举重	0	1F3CB	90	name	ju3 zhong4
+zh	乌贼	0	1F991	90	name	wu1 zei2
+zh	乐谱	1	1F3BC	100	name+gloss	yue4 pu3
+zh	乐音	1	1F3B5	80	gloss	yue4 yin1
+zh	乒乓球	1	1F3D3	100	name+gloss	ping1 pang1 qiu2
+zh	书	0	1F4D6	100	manual	open book
+zh	书包	0	1F392	100	manual	backpack
+zh	书板	1	E1CC	80	gloss	shu1 ban3
+zh	书签	1	1F516	100	name+gloss	shu1 qian1
+zh	书籍	1	1F4DA	90	name+gloss	shu1 ji2
+zh	二师兄	1	1F416	80	gloss	er4 shi1 xiong1
+zh	云	3	2601	100	name+gloss	yun2
+zh	云头	1	2601	80	gloss	yun2 tou2
+zh	云彩	1	2601	90	name+gloss	yun2 cai5
+zh	云朵	1	2601	90	name+gloss	yun2 duo3
+zh	云霄飞车	1	1F3A2	80	gloss	yun2 xiao1 fei1 che1
+zh	交换器	1	E1C3	80	gloss	jiao1 huan4 qi4
+zh	交换机	1	E1C3	80	gloss	jiao1 huan4 ji1
+zh	亲吻	1	1F48F	100	name+gloss	qin1 wen3
+zh	亲王	1	1F934	80	gloss	qin1 wang2
+zh	人像	0	1F464	90	name	ren2 xiang4
+zh	人士	1	1F9D1	80	gloss	ren2 shi4
+zh	人头	1	1F9D1	80	gloss	ren2 tou2
+zh	人称	1	1F9D1	80	gloss	ren2 cheng1
+zh	人身	1	1F9D1	80	gloss	ren2 shen1
+zh	仓鼠	1	1F439	100	name+gloss	cang1 shu3
+zh	仙人	0	1F9DA-200D-2642-FE0F	90	name	xian1 ren2
+zh	仙人掌	1	1F335	100	name+gloss	xian1 ren2 zhang3
+zh	仙女棒	1	1F387	80	gloss	xian1 nu:3 bang4
+zh	仙子	1	1F9DA	90	name+gloss	xian1 zi3
+zh	仙童	1	1F9DD	80	gloss	xian1 tong2
+zh	代销店	1	E144	80	gloss	dai4 xiao1 dian4
+zh	企鹅	1	1F427	100	name+gloss	qi3 e2
+zh	休旅车	1	1F699	90	name+gloss	xiu1 lu:3 che1
+zh	伞	1	2602	100	name+gloss	san3
+zh	传动装置	1	E0A1	80	gloss	chuan2 dong4 zhuang1 zhi4
+zh	传声器	1	1F3A4	80	gloss	chuan2 sheng1 qi4
+zh	传真机	1	1F4E0	100	name+gloss	chuan2 zhen1 ji1
+zh	伢	1	1F9D2	80	gloss	ya2
+zh	伢子	1	1F9D2	80	gloss	ya2 zi5
+zh	伢崽	1	1F9D2	80	gloss	ya2 zai3
+zh	伦琴射线	1	1FA7B	80	gloss	lun2 qin2 she4 xian4
+zh	伯都	1	1F405	80	gloss	bo2 dou1
+zh	伸缩喇叭	1	1FA8A	80	gloss	shen1 suo1 la3 ba5
+zh	住舍	1	1F3E0	80	gloss	zhu4 she4
+zh	体恤衫	1	1F455	80	gloss	ti3 xu4 shan1
+zh	体温表	1	E324	80	gloss	ti3 wen1 biao3
+zh	体温计	1	E324	80	gloss	ti3 wen1 ji4
+zh	体育场	1	1F3DF	80	gloss	ti3 yu4 chang3
+zh	体育馆	1	1F3DF	100	name+gloss	ti3 yu4 guan3
+zh	作者权	1	00A9	80	gloss	zuo4 zhe3 quan2
+zh	侍卫官	1	1F482	80	gloss	shi4 wei4 guan1
+zh	侦察员	1	1F575	80	gloss	zhen1 cha2 yuan2
+zh	侦探	1	1F575	100	name+gloss	zhen1 tan4
+zh	侧手翻	0	1F938	90	name	ce4 shou3 fan1
+zh	便利商店	1	1F3EA	80	gloss	bian4 li4 shang1 dian4
+zh	便利店	1	1F3EA	100	name+gloss	bian4 li4 dian4
+zh	便器	1	1F6BD	80	gloss	bian4 qi4
+zh	便所	1	1F6BD	80	gloss	bian4 suo3
+zh	促织	1	1F997	80	gloss	cu4 zhi1
+zh	保龄球	0	1F3B3	90	name	bao3 ling2 qiu2
+zh	信封	1	2709	100	name+gloss	xin4 feng1
+zh	信息	0	2139	90	name	xin4 xi1
+zh	信用卡	1	1F4B3	100	name+gloss	xin4 yong4 ka3
+zh	停站	1	1F68F	80	gloss	ting2 zhan4
+zh	停表	1	23F1	80	gloss	ting2 biao3
+zh	停车站	1	1F68F	80	gloss	ting2 che1 zhan4
+zh	偷油婆	1	1FAB3	80	gloss	tou1 you2 po2
+zh	偷看	0	1FAE3	90	name	tou1 kan4
+zh	傲慢	0	1F624	90	name	ao4 man4
+zh	僵尸	1	1F9DF	100	name+gloss	jiang1 shi1
+zh	儿	1	1F9D2	80	gloss	er2
+zh	儿童	1	1F9D2	100	name+gloss	er2 tong2
+zh	先生	1	1F9D1-200D-1F3EB	80	gloss	xian1 sheng5
+zh	光盘	0	1F4BF	90	name	guang1 pan2
+zh	克尔白	0	1F54B	90	name	Ke4 er3 bai2
+zh	兔	2	1F407	80	gloss	tu4
+zh	兔子	1	1F407	100	name+gloss	tu4 zi5
+zh	入场券	0	1F39F	90	name	ru4 chang3 quan4
+zh	全球位置测定系统	1	E1CD	80	gloss	quan2 qiu2 wei4 zhi4 ce4 ding4 xi4 tong3
+zh	全球定位系统	1	E1CD	80	gloss	quan2 qiu2 ding4 wei4 xi4 tong3
+zh	八带蛸	1	1F419	80	gloss	ba1 dai4 shao1
+zh	八带鱼	1	1F419	80	gloss	ba1 dai4 yu2
+zh	八爪鱼	1	1F419	80	gloss	ba1 zhua3 yu2
+zh	公主	1	1F478	100	name+gloss	gong1 zhu3
+zh	公事包	1	1F4BC	90	name+gloss	gong1 shi4 bao1
+zh	公交车	0	1F68C	90	name	gong1 jiao1 che1
+zh	公共汽车	1	1F68C	80	gloss	gong1 gong4 qi4 che1
+zh	公共汽车站	1	1F68F	90	name+gloss	gong1 gong4 qi4 che1 zhan4
+zh	公文包	1	1F4BC	100	name+gloss	gong1 wen2 bao1
+zh	公牛	0	1F402	90	name	gong1 niu2
+zh	公猪	1	1F417	80	gloss	gong1 zhu1
+zh	公羊	1	1F40F	100	name+gloss	gong1 yang2
+zh	公车	1	1F68C	80	gloss	gong1 che1
+zh	公鸡	0	1F413	90	name	gong1 ji1
+zh	六芒星	0	2721	90	name	liu4 mang2 xing1
+zh	关东煮	0	1F362	90	name	Guan1 dong1 zhu3
+zh	兵	0	265F	90	name	bing1
+zh	写字	0	270D	90	name	xie3 zi4
+zh	写字楼	1	1F3E2	90	name+gloss	xie3 zi4 lou2
+zh	军功章	1	1F396	100	name+gloss	jun1 gong1 zhang1
+zh	农人	1	1F9D1-200D-1F33E	80	gloss	nong2 ren2
+zh	农夫	0	1F468-200D-1F33E	90	name	nong2 fu1
+zh	农妇	0	1F469-200D-1F33E	90	name	nong2 fu4
+zh	农户	1	1F9D1-200D-1F33E	80	gloss	nong2 hu4
+zh	农民	0	1F9D1-200D-1F33E	90	name	nong2 min2
+zh	冰	1	1F9CA	80	gloss	bing1
+zh	冰块	0	1F9CA	90	name	bing1 kuai4
+zh	冰壶	1	1F94C	100	name+gloss	bing1 hu2
+zh	冰山	1	E2C0	80	gloss	bing1 shan1
+zh	冰橇	1	1F6F7	80	gloss	bing1 qiao1
+zh	冰淇淋	1	1F368	100	name+gloss	bing1 qi2 lin2
+zh	冰激凌	1	1F368	90	name+gloss	bing1 ji1 ling2
+zh	冰球	1	1F3D2	100	name+gloss	bing1 qiu2
+zh	冲浪	0	1F3C4	90	name	chong1 lang4
+zh	冷汗	0	1F630	90	name	leng3 han4
+zh	冷漠	0	1F610	90	name	leng3 mo4
+zh	减	0	2796	90	name	jian3
+zh	减去	1	2796	80	gloss	jian3 qu4
+zh	凤	2	1F426-200D-1F525	80	gloss	Feng4
+zh	凤凰	2	1F426-200D-1F525	100	name+gloss	Feng4 huang2
+zh	凤梨	1	1F34D	80	gloss	feng4 li2
+zh	出口	1	E10D	80	gloss	chu1 kou3
+zh	出拳	0	1F44A	90	name	chu1 quan2
+zh	出租汽车	1	1F695	80	gloss	chu1 zu1 qi4 che1
+zh	出租车	1	1F695	100	name+gloss	chu1 zu1 che1
+zh	函	1	2709	80	gloss	han2
+zh	刀叉	0	1F374	90	name	dao1 cha1
+zh	分类帐	1	1F4D2	80	gloss	fen1 lei4 zhang4
+zh	划艇	0	1F6A3	90	name	hua2 ting3
+zh	列车	1	1F686	80	gloss	lie4 che1
+zh	创可贴	0	1FA79	90	name	chuang1 ke3 tie1
+zh	刨冰	0	1F367	90	name	bao4 bing1
+zh	别墅	0	1F3E1	90	name	bie2 shu4
+zh	刮胡刀	1	1FA92	80	gloss	gua1 hu2 dao1
+zh	刺猬	1	1F994	100	name+gloss	ci4 wei5
+zh	剃刀	1	1FA92	90	name+gloss	ti4 dao1
+zh	剃须刀	1	1FA92	100	name+gloss	ti4 xu1 dao1
+zh	前台	0	1F481	90	name	qian2 tai2
+zh	剑标	1	1F5E1	80	gloss	jian4 biao1
+zh	剥啄	1	E100	80	gloss	bo1 zhuo2
+zh	剪刀	1	2702	100	name+gloss	jian3 dao1
+zh	剪切板	1	1F4CB	80	gloss	jian3 qie1 ban3
+zh	剪贴板	1	1F4CB	100	name+gloss	jian3 tie1 ban3
+zh	割草机	1	E343	80	gloss	ge1 cao3 ji1
+zh	剳	1	1FA9D	80	gloss	da2
+zh	办公大楼	1	1F3E2	80	gloss	ban4 gong1 da4 lou2
+zh	办公楼	1	1F3E2	100	name+gloss	ban4 gong1 lou2
+zh	加	2	2795	100	name+gloss	Jia1
+zh	动车	1	1F684	80	gloss	dong4 che1
+zh	勺	1	1F944	90	name+gloss	shao2
+zh	勾号	1	2714	100	name+gloss	gou1 hao4
+zh	勾拳	1	1FA9D	80	gloss	gou1 quan2
+zh	包探	1	1F575	80	gloss	bao1 tan4
+zh	包裹	1	1F4E6	100	name+gloss	bao1 guo3
+zh	匕	1	1F5E1	80	gloss	bi3
+zh	匕首	1	1F5E1	100	name+gloss	bi3 shou3
+zh	北	1	E0A0	80	gloss	bei3
+zh	北方	1	E0A0	80	gloss	bei3 fang1
+zh	北极熊	1	1F43B-200D-2744-FE0F	100	name+gloss	bei3 ji2 xiong2
+zh	北边	1	E0A0	80	gloss	bei3 bian1
+zh	北鼻	1	1F476	80	gloss	bei3 bi2
+zh	匙	1	1F944	100	name+gloss	chi2
+zh	医院	0	1F3E5	100	manual	hospital
+zh	十字架	0	271D	90	name	shi2 zi4 jia4
+zh	华夫	1	1F9C7	80	gloss	hua2 fu1
+zh	单人沙发	1	E141	80	gloss	dan1 ren2 sha1 fa1
+zh	单轨	1	1F69D	100	name+gloss	dan1 gui3
+zh	南瓜灯	0	1F383	90	name	nan2 gua1 deng1
+zh	南美梨	1	1F951	80	gloss	nan2 mei3 li2
+zh	卡仕达	1	1F36E	80	gloss	ka3 shi4 da2
+zh	卡士达	1	1F36E	90	name+gloss	ka3 shi4 da2
+zh	卧铺	1	1F6CF	80	gloss	wo4 pu4
+zh	卫兵	1	1F482	100	name+gloss	wei4 bing1
+zh	卫星	1	1F6F0	100	name+gloss	wei4 xing1
+zh	卫生间	0	1F6BB	90	name	wei4 sheng1 jian1
+zh	卫队	1	1F482	80	gloss	wei4 dui4
+zh	印表机	1	1F5A8	80	gloss	yin4 biao3 ji1
+zh	印章	1	1F9AD	80	gloss	yin4 zhang1
+zh	卷烟	1	1F6AC	90	name+gloss	juan3 yan1
+zh	卷纸	0	1F9FB	90	name	juan3 zhi3
+zh	卷轴	0	1F4DC	90	name	juan4 zhou2
+zh	厂	2	1F3ED	80	gloss	han3
+zh	厂子	1	1F3ED	80	gloss	chang3 zi5
+zh	厂工	1	1F9D1-200D-1F3ED	80	gloss	chang3 gong1
+zh	厂狗	1	1F9D1-200D-1F3ED	80	gloss	chang3 gou3
+zh	历	2	1F4C5	80	gloss	li4
+zh	厕所	0	1F6BE	90	name	ce4 suo3
+zh	厢房	1	1FABD	80	gloss	xiang1 fang2
+zh	厨子	1	1F9D1-200D-1F373	80	gloss	chu2 zi5
+zh	厨师	1	1F9D1-200D-1F373	100	name+gloss	chu2 shi1
+zh	厪	1	1F6D6	80	gloss	jin3
+zh	双拐	1	E326	80	gloss	shuang1 guai3
+zh	双眼	0	1F440	90	name	shuang1 yan3
+zh	双肩包	1	1F392	80	gloss	shuang1 jian1 bao1
+zh	发夹	0	1FAAE	90	name	fa4 jia1
+zh	发烧	0	1F912	90	name	fa1 shao1
+zh	发财	0	1F911	90	name	fa1 cai2
+zh	受伤	0	1F915	90	name	shou4 shang1
+zh	口	1	1F444	90	name+gloss	kou3
+zh	口子	1	1F573	80	gloss	kou3 zi5
+zh	口条	1	1F445	80	gloss	kou3 tiao2
+zh	口红	1	1F484	80	gloss	kou3 hong2
+zh	叫鸡	1	1F413	80	gloss	jiao4 ji1
+zh	可颂	1	1F950	80	gloss	ke3 song4
+zh	台式机	1	1F5A5	80	gloss	tai2 shi4 ji1
+zh	台式电脑	1	1F5A5	100	name+gloss	tai2 shi4 dian4 nao3
+zh	台球	1	1F3B1	100	name+gloss	tai2 qiu2
+zh	吃惊	0	1F62E	90	name	chi1 jing1
+zh	吃角子老虎	1	1F3B0	90	name+gloss	chi1 jiao3 zi5 lao3 hu3
+zh	吉他	1	1F3B8	100	name+gloss	ji2 ta1
+zh	吉它	1	1F3B8	80	gloss	ji2 ta1
+zh	名称权	1	00A9	80	gloss	ming2 cheng1 quan2
+zh	吐绶鸡	1	1F983	80	gloss	tu3 shou4 ji1
+zh	向日葵	1	1F33B	100	name+gloss	xiang4 ri4 kui2
+zh	向盘	1	1F9ED	80	gloss	xiang4 pan2
+zh	向阳花	1	1F33B	80	gloss	xiang4 yang2 hua1
+zh	吗喽	1	1F412	80	gloss	ma5 lou5
+zh	吪	1	E103	80	gloss	e2
+zh	听筒	1	1F4DE	90	name+gloss	ting1 tong3
+zh	听诊器	1	1FA7A	100	name+gloss	ting1 zhen3 qi4
+zh	吸血鬼	1	1F9DB	100	name+gloss	xi1 xue4 gui3
+zh	吸铁石	1	1F9F2	80	gloss	xi1 tie3 shi2
+zh	吻	1	1F48F	80	gloss	wen3
+zh	呇	1	2B50	80	gloss	qi3
+zh	呎	1	1F9B6	80	gloss	chi3
+zh	呕吐	0	1F92E	90	name	ou3 tu4
+zh	呵呵	0	1F642	90	name	he1 he1
+zh	呼机	1	1F4DF	90	name+gloss	hu1 ji1
+zh	呼气	0	1F62E-200D-1F4A8	90	name	hu1 qi4
+zh	和服	1	1F458	100	name+gloss	he2 fu2
+zh	咖啡	0	2615	100	manual	hot beverage
+zh	咖啡师	1	E185	80	gloss	ka1 fei1 shi1
+zh	咯咯哒	1	1F414	80	gloss	ge1 ge1 da1
+zh	咸盐	1	1F9C2	80	gloss	xian2 yan2
+zh	咸肉	1	1F953	80	gloss	xian2 rou4
+zh	哈哈	0	1F603	90	name	ha1 ha1
+zh	哈基米	1	1F408	80	gloss	ha1 ji1 mi3
+zh	哥布林	1	1F47A	80	gloss	ge1 bu4 lin2
+zh	哭	0	1F622	90	name	ku1
+zh	唇印	0	1F48B	90	name	chun2 yin4
+zh	唇膏	1	1F484	100	name+gloss	chun2 gao1
+zh	商场	1	1F3EC	100	name+gloss	shang1 chang3
+zh	商标	1	2122	100	name+gloss	shang1 biao1
+zh	啤酒	0	1F37A	90	name	pi2 jiu3
+zh	喇叭	1	1F4E2	100	name+gloss	la3 ba5
+zh	喊话器	1	1F4E3	80	gloss	han3 hua4 qi4
+zh	喜笑颜开	0	1F970	90	name	xi3 xiao4 yan2 kai1
+zh	喵星人	1	1F408	80	gloss	miao1 xing1 ren2
+zh	喷水池	1	26F2	80	gloss	pen1 shui3 chi2
+zh	喷泉	1	26F2	100	name+gloss	pen1 quan2
+zh	嘴	1	1F444	100	name+gloss	zui3
+zh	嘴子	1	1F444	80	gloss	zui3 zi5
+zh	嘴巴	1	1F444	80	gloss	zui3 ba5
+zh	嘴里	1	1F444	80	gloss	zui3 li3
+zh	嘻嘻	0	1F601	90	name	xi1 xi1
+zh	嘿嘿	0	1F600	90	name	hei1 hei1
+zh	四叶草	0	1F340	90	name	si4 ye4 cao3
+zh	四脚蛇	1	1F98E	80	gloss	si4 jiao3 she2
+zh	囝	1	1F9D2	80	gloss	jian3
+zh	回力镖	1	1FA83	80	gloss	hui2 li4 biao1
+zh	回单	1	1F9FE	80	gloss	hui2 dan1
+zh	回形针	0	1F4CE	90	name	hui2 xing2 zhen1
+zh	回执	1	1F9FE	80	gloss	hui2 zhi2
+zh	回执单	1	1F9FE	80	gloss	hui2 zhi2 dan1
+zh	回旋镖	1	1FA83	100	name+gloss	hui2 xuan2 biao1
+zh	回条	1	1F9FE	80	gloss	hui2 tiao2
+zh	回路	2	E1D7	80	gloss	hui2 lu4
+zh	囡	1	1F9D2	80	gloss	nan1
+zh	团	2	1F95F	80	gloss	tuan2
+zh	团子	1	1F361	100	name+gloss	tuan2 zi5
+zh	困惑	0	1F616	90	name	kun4 huo4
+zh	困扰	0	1F615	90	name	kun4 rao3
+zh	围巾	1	1F9E3	100	name+gloss	wei2 jin1
+zh	国家公园	1	1F3DE	100	name+gloss	guo2 jia1 gong1 yuan2
+zh	图书	1	1F4DA	90	name+gloss	tu2 shu1
+zh	图形	1	E142	80	gloss	tu2 xing2
+zh	图钉	0	1F4CC	90	name	tu2 ding1
+zh	圆月	1	1F315	80	gloss	yuan2 yue4
+zh	圆环	1	1F48D	80	gloss	yuan2 huan2
+zh	圆规	1	1F9ED	80	gloss	yuan2 gui1
+zh	圊	1	1F6BB	80	gloss	qing1
+zh	土豆	1	1F954	100	name+gloss	tu3 dou4
+zh	地动	1	E09C	80	gloss	di4 dong4
+zh	地滑	1	1F6D8	80	gloss	di4 hua2
+zh	地牛翻身	1	E09C	80	gloss	di4 niu2 fan1 shen1
+zh	地铁	0	1F687	90	name	di4 tie3
+zh	地震	1	E09C	80	gloss	di4 zhen4
+zh	场记板	0	1F3AC	90	name	chang3 ji4 ban3
+zh	坍缩星	1	E20D	80	gloss	tan1 suo1 xing1
+zh	坐席	1	1F4BA	80	gloss	zuo4 xi2
+zh	坐椅	1	1F4BA	80	gloss	zuo4 yi3
+zh	坑洞	1	1F573	80	gloss	keng1 dong4
+zh	坚冰	1	1F9CA	80	gloss	jian1 bing1
+zh	垃圾桶	0	1F5D1	90	name	la1 ji1 tong3
+zh	垒球	1	1F94E	100	name+gloss	lei3 qiu2
+zh	城堡	1	1F3F0	90	name+gloss	cheng2 bao3
+zh	城镇	1	E203	80	gloss	cheng2 zhen4
+zh	培养皿	0	1F9EB	90	name	pei2 yang3 min3
+zh	培根	1	1F953	100	name+gloss	pei2 gen1
+zh	堪达罕	1	1FACE	80	gloss	kan1 da2 han3
+zh	塔口	1	1F32E	80	gloss	ta3 kou3
+zh	塔可	1	1F32E	80	gloss	ta3 ke3
+zh	塔可饼	1	1F32E	80	gloss	ta3 ke3 bing3
+zh	墓碑	1	1FAA6	100	name+gloss	mu4 bei1
+zh	士多啤梨	1	1F353	80	gloss	shi4 duo1 pi2 li2
+zh	壴	2	1F941	80	gloss	Zhu4
+zh	备忘录	0	1F4DD	90	name	bei4 wang4 lu4
+zh	夕阳	1	1F307	90	name+gloss	xi1 yang2
+zh	外壳	1	2709	80	gloss	wai4 ke2
+zh	外套	0	1F9E5	90	name	wai4 tao4
+zh	外星	1	1F47D	80	gloss	wai4 xing1
+zh	外星人	0	1F47D	90	name	wai4 xing1 ren2
+zh	多云	0	1F325	90	name	duo1 yun2
+zh	多拿滋	1	1F369	80	gloss	duo1 na2 zi1
+zh	夜晚	0	1F303	90	name	ye4 wan3
+zh	夜枭	1	1F989	80	gloss	ye4 xiao1
+zh	夜猫子	1	1F989	80	gloss	ye4 mao1 zi5
+zh	大便	0	1F4A9	90	name	da4 bian4
+zh	大水	1	E09F	80	gloss	da4 shui3
+zh	大漠	1	1F3DC	80	gloss	da4 mo4
+zh	大猩猩	1	1F98D	100	name+gloss	da4 xing1 xing5
+zh	大礼帽	1	1F3A9	80	gloss	da4 li3 mao4
+zh	大笑	0	1F604	90	name	da4 xiao4
+zh	大笨象	1	1F418	80	gloss	da4 ben4 xiang4
+zh	大羊驼	1	1F999	80	gloss	da4 yang2 tuo2
+zh	大肠	1	E314	80	gloss	da4 chang2
+zh	大蒜	1	1F9C4	90	name+gloss	da4 suan4
+zh	大虫	1	1F405	80	gloss	da4 chong2
+zh	大象	1	1F418	100	name+gloss	da4 xiang4
+zh	大风	0	1F32C	90	name	da4 feng1
+zh	大鹿	1	1FACE	80	gloss	da4 lu4
+zh	大鼠	1	1F400	80	gloss	da4 shu3
+zh	天妇罗	1	1F364	100	name+gloss	tian1 fu4 luo2
+zh	天汉	1	1F30C	80	gloss	Tian1 han4
+zh	天秤	1	2696	90	name+gloss	tian1 cheng4
+zh	天鹅	1	1F9A2	100	name+gloss	tian1 e2
+zh	太平门	1	E201	80	gloss	tai4 ping2 men2
+zh	太空人	1	1F9D1-200D-1F680	80	gloss	tai4 kong1 ren2
+zh	太空梭	1	E20B	80	gloss	tai4 kong1 suo1
+zh	太阳	0	2600	100	manual	sun
+zh	太阳电池	1	E1D6	80	gloss	tai4 yang2 dian4 chi2
+zh	太阳眼镜	1	1F576	80	gloss	tai4 yang2 yan3 jing4
+zh	太阳能	1	E2CD	80	gloss	tai4 yang2 neng2
+zh	太阳能电池	1	E1D6	80	gloss	tai4 yang2 neng2 dian4 chi2
+zh	太阳花	1	1F33B	90	name+gloss	tai4 yang2 hua1
+zh	太阳镜	1	1F576	80	gloss	tai4 yang2 jing4
+zh	失望	0	1F61E	90	name	shi1 wang4
+zh	头冠	1	1F451	80	gloss	tou2 guan1
+zh	头昏	1	1F4AB	80	gloss	tou2 hun1
+zh	头昏眼花	0	1F974	90	name	tou2 hun1 yan3 hua1
+zh	头晕	1	1F4AB	100	name+gloss	tou2 yun1
+zh	头疼	1	E31D	80	gloss	tou2 teng2
+zh	头盖	1	1F480	80	gloss	tou2 gai4
+zh	头盖骨	1	1F480	80	gloss	tou2 gai4 gu3
+zh	头风	1	E31D	80	gloss	tou2 feng1
+zh	头骨	1	1F480	100	name+gloss	tou2 gu3
+zh	夹具	1	1F5DC	90	name+gloss	jia1 ju4
+zh	夹钳	0	1F5DC	90	name	jia1 qian2
+zh	奇异果	1	1F95D	90	name+gloss	qi2 yi4 guo3
+zh	奖杯	0	1F3C6	90	name	jiang3 bei1
+zh	奖牌	0	1F3C5	90	name	jiang3 pai2
+zh	套娃	0	1FA86	90	name	tao4 wa2
+zh	女人	1	1F469	100	name+gloss	nu:3 ren2
+zh	女厕	0	1F6BA	90	name	nu:3 ce4
+zh	女同胞	1	1F469	80	gloss	nu:3 tong2 bao1
+zh	女娃	2	1F467	80	gloss	Nu:3 wa2
+zh	女子	1	1F469	80	gloss	nu:3 zi3
+zh	女孩	0	1F467	90	name	nu:3 hai2
+zh	女孩子	1	1F467	80	gloss	nu:3 hai2 zi5
+zh	女性	1	1F469	80	gloss	nu:3 xing4
+zh	女流	1	1F469	80	gloss	nu:3 liu2
+zh	女的	1	1F469	80	gloss	nu:3 de5
+zh	女装	0	1F45A	90	name	nu:3 zhuang1
+zh	奶油果	1	1F951	80	gloss	nai3 you2 guo3
+zh	奶牛	0	1F404	90	name	nai3 niu2
+zh	奶瓶	0	1F37C	90	name	nai3 ping2
+zh	奶酪火锅	1	1FAD5	100	name+gloss	nai3 lao4 huo3 guo1
+zh	奶黄	1	1F36E	100	name+gloss	nai3 huang2
+zh	妇	1	1F469	80	gloss	fu4
+zh	妇女	1	1F469	80	gloss	fu4 nu:3
+zh	妖	1	1F47A	80	gloss	yao1
+zh	妖怪	0	1F9DE	90	name	yao1 guai4
+zh	妞	1	1F467	80	gloss	niu1
+zh	妪	1	1F475	80	gloss	yu4
+zh	妮	1	1F467	80	gloss	ni1
+zh	姑娘	1	1F467	80	gloss	gu1 niang5
+zh	㛀	1	1F930	80	gloss	chu2
+zh	姜	3	1FADA	100	name+gloss	Jiang1
+zh	威权	1	E08F	80	gloss	wei1 quan2
+zh	威灵	1	E08F	80	gloss	wei1 ling2
+zh	娃	1	1F476	80	gloss	wa2
+zh	娃娃	1	1F476	80	gloss	wa2 wa5
+zh	娃子	1	1F476	80	gloss	wa2 zi5
+zh	姬	2	1F469	80	gloss	Ji1
+zh	娘儿们	1	1F469	80	gloss	niang2 r5 men5
+zh	娘妈	1	1F469	80	gloss	niang2 ma1
+zh	婆子	1	1F475	80	gloss	po2 zi5
+zh	婚事	1	1F492	80	gloss	hun1 shi4
+zh	婚典	1	1F492	80	gloss	hun1 dian3
+zh	婚礼	1	1F492	100	name+gloss	hun1 li3
+zh	婴幼儿	1	1F476	80	gloss	ying1 you4 er2
+zh	媪	1	1F475	80	gloss	ao3
+zh	嫚	1	1F467	80	gloss	man1
+zh	嫚子	1	1F467	80	gloss	man1 zi5
+zh	孔	2	1F573	80	gloss	Kong3
+zh	孔眼	1	1F573	80	gloss	kong3 yan3
+zh	孔雀	0	1F99A	90	name	kong3 que4
+zh	孕妇	1	1F930	100	name+gloss	yun4 fu4
+zh	孛	1	2604	80	gloss	bei4
+zh	孛星	1	2604	80	gloss	bei4 xing1
+zh	孥	1	1F9D2	80	gloss	nu2
+zh	学员	1	1F9D1-200D-1F393	80	gloss	xue2 yuan2
+zh	学子	1	1F9D1-200D-1F393	80	gloss	xue2 zi3
+zh	学校	0	1F3EB	100	manual	school
+zh	学生	1	1F9D1-200D-1F393	100	name+gloss	xue2 sheng5
+zh	孩	1	1F9D2	80	gloss	hai2
+zh	孺	2	1F9D2	80	gloss	Ru2
+zh	宅舍	1	1F3E0	80	gloss	zhai2 she4
+zh	宅院	1	1F3E0	80	gloss	zhai2 yuan4
+zh	宇航员	1	1F9D1-200D-1F680	100	name+gloss	yu3 hang2 yuan2
+zh	守兵	1	1F482	80	gloss	shou3 bing1
+zh	安石榴	1	E0C4	80	gloss	an1 shi2 liu5
+zh	宗	2	1F3EB	80	gloss	Zong1
+zh	定时钟	1	E0AB	80	gloss	ding4 shi2 zhong1
+zh	宝宝	0	1F6BC	90	name	bao3 bao5
+zh	宝特瓶	1	E0CC	80	gloss	bao3 te4 ping2
+zh	宝石	0	1F48E	90	name	bao3 shi2
+zh	实生苗	1	1F331	80	gloss	shi2 sheng1 miao2
+zh	审判员	1	1F9D1-200D-2696-FE0F	80	gloss	shen3 pan4 yuan2
+zh	审判官	1	1F9D1-200D-2696-FE0F	80	gloss	shen3 pan4 guan1
+zh	客船	1	1F6F3	90	name+gloss	ke4 chuan2
+zh	客轮	1	1F6F3	100	name+gloss	ke4 lun2
+zh	宫位	1	1F3E0	80	gloss	gong1 wei4
+zh	害怕	0	1F628	90	name	hai4 pa4
+zh	家庭	0	1F46A	90	name	jia1 ting2
+zh	家族	1	1F46A	80	gloss	jia1 zu2
+zh	密钥	1	1F511	90	name+gloss	mi4 yao4
+zh	富士山	0	1F5FB	90	name	Fu4 shi4 Shan1
+zh	寒冰	1	1F9CA	80	gloss	han2 bing1
+zh	寮	2	1F6D6	80	gloss	Liao2
+zh	寮房	1	1F6D6	80	gloss	liao2 fang2
+zh	寻呼机	0	1F4DF	90	name	xun2 hu1 ji1
+zh	导盲犬	1	1F9AE	100	name+gloss	dao3 mang2 quan3
+zh	寿司	1	1F363	100	name+gloss	shou4 si1
+zh	寿材	1	26B0	80	gloss	shou4 cai2
+zh	寿糕	1	1F382	80	gloss	shou4 gao1
+zh	封印	1	1F9AD	80	gloss	feng1 yin4
+zh	封套	1	2709	80	gloss	feng1 tao4
+zh	封条	1	1F9AD	80	gloss	feng1 tiao2
+zh	将牌	1	E183	80	gloss	jiang4 pai2
+zh	小号	1	1F3BA	100	name+gloss	xiao3 hao4
+zh	小型巴士	1	1F690	80	gloss	xiao3 xing2 ba1 shi4
+zh	小妖精	1	1F47A	100	name+gloss	xiao3 yao1 jing1
+zh	小娃娃	1	1F476	80	gloss	xiao3 wa2 wa5
+zh	小子	2	1F466	80	gloss	xiao3 zi3
+zh	小屋	1	1F6D6	100	name+gloss	xiao3 wu1
+zh	小巴	1	1F690	100	name+gloss	xiao3 ba1
+zh	小强	1	1FAB3	90	name+gloss	Xiao3 Qiang2
+zh	小提琴	1	1F3BB	100	name+gloss	xiao3 ti2 qin2
+zh	小滴	1	1F4A7	80	gloss	xiao3 di1
+zh	小票	1	1F9FE	80	gloss	xiao3 piao4
+zh	小精灵	1	1F9DD	100	name+gloss	xiao3 jing1 ling2
+zh	小虾	1	1F990	80	gloss	xiao3 xia1
+zh	小虾米	1	1F990	80	gloss	xiao3 xia1 mi5
+zh	小铲子	1	E346	80	gloss	xiao3 chan3 zi5
+zh	小鸡	0	1F424	90	name	xiao3 ji1
+zh	小鼠	1	1F401	80	gloss	xiao3 shu3
+zh	小龙	1	1F40D	80	gloss	xiao3 long2
+zh	少女	1	1F467	80	gloss	shao4 nu:3
+zh	尖刀	1	1F5E1	80	gloss	jian1 dao1
+zh	尾气	0	1F4A8	90	name	wei3 qi4
+zh	屋	1	1F3E0	80	gloss	wu1
+zh	屋子	1	1F3E0	80	gloss	wu1 zi5
+zh	屋宇	1	1F3E0	80	gloss	wu1 yu3
+zh	山岳	1	26F0	80	gloss	shan1 yue4
+zh	山崩	1	1F6D8	90	name+gloss	shan1 beng1
+zh	山泥倾泻	1	1F6D8	80	gloss	shan1 ni2 qing1 xie4
+zh	山羊	1	1F410	100	name+gloss	shan1 yang2
+zh	山药蛋	1	1F954	80	gloss	shan1 yao5 dan4
+zh	岩石	1	1FAA8	100	name+gloss	yan2 shi2
+zh	崩坍	1	1F6D8	80	gloss	beng1 tan1
+zh	崽	1	1F9D2	80	gloss	zai3
+zh	嵄	1	26F0	80	gloss	mei3
+zh	工人	0	1F9D1-200D-1F3ED	90	name	gong1 ren2
+zh	工具箱	1	1F9F0	100	name+gloss	gong1 ju4 xiang1
+zh	工厂	1	1F3ED	100	name+gloss	gong1 chang3
+zh	巧克力	0	1F36B	90	name	qiao3 ke4 li4
+zh	巨魔	1	1F9CC	80	gloss	ju4 mo2
+zh	巴士	1	1F68C	80	gloss	ba1 shi4
+zh	巴士站	1	1F68F	80	gloss	ba1 shi4 zhan4
+zh	巴蛸	1	1F419	80	gloss	ba1 shao1
+zh	巾帼	1	1F469	80	gloss	jin1 guo2
+zh	帆船	1	26F5	100	name+gloss	fan1 chuan2
+zh	师	2	1F9D1-200D-1F3EB	80	gloss	Shi1
+zh	师尊	1	1F9D1-200D-1F3EB	80	gloss	shi1 zun1
+zh	帐幕	1	26FA	80	gloss	zhang4 mu4
+zh	帐篷	1	26FA	100	name+gloss	zhang4 peng5
+zh	帚	1	1F9F9	80	gloss	zhou3
+zh	帡幪	1	26FA	80	gloss	ping2 meng2
+zh	席位	1	1F4BA	80	gloss	xi2 wei4
+zh	常绿树	1	1F332	80	gloss	chang2 lu:4 shu4
+zh	帽子	0	1F9E2	100	manual	billed cap
+zh	帽子叔叔	1	1F46E	80	gloss	mao4 zi5 shu1 shu5
+zh	幄	1	26FA	80	gloss	wo4
+zh	干杯	0	1F37B	90	name	gan1 bei1
+zh	年历	1	1F4C5	80	gloss	nian2 li4
+zh	幸运曲奇	1	1F960	80	gloss	xing4 yun4 qu1 qi2
+zh	幸运饼干	1	1F960	100	name+gloss	xing4 yun4 bing3 gan1
+zh	幻椅式	1	1FA91	80	gloss	huan4 yi3 shi4
+zh	幼苗	1	1F331	100	name+gloss	you4 miao2
+zh	幽魂	1	1F47B	80	gloss	you1 hun2
+zh	庄稼人	1	1F9D1-200D-1F33E	80	gloss	zhuang1 jia5 ren2
+zh	床	0	1F6CF	100	manual	bed
+zh	床位	1	1F6CF	80	gloss	chuang2 wei4
+zh	床铺	1	1F6CF	90	name+gloss	chuang2 pu4
+zh	庐	2	1F6D6	80	gloss	Lu2
+zh	废墟	0	1F3DA	90	name	fei4 xu1
+zh	庠	1	1F3EB	80	gloss	xiang2
+zh	座	1	1F4BA	80	gloss	zuo4
+zh	座位	1	1F4BA	100	name+gloss	zuo4 wei4
+zh	座席	1	1F4BA	80	gloss	zuo4 xi2
+zh	座椅	1	1F4BA	80	gloss	zuo4 yi3
+zh	座钟	0	1F570	90	name	zuo4 zhong1
+zh	庵	1	1F6D6	80	gloss	an1
+zh	廌	1	1F984	80	gloss	zhi4
+zh	建筑工人	1	1F477	100	name+gloss	jian4 zhu4 gong1 ren2
+zh	开花	0	1F33C	90	name	kai1 hua1
+zh	开麦拉	1	1F4F7	80	gloss	kai1 mai4 la1
+zh	弓箭	1	1F3F9	90	name+gloss	gong1 jian4
+zh	弥月	1	1F315	80	gloss	mi2 yue4
+zh	弯月	1	1F319	100	name+gloss	wan1 yue4
+zh	录像带	0	1F4FC	90	name	lu4 xiang4 dai4
+zh	彗	1	1F9F9	80	gloss	hui4
+zh	彗星	1	2604	100	name+gloss	hui4 xing1
+zh	彩虹	1	1F308	100	name+gloss	cai3 hong2
+zh	影	1	E142	80	gloss	ying3
+zh	影剧院	1	1F3A6	80	gloss	ying3 ju4 yuan4
+zh	影碟	1	1F4C0	80	gloss	ying3 die2
+zh	得意	0	1F60F	90	name	de2 yi4
+zh	微笑	0	263A	90	name	wei1 xiao4
+zh	德士	1	1F695	80	gloss	de2 shi4
+zh	德律风	1	260E	80	gloss	de2 lu:4 feng1
+zh	心	0	2764	100	manual	red heart
+zh	心碎	1	1F494	100	name+gloss	xin1 sui4
+zh	心跳	0	1F493	90	name	xin1 tiao4
+zh	忍者	1	1F977	100	name+gloss	ren3 zhe3
+zh	快艇	1	1F6A4	100	name+gloss	kuai4 ting3
+zh	念珠	1	1F4FF	100	name+gloss	nian4 zhu1
+zh	总谱	1	1F3BC	80	gloss	zong3 pu3
+zh	恒星	1	2B50	80	gloss	heng2 xing1
+zh	恩师	1	1F9D1-200D-1F3EB	80	gloss	en1 shi1
+zh	悠悠球	1	1FA80	100	name+gloss	you1 you1 qiu2
+zh	情书	1	1F48C	100	name+gloss	qing2 shu1
+zh	情侣	0	1F491	90	name	qing2 lu:3
+zh	情侣酒店	1	1F3E9	90	name+gloss	qing2 lu:3 jiu3 dian4
+zh	情趣酒店	1	1F3E9	80	gloss	qing2 qu4 jiu3 dian4
+zh	意大利直面	1	1F35D	80	gloss	Yi4 da4 li4 zhi2 mian4
+zh	感冒	0	1F637	90	name	gan3 mao4
+zh	戏票	1	1F3AB	80	gloss	xi4 piao4
+zh	成人	0	1F9D1	90	name	cheng2 ren2
+zh	戒子	1	1F48D	80	gloss	jie4 zi5
+zh	戒指	1	1F48D	100	name+gloss	jie4 zhi5
+zh	房	2	1F3E0	80	gloss	Fang2
+zh	房子	0	1F3E0	100	manual	house
+zh	房屋	1	1F3E0	90	name+gloss	fang2 wu1
+zh	房舍	1	1F3E0	80	gloss	fang2 she4
+zh	手	0	270B	100	manual	raised hand
+zh	手包	1	1F45C	80	gloss	shou3 bao1
+zh	手套	0	1F9E4	90	name	shou3 tao4
+zh	手帐	1	1F4D3	80	gloss	shou3 zhang4
+zh	手拿包	1	1F45D	90	name+gloss	shou3 na2 bao1
+zh	手掌	0	1F590	90	name	shou3 zhang3
+zh	手提包	0	1F45C	90	name	shou3 ti2 bao1
+zh	手机	0	1F4F1	100	manual	mobile phone
+zh	手球	0	1F93E	90	name	shou3 qiu2
+zh	手电	1	1F526	90	name+gloss	shou3 dian4
+zh	手电筒	1	1F526	100	name+gloss	shou3 dian4 tong3
+zh	手表	0	231A	90	name	shou3 biao3
+zh	手风琴	1	1FA97	100	name+gloss	shou3 feng1 qin2
+zh	打印机	1	1F5A8	100	name+gloss	da3 yin4 ji1
+zh	打呵欠	0	1F971	90	name	da3 he1 qian4
+zh	打喷嚏	0	1F927	90	name	da3 pen1 ti4
+zh	打火机	1	E143	80	gloss	da3 huo3 ji1
+zh	打碟师	1	1F9D1-200D-1FAA9	80	gloss	da3 die2 shi1
+zh	打雷	0	1F329	90	name	da3 lei2
+zh	执行绪	1	1F9F5	80	gloss	zhi2 xing2 xu4
+zh	扩增实境	1	E1C6	80	gloss	kuo4 zeng1 shi2 jing4
+zh	扩音器	1	1F4E3	100	name+gloss	kuo4 yin1 qi4
+zh	扫	2	1F9F9	80	gloss	sao3
+zh	扫帚	1	1F9F9	100	name+gloss	sao4 zhou5
+zh	扫帚星	1	2604	80	gloss	sao4 zhou5 xing1
+zh	扫把	1	1F9F9	80	gloss	sao4 ba3
+zh	扫把星	1	2604	80	gloss	sao4 ba3 xing1
+zh	扳手	1	1F527	100	name+gloss	ban1 shou3
+zh	扳钳	1	1F527	80	gloss	ban1 qian2
+zh	扶手椅	1	E141	80	gloss	fu2 shou3 yi3
+zh	扶梯	1	1FA9C	80	gloss	fu2 ti1
+zh	批萨	1	1F355	80	gloss	pi1 sa4
+zh	技工	0	1F9D1-200D-1F527	90	name	ji4 gong1
+zh	投票箱	0	1F5F3	90	name	tou2 piao4 xiang1
+zh	折扇	0	1FAAD	90	name	zhe2 shan4
+zh	护目镜	0	1F97D	90	name	hu4 mu4 jing4
+zh	护盾	1	1F6E1	80	gloss	hu4 dun4
+zh	报社	1	1F4F0	80	gloss	bao4 she4
+zh	报纸	1	1F4F0	100	name+gloss	bao4 zhi3
+zh	披萨	1	1F355	100	name+gloss	pi1 sa4
+zh	抱抱	0	1F917	90	name	bao4 bao4
+zh	担心	0	1F61F	90	name	dan1 xin1
+zh	担架	1	E328	80	gloss	dan1 jia4
+zh	担架床	1	E328	80	gloss	dan1 jia4 chuang2
+zh	担架抬	1	E328	80	gloss	dan1 jia4 tai2
+zh	拉管	1	1FA8A	80	gloss	la1 guan3
+zh	拐子	1	1FA7C	80	gloss	guai3 zi5
+zh	拐杖	1	1FA7C	100	name+gloss	guai3 zhang4
+zh	拖拉机	1	1F69C	100	name+gloss	tuo1 la1 ji1
+zh	拖曳机	1	1F69C	80	gloss	tuo1 ye4 ji1
+zh	招数	1	E103	80	gloss	zhao1 shu4
+zh	招法	1	E103	80	gloss	zhao1 fa3
+zh	招牌纸	1	1F3F7	80	gloss	zhao1 pai2 zhi3
+zh	拳击手套	1	1F94A	100	name+gloss	quan2 ji1 shou3 tao4
+zh	拳套	1	1F94A	80	gloss	quan2 tao4
+zh	拼图	0	1F9E9	90	name	pin1 tu2
+zh	挂钩	0	1FA9D	90	name	gua4 gou1
+zh	指北针	1	1F9ED	80	gloss	zhi3 bei3 zhen1
+zh	指南针	1	1F9ED	100	name+gloss	zhi3 nan2 zhen1
+zh	指印	1	1FAC6	80	gloss	zhi3 yin4
+zh	指摹	1	1FAC6	80	gloss	zhi3 mo2
+zh	指模	1	1FAC6	80	gloss	zhi3 mo2
+zh	指环	1	1F48D	80	gloss	zhi3 huan2
+zh	指甲油	1	1F485	90	name+gloss	zhi3 jia5 you2
+zh	指纹	1	1FAC6	100	name+gloss	zhi3 wen2
+zh	按摩	0	1F486	90	name	an4 mo2
+zh	挡位	1	2699	80	gloss	dang3 wei4
+zh	挥手	0	1F44B	90	name	hui1 shou3
+zh	捂脸	0	1F926	90	name	wu3 lian3
+zh	捕鼠器	1	1FAA4	100	name+gloss	bu3 shu3 qi4
+zh	捧花	1	1F490	80	gloss	peng3 hua1
+zh	排挡	1	2699	80	gloss	pai2 dang3
+zh	排球	1	1F3D0	100	name+gloss	pai2 qiu2
+zh	排骨	0	1F356	90	name	pai2 gu3
+zh	探员	1	1F575	80	gloss	tan4 yuan2
+zh	探长	1	1F575	80	gloss	tan4 zhang3
+zh	措举	1	E103	80	gloss	cuo4 ju3
+zh	提包	1	1F45C	80	gloss	ti2 bao1
+zh	提篮	1	1F9FA	80	gloss	ti2 lan2
+zh	提篮儿	1	1F9FA	80	gloss	ti2 lan2 r5
+zh	握手	0	1F91D	90	name	wo4 shou3
+zh	揦子	1	E0CB	80	gloss	la2 zi5
+zh	搋子	1	1FAA0	90	name+gloss	chuai1 zi5
+zh	搭钩	1	1FA9D	80	gloss	da1 gou1
+zh	摄像机	1	1F4F9	100	name+gloss	she4 xiang4 ji1
+zh	摄影机	1	1F4F7	80	gloss	she4 ying3 ji1
+zh	摆渡	1	26F4	80	gloss	bai3 du4
+zh	摇杆	1	1F579	80	gloss	yao2 gan3
+zh	摇滚	0	1F918	90	name	yao2 gun3
+zh	摩天轮	0	1F3A1	90	name	mo2 tian1 lun2
+zh	摩托	1	E1C8	80	gloss	mo2 tuo1
+zh	摩托艇	1	1F6E5	100	name+gloss	mo2 tuo1 ting3
+zh	摩托车	0	1F3CD	90	name	mo2 tuo1 che1
+zh	撅嘴	0	1F64E	90	name	jue1 zui3
+zh	操纵杆	1	1F579	80	gloss	cao1 zong4 gan3
+zh	收件箱	1	1F4E5	100	name+gloss	shou1 jian4 xiang1
+zh	收据	1	1F9FE	100	name+gloss	shou1 ju4
+zh	收条	1	1F9FE	90	name+gloss	shou1 tiao2
+zh	收留所	1	E098	80	gloss	shou1 liu2 suo3
+zh	收音机	1	1F4FB	100	name+gloss	shou1 yin1 ji1
+zh	改锥	1	1FA9B	80	gloss	gai3 zhui1
+zh	放声大哭	0	1F62D	90	name	fang4 sheng1 da4 ku1
+zh	放射性	1	2622	90	name+gloss	fang4 she4 xing4
+zh	放射性废物	1	E2D3	80	gloss	fang4 she4 xing4 fei4 wu4
+zh	救护车	1	1F691	100	name+gloss	jiu4 hu4 che1
+zh	救生圈	0	1F6DF	90	name	jiu4 sheng1 quan1
+zh	救生衣	0	1F9BA	90	name	jiu4 sheng1 yi1
+zh	教书匠	1	1F9D1-200D-1F3EB	80	gloss	jiao1 shu1 jiang4
+zh	教员	1	1F9D1-200D-1F3EB	80	gloss	jiao4 yuan2
+zh	教堂	0	26EA	90	name	jiao4 tang2
+zh	教师	1	1F9D1-200D-1F3EB	80	gloss	jiao4 shi1
+zh	文件	0	1F4C4	90	name	wen2 jian4
+zh	文件夹	1	1F4C1	100	name+gloss	wen2 jian4 jia1
+zh	斑马	1	1F993	100	name+gloss	ban1 ma3
+zh	斧头	1	1FA93	100	name+gloss	fu3 tou2
+zh	断层扫描	1	E329	80	gloss	duan4 ceng2 sao3 miao2
+zh	新月	1	1F311	80	gloss	xin1 yue4
+zh	施工	1	1F6A7	100	name+gloss	shi1 gong1
+zh	旅社	1	1F3E8	80	gloss	lu:3 she4
+zh	旅馆	1	1F3E8	80	gloss	lu:3 guan3
+zh	旋转木马	1	1F3A0	100	name+gloss	xuan2 zhuan3 mu4 ma3
+zh	无人飞行器	1	E1D2	80	gloss	wu2 ren2 fei1 xing2 qi4
+zh	无尾熊	1	1F428	80	gloss	wu2 wei3 xiong2
+zh	无穷大	0	267E	90	name	wu2 qiong2 da4
+zh	无线	1	1F6DC	100	name+gloss	wu2 xian4
+zh	无语	0	1F611	90	name	wu2 yu3
+zh	无轨电车	1	1F68E	100	name+gloss	wu2 gui3 dian4 che1
+zh	无钢圈	1	1F6DC	80	gloss	wu2 gang1 quan1
+zh	日	1	2600	80	gloss	ri4
+zh	日元	0	1F4B4	90	name	ri4 yuan2
+zh	日出	1	1F305	100	name+gloss	ri4 chu1
+zh	日历	1	1F4C5	100	name+gloss	ri4 li4
+zh	日头	1	2600	80	gloss	ri4 tou2
+zh	日暮	1	1F307	80	gloss	ri4 mu4
+zh	日没	1	1F307	80	gloss	ri4 mo4
+zh	日落	1	1F307	100	name+gloss	ri4 luo4
+zh	旰	1	1F307	80	gloss	gan4
+zh	旺来	1	1F34D	80	gloss	wang4 lai2
+zh	明杖	1	1F9AF	80	gloss	ming2 zhang4
+zh	明镜	2	1FA9E	80	gloss	Ming2 jing4
+zh	昏昏沉沉	1	1F4AB	80	gloss	hun1 hun1 chen2 chen2
+zh	星	1	2B50	80	gloss	xing1
+zh	星星	0	2B50	90	name	xing1 xing5
+zh	星月	0	262A	90	name	xing1 yue4
+zh	显微镜	1	1F52C	100	name+gloss	xian3 wei1 jing4
+zh	显镜	1	1F52C	80	gloss	xian3 jing4
+zh	晕乎	1	1F4AB	80	gloss	yun1 hu5
+zh	晕头	1	1F4AB	80	gloss	yun1 tou2
+zh	晕头转向	0	1F635	90	name	yun1 tou2 zhuan4 xiang4
+zh	晕糊	1	1F4AB	80	gloss	yun1 hu5
+zh	智能手表	1	E1CE	80	gloss	zhi4 neng2 shou3 biao3
+zh	暂停键	1	23F8	80	gloss	zan4 ting2 jian4
+zh	暹	1	1F305	80	gloss	xian1
+zh	曱甴	1	1FAB3	80	gloss	yue1 zha2
+zh	曲奇	1	1F36A	90	name+gloss	qu1 qi2
+zh	曲棍球	1	1F3D1	100	name+gloss	qu1 gun4 qiu2
+zh	月亮	0	1F319	100	manual	crescent moon
+zh	月份牌	1	1F4C5	80	gloss	yue4 fen4 pai2
+zh	月牙	1	1F319	80	gloss	yue4 ya2
+zh	月缺	1	1F311	80	gloss	yue4 que1
+zh	月轮	1	1F315	80	gloss	yue4 lun2
+zh	月饼	0	1F96E	90	name	yue4 bing3
+zh	有轨电车	0	1F68B	90	name	you3 gui3 dian4 che1
+zh	服装	1	1F457	80	gloss	fu2 zhuang1
+zh	朔月	1	1F311	100	name+gloss	shuo4 yue4
+zh	朔望	1	1F311	80	gloss	shuo4 wang4
+zh	望	1	1F315	80	gloss	wang4
+zh	望日	1	1F315	80	gloss	wang4 ri4
+zh	望月	1	1F315	80	gloss	wang4 yue4
+zh	望远镜	0	1F52D	90	name	wang4 yuan3 jing4
+zh	木头	0	1FAB5	90	name	mu4 tou5
+zh	木材	1	1FAB5	80	gloss	mu4 cai2
+zh	木槿	1	1F33A	90	name+gloss	mu4 jin3
+zh	木球	1	1F997	80	gloss	mu4 qiu2
+zh	机关车	1	1F682	80	gloss	ji1 guan1 che1
+zh	机动	1	1F682	80	gloss	ji1 dong4
+zh	机器人	0	1F916	90	name	ji1 qi4 ren2
+zh	机器脚踏车	1	1F3CD	80	gloss	ji1 qi4 jiao3 ta4 che1
+zh	机师	1	1F9D1-200D-2708-FE0F	80	gloss	ji1 shi1
+zh	机械人	1	1F916	80	gloss	ji1 xie4 ren2
+zh	机械工	1	1F9D1-200D-1F527	80	gloss	ji1 xie4 gong1
+zh	机械工人	1	1F9D1-200D-1F527	80	gloss	ji1 xie4 gong1 ren2
+zh	机械师	1	1F9D1-200D-1F527	80	gloss	ji1 xie4 shi1
+zh	机翼	1	1FABD	80	gloss	ji1 yi4
+zh	机踏车	1	1F3CD	80	gloss	ji1 ta4 che1
+zh	权	2	E08F	80	gloss	Quan2
+zh	权威	1	E08F	80	gloss	quan2 wei1
+zh	权柄	1	E08F	80	gloss	quan2 bing3
+zh	条形图	1	1F4CA	100	name+gloss	tiao2 xing2 tu2
+zh	条形码	1	E1D9	80	gloss	tiao2 xing2 ma3
+zh	条码	1	E1D9	80	gloss	tiao2 ma3
+zh	来信	0	1F4E8	90	name	lai2 xin4
+zh	杴	1	1FA8F	80	gloss	xian1
+zh	松树	0	1F332	90	name	song1 shu4
+zh	松鼠	1	1F43F	100	name+gloss	song1 shu3
+zh	果穗	1	1F442	80	gloss	guo3 sui4
+zh	枪乌贼	1	1F991	80	gloss	qiang1 wu1 zei2
+zh	枫叶	1	1F341	100	name+gloss	feng1 ye4
+zh	枭	1	1F989	80	gloss	xiao1
+zh	柠檬	1	1F34B	100	name+gloss	ning2 meng2
+zh	柱塞	1	1FAA0	80	gloss	zhu4 sai1
+zh	柱状图	1	1F4CA	80	gloss	zhu4 zhuang4 tu2
+zh	柶	1	1F944	80	gloss	si4
+zh	标签	1	1F3F7	100	name+gloss	biao1 qian1
+zh	标签页	0	1F4D1	90	name	biao1 qian1 ye4
+zh	标语牌	1	1FAA7	100	name+gloss	biao1 yu3 pai2
+zh	栊	1	1FA9F	80	gloss	long2
+zh	栏圈	1	1F58A	80	gloss	lan2 quan1
+zh	树	0	1F333	100	manual	deciduous tree
+zh	树懒	1	1F9A5	100	name+gloss	shu4 lan3
+zh	树獭	1	1F9A5	80	gloss	shu4 ta3
+zh	树袋熊	1	1F428	90	name+gloss	shu4 dai4 xiong2
+zh	栗	3	1F330	80	gloss	li4
+zh	栗子	1	1F330	100	name+gloss	li4 zi5
+zh	校方	1	1F3EB	80	gloss	xiao4 fang1
+zh	核发电厂	1	E2D4	80	gloss	he2 fa1 dian4 chang3
+zh	核电厂	1	E2D4	80	gloss	he2 dian4 chang3
+zh	核电站	1	E2D4	80	gloss	he2 dian4 zhan4
+zh	格格	2	1F478	80	gloss	ge1 ge1
+zh	栽子	1	1F331	80	gloss	zai1 zi5
+zh	桃	1	1F351	100	name+gloss	tao2
+zh	桃子	1	1F351	80	gloss	tao2 zi5
+zh	桌上型电脑	1	1F5A5	80	gloss	zhuo1 shang4 xing2 dian4 nao3
+zh	桌机	1	1F5A5	80	gloss	zhuo1 ji1
+zh	档	1	2699	80	gloss	dang3
+zh	𬂩	1	1F962	80	gloss	jia1
+zh	𬂩提	1	1F962	80	gloss	jia1 ti2
+zh	桶	0	1FAA3	90	name	tong3
+zh	梅花	0	2663	90	name	mei2 hua1
+zh	梨	1	1F350	100	name+gloss	li2
+zh	梨子	1	1F350	80	gloss	li2 zi5
+zh	梯子	0	1FA9C	90	name	ti1 zi5
+zh	梵哑铃	1	1F3BB	80	gloss	fan4 ya3 ling2
+zh	梵婀玲	1	1F3BB	80	gloss	fan4 e1 ling2
+zh	检疫	1	E0AF	80	gloss	jian3 yi4
+zh	棍网球	1	1F94D	80	gloss	gun4 wang3 qiu2
+zh	棒棒糖	1	1F36D	100	name+gloss	bang4 bang4 tang2
+zh	棒球	1	26BE	100	name+gloss	bang4 qiu2
+zh	棕树	1	1F334	80	gloss	zong1 shu4
+zh	棕榈	1	1F334	80	gloss	zong1 lu:2
+zh	棕榈树	1	1F334	100	name+gloss	zong1 lu:2 shu4
+zh	棺	1	26B0	80	gloss	guan1
+zh	棺木	1	26B0	80	gloss	guan1 mu4
+zh	棺材	1	26B0	100	name+gloss	guan1 cai5
+zh	椅	1	1FA91	80	gloss	yi3
+zh	椅子	0	1FA91	100	manual	chair
+zh	椰子	1	1F965	100	name+gloss	ye1 zi5
+zh	榄	1	1FAD2	80	gloss	lan3
+zh	榈	1	1F334	80	gloss	lu:2
+zh	榔头	1	1F528	80	gloss	lang2 tou5
+zh	榴	1	E0C4	80	gloss	liu2
+zh	槥	1	26B0	80	gloss	hui4
+zh	樱桃	0	1F352	90	name	ying1 tao2
+zh	樱花	0	1F338	90	name	ying1 hua1
+zh	橄榄	1	1FAD2	100	name+gloss	gan3 lan3
+zh	橇	1	1F6F7	80	gloss	qiao1
+zh	橐驼	1	1F42A	80	gloss	tuo2 tuo2
+zh	橘子	0	1F34A	90	name	ju2 zi5
+zh	橘柑	1	1F34A	80	gloss	ju2 gan1
+zh	橡皮线	1	E1D4	80	gloss	xiang4 pi2 xian4
+zh	檨	1	1F96D	80	gloss	she1
+zh	欧元	0	1F4B6	90	name	ou1 yuan2
+zh	歌唱家	1	1F9D1-200D-1F3A4	80	gloss	ge1 chang4 jia1
+zh	歌手	1	1F9D1-200D-1F3A4	100	name+gloss	ge1 shou3
+zh	残月	0	1F318	90	name	can2 yue4
+zh	母乳喂养	0	1F931	90	name	mu3 ru3 wei4 yang3
+zh	比基尼	1	1F459	100	name+gloss	bi3 ji1 ni2
+zh	比萨	2	1F355	90	name+gloss	Bi3 sa4
+zh	比萨饼	1	1F355	90	name+gloss	bi3 sa4 bing3
+zh	比赛场	1	1F3DF	80	gloss	bi3 sai4 chang3
+zh	毛毛虫	0	1F41B	90	name	mao2 mao5 chong2
+zh	毛线	0	1F9F6	90	name	mao2 xian4
+zh	毛象	1	1F9A3	80	gloss	mao2 xiang4
+zh	民居	1	1F3D8	80	gloss	min2 ju1
+zh	气旋	1	1F300	90	name+gloss	qi4 xuan2
+zh	气泡	0	1FAE7	90	name	qi4 pao4
+zh	气球	1	1F388	100	name+gloss	qi4 qiu2
+zh	水	0	1F4A7	100	manual	droplet
+zh	水晶球	1	1F52E	100	name+gloss	shui3 jing1 qiu2
+zh	水枪	1	1F52B	100	name+gloss	shui3 qiang1
+zh	水桶	1	1FAA3	90	name+gloss	shui3 tong3
+zh	水母	1	1FABC	100	name+gloss	shui3 mu3
+zh	水母体	1	1FABC	80	gloss	shui3 mu3 ti3
+zh	水滴	0	1F4A7	90	name	shui3 di1
+zh	水灾	1	E09F	80	gloss	shui3 zai1
+zh	水牛	1	1F403	100	name+gloss	shui3 niu2
+zh	水牛儿	1	1F40C	80	gloss	shui3 niu2 r5
+zh	水獭	1	1F9A6	100	name+gloss	shui3 ta3
+zh	水珠	1	1F4A7	80	gloss	shui3 zhu1
+zh	水球	0	1F93D	90	name	shui3 qiu2
+zh	汉	2	1F468	80	gloss	Han4
+zh	汉堡	2	1F354	100	name+gloss	Han4 bao3
+zh	汉堡包	1	1F354	90	name+gloss	han4 bao3 bao1
+zh	汉子	1	1F468	80	gloss	han4 zi5
+zh	汤婆	1	E30F	80	gloss	tang1 po2
+zh	汤婆子	1	E30F	80	gloss	tang1 po2 zi5
+zh	汪星人	1	1F415	80	gloss	wang1 xing1 ren2
+zh	汽车	0	1F697	100	manual	automobile
+zh	汽车站	1	1F68F	80	gloss	qi4 che1 zhan4
+zh	沆	1	26F4	80	gloss	hang4
+zh	沉思	0	1F614	90	name	chen2 si1
+zh	沉默	0	1F636	90	name	chen2 mo4
+zh	沙丽	1	1F97B	80	gloss	sha1 li4
+zh	沙漏	0	231B	90	name	sha1 lou4
+zh	沙漠	1	1F3DC	100	name+gloss	sha1 mo4
+zh	沙碛	1	1F3DC	80	gloss	sha1 qi4
+zh	河狸	1	1F9AB	80	gloss	he2 li2
+zh	河豚	0	1F421	90	name	he2 tun2
+zh	河马	1	1F99B	100	name+gloss	he2 ma3
+zh	油橄榄	1	1FAD2	80	gloss	you2 gan3 lan3
+zh	油炸圈饼	1	1F369	80	gloss	you2 zha2 quan1 bing3
+zh	油泵	0	26FD	90	name	you2 beng4
+zh	泉币	1	1FA99	80	gloss	quan2 bi4
+zh	法官	1	1F9D1-200D-2696-FE0F	100	name+gloss	fa3 guan1
+zh	法师	0	1F9D9	90	name	fa3 shi1
+zh	法轮	0	2638	90	name	fa3 lun2
+zh	泡子	2	1F4A1	80	gloss	pao1 zi5
+zh	泡泡	1	1FAE7	80	gloss	pao4 pao5
+zh	泥刀	1	E346	80	gloss	ni2 dao1
+zh	泥石流	1	1F6D8	90	name+gloss	ni2 shi2 liu2
+zh	泥铲	1	E346	80	gloss	ni2 chan3
+zh	注册	0	00AE	90	name	zhu4 ce4
+zh	注射器	1	1F489	100	name+gloss	zhu4 she4 qi4
+zh	泰迪熊	1	1F9F8	100	name+gloss	tai4 di2 xiong2
+zh	泼溅	0	1FADF	90	name	po1 jian4
+zh	洋柿子	1	1F345	80	gloss	yang2 shi4 zi5
+zh	洋碱	1	1F9FC	80	gloss	yang2 jian3
+zh	洋芋	1	1F954	80	gloss	yang2 yu4
+zh	洋葱	1	1F9C5	100	name+gloss	yang2 cong1
+zh	洗手间	1	1F6BD	80	gloss	xi3 shou3 jian1
+zh	洚	1	E09F	80	gloss	jiang4
+zh	洞	1	1F573	100	name+gloss	dong4
+zh	洞孔	1	1F573	80	gloss	dong4 kong3
+zh	洪	2	E09F	80	gloss	Hong2
+zh	洪涝	1	E09F	80	gloss	hong2 lao4
+zh	洪灾	1	E09F	80	gloss	hong2 zai1
+zh	活塞	0	1FAA0	90	name	huo2 sai1
+zh	活尸	1	1F9DF	80	gloss	huo2 shi1
+zh	派	2	1F967	100	name+gloss	pa1
+zh	流口水	0	1F924	90	name	liu2 kou3 shui3
+zh	流星	0	1F320	90	name	liu2 xing1
+zh	浣熊	1	1F99D	100	name+gloss	huan4 xiong2
+zh	浩室	1	1F3E0	80	gloss	hao4 shi4
+zh	浪花	0	1F30A	90	name	lang4 hua1
+zh	浴盆	1	1F6C1	80	gloss	yu4 pen2
+zh	浴缸	1	1F6C1	100	name+gloss	yu4 gang1
+zh	海关	1	1F6C3	100	name+gloss	hai3 guan1
+zh	海啸	1	E09B	80	gloss	hai3 xiao4
+zh	海椒	1	1F336	80	gloss	hai3 jiao1
+zh	海榴	1	E0C4	80	gloss	hai3 liu2
+zh	海狸	1	1F9AB	100	name+gloss	hai3 li2
+zh	海绵	1	1F9FD	100	name+gloss	hai3 mian2
+zh	海蛎	1	1F9AA	80	gloss	hai3 li4
+zh	海蛎子	1	1F9AA	80	gloss	hai3 li4 zi5
+zh	海螺	1	1F41A	100	name+gloss	hai3 luo2
+zh	海豚	1	1F42C	100	name+gloss	hai3 tun2
+zh	海豹	1	1F9AD	100	name+gloss	hai3 bao4
+zh	海龟	1	1F422	90	name+gloss	hai3 gui1
+zh	消防员	0	1F9D1-200D-1F692	90	name	xiao1 fang2 yuan2
+zh	消防车	1	1F692	100	name+gloss	xiao1 fang2 che1
+zh	淋浴	1	1F6BF	100	name+gloss	lin2 yu4
+zh	淘箩	1	1F9FA	80	gloss	tao2 luo2
+zh	淼	1	E09F	80	gloss	miao3
+zh	清真寺	1	1F54C	100	name+gloss	qing1 zhen1 si4
+zh	清酒	1	1F376	100	name+gloss	qing1 jiu3
+zh	渡渡鸟	1	1F9A4	100	name+gloss	du4 du4 niao3
+zh	渡船	1	26F4	90	name+gloss	du4 chuan2
+zh	渡轮	0	26F4	90	name	du4 lun2
+zh	温度表	1	1F321	80	gloss	wen1 du4 biao3
+zh	温度计	1	1F321	100	name+gloss	wen1 du4 ji4
+zh	温泉城	1	2668	80	gloss	wen1 quan2 cheng2
+zh	游戏手柄	0	1F3AE	90	name	you2 xi4 shou3 bing3
+zh	游泳	0	1F3CA	90	name	you2 yong3
+zh	溜溜球	1	1FA80	90	name+gloss	liu1 liu1 qiu2
+zh	滑冰	1	26F8	100	name+gloss	hua2 bing1
+zh	滑板	1	1F6F9	100	name+gloss	hua2 ban3
+zh	滑板车	0	1F6F4	90	name	hua2 ban3 che1
+zh	滑稽	0	1F92A	90	name	hua2 ji1
+zh	滑雪	1	1F3BF	100	name+gloss	hua2 xue3
+zh	滑雪板	1	1F3C2	100	name+gloss	hua2 xue3 ban3
+zh	滑鼠	1	1F401	80	gloss	hua2 shu3
+zh	满月	1	1F315	100	name+gloss	man3 yue4
+zh	演艺	1	1F3AD	80	gloss	yan3 yi4
+zh	漠	1	1F3DC	80	gloss	mo4
+zh	澨	1	1F3E6	80	gloss	shi4
+zh	濩	1	1F9D1-200D-1F373	80	gloss	huo4
+zh	瀑	1	1F6BF	80	gloss	bao4
+zh	火	0	1F525	100	manual	fire
+zh	火儿	1	1F525	80	gloss	huo3 r5
+zh	火力	1	1F525	80	gloss	huo3 li4
+zh	火山	1	1F30B	100	name+gloss	huo3 shan1
+zh	火烈鸟	1	1F9A9	100	name+gloss	huo3 lie4 niao3
+zh	火焰	1	1F525	100	name+gloss	huo3 yan4
+zh	火箭	1	1F680	100	name+gloss	huo3 jian4
+zh	火箭弹	1	1F680	80	gloss	huo3 jian4 dan4
+zh	火花	1	2747	100	name+gloss	huo3 hua1
+zh	火车	0	1F682	100	manual	locomotive
+zh	火鸡	1	1F983	100	name+gloss	huo3 ji1
+zh	灭火器	1	1F9EF	100	name+gloss	mie4 huo3 qi4
+zh	灯	0	1F4A1	100	manual	light bulb
+zh	灯泡	1	1F4A1	100	name+gloss	deng1 pao4
+zh	灰心	0	1FA76	90	name	hui1 xin1
+zh	灰泥	1	E306	80	gloss	hui1 ni2
+zh	灵怪	1	1F47A	80	gloss	ling2 guai4
+zh	炊事	1	1F373	80	gloss	chui1 shi4
+zh	炊事员	1	1F9D1-200D-1F373	80	gloss	chui1 shi4 yuan2
+zh	炣	1	1F525	80	gloss	ke3
+zh	炮仗	1	1F9E8	80	gloss	pao4 zhang5
+zh	炮竹	1	1F9E8	80	gloss	pao4 zhu2
+zh	炸土豆条	1	1F35F	80	gloss	zha2 tu3 dou4 tiao2
+zh	炸弹	1	1F4A3	100	name+gloss	zha4 dan4
+zh	炸薯条	1	1F35F	80	gloss	zha2 shu3 tiao2
+zh	烙饼	1	1F95E	100	name+gloss	lao4 bing3
+zh	烛	1	1F56F	80	gloss	zhu2
+zh	烛台	1	1F54E	100	name+gloss	zhu2 tai2
+zh	烟卷	1	1F6AC	80	gloss	yan1 juan3
+zh	烟卷儿	1	1F6AC	80	gloss	yan1 juan3 r5
+zh	烟火	2	1F386	80	gloss	yan1 huo3
+zh	烟肉	1	1F953	90	name+gloss	yan1 rou4
+zh	烟花爆竹	1	1F386	80	gloss	yan1 hua1 bao4 zhu2
+zh	热带鱼	1	1F420	100	name+gloss	re4 dai4 yu2
+zh	热水袋	1	E30F	80	gloss	re4 shui3 dai4
+zh	热狗	1	1F32D	100	name+gloss	re4 gou3
+zh	热茶	0	1F375	90	name	re4 cha2
+zh	热饮	0	2615	90	name	re4 yin3
+zh	焰火	1	1F386	100	name+gloss	yan4 huo3
+zh	煎蛋	0	1F373	90	name	jian1 dan4
+zh	煚	1	1F525	80	gloss	jiong3
+zh	照相机	1	1F4F7	90	name+gloss	zhao4 xiang4 ji1
+zh	熊	2	1F43B	100	name+gloss	Xiong2
+zh	熊猫	0	1F43C	100	manual	panda
+zh	熊瞎子	1	1F43B	80	gloss	xiong2 xia1 zi5
+zh	熏肉	1	1F953	90	name+gloss	xun1 rou4
+zh	蒸馏器	0	2697	90	name	zheng1 liu2 qi4
+zh	燨	1	1F525	80	gloss	xi1
+zh	爆仗	1	1F9E8	80	gloss	bao4 zhang5
+zh	爆弹	1	1F4A3	80	gloss	bao4 dan4
+zh	爆炸	0	1F4A5	90	name	bao4 zha4
+zh	爆炸头	0	1F92F	90	name	bao4 zha4 tou2
+zh	爆竹	1	1F9E8	100	name+gloss	bao4 zhu2
+zh	爆米花	1	1F37F	100	name+gloss	bao4 mi3 hua1
+zh	爔	1	1F525	80	gloss	xi1
+zh	爪印	0	1F43E	90	name	zhao3 yin4
+zh	爪机	1	1F4F1	80	gloss	zhua3 ji1
+zh	爱克斯光	1	1FA7B	80	gloss	ai4 ke4 si1 guang1
+zh	片剂	1	E1CC	80	gloss	pian4 ji4
+zh	版权	1	00A9	100	name+gloss	ban3 quan2
+zh	牙	1	1F9B7	80	gloss	ya2
+zh	牙刷	1	1FAA5	100	name+gloss	ya2 shua1
+zh	牙巴	1	1F9B7	80	gloss	ya2 ba5
+zh	牙齿	1	1F9B7	100	name+gloss	ya2 chi3
+zh	牛	0	1F404	100	manual	cow
+zh	牛仔裤	1	1F456	100	name+gloss	niu2 zai3 ku4
+zh	牛只	1	1F404	80	gloss	niu2 zhi1
+zh	牛奶	0	1F95B	100	manual	glass of milk
+zh	牛油	1	1F9C8	80	gloss	niu2 you2
+zh	牛油果	1	1F951	90	name+gloss	niu2 you2 guo3
+zh	牛角包	1	1F950	80	gloss	niu2 jiao3 bao1
+zh	牛角面包	1	1F950	90	name+gloss	niu2 jiao3 mian4 bao1
+zh	牡蛎	1	1F9AA	100	name+gloss	mu3 li4
+zh	牸牛	1	1F404	80	gloss	zi4 niu2
+zh	犀	1	1F98F	80	gloss	xi1
+zh	犀牛	1	1F98F	100	name+gloss	xi1 niu2
+zh	犉	1	1F402	80	gloss	run2
+zh	犎牛	1	1F9AC	80	gloss	feng1 niu2
+zh	犬	1	1F415	80	gloss	quan3
+zh	犬只	1	1F415	80	gloss	quan3 zhi1
+zh	犹太会堂	1	1F54D	80	gloss	You2 tai4 hui4 tang2
+zh	犹太教堂	1	1F54D	100	name+gloss	You2 tai4 jiao4 tang2
+zh	狐	1	1F98A	80	gloss	hu2
+zh	狐狸	0	1F98A	90	name	hu2 li5
+zh	狗	0	1F415	100	manual	dog
+zh	狗子	1	1F415	80	gloss	gou3 zi5
+zh	狗獾	1	1F9A1	80	gloss	gou3 huan1
+zh	独木舟	1	1F6F6	100	name+gloss	du2 mu4 zhou1
+zh	独角兽	1	1F984	100	name+gloss	du2 jiao3 shou4
+zh	独角鲸	1	E006	80	gloss	du2 jiao3 jing1
+zh	独轮车	1	E344	80	gloss	du2 lun2 che1
+zh	狮	1	1F981	80	gloss	shi1
+zh	狮子	2	1F981	100	name+gloss	Shi1 zi3
+zh	狸奴	1	1F408	80	gloss	li2 nu2
+zh	狻猊	1	1F981	80	gloss	suan1 ni2
+zh	狼	1	1F43A	100	name+gloss	lang2
+zh	猓	1	1F412	80	gloss	guo3
+zh	猕猴桃	1	1F95D	100	name+gloss	mi2 hou2 tao2
+zh	猛犸	1	1F9A3	100	name+gloss	meng3 ma3
+zh	猪	1	1F416	100	name+gloss	zhu1
+zh	猪头	0	1F437	90	name	zhu1 tou2
+zh	猩猩	1	1F9A7	90	name+gloss	xing1 xing5
+zh	猫	0	1F408	100	manual	cat
+zh	猫只	1	1F408	80	gloss	mao1 zhi1
+zh	猫头鹰	1	1F989	100	name+gloss	mao1 tou2 ying1
+zh	猬	1	1F994	80	gloss	wei4
+zh	猴	1	1F412	80	gloss	hou2
+zh	猴儿	2	1F412	80	gloss	hou2 er2
+zh	猴子	1	1F412	100	name+gloss	hou2 zi5
+zh	獀	1	1F415	80	gloss	sou1
+zh	獢	1	1F415	80	gloss	xiao1
+zh	獭	1	1F9A6	90	name+gloss	ta3
+zh	獾	2	1F9A1	100	name+gloss	huan1
+zh	玉米	1	1F33D	100	name+gloss	yu4 mi3
+zh	玉米花	1	1F37F	80	gloss	yu4 mi3 hua1
+zh	王冠	1	1F451	80	gloss	wang2 guan1
+zh	王妃	1	1F478	80	gloss	wang2 fei1
+zh	王子	1	1F934	100	name+gloss	wang2 zi3
+zh	王爷	1	1F934	80	gloss	wang2 ye5
+zh	玫瑰	0	1F339	90	name	mei2 gui1
+zh	玫瑰花	1	1F339	80	gloss	mei2 gui1 hua1
+zh	环	2	1F48D	80	gloss	Huan2
+zh	环球定位系统	1	E1CD	80	gloss	huan2 qiu2 ding4 wei4 xi4 tong3
+zh	玺印	1	1F9AD	80	gloss	xi3 yin4
+zh	珊	1	1FAB8	80	gloss	shan1
+zh	珊瑚	1	1FAB8	100	name+gloss	shan1 hu2
+zh	珍珠奶茶	0	1F9CB	90	name	zhen1 zhu1 nai3 cha2
+zh	班卓琴	1	1FA95	100	name+gloss	ban1 zhuo2 qin2
+zh	球场	1	1F3DF	80	gloss	qiu2 chang3
+zh	球棒	1	1F987	80	gloss	qiu2 bang4
+zh	球门	0	1F945	90	name	qiu2 men2
+zh	理发	0	1F487	90	name	li3 fa4
+zh	理发店	0	1F488	90	name	li3 fa4 dian4
+zh	瓢羹	1	1F944	80	gloss	piao2 geng1
+zh	瓢虫	1	1F41E	100	name+gloss	piao2 chong2
+zh	瓶盂	1	1FAD9	80	gloss	ping2 yu2
+zh	甜瓜	0	1F348	90	name	tian2 gua1
+zh	甜甜圈	1	1F369	100	name+gloss	tian2 tian2 quan1
+zh	生气	0	1F620	90	name	sheng1 qi4
+zh	田鸡	1	1F438	80	gloss	tian2 ji1
+zh	甲壳虫	2	1FAB2	80	gloss	Jia3 qiao4 chong2
+zh	甲虫	1	1FAB2	100	name+gloss	jia3 chong2
+zh	电位器	1	E1D5	80	gloss	dian4 wei4 qi4
+zh	电位计	1	E1D5	80	gloss	dian4 wei4 ji4
+zh	电子邮件	0	1F4E7	90	name	dian4 zi3 you2 jian4
+zh	电影机	1	1F3A5	80	gloss	dian4 ying3 ji1
+zh	电影院	0	1F3A6	90	name	dian4 ying3 yuan4
+zh	电梯	0	1F6D7	90	name	dian4 ti1
+zh	电棒	1	1F526	80	gloss	dian4 bang4
+zh	电池	0	1F50B	90	name	dian4 chi2
+zh	电灯泡	1	1F4A1	90	name+gloss	dian4 deng1 pao4
+zh	电玩	1	1F3AE	80	gloss	dian4 wan2
+zh	电珠	1	1F4A1	80	gloss	dian4 zhu1
+zh	电视机	0	1F4FA	90	name	dian4 shi4 ji1
+zh	电筒	1	1F526	90	name+gloss	dian4 tong3
+zh	电线	1	E1D4	80	gloss	dian4 xian4
+zh	电缆	1	E1CB	80	gloss	dian4 lan3
+zh	电脑	0	1F4BB	100	manual	laptop
+zh	电话	0	260E	100	manual	telephone
+zh	电话铃声	1	1F48D	80	gloss	dian4 hua4 ling2 sheng1
+zh	电驴子	1	1F3CD	80	gloss	dian4 lu:2 zi5
+zh	男人	1	1F468	100	name+gloss	nan2 ren2
+zh	男人家	1	1F468	80	gloss	nan2 ren2 jia5
+zh	男儿	1	1F468	80	gloss	nan2 er2
+zh	男厕	0	1F6B9	90	name	nan2 ce4
+zh	男同胞	1	1F468	80	gloss	nan2 tong2 bao1
+zh	男士	1	1F468	80	gloss	nan2 shi4
+zh	男娃	1	1F466	80	gloss	nan2 wa2
+zh	男子汉	1	1F468	80	gloss	nan2 zi3 han4
+zh	男孩	1	1F466	100	name+gloss	nan2 hai2
+zh	男孩子	1	1F466	80	gloss	nan2 hai2 zi5
+zh	男护	1	E303	80	gloss	nan2 hu4
+zh	男的	1	1F468	80	gloss	nan2 de5
+zh	男童	1	1F466	80	gloss	nan2 tong2
+zh	画儿	1	E142	80	gloss	hua4 r5
+zh	画刷	1	1F58C	90	name+gloss	hua4 shua1
+zh	画笔	0	1F58C	90	name	hua4 bi3
+zh	番椒	1	1F336	80	gloss	fan1 jiao1
+zh	番茄	1	1F345	90	name+gloss	fan1 qie2
+zh	疋	1	1F9B6	80	gloss	shu1
+zh	痛苦	0	1F623	90	name	tong4 ku3
+zh	白大褂	0	1F97C	90	name	bai2 da4 gua4
+zh	白熊	1	1F43B-200D-2744-FE0F	80	gloss	bai2 xiong2
+zh	白脱	1	1F9C8	80	gloss	bai2 tuo1
+zh	白领	0	1F9D1-200D-1F4BC	90	name	bai2 ling3
+zh	白鹄	1	1F9A2	80	gloss	bai2 hu2
+zh	百合花饰	1	269C	100	name+gloss	bai3 he2 hua1 shi4
+zh	百宝箱	1	1FA8E	80	gloss	bai3 bao3 xiang1
+zh	百货公司	1	1F3EC	90	name+gloss	bai3 huo4 gong1 si1
+zh	百货商店	1	1F3EC	90	name+gloss	bai3 huo4 shang1 dian4
+zh	百货大楼	1	1F3EC	80	gloss	bai3 huo4 da4 lou2
+zh	皂	1	1F9FC	100	name+gloss	zao4
+zh	皂碱	1	1F9FC	80	gloss	zao4 jian3
+zh	的士	1	1F695	80	gloss	di1 shi4
+zh	皇冠	1	1F451	100	name+gloss	huang2 guan1
+zh	皇子	1	1F934	80	gloss	huang2 zi3
+zh	皋	1	1F3E6	80	gloss	gao1
+zh	皮包	1	1F45C	80	gloss	pi2 bao1
+zh	皮卡	1	1F6FB	90	name+gloss	pi2 ka3
+zh	皮牙子	1	1F9C5	80	gloss	pi2 ya2 zi5
+zh	皮纳塔	1	1FA85	90	name+gloss	pi2 na4 ta3
+zh	皮萨饼	1	1F355	80	gloss	pi2 sa4 bing3
+zh	皱眉	0	1F64D	90	name	zhou4 mei2
+zh	盆浴	1	1F6C1	80	gloss	pen2 yu4
+zh	盈凸月	1	1F314	100	name+gloss	ying2 tu1 yue4
+zh	盐	1	1F9C2	100	name+gloss	yan2
+zh	盒饭	0	1F371	90	name	he2 fan4
+zh	盥洗室	1	1F6BD	80	gloss	guan4 xi3 shi4
+zh	目	1	1F441	80	gloss	mu4
+zh	盲杖	1	1F9AF	100	name+gloss	mang2 zhang4
+zh	直升机	1	1F681	100	name+gloss	zhi2 sheng1 ji1
+zh	直尺	1	1F4CF	100	name+gloss	zhi2 chi3
+zh	相撞	1	1F4A5	80	gloss	xiang1 zhuang4
+zh	相机	1	1F4F7	100	name+gloss	xiang4 ji1
+zh	盾	1	1F6E1	90	name+gloss	dun4
+zh	盾牌	1	1F6E1	100	name+gloss	dun4 pai2
+zh	眨眼	0	1F609	90	name	zha3 yan3
+zh	眩	1	1F4AB	80	gloss	xuan4
+zh	眼	1	1F441	80	gloss	yan3
+zh	眼帘	1	1F440	80	gloss	yan3 lian2
+zh	眼目	1	1F440	80	gloss	yan3 mu4
+zh	眼眸	1	1F440	80	gloss	yan3 mou2
+zh	眼睛	0	1F440	100	manual	eyes
+zh	眼镜	1	1F453	100	name+gloss	yan3 jing4
+zh	着数	1	E103	80	gloss	zhao1 shu4
+zh	着法	1	E103	80	gloss	zhao1 fa3
+zh	短剑	1	1F5E1	90	name+gloss	duan3 jian4
+zh	短裤	1	1FA73	100	name+gloss	duan3 ku4
+zh	矮瓜	1	1F346	80	gloss	ai3 gua1
+zh	石	3	1FAA8	80	gloss	Shi2
+zh	石榴	1	E0C4	80	gloss	shi2 liu5
+zh	石灰	1	1F34B-200D-1F7E9	80	gloss	shi2 hui1
+zh	砖	3	1F9F1	100	name+gloss	zhuan1
+zh	砖块	1	1F9F1	80	gloss	zhuan1 kuai4
+zh	砖头	1	1F9F1	80	gloss	zhuan1 tou5
+zh	砖石	1	1F9F1	80	gloss	zhuan1 shi2
+zh	破洞	1	1F573	80	gloss	po4 dong4
+zh	硬币	1	1FA99	100	name+gloss	ying4 bi4
+zh	碇	3	2693	80	gloss	ding4
+zh	磁体	1	1F9F2	80	gloss	ci2 ti3
+zh	磁石	1	1F9F2	80	gloss	ci2 shi2
+zh	磁碟	1	1F4BD	80	gloss	ci2 die2
+zh	磁铁	1	1F9F2	100	name+gloss	ci2 tie3
+zh	礼帽	1	1F3A9	100	name+gloss	li3 mao4
+zh	礼物	0	1F381	100	manual	wrapped gift
+zh	礼花	1	1F386	80	gloss	li3 hua1
+zh	视窗	2	1FA9F	80	gloss	Shi4 chuang1
+zh	神社	0	26E9	90	name	shen2 she4
+zh	票	1	1F3AB	100	name+gloss	piao4
+zh	票证	1	1F3AB	80	gloss	piao4 zheng4
+zh	禁止	0	1F6AB	90	name	jin4 zhi3
+zh	禁止吸烟	0	1F6AD	90	name	jin4 zhi3 xi1 yan1
+zh	禾苗	1	1F331	80	gloss	he2 miao2
+zh	种苗	1	1F331	80	gloss	zhong3 miao2
+zh	科学家	1	1F9D1-200D-1F52C	100	name+gloss	ke1 xue2 jia1
+zh	秒表	1	23F1	100	name+gloss	miao3 biao3
+zh	秦椒	1	1F336	80	gloss	Qin2 jiao1
+zh	程序员	0	1F9D1-200D-1F4BB	90	name	cheng2 xu4 yuan2
+zh	稻子	0	1F33E	90	name	dao4 zi5
+zh	空巢	1	1FAB9	100	name+gloss	kong1 chao2
+zh	窍	1	1F573	80	gloss	qiao4
+zh	窗	4	1FA9F	80	gloss	chuang1
+zh	窗口	1	1FA9F	90	name+gloss	chuang1 kou3
+zh	窗口期	1	1FA9F	80	gloss	chuang1 kou3 qi1
+zh	窗子	1	1FA9F	80	gloss	chuang1 zi5
+zh	窗户	1	1FA9F	100	name+gloss	chuang1 hu5
+zh	窗扇	1	1FA9F	80	gloss	chuang1 shan4
+zh	窝夫	1	1F9C7	80	gloss	wo1 fu1
+zh	窟窿	1	1F573	80	gloss	ku1 long5
+zh	竖中指	0	1F595	90	name	shu4 zhong1 zhi3
+zh	竖琴	1	1FA89	100	name+gloss	shu4 qin2
+zh	站	1	1F689	80	gloss	zhan4
+zh	童	2	1F9D2	80	gloss	Tong2
+zh	童儿	1	1F466	80	gloss	tong2 er2
+zh	童子	1	1F466	80	gloss	tong2 zi3
+zh	笑脸	1	263A	80	gloss	xiao4 lian3
+zh	笑貌	1	263A	80	gloss	xiao4 mao4
+zh	笑颜	1	263A	80	gloss	xiao4 yan2
+zh	笔	0	1F58A	90	name	bi3
+zh	笔会	1	1F58A	80	gloss	Bi3 hui4
+zh	笔杆子	1	1F58A	80	gloss	bi3 gan3 zi5
+zh	笔电	1	1F4D3	80	gloss	bi3 dian4
+zh	笔记型电脑	1	1F4D3	80	gloss	bi3 ji4 xing2 dian4 nao3
+zh	笔记本	1	1F4D3	100	name+gloss	bi3 ji4 ben3
+zh	笔记本电脑	1	1F4BB	100	name+gloss	bi3 ji4 ben3 dian4 nao3
+zh	笔记本计算机	1	1F4BB	80	gloss	bi3 ji4 ben3 ji4 suan4 ji1
+zh	笛	1	1FA88	80	gloss	di2
+zh	笤	1	1F9F9	80	gloss	tiao2
+zh	筐	1	1F9FA	100	name+gloss	kuang1
+zh	筰	1	E1CB	80	gloss	zuo2
+zh	筲	2	1F9FA	80	gloss	shao1
+zh	筷子	1	1F962	100	name+gloss	kuai4 zi5
+zh	签条	1	1F3F7	80	gloss	qian1 tiao2
+zh	签语饼	1	1F960	80	gloss	qian1 yu3 bing3
+zh	算盘	1	1F9EE	100	name+gloss	suan4 pan2
+zh	管龠	1	1FA88	80	gloss	guan3 yue4
+zh	箩	1	1F9FA	80	gloss	luo2
+zh	箸	2	1F962	90	name+gloss	zhu4
+zh	篆	1	1F9AD	80	gloss	zhuan4
+zh	篓	1	1F9FA	80	gloss	lou3
+zh	篓子	1	1F9FA	80	gloss	lou3 zi5
+zh	篮	1	1F9FA	80	gloss	lan2
+zh	篮子	1	1F9FA	90	name+gloss	lan2 zi5
+zh	篮球	1	1F3C0	100	name+gloss	lan2 qiu2
+zh	篮筐	1	1F9FA	80	gloss	lan2 kuang1
+zh	篴	1	1FA88	80	gloss	di2
+zh	簇射	1	1F6BF	80	gloss	cu4 she4
+zh	簿子	1	1F4D3	80	gloss	bu4 zi5
+zh	籥	1	1FA88	80	gloss	yue4
+zh	米果	1	1F358	90	name+gloss	mi3 guo3
+zh	米饭	0	1F35A	100	manual	cooked rice
+zh	精灵	1	1F9DA	100	name+gloss	jing1 ling2
+zh	糕	1	E0C7	80	gloss	gao1
+zh	糖	1	1F36C	100	name+gloss	tang2
+zh	糖果	1	1F36C	80	gloss	tang2 guo3
+zh	红包	0	1F9E7	90	name	hong2 bao1
+zh	红心	0	2764	90	name	hong2 xin1
+zh	红日	1	2600	80	gloss	hong2 ri4
+zh	红桃	0	2665	90	name	hong2 tao2
+zh	红萝卜	1	1F955	80	gloss	hong2 luo2 bo5
+zh	红轮	1	2600	80	gloss	hong2 lun2
+zh	红辣椒	0	1F336	90	name	hong2 la4 jiao1
+zh	纥	1	1FAA2	80	gloss	ge1
+zh	纪念奖	1	1F3C6	80	gloss	ji4 nian4 jiang3
+zh	索道	1	1F6A1	100	name+gloss	suo3 dao4
+zh	纱丽	1	1F97B	100	name+gloss	sha1 li4
+zh	纱线	1	1F9F6	80	gloss	sha1 xian4
+zh	纸烟	1	1F6AC	80	gloss	zhi3 yan1
+zh	纸鸢	1	1FA81	80	gloss	zhi3 yuan1
+zh	纸鹞	1	1FA81	80	gloss	zhi3 yao4
+zh	线	2	1F9F5	100	name+gloss	xian4
+zh	线程	1	1F9F5	80	gloss	xian4 cheng2
+zh	线缆	1	E1CB	80	gloss	xian4 lan3
+zh	组图	1	E142	80	gloss	zu3 tu2
+zh	细菌	0	1F9A0	90	name	xi4 jun1
+zh	结	2	1FAA2	100	name+gloss	jie1
+zh	结子	2	1FAA2	80	gloss	jie1 zi3
+zh	绳结	1	1FAA2	90	name+gloss	sheng2 jie2
+zh	绶带	1	1F380	80	gloss	shou4 dai4
+zh	绿叶蔬菜	0	1F96C	90	name	lu:4 ye4 shu1 cai4
+zh	绿花椰菜	1	1F966	80	gloss	lu:4 hua1 ye1 cai4
+zh	绿花菜	1	1F966	80	gloss	lu:4 hua1 cai4
+zh	绿菜花	1	1F966	80	gloss	lu:4 cai4 hua1
+zh	缄默	0	1F62F	90	name	jian1 mo4
+zh	缆	1	E1CB	80	gloss	lan3
+zh	缆索	1	E1CB	80	gloss	lan3 suo3
+zh	缆线	1	E1CB	80	gloss	lan3 xian4
+zh	缆绳	1	E1CB	80	gloss	lan3 sheng2
+zh	缆车	0	1F6A0	90	name	lan3 che1
+zh	缎带	1	1F380	90	name+gloss	duan4 dai4
+zh	缝衣针	1	1FAA1	90	name+gloss	feng2 yi1 zhen1
+zh	缬	1	1FAA2	80	gloss	xie2
+zh	繨	1	1FAA2	80	gloss	da2
+zh	缸	1	1FAD9	80	gloss	gang1
+zh	罐	1	1FAD9	100	name+gloss	guan4
+zh	罐子	1	1FAD9	80	gloss	guan4 zi5
+zh	网球	1	1F3BE	100	name+gloss	wang3 qiu2
+zh	罗盘	1	1F9ED	90	name+gloss	luo2 pan2
+zh	罗经	1	1F9ED	80	gloss	luo2 jing1
+zh	罗马教廷	1	26EA	80	gloss	Luo2 ma3 jiao4 ting2
+zh	羊角包	1	1F950	80	gloss	yang2 jiao3 bao1
+zh	羊角面包	1	1F950	100	name+gloss	yang2 jiao3 mian4 bao1
+zh	美人鱼	1	1F9DC-200D-2640-FE0F	100	name+gloss	mei3 ren2 yu2
+zh	美元	0	1F4B5	90	name	mei3 yuan2
+zh	美式橄榄球	0	1F3C8	90	name	Mei3 shi4 gan3 lan3 qiu2
+zh	美洲鸵	0	1F999	90	name	Mei3 zhou1 tuo2
+zh	群花	1	1F33C	80	gloss	qun2 hua1
+zh	羽	1	1FAB6	80	gloss	yu3
+zh	羽毛	1	1FAB6	100	name+gloss	yu3 mao2
+zh	羽毛球	1	1F3F8	100	name+gloss	yu3 mao2 qiu2
+zh	羽球	1	1F3F8	90	name+gloss	yu3 qiu2
+zh	羽翼	1	1FABD	80	gloss	yu3 yi4
+zh	翅	2	1FABD	80	gloss	chi4
+zh	翅膀	1	1FABD	100	name+gloss	chi4 bang3
+zh	翎毛	1	1FAB6	80	gloss	ling2 mao2
+zh	翼	2	1FABD	80	gloss	Yi4
+zh	翻白眼	0	1F644	90	name	fan1 bai2 yan3
+zh	老公公	1	1F474	80	gloss	lao3 gong1 gong5
+zh	老叟	1	1F474	80	gloss	lao3 sou3
+zh	老太婆	1	1F475	80	gloss	lao3 tai4 po2
+zh	老头子	1	1F474	80	gloss	lao3 tou2 zi5
+zh	老奶奶	0	1F475	90	name	lao3 nai3 nai5
+zh	老妪	1	1F475	80	gloss	lao3 yu4
+zh	老师	1	1F9D1-200D-1F3EB	100	name+gloss	lao3 shi1
+zh	老年人	0	1F9D3	90	name	lao3 nian2 ren2
+zh	老汉	1	1F474	80	gloss	lao3 han4
+zh	老爷爷	0	1F474	90	name	lao3 ye2 ye5
+zh	老翁	1	1F474	80	gloss	lao3 weng1
+zh	老虎	1	1F405	100	name+gloss	lao3 hu3
+zh	老虎机	1	1F3B0	100	name+gloss	lao3 hu3 ji1
+zh	老鼠	0	1F401	90	name	lao3 shu3
+zh	考拉	1	1F428	100	name+gloss	kao3 la1
+zh	耗子	0	1F400	90	name	hao4 zi5
+zh	耳	1	1F442	90	name+gloss	er3
+zh	耳朵	0	1F442	100	manual	ear
+zh	耳机	1	1F3A7	100	name+gloss	er3 ji1
+zh	耳根子	1	1F442	80	gloss	er3 gen1 zi5
+zh	耳痛	1	E31E	80	gloss	er3 tong4
+zh	耸肩	0	1F937	90	name	song3 jian1
+zh	聋人	1	1F9CF	80	gloss	long2 ren2
+zh	聋子	1	1F9CF	80	gloss	long2 zi5
+zh	职员	1	1F9D1-200D-1F4BC	80	gloss	zhi2 yuan2
+zh	职权	1	E08F	80	gloss	zhi2 quan2
+zh	联队	1	1FABD	80	gloss	lian2 dui4
+zh	肌肉	1	1F4AA	100	name+gloss	ji1 rou4
+zh	肝	1	E312	80	gloss	gan1
+zh	肝脏	1	E312	80	gloss	gan1 zang4
+zh	肠管	1	E315	80	gloss	chang2 guan3
+zh	肥皂	1	1F9FC	80	gloss	fei2 zao4
+zh	肺	1	1FAC1	100	name+gloss	fei4
+zh	肺脏	1	1FAC1	80	gloss	fei4 zang4
+zh	肾	1	E316	80	gloss	shen4
+zh	肾脏	1	E316	80	gloss	shen4 zang4
+zh	胃	1	E313	80	gloss	wei4
+zh	胃囊	1	E313	80	gloss	wei4 nang2
+zh	背囊	1	1F392	80	gloss	bei4 nang2
+zh	胡瓜	1	1F952	80	gloss	hu2 gua1
+zh	胡萝卜	1	1F955	100	name+gloss	hu2 luo2 bo5
+zh	胴	1	E314	80	gloss	dong4
+zh	脑	0	1F9E0	90	name	nao3
+zh	脑瓜	1	1F480	80	gloss	nao3 gua1
+zh	脚	1	1F9B6	100	name+gloss	jiao3
+zh	脚丫	1	1F9B6	80	gloss	jiao3 ya1
+zh	脚丫子	1	1F9B6	80	gloss	jiao3 ya1 zi5
+zh	脚印	1	1F463	100	name+gloss	jiao3 yin4
+zh	脚杆	1	1F9B5	80	gloss	jiao3 gan3
+zh	脱氧核糖核酸	1	1F9EC	80	gloss	tuo1 yang3 he2 tang2 he2 suan1
+zh	脶	1	1FAC6	80	gloss	luo2
+zh	脷	1	1F445	80	gloss	li4
+zh	脸红	0	1F633	90	name	lian3 hong2
+zh	腰子	1	E316	80	gloss	yao1 zi5
+zh	腿	1	1F9B5	100	name+gloss	tui3
+zh	腿部	1	1F9B5	80	gloss	tui3 bu4
+zh	膝上型	1	1F4BB	80	gloss	xi1 shang4 xing2
+zh	膝上型电脑	1	1F4BB	80	gloss	xi1 shang4 xing2 dian4 nao3
+zh	自动车	1	1F697	80	gloss	zi4 dong4 che1
+zh	自拍	1	1F933	100	name+gloss	zi4 pai1
+zh	自拍照	1	1F933	80	gloss	zi4 pai1 zhao4
+zh	自来水笔	1	1F58B	80	gloss	zi4 lai2 shui3 bi3
+zh	自行车	0	1F6B2	100	manual	bicycle
+zh	臭鼬	1	1F9A8	100	name+gloss	chou4 you4
+zh	致敬	0	1FAE1	90	name	zhi4 jing4
+zh	舌	2	1F445	90	name+gloss	ji1
+zh	舌头	1	1F445	100	name+gloss	she2 tou5
+zh	航天员	1	1F9D1-200D-1F680	80	gloss	hang2 tian1 yuan2
+zh	航天飞机	1	E20B	80	gloss	hang2 tian1 fei1 ji1
+zh	航船	1	1F6A2	80	gloss	hang2 chuan2
+zh	舶	1	1F6A2	80	gloss	bo2
+zh	船	2	1F6A2	100	name+gloss	chuan2
+zh	船只	1	1F6A2	80	gloss	chuan2 zhi1
+zh	船方	1	1F6A2	80	gloss	chuan2 fang1
+zh	艺术家	1	1F9D1-200D-1F3A8	100	name+gloss	yi4 shu4 jia1
+zh	艾菲尔铁塔	1	E205	80	gloss	Ai4 fei1 er3 Tie3 ta3
+zh	节瘤	1	1FAA2	80	gloss	jie2 liu2
+zh	芒果	1	1F96D	100	name+gloss	mang2 guo3
+zh	芙蓉	0	1F33A	90	name	fu2 rong2
+zh	芝士	0	1F9C0	90	name	zhi1 shi4
+zh	花	0	1F33C	100	manual	blossom
+zh	花束	1	1F490	100	name+gloss	hua1 shu4
+zh	花栗鼠	1	1F43F	90	name+gloss	hua1 li4 shu3
+zh	花炮	1	1F9E8	80	gloss	hua1 pao4
+zh	花生	1	1F95C	100	name+gloss	hua1 sheng1
+zh	花痴	0	1F60D	90	name	hua1 chi1
+zh	花豹	1	1F406	80	gloss	hua1 bao4
+zh	花饺	1	1F95F	80	gloss	hua1 jiao3
+zh	芸帙	1	1F4DA	80	gloss	yun2 zhi4
+zh	芸签	1	1F516	80	gloss	yun2 qian1
+zh	芸编	1	1F4DA	80	gloss	yun2 bian1
+zh	苍蝇	0	1FAB0	90	name	cang1 ying5
+zh	苦笑	0	1F605	90	name	ku3 xiao4
+zh	英尺	1	1F9B6	80	gloss	ying1 chi3
+zh	英式橄榄球	1	1F3C9	100	name+gloss	Ying1 shi4 gan3 lan3 qiu2
+zh	英镑	0	1F4B7	90	name	Ying1 bang4
+zh	苹果	0	1F34E	100	manual	red apple
+zh	茀星	1	2604	80	gloss	fu2 xing1
+zh	茄	2	1F346	80	gloss	jia1
+zh	茄子	1	1F346	100	name+gloss	qie2 zi5
+zh	茅房	1	1F6BD	80	gloss	mao2 fang2
+zh	茶	0	1F375	100	manual	teacup without handle
+zh	茶壶	1	1FAD6	100	name+gloss	cha2 hu2
+zh	草坪机	1	E343	80	gloss	cao3 ping2 ji1
+zh	草莓	1	1F353	100	name+gloss	cao3 mei2
+zh	药丸	1	1F48A	100	name+gloss	yao4 wan2
+zh	药疗	1	E307	80	gloss	yao4 liao2
+zh	药草	0	1F33F	90	name	yao4 cao3
+zh	荷	2	1FAB7	80	gloss	He2
+zh	荷花	1	1FAB7	80	gloss	he2 hua1
+zh	莎丽	1	1F97B	90	name+gloss	sha1 li4
+zh	莱姆	1	1F34B-200D-1F7E9	80	gloss	lai2 mu3
+zh	莲	1	1FAB7	80	gloss	lian2
+zh	莲花	0	1FAB7	90	name	lian2 hua1
+zh	菇	1	1F344	80	gloss	gu1
+zh	菇蕈	1	1F344	80	gloss	gu1 xun4
+zh	菌	2	1F344	80	gloss	jun1
+zh	菌子	1	1F344	80	gloss	jun4 zi5
+zh	菌菇	1	1F344	80	gloss	jun1 gu1
+zh	菜刀	1	1F52A	100	name+gloss	cai4 dao1
+zh	菠萝	1	1F34D	100	name+gloss	bo1 luo2
+zh	萏	1	1FAB7	80	gloss	dan4
+zh	营帐	1	26FA	80	gloss	ying2 zhang4
+zh	萨克斯管	1	1F3B7	100	name+gloss	sa4 ke4 si1 guan3
+zh	萨克斯风	1	1F3B7	90	name+gloss	sa4 ke4 si1 feng1
+zh	著作权	1	00A9	80	gloss	zhu4 zuo4 quan2
+zh	落叶	0	1F342	90	name	luo4 ye4
+zh	落叶乔木	1	1F333	80	gloss	luo4 ye4 qiao2 mu4
+zh	葡萄	1	1F347	100	name+gloss	pu2 tao5
+zh	葡萄酒	1	1F377	100	name+gloss	pu2 tao5 jiu3
+zh	葱头	1	1F9C5	80	gloss	cong1 tou2
+zh	葵花	1	1F33B	80	gloss	kui2 hua1
+zh	蒜	1	1F9C4	100	name+gloss	suan4
+zh	蓝莓	1	1FAD0	100	name+gloss	lan2 mei2
+zh	蔃	1	1F6AC	80	gloss	qiang2
+zh	蔻丹	1	1F485	80	gloss	kou4 dan1
+zh	蔽身处	1	E098	80	gloss	bi4 shen1 chu4
+zh	蕉	1	1F34C	80	gloss	jiao1
+zh	蕖	1	1FAB7	80	gloss	qu2
+zh	薯	1	1F954	80	gloss	shu3
+zh	薯条	1	1F35F	100	name+gloss	shu3 tiao2
+zh	藏宝箱	1	1FA8E	90	name+gloss	cang2 bao3 xiang1
+zh	蘑	1	1F344	80	gloss	mo2
+zh	蘑菇	1	1F344	100	name+gloss	mo2 gu5
+zh	虎	1	1F405	90	name+gloss	hu3
+zh	虎鲸	0	1FACD	90	name	hu3 jing1
+zh	虚拟实境	1	E1CA	80	gloss	xu1 ni3 shi2 jing4
+zh	虚拟现实	1	E1CA	80	gloss	xu1 ni3 xian4 shi2
+zh	虷	1	1FAB1	80	gloss	gan1
+zh	虹	1	1F308	80	gloss	hong2
+zh	虾	2	1F990	100	name+gloss	ha2
+zh	虾子	2	1F990	80	gloss	xia1 zi3
+zh	蚁	1	1F41C	80	gloss	yi3
+zh	蚂蚁	1	1F41C	100	name+gloss	ma3 yi3
+zh	蚊	1	1F99F	80	gloss	wen2
+zh	蚊子	1	1F99F	100	name+gloss	wen2 zi5
+zh	蚊虫	1	1F99F	80	gloss	wen2 chong2
+zh	蚝	1	1F9AA	80	gloss	hao2
+zh	蚵	1	1F9AA	80	gloss	e2
+zh	蚵仔	1	1F9AA	80	gloss	e2 zi5
+zh	蛇	2	1F40D	100	name+gloss	she2
+zh	蛋	2	1F95A	100	name+gloss	Dan4
+zh	蛋奶冻	1	1F36E	90	name+gloss	dan4 nai3 dong4
+zh	蛋糕	1	E0C7	80	gloss	dan4 gao1
+zh	蛌	1	1F997	80	gloss	gu3
+zh	蛎	1	1F9AA	80	gloss	li4
+zh	蛐蛐	1	1F997	90	name+gloss	qu1 qu5
+zh	蛙	1	1F438	80	gloss	wa1
+zh	蛛	1	1F577	80	gloss	zhu1
+zh	蛛蛛	1	1F577	80	gloss	zhu1 zhu5
+zh	蛣	1	1FAB2	80	gloss	jie2
+zh	蛳	1	1F40C	80	gloss	si1
+zh	蛸	1	1F419	80	gloss	shao1
+zh	蜂蜜	0	1F36F	90	name	feng1 mi4
+zh	蜅	1	1F980	80	gloss	fu3
+zh	蜗	1	1F40C	80	gloss	wo1
+zh	蜗杆	1	1FAB1	80	gloss	wo1 gan3
+zh	蜗牛	1	1F40C	100	name+gloss	wo1 niu2
+zh	蜗蜒	1	1F40C	80	gloss	wo1 yan2
+zh	蜘蛛	1	1F577	100	name+gloss	zhi1 zhu1
+zh	蜘蛛网	1	1F578	100	name+gloss	zhi1 zhu1 wang3
+zh	蜚蠊	1	1FAB3	80	gloss	fei3 lian2
+zh	蜜罐	1	1F36F	90	name+gloss	mi4 guan4
+zh	蜜蜂	1	1F41D	100	name+gloss	mi4 feng1
+zh	蜡	1	1F56F	80	gloss	la4
+zh	蜡炬	1	1F56F	80	gloss	la4 ju4
+zh	蜡烛	1	1F56F	100	name+gloss	la4 zhu2
+zh	蜡笔	1	1F58D	100	name+gloss	la4 bi3
+zh	蜥	1	1F98E	80	gloss	xi1
+zh	蜥蜴	1	1F98E	100	name+gloss	xi1 yi4
+zh	蝃蝥	1	1F577	80	gloss	zhuo1 mao2
+zh	蝇	1	1FAB0	80	gloss	ying2
+zh	蝎	2	1F982	80	gloss	xie1
+zh	蝎子	1	1F982	100	name+gloss	xie1 zi5
+zh	蝙蝠	1	1F987	100	name+gloss	bian1 fu2
+zh	蝠	1	1F987	80	gloss	fu2
+zh	蝴蝶	1	1F98B	100	name+gloss	hu2 die2
+zh	蝴蝶结	0	1F380	90	name	hu2 die2 jie2
+zh	蝶	2	1F98B	80	gloss	die2
+zh	蝶类	1	1F98B	80	gloss	die2 lei4
+zh	䗖𬟽	1	1F308	80	gloss	di4 dong1
+zh	螃蟹	1	1F980	90	name+gloss	pang2 xie4
+zh	融化	0	1FAE0	90	name	rong2 hua4
+zh	螘	1	1F41C	80	gloss	yi3
+zh	螺	1	1F41A	90	name+gloss	luo2
+zh	螺丝刀	1	1FA9B	100	name+gloss	luo2 si1 dao1
+zh	螺丝起子	1	1FA9B	80	gloss	luo2 si1 qi3 zi5
+zh	螺刀	1	1FA9B	80	gloss	luo2 dao1
+zh	螺旋钳	1	1F527	80	gloss	luo2 xuan2 qian2
+zh	蟋蟀	1	1F997	100	name+gloss	xi1 shuai4
+zh	蟑螂	1	1FAB3	100	name+gloss	zhang1 lang2
+zh	蟹	1	1F980	100	name+gloss	xie4
+zh	蠕虫	1	1FAB1	100	name+gloss	ru2 chong2
+zh	行事历	1	1F4C5	80	gloss	xing2 shi4 li4
+zh	行人	0	1F6B6	90	name	xing2 ren2
+zh	行动电话	1	1F4F1	80	gloss	xing2 dong4 dian4 hua4
+zh	行李	1	1F9F3	80	gloss	xing2 li5
+zh	行李箱	1	1F9F3	100	name+gloss	xing2 li5 xiang1
+zh	表	2	231A	90	name+gloss	biao3
+zh	袄	1	1F9E5	80	gloss	ao3
+zh	袄子	1	1F9E5	80	gloss	ao3 zi5
+zh	袋鼠	1	1F998	100	name+gloss	dai4 shu3
+zh	袜	1	1F9E6	90	name+gloss	wa4
+zh	袜子	1	1F9E6	100	name+gloss	wa4 zi5
+zh	被毛	1	1F9E5	80	gloss	bei4 mao2
+zh	裁判官	1	1F9D1-200D-2696-FE0F	80	gloss	cai2 pan4 guan1
+zh	西兰花	1	1F966	100	name+gloss	xi1 lan2 hua1
+zh	西瓜	0	1F349	100	manual	watermelon
+zh	西红柿	1	1F345	100	name+gloss	xi1 hong2 shi4
+zh	规	2	1F9ED	80	gloss	gui1
+zh	计时器	1	E0AB	80	gloss	ji4 shi2 qi4
+zh	记事本	1	1F4D3	80	gloss	ji4 shi4 ben3
+zh	试管	1	1F9EA	100	name+gloss	shi4 guan3
+zh	话筒	1	1F3A4	80	gloss	hua4 tong3
+zh	说话	0	1F5E3	90	name	shuo1 hua4
+zh	说谎	0	1F925	90	name	shuo1 huang3
+zh	调色盘	0	1F3A8	90	name	tiao2 se4 pan2
+zh	谱子	1	1F3BC	80	gloss	pu3 zi5
+zh	警告	0	26A0	90	name	jing3 gao4
+zh	警备	1	1F482	80	gloss	jing3 bei4
+zh	警察	0	1F46E	90	name	jing3 cha2
+zh	警车	1	1F693	100	name+gloss	jing3 che1
+zh	象	1	1F418	90	name+gloss	xiang4
+zh	豭	1	1F417	80	gloss	jia1
+zh	豹	1	1F406	90	name+gloss	bao4
+zh	豹子	1	1F406	100	name+gloss	bao4 zi5
+zh	貆	1	1F9A1	80	gloss	huan2
+zh	贝果	1	1F96F	90	name+gloss	bei4 guo3
+zh	账本	0	1F4D2	90	name	zhang4 ben3
+zh	货币兑换	1	1F4B1	100	name+gloss	huo4 bi4 dui4 huan4
+zh	货车	0	1F69A	90	name	huo4 che1
+zh	质检	1	E0AF	80	gloss	zhi4 jian3
+zh	购物手推车	1	1F6D2	80	gloss	gou4 wu4 shou3 tui1 che1
+zh	购物袋	0	1F6CD	90	name	gou4 wu4 dai4
+zh	购物车	1	1F6D2	100	name+gloss	gou4 wu4 che1
+zh	贵妇犬	1	1F429	80	gloss	gui4 fu4 quan3
+zh	贵宾犬	1	1F429	100	name+gloss	gui4 bin1 quan3
+zh	贷记卡	1	1F4B3	90	name+gloss	dai4 ji4 ka3
+zh	资讯	1	2139	80	gloss	zi1 xun4
+zh	赏月	0	1F391	90	name	shang3 yue4
+zh	赛车	0	1F3CE	90	name	sai4 che1
+zh	赛马	1	1F3C7	100	name+gloss	sai4 ma3
+zh	走子	1	E103	80	gloss	zou3 zi3
+zh	走山	1	1F6D8	80	gloss	zou3 shan1
+zh	超级英雄	1	1F9B8	100	name+gloss	chao1 ji2 ying1 xiong2
+zh	超英	1	1F9B8	80	gloss	chao1 ying1
+zh	足球	0	26BD	90	name	zu2 qiu2
+zh	跂	1	1F9B6	80	gloss	ji1
+zh	跑步者	0	1F3C3	90	name	pao3 bu4 zhe3
+zh	跑表	1	23F1	80	gloss	pao3 biao3
+zh	跑鞋	0	1F45F	90	name	pao3 xie2
+zh	跞	1	E103	80	gloss	li4
+zh	路面电车	0	1F68A	90	name	lu4 mian4 dian4 che1
+zh	身份证	1	1FAAA	100	name+gloss	shen1 fen4 zheng4
+zh	身份识别卡	1	1FAAA	80	gloss	shen1 fen4 shi2 bie2 ka3
+zh	车站	0	1F689	90	name	che1 zhan4
+zh	车轮	1	1F6DE	100	name+gloss	che1 lun2
+zh	车轮子	1	1F6DE	80	gloss	che1 lun2 zi5
+zh	轨迹球	1	1F5B2	100	name+gloss	gui3 ji4 qiu2
+zh	轨道交通	1	1F687	80	gloss	gui3 dao4 jiao1 tong1
+zh	轮子	1	1F6DE	80	gloss	lun2 zi5
+zh	轮渡	1	26F4	80	gloss	lun2 du4
+zh	软盘	1	1F4BE	100	name+gloss	ruan3 pan2
+zh	软碟	1	1F4BE	80	gloss	ruan3 die2
+zh	软磁盘	1	1F4BE	80	gloss	ruan3 ci2 pan2
+zh	软磁碟	1	1F4BE	80	gloss	ruan3 ci2 die2
+zh	轱辘	1	1F6DE	80	gloss	gu1 lu5
+zh	轻型轨道交通	1	1F688	80	gloss	qing1 xing2 gui3 dao4 jiao1 tong1
+zh	轻轨	0	1F688	90	name	qing1 gui3
+zh	载籍	1	1F4DA	80	gloss	zai3 ji2
+zh	辐射	0	2622	90	name	fu2 she4
+zh	辣椒	1	1F336	80	gloss	la4 jiao1
+zh	过山车	1	1F3A2	100	name+gloss	guo4 shan1 che1
+zh	运存	1	1F40F	80	gloss	yun4 cun2
+zh	连体泳衣	1	1FA71	100	name+gloss	lian2 ti3 yong3 yi1
+zh	连衣裙	0	1F457	90	name	lian2 yi1 qun2
+zh	迷茫	0	1F636-200D-1F32B-FE0F	90	name	mi2 mang2
+zh	送礼会	1	1F6BF	80	gloss	song4 li3 hui4
+zh	遮护板	1	1F6E1	80	gloss	zhe1 hu4 ban3
+zh	邮局	1	1F3E4	100	name+gloss	you2 ju2
+zh	邮政局	1	1F3E4	80	gloss	you2 zheng4 ju2
+zh	邮筒	0	1F4EE	90	name	you2 tong3
+zh	郁金香	1	1F337	100	name+gloss	yu4 jin1 xiang1
+zh	郁闷	0	1FAE4	90	name	yu4 men4
+zh	酒店	1	1F3E8	100	name+gloss	jiu3 dian4
+zh	酥油	1	1F9C8	80	gloss	su1 you2
+zh	酪梨	1	1F951	90	name+gloss	lao4 li2
+zh	酸橙	1	1F34B-200D-1F7E9	90	name+gloss	suan1 cheng2
+zh	酸民	1	1F9CC	80	gloss	suan1 min2
+zh	野牛	1	1F9AC	90	name+gloss	ye3 niu2
+zh	野猪	0	1F417	90	name	ye3 zhu1
+zh	野胡萝卜	1	1F955	80	gloss	ye3 hu2 luo2 bo5
+zh	金刚鹦鹉	1	E010	80	gloss	jin1 gang1 ying1 wu3
+zh	金牌	1	1F947	100	name+gloss	jin1 pai2
+zh	金钥	1	1F511	80	gloss	jin1 yao4
+zh	金钱豹	1	1F406	80	gloss	jin1 qian2 bao4
+zh	金雀花	1	1F9F9	80	gloss	jin1 que4 hua1
+zh	金鱼	1	E000	80	gloss	jin1 yu2
+zh	针筒	1	1F489	90	name+gloss	zhen1 tong3
+zh	针管	1	1F489	80	gloss	zhen1 guan3
+zh	钓鱼竿	1	1F3A3	100	name+gloss	diao4 yu2 gan1
+zh	钟	0	23F0	100	manual	alarm clock
+zh	钢笔	1	1F58B	100	name+gloss	gang1 bi3
+zh	钥	1	1F511	80	gloss	yue4
+zh	钥匙	0	1F511	100	manual	key
+zh	钩子	1	1FA9D	90	name+gloss	gou1 zi5
+zh	钩扣	1	1FA9D	80	gloss	gou1 kou4
+zh	钩拳	1	1FA9D	80	gloss	gou1 quan2
+zh	鉠	1	1F48D	80	gloss	yang1
+zh	钱	0	1F4B0	100	manual	money bag
+zh	钱包	1	1F45B	100	name+gloss	qian2 bao1
+zh	钱袋	0	1F4B0	90	name	qian2 dai4
+zh	铁轨	0	1F6E4	90	name	tie3 gui3
+zh	铁锹	1	E345	80	gloss	tie3 qiao1
+zh	铃	1	1F514	80	gloss	ling2
+zh	铃声	1	1F48D	80	gloss	ling2 sheng1
+zh	铃铛	0	1F514	90	name	ling2 dang5
+zh	铅笔	1	270F	100	name+gloss	qian1 bi3
+zh	铜牌	1	1F949	100	name+gloss	tong2 pai2
+zh	铰	1	2702	80	gloss	jiao3
+zh	银屏	1	1F4FA	80	gloss	yin2 ping2
+zh	银河	0	1F30C	90	name	Yin2 he2
+zh	银燕	1	2708	80	gloss	yin2 yan4
+zh	银牌	1	1F948	100	name+gloss	yin2 pai2
+zh	银行	1	1F3E6	100	name+gloss	yin2 hang2
+zh	铸币	1	1FA99	80	gloss	zhu4 bi4
+zh	链接	0	1F517	90	name	lian4 jie1
+zh	链条	0	26D3	90	name	lian4 tiao2
+zh	链球	1	1F528	80	gloss	lian4 qiu2
+zh	链路	1	1F517	80	gloss	lian4 lu4
+zh	锁匙	1	1F511	80	gloss	suo3 chi2
+zh	锁链	1	26D3	80	gloss	suo3 lian4
+zh	锚	1	2693	100	name+gloss	mao2
+zh	锤	1	1F528	80	gloss	chui2
+zh	锤子	1	1F528	100	name+gloss	chui2 zi5
+zh	锨	1	1FA8F	80	gloss	xian1
+zh	键	1	1F511	80	gloss	jian4
+zh	键盘	0	2328	90	name	jian4 pan2
+zh	锯	2	E348	80	gloss	ju1
+zh	锯子	1	E348	80	gloss	ju4 zi5
+zh	鍉	1	1F944	80	gloss	di1
+zh	鍏	1	E345	80	gloss	wei2
+zh	鍹	1	E345	80	gloss	xuan1
+zh	锳	1	1F48D	80	gloss	ying1
+zh	锸	1	E345	80	gloss	cha1
+zh	锹	2	1FA8F	90	name+gloss	qiao1
+zh	镇子	1	E203	80	gloss	zhen4 zi5
+zh	镐	1	26CF	80	gloss	gao3
+zh	𬭩	1	1FA8F	80	gloss	weng1
+zh	镜	1	1FA9E	80	gloss	jing4
+zh	镜子	1	1FA9E	100	name+gloss	jing4 zi5
+zh	镡	2	1F482	80	gloss	Tan2
+zh	𨱑	1	1F514	80	gloss	heng2
+zh	长号	1	1FA8A	100	name+gloss	chang2 hao4
+zh	长枪短炮	1	1F4F7	80	gloss	chang2 qiang1 duan3 pao4
+zh	长笛	0	1FA88	90	name	chang2 di2
+zh	长虫	1	1F40D	80	gloss	chang2 chong5
+zh	长颈鹿	1	1F992	100	name+gloss	chang2 jing3 lu4
+zh	门	0	1F6AA	100	manual	door
+zh	门子	1	1F6AA	80	gloss	men2 zi5
+zh	门户	1	1F6AA	80	gloss	men2 hu4
+zh	门扇	1	1F6AA	80	gloss	men2 shan4
+zh	门票	1	1F3AB	80	gloss	men2 piao4
+zh	闪亮	0	2728	90	name	shan3 liang4
+zh	闭嘴	0	1F910	90	name	bi4 zui3
+zh	闹钟	1	23F0	100	name+gloss	nao4 zhong1
+zh	闹铃时钟	1	23F0	80	gloss	nao4 ling2 shi2 zhong1
+zh	阖	1	1F6AA	80	gloss	he2
+zh	阤	1	1F3E6	80	gloss	tuo2
+zh	阳伞	0	26F1	90	name	yang2 san3
+zh	阳宗	1	2600	80	gloss	yang2 zong1
+zh	阴阳	0	262F	90	name	yin1 yang2
+zh	阴魂	1	1F47B	80	gloss	yin1 hun2
+zh	阵雨	1	1F6BF	80	gloss	zhen4 yu3
+zh	阹	1	1F58A	80	gloss	qu1
+zh	阿飘	1	1F47B	80	gloss	a1 piao1
+zh	降落伞	1	1FA82	100	name+gloss	jiang4 luo4 san3
+zh	除	0	2797	90	name	chu2
+zh	隐藏处	1	E098	80	gloss	yin3 cang2 chu4
+zh	雀鸟	1	1F426	80	gloss	que4 niao3
+zh	雄蜂	1	E1D2	80	gloss	xiong2 feng1
+zh	雄鸡	1	1F413	80	gloss	xiong2 ji1
+zh	集镇	1	E203	80	gloss	ji2 zhen4
+zh	雌鹿	1	E003	80	gloss	ci2 lu4
+zh	雨	0	1F327	100	manual	cloud with rain
+zh	雪	0	2744	100	manual	snowflake
+zh	雪山	1	1F3D4	100	name+gloss	xue3 shan1
+zh	雪崩	1	E09E	80	gloss	xue3 beng1
+zh	雪橇	1	1F6F7	100	name+gloss	xue3 qiao1
+zh	雪片	1	2744	80	gloss	xue3 pian4
+zh	雪花	1	2744	100	name+gloss	xue3 hua1
+zh	雷阵雨	0	26C8	90	name	lei2 zhen4 yu3
+zh	雾	1	1F32B	100	name+gloss	wu4
+zh	雾幔	1	1F32B	80	gloss	wu4 man4
+zh	雾气	1	1F32B	80	gloss	wu4 qi4
+zh	雾茫茫	1	1F301	80	gloss	wu4 mang2 mang2
+zh	震惊	0	1F632	90	name	zhen4 jing1
+zh	露营	1	1F3D5	100	name+gloss	lu4 ying2
+zh	青柠	1	1F34B-200D-1F7E9	100	name+gloss	qing1 ning2
+zh	青柠檬	1	1F34B-200D-1F7E9	80	gloss	qing1 ning2 meng2
+zh	青柠色	1	1F34B-200D-1F7E9	80	gloss	qing1 ning2 se4
+zh	青瓜	1	1F952	80	gloss	qing1 gua1
+zh	青花椰菜	1	1F966	80	gloss	qing1 hua1 ye1 cai4
+zh	青花菜	1	1F966	80	gloss	qing1 hua1 cai4
+zh	青蛙	1	1F438	100	name+gloss	qing1 wa1
+zh	面包	1	1F35E	100	name+gloss	mian4 bao1
+zh	面条	0	1F35C	100	manual	steaming bowl
+zh	面饼	1	1FAD3	90	name+gloss	mian4 bing3
+zh	鞋	0	1F45F	100	manual	running shoe
+zh	鞠躬	0	1F647	90	name	ju1 gong1
+zh	音乐	0	1F3B5	100	manual	musical note
+zh	音步	1	1F9B6	80	gloss	yin1 bu4
+zh	音符	0	1F3B5	90	name	yin1 fu2
+zh	章子	1	1F9AD	80	gloss	zhang1 zi5
+zh	章鱼	1	1F419	100	name+gloss	zhang1 yu2
+zh	预警	1	26A0	80	gloss	yu4 jing3
+zh	颅骨	1	1F480	80	gloss	lu2 gu3
+zh	领带	1	1F454	100	name+gloss	ling3 dai4
+zh	颤抖	0	1FAE8	90	name	chan4 dou3
+zh	风信子	1	1FABB	100	name+gloss	feng1 xin4 zi3
+zh	风浪板	1	E189	80	gloss	feng1 lang4 ban3
+zh	风筝	1	1FA81	100	name+gloss	feng1 zheng5
+zh	风铃	0	1F390	90	name	feng1 ling2
+zh	风镜	1	1F97D	80	gloss	feng1 jing4
+zh	飞吻	0	1F618	90	name	fei1 wen3
+zh	飞机	0	2708	100	manual	airplane
+zh	飞机师	1	1F9D1-200D-2708-FE0F	80	gloss	fei1 ji1 shi1
+zh	飞盘	0	1F94F	90	name	fei1 pan2
+zh	飞碟	1	1F6F8	100	name+gloss	fei1 die2
+zh	飞行员	1	1F9D1-200D-2708-FE0F	100	name+gloss	fei1 xing2 yuan2
+zh	飞鸟	1	1F426	80	gloss	fei1 niao3
+zh	飞鹰	1	1F985	80	gloss	fei1 ying1
+zh	食人魔	1	1F479	100	name+gloss	shi2 ren2 mo2
+zh	饭	1	1F35A	80	gloss	fan4
+zh	饭团	1	1F359	100	name+gloss	fan4 tuan2
+zh	饮用水	0	1F6B0	90	name	yin3 yong4 shui3
+zh	饺子	1	1F95F	100	name+gloss	jiao3 zi5
+zh	饺饵	1	1F95F	80	gloss	jiao3 er3
+zh	饼干	0	1F36A	90	name	bing3 gan1
+zh	餐具	0	1F37D	90	name	can1 ju4
+zh	饽	1	E0C7	80	gloss	bo1
+zh	馃	1	E0C7	80	gloss	guo3
+zh	馆地	1	1F3EB	80	gloss	guan3 di4
+zh	香吻	1	1F48F	80	gloss	xiang1 wen3
+zh	香烟	1	1F6AC	100	name+gloss	xiang1 yan1
+zh	香烟	2	1F6AC	100	name+gloss	xiang1 yan1
+zh	香蕉	0	1F34C	100	manual	banana
+zh	马	0	1F40E	100	manual	horse
+zh	马匹	1	1F40E	80	gloss	ma3 pi3
+zh	马头	0	1F434	90	name	ma3 tou5
+zh	马桶	0	1F6BD	90	name	ma3 tong3
+zh	马表	1	23F1	80	gloss	ma3 biao3
+zh	马达	1	E1C8	80	gloss	ma3 da2
+zh	马铃薯	1	1F954	90	name+gloss	ma3 ling2 shu3
+zh	马骝	1	1F412	80	gloss	ma3 liu2
+zh	马黛茶	0	1F9C9	90	name	ma3 dai4 cha2
+zh	馲	1	1F42A	80	gloss	tuo1
+zh	驻地	1	1F689	80	gloss	zhu4 di4
+zh	驼色	1	1F42A	80	gloss	tuo2 se4
+zh	驼鹿	1	1FACE	100	name+gloss	tuo2 lu4
+zh	骆	2	1F42A	80	gloss	Luo4
+zh	骆马	1	1F999	90	name+gloss	luo4 ma3
+zh	骆驼	1	1F42A	100	name+gloss	luo4 tuo5
+zh	骨	2	1F9B4	80	gloss	gu1
+zh	骨头	1	1F9B4	100	name+gloss	gu3 tou5
+zh	骰子	1	1F3B2	100	name+gloss	tou2 zi5
+zh	骷髅	0	2620	90	name	ku1 lou2
+zh	髑髅	1	1F480	80	gloss	du2 lou2
+zh	高压	1	26A1	100	name+gloss	gao1 ya1
+zh	高压电	1	26A1	80	gloss	gao1 ya1 dian4
+zh	高跟鞋	0	1F460	90	name	gao1 gen1 xie2
+zh	高速公路	0	1F6E3	90	name	gao1 su4 gong1 lu4
+zh	鬼	0	1F47B	90	name	gui3
+zh	鬼魂	1	1F47B	80	gloss	gui3 hun2
+zh	魔术棒	1	1FA84	80	gloss	mo2 shu4 bang4
+zh	魔杖	1	1FA84	90	name+gloss	mo2 zhang4
+zh	魔棒	1	1FA84	100	name+gloss	mo2 bang4
+zh	鱼	0	1F41F	100	manual	fish
+zh	鱼津	1	1FAE7	80	gloss	yu2 jin1
+zh	魵	1	1F990	80	gloss	fen2
+zh	鱿	1	1F991	80	gloss	you2
+zh	鱿鱼	1	1F991	90	name+gloss	you2 yu2
+zh	鲄	1	1F421	80	gloss	he2
+zh	鮨	1	1F363	80	gloss	qi2
+zh	鲒	1	1F9AA	80	gloss	jie2
+zh	鲛	1	1F988	80	gloss	jiao1
+zh	鲛鱼	1	1F988	80	gloss	jiao1 yu2
+zh	鲜	5	1F41F	80	gloss	xian3
+zh	鲤鱼旗	0	1F38F	90	name	li3 yu2 qi2
+zh	鲨	1	1F988	90	name+gloss	sha1
+zh	鲨鱼	1	1F988	100	name+gloss	sha1 yu2
+zh	鲸	1	1F40B	80	gloss	jing1
+zh	鲸鱼	1	1F40B	100	name+gloss	jing1 yu2
+zh	鯸	1	1F421	80	gloss	hou2
+zh	鳄梨	1	1F951	100	name+gloss	e4 li2
+zh	鳄鱼	0	1F40A	90	name	e4 yu2
+zh	鱄	2	1F41F	80	gloss	Zhuan1
+zh	𫠒	1	1F419	80	gloss	zhang1
+zh	鳞	1	E32B	80	gloss	lin2
+zh	鸟	0	1F426	100	manual	bird
+zh	鸟儿	1	1F426	80	gloss	niao3 r5
+zh	鸟禽	1	1F426	80	gloss	niao3 qin2
+zh	鸟雀	1	1F426	80	gloss	niao3 que4
+zh	鸠鸽	1	1F54A	80	gloss	jiu1 ge1
+zh	鸡	1	1F414	100	name+gloss	ji1
+zh	鸡尾酒	0	1F378	90	name	ji1 wei3 jiu3
+zh	鸡肉	1	1F414	80	gloss	ji1 rou4
+zh	鸡蛋	0	1F95A	100	manual	egg
+zh	鸢	1	1FA81	80	gloss	yuan1
+zh	鸭	1	1F986	90	name+gloss	ya1
+zh	鸭子	1	1F986	100	name+gloss	ya1 zi5
+zh	鸭舌帽	0	1F9E2	90	name	ya1 she2 mao4
+zh	鸮	1	1F989	80	gloss	xiao1
+zh	鸱鸮	1	1F989	80	gloss	chi1 xiao1
+zh	鸽	0	1F54A	90	name	ge1
+zh	鸽子	1	E009	80	gloss	ge1 zi5
+zh	鸿鹄	1	1F9A2	80	gloss	hong2 hu2
+zh	鹁鸽	1	E009	80	gloss	bo2 ge1
+zh	鹄	2	1F9A2	80	gloss	gu3
+zh	鹅	2	1FABF	100	name+gloss	e2
+zh	鵩	1	1F989	80	gloss	fu2
+zh	鹜	1	1F986	80	gloss	wu4
+zh	鹦	1	1F99C	80	gloss	ying1
+zh	鹦哥	1	1F99C	80	gloss	ying1 ge1
+zh	鹦鹉	1	1F99C	100	name+gloss	ying1 wu3
+zh	鹰	0	1F985	90	name	ying1
+zh	鹿	1	1F98C	100	name+gloss	lu4
+zh	麋	2	1FACE	80	gloss	Mi2
+zh	麣	1	1F410	80	gloss	yan2
+zh	麦克	2	1F3A4	80	gloss	Mai4 ke4
+zh	麦克风	1	1F3A4	100	name+gloss	mai4 ke4 feng1
+zh	黄梨	1	1F34D	80	gloss	huang2 li2
+zh	黄油	1	1F9C8	100	name+gloss	huang2 you2
+zh	黄瓜	1	1F952	100	name+gloss	huang2 gua1
+zh	黉	1	1F3EB	80	gloss	hong2
+zh	黑心	0	1F5A4	90	name	hei1 xin1
+zh	黑桃	0	2660	90	name	hei1 tao2
+zh	黑洞	1	E20D	80	gloss	hei1 dong4
+zh	墨西哥卷饼	1	1F32E	100	name+gloss	Mo4 xi1 ge1 juan3 bing3
+zh	墨镜	1	1F576	100	name+gloss	mo4 jing4
+zh	鼓	2	1F941	100	name+gloss	gu3
+zh	鼓掌	0	1F44F	90	name	gu3 zhang3
+zh	鼠标	1	1F401	80	gloss	shu3 biao1
+zh	鼠标器	1	1F401	80	gloss	shu3 biao1 qi4
+zh	鼠海豚	1	E008	80	gloss	shu3 hai3 tun2
+zh	鼻	1	1F443	80	gloss	bi2
+zh	鼻儿	1	1F441	80	gloss	bi2 r5
+zh	鼻子	1	1F443	100	name+gloss	bi2 zi5
+zh	齿	1	1F9B7	80	gloss	chi3
+zh	齿轮	1	2699	100	name+gloss	chi3 lun2
+zh	龇牙咧嘴	0	1F62C	90	name	zi1 ya2 lie3 zui3
+zh	龙	2	1F409	100	name+gloss	Long2
+zh	龙卷	1	1F32A	80	gloss	long2 juan3
+zh	龙卷风	1	1F32A	100	name+gloss	long2 juan3 feng1
+zh	龙头	0	1F432	90	name	long2 tou2
+zh	龙纹	1	1F409	80	gloss	long2 wen2
+zh	龙虾	1	1F99E	100	name+gloss	long2 xia1
+zh	龗	1	1F409	80	gloss	ling2

@@ -8,6 +8,9 @@
 	import Field from '$lib/ui/Field.svelte';
 	import Msg from '$lib/ui/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
+	import PlacementOffer from '$lib/placement/PlacementOffer.svelte';
+	import StarterOffer from '$lib/starter/StarterOffer.svelte';
+	import LevelCheckOffer from '$lib/placement/LevelCheckOffer.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
@@ -67,6 +70,9 @@
 	</header>
 
 	<EmailBanner />
+	<PlacementOffer />
+	<StarterOffer />
+	<LevelCheckOffer />
 
 	<form class="search" role="search" onsubmit={search}>
 		<div class="search-field">

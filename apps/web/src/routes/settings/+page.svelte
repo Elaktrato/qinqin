@@ -20,10 +20,15 @@
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import FeedbackSettings from '$lib/settings/FeedbackSettings.svelte';
+	import HintSettings from '$lib/settings/HintSettings.svelte';
+	import StarterSettings from '$lib/starter/StarterSettings.svelte';
+	import VisualAidsSettings from '$lib/settings/VisualAidsSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
+	import KnownSettings from '$lib/placement/KnownSettings.svelte';
+	import LevelCheck from '$lib/placement/LevelCheck.svelte';
 	import NotificationSettings from '$lib/settings/NotificationSettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
@@ -314,6 +319,11 @@
 			<div class="group" hidden={activeTab !== 'study'}>
 				<StudyDaySettings />
 				<StudySettings />
+				<HintSettings />
+				<StarterSettings />
+				<VisualAidsSettings />
+				<KnownSettings />
+				<LevelCheck />
 				<FeedbackSettings />
 			</div>
 

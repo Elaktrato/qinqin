@@ -1,0 +1,7 @@
+{
+  "unit": "word",
+  "levels": [
+    {"name": "Level 1", "entries": ["你好", "学习"]},
+    {"name": "Level 2", "entries": ["中国"]}
+  ]
+}

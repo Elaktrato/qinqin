@@ -77,6 +77,16 @@ data `{version: 1, entryId, createdAt}`. Valid only when the key is `known:` + a
 informational; anything else is ignored. Unmarking tombstones the row; marking again revives it under the
 same key. The mark creates no card. Backup: `backup/README.md`.
 
+**Declarations (#74).** A mark may carry `batch` (a non-empty string, a ULID), `source` (`range` or
+`placement`) and `scope` (a label, at most 120 code points; empty when absent). A mark with a valid `batch` and
+`source` belongs to that declaration; anything else is a mark made by hand. A declaration ("I already know
+everything up to HSK 3", an accepted placement result) writes marks only for entries without a live mark, so a
+mark made by hand keeps its origin, all with the one `batch`. Undo tombstones exactly the live marks that still
+carry the batch; marking an entry by hand afterwards replaces the row without the batch, which takes it out of
+the declaration. A declared mark is known for the reader, coverage, smart readings, stats and starter decks
+exactly like any mark; it is not mastery: no card, no review, no map colour changes. Fixture: `word-states.json`
+`batchCases`.
+
 Setting `reader.highlightWords` (boolean, default `false`) draws **new** words with a thin solid underline and
 **learning** words with a thin dotted one (no tint: the line style alone carries the state); known words are plain. Inside a user
 highlight no state is drawn. The text and its offsets are unchanged.

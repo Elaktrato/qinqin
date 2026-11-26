@@ -1,0 +1,5 @@
+kana.json, hangul.json and cyrillic.json (the charts, example words and keyboard key hints of the writing-system trainer) are written for qinqin by the project and released under the Creative Commons Attribution 4.0 International
+licence (CC BY 4.0): credit "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin". The full legal code
+is plugins/data/ja-lemma/LICENSE. The rest of the code is under the MIT licence (the repository's LICENSE and
+LICENSING.md). The licence applies to the words, glosses and charts; the dictionaries and pictures they point at keep
+their own licences (docs/sources.md).

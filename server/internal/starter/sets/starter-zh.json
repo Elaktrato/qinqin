@@ -1,0 +1,394 @@
+{
+ "version": 1,
+ "id": "starter-zh",
+ "language": "zh",
+ "name": "Starter words (Chinese)",
+ "license": "CC-BY-4.0",
+ "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is by qinqin contributors, CC BY 4.0; the dictionaries and pictures it points at keep their own licences).",
+ "humanReviewed": false,
+ "words": [
+  {
+   "form": "狗",
+   "gloss": "dog",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F415"
+   }
+  },
+  {
+   "form": "猫",
+   "gloss": "cat",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F408"
+   }
+  },
+  {
+   "form": "鱼",
+   "gloss": "fish",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F41F"
+   }
+  },
+  {
+   "form": "牛",
+   "gloss": "cow",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F404"
+   }
+  },
+  {
+   "form": "马",
+   "gloss": "horse",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F40E"
+   }
+  },
+  {
+   "form": "熊猫",
+   "gloss": "panda",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F43C"
+   }
+  },
+  {
+   "form": "香蕉",
+   "gloss": "banana",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F34C"
+   }
+  },
+  {
+   "form": "西瓜",
+   "gloss": "watermelon",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F349"
+   }
+  },
+  {
+   "form": "鸡蛋",
+   "gloss": "egg",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F95A"
+   }
+  },
+  {
+   "form": "米饭",
+   "gloss": "cooked rice",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F35A"
+   }
+  },
+  {
+   "form": "面条",
+   "gloss": "noodles",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F35C"
+   }
+  },
+  {
+   "form": "牛奶",
+   "gloss": "milk",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F95B"
+   }
+  },
+  {
+   "form": "茶",
+   "gloss": "tea",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F375"
+   }
+  },
+  {
+   "form": "咖啡",
+   "gloss": "coffee",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2615"
+   }
+  },
+  {
+   "form": "水",
+   "reading": "shuǐ",
+   "gloss": "water",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4A7"
+   }
+  },
+  {
+   "form": "手",
+   "gloss": "hand",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "270B"
+   }
+  },
+  {
+   "form": "眼睛",
+   "gloss": "eye",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F440"
+   }
+  },
+  {
+   "form": "耳朵",
+   "gloss": "ear",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F442"
+   }
+  },
+  {
+   "form": "火",
+   "reading": "huǒ",
+   "gloss": "fire",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F525"
+   }
+  },
+  {
+   "form": "雨",
+   "reading": "yǔ",
+   "gloss": "rain",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F327"
+   }
+  },
+  {
+   "form": "雪",
+   "reading": "xuě",
+   "gloss": "snow",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2744"
+   }
+  },
+  {
+   "form": "花",
+   "reading": "huā",
+   "gloss": "flower",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F33C"
+   }
+  },
+  {
+   "form": "树",
+   "gloss": "tree",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F333"
+   }
+  },
+  {
+   "form": "太阳",
+   "gloss": "sun",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2600"
+   }
+  },
+  {
+   "form": "月亮",
+   "gloss": "moon",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F319"
+   }
+  },
+  {
+   "form": "房子",
+   "gloss": "house",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3E0"
+   }
+  },
+  {
+   "form": "门",
+   "gloss": "door",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F6AA"
+   }
+  },
+  {
+   "form": "椅子",
+   "gloss": "chair",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1FA91"
+   }
+  },
+  {
+   "form": "床",
+   "gloss": "bed",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F6CF"
+   }
+  },
+  {
+   "form": "灯",
+   "gloss": "lamp",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4A1"
+   }
+  },
+  {
+   "form": "钥匙",
+   "gloss": "key",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F511"
+   }
+  },
+  {
+   "form": "书",
+   "reading": "shū",
+   "gloss": "book",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4D6"
+   }
+  },
+  {
+   "form": "书包",
+   "gloss": "schoolbag",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F392"
+   }
+  },
+  {
+   "form": "帽子",
+   "gloss": "hat",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F9E2"
+   }
+  },
+  {
+   "form": "鞋",
+   "gloss": "shoe",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F45F"
+   }
+  },
+  {
+   "form": "礼物",
+   "gloss": "gift",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F381"
+   }
+  },
+  {
+   "form": "钱",
+   "reading": "qián",
+   "gloss": "money",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4B0"
+   }
+  },
+  {
+   "form": "电话",
+   "gloss": "telephone",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "260E"
+   }
+  },
+  {
+   "form": "手机",
+   "gloss": "mobile phone",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4F1"
+   }
+  },
+  {
+   "form": "电脑",
+   "gloss": "computer",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F4BB"
+   }
+  },
+  {
+   "form": "汽车",
+   "gloss": "car",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F697"
+   }
+  },
+  {
+   "form": "火车",
+   "gloss": "train",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F682"
+   }
+  },
+  {
+   "form": "自行车",
+   "gloss": "bicycle",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F6B2"
+   }
+  },
+  {
+   "form": "飞机",
+   "gloss": "airplane",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "2708"
+   }
+  },
+  {
+   "form": "学校",
+   "gloss": "school",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3EB"
+   }
+  },
+  {
+   "form": "医院",
+   "gloss": "hospital",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3E5"
+   }
+  },
+  {
+   "form": "音乐",
+   "gloss": "music",
+   "picture": {
+    "pack": "images-openmoji",
+    "concept": "1F3B5"
+   }
+  }
+ ]
+}

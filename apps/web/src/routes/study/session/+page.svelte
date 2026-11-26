@@ -97,6 +97,23 @@ import type { Run } from '$lib/study/vacation';
 	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';
 	import GradeBar from '$lib/features/flashcards/face/GradeBar.svelte';
 	import { provideCardFace } from '$lib/features/flashcards/face/cardFace.svelte';
+	import type { CardHints } from '$lib/features/flashcards/face/cardHints.svelte';
+	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
+	import { pictureFor } from '$lib/aids/pictures';
+	import { readVisualAids } from '$lib/aids/visualAids';
+	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/study/hints';
+	import {
+		readStarterSettings,
+		replayStarter,
+		stageNote,
+		starterAppliesTo,
+		starterForcedHints,
+		starterFront,
+		starterProfile,
+		usuallyKanaOf,
+		type StarterFront,
+		type StarterReview
+	} from '$lib/study/starter';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
 	import { nextIntervals } from '$lib/study/scheduler';
 	import { longInterval } from '$lib/study/intervalText';
@@ -121,6 +138,78 @@ import type { Run } from '$lib/study/vacation';
 
 	// The open page (#101): the card registers its primary action here.
 	provideCardFace();
+
+	// The hints of the card on screen (#215): the workspace's hint settings, the card's hint state
+	// (bound from its HintScope) and the plan of a resolved card.
+	const hintSettings = $derived(readHintSettings(session.workspaces.current?.settings));
+	let cardHints = $state<CardHints | null>(null);
+	// Starter mode (#214): the stage of a vocab card's word, derived from the card's own reviews.
+	const starterSettings = $derived(readStarterSettings(session.workspaces.current?.settings));
+	const starterReviews = $derived.by(() => {
+		const byCard = new Map<string, StarterReview[]>();
+		if (!starterSettings.enabled) return byCard;
+		for (const review of [...reviews, ...sessionReviews]) {
+			const id = review?.payload?.cardId;
+			if (typeof id !== 'string') continue;
+			const list = byCard.get(id) ?? [];
+			list.push({ at: review.ts, grade: review.payload.grade });
+			byCard.set(id, list);
+		}
+		return byCard;
+	});
+	const NOTE_TEXT = {
+		kana: t('flashcards.starter.new.kana'),
+		katakana: t('flashcards.starter.new.katakana'),
+		noRomaji: t('flashcards.starter.new.noRomaji'),
+		pictureHint: t('flashcards.starter.new.pictureHint'),
+		kanji: t('flashcards.starter.new.kanji'),
+		hanzi: t('flashcards.starter.new.hanzi'),
+		noPinyin: t('flashcards.starter.new.noPinyin'),
+		normal: t('flashcards.starter.new.normal')
+	};
+	interface StarterView {
+		front: StarterFront | null;
+		note: string | null;
+		forced: Partial<Record<HintKind, HintMode>>;
+	}
+	function starterOf(current: { item: FlowItem; entry: Entry }): StarterView | null {
+		if (current.item.kind !== 'vocab') return null;
+		const profile = starterProfile(current.entry.language);
+		if (profile === null) return null;
+		const deckIds = current.item.card?.deckIds ?? current.item.deckIds ?? [];
+		if (!starterAppliesTo(starterSettings, current.entry.language, deckIds)) return null;
+		const word = { usuallyKana: profile === 'ja' && usuallyKanaOf(current.entry) };
+		const progress = replayStarter(profile, word, starterReviews.get(current.item.cardId) ?? []);
+		const front = starterFront(profile, progress.stage, word, current.entry);
+		const kana = current.entry.readings.find((r) => r.type === 'kana')?.value ?? '';
+		const note = progress.justAdvanced
+			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana) })
+			: null;
+		return {
+			front,
+			note: note === null ? null : NOTE_TEXT[note],
+			forced: starterForcedHints(profile, progress.stage, word)
+		};
+	}
+	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
+	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
+	let pictureTick = $state(0);
+	const hasPicture = (id: number): boolean => {
+		void pictureTick;
+		return visualAids.pictures && (session.caches.pictures.peek(id) ?? null) !== null;
+	};
+	const hintPlanOf = (current: { item: FlowItem; entry: Entry }) =>
+		resolveHints({
+			cardKind: current.item.kind,
+			settings: hintSettings,
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) }),
+			forced: starterOf(current)?.forced
+		});
+	$effect(() => {
+		const id = shownCard?.entry.id;
+		if (id === undefined || !visualAids.pictures) return;
+		void pictureFor(session.caches.pictures, id).then(() => (pictureTick += 1));
+	});
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
 		vocab: t('study.cardType.vocab'),
@@ -647,7 +736,7 @@ import type { Run } from '$lib/study/vacation';
 				};
 			}
 			case 'writing': {
-				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch));
+				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch, undefined, entry.language));
 				if (!isEligible('writing', entry, { language, hasSentence: false, usableChars: chars })) {
 					return null;
 				}
@@ -992,8 +1081,11 @@ import type { Run } from '$lib/study/vacation';
 		done = true;
 		suggestionFocusedAt = null;
 		// Easy is never suggested automatically.
-		suggested = result.suggested === 4 ? 3 : result.suggested;
-		doneMeta = { ...result.meta, durationMs: Math.max(0, Date.now() - shownAt) };
+		const card = { suggested: result.suggested === 4 ? 3 : result.suggested, meta: result.meta };
+		// A hint asked for with the Hint control lowers the suggestion and counts in meta.hints (hints.ts).
+		const hinted = applyHints(card, cardHints?.used ?? 0);
+		suggested = hinted.suggested;
+		doneMeta = { ...hinted.meta, durationMs: Math.max(0, Date.now() - shownAt) };
 		if (suggested !== null) {
 			// Focus the suggestion so Enter/Space (or 1–4) confirms it and a
 			// tile or pad no longer holds focus.
@@ -1013,6 +1105,11 @@ import type { Run } from '$lib/study/vacation';
 	/** withBackKey adds "Z goes back" to the key line once something was graded. */
 	function withBackKey(keys: string): string {
 		return steps.length > 0 ? t('study.session.regrade.keysWithBack', { keys }) : keys;
+	}
+
+	/** withHintKey adds "H shows a hint" while the card still has a hint to offer (#215). */
+	function withHintKey(keys: string): string {
+		return cardHints?.canReveal ? t('study.session.keysHint', { keys }) : keys;
 	}
 
 	function revealByKey(): void {
@@ -1363,11 +1460,11 @@ import type { Run } from '$lib/study/vacation';
 			done={shownDone && shownCard !== null}
 			keys={viewing !== null
 				? t('study.session.regrade.keys')
-				: withBackKey(
+				: withBackKey(withHintKey(
 						done && canSound(currentAudio)
 							? t('study.session.keysPlays', { keys: KEY_HINTS[item.kind] })
 							: KEY_HINTS[item.kind]
-					)}
+					))}
 			bind:heading={faceHeading}
 		>
 			{#snippet chips()}
@@ -1448,11 +1545,14 @@ import type { Run } from '$lib/study/vacation';
 				<p class="hint loading-card" role="status">{t('study.session.loadingCard')}</p>
 			{:else}
 				{@const current = shownCard}
+				{@const starter = starterOf(current)}
 				{@const done = shownDone}
 				{@const onCardDone = viewing === null ? onCardShown : noop}
 				{#key viewing === null ? index : `back:${backAt}`}
+					<HintScope plan={hintPlanOf(current)} locked={done} bind:hints={cardHints}>
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
+							{starter}
 							item={current.item}
 							entry={current.entry}
 							revealed={done}
@@ -1504,6 +1604,7 @@ import type { Run } from '$lib/study/vacation';
 							audio={currentAudio ?? undefined}
 						/>
 					{/if}
+					</HintScope>
 				{/key}
 			{/if}
 		</StudyFace>

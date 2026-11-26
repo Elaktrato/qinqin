@@ -10,14 +10,15 @@ function state(id: string, enabled = true): FeatureSwitch {
 const ALL_ON = [state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)];
 
 describe('core features', () => {
-	it('are the four core features, with fixed ids and routes', () => {
+	it('are the five core features, with fixed ids and routes', () => {
 		expect(coreFeatures.map((f) => [f.id, f.title])).toEqual([
 			['flashcards', 'Decks'],
 			['reader', 'Reader'],
 			['journal', 'Journal'],
-			['grammar', 'Grammar']
+			['grammar', 'Grammar'],
+			['scripts', 'Scripts']
 		]);
-		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar']);
+		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar', '/scripts']);
 	});
 
 	it('a feature without a switch row is on; its row switches it', () => {
@@ -58,7 +59,8 @@ describe('feature widgets', () => {
 		expect(coreFeatures.flatMap((f) => (f.def.widgets ?? []).map((w) => [w.id, w.owner]))).toEqual([
 			['flashcards-summary', FLASHCARDS_ID],
 			['word-states', FLASHCARDS_ID],
-			['reading-time', READER_ID]
+			['reading-time', READER_ID],
+			['scripts-progress', 'scripts']
 		]);
 	});
 });

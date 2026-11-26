@@ -29,7 +29,8 @@ export const KEY_AREAS = [
 	'apiError',
 	'format',
 	'features',
-	'milestones'
+	'milestones',
+	'scripts'
 ] as const;
 
 export type KeyArea = (typeof KEY_AREAS)[number];

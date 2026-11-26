@@ -4,6 +4,7 @@
 	// side by side, separated by " | ". Kinds keep the order they first appear in.
 	// Each value carries the reading's own language; the separator is hidden from
 	// screen readers, which move through the values one by one.
+	import ToneText from '$lib/aids/ToneText.svelte';
 	import { readingLabel } from '$lib/languages/format';
 	import { readingLang } from '$lib/i18n/lang';
 
@@ -52,8 +53,8 @@
 					<td colspan={row.label === null ? 2 : 1}>
 						{#each row.values as value, index (index)}
 							{#if index > 0}<span class="sep" aria-hidden="true">{' | '}</span>{/if}
-							{#if emphasis}<strong class="fa-reading" lang={row.lang}>{value}</strong>
-							{:else}<span class="fa-reading" lang={row.lang}>{value}</span>{/if}
+							{#if emphasis}<strong class="fa-reading" lang={row.lang}><ToneText type={row.type} {value} /></strong>
+							{:else}<span class="fa-reading" lang={row.lang}><ToneText type={row.type} {value} /></span>{/if}
 						{/each}
 					</td>
 				</tr>

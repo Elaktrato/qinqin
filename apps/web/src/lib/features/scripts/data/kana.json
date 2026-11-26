@@ -1,0 +1,1431 @@
+{
+	"id": "kana",
+	"license": "CC-BY-4.0",
+	"systems": [
+		{
+			"id": "hiragana",
+			"language": "ja",
+			"groups": [
+				"basic",
+				"dakuten",
+				"handakuten",
+				"combo"
+			],
+			"items": [
+				{
+					"glyph": "あ",
+					"roman": "a",
+					"group": "basic"
+				},
+				{
+					"glyph": "い",
+					"roman": "i",
+					"group": "basic"
+				},
+				{
+					"glyph": "う",
+					"roman": "u",
+					"group": "basic"
+				},
+				{
+					"glyph": "え",
+					"roman": "e",
+					"group": "basic"
+				},
+				{
+					"glyph": "お",
+					"roman": "o",
+					"group": "basic"
+				},
+				{
+					"glyph": "か",
+					"roman": "ka",
+					"group": "basic"
+				},
+				{
+					"glyph": "き",
+					"roman": "ki",
+					"group": "basic"
+				},
+				{
+					"glyph": "く",
+					"roman": "ku",
+					"group": "basic"
+				},
+				{
+					"glyph": "け",
+					"roman": "ke",
+					"group": "basic"
+				},
+				{
+					"glyph": "こ",
+					"roman": "ko",
+					"group": "basic"
+				},
+				{
+					"glyph": "さ",
+					"roman": "sa",
+					"group": "basic"
+				},
+				{
+					"glyph": "し",
+					"roman": "shi",
+					"group": "basic",
+					"alt": [
+						"si"
+					]
+				},
+				{
+					"glyph": "す",
+					"roman": "su",
+					"group": "basic"
+				},
+				{
+					"glyph": "せ",
+					"roman": "se",
+					"group": "basic"
+				},
+				{
+					"glyph": "そ",
+					"roman": "so",
+					"group": "basic"
+				},
+				{
+					"glyph": "た",
+					"roman": "ta",
+					"group": "basic"
+				},
+				{
+					"glyph": "ち",
+					"roman": "chi",
+					"group": "basic",
+					"alt": [
+						"ti"
+					]
+				},
+				{
+					"glyph": "つ",
+					"roman": "tsu",
+					"group": "basic",
+					"alt": [
+						"tu"
+					]
+				},
+				{
+					"glyph": "て",
+					"roman": "te",
+					"group": "basic"
+				},
+				{
+					"glyph": "と",
+					"roman": "to",
+					"group": "basic"
+				},
+				{
+					"glyph": "な",
+					"roman": "na",
+					"group": "basic"
+				},
+				{
+					"glyph": "に",
+					"roman": "ni",
+					"group": "basic"
+				},
+				{
+					"glyph": "ぬ",
+					"roman": "nu",
+					"group": "basic"
+				},
+				{
+					"glyph": "ね",
+					"roman": "ne",
+					"group": "basic"
+				},
+				{
+					"glyph": "の",
+					"roman": "no",
+					"group": "basic"
+				},
+				{
+					"glyph": "は",
+					"roman": "ha",
+					"group": "basic"
+				},
+				{
+					"glyph": "ひ",
+					"roman": "hi",
+					"group": "basic"
+				},
+				{
+					"glyph": "ふ",
+					"roman": "fu",
+					"group": "basic",
+					"alt": [
+						"hu"
+					]
+				},
+				{
+					"glyph": "へ",
+					"roman": "he",
+					"group": "basic"
+				},
+				{
+					"glyph": "ほ",
+					"roman": "ho",
+					"group": "basic"
+				},
+				{
+					"glyph": "ま",
+					"roman": "ma",
+					"group": "basic"
+				},
+				{
+					"glyph": "み",
+					"roman": "mi",
+					"group": "basic"
+				},
+				{
+					"glyph": "む",
+					"roman": "mu",
+					"group": "basic"
+				},
+				{
+					"glyph": "め",
+					"roman": "me",
+					"group": "basic"
+				},
+				{
+					"glyph": "も",
+					"roman": "mo",
+					"group": "basic"
+				},
+				{
+					"glyph": "や",
+					"roman": "ya",
+					"group": "basic"
+				},
+				{
+					"glyph": "ゆ",
+					"roman": "yu",
+					"group": "basic"
+				},
+				{
+					"glyph": "よ",
+					"roman": "yo",
+					"group": "basic"
+				},
+				{
+					"glyph": "ら",
+					"roman": "ra",
+					"group": "basic"
+				},
+				{
+					"glyph": "り",
+					"roman": "ri",
+					"group": "basic"
+				},
+				{
+					"glyph": "る",
+					"roman": "ru",
+					"group": "basic"
+				},
+				{
+					"glyph": "れ",
+					"roman": "re",
+					"group": "basic"
+				},
+				{
+					"glyph": "ろ",
+					"roman": "ro",
+					"group": "basic"
+				},
+				{
+					"glyph": "わ",
+					"roman": "wa",
+					"group": "basic"
+				},
+				{
+					"glyph": "を",
+					"roman": "wo",
+					"group": "basic",
+					"alt": [
+						"o"
+					]
+				},
+				{
+					"glyph": "ん",
+					"roman": "n",
+					"group": "basic"
+				},
+				{
+					"glyph": "が",
+					"roman": "ga",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぎ",
+					"roman": "gi",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぐ",
+					"roman": "gu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "げ",
+					"roman": "ge",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ご",
+					"roman": "go",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ざ",
+					"roman": "za",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "じ",
+					"roman": "ji",
+					"group": "dakuten",
+					"alt": [
+						"zi"
+					]
+				},
+				{
+					"glyph": "ず",
+					"roman": "zu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぜ",
+					"roman": "ze",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぞ",
+					"roman": "zo",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "だ",
+					"roman": "da",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぢ",
+					"roman": "ji",
+					"group": "dakuten",
+					"alt": [
+						"di"
+					]
+				},
+				{
+					"glyph": "づ",
+					"roman": "zu",
+					"group": "dakuten",
+					"alt": [
+						"du"
+					]
+				},
+				{
+					"glyph": "で",
+					"roman": "de",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ど",
+					"roman": "do",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ば",
+					"roman": "ba",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "び",
+					"roman": "bi",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぶ",
+					"roman": "bu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "べ",
+					"roman": "be",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぼ",
+					"roman": "bo",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ぱ",
+					"roman": "pa",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ぴ",
+					"roman": "pi",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ぷ",
+					"roman": "pu",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ぺ",
+					"roman": "pe",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ぽ",
+					"roman": "po",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "きゃ",
+					"roman": "kya",
+					"group": "combo"
+				},
+				{
+					"glyph": "きゅ",
+					"roman": "kyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "きょ",
+					"roman": "kyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "しゃ",
+					"roman": "sha",
+					"group": "combo",
+					"alt": [
+						"sya"
+					]
+				},
+				{
+					"glyph": "しゅ",
+					"roman": "shu",
+					"group": "combo",
+					"alt": [
+						"syu"
+					]
+				},
+				{
+					"glyph": "しょ",
+					"roman": "sho",
+					"group": "combo",
+					"alt": [
+						"syo"
+					]
+				},
+				{
+					"glyph": "ちゃ",
+					"roman": "cha",
+					"group": "combo",
+					"alt": [
+						"tya"
+					]
+				},
+				{
+					"glyph": "ちゅ",
+					"roman": "chu",
+					"group": "combo",
+					"alt": [
+						"tyu"
+					]
+				},
+				{
+					"glyph": "ちょ",
+					"roman": "cho",
+					"group": "combo",
+					"alt": [
+						"tyo"
+					]
+				},
+				{
+					"glyph": "にゃ",
+					"roman": "nya",
+					"group": "combo"
+				},
+				{
+					"glyph": "にゅ",
+					"roman": "nyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "にょ",
+					"roman": "nyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ひゃ",
+					"roman": "hya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ひゅ",
+					"roman": "hyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ひょ",
+					"roman": "hyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "みゃ",
+					"roman": "mya",
+					"group": "combo"
+				},
+				{
+					"glyph": "みゅ",
+					"roman": "myu",
+					"group": "combo"
+				},
+				{
+					"glyph": "みょ",
+					"roman": "myo",
+					"group": "combo"
+				},
+				{
+					"glyph": "りゃ",
+					"roman": "rya",
+					"group": "combo"
+				},
+				{
+					"glyph": "りゅ",
+					"roman": "ryu",
+					"group": "combo"
+				},
+				{
+					"glyph": "りょ",
+					"roman": "ryo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぎゃ",
+					"roman": "gya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぎゅ",
+					"roman": "gyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぎょ",
+					"roman": "gyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "じゃ",
+					"roman": "ja",
+					"group": "combo",
+					"alt": [
+						"zya"
+					]
+				},
+				{
+					"glyph": "じゅ",
+					"roman": "ju",
+					"group": "combo",
+					"alt": [
+						"zyu"
+					]
+				},
+				{
+					"glyph": "じょ",
+					"roman": "jo",
+					"group": "combo",
+					"alt": [
+						"zyo"
+					]
+				},
+				{
+					"glyph": "びゃ",
+					"roman": "bya",
+					"group": "combo"
+				},
+				{
+					"glyph": "びゅ",
+					"roman": "byu",
+					"group": "combo"
+				},
+				{
+					"glyph": "びょ",
+					"roman": "byo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぴゃ",
+					"roman": "pya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぴゅ",
+					"roman": "pyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ぴょ",
+					"roman": "pyo",
+					"group": "combo"
+				}
+			],
+			"words": [
+				{
+					"text": "ねこ",
+					"roman": "neko",
+					"gloss": "cat"
+				},
+				{
+					"text": "いぬ",
+					"roman": "inu",
+					"gloss": "dog"
+				},
+				{
+					"text": "みず",
+					"roman": "mizu",
+					"gloss": "water"
+				},
+				{
+					"text": "やま",
+					"roman": "yama",
+					"gloss": "mountain"
+				},
+				{
+					"text": "はな",
+					"roman": "hana",
+					"gloss": "flower"
+				},
+				{
+					"text": "ひと",
+					"roman": "hito",
+					"gloss": "person"
+				},
+				{
+					"text": "あめ",
+					"roman": "ame",
+					"gloss": "rain"
+				},
+				{
+					"text": "うみ",
+					"roman": "umi",
+					"gloss": "sea"
+				},
+				{
+					"text": "そら",
+					"roman": "sora",
+					"gloss": "sky"
+				},
+				{
+					"text": "ほし",
+					"roman": "hoshi",
+					"gloss": "star"
+				},
+				{
+					"text": "つき",
+					"roman": "tsuki",
+					"gloss": "moon"
+				},
+				{
+					"text": "かわ",
+					"roman": "kawa",
+					"gloss": "river"
+				},
+				{
+					"text": "さかな",
+					"roman": "sakana",
+					"gloss": "fish"
+				},
+				{
+					"text": "たまご",
+					"roman": "tamago",
+					"gloss": "egg"
+				},
+				{
+					"text": "くつ",
+					"roman": "kutsu",
+					"gloss": "shoes"
+				},
+				{
+					"text": "めがね",
+					"roman": "megane",
+					"gloss": "glasses"
+				},
+				{
+					"text": "さけ",
+					"roman": "sake",
+					"gloss": "rice wine"
+				},
+				{
+					"text": "ふね",
+					"roman": "fune",
+					"gloss": "ship"
+				},
+				{
+					"text": "とり",
+					"roman": "tori",
+					"gloss": "bird"
+				},
+				{
+					"text": "かお",
+					"roman": "kao",
+					"gloss": "face"
+				},
+				{
+					"text": "くち",
+					"roman": "kuchi",
+					"gloss": "mouth"
+				},
+				{
+					"text": "みみ",
+					"roman": "mimi",
+					"gloss": "ear"
+				},
+				{
+					"text": "はは",
+					"roman": "haha",
+					"gloss": "my mother"
+				},
+				{
+					"text": "ちち",
+					"roman": "chichi",
+					"gloss": "my father"
+				},
+				{
+					"text": "あさ",
+					"roman": "asa",
+					"gloss": "morning"
+				},
+				{
+					"text": "よる",
+					"roman": "yoru",
+					"gloss": "night"
+				},
+				{
+					"text": "なつ",
+					"roman": "natsu",
+					"gloss": "summer"
+				},
+				{
+					"text": "ふゆ",
+					"roman": "fuyu",
+					"gloss": "winter"
+				},
+				{
+					"text": "あき",
+					"roman": "aki",
+					"gloss": "autumn"
+				},
+				{
+					"text": "はる",
+					"roman": "haru",
+					"gloss": "spring"
+				},
+				{
+					"text": "さくら",
+					"roman": "sakura",
+					"gloss": "cherry blossom"
+				}
+			]
+		},
+		{
+			"id": "katakana",
+			"language": "ja",
+			"groups": [
+				"basic",
+				"dakuten",
+				"handakuten",
+				"combo"
+			],
+			"items": [
+				{
+					"glyph": "ア",
+					"roman": "a",
+					"group": "basic"
+				},
+				{
+					"glyph": "イ",
+					"roman": "i",
+					"group": "basic"
+				},
+				{
+					"glyph": "ウ",
+					"roman": "u",
+					"group": "basic"
+				},
+				{
+					"glyph": "エ",
+					"roman": "e",
+					"group": "basic"
+				},
+				{
+					"glyph": "オ",
+					"roman": "o",
+					"group": "basic"
+				},
+				{
+					"glyph": "カ",
+					"roman": "ka",
+					"group": "basic"
+				},
+				{
+					"glyph": "キ",
+					"roman": "ki",
+					"group": "basic"
+				},
+				{
+					"glyph": "ク",
+					"roman": "ku",
+					"group": "basic"
+				},
+				{
+					"glyph": "ケ",
+					"roman": "ke",
+					"group": "basic"
+				},
+				{
+					"glyph": "コ",
+					"roman": "ko",
+					"group": "basic"
+				},
+				{
+					"glyph": "サ",
+					"roman": "sa",
+					"group": "basic"
+				},
+				{
+					"glyph": "シ",
+					"roman": "shi",
+					"group": "basic",
+					"alt": [
+						"si"
+					]
+				},
+				{
+					"glyph": "ス",
+					"roman": "su",
+					"group": "basic"
+				},
+				{
+					"glyph": "セ",
+					"roman": "se",
+					"group": "basic"
+				},
+				{
+					"glyph": "ソ",
+					"roman": "so",
+					"group": "basic"
+				},
+				{
+					"glyph": "タ",
+					"roman": "ta",
+					"group": "basic"
+				},
+				{
+					"glyph": "チ",
+					"roman": "chi",
+					"group": "basic",
+					"alt": [
+						"ti"
+					]
+				},
+				{
+					"glyph": "ツ",
+					"roman": "tsu",
+					"group": "basic",
+					"alt": [
+						"tu"
+					]
+				},
+				{
+					"glyph": "テ",
+					"roman": "te",
+					"group": "basic"
+				},
+				{
+					"glyph": "ト",
+					"roman": "to",
+					"group": "basic"
+				},
+				{
+					"glyph": "ナ",
+					"roman": "na",
+					"group": "basic"
+				},
+				{
+					"glyph": "ニ",
+					"roman": "ni",
+					"group": "basic"
+				},
+				{
+					"glyph": "ヌ",
+					"roman": "nu",
+					"group": "basic"
+				},
+				{
+					"glyph": "ネ",
+					"roman": "ne",
+					"group": "basic"
+				},
+				{
+					"glyph": "ノ",
+					"roman": "no",
+					"group": "basic"
+				},
+				{
+					"glyph": "ハ",
+					"roman": "ha",
+					"group": "basic"
+				},
+				{
+					"glyph": "ヒ",
+					"roman": "hi",
+					"group": "basic"
+				},
+				{
+					"glyph": "フ",
+					"roman": "fu",
+					"group": "basic",
+					"alt": [
+						"hu"
+					]
+				},
+				{
+					"glyph": "ヘ",
+					"roman": "he",
+					"group": "basic"
+				},
+				{
+					"glyph": "ホ",
+					"roman": "ho",
+					"group": "basic"
+				},
+				{
+					"glyph": "マ",
+					"roman": "ma",
+					"group": "basic"
+				},
+				{
+					"glyph": "ミ",
+					"roman": "mi",
+					"group": "basic"
+				},
+				{
+					"glyph": "ム",
+					"roman": "mu",
+					"group": "basic"
+				},
+				{
+					"glyph": "メ",
+					"roman": "me",
+					"group": "basic"
+				},
+				{
+					"glyph": "モ",
+					"roman": "mo",
+					"group": "basic"
+				},
+				{
+					"glyph": "ヤ",
+					"roman": "ya",
+					"group": "basic"
+				},
+				{
+					"glyph": "ユ",
+					"roman": "yu",
+					"group": "basic"
+				},
+				{
+					"glyph": "ヨ",
+					"roman": "yo",
+					"group": "basic"
+				},
+				{
+					"glyph": "ラ",
+					"roman": "ra",
+					"group": "basic"
+				},
+				{
+					"glyph": "リ",
+					"roman": "ri",
+					"group": "basic"
+				},
+				{
+					"glyph": "ル",
+					"roman": "ru",
+					"group": "basic"
+				},
+				{
+					"glyph": "レ",
+					"roman": "re",
+					"group": "basic"
+				},
+				{
+					"glyph": "ロ",
+					"roman": "ro",
+					"group": "basic"
+				},
+				{
+					"glyph": "ワ",
+					"roman": "wa",
+					"group": "basic"
+				},
+				{
+					"glyph": "ヲ",
+					"roman": "wo",
+					"group": "basic",
+					"alt": [
+						"o"
+					]
+				},
+				{
+					"glyph": "ン",
+					"roman": "n",
+					"group": "basic"
+				},
+				{
+					"glyph": "ガ",
+					"roman": "ga",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ギ",
+					"roman": "gi",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "グ",
+					"roman": "gu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ゲ",
+					"roman": "ge",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ゴ",
+					"roman": "go",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ザ",
+					"roman": "za",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ジ",
+					"roman": "ji",
+					"group": "dakuten",
+					"alt": [
+						"zi"
+					]
+				},
+				{
+					"glyph": "ズ",
+					"roman": "zu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ゼ",
+					"roman": "ze",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ゾ",
+					"roman": "zo",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ダ",
+					"roman": "da",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ヂ",
+					"roman": "ji",
+					"group": "dakuten",
+					"alt": [
+						"di"
+					]
+				},
+				{
+					"glyph": "ヅ",
+					"roman": "zu",
+					"group": "dakuten",
+					"alt": [
+						"du"
+					]
+				},
+				{
+					"glyph": "デ",
+					"roman": "de",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ド",
+					"roman": "do",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "バ",
+					"roman": "ba",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ビ",
+					"roman": "bi",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ブ",
+					"roman": "bu",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ベ",
+					"roman": "be",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "ボ",
+					"roman": "bo",
+					"group": "dakuten"
+				},
+				{
+					"glyph": "パ",
+					"roman": "pa",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ピ",
+					"roman": "pi",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "プ",
+					"roman": "pu",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ペ",
+					"roman": "pe",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "ポ",
+					"roman": "po",
+					"group": "handakuten"
+				},
+				{
+					"glyph": "キャ",
+					"roman": "kya",
+					"group": "combo"
+				},
+				{
+					"glyph": "キュ",
+					"roman": "kyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "キョ",
+					"roman": "kyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "シャ",
+					"roman": "sha",
+					"group": "combo",
+					"alt": [
+						"sya"
+					]
+				},
+				{
+					"glyph": "シュ",
+					"roman": "shu",
+					"group": "combo",
+					"alt": [
+						"syu"
+					]
+				},
+				{
+					"glyph": "ショ",
+					"roman": "sho",
+					"group": "combo",
+					"alt": [
+						"syo"
+					]
+				},
+				{
+					"glyph": "チャ",
+					"roman": "cha",
+					"group": "combo",
+					"alt": [
+						"tya"
+					]
+				},
+				{
+					"glyph": "チュ",
+					"roman": "chu",
+					"group": "combo",
+					"alt": [
+						"tyu"
+					]
+				},
+				{
+					"glyph": "チョ",
+					"roman": "cho",
+					"group": "combo",
+					"alt": [
+						"tyo"
+					]
+				},
+				{
+					"glyph": "ニャ",
+					"roman": "nya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ニュ",
+					"roman": "nyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ニョ",
+					"roman": "nyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ヒャ",
+					"roman": "hya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ヒュ",
+					"roman": "hyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ヒョ",
+					"roman": "hyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ミャ",
+					"roman": "mya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ミュ",
+					"roman": "myu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ミョ",
+					"roman": "myo",
+					"group": "combo"
+				},
+				{
+					"glyph": "リャ",
+					"roman": "rya",
+					"group": "combo"
+				},
+				{
+					"glyph": "リュ",
+					"roman": "ryu",
+					"group": "combo"
+				},
+				{
+					"glyph": "リョ",
+					"roman": "ryo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ギャ",
+					"roman": "gya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ギュ",
+					"roman": "gyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ギョ",
+					"roman": "gyo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ジャ",
+					"roman": "ja",
+					"group": "combo",
+					"alt": [
+						"zya"
+					]
+				},
+				{
+					"glyph": "ジュ",
+					"roman": "ju",
+					"group": "combo",
+					"alt": [
+						"zyu"
+					]
+				},
+				{
+					"glyph": "ジョ",
+					"roman": "jo",
+					"group": "combo",
+					"alt": [
+						"zyo"
+					]
+				},
+				{
+					"glyph": "ビャ",
+					"roman": "bya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ビュ",
+					"roman": "byu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ビョ",
+					"roman": "byo",
+					"group": "combo"
+				},
+				{
+					"glyph": "ピャ",
+					"roman": "pya",
+					"group": "combo"
+				},
+				{
+					"glyph": "ピュ",
+					"roman": "pyu",
+					"group": "combo"
+				},
+				{
+					"glyph": "ピョ",
+					"roman": "pyo",
+					"group": "combo"
+				}
+			],
+			"words": [
+				{
+					"text": "テレビ",
+					"roman": "terebi",
+					"gloss": "television"
+				},
+				{
+					"text": "ラジオ",
+					"roman": "rajio",
+					"gloss": "radio"
+				},
+				{
+					"text": "カメラ",
+					"roman": "kamera",
+					"gloss": "camera"
+				},
+				{
+					"text": "ホテル",
+					"roman": "hoteru",
+					"gloss": "hotel"
+				},
+				{
+					"text": "パン",
+					"roman": "pan",
+					"gloss": "bread"
+				},
+				{
+					"text": "ナイフ",
+					"roman": "naifu",
+					"gloss": "knife"
+				},
+				{
+					"text": "ペン",
+					"roman": "pen",
+					"gloss": "pen"
+				},
+				{
+					"text": "ピアノ",
+					"roman": "piano",
+					"gloss": "piano"
+				},
+				{
+					"text": "バス",
+					"roman": "basu",
+					"gloss": "bus"
+				},
+				{
+					"text": "ドア",
+					"roman": "doa",
+					"gloss": "door"
+				},
+				{
+					"text": "テニス",
+					"roman": "tenisu",
+					"gloss": "tennis"
+				},
+				{
+					"text": "サラダ",
+					"roman": "sarada",
+					"gloss": "salad"
+				},
+				{
+					"text": "メロン",
+					"roman": "meron",
+					"gloss": "melon"
+				},
+				{
+					"text": "トマト",
+					"roman": "tomato",
+					"gloss": "tomato"
+				},
+				{
+					"text": "バナナ",
+					"roman": "banana",
+					"gloss": "banana"
+				},
+				{
+					"text": "ネクタイ",
+					"roman": "nekutai",
+					"gloss": "necktie"
+				},
+				{
+					"text": "ポスト",
+					"roman": "posuto",
+					"gloss": "mailbox"
+				},
+				{
+					"text": "ココア",
+					"roman": "kokoa",
+					"gloss": "cocoa"
+				},
+				{
+					"text": "レモン",
+					"roman": "remon",
+					"gloss": "lemon"
+				},
+				{
+					"text": "アイス",
+					"roman": "aisu",
+					"gloss": "ice cream"
+				}
+			]
+		}
+	]
+}

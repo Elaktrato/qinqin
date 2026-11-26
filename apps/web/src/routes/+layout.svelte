@@ -29,6 +29,7 @@
 	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import { startReminders } from '$lib/reminders/runtime';
+	import { flushPending } from '$lib/features/scripts/pending';
 	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import StudyModal from '$lib/features/flashcards/setup/StudyModal.svelte';
@@ -76,7 +77,7 @@
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): Search, the core features
 	// that are switched on, Stats.
-	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }));
+	const sections = $derived(frameSections(session?.features ?? { list: [], status: 'idle' }, session?.workspaces.current?.language ?? null));
 	const current = $derived(currentSection(path, sections));
 	const signedIn = $derived(app.auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
@@ -206,6 +207,33 @@
 			document.removeEventListener('visibilitychange', onVisible);
 		};
 	});
+
+	// Offline script answers (#204) wait in the browser; send them when the app starts, when the browser
+	// comes back online and when the app returns to the front, not only when /scripts opens.
+	$effect(() => {
+		const current = session;
+		const id = current?.workspaces.loaded && app.auth.restriction === null ? (current.workspaces.current?.id ?? null) : null;
+		if (current === null || id === null) return;
+		const run = () => void flushPending(localStorageOrNull(), id, (events) => current.events.post(events));
+		run();
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') run();
+		};
+		window.addEventListener('online', run);
+		document.addEventListener('visibilitychange', onVisible);
+		return () => {
+			window.removeEventListener('online', run);
+			document.removeEventListener('visibilitychange', onVisible);
+		};
+	});
+
+	function localStorageOrNull(): Storage | null {
+		try {
+			return typeof localStorage === 'undefined' ? null : localStorage;
+		} catch {
+			return null;
+		}
+	}
 
 	// Reminders (#137): facts for the server and local notifications for the Android shell, only for
 	// accounts that turned them on (lib/reminders/runtime.ts reads the row); stops with the session.

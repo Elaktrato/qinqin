@@ -237,12 +237,13 @@ describe('featureCredits', () => {
 
 	it('credits the feature sources from the real features', () => {
 		const result = featureCredits(coreFeatures, coreCredits);
-		expect(result.map((feature) => feature.id)).toEqual(['journal']);
+		expect(result.map((feature) => feature.id)).toEqual(['journal', 'scripts']);
 		expect(result[0].credits.map((credit) => credit.name)).toEqual([
 			'Tesseract OCR',
 			'Leptonica',
 			'Anthropic Go SDK'
 		]);
+		expect(result[1].credits.map((credit) => credit.name)).toEqual(['qinqin script charts']);
 	});
 });
 

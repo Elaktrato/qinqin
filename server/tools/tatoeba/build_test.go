@@ -402,3 +402,63 @@ func TestStagingIsOutsideThePackFolder(t *testing.T) {
 		}
 	}
 }
+
+// TestSentencesCarryTheirCredits: every sentence of a pack carries its own
+// credit in sentences.json (its Tatoeba id, its owner, and the id and owner of
+// its translation), so the app can credit the author of each sentence it
+// shows (CC BY 2.0 FR) with no second lookup; there is no separate "credits"
+// map, and credits.tsv lists exactly the bundled sentences.
+func TestSentencesCarryTheirCredits(t *testing.T) {
+	out, _ := buildFixture(t, nil)
+	data, err := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "sentences.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(data, &top); err != nil {
+		t.Fatal(err)
+	}
+	if _, old := top["credits"]; old {
+		t.Error("sentences.json still has the separate credits map")
+	}
+	var p struct {
+		Entries []struct {
+			Sentences []struct {
+				ID    int64  `json:"id"`
+				Hanzi string `json:"hanzi"`
+				By    string `json:"by"`
+				TID   int64  `json:"tid"`
+				TBy   string `json:"tby"`
+			} `json:"sentences"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(data, &p); err != nil {
+		t.Fatal(err)
+	}
+	used := map[int64]bool{}
+	found := false
+	for _, g := range p.Entries {
+		for _, s := range g.Sentences {
+			if s.ID == 0 || s.TID == 0 {
+				t.Errorf("%s: id %d, translation id %d: both are required", s.Hanzi, s.ID, s.TID)
+			}
+			used[s.ID] = true
+			if s.ID == 1013 {
+				found = true
+				if s.By != "wei" || s.TID != 2015 || s.TBy != "emma" {
+					t.Errorf("credit of 1013 = %q / %d / %q, want wei / 2015 / emma", s.By, s.TID, s.TBy)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Error("sentence 1013 is not in the fixture pack")
+	}
+	credits, err := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "credits.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rows := strings.Count(string(credits), "\n") - 1; rows != len(used) {
+		t.Errorf("credits.tsv has %d rows, sentences.json %d sentences", rows, len(used))
+	}
+}

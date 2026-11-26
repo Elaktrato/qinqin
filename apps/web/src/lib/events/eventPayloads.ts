@@ -22,3 +22,8 @@ export function readPayload(bookId: number, seconds: number): { bookId: number; 
 export function journalPayload(entryId: string): { entryId: string } {
 	return { entryId };
 }
+
+/** `script`: one answer of the writing-system trainer (#204): the system, the item or word, the mode, right or wrong. */
+export function scriptPayload(system: string, item: string, mode: string, ok: boolean): { system: string; item: string; mode: string; ok: boolean } {
+	return { system, item, mode, ok };
+}

@@ -34,6 +34,7 @@ characters). Owned copies get a deterministic id:
 - level deck: `d-lvl-<slug(packId)>-<fnv1a32(packId + "\0" + levelName)>`. (The plugin decks `d-plg-…` went with the code plugins, #199.)
 - starter deck (frequency, #75): `d-frq-<slug(packId)>-<fnv1a32(packId + "\0" + "top-" + size)>`; see
   [`../frequency/`](../frequency/README.md).
+- Starter set deck (#214): `d-starter-<ja|zh>`, a plain deck (no `source`); see [`../starter/`](../starter/README.md).
 
 ## Add to my decks (`add-to-deck.json`)
 

@@ -10,9 +10,11 @@
 	interface Props {
 		char: string;
 		size?: number;
+		/** The language of what is shown: the server prefers the stroke pack made for it (Japanese shapes). */
+		lang?: string;
 	}
 
-	let { char, size = 160 }: Props = $props();
+	let { char, size = 160, lang }: Props = $props();
 
 	let host = $state<HTMLDivElement | null>(null);
 	let ready = $state(false);
@@ -34,6 +36,7 @@
 
 	$effect(() => {
 		const symbol = char;
+		const language = lang;
 		const node = host;
 		// Read synchronously so a size change re-initialises the writer.
 		const dimension = size;
@@ -60,7 +63,7 @@
 					unavailableFor = symbol;
 					return;
 				}
-				const [module, result] = await Promise.all([import('hanzi-writer'), fetchStrokeData(session.caches.strokes, symbol)]);
+				const [module, result] = await Promise.all([import('hanzi-writer'), fetchStrokeData(session.caches.strokes, symbol, undefined, language)]);
 				if (cancelled) return;
 				if (result.kind === 'missing') {
 					unavailableFor = symbol;

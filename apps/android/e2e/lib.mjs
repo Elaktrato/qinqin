@@ -1,8 +1,9 @@
 // Helpers of the emulator job (#35): adb, a dependency-free Chrome DevTools Protocol client over Node's global
 // WebSocket, and a step recorder that prints a machine-readable summary. No Playwright, no `ws`.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { RelaunchCounter, withRecovery } from './recover.mjs';
 
 export const PKG = process.env.E2E_PACKAGE || 'io.github.elaktrato.qinqin';
 export const OUT = process.env.E2E_OUT || join(process.cwd(), 'e2e-out');
@@ -94,12 +95,36 @@ export function appPid() {
 	return /^\d+/.test(out) ? out.split(/\s+/)[0] : null;
 }
 
+/** Counts the activity relaunches that `startRelaunchWatch` sees (see recover.mjs). */
+export const relaunches = new RelaunchCounter();
+const liveCdps = new Set();
+
+/**
+ * startRelaunchWatch: follows the shell's own log tag (`Capacitor`) from now on and counts "App destroyed". A DevTools
+ * connection made before a relaunch is to a destroyed WebView: its pending calls fail at once instead of after 60 s.
+ */
+export function startRelaunchWatch() {
+	const child = spawn(ADB, ['logcat', '-v', 'time', '-T', '1', 'Capacitor:D', '*:S'], { stdio: ['ignore', 'pipe', 'ignore'] });
+	child.stdout.setEncoding('utf8');
+	child.stdout.on('data', (chunk) => relaunches.feed(chunk));
+	child.on('error', () => {
+		// No logcat, no early abort: the step timeouts still end every wait.
+	});
+	relaunches.onRelaunch((n) => {
+		console.log(`the shell's activity was destroyed (#${n})`);
+		for (const c of [...liveCdps]) c.abortPending('DevTools socket closed (the activity was relaunched)');
+	});
+	return () => child.kill();
+}
+
 export class Cdp {
 	constructor(ws) {
 		this.ws = ws;
 		this.next = 1;
 		this.pending = new Map();
 		this.listeners = new Map();
+		this.prefix = '';
+		liveCdps.add(this);
 		ws.addEventListener('message', (ev) => {
 			const msg = JSON.parse(ev.data);
 			if (msg.method) for (const fn of this.listeners.get(msg.method) || []) fn(msg.params);
@@ -110,9 +135,15 @@ export class Cdp {
 			else p.resolve(msg.result);
 		});
 		ws.addEventListener('close', () => {
-			for (const p of this.pending.values()) p.reject(new Error('DevTools socket closed'));
-			this.pending.clear();
+			liveCdps.delete(this);
+			this.abortPending('DevTools socket closed');
 		});
+	}
+
+	/** abortPending: rejects every call that waits for an answer. */
+	abortPending(message) {
+		for (const p of this.pending.values()) p.reject(new Error(message));
+		this.pending.clear();
 	}
 
 	send(method, params = {}, timeoutMs = 60_000) {
@@ -139,6 +170,7 @@ export class Cdp {
 	}
 
 	close() {
+		liveCdps.delete(this);
 		try {
 			this.ws.close();
 		} catch {
@@ -171,6 +203,7 @@ export async function connectPage(prefix, { timeout = 60_000 } = {}) {
 				cdp.close();
 				return null;
 			}
+			cdp.prefix = prefix;
 			return cdp;
 		},
 		{ timeout, interval: 1000 }
@@ -183,6 +216,8 @@ export class Recorder {
 		this.steps = [];
 		this.numbers = {};
 		this.failed = false;
+		/** recover: set by the driver; attaches to the current page after an unplanned relaunch (recover.mjs). */
+		this.recover = null;
 	}
 
 	async step(name, fn) {
@@ -191,8 +226,9 @@ export class Recorder {
 		this.steps.push(entry);
 		console.log(`--- ${name}`);
 		try {
-			const data = await fn();
+			const { value: data, retried } = await withRecovery(fn, { counter: relaunches, recover: () => this.recover(), enabled: typeof this.recover === 'function' });
 			entry.ok = true;
+			if (retried) entry.retried = true;
 			if (data !== undefined) entry.data = data;
 		} catch (err) {
 			entry.error = String(err.message || err);

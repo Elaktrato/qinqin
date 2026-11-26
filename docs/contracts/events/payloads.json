@@ -11,7 +11,8 @@
     {"type": "view", "write": true, "builder": "viewPayload"},
     {"type": "lookup", "write": false},
     {"type": "read", "write": true, "builder": "readPayload"},
-    {"type": "journal", "write": true, "builder": "journalPayload"}
+    {"type": "journal", "write": true, "builder": "journalPayload"},
+    {"type": "script", "write": true, "builder": "scriptPayload"}
   ],
   "cases": [
     {
@@ -33,6 +34,12 @@
       "kind": "build", "type": "journal", "name": "journal names the journal entry by its ULID string",
       "note": "{entryId} with the journal entry's ULID, a string (never a number)",
       "args": ["01KA00000000000000000000J1"], "expect": {"entryId": "01KA00000000000000000000J1"}
+    },
+    {
+      "kind": "build", "type": "script", "name": "script names the system, the item, the mode and the result",
+      "note": "{system, item, mode, ok} in this member order: system is hiragana, katakana, hangul or cyrillic; item is the chart item (\"hiragana:あ\") or example word (\"hiragana:word:ねこ\"); mode is recognise, recall, read, type or write (write: kana drawn on the writing pad, #62; a client that does not know a mode ignores the event); ok is a boolean",
+      "args": ["hiragana", "hiragana:あ", "recognise", true],
+      "expect": {"system": "hiragana", "item": "hiragana:あ", "mode": "recognise", "ok": true}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",
