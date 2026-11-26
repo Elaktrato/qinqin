@@ -3,8 +3,8 @@
  "id": "starter-ja",
  "language": "ja",
  "name": "Starter words (Japanese)",
- "license": "CC0-1.0",
- "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is released under CC0 1.0; the dictionary data stays under its own licence).",
+ "license": "CC-BY-4.0",
+ "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is by qinqin contributors, CC BY 4.0; the dictionaries and pictures it points at keep their own licences).",
  "humanReviewed": false,
  "words": [
   {

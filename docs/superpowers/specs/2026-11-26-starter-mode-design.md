@@ -115,6 +115,7 @@ pack, and a Go test checks every promise against the committed mapping `scripts/
 - Ruling: the word choice is released under CC0 1.0 (`set.json` carries `license` and `attribution`) — a list of
   everyday words has no thin-copyright expectation either way, and the issue says "released openly; the word choice is
   our own" — cost if wrong: the owner may prefer MIT like the code; one field per set. **Flagged for the owner.**
+  **Superseded 2026-11-26 (owner):** CC BY 4.0 ("qinqin contributors, CC BY 4.0"), no CC0 exception; see `LICENSING.md`.
 - Ruling: a single hanzi that is not a word falls back to its **character** entry — CC-CEDICT has no word entry for 狗
   or 水, and these are beginner words; the card is created with `entryKind: "character"` (no sentence or tone
   companions) — cost if wrong: the card's back lists "surname Shui" before "water" (CC-CEDICT orders its lines so); the

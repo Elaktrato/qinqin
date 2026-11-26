@@ -1,5 +1,5 @@
 // The writing-system trainer (#204, kana #63): the shapes of the script data and of a practice question.
-// The data files are in ./data (CC0, written by the project; data/ATTRIBUTION.md).
+// The data files are in ./data (CC BY 4.0, written by the project; data/ATTRIBUTION.md).
 
 export type SystemId = 'hiragana' | 'katakana' | 'hangul' | 'cyrillic';
 export const SYSTEM_IDS: readonly SystemId[] = ['hiragana', 'katakana', 'hangul', 'cyrillic'];

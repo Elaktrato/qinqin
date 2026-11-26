@@ -2002,7 +2002,7 @@
 	"scripts.cell.labelDue": "{glyph}, {roman}, {mastery}, due for review",
 	"scripts.chart.title": "Chart",
 	"scripts.chooseWorkspace": "Choose a workspace to practise its writing system.",
-	"scripts.credit.notice": "The charts, example words and key hints were written by the qinqin project and are dedicated to the public domain (CC0 1.0). No attribution is required.",
+	"scripts.credit.notice": "The charts, example words and key hints were written by the qinqin project and are shared under CC BY 4.0: credit \"qinqin contributors, CC BY 4.0\".",
 	"scripts.detail.keyboard": "Keyboard key: {key}",
 	"scripts.detail.lookalike": "Looks like a Latin letter but sounds different.",
 	"scripts.group.basic": "Basic",

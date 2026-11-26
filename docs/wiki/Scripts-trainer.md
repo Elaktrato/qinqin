@@ -38,4 +38,4 @@ Your progress is **derived from your answers**, which are stored as `script` stu
 
 ## Data and licence
 
-The charts, example words and key hints are written by the qinqin project and released under CC0 (public domain). See [Data and licences](Data-and-licences).
+The charts, example words and key hints are written by the qinqin project and released under CC BY 4.0 (credit "qinqin contributors"). See [Data and licences](Data-and-licences).

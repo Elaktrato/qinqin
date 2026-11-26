@@ -2,8 +2,10 @@
 
 Files: `kana.json` (hiragana and katakana), `hangul.json`, `cyrillic.json`.
 
-**Licence: CC0 1.0 Universal** (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/).
-No attribution is required. The project credits itself on the Sources page as "qinqin contributors" anyway.
+**Licence: CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/), credit "qinqin contributors, CC BY 4.0 —
+https://github.com/Elaktrato/qinqin". The full legal code is `plugins/data/ja-lemma/LICENSE`; see `NOTICE` here.
+(Issue #204 asked for CC0; the owner decided on 2026-11-26 that these files follow the project's CC BY 4.0, see
+`LICENSING.md`.) The Sources page credits them under the feature.
 
 ## Where the data comes from
 
@@ -23,9 +25,9 @@ All of it was written by the qinqin project; no third-party data file was downlo
 
 ## What is not here
 
-- No stroke order data. KanjiVG (the usual source for kana strokes) is CC BY-SA 3.0, which is below the project's
-  floor of CC BY-SA 4.0, so it is not bundled; the project has not written kana, Hangul or Cyrillic stroke data
-  yet. The trainer therefore has no write mode.
+- No stroke order data in these files. Kana stroke order comes from the separate `kanjivg-strokes` pack (KanjiVG,
+  CC BY-SA 3.0, served by the server; `docs/sources.md`). KanjiVG has no Hangul or Cyrillic, so those systems have
+  no write mode.
 - No audio. Sounds are spoken by the device voice (the browser's speech synthesis, or Android's text-to-speech in
   the app). Lingua Libre recordings (Wikimedia Commons, licence per file) are a possible later source; each file's
   licence must be checked at download time before anything is bundled.

@@ -118,18 +118,18 @@ unverified facts marked unverified) must stay the same in both places.
 
 The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
 `apps/web/src/lib/features/scripts/data/kana.json`, `hangul.json` and `cyrillic.json`, with their own
-`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC0 1.0** (public domain
-dedication), as the issue states; this differs from the CC BY 4.0 of the project's other written content
-(`LICENSING.md`), because a chart of letters has nothing to attribute. Nothing in them is copied from another
+`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC BY 4.0** like the
+project's other written content (`LICENSING.md`; issue #204 asked for CC0, the owner decided on 2026-11-26 that
+there is no exception). Nothing in them is copied from another
 source: the charts are tables of facts about writing systems (modified Hepburn, Revised Romanization, a plain
 Cyrillic transliteration), the example words are common words with an English gloss, and the keyboard keys are
 layout facts (Korean 2-set, Russian ЙЦУКЕН). The Sources page lists them under the feature (`FeatureDef.sources`).
 
 Licence checks done at the time of writing (2026-11-26), for sources that were looked at and **not bundled**:
 
-- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`). Below the project's floor
-  (CC BY-SA 4.0 or more permissive), so it is not used for the kana write mode. The `kanjivg-components` pack, which
-  predates this rule, is unchanged (see the owner question in the #204 pull request).
+- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`), below the project's usual
+  floor of CC BY-SA 4.0. The owner accepted it on 2026-11-26: the `kanjivg-strokes` pack (see "Stroke-order data")
+  gives the kana trainer its write mode, and `kanjivg-components` stays.
 - **Lingua Libre / Wikimedia Commons** (sound recordings): the licence is per file (often CC BY-SA 4.0, some
   CC BY-SA 3.0 or CC0). Nothing was downloaded; each file would have to be checked at download time. The trainer
   speaks with the device voice meanwhile.
@@ -155,11 +155,11 @@ reading, a one-word English gloss and the picture each word should have in an
 images pack. The **project wrote them**: the choice and order of words, the
 glosses and the picture pairing. They copy no third-party text; the dictionary
 entries and the pictures they point at stay under their own licences (see
-"Pictures"), and each file's `license` is **CC0 1.0** (`LICENSING.md` extends its
-CC0 exception to them). They are seeds, not reviewed lists: `humanReviewed` is
+"Pictures"), and each file's `license` is **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0";
+the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They are seeds, not reviewed lists: `humanReviewed` is
 `false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
 for 100 to 300; a person has not yet read every word against the dictionary.
-Owner confirmation pending (v0.8.0 spec, owner questions).
+Licence confirmed by the owner on 2026-11-26.
 
 ## Example sentences (Tatoeba)
 

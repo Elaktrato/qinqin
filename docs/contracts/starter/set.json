@@ -6,37 +6,37 @@
   {
    "name": "a minimal set",
    "valid": true,
-   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "images-openmoji", "concept": "1F34E" } }] }
+   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "images-openmoji", "concept": "1F34E" } }] }
   },
   {
    "name": "a word with a reading and a mapping target",
    "valid": true,
-   "set": { "version": 1, "id": "starter-ja", "language": "ja", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": true, "words": [{ "form": "月", "reading": "つき", "gloss": "moon", "picture": { "pack": "images-openmoji", "concept": "1F319" } }, { "form": "バナナ", "gloss": "banana", "picture": { "pack": "images-openmoji", "concept": "1F34C", "target": "j:1099420" } }] }
+   "set": { "version": 1, "id": "starter-ja", "language": "ja", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": true, "words": [{ "form": "月", "reading": "つき", "gloss": "moon", "picture": { "pack": "images-openmoji", "concept": "1F319" } }, { "form": "バナナ", "gloss": "banana", "picture": { "pack": "images-openmoji", "concept": "1F34C", "target": "j:1099420" } }] }
   },
   {
    "name": "version 2 is refused",
    "valid": false,
-   "set": { "version": 2, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
+   "set": { "version": 2, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
   },
   {
    "name": "an id with a capital or a space is refused",
    "valid": false,
-   "set": { "version": 1, "id": "Starter XX", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
+   "set": { "version": 1, "id": "Starter XX", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
   },
   {
    "name": "no words is refused",
    "valid": false,
-   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [] }
+   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [] }
   },
   {
    "name": "the same form and reading twice is refused",
    "valid": false,
-   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }, { "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
+   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }, { "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
   },
   {
    "name": "a concept that could name a path is refused",
    "valid": false,
-   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "../x" } }] }
+   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "../x" } }] }
   },
   {
    "name": "a missing licence is refused",
@@ -46,7 +46,7 @@
   {
    "name": "a member the format does not have is refused",
    "valid": false,
-   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC0-1.0", "attribution": "A", "humanReviewed": false, "extra": 1, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
+   "set": { "version": 1, "id": "starter-xx", "language": "xx", "name": "N", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "extra": 1, "words": [{ "form": "a", "gloss": "g", "picture": { "pack": "p", "concept": "c" } }] }
   }
  ]
 }

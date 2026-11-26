@@ -35,16 +35,17 @@ If you reuse this content, credit it as:
 
 and say if you changed it. The same credit line is used on the Sources page.
 
-### The script charts and the Starter word lists: CC0 1.0
+### The script charts and the Starter word lists: CC BY 4.0
 
-The exceptions to CC BY 4.0 are the data of the writing-system trainer (kana, Hangul and Cyrillic charts, their
-example words and keyboard key hints: `apps/web/src/lib/features/scripts/data/`) and the Starter word lists
-(`server/internal/starter/sets/starter-zh.json` and `starter-ja.json`, #214). The project wrote them and releases
-them under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), a public domain dedication with no
-attribution requirement, as issue #204 states for the charts (the lists are facts about writing systems). The Starter
-lists are the project's own selection of common, picturable words with short glosses and picture pairings; they
-copy no third-party text, and the dictionary entries and pictures they point at keep their own licences. Their
-extension to CC0 is awaiting the owner's confirmation. Anything else the project writes stays CC BY 4.0.
+The data of the writing-system trainer (kana, Hangul and Cyrillic charts, their example words and keyboard key hints:
+`apps/web/src/lib/features/scripts/data/`) and the Starter word lists (`server/internal/starter/sets/starter-zh.json`
+and `starter-ja.json`, #214) are written by the project and are under CC BY 4.0 like the rest of its written content.
+Issue #204 asked for CC0 for the charts and an earlier version of this file made them an exception; the owner decided on
+2026-11-26 that there is **no exception**: credit "qinqin contributors, CC BY 4.0". The files carry
+`"license": "CC-BY-4.0"`; a `NOTICE` next to each (the copies in the web build and in the server binary) names the
+licence and points at the legal code in `plugins/data/ja-lemma/LICENSE`, as the lemma table does.
+The Starter lists copy no third-party text; the dictionary entries and pictures they point at keep their own
+licences. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
 
 ## Third-party data keeps its own licence
 
@@ -66,6 +67,16 @@ project takes is that a program which reads a separate data file and shows it, s
 the data (a collection, as with the dictionaries above), so the MIT code stays MIT. To keep that true the pictures are
 never compiled into the binary and never bundled in the web build: the server serves them from the installed packs.
 This position is the project owner's to confirm; it is not legal advice. See `docs/sources.md`, "Pictures".
+
+### Stroke-order data (KanjiVG): CC BY-SA 3.0, accepted
+
+The Japanese stroke-order data (`kanjivg-strokes`, #62) and the component index (`kanjivg-components`) are derived from
+[KanjiVG](https://kanjivg.tagaini.net) (© Ulrich Apel, CC BY-SA **3.0**). 3.0 is below the project's usual floor of
+CC BY-SA 4.0; the owner accepted it for KanjiVG on 2026-11-26 (KanjiVG offers no other licence and the data has no substitute with a clear licence).
+Both packs are adaptations of KanjiVG and stay under CC BY-SA 3.0 (the stroke pack says it changed the drawings: the
+centre lines were widened into outlines in the stroke-data format). Like every BY-SA pack (OpenMoji, Mulberry,
+KanjiVG) each stays its own data pack, served by the running server: never compiled into the Go binary
+(`go:embed`), never in the web build and never in the Android APK. See `docs/sources.md`, "Stroke-order data".
 
 ### The HSK lists
 
