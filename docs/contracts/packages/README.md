@@ -16,7 +16,7 @@ Fixtures:
 - `catalogue.json` — valid and invalid catalogues of `GET /api/packages`.
 - `manifest.json` — valid manifests (one per type) and invalid ones.
 - `versioning.json` — `server` cases (pack operations → catalogue rows) and `client` cases (`packageAction`).
-- `schemas.json` — the exact `data.sqlite` schema of format 1 per type, and the row order of each table.
+- `schemas.json` — the exact `data.sqlite` schema per type (format 1; the `sentences` type is format 2), and the row order of each table.
 - `pack-types.json` — every data **pack** type (the manifest `type` of a pack an administrator installs) and
   what it builds; see "Pack types" below.
 
@@ -26,7 +26,7 @@ Fixtures:
 | --- | --- | --- | --- |
 | `lexicon` | `lexicon.<lang>` | every live entry of the language (forms, readings), its links, the senses of every live dictionary of the language, those dictionaries | — |
 | `levels` | `levels.<packId>` | one level scheme, its levels and members | `lexicon.<lang>` |
-| `sentences` | `sentences.<packId>` | the pack's live sentences; `pinyin` may be `""` (no reading: the pack left it out rather than guess; show no reading line) | `lexicon.<lang>` |
+| `sentences` | `sentences.<packId>` | the pack's live sentences, each with its credit (`credit_id`, `credit_owner`, `credit_tr_id`, `credit_tr_owner`; `0` and `""` when it has none; the link is the source's page of the id, Tatoeba: `https://tatoeba.org/en/sentences/show/<id>`); `pinyin` may be `""` (no reading: the pack left it out rather than guess; show no reading line). Format 2 | `lexicon.<lang>` |
 | `frequency` | `frequency.<packId>` | the pack's frequency rows | — |
 | `components` | `components.<packId>` | the pack's component index | — |
 | `audio` | `audio.<packId>` | the pack's clips (index and files); `optional: true` | — |
@@ -145,7 +145,7 @@ change.
 
 ## Versioning
 
-- `formatVersion` — the schema of `data.sqlite` for the type (1 for every type now). A client accepts exactly
+- `formatVersion` — the schema of `data.sqlite` for the type (1, except `sentences`: 2). A client accepts exactly
   the versions it knows.
 - `contentHash` — `sha256:` over a canonical stream of the package content (type, format version, every data
   table in `schemas.json` order with rows in its `order`, `qq_sources`, the licence texts); not over
