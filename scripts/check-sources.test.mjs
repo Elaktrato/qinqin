@@ -356,3 +356,35 @@ test('rule h: the images packs need their mapping and a docs section with pack i
 	assert.match(checkSources(withPins(DOC + '`images-openmoji` 17.0.0 `images-mulberry` 3.6.1')).join('\n'), /licence CC BY-SA 4\.0 of images-openmoji is not stated/);
 	assert.deepEqual(checkSources(repo(okPacks())), [], 'without the pins the rule does not apply');
 });
+
+test('the fetched KanjiVG strokes pack the docs name is accepted', () => {
+	assert.ok(FETCHED_PACKS.includes('kanjivg-strokes'));
+	const doc = DOC + '- **KanjiVG strokes** (`kanjivg-strokes`, fetched at build time)\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});
+
+test('rule i: the embedded project data (script charts, Starter lists) is CC BY 4.0 with the credit and a notice', () => {
+	const NOTICE = 'Attribution 4.0 International, plugins/data/ja-lemma/LICENSE\n';
+	const withData = ({ scriptLicence = 'CC-BY-4.0', starterLicence = 'CC-BY-4.0', credit = 'qinqin contributors, CC BY 4.0', notices = true } = {}) => {
+		const root = repo(okPacks());
+		const scripts = join(root, 'apps/web/src/lib/features/scripts/data');
+		const sets = join(root, 'server/internal/starter/sets');
+		mkdirSync(scripts, { recursive: true });
+		mkdirSync(sets, { recursive: true });
+		writeFileSync(join(scripts, 'kana.json'), JSON.stringify({ id: 'kana', license: scriptLicence }));
+		writeFileSync(join(sets, 'starter-ja.json'), JSON.stringify({ id: 'starter-ja', license: starterLicence, attribution: `Words (${credit})` }));
+		if (notices) {
+			writeFileSync(join(scripts, 'NOTICE'), NOTICE);
+			writeFileSync(join(sets, 'NOTICE'), NOTICE);
+		}
+		return root;
+	};
+	assert.deepEqual(checkSources(withData()), []);
+	const bad = checkSources(withData({ scriptLicence: 'CC0-1.0', starterLicence: 'CC0-1.0', credit: 'anyone', notices: false })).join('\n');
+	assert.match(bad, /scripts\/data\/kana\.json: license must be "CC-BY-4\.0", got "CC0-1\.0"/);
+	assert.match(bad, /starter\/sets\/starter-ja\.json: license must be "CC-BY-4\.0", got "CC0-1\.0"/);
+	assert.match(bad, /starter\/sets\/starter-ja\.json: attribution must carry the credit "qinqin contributors, CC BY 4\.0"/);
+	assert.match(bad, /scripts\/data\/NOTICE: missing or not the CC BY 4\.0 notice/);
+	assert.match(bad, /starter\/sets\/NOTICE: missing or not the CC BY 4\.0 notice/);
+	assert.deepEqual(checkSources(repo(okPacks())), [], 'without the directories the rule does not apply');
+});

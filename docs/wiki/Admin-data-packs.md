@@ -8,16 +8,17 @@ Everything qinqin knows about words and characters comes from **packs**: diction
 |---|---|---|
 | **Bundled** (`plugins/data/` in the repository, `/opt/qinqin/packs` in the image) | CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, HSK 3.0 characters and words, jōyō grades, 通用规范汉字表, JLPT kanji, KanjiVG components, a Spanish demo dictionary, the Chinese (HSK-aligned) and Japanese (≈ JLPT) grammar packs, the Japanese lemmatizer rules (`ja-lemma`, see below); the Tatoeba example sentences (`zh-sentences-tatoeba`, `ja-sentences-tatoeba`) once a maintainer has generated them ([Data and licences](Data-and-licences#example-sentences-tatoeba)) | The first start of a fresh instance ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start); not the two demos), or `qinqin seed` (everything, demos included) |
 | **Built into the image** (not committed) | The stroke-order data `hanzi-writer-strokes` (`/opt/qinqin/strokes`) and the Kanji alive audio (`/opt/qinqin/audio`, when the image was built with it) | The first start ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start)), or `qinqin seed`; the stroke data also installs itself at start when no strokes pack is installed |
+| **Built into the image** (not committed), Japanese stroke order | The CC BY-SA 3.0 pack `kanjivg-strokes` (`/opt/qinqin/kanjivg`; built from pinned KanjiVG, `--build-arg WITH_KANJIVG=0` skips it) | The first start (auto-seed), or `qinqin seed` |
 | **Built into the image** (not committed), pictures | The two CC BY-SA 4.0 picture packs `images-openmoji` and `images-mulberry` (`/opt/qinqin/images`; built from pinned upstream releases, only the pictures a word mapping uses; `--build-arg WITH_IMAGES=0` leaves them out) | The first start, or `qinqin seed` |
 | **Built by you** (never committed or bundled) | Font packs, made with `scripts/prepare-font-pack.mjs` from a pinned upstream face ([Data and licences](Data-and-licences#hanzi-and-kanji-font-packs)) | Upload in Settings → Data, or `qinqin seed --packs <folder>` |
 | **Local-only** (the gitignored `plugins/data-local/`) | Data with an unclear or restrictive licence: a Chinese frequency list, the JLPT vocabulary pack, a Chinese components pack, a level list of your own | `qinqin seed` with the folder mounted and named in `--packs` |
 
 The bundled set is chosen so a fresh server can seed itself offline on its first start and every pack's licence allows redistribution (see `docs/sources.md`). Local-only data stays on your server: it is never part of the repository or the image, and you are responsible for its terms.
 
-**Under Docker** `qinqin seed` sees only the image's pack roots (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`, `/opt/qinqin/images`). To add a host folder, mount it, for example `./plugins/data-local:/opt/qinqin/local:ro`, and name every root:
+**Under Docker** `qinqin seed` sees only the image's pack roots (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`, `/opt/qinqin/images`, `/opt/qinqin/kanjivg`). To add a host folder, mount it, for example `./plugins/data-local:/opt/qinqin/local:ro`, and name every root:
 
 ```sh
-docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/images,/opt/qinqin/local
+docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/images,/opt/qinqin/kanjivg,/opt/qinqin/local
 ```
 
 **A level list of your own**: put a folder `plugins/data-local/<id>/` with a `manifest.json` (`"type": "levels"`, `"format": "json"`, a `license` and an `attribution`) and a `levels.json` ([Data pack format](Data-pack-format)), then run `qinqin seed --packs plugins/data,plugins/data-local` (in a checkout) or the Docker form above. Font packs built into `plugins/data-fonts/` are not a default root either: name the folder in `--packs`, or upload the pack. The hand-written samples in `plugins/samples/` (`zh-mini`, `ja-mini`, `hsk-mini`, `jlpt-mini`) are never seeded unless you name them (`qinqin seed --packs plugins/samples`). `zh-grammar-demo` is the only bundled grammar pack.
@@ -98,8 +99,12 @@ At import the server keeps each pack's licence files: the files at the pack root
 Stroke animations come from the pack `hanzi-writer-strokes` (data from the `hanzi-writer-data` npm package, derived from Make Me a Hanzi; Arphic Public License). It is built into the image at `/opt/qinqin/strokes` (about 13 MB), not committed and not part of the web app.
 
 - At start the server installs it when no strokes pack is installed, unless an administrator uninstalled one (log: `strokes: installed the bundled stroke data ...`). `qinqin seed` installs it too.
-- The server answers `GET /hanzi/U<HEX>.json` (the code point in uppercase hex) from the installed strokes packs, the URL the static files had in v0.3. When several strokes packs carry a character, the one installed first serves it. `GET /api/stroke-packs` lists their credits for the Sources page.
+- The server answers `GET /hanzi/U<HEX>.json` (the code point in uppercase hex) from the installed strokes packs, the URL the static files had in v0.3. When several strokes packs carry a character, the one made for the reader's language serves it (`?lang=ja` asks for the Japanese shapes; `docs/contracts/strokes/`), otherwise the one installed first. `GET /api/stroke-packs` lists their credits for the Sources page.
 - In a repository checkout, build it with `npm --prefix apps/web ci` and then `node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes`; `qinqin seed` picks up `plugins/data-strokes` when it exists.
+
+### Japanese stroke order (KanjiVG)
+
+The pack `kanjivg-strokes` (KanjiVG, © Ulrich Apel, **CC BY-SA 3.0**) carries the stroke order of kana, the Japanese forms of kanji and the iteration marks (6,614 characters, about 7 MB). The writing pad and the stroke player use it for Japanese entries, and the kana trainer's **Write** mode needs it. KanjiVG draws each stroke as the centre line of the pen; the pack widens the lines into outlines in the stroke-data format and says so in its notice (the pack is an adaptation and stays under CC BY-SA 3.0). It is built into the image at `/opt/qinqin/kanjivg` (`--build-arg WITH_KANJIVG=0` skips it) and is a separate data pack, never inside the server binary, the web app or the Android app. In a checkout: `scripts/fetch-kanjivg-strokes.sh` (needs `git` and Node; it checks the pinned commit and licence text) writes `plugins/data-strokes/kanjivg-strokes`, and `qinqin seed` installs it. Uninstalling it hides the Write mode and returns Japanese entries to the shared shapes.
 
 ## Lemmatizer rule tables
 

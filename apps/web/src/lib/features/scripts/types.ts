@@ -1,12 +1,23 @@
 // The writing-system trainer (#204, kana #63): the shapes of the script data and of a practice question.
-// The data files are in ./data (CC0, written by the project; data/ATTRIBUTION.md).
+// The data files are in ./data (CC BY 4.0, written by the project; data/ATTRIBUTION.md).
 
 export type SystemId = 'hiragana' | 'katakana' | 'hangul' | 'cyrillic';
 export const SYSTEM_IDS: readonly SystemId[] = ['hiragana', 'katakana', 'hangul', 'cyrillic'];
 
-/** recognise: glyph to sound. recall: sound to glyph. read: a syllable or word to its sound. type: sound to typed glyph. */
-export type Mode = 'recognise' | 'recall' | 'read' | 'type';
-export const MODES: readonly Mode[] = ['recognise', 'recall', 'read', 'type'];
+/**
+ * recognise: glyph to sound. recall: sound to glyph. read: a syllable or word to its sound. type: sound to typed glyph.
+ * write: sound to a glyph drawn stroke by stroke on the writing pad (kana only: KanjiVG stroke data, #62).
+ */
+export type Mode = 'recognise' | 'recall' | 'read' | 'type' | 'write';
+export const MODES: readonly Mode[] = ['recognise', 'recall', 'read', 'type', 'write'];
+
+/** The systems with stroke data to write by: the kana. Hangul and Cyrillic have none (KanjiVG has neither). */
+export const WRITABLE_SYSTEMS: readonly SystemId[] = ['hiragana', 'katakana'];
+
+/** canWrite says whether a system has a write mode; the server must also have the Japanese stroke pack. */
+export function canWrite(system: SystemId): boolean {
+	return WRITABLE_SYSTEMS.includes(system);
+}
 
 /** One letter, jamo or kana of a chart. */
 export interface ScriptItem {

@@ -47,8 +47,10 @@ and never share the correct answer's romanisation.
 - Ruling: the three data sets are released CC0, following the issue, although `LICENSING.md` says project-written
   content is CC BY 4.0 — the issue's CC0 text is specific to these packs and CC0 is more permissive than the
   owner's CC BY-SA 4.0 floor — if wrong: relabel to CC BY 4.0 (a notice change, no code).
+  **Superseded 2026-11-26 (owner):** CC BY 4.0, no CC0 exception; see `LICENSING.md`.
 - Ruling: kana write mode is deferred — KanjiVG is CC BY-SA 3.0, not 4.0 or more permissive, and the project has no
   stroke data of its own for kana — if wrong: a pack of project-authored kana strokes, or an owner exception for KanjiVG.
+  **Superseded 2026-11-26 (owner):** KanjiVG CC BY-SA 3.0 accepted; kana write mode built on the `kanjivg-strokes` pack (#62, `docs/superpowers/plans/2026-11-26-kanjivg-strokes.md`). Hangul and Cyrillic have no write mode (KanjiVG has none).
 - Ruling: progress is derived from events, not stored rows — as the issue says and like reviews — if wrong: a
   typed progress table like grammar's.
 - Ruling: `ko` and `ru` get language profiles now (script `other`) so the feature can appear for them — a profile

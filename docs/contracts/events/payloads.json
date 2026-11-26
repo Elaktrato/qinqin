@@ -37,7 +37,7 @@
     },
     {
       "kind": "build", "type": "script", "name": "script names the system, the item, the mode and the result",
-      "note": "{system, item, mode, ok} in this member order: system is hiragana, katakana, hangul or cyrillic; item is the chart item (\"hiragana:あ\") or example word (\"hiragana:word:ねこ\"); mode is recognise, recall, read or type; ok is a boolean",
+      "note": "{system, item, mode, ok} in this member order: system is hiragana, katakana, hangul or cyrillic; item is the chart item (\"hiragana:あ\") or example word (\"hiragana:word:ねこ\"); mode is recognise, recall, read, type or write (write: kana drawn on the writing pad, #62; a client that does not know a mode ignores the event); ok is a boolean",
       "args": ["hiragana", "hiragana:あ", "recognise", true],
       "expect": {"system": "hiragana", "item": "hiragana:あ", "mode": "recognise", "ok": true}
     },

@@ -26,8 +26,8 @@ export const scriptsDef: FeatureDef = {
 		{
 			name: 'qinqin script charts',
 			url: 'https://github.com/Elaktrato/qinqin',
-			license: 'CC0 1.0',
-			attribution: 'qinqin contributors',
+			license: 'CC BY 4.0',
+			attribution: 'qinqin contributors, CC BY 4.0',
 			get notice() {
 				return t('scripts.credit.notice');
 			}

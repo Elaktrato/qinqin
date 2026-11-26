@@ -78,7 +78,7 @@ server resolves it with the starter-deck rule (a kana row takes the kana-only wo
 installed dictionary has and an entry an earlier word already took. `picture` is the picture the word is expected to
 have in an images pack (`target` is the mapping's target when it is not the form, a Japanese `j:<ent_seq>` key); a Go
 test checks every promise against the committed mapping in `scripts/images/<pack>/map.tsv`. `humanReviewed: false`
-marks a seed that only its author checked. The word choice is released under CC0 1.0.
+marks a seed that only its author checked. The word choice is released under CC BY 4.0 (credit "qinqin contributors, CC BY 4.0").
 
 - `GET /api/starter-sets` (public, not access tokens): `[{id, language, name, license, attribution, wordCount,
   humanReviewed}]`.

@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #62 — Japanese stroke order: the language of a stroke request (contract 13)
+
+- **New query parameter:** `GET /hanzi/U<HEX>.json?lang=<code>` (two or three lower-case letters) asks for the shapes
+  of one language where the installed strokes packs differ: a pack that lists the language comes first, then the pack
+  with the fewest languages (a pack made for Japanese alone beats the shared Chinese-and-Japanese one), then the order of
+  registration. A character only one pack has is served whatever the language; a malformed `lang` is `400 bad_request`;
+  without it nothing changes. New fixture `strokes/lookup.json` (rule `strokes/lookup`) and `strokes/README.md`.
+- **Clients:** the web app passes the language of the entry or workspace and keys its stroke cache by language and
+  character; the service worker's `/hanzi/` cache keeps a well-formed `lang` in its key (the one query parameter it keeps).
+- **New pack, no new type or route:** `kanjivg-strokes` (KanjiVG, CC BY-SA 3.0, languages `["ja"]`, built by
+  `scripts/fetch-kanjivg-strokes.sh`, shipped beside the binary and never in it or in the web build). It carries kana,
+  Japanese kanji forms and the iteration marks in the stroke-data format the app already reads; kana have stroke data
+  for the first time, so the writing pad works on them. `GET /api/stroke-packs` lists it with the others.
+
 ## Tatoeba credits on every sentence (contract 12)
 
 - **Sentence pack file (`sentences.json`):** each sentence carries its own credit: `id` (its Tatoeba id), `by` (its

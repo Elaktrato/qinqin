@@ -118,18 +118,18 @@ unverified facts marked unverified) must stay the same in both places.
 
 The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
 `apps/web/src/lib/features/scripts/data/kana.json`, `hangul.json` and `cyrillic.json`, with their own
-`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC0 1.0** (public domain
-dedication), as the issue states; this differs from the CC BY 4.0 of the project's other written content
-(`LICENSING.md`), because a chart of letters has nothing to attribute. Nothing in them is copied from another
+`ATTRIBUTION.md` next to them. They are written by the qinqin project and released under **CC BY 4.0** like the
+project's other written content (`LICENSING.md`; issue #204 asked for CC0, the owner decided on 2026-11-26 that
+there is no exception). Nothing in them is copied from another
 source: the charts are tables of facts about writing systems (modified Hepburn, Revised Romanization, a plain
 Cyrillic transliteration), the example words are common words with an English gloss, and the keyboard keys are
 layout facts (Korean 2-set, Russian ЙЦУКЕН). The Sources page lists them under the feature (`FeatureDef.sources`).
 
 Licence checks done at the time of writing (2026-11-26), for sources that were looked at and **not bundled**:
 
-- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`). Below the project's floor
-  (CC BY-SA 4.0 or more permissive), so it is not used for the kana write mode. The `kanjivg-components` pack, which
-  predates this rule, is unchanged (see the owner question in the #204 pull request).
+- **KanjiVG** (kana stroke order): CC BY-SA **3.0** (project README and `COPYING`), below the project's usual
+  floor of CC BY-SA 4.0. The owner accepted it on 2026-11-26: the `kanjivg-strokes` pack (see "Stroke-order data")
+  gives the kana trainer its write mode, and `kanjivg-components` stays.
 - **Lingua Libre / Wikimedia Commons** (sound recordings): the licence is per file (often CC BY-SA 4.0, some
   CC BY-SA 3.0 or CC0). Nothing was downloaded; each file would have to be checked at download time. The trainer
   speaks with the device voice meanwhile.
@@ -155,11 +155,11 @@ reading, a one-word English gloss and the picture each word should have in an
 images pack. The **project wrote them**: the choice and order of words, the
 glosses and the picture pairing. They copy no third-party text; the dictionary
 entries and the pictures they point at stay under their own licences (see
-"Pictures"), and each file's `license` is **CC0 1.0** (`LICENSING.md` extends its
-CC0 exception to them). They are seeds, not reviewed lists: `humanReviewed` is
+"Pictures"), and each file's `license` is **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0";
+the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They are seeds, not reviewed lists: `humanReviewed` is
 `false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
 for 100 to 300; a person has not yet read every word against the dictionary.
-Owner confirmation pending (v0.8.0 spec, owner questions).
+Licence confirmed by the owner on 2026-11-26.
 
 ## Example sentences (Tatoeba)
 
@@ -775,6 +775,27 @@ committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
+
+- **KanjiVG stroke data** (`kanjivg-strokes`, Japanese, fetched at build time; #62): the stroke order of kana, the
+  Japanese forms of kanji and the iteration marks (6,614 characters) from
+  [KanjiVG](https://kanjivg.tagaini.net), © Ulrich Apel, tag `r20260714`, commit
+  `d95a97627fd9fe5b2c8d06ca81e38149609c0c1e`, licensed **CC BY-SA 3.0** (README and `COPYING`, checked 2026-11-26). 3.0 is
+  below the project's usual CC BY-SA 4.0 floor; the owner accepted it for KanjiVG on 2026-11-26 (`LICENSING.md`).
+  KanjiVG stores each stroke as the centre line of the pen. The pack is an **adaptation**: `scripts/prepare-kanjivg-strokes.mjs`
+  samples each path into a median (a short polyline) and widens it by 2.75 KanjiVG units on each side, with round caps,
+  into the outline the stroke-data format needs (Hanzi Writer's: strokes and medians in a 1024 box, y up, baseline 900),
+  so the writing pad and the stroke player read it like any other strokes pack. Stroke order and direction are
+  KanjiVG's own; variant drawings (`-Kaisho` and so on), Latin and symbols are not included. The pack says it was
+  changed (manifest `notice`, `ATTRIBUTION.md`) and stays under CC BY-SA 3.0.
+
+It is a data pack of type `strokes` with `languages: ["ja"]`, built by `scripts/fetch-kanjivg-strokes.sh` (a pinned
+clone: the tag's commit, the SHA-256 of `COPYING` from `plugins/data/UPSTREAM.sha256` and the README's licence line are
+checked, and any difference stops the build) into the gitignored `plugins/data-strokes/kanjivg-strokes`; the Docker
+image builds it in its own `kanjivg` stage and ships it under `/opt/qinqin/kanjivg` (`--build-arg WITH_KANJIVG=0`
+skips it). The share-alike position of the project: like every BY-SA pack it stays its own data pack, served by the
+running server (`GET /hanzi/U<HEX>.json?lang=ja`, `docs/contracts/strokes/`), and is **never** compiled into the Go
+binary (`go:embed`), put in the web build or bundled in the Android app. For a character both packs carry, the
+language decides which serves it: a Japanese reader gets KanjiVG's shapes, a Chinese one the Make Me a Hanzi shapes.
 
 ## Themes
 

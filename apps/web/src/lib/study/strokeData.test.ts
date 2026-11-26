@@ -20,6 +20,32 @@ describe('strokeUrl', () => {
 	it('handles astral characters', () => {
 		expect(strokeUrl('𠀀')).toBe('/hanzi/U20000.json');
 	});
+	it('asks for the shapes of a language with ?lang= (docs/contracts/strokes)', () => {
+		expect(strokeUrl('海', 'ja')).toBe('/hanzi/U6D77.json?lang=ja');
+		expect(strokeUrl('海', 'zh')).toBe('/hanzi/U6D77.json?lang=zh');
+	});
+	it('leaves out a language the route would refuse', () => {
+		for (const lang of [undefined, '', 'JA', 'zh-TW', 'japanese', 'j']) expect(strokeUrl('海', lang)).toBe('/hanzi/U6D77.json');
+	});
+});
+
+describe('stroke data per language', () => {
+	it('keeps the data of each language apart and fetches the language asked for', async () => {
+		const fetchFn = vi.fn(async (url: string) => jsonResponse({ url }));
+		const as = fetchFn as unknown as typeof fetch;
+		expect(await loadStrokeData(cache, '海', as, 'ja')).toEqual({ url: '/hanzi/U6D77.json?lang=ja' });
+		expect(await loadStrokeData(cache, '海', as, 'zh')).toEqual({ url: '/hanzi/U6D77.json?lang=zh' });
+		expect(await loadStrokeData(cache, '海', as)).toEqual({ url: '/hanzi/U6D77.json' });
+		expect(await loadStrokeData(cache, '海', as, 'ja')).toEqual({ url: '/hanzi/U6D77.json?lang=ja' });
+		expect(fetchFn).toHaveBeenCalledTimes(3);
+	});
+	it('treats an unusable language as none, so it shares the plain entry', async () => {
+		const fetchFn = vi.fn(async () => jsonResponse({ a: 1 }));
+		const as = fetchFn as unknown as typeof fetch;
+		await loadStrokeData(cache, '海', as);
+		await loadStrokeData(cache, '海', as, 'zh-TW');
+		expect(fetchFn).toHaveBeenCalledTimes(1);
+	});
 });
 
 describe('loadStrokeData', () => {

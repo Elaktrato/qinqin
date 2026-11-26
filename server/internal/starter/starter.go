@@ -1,6 +1,6 @@
 // Package starter holds the Starter sets (#214): a short list of common,
 // picturable words per language, written for this project and released under
-// CC0 1.0 (LICENSING.md; the word choice is ours; the dictionary data it points
+// CC BY 4.0 (LICENSING.md; the word choice is ours; the dictionary data it points
 // at stays in the dictionaries). A set says through humanReviewed whether a
 // person has read every word against the dictionary; the shipped seeds say
 // false. A set names words the way a level or frequency list does

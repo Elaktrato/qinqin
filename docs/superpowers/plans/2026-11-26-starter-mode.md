@@ -59,7 +59,7 @@ contracts and fixtures decodable by Android, docs, i18n, dom and e2e tests.
 
 ## Open questions for the owner
 
-1. **Word list licence:** CC0 1.0 for the Starter word choice (ruling in the spec)?
+1. **Word list licence:** CC0 1.0 for the Starter word choice (ruling in the spec)? *Answered 2026-11-26: CC BY 4.0, not CC0.*
 2. **Thresholds:** 7 spaced successes for Japanese, 6 for Chinese; Again drops a stage. Right pace?
 3. **Manual nudge** ("show me the kanji already"): worth a keyed row per word?
 4. **Create-workspace "I'm new" checkbox** and **reader/entry pages** following the stage: next?

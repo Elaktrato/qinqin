@@ -292,3 +292,38 @@ func TestUninstallTurnsAutoInstallOff(t *testing.T) {
 		t.Fatal("a failed uninstall turned auto-install off")
 	}
 }
+
+// TestLookupForPrefersThePackMadeForTheLanguage: with a language, a pack that lists it wins, and one made for
+// that language alone (KanjiVG's Japanese shapes) beats a shared pack (the Chinese shapes); without a language,
+// or when no pack lists it, the order of registration decides as before.
+func TestLookupForPrefersThePackMadeForTheLanguage(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := dbtest.Open(t)
+	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "shared", "1", []string{"zh", "ja"}, line("好", dataHao))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "japanese", "1", []string{"ja"}, line("好", dataYi)+line("あ", dataRad))); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ char, lang, want string }{
+		{"好", "", dataHao},   // no language: the first pack
+		{"好", "zh", dataHao}, // the Japanese pack does not list zh
+		{"好", "ja", dataYi},  // made for ja alone
+		{"好", "ko", dataHao}, // nobody lists ko: the first pack
+		{"あ", "ja", dataRad}, // only the Japanese pack has it
+		{"あ", "zh", dataRad}, // a character only one pack has is served whatever the language
+		{"あ", "", dataRad},
+	} {
+		got, ok, err := strokes.LookupFor(ctx, sqlDB, c.char, c.lang)
+		if err != nil || !ok || string(got) != c.want {
+			t.Errorf("LookupFor(%s, %q) = %s, %v, %v; want %s", c.char, c.lang, got, ok, err, c.want)
+		}
+	}
+	if _, ok, _ := strokes.LookupFor(ctx, sqlDB, "一", "ja"); ok {
+		t.Error("a character no pack has must not be found")
+	}
+	// Lookup is LookupFor without a language.
+	if got, _, _ := strokes.Lookup(ctx, sqlDB, "好"); string(got) != dataHao {
+		t.Errorf("Lookup(好) = %s", got)
+	}
+}

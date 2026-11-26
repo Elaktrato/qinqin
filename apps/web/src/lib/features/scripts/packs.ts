@@ -1,4 +1,4 @@
-// The script data (CC0, project-written; ./data/ATTRIBUTION.md) as ScriptSystems. The JSON files are part of the
+// The script data (CC BY 4.0, project-written; ./data/ATTRIBUTION.md) as ScriptSystems. The JSON files are part of the
 // web build, so the trainer works offline in the PWA and the Android shell (spec 2026-11-26, Ruling).
 
 import kana from './data/kana.json';

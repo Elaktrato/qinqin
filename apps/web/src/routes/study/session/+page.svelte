@@ -736,7 +736,7 @@ import type { Run } from '$lib/study/vacation';
 				};
 			}
 			case 'writing': {
-				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch));
+				const chars = await usableChars(item.written ?? entry.written, (ch) => loadStrokeData(session.caches.strokes, ch, undefined, entry.language));
 				if (!isEligible('writing', entry, { language, hasSentence: false, usableChars: chars })) {
 					return null;
 				}

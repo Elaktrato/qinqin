@@ -13,7 +13,7 @@ import (
 	"qinqin/internal/starter"
 )
 
-const good = `{"version":1,"id":"starter-xx","language":"xx","name":"N","license":"CC0-1.0","attribution":"A","humanReviewed":false,
+const good = `{"version":1,"id":"starter-xx","language":"xx","name":"N","license":"CC-BY-4.0","attribution":"A","humanReviewed":false,
 "words":[{"form":"a","gloss":"g","picture":{"pack":"images-openmoji","concept":"1F34E"}}]}`
 
 func TestParseAcceptsAGoodSet(t *testing.T) {

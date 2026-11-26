@@ -47,6 +47,7 @@ The dictionary files are redistributed **unmodified**; the Jiten list is a conve
 
 **Built into the image, not committed:**
 
+- **Japanese stroke order** (`kanjivg-strokes`): KanjiVG, © Ulrich Apel, **CC BY-SA 3.0** (accepted by the project owner although it is below the usual CC BY-SA 4.0 floor). The pack widens KanjiVG's pen centre lines into outlines, so it is an adaptation and says it was changed; like every share-alike pack it is served as its own data pack and never built into the server program, the web app or the Android app. Built by `scripts/fetch-kanjivg-strokes.sh`.
 - **Stroke-order data** (`hanzi-writer-strokes`): `hanzi-writer-data`, derived from the Make Me a Hanzi dataset, **Arphic Public License**; built by `scripts/prepare-strokes-pack.mjs` (into the image, or locally into the gitignored `plugins/data-strokes/`). It is a pack like the others: listed in the Sources page's stroke data section, and an administrator can uninstall it.
 - **Kanji alive example-word audio** (`kanjialive-audio`): 10,156 Japanese clips, CC BY 4.0, fetched and checksum-checked at build time ([AI providers and offline OCR](Admin-AI-and-OCR#audio-in-the-image)).
 

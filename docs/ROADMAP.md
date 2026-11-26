@@ -169,9 +169,9 @@ plan. Native pieces only where the WebView falls short.
 - Getting started: [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test,
   [#82](https://github.com/Elaktrato/qinqin/issues/82) level check,
   [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study,
-  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC0 data; write mode deferred, KanjiVG is CC BY-SA 3.0)
+  [#204](https://github.com/Elaktrato/qinqin/issues/204) writing-system trainer (`/scripts`; on `feature/writing-systems-204`: kana, Hangul and Cyrillic charts, recognise, recall, read and type practice, progress from `script` events, CC BY 4.0 data; kana write mode with KanjiVG strokes, #62)
 - Data: [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba sentences,
-  [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order,
+  [#62](https://github.com/Elaktrato/qinqin/issues/62) KanjiVG stroke order (the pack `kanjivg-strokes`, CC BY-SA 3.0 accepted by the owner; `?lang=` on `/hanzi/`, the kana Write mode; plan `docs/superpowers/plans/2026-11-26-kanjivg-strokes.md`),
   [#237](https://github.com/Elaktrato/qinqin/issues/237) Mandarin audio
 
 ### v0.9.0 — courses (milestone 8)
@@ -265,7 +265,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 **Japanese**
 
-- [#62](https://github.com/Elaktrato/qinqin/issues/62) stroke order data from KanjiVG (licence CC BY-SA 3.0; check before bundling)
+- ~~[#62](https://github.com/Elaktrato/qinqin/issues/62) stroke order data from KanjiVG~~ — built for v0.8.0 as the separate pack `kanjivg-strokes` (licence CC BY-SA 3.0, accepted by the owner 2026-11-26)
 - [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study, separate from flashcards
 
 **Reader and lookup**

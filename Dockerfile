@@ -73,6 +73,19 @@ RUN mkdir -p /out && if [ "$WITH_IMAGES" = "1" ]; then \
       for p in openmoji mulberry; do node /src/scripts/prepare-images-pack.mjs --pack "$p" --out "/out/images-$p" --cache /tmp/images-cache || exit 1; done; \
     fi
 
+# Japanese stroke order: the kanjivg-strokes pack (KanjiVG, CC BY-SA 3.0), built here
+# from the pinned KanjiVG checkout (tag r20260714; the commit and the licence text are
+# checked by scripts/fetch-kanjivg-strokes.sh). The pack is an adaptation of KanjiVG and
+# is shipped as a separate data pack next to the binary, never compiled into it or into
+# the web build (docs/sources.md, "Stroke-order data"). --build-arg WITH_KANJIVG=0 skips
+# the download; /out then stays empty.
+FROM alpine:3.22 AS kanjivg
+ARG WITH_KANJIVG=1
+RUN apk add --no-cache bash git nodejs ca-certificates
+COPY scripts/fetch-kanjivg-strokes.sh scripts/prepare-kanjivg-strokes.mjs /src/scripts/
+COPY plugins/data/UPSTREAM.sha256 /src/plugins/data/UPSTREAM.sha256
+RUN mkdir -p /out && if [ "$WITH_KANJIVG" = "1" ]; then bash /src/scripts/fetch-kanjivg-strokes.sh /out; fi
+
 # Runtime: alpine, not scratch — the compose healthcheck needs busybox wget.
 FROM alpine:3.22
 # Offline OCR for the journal's photo import: Tesseract 5 and the models for
@@ -112,7 +125,10 @@ COPY --from=audio /out /opt/qinqin/audio
 COPY --from=web /out/strokes /opt/qinqin/strokes
 # The pictures packs (CC BY-SA 4.0), when built with WITH_IMAGES=1 (the default).
 COPY --from=images /out /opt/qinqin/images
-ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/images
+# The Japanese stroke-order pack (CC BY-SA 3.0, about 7 MB), when built with WITH_KANJIVG=1
+# (the default); its own root, after the Hanzi Writer pack.
+COPY --from=kanjivg /out /opt/qinqin/kanjivg
+ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/images,/opt/qinqin/kanjivg
 VOLUME /data
 EXPOSE 8080
 ENTRYPOINT ["qinqin"]

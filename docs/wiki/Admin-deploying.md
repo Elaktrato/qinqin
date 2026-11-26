@@ -78,6 +78,7 @@ The published image is the full build:
 - Tesseract OCR with the Chinese, Japanese and English models (about +193 MB), for reading journal photos offline.
 - The Kanji alive example-word audio (about +70 MB, 10,156 Japanese clips, CC BY 4.0).
 - The stroke-order data pack (`/opt/qinqin/strokes`, about 13 MB). It is a pack, not part of the web app, whose build shrank from about 50 MB to about 3 MB.
+- The Japanese stroke-order pack (`/opt/qinqin/kanjivg`, about 7 MB, KanjiVG, CC BY-SA 3.0), cloned at image build from a pinned commit; `--build-arg WITH_KANJIVG=0` leaves it out (the kana Write mode then stays hidden).
 
 Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
 
@@ -119,7 +120,7 @@ Everything lives in `/data` (the volume):
 | `tmp/` | Staged restore uploads and database snapshots; emptied at start |
 | `cache/sources/` | Cache of the Aozora Bunko and Gutenberg imports; safe to delete |
 
-The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`). At start the server also removes the book and photo folders of users that no longer exist.
+The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`, `/opt/qinqin/kanjivg`). At start the server also removes the book and photo folders of users that no longer exist.
 
 `packages/` grows with the installed packs: one file per package, roughly the size of the pack's data compressed (CC-CEDICT's `lexicon.zh` is about 15 MB, the stroke data about 13 MB, an audio pack its clips), and a replaced revision is kept 7 days so clients can finish a download. See [Data packs on the server](Admin-data-packs).
 

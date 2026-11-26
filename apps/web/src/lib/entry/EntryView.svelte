@@ -471,7 +471,7 @@
 								{/each}
 							</p>
 						{/if}
-						<StrokePlayer char={strokeChar} />
+						<StrokePlayer char={strokeChar} lang={entry.language} />
 					</section>
 				{/if}
 				{#if !editing && session.workspaces.current}

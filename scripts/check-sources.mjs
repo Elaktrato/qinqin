@@ -32,6 +32,10 @@
 //   g. the packs the project writes itself (PROJECT_PACKS) state licence
 //      exactly CC-BY-4.0 (optionally followed by " (qualifier)"), carry the credit "qinqin contributors, CC BY 4.0" in their
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
+//   i. the project-written data embedded in the code (the script charts under
+//      apps/web/src/lib/features/scripts/data and the Starter lists under
+//      server/internal/starter/sets) state license "CC-BY-4.0" (Starter lists also carry
+//      the credit) and have a NOTICE beside them; there is no CC0 exception (LICENSING.md).
 //   h. the images packs (#216; only when scripts/images/pins.json exists): each has its committed
 //      mapping, and docs/sources.md names the pack, its pinned version and its licence.
 //
@@ -72,7 +76,8 @@ export const FETCHED_PACKS = [
 	'lxgw-wenkai',
 	'klee-one',
 	'images-openmoji',
-	'images-mulberry'
+	'images-mulberry',
+	'kanjivg-strokes'
 ];
 
 /**
@@ -81,6 +86,39 @@ export const FETCHED_PACKS = [
  * mapping, and docs/sources.md must name the pack, its pinned version and its licence.
  */
 export const IMAGES_PACKS = { 'images-openmoji': ['openmoji', 'CC BY-SA 4.0'], 'images-mulberry': ['mulberry', 'CC BY-SA 4.0'] };
+
+/** Embedded project-written data: [directory, files carry a credit]. */
+const EMBEDDED_PROJECT_DATA = [
+	['apps/web/src/lib/features/scripts/data', false],
+	['server/internal/starter/sets', true]
+];
+
+/** embeddedDataProblems checks rule i; a directory that does not exist is skipped. */
+function embeddedDataProblems(root) {
+	const problems = [];
+	for (const [dir, credited] of EMBEDDED_PROJECT_DATA) {
+		const abs = join(root, dir);
+		if (!existsSync(abs)) continue;
+		for (const name of readdirSync(abs).filter((n) => n.endsWith('.json')).sort()) {
+			let m;
+			try {
+				m = JSON.parse(readFileSync(join(abs, name), 'utf8'));
+			} catch (e) {
+				problems.push(`${dir}/${name}: not valid JSON (${e.message})`);
+				continue;
+			}
+			if (m.license !== 'CC-BY-4.0') problems.push(`${dir}/${name}: license must be "CC-BY-4.0", got ${JSON.stringify(m.license)}`);
+			if (credited && !(typeof m.attribution === 'string' && m.attribution.includes(PROJECT_CREDIT))) {
+				problems.push(`${dir}/${name}: attribution must carry the credit "${PROJECT_CREDIT}"`);
+			}
+		}
+		const notice = join(abs, 'NOTICE');
+		if (!existsSync(notice) || !readFileSync(notice, 'utf8').includes('Attribution 4.0 International')) {
+			problems.push(`${dir}/NOTICE: missing or not the CC BY 4.0 notice (see server/internal/lemma/tables/NOTICE)`);
+		}
+	}
+	return problems;
+}
 
 function imagesProblems(root, doc) {
 	const pinFile = join(root, 'scripts/images/pins.json');
@@ -449,6 +487,7 @@ export function checkSources(root) {
 			problems.push(`docs/sources.md: bundled pack "${id}" (${rel}) is not mentioned; add it, in backticks, to the tables`);
 		}
 	}
+	problems.push(...embeddedDataProblems(root));
 	problems.push(...imagesProblems(root, doc));
 	problems.push(...fontProblems(root, doc));
 	problems.push(...namedWithLicence(root, doc, iconFiles(root), 'vendored icon set'));
