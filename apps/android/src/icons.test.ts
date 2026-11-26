@@ -10,6 +10,9 @@ describe('launcher icon', () => {
 	it('has a vector foreground that matches the logo', () => {
 		expect(readFileSync(RES + 'drawable/ic_launcher_foreground.xml', 'utf8')).toBe(built['drawable/ic_launcher_foreground.xml']);
 	});
+	it('has a status-bar icon for notifications that matches the logo', () => {
+		expect(readFileSync(RES + 'drawable/ic_stat_qinqin.xml', 'utf8')).toBe(built['drawable/ic_stat_qinqin.xml']);
+	});
 	it('has 192 px legacy icons for API 24 and 25', () => {
 		for (const f of ['mipmap-nodpi/ic_launcher.png', 'mipmap-nodpi/ic_launcher_round.png']) {
 			const png = readFileSync(RES + f);
