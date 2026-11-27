@@ -187,7 +187,7 @@ export interface DeckSessionOptions {
 	now: Date;
 	/** The workspace language; tone needs Chinese. */
 	language: string;
-	/** `kind:entryId` of companions already found ineligible; never planned. */
+	/** `kind:entryId` of companions ruled out (EligibilityIndex.skip); never planned. */
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
@@ -209,10 +209,10 @@ export interface DeckSessionPlan {
 	/**
 	 * New items (real cards, then companions) the daily limits allow beyond
 	 * the session's new-card cap, in queue order, at most backfillLeft
-	 * (sessionQueue.ts). Eligibility is only known once an entry is loaded,
-	 * so when the runner drops an ineligible companion the next reserve item
-	 * takes its place (see dropItem); otherwise sentence-less old words would
-	 * use up the budget in every session and starve the newer ones.
+	 * (sessionQueue.ts). The eligibility index (#288) keeps unusable
+	 * companions out of the plan; one that still proves unusable when shown
+	 * (an entry the index did not know, a pack removed since) is replaced by
+	 * the next reserve item (see dropItem).
 	 */
 	reserve: FlowItem[];
 	/** Replacements left this session (see backfillLimit). */
@@ -261,7 +261,20 @@ export function allowedReal(
  * reserve. Companions that can never be eligible are left out entirely:
  * writing for words without Han characters, tone outside Chinese.
  */
-export function deckSessionPlan({
+export function deckSessionPlan(options: DeckSessionOptions): DeckSessionPlan {
+	const backfillLeft = sessionBackfill(options.newLimit, options.studyAll === true);
+	const planned = deckSessionEntries(options);
+	if (planned === null) return { queue: [], reserve: [], backfillLeft };
+	return buildSessionQueue({ ...planned.admission, entries: planned.entries });
+}
+
+/**
+ * deckSessionEntries: the candidates of a deck session in queue order (the
+ * real cards, then the companions) and the admission they go through; null
+ * when nothing can be planned (no session kind, a vacation day). Shared by the
+ * plan and by what the home widget counts as left today, so both agree.
+ */
+export function deckSessionEntries({
 	cards,
 	reviews,
 	deckIds,
@@ -277,10 +290,9 @@ export function deckSessionPlan({
 	offline,
 	newKey,
 	studyAll = false
-}: DeckSessionOptions): DeckSessionPlan {
-	const backfillLeft = sessionBackfill(newLimit, studyAll);
+}: DeckSessionOptions): { admission: Omit<Parameters<typeof admitSession>[0], 'candidates'>; entries: QueueEntry<FlowItem>[] } | null {
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
+	if (wanted.length === 0 || ctx.vacationToday) return null;
 
 	// Cards that may not be shown (switch off, skipped, buried) leave before
 	// the limits apply, so they never use up a slot.
@@ -358,7 +370,7 @@ export function deckSessionPlan({
 			})
 		);
 
-	return buildSessionQueue({ ...admission, entries: [...real, ...companions] });
+	return { admission, entries: [...real, ...companions] };
 }
 
 /** deckSessionItems is the queue of deckSessionPlan (no reserve). */

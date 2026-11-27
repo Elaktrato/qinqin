@@ -66,41 +66,46 @@ export class EligibilityIndex {
 	}
 
 	/**
-	 * ensure asks for the ids it does not know or knows for longer than the
-	 * time to live, and resolves when every request settled. A failed request
-	 * leaves its ids unknown (asked again next time); it never rejects.
+	 * ensure asks for the ids it does not know, and resolves when those
+	 * requests settled; ids known for longer than the time to live are asked
+	 * again in the background (their old answer serves meanwhile). A failed
+	 * request leaves its ids unknown (asked again next time); it never rejects.
 	 */
 	async ensure(ids: Iterable<number>): Promise<void> {
 		const now = this.#deps.now();
 		const wait: Promise<void>[] = [];
-		const ask: number[] = [];
+		const unknown: number[] = [];
+		const stale: number[] = [];
 		for (const id of new Set(ids)) {
 			if (!Number.isInteger(id) || id <= 0) continue;
 			const pending = this.#pending.get(id);
 			if (pending !== undefined) {
-				wait.push(pending);
+				if (!this.#rows.has(id)) wait.push(pending);
 				continue;
 			}
 			const row = this.#rows.get(id);
-			if (row === undefined || now - row.at >= ELIGIBILITY_TTL_MS) ask.push(id);
+			if (row === undefined) unknown.push(id);
+			else if (now - row.at >= ELIGIBILITY_TTL_MS) stale.push(id);
 		}
+		void this.#run(stale);
+		await Promise.all([this.#run(unknown), ...wait]);
+	}
+
+	/** Requests the ids in batches, PARALLEL at a time; each id is pending until its batch settled. */
+	async #run(ids: number[]): Promise<void> {
+		if (ids.length === 0) return;
 		const batches: number[][] = [];
-		for (let at = 0; at < ask.length; at += ELIGIBILITY_BATCH) batches.push(ask.slice(at, at + ELIGIBILITY_BATCH));
+		for (let at = 0; at < ids.length; at += ELIGIBILITY_BATCH) batches.push(ids.slice(at, at + ELIGIBILITY_BATCH));
 		let next = 0;
-		const lanes: Promise<void>[] = [];
 		const lane = async (): Promise<void> => {
 			while (next < batches.length) await this.#request(batches[next++]);
 		};
-		// Every id of a batch is pending until its lane reaches it.
-		const all = (async () => {
-			for (let i = 0; i < Math.min(PARALLEL, batches.length); i++) lanes.push(lane());
-			await Promise.all(lanes);
-		})();
-		for (const id of ask) this.#pending.set(id, all);
+		const all = Promise.all(Array.from({ length: Math.min(PARALLEL, batches.length) }, lane)).then(() => undefined);
+		for (const id of ids) this.#pending.set(id, all);
 		try {
-			await Promise.all([all, ...wait]);
+			await all;
 		} finally {
-			for (const id of ask) if (this.#pending.get(id) === all) this.#pending.delete(id);
+			for (const id of ids) if (this.#pending.get(id) === all) this.#pending.delete(id);
 		}
 	}
 
@@ -154,4 +159,9 @@ export class EligibilityIndex {
 		this.#skip = null;
 		this.#version++;
 	}
+}
+
+/** The entries planning asks about: those of the vocab cards (companions are made from them). */
+export function companionEntryIds(cards: readonly { kind: StudyCardKind; entryId: number }[]): number[] {
+	return [...new Set(cards.filter((card) => card.kind === 'vocab').map((card) => card.entryId))];
 }

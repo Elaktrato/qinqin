@@ -4,9 +4,10 @@
 // buried them) are removed first, exactly like a session's plan, so a
 // count never promises a card the session will not show. Virtual
 // companions that do not exist yet are not counted (the setup summary
-// counts them through deckSessionItems).
+// counts them through deckSessionItems; leftToday with `companions` counts
+// them as the session plans them).
 
-import { allowedReal, vocabEntryIds } from './cardFlow';
+import { allowedReal, deckSessionEntries, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from '$lib/studycore/deckSettings';
 import { buriedNow } from './siblings';
 import type { Schedule } from '$lib/studycore/scheduler';
@@ -49,6 +50,12 @@ export interface DueCountsInput {
 	applyDailyLimits?: boolean;
 	/** What today already used, shared by many counts (limits.ts). */
 	counts?: DayCounts;
+	/**
+	 * leftToday only: count the companions the session would plan as new cards
+	 * too (#288): the workspace language, the eligibility index's `skip`, and
+	 * offline (no companions then).
+	 */
+	companions?: { language: string; skip?: ReadonlySet<string>; offline?: boolean };
 }
 
 /** The queue options of a count: buried and switched-off cards left out first. */
@@ -104,6 +111,26 @@ export function dueCounts(input: DueCountsInput): { due: number; fresh: number }
  * session caps removed (sessionQueue.ts `admitSession().left`). Real cards only.
  */
 export function leftToday(input: DueCountsInput): Admission['left'] {
+	if (input.companions !== undefined) {
+		// The session's own candidates: real cards and companions, one admission.
+		const planned = deckSessionEntries({
+			cards: input.cards,
+			reviews: input.reviews,
+			deckIds: input.deckIds,
+			kinds: input.kinds,
+			newLimit: NO_LIMIT,
+			reviewLimit: NO_LIMIT,
+			now: input.now,
+			w: input.w,
+			ctx: input.ctx,
+			deckSettings: input.deckSettings,
+			language: input.companions.language,
+			skip: input.companions.skip,
+			offline: input.companions.offline
+		});
+		if (planned === null) return { reviews: 0, new: 0, unlimited: false, limitedOut: 0 };
+		return admitSession({ ...planned.admission, candidates: planned.entries, caps: { newLimit: NO_LIMIT, reviewLimit: NO_LIMIT } }).left;
+	}
 	const base = prepare({ ...input, applyDailyLimits: true });
 	const { candidates, counts } = queueCandidates(base);
 	return admitSession({

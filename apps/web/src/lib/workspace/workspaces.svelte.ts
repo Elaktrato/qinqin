@@ -141,7 +141,7 @@ export class Workspaces {
 			if (!(err instanceof ApiError && err.status === 404)) throw err;
 			gone = true;
 		}
-		forgetWorkspace(id, this.#deps.local(), this.#deps.session());
+		forgetWorkspace(id, this.#deps.local());
 		this.#deps.dropReviews?.(id);
 		if (gone) {
 			await this.load();

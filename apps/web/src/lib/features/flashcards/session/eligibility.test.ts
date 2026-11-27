@@ -66,15 +66,24 @@ describe('EligibilityIndex', () => {
 		expect(idx.knows(1)).toBe(true);
 	});
 
-	it('asks again after the time to live and after forget', async () => {
-		const { idx, fetch, advance } = index(all);
+	it('asks again after the time to live (in the background, the old answer serves) and after forget', async () => {
+		let answer: Record<string, string[]> = { '1': ['sentence'] };
+		let release = () => {};
+		const { idx, fetch, advance } = index(async () => answer);
 		await idx.ensure([1]);
 		advance(ELIGIBILITY_TTL_MS - 1);
 		await idx.ensure([1]);
 		expect(fetch).toHaveBeenCalledTimes(1);
 		advance(2);
+		answer = { '1': ['reverse'] };
+		fetch.mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(answer))));
 		await idx.ensure([1]);
 		expect(fetch).toHaveBeenCalledTimes(2);
+		// Not waited for: the old answer still serves.
+		expect(idx.allows('sentence', 1)).toBe(true);
+		release();
+		await vi.waitFor(() => expect(idx.allows('reverse', 1)).toBe(true));
+		expect(idx.allows('sentence', 1)).toBe(false);
 		idx.forget(1);
 		expect(idx.knows(1)).toBe(false);
 		await idx.ensure([1]);
@@ -101,5 +110,19 @@ describe('EligibilityIndex', () => {
 		idx.clear();
 		expect(idx.knows(1)).toBe(false);
 		expect(idx.skip().size).toBe(0);
+	});
+});
+
+describe('companionEntryIds', () => {
+	it('lists the entries of the vocab cards once', async () => {
+		const { companionEntryIds } = await import('./eligibility.svelte');
+		expect(
+			companionEntryIds([
+				{ kind: 'vocab', entryId: 1 },
+				{ kind: 'sentence', entryId: 2 },
+				{ kind: 'vocab', entryId: 1 },
+				{ kind: 'vocab', entryId: 3 }
+			])
+		).toEqual([1, 3]);
 	});
 });

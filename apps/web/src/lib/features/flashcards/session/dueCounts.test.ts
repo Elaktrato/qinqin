@@ -112,3 +112,23 @@ describe('daily limits in counts', () => {
 		expect(leftToday({ ...input, ctx: { ...UTC_CONTEXT, vacationToday: true } })).toMatchObject({ reviews: 0, new: 0 });
 	});
 });
+
+describe('leftToday counts the companions the session plans (#288)', () => {
+	// Two words already studied (not due), a word salad selected: their companions are the new cards.
+	const cards = [1, 2, 3].map((n) => card(`c-vocab-${n}`, 'vocab', n, { written: '学校' }));
+	const reviews = cards.map((c) => review(c.id, '2026-02-28T00:00:00Z', 4));
+	const base = { cards, reviews, deckIds: ['general'], kinds: ['vocab', 'sentence'] as StudyCardKind[], now: NOW, w: DEFAULT_W, ctx: UTC_CONTEXT };
+
+	it('real cards only without the companions option, as before', () => {
+		expect(leftToday(base)).toMatchObject({ reviews: 0, new: 0 });
+	});
+
+	it('the companions the eligibility index allows are new cards left today, under the daily new limit', () => {
+		const companions = { language: 'ja', skip: new Set(['sentence:2']) };
+		expect(leftToday({ ...base, companions })).toMatchObject({ reviews: 0, new: 2 });
+		const ctx = { ...UTC_CONTEXT, limits: { workspace: { new: 1, reviews: null }, decks: {}, existingDecks: null } };
+		expect(leftToday({ ...base, ctx, companions })).toMatchObject({ new: 1 });
+		// Offline no companion is planned (planCompanions).
+		expect(leftToday({ ...base, companions: { ...companions, offline: true } })).toMatchObject({ new: 0 });
+	});
+});

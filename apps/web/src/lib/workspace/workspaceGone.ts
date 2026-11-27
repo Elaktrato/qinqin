@@ -68,7 +68,7 @@ export class WorkspaceRecovery {
 		if (before === null) return;
 		const { list, current } = workspaces;
 		if (list.some((workspace) => workspace.id === before.id)) return;
-		forgetWorkspace(before.id, this.#deps.local(), this.#deps.session());
+		forgetWorkspace(before.id, this.#deps.local());
 		this.#deps.dropReviews?.(before.id);
 		notices.show(
 			current

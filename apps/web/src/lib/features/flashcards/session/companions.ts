@@ -51,7 +51,7 @@ function createdAtMs(card: StudyCard): number {
  * when the word's `skipKinds` list it, never for words in `exclude`
  * (they have a real queued item), at most one of them per word (reverse
  * preferred; cloze when reverse cannot be planned), and never for kinds
- * remembered ineligible in `skip` (`kind:entryId`).
+ * ruled out in `skip` (`kind:entryId`, the eligibility index).
  */
 export function planCompanions({
 	cards,
@@ -80,7 +80,7 @@ export function planCompanions({
 	deckSettings?: Record<string, DeckSettings>;
 	/** Entry ids that get no opt-in item (a real item of the word is queued). */
 	exclude?: ReadonlySet<number>;
-	/** `kind:entryId` of items already found ineligible. */
+	/** `kind:entryId` keys ruled out (EligibilityIndex.skip: the server's answer and drops when shown). */
 	skip?: ReadonlySet<string>;
 	/**
 	 * Offline nothing is planned: a companion becomes a card only by a
