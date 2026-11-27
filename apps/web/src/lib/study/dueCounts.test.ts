@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { dueCounts, leftToday } from './dueCounts';
 import type { DeckSettings } from './deckSettings';
 import { DEFAULT_W } from './fsrs/params';
-import { buildQueue, scheduleFor } from './scheduler';
+import { scheduleFor } from './scheduler';
+import { buildQueue } from './queue';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 import * as build from '$lib/testing/study';
 

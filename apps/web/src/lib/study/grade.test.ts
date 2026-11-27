@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_W } from './fsrs/params';
 import { gradeItem, type GradeableItem } from './grade';
 import { planCompanions } from './companions';
-import { buildQueue } from './scheduler';
+import { buildQueue } from './queue';
 import type { ReviewGrade, StudyCard } from './types';
 import * as build from '$lib/testing/study';
 

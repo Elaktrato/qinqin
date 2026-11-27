@@ -7,7 +7,8 @@ import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { queueCandidates, scheduleFor } from './scheduler';
+import { scheduleFor } from './scheduler';
+import { queueCandidates } from './queue';
 import { dayCountsCached } from './limits';
 import type { ClozeMode } from './cloze';
 import {

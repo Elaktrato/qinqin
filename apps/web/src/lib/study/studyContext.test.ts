@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/scheduler/due-today.json';
 import { studyDay } from '../time/studyDay';
-import { buildQueue } from './scheduler';
+import { buildQueue } from './queue';
 import { dueCounts } from './dueCounts';
 import { deckSessionItems } from './cardFlow';
 import { buildLevelQueue } from './levelQueue';

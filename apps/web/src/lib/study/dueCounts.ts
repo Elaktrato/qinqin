@@ -9,11 +9,8 @@
 import { allowedReal, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
-import {
-	queueCandidates,
-	type BuildQueueOptions,
-	type Schedule
-} from './scheduler';
+import type { Schedule } from './scheduler';
+import { queueCandidates, type BuildQueueOptions } from './queue';
 import type { LimitRows, StudyContext } from './studyContext';
 import { dayCountsCached, NO_LIMIT, type Admission, type DayCounts } from './limits';
 import { admitSession, skipKindsByEntry } from './sessionQueue';
