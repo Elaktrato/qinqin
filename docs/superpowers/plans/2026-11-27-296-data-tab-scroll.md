@@ -75,7 +75,16 @@ overflow. Every later screen is checked with it.
   in a (positioned) scroller.
 - The lint test was run against the unfixed components and failed on all 17 tables, then passed.
 - Commits: the fix with its lint test, then the guard and spec (green at each commit), then docs.
-- Gates: see the report at the end of this record.
+- The first full e2e run failed `conventions.spec.ts` ("no spec waits a fixed time"): its pattern also matches
+  `test.setTimeout(`; the spec uses `test.describe.configure({ timeout })` instead.
+- The Sources page's DOM test pinned the old local `.table-wrap`; it now checks the shared `.ui-table-scroll`
+  (one per table, a labelled region with `tabindex="0"`).
+- Gates (Node 26.13.1): `npm run check` 0 errors, 0 warnings; `npm run build` ok; full vitest 710 files,
+  14,046 passed, 2 skipped; e2e 3 runs, 39 passed each (the new spec's 4 tests included);
+  `node --test scripts/*.test.mjs` 190 tests, 189 passed, 1 skipped; `node scripts/gen-api-docs.mjs --check` ok.
+  No Go changed.
+- Not checked: a real phone and the Android app (Local follow-up); `/study/session` (ruling above); the invites and
+  access-token tables at phone width with rows (the learner has none; the lint test checks their wrapper).
 
 ## Local follow-up
 
