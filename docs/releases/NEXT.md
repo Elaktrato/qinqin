@@ -11,6 +11,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
+- Home shows what it showed last at once when you come back to it and refreshes quietly behind, with no loading lines (#290). The decks page, the Reader's library and the Stats widgets work the same way. After a reload or in the Android app your widget layout shows at once too. When a refresh fails the page keeps what it shows and says so in one quiet line.
+
 ## Fixed
 
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or
