@@ -25,6 +25,10 @@ Fixtures:
   `isReadingShown`), `textType` (a plain reading string typed by its script), `languages` (the switches of a
   language, its profile's `romanisations`) and `patch` (web: `lib/languages/romanisation.test.ts`; Go:
   `internal/lang/romanisation_test.go`, the types against the profiles).
+- `mastery-map.json` — the workspace-settings key `masteryMap` (#163, below): `parse`, `resolve` (the grading a
+  language and its installed packs give a stored setting), `studySet` (the levels of a pack the map shows) and
+  `patch` (web: `lib/stats/mapGrading.test.ts`; Go: `internal/levels/mastery_map_test.go`, the default packs against
+  the bundled level packs).
 
 ## Workspace settings
 
@@ -42,6 +46,7 @@ collection). Keys in use:
 | `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `starter/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
 | `visualAids` | object: aid (`pictures`, `toneColors`, `toneContour`, `anatomy`) → boolean | each switch alone: `true` (absent, not a boolean, unknown members ignored; `toneContour` is `false` when only `toneColors: false` is stored); see `aids/visual-aids.json` | `aids/visualAids.ts` | Settings > Study > Visual aids (a switch at a time, by merge patch) |
 | `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
+| `masteryMap` | object `{grading, includeOutside, levels}` | each member alone: the language's default grading, `includeOutside` false, every level; see `mastery-map.json` | `stats/mapGrading.ts` | Stats → Characters (a member at a time, by merge patch) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -83,6 +88,32 @@ profile's `romanisations` (`languages/profiles.json`); kana, on, kun and pack-de
 
 Ruling: Android reads `romanisation` with the same rule and fixture, and writes one type at a time by merge patch —
 cost: none.
+
+## The mastery map's grading (`masteryMap`, #163)
+
+The character map (Stats → Characters) goes by **one grading** per workspace:
+`{"masteryMap": {"grading": "pack:hsk-chars", "includeOutside": false, "levels": {"hsk-chars": [0, 1, 2]}}}`.
+
+- **`grading`**: a built-in grouping of the language (`ja`: `grade`, `freq`, `strokes`; `zh`: `common`, `hkgrade`,
+  `strokes`) or an installed level pack of the language as `pack:<packId>` (never `hsk-mini`, `jlpt-mini` or
+  `joyo-grades`, which is the built-in `grade`). Anything else, or a pack that is not installed, is the **default**:
+  the first installed pack of `defaultPacks` (`zh`: `hsk-chars`, `hsk-words`; `ja`: `jlpt-kanji`), else the first
+  installed pack whose id starts with `defaultPackPrefix` (`hsk-`, `jlpt-`), else the language's first built-in
+  (`common`, `grade`).
+- **`includeOutside`** (default `false`): with a pack grading, off shows only the characters of the pack's levels (the
+  map, its "X of Y learned" counts and the stage bars); on, every other character of the language joins as a last
+  section "Outside <grading>". A built-in grouping always shows every character in its own sections.
+- **`levels`**: the study set per pack, the level `ord`s to show; absent means every level. Ords the pack no longer
+  has are ignored, and a set that keeps none is every level. A character belongs to one level by the scheme rule (its
+  own glyph first, then a variant form, lowest level first); a character whose level is not in the set is not shown.
+- Ids are pack ids and level ords, never database ids, so the setting needs no remap on restore.
+- The map's Level select (a browse focus, remembered per device) narrows within the study set: all study levels, one
+  of them, or "Outside" while it is included.
+- It is the map's only: level sessions, the level check, courses and the Home widget "Characters" ignore it.
+
+Writes are merge patches of one member (`patch`); "every level" deletes the pack's set (`null`).
+
+Ruling: Android reads `masteryMap` with the same rule and fixture — cost: none.
 
 ## User-global keyed rows
 

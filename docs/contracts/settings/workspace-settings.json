@@ -57,6 +57,12 @@
    "shape": "object: romanisation type (pinyin, bopomofo, romaji) -> \"always\" | \"never\"",
    "default": "each type always; see settings/romanisation.json",
    "owner": "apps/web/src/lib/languages/romanisation.ts"
+  },
+  {
+   "key": "masteryMap",
+   "shape": "object {grading: built-in key | \"pack:<packId>\", includeOutside: boolean, levels: {packId: [level ord]}}",
+   "default": "the language's default grading, outside off, every level; see settings/mastery-map.json",
+   "owner": "apps/web/src/lib/stats/mapGrading.ts"
   }
  ],
  "parse": [
@@ -401,6 +407,40 @@
      "hints": {
       "reading": {
        "vocab": "hint"
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "the mastery map, one member at a time",
+   "note": "a study set of one pack is replaced as a whole, another pack's set is kept; null deletes a set (#163)",
+   "stored": {
+    "masteryMap": {
+     "grading": "pack:hsk-chars",
+     "levels": {
+      "hsk-chars": [0, 1],
+      "hsk-words": [2]
+     }
+    }
+   },
+   "patch": {
+    "masteryMap": {
+     "includeOutside": true,
+     "levels": {
+      "hsk-chars": [0],
+      "hsk-words": null
+     }
+    }
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "masteryMap": {
+      "grading": "pack:hsk-chars",
+      "includeOutside": true,
+      "levels": {
+       "hsk-chars": [0]
       }
      }
     }

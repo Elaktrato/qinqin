@@ -1,0 +1,74 @@
+{
+ "version": 1,
+ "rule": "settings/mastery-map",
+ "note": "The mastery map's grading (#163). The workspace-settings key `masteryMap`: {grading, includeOutside, levels}. Web: apps/web/src/lib/stats/mapGrading.ts, decoded by mapGrading.test.ts; Go: server/internal/levels/mastery_map_test.go (the default packs against the bundled level packs) and the merge cases of workspace-settings.json.",
+ "key": "masteryMap",
+ "builtIn": { "ja": ["grade", "freq", "strokes"], "zh": ["common", "hkgrade", "strokes"] },
+ "defaultPacks": { "ja": ["jlpt-kanji"], "zh": ["hsk-chars", "hsk-words"] },
+ "defaultPackPrefix": { "ja": "jlpt-", "zh": "hsk-" },
+ "neverGradings": ["hsk-mini", "jlpt-mini", "joyo-grades"],
+ "parse": [
+  { "name": "nothing stored", "settings": {}, "expect": { "grading": null, "includeOutside": false, "levels": {} } },
+  { "name": "null settings", "settings": null, "expect": { "grading": null, "includeOutside": false, "levels": {} } },
+  {
+   "name": "a pack grading with a study set and outside on",
+   "settings": { "masteryMap": { "grading": "pack:hsk-chars", "includeOutside": true, "levels": { "hsk-chars": [1, 2, 3] } } },
+   "expect": { "grading": "pack:hsk-chars", "includeOutside": true, "levels": { "hsk-chars": [1, 2, 3] } }
+  },
+  {
+   "name": "a built-in grading",
+   "settings": { "masteryMap": { "grading": "strokes" } },
+   "expect": { "grading": "strokes", "includeOutside": false, "levels": {} }
+  },
+  {
+   "name": "each member alone: an invalid grading and outside are the defaults, the levels stay",
+   "settings": { "masteryMap": { "grading": "scheme:7", "includeOutside": "yes", "levels": { "jlpt-kanji": [5] } } },
+   "expect": { "grading": null, "includeOutside": false, "levels": { "jlpt-kanji": [5] } }
+  },
+  {
+   "name": "a grading that is not a string, an empty pack id",
+   "settings": { "masteryMap": { "grading": "pack:" } },
+   "expect": { "grading": null, "includeOutside": false, "levels": {} }
+  },
+  {
+   "name": "level lists keep non-negative integers once, in their order; anything else is dropped",
+   "settings": { "masteryMap": { "levels": { "hsk-chars": [3, 1, 3, -1, 1.5, "2", 0], "hsk-words": "all", "x": [], "": [1] } } },
+   "expect": { "grading": null, "includeOutside": false, "levels": { "hsk-chars": [3, 1, 0] } }
+  },
+  {
+   "name": "a member that is not an object is the default",
+   "settings": { "masteryMap": ["pack:hsk-chars"] },
+   "expect": { "grading": null, "includeOutside": false, "levels": {} }
+  }
+ ],
+ "resolve": [
+  { "name": "Chinese with the HSK characters: HSK characters", "language": "zh", "installed": ["tgh-chars", "hsk-words", "hsk-chars"], "settings": {}, "expect": "pack:hsk-chars" },
+  { "name": "Chinese with HSK words only: HSK words", "language": "zh", "installed": ["tgh-chars", "hsk-words"], "settings": {}, "expect": "pack:hsk-words" },
+  { "name": "Chinese with no HSK pack: today's grouping", "language": "zh-TW", "installed": ["tgh-chars", "hsk-mini"], "settings": {}, "expect": "common" },
+  { "name": "Japanese with the JLPT kanji: JLPT", "language": "ja", "installed": ["joyo-grades", "jlpt-kanji"], "settings": {}, "expect": "pack:jlpt-kanji" },
+  { "name": "Japanese with another JLPT pack only: that pack", "language": "ja", "installed": ["jlpt-mini", "jlpt-estimated"], "settings": {}, "expect": "pack:jlpt-estimated" },
+  { "name": "Japanese with no JLPT pack: today's grouping", "language": "ja", "installed": ["joyo-grades"], "settings": {}, "expect": "grade" },
+  { "name": "a stored built-in of the language", "language": "ja", "installed": ["jlpt-kanji"], "settings": { "masteryMap": { "grading": "strokes" } }, "expect": "strokes" },
+  { "name": "a built-in of another language falls back", "language": "ja", "installed": ["jlpt-kanji"], "settings": { "masteryMap": { "grading": "common" } }, "expect": "pack:jlpt-kanji" },
+  { "name": "a stored installed pack", "language": "zh", "installed": ["hsk-chars", "tgh-chars"], "settings": { "masteryMap": { "grading": "pack:tgh-chars" } }, "expect": "pack:tgh-chars" },
+  { "name": "an uninstalled pack falls back to the default", "language": "zh", "installed": ["hsk-chars"], "settings": { "masteryMap": { "grading": "pack:my-list" } }, "expect": "pack:hsk-chars" },
+  { "name": "an uninstalled pack without a default pack falls back to today's grouping", "language": "zh", "installed": [], "settings": { "masteryMap": { "grading": "pack:hsk-chars" } }, "expect": "common" },
+  { "name": "a sample or the Jōyō pack is never a grading", "language": "ja", "installed": ["jlpt-mini", "joyo-grades"], "settings": { "masteryMap": { "grading": "pack:joyo-grades" } }, "expect": "grade" },
+  { "name": "a pack of another language is not offered", "language": "ja", "installed": ["hsk-chars"], "settings": { "masteryMap": { "grading": "pack:hsk-chars" } }, "expect": "grade" },
+  { "name": "a language without a character map has no grading", "language": "es", "installed": [], "settings": {}, "expect": null }
+ ],
+ "studySet": [
+  { "name": "nothing stored: every level", "pack": "hsk-chars", "ords": [0, 1, 2, 3], "settings": {}, "expect": [0, 1, 2, 3] },
+  { "name": "the stored levels, in level order", "pack": "hsk-chars", "ords": [0, 1, 2, 3], "settings": { "masteryMap": { "levels": { "hsk-chars": [2, 0] } } }, "expect": [0, 2] },
+  { "name": "another pack's set does not apply", "pack": "hsk-chars", "ords": [0, 1], "settings": { "masteryMap": { "levels": { "hsk-words": [1] } } }, "expect": [0, 1] },
+  { "name": "levels no longer in the pack are ignored", "pack": "hsk-chars", "ords": [0, 1], "settings": { "masteryMap": { "levels": { "hsk-chars": [1, 9] } } }, "expect": [1] },
+  { "name": "a set that keeps no installed level is every level", "pack": "hsk-chars", "ords": [0, 1], "settings": { "masteryMap": { "levels": { "hsk-chars": [7, 8] } } }, "expect": [0, 1] }
+ ],
+ "patch": [
+  { "name": "choose a grading", "set": { "grading": "pack:jlpt-kanji" }, "expect": { "masteryMap": { "grading": "pack:jlpt-kanji" } } },
+  { "name": "choose a built-in grading", "set": { "grading": "strokes" }, "expect": { "masteryMap": { "grading": "strokes" } } },
+  { "name": "include the characters outside", "set": { "includeOutside": true }, "expect": { "masteryMap": { "includeOutside": true } } },
+  { "name": "a study set, in level order", "set": { "pack": "hsk-chars", "levels": [2, 0], "ords": [0, 1, 2] }, "expect": { "masteryMap": { "levels": { "hsk-chars": [0, 2] } } } },
+  { "name": "every level is no set (the member deleted)", "set": { "pack": "hsk-chars", "levels": [2, 1, 0], "ords": [0, 1, 2] }, "expect": { "masteryMap": { "levels": { "hsk-chars": null } } } }
+ ]
+}
