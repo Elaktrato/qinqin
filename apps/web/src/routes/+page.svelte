@@ -12,7 +12,8 @@
 	import StarterOffer from '$lib/starter/StarterOffer.svelte';
 	import LevelCheckOffer from '$lib/placement/LevelCheckOffer.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
-	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { homeEmptyReason, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { heldLayout, refreshLayout } from '$lib/widgets/homeData';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { useSession } from '$lib/context/context';
 
@@ -30,9 +31,12 @@
 
 	// The user's home layout (null = none stored, so the default). Nothing
 	// renders until it is known, so a custom order never flashes as the
-	// default first; a failed load falls back to the default quietly.
-	let stored = $state<string[] | null>(null);
-	let layoutReady = $state(false);
+	// default first; a failed load falls back to the default quietly. A layout
+	// this session (or this user's device copy) holds shows at once and is
+	// refreshed behind it (#290).
+	const held = heldLayout(session);
+	let stored = $state<string[] | null>(held?.ids ?? null);
+	let layoutReady = $state(held !== null);
 
 	// Feature widgets join once the shared feature switches are loaded; until
 	// then, or when they failed, only the core widgets can be shown.
@@ -45,9 +49,10 @@
 
 	onMount(async () => {
 		try {
-			stored = await loadLayout();
+			stored = await refreshLayout(session);
 		} catch {
-			stored = null;
+			// The held layout stays; with none, the default.
+			if (!layoutReady) stored = null;
 		} finally {
 			layoutReady = true;
 		}
