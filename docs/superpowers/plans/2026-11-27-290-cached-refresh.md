@@ -43,7 +43,7 @@ keep planning against the newest rows.
    failed. DOM tests first.
 7. Other pages: the decks list keeps its data in the session's held values in the same way. The reader library and
    the rest are listed below.
-8. E2E: revisit Home after studying a card and after the freshness window, and see no loading line.
+8. E2E: revisit Home after the freshness window and see no loading line, while the refresh still goes out.
 9. Docs: the sync contract's "Rounds and cursors" notes say when a client may serve held rows (README only, no wire
    change), CHANGELOG entry, record 0009 (the held values), wiki, NEXT.md.
 
@@ -121,9 +121,9 @@ Tasks:
 7. The other widgets and the heatmap (4ed28712): converted under the existing widget DOM tests; no new test per
    widget (WidgetLoad is the tested part). The heatmap's held window and the two-step character map are covered by
    the existing heatmap and map tests plus the Home revisit test.
-8. Home's quiet notice and the pinned revisit (this commit's test was written after the notice).
+8. Home's quiet notice and the pinned revisit (ce6a5f3d; the tests were written after the notice).
 9. Decks and library (bbc4e437): `decksData.test.ts` and the two Library tests were written first and failed.
-10. Sign-out isolation readers for held values and Home's layout (passed at once: the session owns them).
+10. Sign-out isolation readers for held values and Home's layout (abac9128; passed at once: the session owns them).
 11. E2E `home-revisit.spec.ts` (bc7a6341): passes on the branch, fails on the base (12 loading lines seen).
 12. Docs: wiki (Finding your way, Development), record 0009, NEXT.md.
 
