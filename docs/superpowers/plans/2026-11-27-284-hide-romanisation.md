@@ -78,9 +78,40 @@ the mechanism must be one call a later builder cannot miss.
   shown). The stage replay is unchanged (no contract change to `starter/stages.json`) — cost: none.
 - Ruling: signed out, or outside a session (the sources page, tests without a session), everything is shown — the
   default — cost: none.
+- Ruling: the share text of a word or sentence (the OS share sheet) keeps its reading — it is written for another
+  person, who may need it — cost: a learner sharing a word sends pinyin they do not see themselves.
+- Ruling: a grammar lesson of another language than the workspace's follows the current workspace's switches (the
+  setting is the workspace's; the plain string is typed by the lesson's language) — cost: none in practice.
+- Ruling: the guard is a source scan of the markup (`romanisationGuard.ts`): known reading fields (`.pinyin`,
+  `reading.value`, `.reading`, `.roman`, `readingBeside(`, `readingLine(`, `row.r`, tone syllables, `<ToneText`,
+  `front.annotation`, ruby `.ruby`/`.rt`, `q.prompt`); a file that prints one is in `RENDERERS` and uses the helper,
+  or `EXEMPT` with a reason (the visual-aid previews) — not an AST analysis — cost: a reading printed from a local
+  variable with another name is not seen; the list grows with each new reading field.
 - Ruling: typing romaji or pinyin to search, the IME and the entry editor's reading fields are unchanged; the editor
   shows the stored readings it edits (asking to edit counts as asking) — cost: none.
 
 ## Execution record
 
-(filled in as the tasks land)
+1. Plan committed first.
+2. The rule: `romanisation.test.ts` (fixture cases) written first and seen failing (no module), then
+   `romanisation.ts`; `ReadingText.dom.test.ts` seen failing on the hidden case, then `ReadingText` hides. Go:
+   `romanisation_test.go` and the profiles fixture with `romanisations`; a merge case in `workspace-settings.json`
+   (run by the existing Go merge test). Contract 15, CHANGELOG.
+3. Settings: `RomanisationSettings.dom.test.ts` and the component written together (not seen failing first).
+4. Entry page and lists: the EntryView DOM test was checked to fail with the old `Readings.svelte` and pass with the
+   new; search, lookups, deck lists, CellTip and grammar edits are covered by the guard and the full suite, not by
+   their own DOM tests.
+5. Reader: `readingLine` test seen failing, then the `shows` parameter; `shownPieces`/`shownRuns` tests written with
+   the code (not seen failing); EntryCard and ChapterText DOM tests added after.
+6. Flashcards: `hints.json` cases and `hints.contract.test.ts` seen failing (14), then `hints.ts`; Starter tests seen
+   failing (5), then `starter.ts`; ToneCard, card and hint DOM tests written with the code.
+7. Scripts: `romaji.test.ts` seen failing (no module), then `romaji.ts`; page DOM tests written with the views.
+8. Guard (`romanisation.lint.test.ts`, with planted cases), docs (wiki Development, Settings tour, Flashcards, Reader,
+   Scripts trainer; record 0004; NEXT.md), e2e `hide-romanisation.spec.ts` at 360 px (checked to fail with romaji
+   shown).
+
+## Local follow-up
+
+- Hand check on a phone (Android shell and a mobile browser): Settings → Study → Romanisation in a Chinese and a
+  Japanese workspace; a Tones card with pinyin hidden (pads by character, the answer as tone numbers and contours);
+  the kana trainer's Recall prompt with only the sound; a Chinese EPUB with pinyin ruby while pinyin is hidden.
