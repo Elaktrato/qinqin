@@ -53,4 +53,10 @@ list lives in one place, `features.IDs` in Go, and every writer already checks i
 - The migration test also guards itself: it asserts `scripts` is refused before 055, so it cannot pass vacuously.
 - Docs: wiki Development (a feature no longer needs a migration), record 0006's table, `docs/releases/NEXT.md`
   (Upgrading and Fixed).
-- Gates: see the commit of this record (targeted packages, then one full `./...`).
+- Gates: gofmt clean; `go vet` + `go test` on `internal/api`, `internal/db`, `internal/features`, `internal/backup`,
+  `internal/sync`: all ok. Full `go vet ./... && go test ./...`: 60 packages ok, one failure, the known
+  environment-only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here). No web code changed;
+  the wiki and record 0006 changed, so the docs tests ran: `apps/web` `npx vitest run tests/repo` 9 files, 587
+  passed, 1 skipped; `node --test scripts/*.test.mjs` 190 tests, 189 passed, 1 skipped, 0 failed.
+- Not checked: the fix on the owner's instance (a real upgrade from v0.8.0); the migration test covers a
+  populated 054 database.
