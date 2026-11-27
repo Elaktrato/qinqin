@@ -6,6 +6,14 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 - Migration 055 rebuilds `feature_switches` without its list of feature ids (#294); every switch is kept. Nothing to do beyond the usual backup.
 
+## New
+
+- Study: hide romanisation everywhere (#284). Settings → Study → **Romanisation** has **Show pinyin** and **Show bopomofo**
+  (Chinese) and **Show romaji** (Japanese), each Always or Never. A hidden one appears nowhere: word pages, search,
+  the reader (popup, phone sheet, ruby), word lists, Stats, every flashcard kind and the kana trainer. On a card it is
+  the last hint; Tones cards answer with tone numbers and contours; Starter mode starts at the kana or the
+  characters. Searching by romaji or pinyin still works. Tone colours and furigana keep their own switches.
+
 ## Fixed
 
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or

@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #278 (the study core). A merge from an issue that changes what this record names adds it here and
+Touched by: #278 (the study core), #284 (the reading convention). A merge from an issue that changes what this record names adds it here and
 updates the record.
 
 ## Context
@@ -64,6 +64,11 @@ Under `apps/web/src/lib/`:
   `lib/entry/EntryEditForm.svelte`, the journal's is `lib/features/journal/EntryEditor.svelte`).
 - **Repository tests** (the docs, the README, the wiki, the shipped licence texts, the bundle size, these folder
   rules) live in `apps/web/tests/repo/`, outside `src/`; the vitest `unit` project runs them.
+- **UI convention: readings follow hidden romanisation** (#284). A component that shows a reading (a reading object,
+  a word's reading string, a sentence's reading line, ruby) renders it through `lib/components/ReadingText` (or
+  flashcards' `ReadingTable`) or asks `useRomanisation()` from `lib/languages` (a logic module that reads the
+  session through context, record 0009); the rule itself is `lib/languages/romanisation.ts`. A screen never reads the
+  `romanisation` setting itself.
 
 Imports across folders use `$lib/...`; inside one folder they stay relative.
 
@@ -106,6 +111,9 @@ Not allowed:
 
 ## Enforcement
 
+- `apps/web/src/lib/languages/romanisation.lint.test.ts` checks the reading convention: the markup of every shipped
+  component is scanned for the known reading fields (`READING_FIELDS` in `lib/languages/romanisationGuard.ts`); one
+  that prints a field must be in its `RENDERERS` list and use the helper, or be `EXEMPT` with a reason.
 - `apps/web/tests/repo/folderRules.test.ts` runs the checks of `apps/web/tests/repo/folderRules.ts` on the real
   tree and shows each failing on a planted tree: `uiImportFindings` (the allow-list `UI_MAY_IMPORT`),
   `sharedComponentFindings` (users by `ownerOf`: `FEATURE_FOLDERS`, the switchable features, the frame, routes by
