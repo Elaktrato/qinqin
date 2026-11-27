@@ -1,4 +1,5 @@
-// The core features: flashcards (Decks), the reader, the journal, grammar and the writing-system trainer (scripts, #204).
+// The core features: flashcards (Decks), the reader, the journal, grammar, the writing-system trainer (scripts, #204)
+// and Stats (#295).
 // They are the app (record 0006, #199): there are no code plugins. Each user
 // can switch one off for themselves (GET /api/features, PUT
 // /api/features/{id}; docs/contracts/features/). Switching off only hides the
@@ -19,6 +20,7 @@ import GrammarPage from '$lib/features/grammar/GrammarPage.svelte';
 import { grammarDef } from '$lib/features/grammar/manifest';
 import ScriptsPage from '$lib/features/scripts/ScriptsPage.svelte';
 import { scriptsDef } from '$lib/features/scripts/manifest';
+import { statsDef } from '$lib/stats/manifest';
 import { writingSystemsOf } from '$lib/languages/profiles';
 import type { FeatureSwitch } from './switches.svelte';
 
@@ -27,6 +29,7 @@ export const READER_ID = 'reader';
 export const JOURNAL_ID = 'journal';
 export const GRAMMAR_ID = 'grammar';
 export const SCRIPTS_ID = 'scripts';
+export const STATS_ID = 'stats';
 
 /** What the web build ships for a feature besides its page: widgets and third-party credits. */
 export interface FeatureDef {
@@ -47,15 +50,18 @@ export interface CoreFeature {
 	def: FeatureDef;
 	/** Shown only where this accepts the workspace's language (the language profile decides); absent: every language. */
 	appliesTo?: (language: string) => boolean;
-	/** The page, which routes `rest` itself. */
-	component: Component<{ rest: string }>;
+	/**
+	 * The page, which routes `rest` itself (FeaturePage). Absent: the feature's pages are routes of their own whose
+	 * layout guards them with FeatureGate (Stats: /stats, /stats/week, /stats/characters).
+	 */
+	component?: Component<{ rest: string }>;
 }
 
 function feature(
 	id: string,
 	title: MessageKey,
 	def: FeatureDef,
-	component: Component<{ rest: string }>
+	component?: Component<{ rest: string }>
 ): CoreFeature {
 	return {
 		id,
@@ -81,7 +87,8 @@ export const coreFeatures: readonly CoreFeature[] = [
 	feature(READER_ID, 'features.reader.title', readerDef, ReaderPage),
 	feature(JOURNAL_ID, 'features.journal.title', journalDef, JournalPage),
 	feature(GRAMMAR_ID, 'features.grammar.title', grammarDef, GrammarPage),
-	feature(SCRIPTS_ID, 'features.scripts.title', scriptsDef, ScriptsPage)
+	feature(SCRIPTS_ID, 'features.scripts.title', scriptsDef, ScriptsPage),
+	feature(STATS_ID, 'features.stats.title', statsDef)
 ];
 
 /**
@@ -93,7 +100,8 @@ const SWITCHED_OFF: Readonly<Record<string, MessageKey>> = {
 	[READER_ID]: 'features.reader.switchedOff',
 	[JOURNAL_ID]: 'features.journal.switchedOff',
 	[GRAMMAR_ID]: 'features.grammar.switchedOff',
-	[SCRIPTS_ID]: 'features.scripts.switchedOff'
+	[SCRIPTS_ID]: 'features.scripts.switchedOff',
+	[STATS_ID]: 'features.stats.switchedOff'
 };
 
 /** switchedOffTitle: "Flashcards are switched off" for a core feature id. */

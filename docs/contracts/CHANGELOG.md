@@ -5,6 +5,14 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #295 — Stats is a core feature (contract 17)
+
+- **Features:** a sixth core feature id `stats` (`features/switches.json`: `features` and the GET order end in
+  `stats`; a new PUT case). `PUT /api/features/stats` stores the switch; no migration (since 055 the table has no list
+  of ids). The README lists what a client hides while Stats is off and what stays.
+- **Clients:** a client that does not know `stats` ignores its row (the list is read leniently) and keeps showing
+  Stats.
+
 ## #284 — hidden romanisation (contract 16)
 
 - **New workspace-settings key** `romanisation` (`settings/README.md`): `{"pinyin" | "bopomofo" | "romaji": "always" |

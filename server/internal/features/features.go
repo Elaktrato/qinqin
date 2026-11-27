@@ -1,6 +1,6 @@
 // Package features holds the core features and each user's feature switches
-// (#199, record 0006): flashcards, the reader, the journal, grammar and the writing-system trainer are the
-// app, not plugins; a user can switch each off for themselves. Switching off
+// (#199, record 0006): flashcards, the reader, the journal, grammar, the writing-system trainer and Stats
+// (#295) are the app, not plugins; a user can switch each off for themselves. Switching off
 // only hides the feature in the client: the server keeps accepting and
 // counting its data and events. Contract: docs/contracts/features/.
 package features
@@ -15,7 +15,7 @@ import (
 )
 
 // IDs are the core features, in the order of the navigation.
-var IDs = []string{"flashcards", "reader", "journal", "grammar", "scripts"}
+var IDs = []string{"flashcards", "reader", "journal", "grammar", "scripts", "stats"}
 
 // ErrUnknown reports an id that names no feature.
 var ErrUnknown = errors.New("features: unknown feature")

@@ -16,7 +16,7 @@ Stats pages from other screens. The server keeps counting; nothing is deleted.
 1. This plan.
 2. The feature id: `stats` in `features.IDs`, `docs/contracts/features/switches.json` (six ids) and its README
    (what Stats off hides and what stays), ContractVersion 17 with a CHANGELOG entry; the web registry
-   (`lib/features/index.ts`, `lib/features/stats/manifest.ts`), its title and switched-off message. Tests first: the
+   (`lib/features/index.ts`, `lib/stats/manifest.ts`), its title and switched-off message. Tests first: the
    Go and web contract tests against the six-id fixture, the Go route test's list.
 3. The widgets: the Stats widgets move from the core list into the Stats feature's definition (owner `stats`); a
    widget can name other features it needs (`WidgetDef.requires`), and the word-states widget (flashcards') needs
@@ -68,8 +68,9 @@ the daily-goal widget), the weekly-summary widget, the milestone cards on Home, 
   (`/stats`, `/stats/week`, `/stats/characters`) whose layout is wrapped in `FeatureGate`. `FeaturePage` becomes
   `FeatureGate` + the feature's component — one notice for every feature, and the Stats routes keep their URLs —
   cost if wrong: none for users.
-- Ruling: the Stats code stays in `lib/stats/` and its routes in `routes/stats/`; only the manifest is in
-  `lib/features/stats/` — moving the folder is churn without a user-visible change — cost if wrong: a later move.
+- Ruling: the Stats code stays in `lib/stats/` (a feature folder of record 0004 already) and its routes in
+  `routes/stats/`; its manifest is `lib/stats/manifest.ts`, not a new `lib/features/stats/` — one folder for Stats,
+  and moving it is churn without a user-visible change — cost if wrong: a later move.
 - Ruling: the Stats section's place does not change: last in the frame, after the features, as the feature order
   puts it last — cost if wrong: none. Before the switches load, only Search shows (Stats now waits like every
   feature, so a switched-off Stats never flashes in).
