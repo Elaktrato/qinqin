@@ -5,6 +5,15 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #220 — topic labels of words (contract 21)
+
+- **New folder `topics/`:** the fixed topic list shared by every language (`topics.json`, rule `topics/list`: 49 ids
+  with an English scope; names are the messages `topics.name.<id>`), decoded by Go and web; the labels file a server
+  embeds and the lookup of a listed word's topics (`labels.json`, rule `topics/labels`), decoded by Go.
+- **i18n:** a new key area `topics`.
+- **Clients:** no route changes. The labels are read by the server (the course fill rule, #221); a client shows a
+  topic by its id's name and ignores an id it does not know.
+
 ## #163 — the mastery map's grading (contract 20)
 
 - **New workspace-settings key** `masteryMap` (`settings/README.md`): `{grading, includeOutside, levels}`: one
