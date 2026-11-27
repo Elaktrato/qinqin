@@ -5,7 +5,7 @@
 // mark recomputes them without a request. Contract:
 // docs/contracts/reader/coverage.json.
 import type { SegmentMatch } from '$lib/api/types';
-import type { Familiarity } from '$lib/study/known';
+import type { Familiarity } from '$lib/studycore/known';
 import { isWordChar, isWordToken } from './wordRanges';
 
 export interface Occurrence {

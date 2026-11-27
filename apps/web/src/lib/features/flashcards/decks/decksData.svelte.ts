@@ -7,14 +7,14 @@ import type { Session } from '$lib/context/session.svelte';
 import { untrack } from 'svelte';
 import { errorText } from '$lib/api/apiErrors';
 import { t } from '$lib/i18n';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import { loadStudyHistory } from '$lib/study/data';
-import { activeWeights } from '$lib/study/readModel';
-import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { activeWeights } from '$lib/studycore/readModel';
+import type { Deck, ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { addDays } from '$lib/time/studyDay';
-import { contextForData } from '$lib/study/currentContext';
-import type { StudyContext } from '$lib/study/studyContext';
+import { contextForData } from '$lib/studycore/currentContext';
+import type { StudyContext } from '$lib/studycore/studyContext';
 import { scheduleIndex, type ScheduleIndex } from './deckStats';
 
 export interface DecksSnapshot {

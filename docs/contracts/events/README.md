@@ -9,13 +9,13 @@ with it, and what each type's payload means. Design: `docs/superpowers/specs/202
 Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
 `page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/studycore/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
 - `envelope.json` — batches posted to `POST /api/events/batch`, the answer, and what `GET /api/events` and
   the pull v2 `events` collection return afterwards. Decoded by `server/internal/api/contract_events_test.go`
-  (every step and the stored list), `apps/web/src/lib/study/scheduler.test.ts` (the order case) and
+  (every step and the stored list), `apps/web/src/lib/studycore/scheduler.test.ts` (the order case) and
   `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pull case). `$ws` is a workspace of the caller,
   `$bobWs` one of another user.
 - `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
@@ -25,12 +25,12 @@ Fixtures:
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 - `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
-  Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
-  `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+  Decoded by `apps/web/src/lib/studycore/reviewParse.test.ts`, `studycore/scheduler.test.ts` (`isValidReview`,
+  `sortedReviews`) and `studycore/exp.test.ts` (XP counts exactly the valid ones).
 - `review-replace.json` — replaced reviews (#131): which reviews of a set count when some name the review they
   replace (`live`, in replay order) and which are replaced; hand-written `cases` plus a `generated` block of 300
   seeded random families (`scripts/contracts/gen-review-replace.mjs`, seed 131, expected ids from an oracle written
-  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
+  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/studycore/replaced.test.ts`
   (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
   cases (query → status and JSON code). Decoded by
@@ -195,7 +195,7 @@ clamping and a `read` without `bookId` still counts; "distinct `entryId` of `jou
 ## Reviews
 
 The `review` payload is `{cardId: string, mode: <card kind>, grade: 1|2|3|4, meta?: {tier?, mistakes?, hints?,
-durationMs?}}` (written by `study/events.ts`; the overview's row keeps the shape). A client reads a stored
+durationMs?}}` (written by `studycore/events.ts`; the overview's row keeps the shape). A client reads a stored
 event as a review in two steps, both pinned by `review-parse.json`:
 
 1. **Parse** (`parseReview`): only `type: "review"`; the payload is an object with a non-empty string `cardId`

@@ -7,7 +7,7 @@
 import type { FrequencyPack } from '$lib/api/types';
 import { t } from '$lib/i18n';
 import { getStarterEntries, type StarterEntry } from '$lib/api/frequency';
-import type { Deck } from '$lib/study/types';
+import type { Deck } from '$lib/studycore/types';
 import type { AddItem, AddPlan } from './addToDeck';
 import { ownedStarterDeckId } from './systemDecks';
 import type { StarterCache } from '../../../context/caches';

@@ -5,7 +5,7 @@
 	import { t } from '$lib/i18n';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
-	import { onContextStale } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import { errorText } from '$lib/api/apiErrors';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { formatDate, formatNumber } from '$lib/i18n/format';
-	import type { Fit } from '$lib/study/fsrs/evaluate';
-	import type { ApplyCheck, Preview } from '$lib/study/fsrs/preview';
+	import type { Fit } from '../fsrs/evaluate';
+	import type { ApplyCheck, Preview } from '../fsrs/preview';
 	import { Button, Section } from '$lib/ui';
 
 	let {

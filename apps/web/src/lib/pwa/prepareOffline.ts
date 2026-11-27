@@ -5,12 +5,12 @@
 // burying, the learner's day), not a copy of its rules.
 
 import { entryPath } from '../api/entries';
-import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
-import { writableChars } from '../study/writing';
-import type { StudyContext } from '../study/studyContext';
-import { type StudyHistory } from '../study/types';
-import { enabledKinds } from '../study/deckSettings';
-import { setupDeckIds, setupKinds, type StudySetup } from '../study/setup';
+import { deckSessionPlan, type DeckSessionOptions } from '$lib/features/flashcards/session/cardFlow';
+import { writableChars } from '$lib/exercises/writing';
+import type { StudyContext } from '$lib/studycore/studyContext';
+import { type StudyHistory } from '$lib/studycore/types';
+import { enabledKinds } from '$lib/studycore/deckSettings';
+import { setupDeckIds, setupKinds, type StudySetup } from '$lib/features/flashcards/setup/setup';
 import type { OfflineState } from './offlineState.svelte';
 
 /** The API reads every page of the app shell needs, besides the study data. */

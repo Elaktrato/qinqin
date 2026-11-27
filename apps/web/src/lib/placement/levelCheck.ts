@@ -4,7 +4,7 @@
 // For a target level of a scheme (HSK 4, N3 ...) the lists of that level and
 // of every level below it make the vocabulary the exam can ask. What the app
 // already knows about the learner is exact and needs no question: an entry is
-// known, learning or unseen by the shared predicate (lib/study/known.ts). Only
+// known, learning or unseen by the shared predicate (lib/studycore/known.ts). Only
 // the entries the app does not call known can still be known from elsewhere,
 // so a seeded sample of them is asked, self-assessed, with the placement
 // test's generator (`pick`). The sample is stratified by level (the questions
@@ -15,7 +15,7 @@
 // level whose not-yet-known entries were all asked is exact. No I/O, no
 // clock, no Math.random.
 
-import { familiarity, type KnownIndex } from '$lib/study/known';
+import { familiarity, type KnownIndex } from '$lib/studycore/known';
 import type { LevelMembers } from './declare';
 import { pick } from './placement';
 

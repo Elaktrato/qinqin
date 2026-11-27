@@ -6,10 +6,10 @@
 	import { BUILTIN_SOURCES } from '$lib/goals/builtinSources';
 	import { activityType, type GoalsRow } from '$lib/goals/goals';
 	import { metricOptions, type MetricOption } from '$lib/goals/goalText';
-	import { onContextStale } from '$lib/study/currentContext';
-	import { effectiveLimits } from '$lib/study/limits';
-	import { saveGoals } from '$lib/study/commands/keyed';
-	import { getStudyData } from '$lib/study/data';
+	import { onContextStale } from '$lib/studycore/currentContext';
+	import { effectiveLimits } from '$lib/studycore/limits';
+	import { saveGoals } from '$lib/studycore/commands/keyed';
+	import { getStudyData } from '$lib/studycore/data';
 	import { formFrom, limitHint, planForm, type GoalFormState } from './goalForm';
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';

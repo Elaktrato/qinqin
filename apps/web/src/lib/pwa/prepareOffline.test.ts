@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
+import { STUDY_PULL_COLLECTIONS } from '$lib/studycore/sync/pull';
 import classifyFixtureRoutes from './sw/routes.fixture.json';
 import { classify } from './sw/classify';
-import { defaultSetup } from '../study/setup';
-import { DEFAULT_W } from '../study/fsrs/params';
-import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
-import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
-import { STUDY_COLLECTIONS } from '../study/rows';
+import { defaultSetup } from '$lib/features/flashcards/setup/setup';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { UTC_CONTEXT, type StudyContext } from '$lib/studycore/studyContext';
+import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
+import { STUDY_COLLECTIONS } from '$lib/studycore/rows';
 import { firstPageUrl, nextPageUrl } from '../sync/pager';
 import { fullLogPath } from '$lib/events';
 import { entryPath } from '../api/entries';
-import { strokeUrl } from '../study/strokeData';
+import { strokeUrl } from '$lib/writing/strokeData';
 import {
 	OFFLINE_API_PATHS,
 	PREPARE_THROTTLE_MS,

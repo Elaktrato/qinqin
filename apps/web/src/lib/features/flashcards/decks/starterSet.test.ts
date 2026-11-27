@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { StarterSetEntry } from '$lib/api/starter';
-import { starterSetDeckId } from '$lib/study/starter';
+import { starterSetDeckId } from '$lib/starter/starter';
 import { planAddToDeck } from './addToDeck';
 import { starterSetItems, starterSetTarget } from './starterSet';
 

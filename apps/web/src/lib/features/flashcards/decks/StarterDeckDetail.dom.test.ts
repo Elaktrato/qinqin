@@ -4,28 +4,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(), getStarterEntries: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn(),
 	loadRawStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/write', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
+vi.mock('$lib/studycore/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
 import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
-import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
+import { loadRawStudyData, loadStudyHistory } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
 import { toLegacy } from '$lib/testing/legacyCodec';
-import { type StudyWrite } from '$lib/study/plan';
+import { type StudyWrite } from '$lib/studycore/plan';
 
 /** The typed writes as the legacy rows they stand for (test codec). */
 function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; knownAt?: string }[] {
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
-import type { Deck, StudyCard } from '$lib/study/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 
 import { primaryActions } from '$lib/ui/testing/primary';
 import StarterDeckDetail from './StarterDeckDetail.svelte';

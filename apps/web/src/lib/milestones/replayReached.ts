@@ -9,9 +9,9 @@
 
 import type { CharRow } from '$lib/api/types';
 import { classifySchedule } from '$lib/stats/wordStates';
-import { MASTERY_KINDS, MASTERY_THRESHOLD, cardStrength, masteryFromSchedules } from '$lib/study/mastery';
-import type { Schedule } from '$lib/study/scheduler';
-import type { StudyCard } from '$lib/study/types';
+import { MASTERY_KINDS, MASTERY_THRESHOLD, cardStrength, masteryFromSchedules } from '$lib/studycore/mastery';
+import type { Schedule } from '$lib/studycore/scheduler';
+import type { StudyCard } from '$lib/studycore/types';
 import type { StudyDay } from '$lib/time/studyDay';
 import type { Timelines } from '$lib/weekly/replay';
 import { FAMILIES, compareIds, levelMilestoneId, type MilestoneFamily } from './catalogue';

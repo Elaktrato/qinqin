@@ -1,5 +1,5 @@
 <script module lang="ts">
-	import { nextBatchOwner } from '$lib/study/mapGrid';
+	import { nextBatchOwner } from '$lib/studycore/mapGrid';
 
 	interface BatchJob {
 		order: number;
@@ -40,14 +40,14 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import type { CellState } from '$lib/study/charGroups';
+	import type { CellState } from '$lib/studycore/charGroups';
 	import {
 		STAGE_INFO,
 		columnCount,
 		gridMove,
 		renderedCount,
 		type TipRequest
-	} from '$lib/study/mapGrid';
+	} from '$lib/studycore/mapGrid';
 
 	let {
 		sectionId,

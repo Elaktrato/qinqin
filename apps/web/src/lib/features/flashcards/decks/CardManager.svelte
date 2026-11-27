@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { withStudy } from '$lib/study/data';
+	import { withStudy } from '$lib/studycore/data';
 	import { onDestroy, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { studyLang } from '$lib/i18n/lang';
-	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
+	import { createCardActions, type CardActionsState } from './cardActions';
 	import {
 		deleteCards,
 		dropSiblingCards,
@@ -11,9 +11,9 @@
 		restoreCards,
 		skipKind,
 		unskipKind
-	} from '$lib/study/commands/cards';
-	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
-	import type { Deck, StudyCard } from '$lib/study/types';
+	} from '../commands/cards';
+	import { rangeIds, toggleId, wordsOfCards } from './cardSelection';
+	import type { Deck, StudyCard } from '$lib/studycore/types';
 	import { Button, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -23,7 +23,7 @@
 	// undone from the toast; `onchanged` tells the page to reload.
 	// Only the newest change is undoable: a new one replaces the toast.
 	// The writes, the undo slot and its timer live in the shared controller
-	// (lib/study/cardActions.ts), which the decks view uses as well.
+	// (lib/features/flashcards/decks/cardActions.ts), which the decks view uses as well.
 	let {
 		workspaceId,
 		cards,

@@ -4,7 +4,7 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { getStudyData } from '$lib/study/data';
+	import { getStudyData } from '$lib/studycore/data';
 	import { Button, Chip } from '$lib/ui';
 	import { declarableSchemes } from './levels';
 	import { isLevelCheckDismissed, setLevelCheckDismissed, shouldOfferLevelCheck } from './levelCheckOffer';

@@ -8,10 +8,10 @@
 // days or more (the same edge the Word Salad tiers use).
 
 import { t, type MessageKey } from '$lib/i18n';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import { scheduleFor, type Schedule } from '$lib/study/scheduler';
-import type { StudyClock } from '$lib/study/studyClock';
-import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import { scheduleFor, type Schedule } from '$lib/studycore/scheduler';
+import type { StudyClock } from '$lib/studycore/studyClock';
+import type { Deck, ReviewEvent, StudyCard } from '$lib/studycore/types';
 
 export type WordState = 'new' | 'learning' | 'young' | 'mature';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { isImeKey } from '$lib/ui/ime';
-	import type { ClozePart } from '$lib/study/cloze';
+	import type { ClozePart } from '$lib/exercises/cloze';
 	import { t } from '$lib/i18n';
 	import { choiceForKeyEvent } from '$lib/components/clozeKeys';
 

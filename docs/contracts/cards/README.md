@@ -72,9 +72,9 @@ spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings
 
 A deck session studies the cards of the chosen decks (`deckIds`) and kinds (`kinds`) with a session new-card
 limit (`newLimit`) and review limit (`reviewLimit`). Level sessions follow their own plan
-(`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/study/cardFlow.ts`, with
+(`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/features/flashcards/session/cardFlow.ts`, with
 `companions.ts`, `scheduler.ts` `queueCandidates` and `sessionQueue.ts`) returns `{queue, reserve, backfillLeft}`; `plans` cases pin
-the ids of each, decoded by `apps/web/src/lib/study/cardFlow.test.ts`. Inputs: zone `history`, `now`,
+the ids of each, decoded by `apps/web/src/lib/features/flashcards/session/cardFlow.test.ts`. Inputs: zone `history`, `now`,
 `language`, `cards`, `reviews` (`{cardId, ts, grade}`; event ids are given in list order, `mode` is the card's
 kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (deck id → enabled opt-in kinds),
 `newRank` (entry id → frequency rank, the `orderNew` key of `frequency/`), `skip` and `offline`; `weights`
@@ -134,8 +134,8 @@ deferred (spec D2) — cost: none.
 The admission every session shares: deck sessions (above), level sessions (`levels/`) and the counts (due/new
 numbers, "left today"). Each lists its **candidates** in queue order its own way, `{cardId, deckIds, bucket}` with
 `bucket` = `continuing` (due, already reviewed today), `review` (due) or `new` (never reviewed, or virtual); the
-builder never reorders them. Web: `lib/study/sessionQueue.ts` (`admitSession`, `buildSessionQueue`), decoded by
-`apps/web/src/lib/study/sessionQueue.test.ts`. Spec: `docs/superpowers/specs/2026-11-23-queue-builder-design.md`.
+builder never reorders them. Web: `lib/features/flashcards/session/sessionQueue.ts` (`admitSession`, `buildSessionQueue`), decoded by
+`apps/web/src/lib/features/flashcards/session/sessionQueue.test.ts`. Spec: `docs/superpowers/specs/2026-11-23-queue-builder-design.md`.
 
 1. **Vacation day** (`vacationToday`): nothing is admitted; queue and reserve are empty, `left` is all zero.
 2. **Caps**: `cap(x)` = `floor(x)` for a finite `x`, at least 0 (fixture caps such as `1.7` and `-2`); anything
@@ -159,8 +159,8 @@ nothing, and a card created from a virtual item takes the next free id (`freshCa
 
 The order of the card types inside a session, applied **after** the plan (deck sessions above, level sessions
 `levels/`): it reorders the planned queue and never adds, drops or re-admits an item, so limits, caps, the
-reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
-`apps/web/src/lib/study/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
+reserve and burying are unchanged. Web: `lib/features/flashcards/session/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
+`apps/web/src/lib/features/flashcards/session/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
 
 - **Blocks**: the due block (a real card with a valid review) and the new block (never reviewed or virtual), each
   keeping its items; output `[...due, ...new]`.
@@ -205,8 +205,8 @@ vocabFirst, items: [{cardId, kind, entryId, review}], expect: [cardId]}` (`items
 ## Hints (`hints.json`, #215)
 
 Optional help a learner asks for during a review instead of looking at the answer, on every card kind. Web:
-`lib/study/hints.ts` (`HINT_REGISTRY`, `readHintSettings`, `resolveHints`, `lowerForHints`, `applyHints`), decoded by
-`apps/web/src/lib/study/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
+`lib/features/flashcards/face/hints.ts` (`HINT_REGISTRY`, `readHintSettings`, `resolveHints`, `lowerForHints`, `applyHints`), decoded by
+`apps/web/src/lib/features/flashcards/face/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
 
 - **Hint kinds** (the registry, in the fixed order they are revealed in): `reading` (the entry's readings: kana,
   pinyin, zhuyin, romaji, on and kun), then `picture` (ready since #212: an entry

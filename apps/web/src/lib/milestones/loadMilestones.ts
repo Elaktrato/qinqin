@@ -12,12 +12,12 @@ import { FLASHCARDS_ID, JOURNAL_ID, READER_ID, featureEnabled } from '$lib/featu
 import { levelDecks, levelItems, ownedLevelDeckId } from '$lib/features/flashcards/decks/systemDecks';
 import { usesHan } from '$lib/languages';
 import type { FeatureSwitchesValue } from '$lib/features/switches.svelte';
-import { buildSections } from '$lib/study/charGroups';
-import { loadStudyHistory } from '$lib/study/data';
-import { saveSeenMilestones } from '$lib/study/commands/keyed';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { StudyCard } from '$lib/study/types';
-import { vacationRuns } from '$lib/study/vacation';
+import { buildSections } from '$lib/studycore/charGroups';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { saveSeenMilestones } from '$lib/studycore/commands/keyed';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { StudyCard } from '$lib/studycore/types';
+import { vacationRuns } from '$lib/studycore/vacation';
 import type { Timelines } from '$lib/weekly/replay';
 import { MILESTONE_KEY_PREFIX, enabledFamilies, logFamilies } from './catalogue';
 import { milestoneTitle } from './milestoneText';

@@ -4,22 +4,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ fetchSchemeCharacters: vi.fn(), getSchemes: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/entriesCache', () => ({
+vi.mock('$lib/studycore/entriesCache', () => ({
 	fillMissingWrittenProgressively: vi.fn(async (cards: unknown[]) => ({ cards, unresolvedCards: 0 }))
 }));
-vi.mock('$lib/study/mastery', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/mastery')>()),
+vi.mock('$lib/studycore/mastery', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/mastery')>()),
 	masteryForChars: vi.fn()
 }));
 
 import { fetchCharacters } from '$lib/api/characters';
 import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
-import { masteryForChars, type CharMastery } from '$lib/study/mastery';
-import { loadStudyData } from '$lib/study/data';
+import { masteryForChars, type CharMastery } from '$lib/studycore/mastery';
+import { loadStudyData } from '$lib/studycore/data';
 import CharactersPage from './+page.svelte';
 import charGrid from '$lib/stats/map/CharGrid.svelte?raw';
 import cellTip from '$lib/stats/map/CellTip.svelte?raw';

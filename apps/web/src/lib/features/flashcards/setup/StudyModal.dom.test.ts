@@ -4,17 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(async () => []) }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 
 import { getSchemes } from '$lib/api/schemes';
 import type { Scheme } from '$lib/api/types';
-import { loadStudyHistory } from '$lib/study/data';
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import { StudySetups } from '$lib/study/setupStore.svelte';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { SESSION_CONFIG_KEY } from '../session/session';
+import { defaultSetup, type StudySetup } from './setup';
+import { StudySetups } from './setupStore.svelte';
 import { ApiError } from '$lib/api/client';
 import { t } from '$lib/i18n';
 import { testContext, type TestContext } from '$lib/testing/context';

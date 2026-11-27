@@ -7,15 +7,15 @@
 // deck on the page, the due counts included.
 
 import { t } from '$lib/i18n';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import { cardScore, MASTERY_THRESHOLD } from '$lib/study/mastery';
-import { dueCounts } from '$lib/study/dueCounts';
-import { isValidReview, scheduleFor, type Schedule } from '$lib/study/scheduler';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import { cardScore, MASTERY_THRESHOLD } from '$lib/studycore/mastery';
+import { dueCounts } from '../session/dueCounts';
+import { isValidReview, scheduleFor, type Schedule } from '$lib/studycore/scheduler';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
 import { classifySchedule, emptyCounts, type WordStateCounts } from '$lib/stats/wordStates';
-import type { StudyContext } from '$lib/study/studyContext';
-import type { StudyClock } from '$lib/study/studyClock';
+import type { StudyContext } from '$lib/studycore/studyContext';
+import type { StudyClock } from '$lib/studycore/studyClock';
 
 /** Reviewed card ids only; a missing id means "never reviewed". */
 export type ScheduleIndex = Map<string, Schedule | null>;

@@ -1,12 +1,12 @@
 <script lang="ts">
 	// The one Hint control of every card kind (#215): a small button and the H key (Alt+H inside a text
 	// field). Each press reveals the next hint in the fixed order; nothing is shown when no hint is left or
-	// the card is answered. The grade rule is applied by the session (lib/study/hints.ts).
+	// the card is answered. The grade rule is applied by the session (lib/features/flashcards/face/hints.ts).
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { isImeKey } from '$lib/ui/ime';
 	import Button from '$lib/ui/Button.svelte';
-	import { isHintKey } from '$lib/study/hintKey';
+	import { isHintKey } from './hintKey';
 	import { useCardHints } from './cardHints.svelte';
 
 	const hints = useCardHints();

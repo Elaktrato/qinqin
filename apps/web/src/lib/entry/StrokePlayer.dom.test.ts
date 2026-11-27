@@ -10,10 +10,10 @@ const writer = {
 	pauseAnimation: vi.fn(() => Promise.resolve())
 };
 vi.mock('hanzi-writer', () => ({ default: { create: vi.fn(() => writer) } }));
-vi.mock('$lib/study/strokeData', () => ({ fetchStrokeData: vi.fn() }));
+vi.mock('$lib/writing/strokeData', () => ({ fetchStrokeData: vi.fn() }));
 
 import HanziWriter from 'hanzi-writer';
-import { fetchStrokeData } from '$lib/study/strokeData';
+import { fetchStrokeData } from '$lib/writing/strokeData';
 import StrokePlayer from './StrokePlayer.svelte';
 
 let ctx: TestContext = testContext();

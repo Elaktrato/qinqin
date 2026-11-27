@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Fit } from '$lib/study/fsrs/evaluate';
+	import type { Fit } from '../fsrs/evaluate';
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
-	import { LOW_DATA_LABELLED, MIN_LABELLED, type OptimizeResult } from '$lib/study/fsrs/optimize';
+	import { LOW_DATA_LABELLED, MIN_LABELLED, type OptimizeResult } from '../fsrs/optimize';
 	import { Button, Section } from '$lib/ui';
 
 	let {

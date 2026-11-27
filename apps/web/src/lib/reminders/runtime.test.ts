@@ -4,8 +4,8 @@ import { defaultReminderSettings } from './settings';
 import { fakePort } from './device/port';
 
 const listeners: ((ws: number) => void)[] = [];
-vi.mock('../study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('../study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	onStudyChange: vi.fn((_study: unknown, l: (ws: number) => void) => {
 		listeners.push(l);
 		return () => listeners.splice(listeners.indexOf(l), 1);

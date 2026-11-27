@@ -7,7 +7,7 @@
 // or a write costs. It is not the server: shapes are the contract's, the
 // edge cases (limits, 413, refused keys) are not modelled.
 
-import { STUDY_COLLECTIONS, identityOf, parseRow, type StudyCollection, type StudyRow } from '../study/rows';
+import { STUDY_COLLECTIONS, identityOf, parseRow, type StudyCollection, type StudyRow } from '$lib/studycore/rows';
 
 type Obj = Record<string, unknown>;
 

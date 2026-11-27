@@ -1,13 +1,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
-import type { HintPlan } from '$lib/study/hints';
+import type { FlowItem } from '../session/cardFlow';
+import type { HintPlan } from '../face/hints';
 
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 
 import ReverseCard from './ReverseCard.svelte';
-import { withShownWritten } from '$lib/study/cardView';
+import { withShownWritten } from './cardView';
 import CardHarness from '../face/testing/CardHarness.svelte';
 
 function entry(over: Partial<Entry> = {}): Entry {

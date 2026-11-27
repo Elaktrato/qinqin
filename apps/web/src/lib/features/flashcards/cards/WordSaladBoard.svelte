@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
-	import { isCorrect, shuffleTokens } from '$lib/study/wordSalad';
+	import { isCorrect, shuffleTokens } from '$lib/exercises/wordSalad';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { useOptionalCardFace } from '../face/cardFace.svelte';

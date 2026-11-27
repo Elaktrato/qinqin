@@ -9,7 +9,7 @@
 import type { Session } from '$lib/context/session.svelte';
 import type { EventSource, Timers, VisibilitySource } from '$lib/context/deps';
 import { getFormatLocale, rawMessage, t } from '$lib/i18n';
-import { onStudyChange } from '$lib/study/data';
+import { onStudyChange } from '$lib/studycore/data';
 import { clearPushTexts, pushTextsOf, writePushTexts } from '$lib/pwa/sw/pushTexts';
 import { isShell } from '$lib/native/shell';
 import { devicePort, type DevicePort } from './device/port';

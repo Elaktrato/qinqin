@@ -6,8 +6,8 @@
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
+	import type { CardAudio } from '$lib/audio/cue';
+	import { type CardResult, type FlowItem } from '../session/cardFlow';
 	import {
 		suggestToneGrade,
 		toneFromGesture,
@@ -18,7 +18,7 @@
 		toneCandidates,
 		toneVerdict,
 		type ToneVerdict
-	} from '$lib/study/tones';
+	} from '$lib/exercises/tones';
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';

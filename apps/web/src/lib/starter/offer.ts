@@ -3,7 +3,7 @@
 // know none. Both use the same test for "brand new" (no card, no known mark), so they appear together on a
 // fresh workspace and vanish together once anything exists. "Not now" is remembered on this device only.
 
-import { starterProfile } from '$lib/study/starter';
+import { starterProfile } from './starter';
 
 export interface StarterOfferFacts {
 	language: string;

@@ -9,19 +9,19 @@ import { EventLog } from '$lib/events';
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
 
 import type { CharRow } from '$lib/api/types';
 import type { StudyEvent } from '$lib/events';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { loadStudyHistory } from '$lib/study/data';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { studyDay } from '$lib/time/studyDay';
 import { replayStats, timelinesFor } from '$lib/weekly/replay';
 import { enabledFamilies } from './catalogue';

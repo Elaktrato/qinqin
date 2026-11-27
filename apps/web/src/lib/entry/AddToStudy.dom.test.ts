@@ -2,18 +2,18 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
 	addCard: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));
 
-import { addCard } from '$lib/study/commands/cards';
-import { getStudyData, hasCard } from '$lib/study/data';
+import { addCard } from '$lib/features/flashcards/commands/cards';
+import { getStudyData, hasCard } from '$lib/studycore/data';
 import AddToStudy from './AddToStudy.svelte';
 
 let ctx: TestContext = testContext();

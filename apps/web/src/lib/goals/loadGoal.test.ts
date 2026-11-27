@@ -6,15 +6,15 @@ const SHARED_DAY = studyDayOf([]);
 import { newSession, studyContext, testContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('../study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('../api/stats', () => ({ fetchActivity: vi.fn() }));
 
 import { fetchActivity, type ActivityResponse } from '../api/stats';
-import { loadStudyHistory } from '../study/data';
-import type { StudyHistory } from '../study/types';
+import { loadStudyHistory } from '$lib/studycore/data';
+import type { StudyHistory } from '$lib/studycore/types';
 import { loadGoalStatus } from './loadGoal';
 import * as build from '$lib/testing/study';
 

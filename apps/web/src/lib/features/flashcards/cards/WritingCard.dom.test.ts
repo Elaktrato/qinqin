@@ -2,20 +2,20 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
+import type { FlowItem } from '../session/cardFlow';
 
 const { stub } = vi.hoisted(() => ({
 	stub: async () => ({ default: (await import('./testing/WritingPadStub.svelte')).default })
 }));
 vi.mock('./WritingPad.svelte', stub);
-vi.mock('$lib/study/strokeData', () => ({
+vi.mock('$lib/writing/strokeData', () => ({
 	loadStrokeData: vi.fn(async () => ({ strokes: ['M 0 0 L 1 1'], medians: [[[0, 0], [100, 100]]] }))
 }));
 
 import WritingCard from './WritingCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';
 import padSource from './WritingPad.svelte?raw';
-import { loadStrokeData } from '$lib/study/strokeData';
+import { loadStrokeData } from '$lib/writing/strokeData';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

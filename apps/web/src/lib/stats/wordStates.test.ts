@@ -1,9 +1,9 @@
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import type { Schedule } from '$lib/study/scheduler';
-import type { Deck, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import type { Schedule } from '$lib/studycore/scheduler';
+import type { Deck, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from '$lib/studycore/types';
 import {
 	MATURE_STABILITY_DAYS,
 	classifySchedule,

@@ -3,12 +3,12 @@
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
-	import { addCard } from '$lib/study/commands/cards';
-	import { setKnownMark } from '$lib/study/commands/keyed';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { getStudyData, hasCard } from '$lib/study/data';
+	import { addCard } from '$lib/features/flashcards/commands/cards';
+	import { setKnownMark } from '$lib/studycore/commands/keyed';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
+	import { getStudyData, hasCard } from '$lib/studycore/data';
 	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
-	import type { Deck } from '$lib/study/types';
+	import type { Deck } from '$lib/studycore/types';
 	import { popupWritten } from './browse';
 	import { Button, Chip, Menu, MenuItem } from '$lib/ui';
 	import { bookSentence, resolveBookSentence } from './sentence';

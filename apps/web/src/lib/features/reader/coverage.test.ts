@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../docs/contracts/reader/coverage.json';
 import type { SegmentMatch } from '$lib/api/types';
-import type { Familiarity } from '$lib/study/known';
+import type { Familiarity } from '$lib/studycore/known';
 import { coverageOf, mergeTallies, tallyChapter, unknownList, type ChapterTally } from './coverage';
 
 type FixtureMatch = { start: number; end: number; surface: string; lemma: string; entries: number[] };

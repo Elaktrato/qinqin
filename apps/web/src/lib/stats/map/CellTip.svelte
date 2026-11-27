@@ -2,7 +2,7 @@
 	import { placePopup } from '$lib/features/reader/placement';
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
-	import { STAGE_INFO, type TipRequest } from '$lib/study/mapGrid';
+	import { STAGE_INFO, type TipRequest } from '$lib/studycore/mapGrid';
 
 	let { tip, id, lang }: { tip: TipRequest | null; id: string; lang: string } = $props();
 

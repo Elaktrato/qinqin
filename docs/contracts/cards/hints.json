@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "cards/hints",
- "note": "Hint kinds, their mode per card kind, the plan of one card and the grade rule (#215). Web: apps/web/src/lib/study/hints.ts, decoded by hints.contract.test.ts. An entry is {hasReading, hasPicture}.",
+ "note": "Hint kinds, their mode per card kind, the plan of one card and the grade rule (#215). Web: apps/web/src/lib/features/flashcards/face/hints.ts, decoded by hints.contract.test.ts. An entry is {hasReading, hasPicture}.",
  "kinds": ["reading", "picture"],
  "modes": ["always", "hint", "never"],
  "notApplicable": [{ "kind": "reading", "cardKind": "tone" }],

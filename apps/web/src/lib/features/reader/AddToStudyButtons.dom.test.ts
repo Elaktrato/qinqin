@@ -6,25 +6,25 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
 vi.mock('$lib/api/entries', () => ({ addSentence: vi.fn(), getEntry: vi.fn() }));
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
 	addCard: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/keyed')>()),
 	setKnownMark: vi.fn(async () => {})
 }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));
 
 
 import { LookupRecorder } from '$lib/lookups/recorder';
-import { addCard } from '$lib/study/commands/cards';
-import { setKnownMark } from '$lib/study/commands/keyed';
-import { getStudyData, hasCard } from '$lib/study/data';
+import { addCard } from '$lib/features/flashcards/commands/cards';
+import { setKnownMark } from '$lib/studycore/commands/keyed';
+import { getStudyData, hasCard } from '$lib/studycore/data';
 import AddToStudyButtons from './AddToStudyButtons.svelte';
 
 let ctx: TestContext = testContext();

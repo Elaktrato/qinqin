@@ -4,9 +4,9 @@
 // loadStudyData, so duplicates of one word (added on two devices before
 // card ids were deterministic) count once. Nothing here is cached.
 
-import type { StudyState } from '$lib/study/data';
+import type { StudyState } from '$lib/studycore/data';
 import { listBooks } from './library';
-import { loadStudyData } from '../study/data';
+import { loadStudyData } from '$lib/studycore/data';
 
 export interface WorkspaceContents {
 	books: number;

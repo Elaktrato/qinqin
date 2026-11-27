@@ -9,7 +9,7 @@ import {
 	vacationLine,
 	vacationStatus
 } from './vacationForm';
-import type { VacationPeriod } from '$lib/study/vacation';
+import type { VacationPeriod } from '$lib/studycore/vacation';
 import { studyDay } from '$lib/time/studyDay';
 
 const period = (over: Partial<VacationPeriod> = {}): VacationPeriod => ({

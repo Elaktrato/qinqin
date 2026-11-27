@@ -33,7 +33,7 @@ the registry #173 added (onSessionEnd, with sessionEpoch checks against late ans
   that ends it; `switched`, another user signed in under this tab). It owns every per-user cache and state
   object: the notices, the workspaces, the review outbox, the study state (the study cache and what derives from
   it), plugin and feature states, the event log, the study day, the lookup recorder, the saved study setups and the study
-  modal's opener (`lib/study/setupStore.svelte.ts`, `lib/study/studyModal.svelte.ts`), the audio player and the
+  modal's opener (`lib/features/flashcards/setup/setupStore.svelte.ts`, `lib/features/flashcards/setup/studyModal.svelte.ts`), the audio player and the
   caches of server answers (`SessionCaches`, `apps/web/src/lib/context/caches.ts`: entry bases, audio,
   characters, schemes, clips, starter decks, goal and weekly memos, reached milestones, ...). Disposing it stops
   its timers and listeners; an answer that arrives later lands in the disposed objects, which nothing reads. A

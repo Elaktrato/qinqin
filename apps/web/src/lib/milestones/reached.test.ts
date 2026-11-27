@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/milestones/reached.json';
 import type { StudyEvent } from '$lib/events';
-import { dailyStreak } from '$lib/study/exp';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import { dailyStreak } from '$lib/studycore/exp';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';
 import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';

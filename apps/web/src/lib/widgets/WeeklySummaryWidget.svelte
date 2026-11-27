@@ -5,7 +5,7 @@
 	// logic lives in lib/weekly (loadWeek.ts is the load).
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import { onContextStale } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import { loadWeek, type WeekView } from '$lib/weekly/loadWeek';
 	import Button from '$lib/ui/Button.svelte';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';

@@ -2,7 +2,7 @@
 	// One card's hints (#215): creates the CardHints the cards and the session share. Placed inside the
 	// card's {#key}, so every card starts with nothing revealed.
 	import type { Snippet } from 'svelte';
-	import type { HintPlan } from '$lib/study/hints';
+	import type { HintPlan } from './hints';
 	import { CardHints, provideCardHints } from './cardHints.svelte';
 
 	let {

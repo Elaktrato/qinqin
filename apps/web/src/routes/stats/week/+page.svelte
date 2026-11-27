@@ -8,9 +8,9 @@
 	import { page } from '$app/state';
 	import { usesHan } from '$lib/languages';
 	import { errorText } from '$lib/api/apiErrors';
-	import { onContextStale } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import IconButton from '$lib/ui/IconButton.svelte';
-	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
+	import { ALL_WORKSPACES, onStudyChange } from '$lib/studycore/data';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import {
@@ -28,7 +28,7 @@
 	import { MILESTONE_TEXT } from '$lib/milestones/milestoneText';
 	import type { Timelines } from '$lib/weekly/replay';
 	import type { CharRow } from '$lib/api/types';
-	import type { StudyCard } from '$lib/study/types';
+	import type { StudyCard } from '$lib/studycore/types';
 	import { useSession } from '$lib/context/context';
 
 

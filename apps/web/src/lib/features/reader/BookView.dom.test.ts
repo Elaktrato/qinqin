@@ -21,8 +21,8 @@ vi.mock('$lib/api/library', () => ({
 	deleteHighlight: vi.fn()
 }));
 vi.mock('$lib/api/segment', () => ({ segmentWithReadings: vi.fn(), segmentAt: vi.fn(async () => null), segmentBatch: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(async () => ({
 		decks: [],
 		cards: [{ id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['general'] }],
@@ -34,13 +34,13 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 vi.mock('$lib/api/entryBases', () => ({
 	loadEntryBases: vi.fn(async (_cache: unknown, ids: number[]) => new Map(ids.map((id) => [id, { id, language: 'zh', kind: 'word', written: `w${id}`, readings: [], attrs: {}, radicalId: null }])))
 }));
-vi.mock('$lib/study/currentContext', () => ({ contextForData: () => ({ clock: {} }) }));
+vi.mock('$lib/studycore/currentContext', () => ({ contextForData: () => ({ clock: {} }) }));
 vi.mock('../flashcards/decks/deckStats', () => ({
 	scheduleIndex: vi.fn(() => new Map([['c1', { due: '', stability: 200, difficulty: 5, state: 2 }]]))
 }));
 
 import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { segmentWithReadings } from '$lib/api/segment';
 import BookView from './BookView.svelte';
 

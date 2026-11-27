@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Test double for WritingPad: the canvas cannot draw in jsdom. A reveal
 	// signal completes the character as revealed, like the real pad.
-	import type { CharOutcome } from '$lib/study/writing';
+	import type { CharOutcome } from '$lib/exercises/writing';
 	import type { CharStrokes } from '$lib/writing/strokes';
 
 	let {

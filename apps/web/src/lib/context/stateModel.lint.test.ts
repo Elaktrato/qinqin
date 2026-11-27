@@ -42,7 +42,7 @@ const ALLOWED: Record<string, string> = {
 	'lib/features/flashcards/Mascot.svelte:probes': 'whether bundled mascot images exist, no user data',
 	'lib/features/reader/variants.ts:converters': 'script converters built from bundled tables',
 	'lib/features/reader/variants.ts:loading': 'the converter tables loading, no user data',
-	'lib/study/scheduler.ts:schedulers': "ts-fsrs instances by weight values (at most 16): a pure function's memo, no rows",
+	'lib/studycore/scheduler.ts:schedulers': "ts-fsrs instances by weight values (at most 16): a pure function's memo, no rows",
 	'lib/milestones/reached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/milestones/replayReached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/api/client.ts:observer': "the one observer slot of the API client: the app context installs it at start and removes it at dispose",

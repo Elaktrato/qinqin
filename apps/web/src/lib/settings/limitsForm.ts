@@ -1,7 +1,7 @@
 // The daily limit forms (workspace and deck): field states <-> rows. Pure.
 
 import { t } from '$lib/i18n';
-import { DEFAULT_LIMITS, MAX_LIMIT, type LimitPair } from '$lib/study/limits';
+import { DEFAULT_LIMITS, MAX_LIMIT, type LimitPair } from '$lib/studycore/limits';
 
 export type FieldMode = 'workspace' | 'value' | 'unlimited';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { knownIndex, type KnownIndex } from '$lib/study/known';
+import { knownIndex, type KnownIndex } from '$lib/studycore/known';
 import type { LevelMembers } from './declare';
 import { SAMPLE_SIZE, checkEstimate, planCheck } from './levelCheck';
 

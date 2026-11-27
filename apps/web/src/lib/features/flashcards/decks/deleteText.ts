@@ -2,8 +2,8 @@
 // (store.ts) strips the deck from every card and moves a card left in no
 // deck to General; this names that outcome before the learner confirms.
 
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { t } from '$lib/i18n';
 
 export function deleteDeckText(

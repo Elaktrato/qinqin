@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { EntryBase } from '$lib/api/types';
-import type { Schedule } from '$lib/study/scheduler';
-import type { StudyCard, StudyCardKind } from '$lib/study/types';
+import type { Schedule } from '$lib/studycore/scheduler';
+import type { StudyCard, StudyCardKind } from '$lib/studycore/types';
 import { PAGE_SIZE, deckRows, filterRows, visibleCount, type RowQuery } from './deckRows';
 import type { ScheduleIndex } from './deckStats';
 import * as build from '$lib/testing/study';

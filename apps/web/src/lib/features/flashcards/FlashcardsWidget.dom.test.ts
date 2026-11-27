@@ -2,19 +2,19 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('$lib/goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
-import { levelProgress, xpFromReviews } from '$lib/study/exp';
-import { loadStudyHistory } from '$lib/study/data';
-import type { ReviewEvent } from '$lib/study/types';
+import { levelProgress, xpFromReviews } from '$lib/studycore/exp';
+import { loadStudyHistory } from '$lib/studycore/data';
+import type { ReviewEvent } from '$lib/studycore/types';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
-import { defaultSetup } from '$lib/study/setup';
+import { defaultSetup } from './setup/setup';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

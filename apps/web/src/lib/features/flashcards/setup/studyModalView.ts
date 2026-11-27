@@ -3,9 +3,9 @@
 
 import { t, type MessageKey } from '$lib/i18n';
 import { profileOf } from '$lib/languages/profiles';
-import { CARD_TYPES, type StudySessionMode } from '$lib/study/session';
-import { setupKinds, type SetupNote, type StudySetup } from '$lib/study/setup';
-import { CARD_KINDS, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
+import { CARD_TYPES, type StudySessionMode } from '../session/session';
+import { setupKinds, type SetupNote, type StudySetup } from './setup';
+import { CARD_KINDS, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/studycore/types';
 
 export interface ChipView {
 	id: StudyCardKind;

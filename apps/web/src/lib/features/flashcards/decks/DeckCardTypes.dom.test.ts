@@ -2,12 +2,12 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
+vi.mock('../commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../commands/decks')>()),
 	saveDeckCardTypes: vi.fn()
 }));
 
-import { saveDeckCardTypes } from '$lib/study/commands/decks';
+import { saveDeckCardTypes } from '../commands/decks';
 import DeckCardTypes from './DeckCardTypes.svelte';
 
 let ctx: TestContext = testContext();

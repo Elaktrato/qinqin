@@ -5,8 +5,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	onStudyChange: vi.fn(() => () => {})
 }));
@@ -14,12 +14,12 @@ vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	reviewsPerDay: vi.fn()
 }));
-vi.mock('$lib/study/currentContext', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
+vi.mock('$lib/studycore/currentContext', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
 
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 import ReviewsPerDayWidget from './ReviewsPerDayWidget.svelte';
 

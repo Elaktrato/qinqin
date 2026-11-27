@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EntryPicture } from '$lib/api/images';
 import type { Entry, Workspace } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
-import type { HintPlan } from '$lib/study/hints';
+import type { FlowItem } from '../session/cardFlow';
+import type { HintPlan } from './hints';
 
 const { entryPicture } = vi.hoisted(() => ({ entryPicture: vi.fn() }));
 vi.mock('$lib/api/images', async (original) => ({ ...(await original<typeof import('$lib/api/images')>()), entryPicture }));

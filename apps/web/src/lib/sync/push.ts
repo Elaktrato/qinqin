@@ -1,5 +1,5 @@
 // POST /api/sync/push (docs/contracts/sync/, push-result.json) for rows that
-// carry their own last-write-wins stamp: typed study rows (study/sync/push.ts)
+// carry their own last-write-wins stamp: typed study rows (studycore/sync/push.ts)
 // and keyed rows (keyed.ts). A batch goes in sequential chunks; a
 // chunk the server only partly applied (it holds a newer row, or refused one)
 // is a PartialPushError, so a caller never reports success for it.

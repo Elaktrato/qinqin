@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { DEFAULT_W } from '../study/fsrs/params';
-import { IDENTITY_CLOCK } from '../study/studyClock';
-import type { ReviewEvent, StudyCard } from '../study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { addDays, studyDay } from '../time/studyDay';
 import { replayStats, timelinesFor, wordsReachingMature, type Timelines } from './replay';
 import { summaryStats, weekSummary, type WeekPasses } from './summary';

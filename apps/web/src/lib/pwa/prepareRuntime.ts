@@ -4,10 +4,10 @@
 import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
 import type { AppContext } from '../context/app.svelte';
-import { contextForData } from '../study/currentContext';
-import { studyPullPages, loadStudyHistory } from '../study/data';
-import { activeWeights } from '../study/readModel';
-import { fetchStrokeData } from '../study/strokeData';
+import { contextForData } from '$lib/studycore/currentContext';
+import { studyPullPages, loadStudyHistory } from '$lib/studycore/data';
+import { activeWeights } from '$lib/studycore/readModel';
+import { fetchStrokeData } from '$lib/writing/strokeData';
 import { ownPartition } from './partitions';
 import { normalizeUrl } from './sw/classify';
 import { prepareOffline } from './prepareOffline';

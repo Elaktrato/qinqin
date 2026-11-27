@@ -5,21 +5,21 @@
 	import GoalRing from '$lib/goals/GoalRing.svelte';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
-	import { leftToday } from '$lib/study/dueCounts';
-	import { leftTodayText } from '$lib/study/limitsText';
-	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-	import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
-	import type { StudyContext } from '$lib/study/studyContext';
-	import type { VacationPeriod } from '$lib/study/vacation';
+	import { leftToday } from './session/dueCounts';
+	import { leftTodayText } from './session/limitsText';
+	import { enabledKinds, type DeckSettings } from '$lib/studycore/deckSettings';
+	import { contextForData, currentContext, onContextStale } from '$lib/studycore/currentContext';
+	import type { StudyContext } from '$lib/studycore/studyContext';
+	import type { VacationPeriod } from '$lib/studycore/vacation';
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
-	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
+	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/studycore/exp';
 	import Mascot from './Mascot.svelte';
-	import { setupKinds } from '$lib/study/setup';
-	import { loadStudyHistory } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import { setupKinds } from './setup/setup';
+	import { loadStudyHistory } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
+	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
+	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/studycore/types';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
@@ -112,7 +112,7 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			decks = data.decks;

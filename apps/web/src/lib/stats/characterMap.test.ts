@@ -1,9 +1,9 @@
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_W } from '$lib/study/fsrs/params';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
 import type { CharRow } from '$lib/api/types';
-import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/studycore/types';
 import { characterSummary } from './characterMap';
 import * as build from '$lib/testing/study';
 

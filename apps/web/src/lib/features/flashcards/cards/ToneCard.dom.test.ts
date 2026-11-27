@@ -2,7 +2,7 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
+import type { FlowItem } from '../session/cardFlow';
 
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 

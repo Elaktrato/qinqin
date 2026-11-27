@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Sentence } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
-import { clozePrompt } from '$lib/study/cloze';
+import type { FlowItem } from '../session/cardFlow';
+import { clozePrompt } from '$lib/exercises/cloze';
 
 import ClozeCard from './ClozeCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';

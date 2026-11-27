@@ -4,8 +4,8 @@
 	import { starterSets } from '$lib/api/starter';
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { getStudyData } from '$lib/study/data';
-	import { readStarterSettings } from '$lib/study/starter';
+	import { getStudyData } from '$lib/studycore/data';
+	import { readStarterSettings } from './starter';
 	import { Button } from '$lib/ui';
 	import { isStarterDismissed, setStarterDismissed, shouldOfferStarter } from './offer';
 	import StarterAdd from './StarterAdd.svelte';

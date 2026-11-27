@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type HanziWriter from 'hanzi-writer';
 	import type { CharacterJson } from 'hanzi-writer';
-	import { fetchStrokeData } from '$lib/study/strokeData';
+	import { fetchStrokeData } from '$lib/writing/strokeData';
 	import { t } from '$lib/i18n';
 	import Button from '$lib/ui/Button.svelte';
 	import { useSession } from '$lib/context/context';

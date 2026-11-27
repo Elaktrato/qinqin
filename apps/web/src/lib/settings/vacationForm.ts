@@ -3,7 +3,7 @@
 import { t, type MessageKey } from '$lib/i18n';
 import { formatDay } from '$lib/i18n/format';
 import type { StudyDay } from '$lib/time/studyDay';
-import { currentVacation, vacationRuns, type Run, type VacationPeriod } from '$lib/study/vacation';
+import { currentVacation, vacationRuns, type Run, type VacationPeriod } from '$lib/studycore/vacation';
 
 /** "3 Jan", or "3 Jan 2027" when the year is not today's (the format locale's short day). */
 function dateLabel(day: string, today: string): string {

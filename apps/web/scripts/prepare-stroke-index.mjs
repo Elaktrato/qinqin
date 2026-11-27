@@ -1,4 +1,4 @@
-// Write src/lib/study/strokeIndex.json: the code points that have stroke
+// Write src/lib/writing/strokeIndex.json: the code points that have stroke
 // data in hanzi-writer-data, as sorted [start, end] ranges. It is committed
 // so the level planner can ask "does this glyph have stroke data?"
 // synchronously (strokeIndex.ts); a test fails when it drifts from the
@@ -24,7 +24,7 @@ for (const cp of points) {
 	else ranges.push([cp, cp]);
 }
 await writeFile(
-	join(here, '..', 'src', 'lib', 'study', 'strokeIndex.json'),
+	join(here, '..', 'src', 'lib', 'writing', 'strokeIndex.json'),
 	JSON.stringify({ count: points.length, ranges }) + '\n'
 );
 console.log(`stroke index: ${points.length} code points in ${ranges.length} ranges`);

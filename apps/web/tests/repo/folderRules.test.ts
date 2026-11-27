@@ -8,6 +8,7 @@ import {
 	LOGIC_FOLDERS,
 	LOOSE_ALLOWED,
 	STRUCTURE_FOLDERS,
+	STUDY_CORE_FOLDERS,
 	duplicateNameFindings,
 	isTestOnly,
 	logicFolderFindings,
@@ -72,6 +73,14 @@ describe('the web folder rules hold on apps/web/src', () => {
 		expect(unresolvedImportFindings(tree)).toEqual([]);
 	});
 
+	it('the study core and the exercises never import the flashcards feature', () => {
+		expect(studyCoreImportFindings(tree)).toEqual([]);
+	});
+
+	it('the study core folders are logic folders', () => {
+		for (const d of STUDY_CORE_FOLDERS) expect(LOGIC_FOLDERS, d).toContain(d);
+	});
+
 	it('every top folder of lib is classified', () => {
 		expect(unclassifiedFolderFindings(tree)).toEqual([]);
 	});
@@ -129,7 +138,7 @@ describe('each check fails on a planted violation', () => {
 			file('lib/components/Lonely.svelte'),
 			file('lib/entry/Use.svelte', imp('$lib/components/Lonely.svelte')),
 			file('lib/features/journal/Note.svelte', "<script>// import L from '$lib/components/Lonely.svelte'\n</script>"),
-			file('lib/study/reexport.ts', "export { default as L } from '$lib/components/Lonely.svelte';"),
+			file('lib/studycore/reexport.ts', "export { default as L } from '$lib/components/Lonely.svelte';"),
 			file('lib/ui/Chip.svelte', imp('$lib/components/Lonely.svelte')),
 			file('lib/features/index.ts', "import '$lib/components/Lonely.svelte';"),
 			file('lib/features/FeaturePage.svelte', imp('$lib/components/Lonely.svelte')),
@@ -202,17 +211,17 @@ describe('each check fails on a planted violation', () => {
 		expect(isTestOnly('lib/entry/EntryView.dom.test.ts')).toBe(true);
 		expect(isTestOnly('lib/i18n/PseudoStub.test.svelte')).toBe(true);
 		expect(isTestOnly('lib/entry/testing/SaveEditor.svelte')).toBe(false);
-		expect(isTestOnly('lib/study/testing.ts')).toBe(false);
+		expect(isTestOnly('lib/studycore/testing.ts')).toBe(false);
 	});
 
 	it('a component in a logic-only folder (a test stub is fine)', () => {
 		const planted = [
-			file('lib/study/DeckCardTypes.svelte'),
+			file('lib/studycore/DeckCardTypes.svelte'),
 			file('lib/i18n/PseudoStub.test.svelte'),
 			file('lib/entry/EntryView.svelte')
 		];
 		expect(logicFolderFindings(planted)).toEqual([
-			'lib/study/DeckCardTypes.svelte is a component in the logic folder lib/study'
+			'lib/studycore/DeckCardTypes.svelte is a component in the logic folder lib/studycore'
 		]);
 	});
 

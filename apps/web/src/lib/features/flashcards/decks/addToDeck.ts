@@ -23,13 +23,13 @@
 // an unreadable identity is left alone and counted in `unreadable`. Cards
 // still join the target (its deck row exists on the server).
 
-import { newCardId } from '$lib/study/canonical';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import type { NewOrder } from '$lib/study/newOrder';
-import { cardRow, deckRow, settingsRow, studyKey } from '$lib/study/rows';
-import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/plan';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { newCardId } from '$lib/studycore/canonical';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import type { NewOrder } from '$lib/studycore/newOrder';
+import { cardRow, deckRow, settingsRow, studyKey } from '$lib/studycore/rows';
+import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/studycore/plan';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 
 export interface AddItem {
 	entryId: number;

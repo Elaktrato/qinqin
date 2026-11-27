@@ -8,7 +8,7 @@ import type { ActivityResponse, ActivitySource } from '../api/stats';
 import { t, type MessageKey } from '../i18n';
 import type { FlowerStage } from '../goals/stage';
 import { addDays, type StudyDay } from '../time/studyDay';
-import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
+import { isVacationDay, vacationRuns, type VacationPeriod } from '$lib/studycore/vacation';
 import { activityText } from './sources';
 
 /** Days covered by the heatmap: 52 weeks of 7 cells. */

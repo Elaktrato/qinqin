@@ -14,11 +14,11 @@ Fixtures:
 - `rows.json` — valid and invalid wire rows per collection (the strict wire decode).
 - `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
 - `setup.json` — the saved study setup, the keyed row `study-setup` (see Study setup below; web:
-  `apps/web/src/lib/study/setup.test.ts`; Go: `server/internal/keyed/setup_contract_test.go`, key and scope).
+  `apps/web/src/lib/features/flashcards/setup/setup.test.ts`; Go: `server/internal/keyed/setup_contract_test.go`, key and scope).
 - `canonical.json` — duplicate cards merged at read time: `{cards, reviews}` and the merged `{cards, reviews,
-  merged}` (web: `apps/web/src/lib/study/canonical.test.ts`).
+  merged}` (web: `apps/web/src/lib/studycore/canonical.test.ts`).
 
-Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
+Web: `apps/web/src/lib/studycore/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
 pull and push; a write is never sent when it would change nothing). The web decodes `rows.json` and
 `lww.json`; its test-only mirror of the keyed-row codec (`lib/testing/legacyCodec.ts`) decodes
 `backup/study-rows.json`.

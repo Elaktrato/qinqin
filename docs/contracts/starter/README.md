@@ -11,7 +11,7 @@ Fixtures:
 
 - `stages.json` — the stage of a word (rule `starter/stages`): the points rule and its constants, the thresholds per
   language profile, what the front shows at each stage (and the hint modes the stage forces), and review histories
-  with the stage they give. Web: `apps/web/src/lib/study/starter.ts`, decoded by `starter.contract.test.ts`.
+  with the stage they give. Web: `apps/web/src/lib/starter/starter.ts`, decoded by `starter.contract.test.ts`.
 - `set.json` — which Starter set files a server accepts (rule `starter/set`). Go: `server/internal/starter/contract_test.go`.
 
 ## The stage of a word (`stages.json`)

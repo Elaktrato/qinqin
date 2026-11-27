@@ -10,13 +10,13 @@
 		readHintSettings,
 		type HintKind,
 		type HintMode
-	} from '$lib/study/hints';
-	import { CARD_KINDS, type StudyCardKind } from '$lib/study/types';
+	} from '$lib/features/flashcards/face/hints';
+	import { CARD_KINDS, type StudyCardKind } from '$lib/studycore/types';
 	import Section from '$lib/ui/Section.svelte';
 	import Select from '$lib/ui/Select.svelte';
 
 	// Settings > Study: which hints a flashcard may offer, per hint kind and card type (#215). Stored in the
-	// workspace's settings (synced and part of a backup); the rules are in lib/study/hints.ts.
+	// workspace's settings (synced and part of a backup); the rules are in lib/features/flashcards/face/hints.ts.
 	const session = useSession();
 	const workspace = $derived(session.workspaces.current);
 	const settings = $derived(readHintSettings(workspace?.settings));

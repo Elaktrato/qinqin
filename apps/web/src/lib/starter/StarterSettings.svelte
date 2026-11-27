@@ -2,7 +2,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { readStarterSettings, starterPatch, starterProfile, type StarterSettings } from '$lib/study/starter';
+	import { readStarterSettings, starterPatch, starterProfile, type StarterSettings } from './starter';
 	import Section from '$lib/ui/Section.svelte';
 	import Select from '$lib/ui/Select.svelte';
 	import StarterAdd from './StarterAdd.svelte';

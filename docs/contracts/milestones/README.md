@@ -15,7 +15,7 @@ and `journal` payloads (`events/payloads.json`), vacation runs and the streak ru
 the level deck ids (`decks/system-deck-ids.json`), the weekly summary's replay timelines (`weekly/`).
 
 Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, `replayReached.ts`, `seen.ts`,
-`plan.ts`, `milestoneText.ts`, `loadMilestones.ts`), `apps/web/src/lib/study/readModel.ts` and `apps/web/src/lib/study/commands/keyed.ts` (row parse,
+`plan.ts`, `milestoneText.ts`, `loadMilestones.ts`), `apps/web/src/lib/studycore/readModel.ts` and `apps/web/src/lib/studycore/commands/keyed.ts` (row parse,
 `saveSeenMilestones`). No server code: the rows are ordinary keyed rows (`keyed/`).
 
 ## Fixtures

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Deck, StudyCard } from '$lib/study/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { deleteDeckText } from './deleteText';
 import * as build from '$lib/testing/study';
 

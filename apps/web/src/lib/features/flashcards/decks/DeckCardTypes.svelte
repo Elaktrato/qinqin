@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import { cleanCardTypes, type DeckSettings } from '$lib/study/deckSettings';
-	import { saveDeckCardTypes } from '$lib/study/commands/decks';
-	import type { OptInKind } from '$lib/study/types';
+	import { cleanCardTypes, type DeckSettings } from '$lib/studycore/deckSettings';
+	import { saveDeckCardTypes } from '../commands/decks';
+	import type { OptInKind } from '$lib/studycore/types';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 

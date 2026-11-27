@@ -3,12 +3,12 @@
 	import StageBar from '$lib/stats/map/StageBar.svelte';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
-	import { onContextStale } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
 	import { errorText } from '$lib/api/apiErrors';
-	import type { SectionStats } from '$lib/study/charGroups';
-	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
-	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
+	import type { SectionStats } from '$lib/studycore/charGroups';
+	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/studycore/mapGrid';
+	import { MASTERY_THRESHOLD } from '$lib/studycore/mastery';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
+import { STUDY_PULL_COLLECTIONS } from '$lib/studycore/sync/pull';
 
 import pageFixture from '../../../../../docs/contracts/sync/pull-page.json';
 import roundsFixture from '../../../../../docs/contracts/sync/pull-rounds.json';

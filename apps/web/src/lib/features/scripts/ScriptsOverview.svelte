@@ -3,7 +3,7 @@
 	// notes); Hangul also shows how a syllable block is built.
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { fetchStrokeData } from '$lib/study/strokeData';
+	import { fetchStrokeData } from '$lib/writing/strokeData';
 	import { formatNumber } from '$lib/i18n/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import Button from '$lib/ui/Button.svelte';

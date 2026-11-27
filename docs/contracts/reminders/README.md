@@ -58,7 +58,7 @@ write wins. Body (at most 16 KiB):
   "vacation": ["2026-11-27", "2026-11-28"] }
 ```
 
-`dueNow`: cards due now (the study queue's count, `lib/study/dueCounts.ts`, daily limits not applied). `dueBuckets`:
+`dueNow`: cards due now (the study queue's count, `lib/features/flashcards/session/dueCounts.ts`, daily limits not applied). `dueBuckets`:
 cards that come due later, grouped by the **start of the UTC hour** (`at`, whole hours) within the next 14 days, at most
 400 buckets. `goal.status`: the day status of the learner's today (`goals/`: `open`, `met`, `vacation`, `none`;
 `set` is true when a goal is in effect). `streak`: the goal streak (`current`, `todayMet`; 0 / false with no goal).

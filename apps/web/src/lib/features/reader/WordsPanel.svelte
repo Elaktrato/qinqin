@@ -3,7 +3,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatPercent } from '$lib/i18n/format';
 	import { Button, Select, Stat } from '$lib/ui';
-	import type { Deck } from '$lib/study/types';
+	import type { Deck } from '$lib/studycore/types';
 	import type { Coverage, UnknownItem } from './coverage';
 	import { allNew, type AddWordsResult } from './wordActions';
 	import {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Stage } from '$lib/study/charGroups';
-	import { STAGE_INFO, formatCount, stageSegments } from '$lib/study/mapGrid';
+	import type { Stage } from '$lib/studycore/charGroups';
+	import { STAGE_INFO, formatCount, stageSegments } from '$lib/studycore/mapGrid';
 
 	let {
 		byStage,
