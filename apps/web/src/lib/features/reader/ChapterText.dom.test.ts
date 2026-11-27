@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, updateWorkspaces, type TestContext } from '$lib/testing/context';
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { installedFaces } from '$lib/fonts/hanzi';
@@ -295,5 +295,33 @@ describe('the reading column (#102)', () => {
 	});
 	it('keeps the bookmarked paragraph marker an --accent pseudo-element', () => {
 		expect(style).toMatch(/p\.bookmarked::before\s*{[^}]*background:\s*var\(--accent\)/);
+	});
+});
+
+describe('ChapterText and hidden romanisation (#284)', () => {
+	function hide(language: string, settings: Record<string, unknown>) {
+		const ws = { id: 4, language, name: '', settings, updatedAt: 't' };
+		updateWorkspaces(ctx.session.workspaces, () => ({ list: [ws], current: ws }));
+	}
+
+	it('draws no pinyin ruby, generated or the book\'s own, while pinyin is hidden', () => {
+		hide('zh', { romanisation: { pinyin: 'never' } });
+		const { root } = mount({
+			paragraphs: [[{ text: '你好' }, { text: '世界', ruby: 'shìjiè' }]],
+			pieces: new Map([[0, [dict(0, 2, 'nǐ hǎo')]]]),
+			display: display({ readings: 'always', bookRuby: true })
+		});
+		expect(root.querySelector('rt')).toBeNull();
+		expect(root.textContent).toBe('你好世界');
+	});
+
+	it('keeps bopomofo ruby when only pinyin is hidden, and furigana with romaji hidden', () => {
+		hide('zh', { romanisation: { pinyin: 'never' } });
+		const zhRoot = mount({ paragraphs: [[{ text: '好', ruby: 'ㄏㄠˇ' }]], display: display({ bookRuby: true }) }).root;
+		expect(zhRoot.querySelector('rt')?.textContent).toBe('ㄏㄠˇ');
+		cleanup();
+		hide('ja', { romanisation: { romaji: 'never' } });
+		const jaRoot = mount({ lang: 'ja', paragraphs: [[{ text: '日本' }]], pieces: new Map([[0, [dict(0, 2, 'にほん')]]]), display: display({ readings: 'always' }) }).root;
+		expect(jaRoot.querySelector('rt')?.textContent).toBe('にほん');
 	});
 });

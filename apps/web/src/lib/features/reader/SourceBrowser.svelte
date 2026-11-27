@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { ApiError } from '$lib/api/client';
@@ -216,6 +217,8 @@
 			importing = null;
 		}
 	}
+	// Hidden romanisation (#284).
+	const roman = useRomanisation();
 </script>
 
 {#snippet work(result: SourceResult)}
@@ -231,7 +234,7 @@
 					? ` · ${result.note}`
 					: ''}
 			</span>
-			{#if result.reading}
+			{#if result.reading && roman.text(result.reading, result.language ?? '')}
 				<span class="reading"
 					><Msg key="reader.sources.matchedReading" args={{ reading: result.reading }}
 						>{#snippet reading(text: string)}<span lang={result.language || undefined}>{text}</span>{/snippet}</Msg
