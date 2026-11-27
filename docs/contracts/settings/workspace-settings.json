@@ -57,6 +57,12 @@
    "shape": "object: romanisation type (pinyin, bopomofo, romaji) -> \"always\" | \"never\"",
    "default": "each type always; see settings/romanisation.json",
    "owner": "apps/web/src/lib/languages/romanisation.ts"
+  },
+  {
+   "key": "interfaceLanguage",
+   "shape": "string: a language tag (i18n/language-tags.json, not empty)",
+   "default": "absent: use the account's interface language; see settings/interface-language.json",
+   "owner": "apps/web/src/lib/i18n/workspaceLanguage.ts"
   }
  ],
  "parse": [
@@ -403,6 +409,44 @@
        "vocab": "hint"
       }
      }
+    }
+   }
+  },
+  {
+   "name": "a workspace's interface language",
+   "note": "set beside the other keys (#297)",
+   "stored": {
+    "romanisation": {
+     "pinyin": "never"
+    }
+   },
+   "patch": {
+    "interfaceLanguage": "de"
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "romanisation": {
+      "pinyin": "never"
+     },
+     "interfaceLanguage": "de"
+    }
+   }
+  },
+  {
+   "name": "back to the account's interface language",
+   "note": "null removes the key: \"use my account setting\" (#297)",
+   "stored": {
+    "interfaceLanguage": "de",
+    "audioAutoplay": true
+   },
+   "patch": {
+    "interfaceLanguage": null
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "audioAutoplay": true
     }
    }
   }

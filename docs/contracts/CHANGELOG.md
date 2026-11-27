@@ -5,6 +5,15 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #297 — the interface language per workspace (contract 17)
+
+- **New workspace-settings key** `interfaceLanguage` (`settings/README.md`): a language tag, absent = "use my account
+  setting" (`null` clears it). New fixture `settings/interface-language.json` (rule `settings/interface-language`),
+  decoded by web and Go: reading the key, the setting that applies (workspace, else account, else the browser's
+  languages) and the setting of a reminder mail about several workspaces (theirs when they agree, else the account's).
+- **Reminder mails** follow that rule; every other mail keeps the account's setting.
+- **Clients:** no route changes. A client that does not know the key uses the account setting everywhere, as before.
+
 ## #284 — hidden romanisation (contract 16)
 
 - **New workspace-settings key** `romanisation` (`settings/README.md`): `{"pinyin" | "bopomofo" | "romaji": "always" |
