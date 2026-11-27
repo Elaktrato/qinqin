@@ -244,12 +244,48 @@ function judge(ink: Forms, cand: Forms): Judged {
 	return best ?? first!;
 }
 
-/** The candidates starting at stroke `from`: the stroke alone and joins that flow on (gap limit). */
+/** The direction a stroke ends in: the chord over its last `MATCH.flowTail` of length (at least `flowTailMin`). */
+function endDirection(m: readonly Pt[]): Pt {
+	const end = m.at(-1)!;
+	const want = Math.max(MATCH.flowTailMin, MATCH.flowTail * pathLength(m));
+	let run = 0;
+	for (let i = m.length - 2; i >= 0; i--) {
+		run += dist(m[i], m[i + 1]);
+		if (run >= want) return { x: end.x - m[i].x, y: end.y - m[i].y };
+	}
+	return { x: end.x - m[0].x, y: end.y - m[0].y };
+}
+
+/**
+ * How the pen gets from stroke `a` to stroke `b` in one motion: `near` when `b` starts within `MATCH.maxGap` of
+ * where `a` ends (the gap rule), `flow` when `a` ends pointing at `b`'s start (within ±60°), at most `MATCH.flowGap`
+ * away, and `b` does not come back past where `a` ended (the flow rule, #292: a hook or flick that leads into the
+ * next stroke, as in き 3+4 or さ 2+3), else null.
+ */
+export function joinLink(a: readonly Pt[], b: readonly Pt[]): 'near' | 'flow' | null {
+	const end = a.at(-1)!;
+	const gap = { x: b[0].x - end.x, y: b[0].y - end.y };
+	const length = Math.hypot(gap.x, gap.y);
+	if (length <= MATCH.maxGap) return 'near';
+	if (length > MATCH.flowGap || cosine(endDirection(a), gap) < MATCH.flowCos) return null;
+	// A next stroke that runs back past where `a` ended would retrace the move to it (口's 横折 + 横): no flow.
+	let clear = Infinity;
+	for (let i = 1; i < b.length; i++) clear = Math.min(clear, segDist(end, b[i - 1], b[i]));
+	return clear >= MATCH.flowClear * length ? 'flow' : null;
+}
+
+/**
+ * The candidates starting at stroke `from`: the stroke alone and the joins of the strokes after it that the pen
+ * reaches in one motion (`joinLink`), up to `MATCH.maxJoin`. A flow link only joins two strokes: a longer join
+ * through it would let a short stroke be skipped on the way (measured: more skipped strokes credited, no join gained).
+ */
 function candidates(medians: readonly Pt[][], from: number): number[][] {
 	const out = [[from]];
 	for (let k = 2; k <= MATCH.maxJoin && from + k - 1 < medians.length; k++) {
-		if (dist(medians[from + k - 2].at(-1)!, medians[from + k - 1][0]) > MATCH.maxGap) break;
+		const link = joinLink(medians[from + k - 2], medians[from + k - 1]);
+		if (link === null || (link === 'flow' && k > 2)) break;
 		out.push(Array.from({ length: k }, (_, i) => from + i));
+		if (link === 'flow') break;
 	}
 	return out;
 }
