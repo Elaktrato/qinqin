@@ -92,4 +92,38 @@ Each member is read alone; an absent or invalid member is the default. Written b
 
 ## Execution record
 
-(filled in as the tasks land)
+- Task 2 (`feat(settings)`): test-first on the web: `lib/stats/mapGrading.test.ts` decodes the fixture and failed
+  (34 of 34) against an empty module, then passed with `mapGrading.ts`. The Go side has nothing to implement (the
+  server stores any settings key): `TestMasteryMapFixture` (`internal/levels`: the default packs are bundled level
+  packs of their language with the prefix, the never-gradings exist) and the new merge case of
+  `TestContractWorkspaceSettingsMerge` are guards that passed from the start.
+- Task 3 (`feat(stats)`): `lib/stats/mapView.test.ts` written first and seen failing (the module had no exports),
+  then `mapView.ts`. The catalogue gained `stats.map.slot.outside`; `stats.map.level.all` reads "All study levels".
+- Task 4 (`feat(stats)`): the page's DOM tests were rewritten first (11 new: HSK default with nothing outside, the
+  outside switch, the study levels and the disabled last one, the Level focus within the set, a remembered focus that
+  left the set, a built-in grading, choosing and falling back, Japanese → JLPT, a failed save, a late answer, an empty
+  level) and seen failing (11 of 11), then the page. The page loads again only on a workspace or language change, not
+  on a settings write (the effect keyed on the id and the language). Dead code went with it: `levelGroupsFor`,
+  `readLevelChoice`, `writeLevelChoice`, `filterByLevel` (charLevels) and `readGroupBy`, `writeGroupBy` (mapGrid),
+  with their tests; `levelOf` keeps its tests.
+- Task 6 (`test(e2e)`): `e2e/tests/mastery-grading.spec.ts` at 360 px. The fixture's Chinese universe has one
+  character (好, Level 1 of the fixture list), so the e2e checks the wiring (default Common without HSK, choosing the
+  list, the study levels, the outside switch and the Level options, the stored setting through the API, a reload); the
+  map's rules are the DOM tests'.
+- Gates on the branch head: `npm run check` 0 errors 0 warnings (2002 files); `npm run build` ok; full vitest (Node
+  26) 724 files, 14277 passed, 2 skipped; e2e three full runs, 47 passed each; `node --test scripts/*.test.mjs` 190,
+  189 passed, 1 skipped; `gen-api-docs --check` clean; Go `gofmt` clean, `go vet ./...` ok, `go test ./...` 61
+  packages ok, one failure: the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here).
+- Not checked: the map with the real HSK and JLPT packs in a browser or on a phone (the e2e fixture has no HSK pack;
+  the default is covered by the fixture and DOM tests), and Android (Local follow-up).
+
+## Local follow-up
+
+- #163 with the bundled packs (`qinqin seed`): a Chinese workspace opens Stats → Characters on "HSK 3.0
+  (characters)", 3,088 characters at most, no "Outside" group; switch HSK 4 to HSK 7–9 off and the map and its "X of
+  Y learned" follow; "Include characters outside" adds the rest (about 8,000) as the last group; Level narrows within
+  the study levels. A Japanese workspace opens on "JLPT kanji (approximate)". Reload, and open the same workspace on a
+  second device or the Android shell: the grading, the study levels and the switch are the same (the Level focus is
+  per device). At 360 px the study-level checkboxes wrap without sideways scrolling.
+- The Home widget "Characters" still counts every character (ruling); decide whether it should follow the grading
+  once #290 has landed.
