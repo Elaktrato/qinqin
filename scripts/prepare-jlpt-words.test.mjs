@@ -384,3 +384,19 @@ test('the notice says it is an estimate and credits its inputs in the notice min
 	assert.ok(Buffer.byteLength(JLPT_WORDS_NOTICE) <= 4000);
 	assert.doesNotMatch(JLPT_WORDS_NOTICE, /\]\((?!https:)/);
 });
+
+test('the committed pack is what the generator writes from the bundled data', () => {
+	const packs = fileURLToPath(new URL('../plugins/data', import.meta.url));
+	const out = mkdtempSync(join(tmpdir(), 'jlpt-words-bundled-'));
+	dirs.push(out);
+	const res = spawnSync(process.execPath, [script, '--packs', packs, '--out', out], { encoding: 'utf8' });
+	assert.equal(res.status, 0, res.stderr);
+	for (const f of PACK_FILES) {
+		assert.equal(readFileSync(join(out, 'jlpt-words', f), 'utf8'), readFileSync(join(packs, 'jlpt-words', f), 'utf8'), `${f} differs: re-run node scripts/prepare-jlpt-words.mjs`);
+	}
+	// The shipped cuts are the cumulative fit on the bundled data.
+	assert.match(res.stdout, new RegExp(`thresholds: R5 ${THRESHOLDS.R5}, R4 ${THRESHOLDS.R4}, R3 ${THRESHOLDS.R3}, R2 ${THRESHOLDS.R2}, R1 ${THRESHOLDS.R1}`));
+	const fit = spawnSync(process.execPath, [script, '--calibrate', '--packs', packs], { encoding: 'utf8' });
+	assert.equal(fit.status, 0, fit.stderr);
+	assert.match(fit.stdout, new RegExp(`^cumulative fit: R5 ${THRESHOLDS.R5}, R4 ${THRESHOLDS.R4}, R3 ${THRESHOLDS.R3}, R2 ${THRESHOLDS.R2}, R1 ${THRESHOLDS.R1};`));
+});

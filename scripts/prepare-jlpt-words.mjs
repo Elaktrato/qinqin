@@ -41,10 +41,11 @@
 // The output depends only on the input files: a re-run reproduces the pack
 // byte for byte.
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { levelsJSON } from './prepare-hsk-syllabus.mjs';
 import { PackError, records, vocabForms, writePack } from './prepare-level-packs.mjs';
 
 /** The level names, easiest first: "≈" says they are an estimate. */
@@ -629,8 +630,9 @@ function parseArgs(argv) {
 	return opts;
 }
 
+const fmt = (n) => n.toLocaleString('en-US');
 const pct = (a, b) => (b === 0 ? 'n/a' : `${((100 * a) / b).toFixed(1)}%`);
-const countsLine = (levels) => levels.map((l) => `${l.name} ${l.entries.length}`).join(', ');
+const countsLine = (levels) => levels.map((l) => `${l.name} ${fmt(l.entries.length)}`).join(', ');
 
 function reportLines({ matched, built, checks, thresholds }) {
 	const lines = [];
@@ -718,18 +720,19 @@ Japanese words grouped by an estimated JLPT level, ≈ N5 (easiest) to ≈ N1.
 This is an estimate, not an official list:
 no official JLPT vocabulary list has been published since 2010 (the Japan
 Foundation and JEES stopped publishing the test's lists with the 2010
-revision). qinqin computes it
-with \`scripts/prepare-jlpt-words.mjs\` from three packs it already bundles:
+revision). qinqin computes it with \`scripts/prepare-jlpt-words.mjs\` from
+three packs it already bundles:
 
-- the Jiten frequency list (\`jiten-frequency\`, version ${v.jiten}), © Jitensoft,
-  https://jiten.moe/frequency-dictionaries, CC BY-SA 4.0;
-- JMdict (\`jmdict\`, version ${v.jmdict}), © Electronic Dictionary Research and
-  Development Group (EDRDG), https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project,
+- the Jiten frequency list (\`jiten-frequency\`, version ${v.jiten}),
+  © Jitensoft, https://jiten.moe/frequency-dictionaries, CC BY-SA 4.0;
+- JMdict (\`jmdict\`, version ${v.jmdict}), © Electronic Dictionary Research
+  and Development Group (EDRDG),
+  https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project,
   CC BY-SA 4.0 (EDRDG licence statement: https://www.edrdg.org/edrdg/licence.html);
-- the approximate JLPT kanji levels (\`jlpt-kanji\`, version ${v.kanji}): kanjiapi.dev's
-  list (MIT, Copyright 2023 Iridium Szreter, https://github.com/onlyskin/kanjiapi.dev;
-  its licence text is LICENSE-kanjiapi.dev here) with gap fill from KANJIDIC2
-  (CC BY-SA 4.0, EDRDG).
+- the approximate JLPT kanji levels (\`jlpt-kanji\`, version ${v.kanji}):
+  kanjiapi.dev's list (MIT, Copyright 2023 Iridium Szreter,
+  https://github.com/onlyskin/kanjiapi.dev; its licence text is
+  LICENSE-kanjiapi.dev here) with gap fill from KANJIDIC2 (CC BY-SA 4.0, EDRDG).
 
 Licence: this pack is an adaptation of the Jiten ranks and JMdict and is
 shared under CC BY-SA 4.0 (LICENSE is the legal code, copied from the
@@ -743,31 +746,44 @@ Method (one Jiten rank is one word):
    matched to the JMdict entry that has most of them as a written form
    with that reading, a kana row as a reading. Ties go to the kana-written
    entry, then the one with more priority tags, then the lower sequence
-   number (${matched.ambiguous} ranks were ties). ${matched.unmatched.length} ranks match no entry; the
-   ${unmatchedWithin.length} of them within the cut below are listed in UNMATCHED.tsv (mostly
-   inflected forms and contractions such as んだ, and names), never guessed.
+   number (${fmt(matched.ambiguous)} ranks were ties, most of them beyond the cut below).
+   ${fmt(matched.unmatched.length)} ranks match no entry; the ${fmt(unmatchedWithin.length)} of them within the cut are
+   listed in UNMATCHED.tsv (inflected forms and grammar patterns such as
+   はずだ and でした), never guessed. Grammar expressions (JMdict entries
+   that are only expressions and start with a particle or the copula, such
+   as のだ, として and かもしれない: the JLPT tests them as grammar) are
+   left out (${fmt(matched.expressions.filter((w) => w.rank <= thresholds.R1).length)} within the cut).
 2. Kanji level: the hardest JLPT kanji level among the kanji of the word's
    written form; a kanji the kanji list has no level for counts as N1.
    Kana-only words and words JMdict marks "usually written using kana
    alone" have none (する is not N1 for 為).
-3. Rank level: Jiten rank ≤ ${thresholds.R5} → ≈ N5, ≤ ${thresholds.R4} → ≈ N4, ≤ ${thresholds.R3} → ≈ N3,
-   ≤ ${thresholds.R2} → ≈ N2, ≤ ${thresholds.R1} → ≈ N1; a word ranked beyond ${thresholds.R1} is not listed.
+3. Rank level: Jiten rank ≤ ${fmt(thresholds.R5)} → ≈ N5, ≤ ${fmt(thresholds.R4)} → ≈ N4, ≤ ${fmt(thresholds.R3)} → ≈ N3,
+   ≤ ${fmt(thresholds.R2)} → ≈ N2, ≤ ${fmt(thresholds.R1)} → ≈ N1; a word ranked beyond ${fmt(thresholds.R1)} is not
+   listed.
 4. The word's level is the harder of the two.
 
 The rank cuts are fitted so the cumulative size up to each level matches the
-commonly cited sizes of the JLPT vocabulary (${TARGET_CUMULATIVE.join(', ')} words up to
-N5 … N1): sizes, not a list. There is no ground truth to measure accuracy
-against; the consistency checks are: of the ${checks.singleKanji.words} one-kanji words, ${checks.singleKanji.agree}
-(${pct(checks.singleKanji.agree, checks.singleKanji.words)}) sit at their kanji's own level; ${checks.monotonic ? 'no level is empty' : 'SOME LEVEL IS EMPTY'}; the share
-of words JMdict marks with a priority tag (its own, independent commonness
-data) per level is ${checks.prioritised.map((s, i) => `${LEVEL_NAMES[i]} ${(100 * s).toFixed(0)}%`).join(', ')}.
+commonly cited sizes of the JLPT vocabulary (${TARGET_CUMULATIVE.map(fmt).join(', ')} words
+up to N5 … N1): sizes, not a list. There is no ground truth to measure
+accuracy against; the consistency checks are:
+
+- of the ${fmt(checks.singleKanji.words)} one-kanji words, ${fmt(checks.singleKanji.agree)} (${pct(checks.singleKanji.agree, checks.singleKanji.words)}) sit at their kanji's own level;
+- of the ${fmt(checks.kanjiEasiestWord.kanji)} JLPT kanji the words use, ${fmt(checks.kanjiEasiestWord.same)} (${pct(checks.kanjiEasiestWord.same, checks.kanjiEasiestWord.kanji)}) first appear in a word
+  at the kanji's own level, ${fmt(checks.kanjiEasiestWord.oneHarder)} one level harder, ${fmt(checks.kanjiEasiestWord.harder)} more;
+- ${checks.monotonic ? 'no level is empty' : 'SOME LEVEL IS EMPTY'};
+- the share of words JMdict marks with a priority tag (its own commonness
+  data, independent of Jiten) per level: ${checks.prioritised.map((s, i) => `${LEVEL_NAMES[i]} ${(100 * s).toFixed(0)}%`).join(', ')}.
+
 A word can be a level off; treat a level as a rough guide.${baseText}
 
 Each level lists its words by Jiten rank. Entries are {"form", "reading"}
-for a word with a kanji form, its kana for a kana-only word. ${total} words;
+for a word with a kanji form, its kana for a kana-only word. ${fmt(total)} words;
 levels: ${countsLine(built.levels)}.
 `
 	});
+
+	// One entry per line, like hsk-words: half the size, and a re-run diffs by word.
+	await writeFile(join(opts.out, 'jlpt-words', 'levels.json'), levelsJSON(built.levels, 'word'));
 
 	for (const line of reportLines({ matched, built, checks, thresholds })) console.log(line);
 	if (baseMatch) for (const s of baseMatch.stats) console.log(`base ${s.name}: ${s.words} words, ${s.matched} matched, ${s.unmatched.length} unmatched (${s.unmatched.slice(0, 20).join(' ')}), ${s.ambiguous} ambiguous`);

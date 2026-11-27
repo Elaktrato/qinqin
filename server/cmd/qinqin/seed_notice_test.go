@@ -21,6 +21,7 @@ func TestCommittedPackNotices(t *testing.T) {
 		"joyo-grades":        {"KANJIDIC2", "Jinmeiyō"},
 		"tgh-chars":          {"国发〔2013〕23号", "kTGH"},
 		"jlpt-kanji":         {"approximate", "[kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev)"},
+		"jlpt-words":         {"an estimate, not an official list", "[Jiten](https://jiten.moe/frequency-dictionaries)", "JMdict", "[kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev)", "CC BY-SA 4.0"},
 		"hsk-words":          {"HSK 词汇大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"hsk-chars":          {"HSK 汉字大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"zh-grammar":         {"CC BY 4.0", "grammar outline", "not been reviewed by a native speaker"},
