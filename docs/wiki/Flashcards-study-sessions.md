@@ -57,7 +57,7 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, 通用�
 | Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
 
 - **Word Salad** gets harder as a card settles: new or short-memory cards (stability under 4 days) show word tiles with the translation; middle cards (under 21 days) hide the translation behind **Show translation**, which counts as a hint; long-memory cards (21 days or more) split every word into single characters. The tier is named on the card. If the sentence cannot be cut into words, each character becomes a tile.
-- **Writing** shows the character's outline as a hint after 3 misses on one stroke; each new character starts again without it.
+- **Writing** helps after 3 misses on one stroke: that stroke lights up with its start marked and then stays faintly on the pad until you draw it. Only that stroke is shown, never the rest of the character, and the same happens for any later stroke you miss 3 times. Each of these counts as a hint in the review, like a press of **Next stroke hint**.
 - **The writing pad** grows with the screen: on a phone it takes the full width where the height allows, and shrinks just enough to keep the feedback line above the buttons at the bottom; on a computer it is a little larger than before. Turning the phone resizes it, also in the middle of a character. The scripts trainer's Write mode uses the same pad.
 - **Tone** swipes: up = 1; up-right or right = 2; down then back up = 3; down-right, down, down-left or left = 4; a tap = neutral (5). A character with several readings accepts any of them (行 can be háng or xíng).
 

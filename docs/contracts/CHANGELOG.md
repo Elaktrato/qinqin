@@ -5,6 +5,15 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #287 — the writing card's automatic stroke hints are counted (contract 16)
+
+- **Writing, `meta.hints`:** after 3 misses on one stroke the client shows that stroke only (a glow, then the stroke
+  dimmed with its start until it is drawn), no longer the whole character's outline, and again for any later stroke
+  that reaches 3 misses. Each such automatic hint counts as one stroke hint in the review's `meta.hints`, beside the
+  presses of the stroke-hint button and the shown characters (`cards/README.md`, "Recording"). The suggested grade is
+  unchanged (the card's own help does not lower it). Before: at most one automatic hint per character, and it left
+  the outline on screen. No fixture changes.
+
 ## #277 — Grammar lesson runs are study events (contract 15)
 
 - **New event type:** `grammar`, one per finished lesson run, `{point: "<packId>:<lessonId>", mode: "lesson",

@@ -44,9 +44,25 @@ applies again to any later stroke that gets 3 misses. Each automatic stroke hint
 - Ruling: a manual Hint press while a stroke is traced still glows it and counts — "Unchanged: the Hint button" —
   cost if wrong: none.
 - Ruling: a join (#292) that covers the traced stroke clears the trace (it was drawn) — cost if wrong: none.
+- Ruling: ContractVersion 16 with a CHANGELOG entry — what a client counts in the writing card's `meta.hints`
+  changes (Android must count the automatic hints the same way), although no fixture changes; other builders may
+  also take 16, the orchestrator renumbers — cost if wrong: one number.
 - Ruling: Show strokes on a traced stroke fills it as usual; the trace is drawn under the fill and disappears with
   it — cost if wrong: cosmetic.
 
 ## Execution record
 
-(filled in as the work goes)
+- Test-first: the five new quiz tests were run against the old `quiz.ts` and failed (no `trace`, outline set, one
+  hint per character), then passed. The e2e (`writing-pad.spec.ts`, "three misses on a stroke ...", 360 × 740) was
+  written after the change and then run with `src/` stashed: it failed at the first trace check (no `.trace`), and
+  passes with the change.
+- The WritingCard DOM test caught a "#287" in the pad's CSS comment (its no-hex-colour check reads `#287` as a
+  colour); the comment names no issue number now. The opacity lint's allowlist entry moved from
+  `.outline.scaffold` to `.trace, .trace-start`.
+- Not checked by hand: the dimmed stroke's contrast on a phone in each theme (Local follow-up).
+
+## Local follow-up
+
+- #287: on a phone, miss a stroke 3 times on a writing card and in the scripts trainer's Write mode: only that
+  stroke should light up and then stay faint (with its start dot) until drawn, in light and dark themes; miss a
+  later stroke 3 times and see the same.

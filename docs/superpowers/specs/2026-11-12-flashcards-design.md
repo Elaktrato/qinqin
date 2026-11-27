@@ -219,7 +219,8 @@ Where the build differs from or refines the decisions above, and the known limit
   three flowing strokes (了), an accepted stroke snaps onto the reference outline in
   about 140 ms and a rejected one flashes red and fades. Order is still enforced; a
   reversed stroke is a miss. After 3 misses on one stroke it glows with its start
-  marked and the outline stays for that character (one auto hint per character).
+  marked and then stays dimmed until it is drawn, that stroke only, again for any
+  later stroke that gets 3 misses, each one a hint (#287).
   **Hint** shows the next stroke (one hint per press); **Reveal character** fades the
   remaining outlines in 150 ms apart (instant under reduced motion) and counts as a
   failed character. Only the primary pointer draws, so a palm or second finger is

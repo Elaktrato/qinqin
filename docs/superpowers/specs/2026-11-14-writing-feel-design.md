@@ -232,9 +232,13 @@ A harsher hand (wobble 0.04, ends ±20 %, ±15°) passes 95 % (before: 55 %).
   morphs into the median and fades into the filled outline in ~120–160 ms.
   Several matched strokes snap together.
 - On miss: the ink flashes red and fades (~250 ms); the mistake counts on the
-  expected stroke. After 3 misses on one stroke the next stroke glows briefly
-  in place with its start marked; as today, the character outline then stays
-  visible as a scaffold for the rest of that character (one hint per character).
+  expected stroke. After 3 misses on one stroke that stroke glows briefly in
+  place with its start marked, then stays faintly visible (dimmed, with its
+  start) until the learner draws it. **Only that stroke**: no outline of the
+  character, no other stroke (#287; until then the whole outline stayed as a
+  scaffold, once per character). Per stroke: any later stroke that reaches 3
+  misses is hinted again, and each automatic hint counts as one hint in
+  `meta.hints` (`lib/writing/quiz.ts`: `autoHints`, `trace`).
 - "Hint" button (shows the next stroke briefly, each press counts as a hint) and "Show
   character" (as today, makes the character revealed → Again).
 - On the last stroke: a short completion flash, then the next character, as
@@ -291,9 +295,11 @@ correct pinyin with its tone mark, as the answer line does today.
   and only where the strokes flow into each other (gap limit).
 - No rotation in the alignment (a rotated stroke is a different stroke); the generous
   direction and shape ceilings absorb the ±10° a hand rotates.
-- Hint after 3 misses keeps today's behaviour (brief glow of the next stroke,
-  then the outline stays for that character); a manual Hint button adds
-  one hint per press. Re-checked with the forgiving matcher (2026-11-15): kept — with
+- Hint after 3 misses (owner, #287, replacing "the outline then stays for that
+  character"): the glow of that stroke, which then stays dimmed until it is
+  drawn; only that stroke, once per stroke, each one a hint in `meta.hints`; the
+  suggested grade is not lowered by it beyond the misses themselves. A manual
+  Hint button adds one hint per press. Re-checked with the forgiving matcher (2026-11-15): kept — with
   correct strokes now accepted in nearly any hand, three misses on one stroke mean the
   learner does not know it, which is exactly when the glow helps.
 - Tone pads keep today's layout (all syllables visible), just larger.

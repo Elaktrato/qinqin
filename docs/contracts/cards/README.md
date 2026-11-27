@@ -273,7 +273,8 @@ Optional help a learner asks for during a review instead of looking at the answe
   lowers no further. The learner can still pick any grade; this
   only moves the suggestion. Cases: `grades`.
 - **Recording** (`applyHints(result, used)`): the review's `meta.hints` is the card's own help count plus `used`
-  (writing: stroke hints and shown strokes; sentence: the translation shown and giving up). The card's own help is
+  (writing: stroke hints and shown strokes, where the stroke hints are the presses of the stroke-hint button plus one
+  for every stroke hinted automatically after 3 misses on it (#287); sentence: the translation shown and giving up). The card's own help is
   not changed by this rule and, as before, does not lower the suggestion by itself. Cases: `results`.
 
 Ruling (owner, 2026-11-26; replaces "capped at Hard") — a hint lowers the suggestion by one step, a card without a
