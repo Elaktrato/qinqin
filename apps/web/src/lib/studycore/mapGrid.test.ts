@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CharRow } from '$lib/api/types';
-import { groupOptions, type CellState } from './charGroups';
+import type { CellState } from './charGroups';
 import {
 	FIRST_BATCH,
 	RENDER_BATCH,
@@ -15,10 +15,8 @@ import {
 	jumpGlyph,
 	learnedSummary,
 	locateGlyph,
-	readGroupBy,
 	sectionsFor,
-	stageSegments,
-	writeGroupBy
+	stageSegments
 } from './mapGrid';
 
 function row(i: number, c: string, extra: Partial<CharRow> = {}): CharRow {
@@ -27,34 +25,6 @@ function row(i: number, c: string, extra: Partial<CharRow> = {}): CharRow {
 
 function cell(r: CharRow, score = 0): CellState {
 	return { char: r, score, stage: score === 0 ? 'unknown' : 'fresh', reviewedCards: 0 };
-}
-
-function memoryStorage(initial: Record<string, string> = {}): Storage {
-	const data = new Map(Object.entries(initial));
-	return {
-		get length() {
-			return data.size;
-		},
-		clear: () => data.clear(),
-		getItem: (key) => data.get(key) ?? null,
-		key: (index) => [...data.keys()][index] ?? null,
-		removeItem: (key) => void data.delete(key),
-		setItem: (key, value) => void data.set(key, String(value))
-	};
-}
-
-function throwingStorage(): Storage {
-	const fail = () => {
-		throw new DOMException('denied', 'SecurityError');
-	};
-	return {
-		length: 0,
-		clear: fail,
-		getItem: fail,
-		key: fail,
-		removeItem: fail,
-		setItem: fail
-	};
 }
 
 describe('defaultOpenSections', () => {
@@ -150,48 +120,6 @@ describe('formatCount and learnedSummary', () => {
 
 	it('handles an empty universe', () => {
 		expect(learnedSummary(0, 0)).toBe('0 of 0 learned (0 %)');
-	});
-});
-
-describe('readGroupBy and writeGroupBy', () => {
-	const options = [
-		{ key: 'grade' as const, label: 'Grade' },
-		{ key: 'freq' as const, label: 'Frequency' },
-		{ key: 'scheme:7' as const, label: 'My HSK' }
-	];
-
-	it('defaults to the first option', () => {
-		expect(readGroupBy(memoryStorage(), 'ja', options)).toBe('grade');
-	});
-
-	it('round-trips per primary language', () => {
-		const storage = memoryStorage();
-		writeGroupBy(storage, 'ja', 'freq');
-		writeGroupBy(storage, 'zh-TW', 'scheme:7');
-		expect(readGroupBy(storage, 'ja', options)).toBe('freq');
-		expect(readGroupBy(storage, 'zh', options)).toBe('scheme:7');
-		expect(storage.getItem('qinqin.map.groupBy.ja')).toBe('freq');
-	});
-
-	it('ignores a stored key that is no longer offered', () => {
-		const storage = memoryStorage({ 'qinqin.map.groupBy.ja': 'scheme:99' });
-		expect(readGroupBy(storage, 'ja', options)).toBe('grade');
-	});
-
-	it('falls back to Grade for the retired pre-2010 JLPT grouping', () => {
-		const storage = memoryStorage({ 'qinqin.map.groupBy.ja': 'jlpt' });
-		expect(readGroupBy(storage, 'ja', groupOptions('ja', []))).toBe('grade');
-	});
-
-	it('survives missing or throwing storage', () => {
-		expect(readGroupBy(null, 'ja', options)).toBe('grade');
-		expect(readGroupBy(throwingStorage(), 'ja', options)).toBe('grade');
-		expect(() => writeGroupBy(throwingStorage(), 'ja', 'freq')).not.toThrow();
-		expect(() => writeGroupBy(null, 'ja', 'freq')).not.toThrow();
-	});
-
-	it('returns null when there are no options', () => {
-		expect(readGroupBy(memoryStorage(), 'es', [])).toBeNull();
 	});
 });
 

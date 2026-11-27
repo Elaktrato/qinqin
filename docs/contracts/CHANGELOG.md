@@ -5,6 +5,15 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #163 — the mastery map's grading (contract 20)
+
+- **New workspace-settings key** `masteryMap` (`settings/README.md`): `{grading, includeOutside, levels}`: one
+  grading per workspace (a built-in grouping or `pack:<packId>`), whether characters outside it are shown, and the
+  study set of each pack's levels by `ord`. New fixture `settings/mastery-map.json` (rule `settings/mastery-map`:
+  parse, the grading a language resolves to with its default and fallback, the study set, the patches), decoded by web
+  and Go; a new merge case in `settings/workspace-settings.json`.
+- **Clients:** no route changes. A client that does not know the key shows the map as before.
+
 ## #295 — Stats is a core feature (contract 19)
 
 - **Features:** a sixth core feature id `stats` (`features/switches.json`: `features` and the GET order end in

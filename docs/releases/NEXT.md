@@ -21,6 +21,11 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
   default. Switching to a workspace with another language reloads the page once into it, an offline start in that
   workspace opens in its language, and reminder mails follow the workspaces they count when those share a language.
   English is the only interface language for now; German and Japanese join as their catalogues land.
+- Stats → Characters: choose what the mastery map goes by (#163). **Grading** picks one level list (HSK, JLPT, any
+  installed list) or a grouping (Grade, Frequency, Strokes …), saved for the workspace on every device; Chinese
+  starts on HSK and Japanese on JLPT. With a list the map shows only its characters, **Study levels** switch single
+  levels on or off, **Include characters outside** adds the rest as a last group, and **Level** narrows within the
+  study levels. The old Group by choice is not carried over.
 - Stats can be switched off (#295): Settings → Features has a **Stats** switch. Off, the Stats pages, the Stats
   section in the bars and the menu, and the Activity, Characters, Summary, Reviews per day and Words widgets are
   hidden; your streak, XP, daily goal, the This week widget and milestone cards stay. Nothing is deleted.
