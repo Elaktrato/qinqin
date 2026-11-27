@@ -46,7 +46,7 @@ beforeEach(() => {
 	vi.stubGlobal('fetch', vi.fn(server.fetch));
 	ctx = studyContext({ deps: { now: () => clock } });
 	ctx.session.workspaces.set({ list: [{ id: WS, language: 'zh', name: 'w' } as never], current: { id: WS, language: 'zh', name: 'w' } as never });
-	ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }], status: 'ready' });
+	ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }, { id: 'stats', enabled: true }], status: 'ready' });
 });
 afterEach(() => {
 	cleanup();
