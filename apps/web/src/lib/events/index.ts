@@ -22,7 +22,7 @@ function timeoutSignal(ms: number): AbortSignal | undefined {
 	return typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(ms) : undefined;
 }
 
-export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal' | 'script';
+export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal' | 'script' | 'grammar';
 
 // StudyEvent is one event as GET /api/events serves it (an item of a page,
 // lib/events/eventPages.ts): the row the
