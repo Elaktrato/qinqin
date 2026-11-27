@@ -5,6 +5,7 @@
 	import { writingSystemsOf } from '$lib/languages/profiles';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
+	import { WidgetLoad } from '$lib/widgets/widgetLoad.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useSession } from '$lib/context/context';
 	import { deriveProgress, summarise, type Summary } from './progress';
@@ -16,18 +17,17 @@
 	// How much of each writing system of the workspace's language is known (the trainer's own progress).
 	const session = useSession();
 
-	let rows = $state.raw<{ id: string; summary: Summary }[]>([]);
-	let loading = $state(true);
-	let error = $state('');
-	let seq = 0;
+	// The last progress of this workspace shows at once on a revisit (#290).
+	const shown = new WidgetLoad<{ id: string; summary: Summary }[]>(session, 'scripts', session.workspaces.current?.id ?? null);
+	const rows = $derived(shown.value ?? []);
 
 	const workspace = $derived(session.workspaces.current);
 	const status = $derived<WidgetStatus>(
 		workspace === null
 			? 'no-workspace'
-			: loading
+			: shown.loading
 				? 'loading'
-				: error
+				: shown.error
 					? 'error'
 					: rows.every((r) => r.summary.known + r.summary.learning === 0)
 						? 'empty'
@@ -37,26 +37,22 @@
 	async function load(force = false): Promise<void> {
 		const ws = workspace;
 		if (ws === null) return;
-		const mine = ++seq;
-		loading = true;
-		error = '';
-		try {
-			const log = await session.events.load(ws.id, { force });
-			if (mine !== seq) return;
-			let pending: StudyEventBody[] = [];
-			try {
-				pending = readPending(localStorage, ws.id);
-			} catch {
-				// No storage: the stored log alone.
-			}
-			const map = deriveProgress(mergeLog(log, pending));
-			const now = Date.now();
-			rows = systemsFor(writingSystemsOf(ws.language)).map((s) => ({ id: s.id, summary: summarise(s.items, map, now) }));
-		} catch (err) {
-			if (mine === seq) error = errorText(err, t('scripts.widget.loadFailed'));
-		} finally {
-			if (mine === seq) loading = false;
-		}
+		await shown.run(
+			ws.id,
+			async () => {
+				const log = await session.events.load(ws.id, { force });
+				let pending: StudyEventBody[] = [];
+				try {
+					pending = readPending(localStorage, ws.id);
+				} catch {
+					// No storage: the stored log alone.
+				}
+				const map = deriveProgress(mergeLog(log, pending));
+				const now = Date.now();
+				return systemsFor(writingSystemsOf(ws.language)).map((s) => ({ id: s.id, summary: summarise(s.items, map, now) }));
+			},
+			(err) => errorText(err, t('scripts.widget.loadFailed'))
+		);
 	}
 
 	$effect(() => {
@@ -73,7 +69,8 @@
 	{status}
 	noWorkspaceText={t('scripts.widget.noWorkspace')}
 	loadingText={t('scripts.widget.loading')}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => void load(true)}
 	emptyText={t('scripts.widget.empty')}
 >

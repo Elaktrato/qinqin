@@ -106,4 +106,19 @@ describe('WidgetLoad (#290)', () => {
 		expect(w.value).toBeNull();
 		expect(w.loading).toBe(false);
 	});
+
+	it('a load can show a first value before it finishes (a two-step load)', async () => {
+		const w = new WidgetLoad<number>(ctx.session, 'w', 1);
+		const rest = deferred<number>();
+		const running = w.run(1, async (show) => {
+			show(1);
+			return rest.promise;
+		}, fail);
+		await Promise.resolve();
+		expect(w.value).toBe(1);
+		expect(w.loading).toBe(false);
+		rest.resolve(2);
+		await running;
+		expect(w.value).toBe(2);
+	});
 });

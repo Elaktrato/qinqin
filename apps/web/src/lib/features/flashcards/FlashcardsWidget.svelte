@@ -16,13 +16,14 @@
 	import type { GrammarRun } from '$lib/studycore/grammarRuns';
 	import Mascot from './Mascot.svelte';
 	import { setupKinds } from './setup/setup';
-	import { loadStudyHistory } from '$lib/studycore/data';
+	import { loadStudyHistory, onStudyChange, touches } from '$lib/studycore/data';
 	import { activeWeights } from '$lib/studycore/readModel';
 	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
 	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/studycore/types';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
+	import { WidgetLoad, heldValue, holdValue } from '$lib/widgets/widgetLoad.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useApp, useSession } from '$lib/context/context';
 	import { companionEntryIds } from './session/eligibility.svelte';
@@ -30,25 +31,36 @@
 	const app = useApp();
 	const session = useSession();
 
-	let decks = $state<Deck[]>([]);
-	let cards = $state<StudyCard[]>([]);
-	let reviews = $state<ReviewEvent[]>([]);
-	// Grammar lesson runs earn EXP and keep the streak (#277).
-	let grammarRuns = $state.raw<readonly GrammarRun[]>([]);
-	let weights = $state.raw<readonly number[]>(DEFAULT_W);
-	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
-	// Vacation days and the study clock of this workspace (rebuilt at midnight).
-	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
-	let vacations = $state.raw<VacationPeriod[]>([]);
-	let loading = $state(true);
-	let error = $state('');
+	interface Shown {
+		decks: Deck[];
+		cards: StudyCard[];
+		reviews: ReviewEvent[];
+		grammarRuns: readonly GrammarRun[];
+		weights: readonly number[];
+		deckSettings: Record<string, DeckSettings>;
+		ctx: StudyContext;
+		vacations: VacationPeriod[];
+	}
+	// The last history of this workspace shows at once on a revisit (#290).
+	const shown = new WidgetLoad<Shown>(session, 'flashcards', session.workspaces.current?.id ?? null);
+	const decks = $derived(shown.value?.decks ?? []);
+	const cards = $derived(shown.value?.cards ?? []);
+	const reviews = $derived(shown.value?.reviews ?? []);
+	const grammarRuns = $derived(shown.value?.grammarRuns ?? []);
+	const weights = $derived(shown.value?.weights ?? DEFAULT_W);
+	const deckSettings = $derived(shown.value?.deckSettings ?? {});
+	const fallbackCtx = currentContext(session.zone);
+	const ctx = $derived(shown.value?.ctx ?? fallbackCtx);
+	const vacations = $derived(shown.value?.vacations ?? []);
 	let noWorkspace = $state(false);
 
-	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
-	// The daily goal loads on its own: a failure only leaves the ring out.
-	let goal = $state.raw<GoalView | null>(null);
+	// The daily goal loads on its own: a failure only leaves the ring out (a
+	// held ring stays, #290).
+	let goal = $state.raw<GoalView | null>(
+		session.workspaces.current === null ? null : (heldValue<GoalView>(session, 'flashcards-goal', session.workspaces.current.id) ?? null)
+	);
 	let goalSeq = 0;
+	let goalWorkspace: number | null = session.workspaces.current?.id ?? null;
 	// Offline with an activity goal today the ring is left out (not "no longer counted").
 	const showGoal = $derived(
 		goal !== null &&
@@ -99,64 +111,54 @@
 	const level = $derived(progress.level);
 	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns));
 	const status = $derived<WidgetStatus>(
-		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
+		noWorkspace ? 'no-workspace' : shown.loading ? 'loading' : shown.error ? 'error' : 'ready'
 	);
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-
+		noWorkspace = workspace === null;
 		if (workspace === null) {
-			decks = [];
-			cards = [];
-			reviews = [];
-			grammarRuns = [];
-			noWorkspace = true;
-			loading = false;
+			shown.clear();
 			return;
 		}
-
-		try {
-			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(session.study, workspace, { force });
-			if (seq !== requestSeq) return;
-			// The words' companion kinds before the count (a failure counts them as before).
-			if (app.offline.online) await session.eligibility.ensure(companionEntryIds(data.cards));
-			if (seq !== requestSeq) return;
-			decks = data.decks;
-			cards = data.cards;
-			reviews = data.reviews;
-			grammarRuns = data.grammarRuns;
-			deckSettings = data.deckSettings ?? {};
-			weights = activeWeights(data);
-			ctx = contextForData(session.zone, data, workspace);
-			vacations = data.vacations ?? [];
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			decks = [];
-			cards = [];
-			reviews = [];
-			grammarRuns = [];
-			error = errorText(err, t('flashcards.widget.loadError'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await shown.run(
+			workspace,
+			async () => {
+				const data = await loadStudyHistory(session.study, workspace, { force });
+				if (app.offline.online) await session.eligibility.ensure(companionEntryIds(data.cards));
+				return {
+					decks: data.decks,
+					cards: data.cards,
+					reviews: data.reviews,
+					grammarRuns: data.grammarRuns,
+					deckSettings: data.deckSettings ?? {},
+					weights: activeWeights(data),
+					ctx: contextForData(session.zone, data, workspace),
+					vacations: data.vacations ?? []
+				};
+			},
+			(err) => errorText(err, t('flashcards.widget.loadError'))
+		);
 	}
 
 	async function loadGoal(workspace: number | null, force = false): Promise<void> {
 		const seq = ++goalSeq;
 		if (workspace === null) {
 			goal = null;
+			goalWorkspace = null;
 			return;
+		}
+		if (workspace !== goalWorkspace) {
+			// Another workspace: its own held ring, or none until it loads.
+			goalWorkspace = workspace;
+			goal = heldValue<GoalView>(session, 'flashcards-goal', workspace) ?? null;
 		}
 		try {
 			const next = await loadGoalStatus(session, workspace, { force });
-			if (seq === goalSeq) goal = next;
+			if (seq !== goalSeq) return;
+			goal = next;
+			holdValue(session, 'flashcards-goal', workspace, next);
 		} catch {
-			if (seq === goalSeq) goal = null;
+			// A failed refresh keeps the goal shown (#290); none shown stays none.
 		}
 	}
 
@@ -172,6 +174,23 @@
 			void loadGoal(workspaceId);
 		})
 	);
+	// A write or a refresh behind the held rows (#290), or a posted review,
+	// changes the counts: only this workspace (or all) loads again.
+	$effect(() => {
+		const id = workspaceId;
+		const again = (touched: number): void => {
+			if (touches(touched, id)) {
+				void load(id);
+				void loadGoal(id);
+			}
+		};
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
+		return () => {
+			offLog();
+			offWrite();
+		};
+	});
 </script>
 
 <WidgetCard
@@ -180,7 +199,8 @@
 	{status}
 	noWorkspaceText={t('flashcards.widget.noWorkspace')}
 	loadingText={t('flashcards.widget.loading')}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => {
 		void load(workspaceId, true);
 		void loadGoal(workspaceId, true);

@@ -47,10 +47,15 @@ export class WidgetLoad<T> {
 
 	/**
 	 * run loads the scope's value; an older run that answers last is dropped.
+	 * `load` may call `show` with a first value before it finishes.
 	 * Called from an effect, it reads none of its own state there (untracked),
 	 * so showing the value does not run the effect again.
 	 */
-	async run(scope: string | number, load: () => Promise<T>, failText: (err: unknown) => string): Promise<void> {
+	async run(
+		scope: string | number,
+		load: (show: (value: T) => void) => Promise<T>,
+		failText: (err: unknown) => string
+	): Promise<void> {
 		const seq = ++this.#seq;
 		untrack(() => {
 			if (String(scope) !== this.#scope) this.#enter(scope);
@@ -58,7 +63,13 @@ export class WidgetLoad<T> {
 			this.loading = this.value === null;
 		});
 		try {
-			const value = await load();
+			// A two-step load shows its first value early (the rest still runs).
+			const show = (value: T): void => {
+				if (seq !== this.#seq) return;
+				this.value = value;
+				this.loading = false;
+			};
+			const value = await load(show);
 			if (seq !== this.#seq) return;
 			this.value = value;
 			this.stale = '';
