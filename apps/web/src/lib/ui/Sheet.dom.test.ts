@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import SheetHarness from './testing/SheetHarness.svelte';
 import source from './Sheet.svelte?raw';
@@ -116,6 +116,29 @@ describe('Sheet', () => {
 		await fireEvent.pointerDown(body, { clientX: 300, clientY: 300, pointerId: 2, isPrimary: true });
 		await fireEvent.pointerUp(body, { clientX: 100, clientY: 300, pointerId: 2 });
 		expect(screen.getByRole('dialog')).toBeTruthy();
+	});
+
+	it('caps its height at 85dvh unless the caller sets a lower cap for that sheet (#282)', async () => {
+		const css = source.slice(source.indexOf('<style>'));
+		expect(css).toMatch(/\.sheet\s*\{[^}]*max-height:\s*var\(--sheet-max-height,\s*85dvh\)/);
+		const { sheet } = await open();
+		expect(sheet.style.getPropertyValue('--sheet-max-height')).toBe('');
+		cleanup();
+		const capped = await open({ maxHeight: '55dvh' });
+		expect(capped.sheet.style.getPropertyValue('--sheet-max-height')).toBe('55dvh');
+		// The content scrolls inside the capped sheet.
+		expect(css).toMatch(/\.body\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto/);
+	});
+
+	it('dragging the handle up never moves or grows the sheet', async () => {
+		const { sheet } = await open({ maxHeight: '55dvh' });
+		const grab = handle(sheet);
+		await fireEvent.pointerDown(grab, { clientX: 100, clientY: 400, pointerId: 1, isPrimary: true });
+		await fireEvent.pointerMove(grab, { clientX: 100, clientY: 100, pointerId: 1 });
+		expect(sheet.style.translate).toBe('');
+		expect(sheet.style.getPropertyValue('--sheet-max-height')).toBe('55dvh');
+		await fireEvent.pointerUp(grab, { clientX: 100, clientY: 100, pointerId: 1 });
+		expect(screen.getByRole('dialog')).toBe(sheet);
 	});
 
 	it('is a bottom floating layer in tokens that slides with the motion token', () => {

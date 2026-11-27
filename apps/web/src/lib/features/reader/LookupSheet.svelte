@@ -12,6 +12,9 @@
 	// Escape, a drag down, a tap on the backdrop) closes the lookup. While it
 	// is open the lookup is pinned: no grace hide, no replacement, and the
 	// looked-up word is kept above the sheet (LookupController.keepWordAbove).
+	// The sheet takes at most 55 % of the screen (#282; the other sheets keep
+	// Sheet's 85 %), so the text being read stays in view; a long entry
+	// scrolls inside it.
 	let {
 		frame,
 		info,
@@ -27,6 +30,8 @@
 		highlighter?: HighlightActions | null;
 		stateLine?: ((entryId: number) => string) | null;
 	} = $props();
+
+	const LOOKUP_SHEET_MAX_HEIGHT = '55dvh';
 
 	$effect(() => {
 		lookup.hold(true);
@@ -70,6 +75,7 @@
 	label={t('reader.popup.label', { text: frame.text })}
 	onclose={() => lookup.close()}
 	returnFocus={() => lookup.wordParagraph()}
+	maxHeight={LOOKUP_SHEET_MAX_HEIGHT}
 >
 	<div class="lookup-sheet" bind:this={content}>
 		<PopupFrameView {frame} {info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} sheet />
