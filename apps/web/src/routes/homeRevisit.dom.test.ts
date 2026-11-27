@@ -114,4 +114,39 @@ describe('Home revisited (#290)', () => {
 		report(`revisit 1 s later, ${latency} ms latency`, quick);
 		expect(first.requests.length).toBeGreaterThan(0);
 	}, 60_000);
+
+	it('a revisit shows every widget with content at its first paint, before any answer, and no loading line', async () => {
+		await visit();
+		clock += 20_000;
+		server.latencyMs = 30;
+		server.resetCounts();
+		const { unmount } = render(Page, { context: ctx.context });
+		// No request has answered yet (30 ms each): the content is the held one.
+		expect(contentShown()).toBe(true);
+		unmount();
+		const again = await visit();
+		expect(again.sawLoading).toBe(0);
+	}, 30_000);
+
+	it('within the freshness window a revisit reads no study rows and no log', async () => {
+		await visit();
+		clock += 1_000;
+		const again = await visit();
+		expect(kinds(again.requests)['GET /api/sync/pull'] ?? 0).toBe(0);
+		expect(kinds(again.requests)['GET /api/events'] ?? 0).toBe(0);
+		expect(again.sawLoading).toBe(0);
+	}, 30_000);
+
+	it('a failed refresh keeps what is shown and says so quietly, once', async () => {
+		await visit();
+		clock += 20_000;
+		server.beforeAnswer = (url) => {
+			if (url.includes('/api/sync/pull') || url.includes('/api/events')) throw new TypeError('offline');
+		};
+		render(Page, { context: ctx.context });
+		expect(contentShown()).toBe(true);
+		await waitFor(() => expect(document.body.textContent).toContain('Could not refresh your study data. Showing what was loaded last.'));
+		expect(contentShown()).toBe(true);
+		expect(document.body.textContent).not.toMatch(/Could not load/);
+	}, 30_000);
 });

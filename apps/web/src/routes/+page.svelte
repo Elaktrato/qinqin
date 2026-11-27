@@ -46,6 +46,9 @@
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
 	const switchesSettled = $derived(session.features.status === 'ready' || session.features.status === 'error');
+	// A refresh behind the held study rows or log failed (#290): the widgets keep
+	// what they show, and one quiet line says it may be out of date.
+	const notRefreshed = $derived(session.workspaces.current !== null && session.study.refresh.failed(session.workspaces.current.id));
 
 	onMount(async () => {
 		try {
@@ -96,6 +99,10 @@
 
 	<!-- Not a widget: a stored layout must never hide it (milestones contract). -->
 	<HomeMilestones />
+
+	{#if notRefreshed}
+		<p class="not-refreshed" role="status">{t('app.home.notRefreshed')}</p>
+	{/if}
 
 	{#if layoutReady}
 		{#if placed.length > 0}
@@ -172,6 +179,12 @@
 
 	.widget {
 		min-width: 0;
+	}
+
+	.not-refreshed {
+		margin: var(--space-4) 0 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
 	}
 
 	.empty {
