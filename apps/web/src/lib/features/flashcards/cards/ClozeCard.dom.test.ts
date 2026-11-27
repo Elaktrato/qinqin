@@ -214,3 +214,18 @@ describe('ClozeCard on the open page (#101)', () => {
 		expect(status.querySelector('svg')).not.toBeNull();
 	});
 });
+
+describe('ClozeCard with pinyin hidden (#284)', () => {
+	it('the answer shows no sentence pinyin while pinyin is hidden, and shows it by default', async () => {
+		const { testContext, updateWorkspaces } = await import('$lib/testing/context');
+		const ctx = testContext();
+		const ws = { id: 4, language: 'zh', name: '', settings: { romanisation: { pinyin: 'never' } }, updatedAt: 't' };
+		updateWorkspaces(ctx.session.workspaces, () => ({ list: [ws], current: ws }));
+		const props = { item, entry, sentence, prompt, mode: 'type', choices: [], accepted: new Set(['喜欢']), language: 'zh', done: true, onDone: vi.fn() };
+		const hidden = render(CardHarness, { props: { card: ClozeCard, cardProps: props, done: true }, context: ctx.context });
+		expect(hidden.container.textContent).not.toContain('wo3 xi3 huan5');
+		cleanup();
+		const shown = render(CardHarness, { card: ClozeCard, cardProps: props, done: true });
+		expect(shown.container.textContent).toContain('wo3 xi3 huan5');
+	});
+});

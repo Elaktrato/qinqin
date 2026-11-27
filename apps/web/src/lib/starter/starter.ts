@@ -186,24 +186,39 @@ function readingOf(entry: StarterEntryLike, type: string): Slot | null {
 	return r ? { text: r.value, lang: readingLang(type, entry.language) } : null;
 }
 
-function slotFor(profile: StarterProfile, entry: StarterEntryLike, what: 'romanisation' | 'reading' | 'written'): Slot {
+/** Whether a reading type shows (hidden romanisation, #284: useRomanisation().shows); the default shows all. */
+type Shows = (type: string) => boolean;
+const SHOW_ALL: Shows = () => true;
+
+function slotFor(profile: StarterProfile, entry: StarterEntryLike, what: 'romanisation' | 'reading' | 'written', shows: Shows): Slot {
 	const written: Slot = { text: entry.written, lang: studyLang(entry.language) };
 	if (what === 'written') return written;
 	// Japanese: the kana reading is shown as the dictionary stores it, so a loanword stays in katakana
 	// (コーヒー) and is never converted to hiragana. Chinese: pinyin.
-	const type = what === 'romanisation' ? 'romaji' : profile === 'ja' ? 'kana' : 'pinyin';
-	return readingOf(entry, type) ?? written;
+	// Hidden romanisation (#284): hidden romaji gives way to the kana; hidden pinyin to bopomofo when that shows,
+	// else to the characters.
+	if (what === 'romanisation' && shows('romaji')) return readingOf(entry, 'romaji') ?? written;
+	if (profile === 'ja') return readingOf(entry, 'kana') ?? written;
+	const type = ['pinyin', 'bopomofo'].find((t) => shows(t));
+	return (type === undefined ? null : readingOf(entry, type)) ?? written;
 }
 
 /**
  * starterFront: what the front of the card shows at this stage, or null for the word's normal card. A
  * reading the entry lacks falls back to the written form, so a card is never empty.
  */
-export function starterFront(profile: StarterProfile, stage: number, word: StarterWord, entry: StarterEntryLike): StarterFront | null {
+export function starterFront(
+	profile: StarterProfile,
+	stage: number,
+	word: StarterWord,
+	entry: StarterEntryLike,
+	opts: { shows?: Shows } = {}
+): StarterFront | null {
 	if (isNormalStage(profile, stage, word) && !(profile === 'ja' && word.usuallyKana)) return null;
 	const spec = stageSpec(profile, stage, word);
-	const main = slotFor(profile, entry, spec.main);
-	const note = spec.annotation === 'none' ? null : slotFor(profile, entry, spec.annotation);
+	const shows = opts.shows ?? SHOW_ALL;
+	const main = slotFor(profile, entry, spec.main, shows);
+	const note = spec.annotation === 'none' ? null : slotFor(profile, entry, spec.annotation, shows);
 	const shown = note !== null && note.text !== main.text;
 	return {
 		main: main.text,
@@ -221,15 +236,29 @@ export type StageNote = 'kana' | 'katakana' | 'noRomaji' | 'pictureHint' | 'kanj
  * stageNote names what changed on arriving at `stage` (null at stage 1: nothing came before). A loanword's
  * kana are katakana, so its note says so (the reading is the dictionary's, never converted).
  */
-export function stageNote(profile: StarterProfile, stage: number, word: StarterWord, opts: { katakana?: boolean } = {}): StageNote | null {
+export function stageNote(
+	profile: StarterProfile,
+	stage: number,
+	word: StarterWord,
+	opts: { katakana?: boolean; shows?: Shows } = {}
+): StageNote | null {
 	const final = finalStage(profile, word);
 	const s = Math.min(Math.max(1, Math.floor(stage)), final);
 	if (s <= 1) return null;
+	const shows = opts.shows ?? SHOW_ALL;
+	let note: StageNote | null;
 	if (profile === 'ja') {
 		if (word.usuallyKana && s === final) return s === 4 ? 'normal' : null;
-		return (['kana', 'noRomaji', 'pictureHint', 'kanji', 'normal'] as const).map((n) => (n === 'kana' && opts.katakana ? 'katakana' : n))[s - 2] ?? null;
+		note = (['kana', 'noRomaji', 'pictureHint', 'kanji', 'normal'] as const).map((n) => (n === 'kana' && opts.katakana ? 'katakana' : n))[s - 2] ?? null;
+		// Hidden romaji (#284): the word started in kana, so neither change happened.
+		if (!shows('romaji') && (note === 'kana' || note === 'katakana' || note === 'noRomaji')) return null;
+		return note;
 	}
-	return (['hanzi', 'pictureHint', 'noPinyin', 'normal'] as const)[s - 2] ?? null;
+	note = (['hanzi', 'pictureHint', 'noPinyin', 'normal'] as const)[s - 2] ?? null;
+	// Hidden pinyin (#284): no pinyin was shown to take away; with no reading standing in the characters came first.
+	if (note === 'noPinyin' && !shows('pinyin')) return null;
+	if (note === 'hanzi' && !shows('pinyin') && !shows('bopomofo')) return null;
+	return note;
 }
 
 // --- Settings -------------------------------------------------------------------------------------

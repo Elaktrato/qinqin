@@ -23,7 +23,9 @@
 		const button = document.activeElement instanceof HTMLElement && document.activeElement.dataset.testid === 'hint-button';
 		const kind = hints.reveal();
 		if (kind === null) return;
-		announcement = t(kind === 'reading' ? 'flashcards.hint.shownReading' : 'flashcards.hint.shownPicture');
+		announcement = t(
+			kind === 'reading' ? 'flashcards.hint.shownReading' : kind === 'romanisation' ? 'flashcards.hint.shownRomanisation' : 'flashcards.hint.shownPicture'
+		);
 		// The button goes away with the last hint: a focused button would drop focus to the page, so the
 		// announcement (which says what was shown) takes it.
 		if (button && !hints.canReveal) void tick().then(() => note?.focus());

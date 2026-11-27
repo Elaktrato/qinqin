@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { isImeKey } from '$lib/ui/ime';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { onMount } from 'svelte';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import AiTag from '$lib/components/AiTag.svelte';
@@ -34,6 +35,7 @@
 	}
 
 	let { entry, sentence, prompt, mode, choices, accepted, language, done, onDone }: Props = $props();
+	const roman = useRomanisation();
 
 	let typed = $state('');
 	let field = $state<HTMLInputElement | HTMLTextAreaElement>();
@@ -178,7 +180,7 @@
 	</p>
 </FaceWork>
 
-{#if done && sentence.pinyin}
+{#if done && roman.text(sentence.pinyin, entry.language)}
 	<FaceAnswer>
 		<p class="fa-reading reading" lang={language}>{sentence.pinyin}</p>
 	</FaceAnswer>

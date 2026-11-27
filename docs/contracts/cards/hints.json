@@ -1,25 +1,18 @@
 {
  "version": 1,
  "rule": "cards/hints",
- "note": "Hint kinds, their mode per card kind, the plan of one card and the grade rule (#215). Web: apps/web/src/lib/features/flashcards/face/hints.ts, decoded by hints.contract.test.ts. An entry is {hasReading, hasPicture}.",
- "kinds": ["reading", "picture"],
+ "note": "Hint kinds, their mode per card kind, the plan of one card and the grade rule (#215). Web: apps/web/src/lib/features/flashcards/face/hints.ts, decoded by hints.contract.test.ts. An entry is {hasReading, hasPicture, hasRomanisation} (hasRomanisation absent = false). romanisation (#284) is a derived kind: never stored, its mode follows `derived` (the reading kind: never stays never, always and hint become hint). entries: hintsForEntry with the hidden-romanisation setting (settings/romanisation.json).",
+ "kinds": ["reading", "picture", "romanisation"],
  "modes": ["always", "hint", "never"],
- "notApplicable": [{ "kind": "reading", "cardKind": "tone" }],
+ "notApplicable": [{ "kind": "reading", "cardKind": "tone" }, { "kind": "romanisation", "cardKind": "tone" }],
  "defaults": {
   "reading": { "vocab": "hint", "sentence": "hint", "writing": "always", "tone": "never", "reverse": "hint", "cloze": "hint" },
-  "picture": { "vocab": "hint", "sentence": "never", "writing": "hint", "tone": "hint", "reverse": "hint", "cloze": "never" }
+  "picture": { "vocab": "hint", "sentence": "never", "writing": "hint", "tone": "hint", "reverse": "hint", "cloze": "never" },
+  "romanisation": { "vocab": "hint", "sentence": "hint", "writing": "hint", "tone": "never", "reverse": "hint", "cloze": "hint" }
  },
  "settings": [
-  {
-   "name": "no hints member: the defaults",
-   "settings": {},
-   "expect": "defaults"
-  },
-  {
-   "name": "null settings",
-   "settings": null,
-   "expect": "defaults"
-  },
+  { "name": "no hints member: the defaults", "settings": {}, "expect": "defaults" },
+  { "name": "null settings", "settings": null, "expect": "defaults" },
   {
    "name": "one cell changed, the rest default",
    "settings": { "hints": { "reading": { "vocab": "always" } } },
@@ -35,20 +28,31 @@
   },
   {
    "name": "unknown modes, kinds and card kinds are ignored",
-   "settings": { "hints": { "reading": { "vocab": "sometimes", "reverse": 7, "karaoke": "always" }, "smell": { "vocab": "always" } } },
+   "settings": {
+    "hints": { "reading": { "vocab": "sometimes", "reverse": 7, "karaoke": "always" }, "smell": { "vocab": "always" } }
+   },
    "expect": "defaults"
   },
-  {
-   "name": "a hints member that is not an object is the defaults",
-   "settings": { "hints": "always" },
-   "expect": "defaults"
-  },
+  { "name": "a hints member that is not an object is the defaults", "settings": { "hints": "always" }, "expect": "defaults" },
   {
    "name": "a kind member that is not an object is the defaults for that kind",
    "settings": { "hints": { "reading": ["always"], "picture": { "vocab": "never" } } },
    "expect": {
     "reading": "defaults",
     "picture": { "vocab": "never", "sentence": "never", "writing": "hint", "tone": "hint", "reverse": "hint", "cloze": "never" }
+   }
+  },
+  {
+   "name": "the romanisation row follows the reading row and a stored one is ignored",
+   "settings": {
+    "hints": {
+     "reading": { "vocab": "never", "writing": "always", "cloze": "hint" },
+     "romanisation": { "vocab": "always", "sentence": "never" }
+    }
+   },
+   "expect": {
+    "reading": { "vocab": "never", "sentence": "hint", "writing": "always", "tone": "never", "reverse": "hint", "cloze": "hint" },
+    "romanisation": { "vocab": "never", "sentence": "hint", "writing": "hint", "tone": "never", "reverse": "hint", "cloze": "hint" }
    }
   }
  ],
@@ -142,6 +146,55 @@
    "entry": { "hasReading": true, "hasPicture": false },
    "always": [],
    "onRequest": ["reading"]
+  },
+  {
+   "name": "romanisation hidden: the shown readings first, the romanisation last",
+   "cardKind": "vocab",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": true, "hasRomanisation": true },
+   "always": [],
+   "onRequest": ["reading", "picture", "romanisation"]
+  },
+  {
+   "name": "every reading hidden: the romanisation hint alone",
+   "cardKind": "reverse",
+   "settings": {},
+   "entry": { "hasReading": false, "hasPicture": false, "hasRomanisation": true },
+   "always": [],
+   "onRequest": ["romanisation"]
+  },
+  {
+   "name": "writing: the shown reading always, the romanisation still a hint",
+   "cardKind": "writing",
+   "settings": {},
+   "entry": { "hasReading": true, "hasPicture": false, "hasRomanisation": true },
+   "always": ["reading"],
+   "onRequest": ["romanisation"]
+  },
+  {
+   "name": "tone: no romanisation hint (the pinyin is the answer)",
+   "cardKind": "tone",
+   "settings": {},
+   "entry": { "hasReading": false, "hasPicture": false, "hasRomanisation": true },
+   "always": [],
+   "onRequest": []
+  },
+  {
+   "name": "reading never: no romanisation hint either",
+   "cardKind": "vocab",
+   "settings": { "hints": { "reading": { "vocab": "never" } } },
+   "entry": { "hasReading": true, "hasPicture": false, "hasRomanisation": true },
+   "always": [],
+   "onRequest": []
+  },
+  {
+   "name": "a forced reading mode decides the romanisation too (Starter)",
+   "cardKind": "vocab",
+   "settings": {},
+   "forced": { "reading": "never", "picture": "always" },
+   "entry": { "hasReading": true, "hasPicture": true, "hasRomanisation": true },
+   "always": ["picture"],
+   "onRequest": []
   }
  ],
  "grades": [
@@ -179,6 +232,40 @@
    "result": { "suggested": 1, "meta": { "mistakes": 1 } },
    "used": 1,
    "expect": { "suggested": 1, "meta": { "mistakes": 1, "hints": 1 } }
+  }
+ ],
+ "storedKinds": ["reading", "picture"],
+ "derived": { "romanisation": "reading" },
+ "entries": [
+  {
+   "name": "nothing hidden: every reading is the reading hint",
+   "readings": ["pinyin", "bopomofo"],
+   "settings": {},
+   "expect": { "hasReading": true, "hasRomanisation": false }
+  },
+  {
+   "name": "pinyin hidden: bopomofo stays, pinyin is the romanisation hint",
+   "readings": ["pinyin", "bopomofo"],
+   "settings": { "romanisation": { "pinyin": "never" } },
+   "expect": { "hasReading": true, "hasRomanisation": true }
+  },
+  {
+   "name": "both hidden: only the romanisation hint",
+   "readings": ["pinyin", "bopomofo"],
+   "settings": { "romanisation": { "pinyin": "never", "bopomofo": "never" } },
+   "expect": { "hasReading": false, "hasRomanisation": true }
+  },
+  {
+   "name": "romaji hidden: kana is the reading hint",
+   "readings": ["kana", "romaji"],
+   "settings": { "romanisation": { "romaji": "never" } },
+   "expect": { "hasReading": true, "hasRomanisation": true }
+  },
+  {
+   "name": "no readings",
+   "readings": [],
+   "settings": { "romanisation": { "romaji": "never" } },
+   "expect": { "hasReading": false, "hasRomanisation": false }
   }
  ]
 }

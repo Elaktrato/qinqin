@@ -27,6 +27,7 @@
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	const session = useSession();
 
 	interface Props {
@@ -67,6 +68,11 @@
 	const syllables = $derived(candidates[0] ?? []);
 	const labels = $derived(tonePadLabels(entry.written, syllables.length));
 	const allReadings = $derived(pinyinReadings(entry.readings));
+	// Hidden romanisation (#284, owner decision): with pinyin hidden the card asks for the tones of the characters
+	// and answers with tone numbers and contours; no pinyin letters, not in the accessible names either.
+	const roman = useRomanisation();
+	const showPinyin = $derived(roman.shows('pinyin'));
+	const padText = (index: number, plain: string): string => labels?.[index] ?? (showPinyin ? plain : '');
 
 	let chosen = $state<(Tone | null)[]>([]);
 	let active = $state(0);
@@ -238,11 +244,13 @@
 				class:wrong={mark === false}
 				bind:this={pads[index]}
 				role="img"
-				aria-label={t('flashcards.tone.padLabel', {
-					n: index + 1,
-					syllable: labels?.[index] ?? syllable.plain,
-					tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone)
-				})}
+				aria-label={padText(index, syllable.plain) === ''
+					? t('flashcards.tone.padLabelN', { n: index + 1, tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone) })
+					: t('flashcards.tone.padLabel', {
+							n: index + 1,
+							syllable: padText(index, syllable.plain),
+							tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone)
+						})}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
@@ -261,9 +269,9 @@
 					{/if}
 				</svg>
 				{#if mark === true}<span class="mark"><Icon name="check" size="s" /></span>{:else if mark === false}<span class="mark"><Icon name="close" size="s" /></span>{/if}
-				<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{labels?.[index] ?? syllable.plain}</span>
+				{#if padText(index, syllable.plain) !== ''}<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{padText(index, syllable.plain)}</span>{/if}
 			</div>
-			<div class="tone-buttons" role="group" aria-label={labels === null
+			<div class="tone-buttons" role="group" aria-label={labels === null && showPinyin
 					? t('flashcards.tone.toneFor', { syllable: syllable.plain })
 					: t('flashcards.tone.toneForN', { n: index + 1 })}>
 				{#each TONES as option (option.tone)}
@@ -283,8 +291,17 @@
 				{/each}
 			</div>
 			{#if verdict !== null}
-				<p class="answer" class:right={mark === true} class:wrong={mark === false}>
-					{verdict.best?.[index]?.text ?? syllable.text}
+				{@const answer = verdict.best?.[index] ?? syllable}
+				<p class="answer" class:right={mark === true} class:wrong={mark === false} data-answer-tone={answer.tone}>
+					{#if showPinyin}
+						{answer.text}
+					{:else}
+						<span aria-hidden="true">{answer.tone}{TONES[answer.tone - 1].glyph}</span>
+						<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
+							{#if answer.tone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[answer.tone]} />{/if}
+						</svg>
+						<span class="sr-only">{nameOf(answer.tone)}</span>
+					{/if}
 				</p>
 			{/if}
 		</li>
@@ -477,9 +494,28 @@
 	}
 
 	.answer {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
 		margin: 0;
 		font-size: var(--font-size-m);
 		font-weight: var(--weight-strong);
+	}
+
+	/* The answer as a tone with pinyin hidden (hidden romanisation): its number and contour, no letters. */
+	.answer-contour {
+		width: 1.25em;
+		height: 1.25em;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 10;
+		stroke-linecap: round;
+	}
+
+	.answer-contour circle {
+		fill: currentColor;
+		stroke: none;
 	}
 
 	.right {
