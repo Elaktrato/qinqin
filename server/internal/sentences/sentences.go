@@ -208,6 +208,47 @@ func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]mo
 	return list, nil
 }
 
+// TextsForEntries returns the texts of the active sentences viewerID may see
+// for each of the entries, in ForEntry's order (pack sentences first, then
+// the viewer's own, each by id); entries without any are absent. One query
+// per 500 ids.
+func TextsForEntries(ctx context.Context, sqlDB *sql.DB, entryIDs []int64, viewerID int64) (map[int64][]string, error) {
+	out := map[int64][]string{}
+	const chunk = 500
+	for start := 0; start < len(entryIDs); start += chunk {
+		part := entryIDs[start:min(start+chunk, len(entryIDs))]
+		args := make([]any, 0, len(part)+1)
+		args = append(args, viewerID)
+		marks := make([]string, len(part))
+		for i, id := range part {
+			marks[i] = "?"
+			args = append(args, id)
+		}
+		rows, err := sqlDB.QueryContext(ctx, `
+			SELECT entry_id, hanzi FROM sentences
+			WHERE deleted_at IS NULL AND (user_id IS NULL OR user_id = ?) AND entry_id IN (`+strings.Join(marks, ",")+`)
+			ORDER BY entry_id, user_id IS NOT NULL, id`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("sentence texts: %w", err)
+		}
+		for rows.Next() {
+			var id int64
+			var text string
+			if err := rows.Scan(&id, &text); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("sentence texts: %w", err)
+			}
+			out[id] = append(out[id], text)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, fmt.Errorf("sentence texts: %w", err)
+		}
+	}
+	return out, nil
+}
+
 // Get returns the active sentence id when viewerID may see it (a pack
 // sentence, or the viewer's own); anything else is ErrSentenceNotFound.
 func Get(ctx context.Context, sqlDB *sql.DB, id, viewerID int64) (model.Sentence, error) {
