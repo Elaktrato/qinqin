@@ -79,4 +79,33 @@ the daily-goal widget), the weekly-summary widget, the milestone cards on Home, 
 
 ## Execution record
 
-(filled in as the tasks land)
+- Task 2 (`feat(features)`): test-first. The fixture got `stats` and the Go route test six ids; `TestFeatureRoutes`
+  and `TestFeaturesContract` failed (5 ids, `PUT /api/features/stats` 404), as did the web contract test, the
+  registry test and two new frame tests (Stats before the switches load, Stats off). Then `features.IDs`, the
+  registry, the frame and the catalogue (`features.stats.*`; `nav.stats` is unused now and removed). The frame change
+  went into this commit, not task 4: with Stats a feature, a fixed Stats row would have listed it twice. Not caught at
+  that commit: `routeTitles.test.ts` counts a page per feature and failed until task 3's commit fixed it (only the
+  full run showed it); every other suite was green.
+- Task 3 (`feat(widgets)`): test-first for the registry and the feature helpers (`widgetFeatures`,
+  `widgetOffFeature`; six failures seen), then the move. The home layout editor's Stats-off test was written before
+  the parked-name change and seen failing ("Words (Decks)") with the change stashed. The Home test (no heatmap with
+  Stats off) was written after the move and passed at once. The contract fixture `settings/core-rows.json` lists the
+  catalogue in registry order, so it changed (CHANGELOG).
+- Task 4 (`feat(stats)`): test-first: `featureKnownOff`, the Stats layout off and loading, the weekly widget, the
+  milestone card and the reader's display panel (six failures seen), then `FeatureGate`, the layout and the links.
+  The Advanced study link has no test of its own (the same helper, one condition). Two guards followed the notice from
+  `FeaturePage` to `FeatureGate` (`mainLandmark.test.ts`, the notice CSS test).
+- Task 6 (`test(e2e)`): `e2e/tests/stats-switch.spec.ts` at 360 px (the off notice of the three Stats pages also goes
+  through `expectNoSidewaysScroll`). No new screen, so `phone-width.spec.ts` is unchanged.
+- Gates on the branch head: `npm run check` 0 errors 0 warnings (1998 files); `npm run build` ok; full vitest (Node
+  26) 722 files, 14241 passed, 2 skipped; e2e 46 passed (one run; three runs are on the #163 branch built on this
+  one); `node --test scripts/*.test.mjs` 190, 189 passed, 1 skipped; `gen-api-docs --check` clean; Go `gofmt` clean,
+  `go vet ./...` ok, `go test ./...` 61 packages ok, one failure: the known `internal/ai`
+  `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here).
+- Not checked: a phone or the Android shell by hand (Local follow-up).
+
+## Local follow-up
+
+- #295 on a phone and in the Android shell: Settings → Features → switch Stats off; the bottom bar and its More sheet
+  have no Stats, Home has no heatmap, `/stats` says "Stats are switched off" and the Back button leaves it; switch it
+  on again.
