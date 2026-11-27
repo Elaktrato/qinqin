@@ -171,6 +171,8 @@ components.
   popup, sheet, dialog: `panel` + `--hair` outline + `--shadow-float`), the selected row (`--selected-wash`). Never
   a box per block.
 - **Hairlines, not blocks.** Separators and outlines are 1px `--hair`.
+- **Tags are outline pills** (owner, #286): a level, a deck or a status shown as a tag is a `Tag` — a 1px outline in
+  its text colour, no fill, rounded ends. The only pills: navigation and buttons never are.
 - **Colour only where it means something:** the accent (current place, the primary action, readings), grades,
   semantic states, data. Neutral (`--text`, `--readable-muted`, `--hair`, `--raised`) everywhere else.
 - **One primary action per view** in the soft accent tint (`--primary-wash` behind `--text`: the tint carries the
@@ -211,6 +213,7 @@ Android builds the same set in Compose). Every visible word is a prop the caller
 | `Drawer` | `bind:open`, `label`, `id?`, `initialFocus?`, `onclose?` | the phone menu (#99): a modal side drawer from the inline-start edge on `--chrome`, `min(20rem, 85vw)` wide; Escape, the scrim or a swipe toward the start (beyond a third of its width) closes it; focus returns to the opener |
 | `Sheet` | `bind:open`, `label`, `onclose?`, `onnext?`, `onprev?`, `initialFocus?` | the bottom sheet of the reader lookup and the journal corrections; drag down to close, swipe or arrows to page |
 | `Chip` | `tone?` (`neutral`/`accent`/`good`) | small text on `raised`, no border; `good` adds a dot |
+| `Tag` | `tone?` (`neutral`/`accent`) | a tag (#286): a 1px outline and no fill, rounded ends, label size; outline and text in one readable colour (`--readable-muted`, or `--reading-accent`), at least 4.5:1 on `panel`; tags only, never navigation or buttons |
 | `Stat` | `value`, `label`, `change?` (`{text, direction}`) | big light number, small muted label; the change in words plus an arrow |
 | `Section` | `title?`, `level?`, `actions?` | unboxed group; a hairline between Sections |
 | `Panel` | `raised?` | the one box: the content surface, an inset that must read as one object |

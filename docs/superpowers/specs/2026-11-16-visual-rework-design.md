@@ -34,6 +34,8 @@ Non-goals
 Anti-goals (would make this a failure even if it works)
 - A heavy, blocky look: filled boxes everywhere, pills with borders, bold everything. The owner explicitly asked
   for less visual weight (round 4 of the mockups).
+  Owner decision (2026-11-26, #286): **tags** — a level, a deck, a status — are small outline pills (a 1px outline,
+  no fill, rounded ends); the anti-goal still holds for navigation and buttons, which are never pills (§5).
 - A generic "web app template" look (stock Material icons, navbar with text links in pills).
 - A theme that makes text unreadable, or colour carrying meaning without a text or shape cue.
 - Any font, palette or icon whose licence is unclear (owner's licence-first rule).
@@ -75,6 +77,10 @@ These come from mockup round 4 and apply to every page, including ones not mocke
 - **A box needs a reason.** Group with space and small labels. Fill, border, radius and shadow mark one element as a
   separate object (the content panel, a menu, the selected row) — not every block.
 - **Hairlines, not blocks.** Separators and outlines use `--hair` (the line colour at about half strength), 1px.
+- **Tags are outline pills** (owner decision, #286): the card header's level, deck and status (and later the entry
+  page's level and frequency) use the shared `Tag` (`lib/ui/Tag.svelte`): 1px outline and text in one readable
+  colour (`--readable-muted`; the level in `--reading-accent`), transparent background, rounded ends, label size.
+  Only tags: navigation and buttons are never pills.
 - **Colour only where it means something:** the accent (current place, primary action, readings), grades,
   semantic states, data (heatmap, mastery, charts). Neutral everywhere else.
 - **One primary action per view** in a soft accent tint (accent at ~14% behind accent-coloured text). Secondary

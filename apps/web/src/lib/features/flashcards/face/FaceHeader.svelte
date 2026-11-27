@@ -1,19 +1,24 @@
 <script lang="ts">
-	// The kind label (#101): the task in the accent, chips (tier, re-show,
-	// new), deck · level on the right. Kinds are not colour-coded. The label
-	// is the face's heading: focus moves to it when a new card shows.
+	// The kind label (#101): the task in the accent, then the tags (#286) — the
+	// status (tier, re-show, new: `Tag`s from the session's `chips`), and the
+	// deck and the level together at the end of the line. Kinds are not
+	// colour-coded; the level is the one accent tag. The label is the face's
+	// heading: focus moves to it when a new card shows.
 	import type { Snippet } from 'svelte';
+	import Tag from '$lib/ui/Tag.svelte';
 
 	let {
 		kindLabel,
 		headingLabel,
-		deckLevel,
+		deck = null,
+		level = null,
 		chips,
 		heading = $bindable()
 	}: {
 		kindLabel: string;
 		headingLabel: string;
-		deckLevel: string | null;
+		deck?: string | null;
+		level?: string | null;
 		chips?: Snippet;
 		heading?: HTMLElement;
 	} = $props();
@@ -22,7 +27,12 @@
 <header class="face-head">
 	<h1 class="kind" tabindex="-1" aria-label={headingLabel} bind:this={heading}>{kindLabel}</h1>
 	{#if chips}{@render chips()}{/if}
-	{#if deckLevel}<span class="deck">{deckLevel}</span>{/if}
+	{#if deck || level}
+		<span class="where">
+			{#if deck}<Tag>{deck}</Tag>{/if}
+			{#if level}<Tag tone="accent">{level}</Tag>{/if}
+		</span>
+	{/if}
 </header>
 
 <style>
@@ -47,9 +57,11 @@
 	.kind:focus:not(:focus-visible) {
 		outline: none;
 	}
-	.deck {
+	.where {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		min-width: 0;
 		margin-inline-start: auto;
-		font-weight: var(--weight-regular);
-		color: var(--readable-muted);
 	}
 </style>

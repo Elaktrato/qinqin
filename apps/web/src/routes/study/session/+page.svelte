@@ -121,7 +121,7 @@ import type { Run } from '$lib/studycore/vacation';
 	import { longInterval } from '$lib/features/flashcards/session/intervalText';
 	import { formatNumber } from '$lib/i18n/format';
 	import Button from '$lib/ui/Button.svelte';
-	import Chip from '$lib/ui/Chip.svelte';
+	import Tag from '$lib/ui/Tag.svelte';
 	import Section from '$lib/ui/Section.svelte';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { useApp } from '$lib/context/context';
@@ -1069,8 +1069,8 @@ import type { Run } from '$lib/studycore/vacation';
 		}
 	}
 
-	/** deckLevelText: the card's first deck (General for general) and the level, "General · JLPT kanji N5". */
-	function deckLevelText(item: FlowItem): string | null {
+	/** The card's first deck (General for general) and its level ("JLPT kanji N5"), each a tag on the face (#286). */
+	function deckAndLevel(item: FlowItem): { deck: string | null; level: string | null } {
 		const deckId = (item.card?.deckIds ?? item.deckIds ?? [])[0];
 		const deck =
 			deckId === undefined ? '' : deckId === 'general' ? t('flashcards.deck.general') : (deckNames.get(deckId) ?? '');
@@ -1079,8 +1079,7 @@ import type { Run } from '$lib/studycore/vacation';
 		const level =
 			sessionLevel ||
 			(badge === undefined ? '' : t('study.session.levelName', { scheme: badge.schemeName, level: badge.levelName }));
-		if (deck && level) return t('study.session.deckLevel', { deck, level });
-		return deck || level || null;
+		return { deck: deck || null, level: level || null };
 	}
 
 	/** onCardDone unlocks grading and preselects the card's suggestion. */
@@ -1451,7 +1450,7 @@ import type { Run } from '$lib/studycore/vacation';
 		<StudyFace
 			{kindLabel}
 			onend={() => backToStudy(null, true)}
-			deckLevel={deckLevelText(item)}
+			{...deckAndLevel(item)}
 			cardLabel={t('study.session.cardLabel', { kind: kindLabel })}
 			headingLabel={t('study.session.cardHeading', {
 				kind: kindLabel,
@@ -1478,16 +1477,16 @@ import type { Run } from '$lib/studycore/vacation';
 		>
 			{#snippet chips()}
 				{#if viewing !== null}
-					<Chip>{t('study.session.regrade.chip', { grade: GRADE_NAMES[viewing.grade] })}</Chip>
+					<Tag>{t('study.session.regrade.chip', { grade: GRADE_NAMES[viewing.grade] })}</Tag>
 				{/if}
 				{#if item.kind === 'sentence' && shownCard !== null}
-					<Chip>{TIER_LABELS[shownCard.tier]}</Chip>
+					<Tag>{TIER_LABELS[shownCard.tier]}</Tag>
 				{/if}
 				{#if item.reshow !== undefined}
-					<Chip>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Chip>
+					<Tag>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Tag>
 				{/if}
 				{#if item.virtual && item.kind !== 'vocab'}
-					<Chip>{t('study.session.new')}</Chip>
+					<Tag>{t('study.session.new')}</Tag>
 				{/if}
 			{/snippet}
 			{#snippet note()}

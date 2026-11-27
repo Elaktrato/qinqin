@@ -69,15 +69,32 @@ describe('StudyFace (#101)', () => {
 		expect(count.getAttribute('aria-atomic')).toBe('true');
 	});
 
-	it('the header shows the kind in the accent, deck · level on the right, and the re-show and tier chips', () => {
-		const chips = createRawSnippet(() => ({ render: () => '<span class="chip">Again, look 2 of 3</span>' }));
-		render(CardHarness, { card: PrimaryCard, kindLabel: 'Build the sentence', deckLevel: 'HSK · Level 1', chips });
+	it('the header shows the kind in the accent, then one outline tag per status, deck and level (#286)', () => {
+		const chips = createRawSnippet(() => ({ render: () => '<span data-tag="neutral">Again, look 2 of 3</span>' }));
+		render(CardHarness, { card: PrimaryCard, kindLabel: 'Build the sentence', deck: 'General', level: 'HSK 1', chips });
 		const head = document.querySelector('.face-head')!;
 		expect(head.querySelector('.kind')?.textContent).toBe('Build the sentence');
-		expect(head.querySelector('.deck')?.textContent).toBe('HSK · Level 1');
-		expect(head.textContent).toContain('Again, look 2 of 3');
+		const tags = [...head.querySelectorAll('[data-tag]')].map((el) => [el.textContent, el.getAttribute('data-tag')]);
+		expect(tags).toEqual([
+			['Again, look 2 of 3', 'neutral'],
+			['General', 'neutral'],
+			['HSK 1', 'accent']
+		]);
+		// Deck and level sit together at the end of the line; the line wraps on a narrow screen.
+		expect(head.querySelector('.where')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('General HSK 1');
+		expect(headerSource).toMatch(/\.where\s*\{[^}]*margin-inline-start:\s*auto/);
+		expect(headerSource).toMatch(/\.face-head\s*\{[^}]*flex-wrap:\s*wrap/);
 		expect(headerSource).toMatch(/\.kind\s*\{[^}]*color:\s*var\(--reading-accent\)/);
-		expect(headerSource).toMatch(/\.deck\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+	});
+
+	it('a card without deck or level shows no tags but its status (#286)', () => {
+		render(CardHarness, { card: PrimaryCard, kindLabel: 'Recognise' });
+		const head = document.querySelector('.face-head')!;
+		expect(head.querySelectorAll('[data-tag]')).toHaveLength(0);
+		expect(head.querySelector('.where')).toBeNull();
+		cleanup();
+		render(CardHarness, { card: PrimaryCard, kindLabel: 'Recognise', level: 'JLPT kanji N5' });
+		expect([...document.querySelectorAll('.face-head [data-tag]')].map((el) => el.textContent)).toEqual(['JLPT kanji N5']);
 	});
 
 	it('a registered primary renders one primary Button in the dock and runs on click', async () => {

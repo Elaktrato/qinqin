@@ -3262,7 +3262,6 @@
 	"study.session.complete": "Session complete",
 	"study.session.count": "{position} / {total}",
 	"study.session.dailyBonus": "Daily bonus",
-	"study.session.deckLevel": "{deck} · {level}",
 	"study.session.done": "Done",
 	"study.session.empty": "Nothing to study",
 	"study.session.emptyText": "Nothing due — add words or raise your limits",

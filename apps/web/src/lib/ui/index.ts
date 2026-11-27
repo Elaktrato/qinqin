@@ -15,5 +15,6 @@ export { default as Select } from './Select.svelte';
 export { default as Sheet } from './Sheet.svelte';
 export { default as Stat } from './Stat.svelte';
 export { default as Tabs } from './Tabs.svelte';
+export { default as Tag } from './Tag.svelte';
 export { default as Tooltip } from './Tooltip.svelte';
 export type { IconName } from './icons/lucide';

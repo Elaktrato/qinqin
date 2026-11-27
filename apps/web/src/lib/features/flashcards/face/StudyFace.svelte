@@ -1,13 +1,13 @@
 <script lang="ts">
 	// The study session's "open page" (#101, design §9 Flashcards): no card
 	// box; every kind has the same four parts in the same places — the kind
-	// label (deck · level on the right), the prompt, the answer area and the
+	// label (the tags, deck and level at the end), the prompt, the answer area and the
 	// answer below a hairline — between the session top and the docked
 	// actions. The card fills its regions with FacePrompt / FaceWork /
 	// FaceAnswer and registers its primary action (cardFace.svelte.ts); the
 	// session provides the face and passes the grade bar.
 	//
-	// API: <StudyFace kindLabel deckLevel cardLabel headingLabel progress countText done keys chips? note? grades? aux? bind:heading>card</StudyFace>
+	// API: <StudyFace kindLabel deck? level? cardLabel headingLabel progress countText done keys chips? note? grades? aux? bind:heading>card</StudyFace>
 	import type { Snippet } from 'svelte';
 	import ActionDock from './ActionDock.svelte';
 	import FaceHeader from './FaceHeader.svelte';
@@ -15,7 +15,8 @@
 
 	let {
 		kindLabel,
-		deckLevel,
+		deck = null,
+		level = null,
 		cardLabel,
 		headingLabel,
 		progress,
@@ -32,7 +33,9 @@
 		children
 	}: {
 		kindLabel: string;
-		deckLevel: string | null;
+		/** The card's deck and level, each shown as a tag (#286). */
+		deck?: string | null;
+		level?: string | null;
 		cardLabel: string;
 		headingLabel: string;
 		progress: { position: number; total: number };
@@ -56,7 +59,7 @@
 	<SessionTop {progress} {countText} {onend} />
 	{#if status}{@render status()}{/if}
 	<article class="fc" aria-label={cardLabel}>
-		<FaceHeader {kindLabel} {headingLabel} {deckLevel} {chips} bind:heading />
+		<FaceHeader {kindLabel} {headingLabel} {deck} {level} {chips} bind:heading />
 		{@render children()}
 		{#if note}{@render note()}{/if}
 	</article>
