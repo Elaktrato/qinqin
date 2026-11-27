@@ -18,6 +18,8 @@ import { createOutboxStore } from '$lib/studycore/outboxStore';
 import { clearRecentSent, rememberSent } from '$lib/studycore/recentSent';
 import { StudySetups } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { StudyModalState } from '$lib/features/flashcards/setup/studyModal.svelte';
+import { EligibilityIndex } from '$lib/features/flashcards/session/eligibility.svelte';
+import { fetchEligibility } from '$lib/api/eligibility';
 import { STUDY_SETUP_KEY } from '$lib/features/flashcards/setup/setup';
 import { keyedData } from '../sync/keyed';
 import { WorkspaceRecovery } from '$lib/workspace/workspaceGone';
@@ -71,6 +73,8 @@ export class Session {
 	readonly setups: StudySetups;
 	/** The study modal's opener. */
 	readonly studyModal = new StudyModalState();
+	/** Which companion cards each entry can make (#288): what planning leaves out. */
+	readonly eligibility: EligibilityIndex;
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
@@ -126,12 +130,14 @@ export class Session {
 			// A deleted workspace leaves the list; before the list loads every id counts.
 			exists: (ws) => !this.workspaces.loaded || this.workspaces.list.some((w) => w.id === ws)
 		});
+		this.eligibility = new EligibilityIndex({ fetch: (ids) => fetchEligibility(api, ids), now });
 		if (deps.document !== null) this.onDispose(this.lookups.recorder.attach(deps.document));
 		this.onDispose((reason) => {
 			this.#player?.stop();
 			this.lookups.dispose();
 			this.study.dispose();
 			this.caches.clear();
+			this.eligibility.clear();
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
 			if (reason === 'signOut') {
 				clearRecentSent(local());

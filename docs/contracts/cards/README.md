@@ -1,4 +1,4 @@
-# Card ids, burying, cloze, deck sessions, the session queue, the session mix and hints (reverse and cloze cards, #65; #132; #175; #215)
+# Card ids, burying, cloze, eligibility, deck sessions, the session queue, the session mix and hints (reverse and cloze cards, #65; #132; #175; #215; #288)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
 `deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
@@ -93,8 +93,8 @@ kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (d
 5. **Companions** (virtual items, created on their first grade): for every vocab card in a session deck,
    oldest first (`createdAt`, then id), one item per selected companion kind it has no card of: `sentence`,
    `writing`, `tone`, then the opt-in `reverse` and `cloze`. Never for a kind the word skips, a `kind:entryId`
-   in `skip` (remembered ineligible), a kind buried today, or writing when the vocab card's `written` snapshot
-   has no Han character (no snapshot: decided when shown). Character vocab cards (`entryKind: "character"`)
+   in `skip` (ruled out by the eligibility index, below), a kind buried today, or writing when the vocab card's
+   `written` snapshot has no Han character (no snapshot: decided when shown). Character vocab cards (`entryKind: "character"`)
    get only writing, from the learner day after their first review. Opt-in kinds: only from a session deck that
    enables them, never for a word with a queued real card, **at most one per word, reverse preferred** (cloze
    when reverse cannot be planned). Items are taken round-robin by kind (one of each kind per round, in kind
@@ -128,6 +128,44 @@ Ruling: the fixture pins the **plan** and eligibility, not which sentence a sent
 virtual item is graded — sentence choice and cloze are already pinned (`cloze.json`), grade suggestions are
 deferred (spec D2) — cost: none.
 
+
+## Eligibility (`eligibility.json`, #288)
+
+Which companion cards an entry can make is decided **when the session is planned**, not when the card is shown, so
+the counts (the study modal's "This session", the home widget, the session counter) only promise cards the session
+shows. The rules are the show-time rules above (`eligible`), moved to planning:
+
+| Kind | Eligible when | Decided by |
+|---|---|---|
+| `sentence` | the entry has a sentence whose text is not blank (JavaScript `trim`) | server |
+| `cloze` | one of the first 8 non-blank sentences has a blank span (`cloze.json`), with the server's segmenter (`POST /api/segment`, deinflection and lemma packs included: 食べた in a sentence counts for 食べる and the card blanks 食べた); a language the server cannot segment has no cloze | server |
+| `tone` | a tonal language (`languages/`) and a pinyin reading that parses as clean toned pinyin (tone marks, no numbers or punctuation; a lone neutral `r` joins the syllable before it) | server |
+| `reverse` | a `word` entry with at least one gloss | server |
+| `writing` | a Han character of the written form has stroke data in an installed strokes pack (whatever its language), and the entry is not a `character` without glosses | server |
+
+The sentences are those the viewer may see (pack sentences, then the viewer's own); the written form and readings
+are the viewer's (their entry patch applied). Another user's sentences never count.
+
+**Route.** `POST /api/study/eligibility {"ids": [<entry id>, ...]}` (1 to 500 positive ids; duplicates once) →
+`200 {"entries": {"<id>": ["sentence", "writing", "tone", "reverse", "cloze"]}}`, each list in kind order, every asked id
+answered, an unknown entry with `[]`. `400 bad_request` for a malformed body or ids, `401` without a session, `429
+rate_limited` while the user's segmentation slots (shared with `POST /api/segment`) are taken. No access tokens; not
+cached by the service worker (an offline session plans no companions).
+
+**Planning.** A client keeps the answers as an index per session. A companion is planned only when the index
+lists its kind for the entry (`skip` in the deck-session cases:
+the `kind:entryId` keys the index rules out). An entry the index does not know yet (not asked, or the request failed)
+is planned as before and checked when shown. A card that still turns out unusable when shown (a pack removed since
+planning) is dropped and the client removes the kind from the entry's index row; `dropItem` replaces a dropped
+companion from the reserve, which holds eligible items only, so the counter never drops by more than the cards
+removed. Entries are asked again after 10 minutes, and adding a sentence forgets the entry.
+
+Case: `{name, entry: {id, language, kind, written, forms: [{text}], readings: [{type, value}], glosses},
+segmentable, sentences: [{id, hanzi}], matchesBySentence: {"<id>": [{start, end, entries: [{id}]}]}, strokes, kinds}`;
+`glosses` is the number of glosses; a sentence without `matchesBySentence` has no match; `strokes` are the characters
+with stroke data. Go:
+`server/internal/eligibility/contract_test.go`; web: `apps/web/src/lib/features/flashcards/session/eligibility.contract.test.ts`
+(the same cases through the show-time rules).
 
 ## Session queue (`session-queue.json`, #175)
 

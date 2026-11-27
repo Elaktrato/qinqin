@@ -10,11 +10,11 @@
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { fetchSchemeCharacters } from '$lib/api/schemes';
 	import type { CharRow, FrequencyPack, Level } from '$lib/api/types';
-	import { useSession } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
 	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { createSetupData } from '$lib/features/flashcards/setup/setupData.svelte';
-	import { noteText } from '$lib/features/flashcards/setup/studyModalView';
+	import { hiddenTypesText, noteText } from '$lib/features/flashcards/setup/studyModalView';
 	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
 	import { t } from '$lib/i18n';
 	import { usesHan } from '$lib/languages';
@@ -27,7 +27,6 @@
 	import { onContextStale } from '$lib/studycore/currentContext';
 	import { onStudyChange, touches } from '$lib/studycore/data';
 	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/studycore/deckSettings';
-	import { loadIneligible } from '$lib/features/flashcards/session/ineligible';
 	import { levelMastery } from '$lib/studycore/levelMastery';
 	import { startTodayText } from '$lib/features/flashcards/session/limitsText';
 	import { resolveSessionOrder } from '$lib/studycore/newOrder';
@@ -172,7 +171,10 @@
 						weights: data.weights,
 						ctx: data.ctx,
 						language,
-						skip: workspaceId === null ? undefined : loadIneligible(workspaceId),
+						// The words the server says cannot make a card of a kind (#288).
+						skip: session.eligibility.skip(),
+						// The Reverse and Cloze switches here turn a kind on for every deck.
+						optIns: 'any',
 						level: {
 							scheme,
 							levelName: setup.levelName,
@@ -202,14 +204,25 @@
 			: vacationBanner(vacationStatus(data.vacations, workspaceId, data.ctx.day.today()), data.ctx.day.today())
 	);
 
-	// The card types: the language's, opt-in ones only for deck sessions.
+	// The card types: the language's, opt-in ones only for deck sessions; once the
+	// counts are known only those with something to study (#289).
+	const available = $derived(plan !== null && ready ? plan.available : null);
 	const visibleTypes = $derived(
-		CARD_TYPES.filter((type) => profileOf(language).cardKinds.includes(type.id) && (setup?.mode !== 'levels' || !isOptIn(type.id)))
+		CARD_TYPES.filter(
+			(type) =>
+				profileOf(language).cardKinds.includes(type.id) &&
+				(setup?.mode !== 'levels' || !isOptIn(type.id)) &&
+				(available === null || available.includes(type.id))
+		)
 	);
 	function isOptIn(kind: string): kind is OptInKind {
 		return (OPT_IN_KINDS as readonly string[]).includes(kind);
 	}
-	const shownKinds = $derived(kinds.filter((kind) => setup?.mode !== 'levels' || !isOptIn(kind)));
+	const shownKinds = $derived(
+		kinds.filter((kind) => (setup?.mode !== 'levels' || !isOptIn(kind)) && visibleTypes.some((type) => type.id === kind))
+	);
+	const app = useApp();
+	const hiddenLines = $derived(plan !== null && ready ? hiddenTypesText(plan.hidden, { admin: app.auth.user?.admin === true }) : []);
 
 	const orderView = $derived(
 		sessionOrderChoices({
@@ -542,6 +555,7 @@
 					</li>
 				{/each}
 			</ul>
+			{#each hiddenLines as line (line)}<p class="hint">{line}</p>{/each}
 			{#if typeError}
 				<p class="error" role="alert">{typeError}</p>
 			{/if}

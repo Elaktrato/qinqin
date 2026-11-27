@@ -8,13 +8,12 @@
 	// back button closes it. Opened through session.studyModal.
 	import { goto } from '$app/navigation';
 	import { errorText } from '$lib/api/apiErrors';
-	import { useSession } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import { t } from '$lib/i18n';
 	import { here } from '$lib/routing/here';
 	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 	import { enabledKinds } from '$lib/studycore/deckSettings';
-	import { loadIneligible } from '../session/ineligible';
 	import { newSessionSeed, saveConfig } from '../session/session';
 	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from './setup';
 	import { planSetup } from './setupPlan';
@@ -22,8 +21,9 @@
 	import { Button, Dialog, IconButton, Sheet } from '$lib/ui';
 	import UnreadableRowsNotice from '../UnreadableRowsNotice.svelte';
 	import { createSetupData } from './setupData.svelte';
-	import { chipPatch, noteText, summaryLine, todayLine, visibleChips } from './studyModalView';
+	import { chipPatch, hiddenTypesText, noteText, summaryLine, todayLine, visibleChips } from './studyModalView';
 
+	const app = useApp();
 	const session = useSession();
 	const modal = session.studyModal;
 	const data = createSetupData(session, { fresh: false });
@@ -65,7 +65,6 @@
 	const deckIds = $derived(setup === null ? [] : setupDeckIds(setup, data.decks));
 	const enabled = $derived(enabledKinds(data.deckSettings, deckIds));
 	const kinds = $derived<StudyCardKind[]>(setup === null ? [] : setupKinds(setup, enabled, language));
-	const chips = $derived(setup === null ? [] : visibleChips(setup, enabled, language));
 	const scheme = $derived(setup === null ? null : (data.schemes.find((s) => s.id === setup.schemeId) ?? null));
 
 	// A level setup counts the level's entries.
@@ -92,7 +91,8 @@
 						weights: data.weights,
 						ctx: data.ctx,
 						language,
-						skip: workspaceId === null ? undefined : loadIneligible(workspaceId),
+						// The words the server says cannot make a card of a kind (#288).
+						skip: session.eligibility.skip(),
 						level: {
 							scheme,
 							levelName: setup.levelName,
@@ -107,6 +107,11 @@
 					new Date()
 				)
 	);
+
+	// Only the types with something to study (#289); every offered one until the counts are known.
+	const available = $derived(plan !== null && ready ? plan.available : null);
+	const chips = $derived(setup === null ? [] : visibleChips(setup, enabled, language, available));
+	const hiddenLines = $derived(plan !== null && ready ? hiddenTypesText(plan.hidden, { admin: app.auth.user?.admin === true }) : []);
 
 	const vacationText = $derived(
 		workspaceId === null || !ready || !data.ctx.vacationToday
@@ -142,7 +147,7 @@
 		// The workspace whose chips were clicked, captured now (#174).
 		const ws = workspaceId;
 		if (ws === null || setup === null) return;
-		void session.setups.update(ws, chipPatch(setup, id, enabled, language));
+		void session.setups.update(ws, chipPatch(setup, id, enabled, language, available));
 	}
 
 	function start(studyAll = false): void {
@@ -195,6 +200,7 @@
 					</label>
 				{/each}
 			</fieldset>
+			{#each hiddenLines as line (line)}<p class="line muted hidden-types">{line}</p>{/each}
 			{#if ready && plan.warnings.length > 0}
 				<ul class="warnings" aria-label={t('study.summary.warnings')}>
 					{#each plan.warnings as warning (warning)}<li>{warning}</li>{/each}
@@ -247,6 +253,9 @@
 	}
 	.summary {
 		font-weight: var(--weight-medium);
+	}
+	.hidden-types {
+		font-size: var(--font-size-label);
 	}
 	.muted {
 		color: var(--readable-muted);

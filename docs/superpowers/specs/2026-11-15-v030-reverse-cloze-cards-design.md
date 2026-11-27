@@ -218,5 +218,10 @@ check that a `deckcfg:` row and a `c-reverse-` card round-trip through plugin da
 
 - The segmenter may not link an inflected Japanese form to the entry; the literal fallback then
   finds nothing and the sentence is not eligible (safe, fewer clozes).
+  Decision (#288, 2026-11-27): checked. The server's segmenter deinflects (the Japanese code pack's rules and any
+  installed lemma pack), so 食べた in a sentence resolves to 食べる and the card blanks 食べた, the surface, as
+  `cards/cloze.json` already says. Since #288 whether a word has a cloze sentence is decided by the server when the
+  session is planned (`POST /api/study/eligibility`, `cards/eligibility.json`) with the same segmenter and the same
+  blank rule, so the counts and the card agree; a test pins 食べた → 食べる (`server/internal/api/handlers_eligibility_test.go`).
 - Distractors from small decks: under 3 candidates the card falls back to typing.
 - Item 1's `StudyDay` lands first; if its names change before merge, only the injection point changes.

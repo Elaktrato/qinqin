@@ -23,8 +23,10 @@
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
-	import { useSession } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
+	import { companionEntryIds } from './session/eligibility.svelte';
 
+	const app = useApp();
 	const session = useSession();
 
 	let decks = $state<Deck[]>([]);
@@ -68,14 +70,16 @@
 		if (workspaceId !== null) void session.setups.refresh(workspaceId);
 	});
 
-	// What the daily limits admit right now for real cards of those types
-	// (companions not created yet are not counted): due reviews and new cards
-	// left today, burying and vacation applied (dueCounts.ts leftToday).
+	// What the daily limits admit right now of those types: due reviews and
+	// new cards left today, the companions the session would plan among them
+	// (the eligibility index decides which words make one, #288; offline none),
+	// burying and vacation applied (dueCounts.ts leftToday).
 	const left = $derived.by(() => {
 		if (noWorkspace || cards.length === 0) {
 			return { reviews: 0, new: 0, unlimited: false, limitedOut: 0 };
 		}
-		return leftToday({ cards, reviews, deckIds, kinds, deckSettings, now: new Date(), w: weights, ctx });
+		const companions = { language: session.workspaces.current?.language ?? '', skip: session.eligibility.skip(), offline: !app.offline.online };
+		return leftToday({ cards, reviews, deckIds, kinds, deckSettings, now: new Date(), w: weights, ctx, companions });
 	});
 
 	// The learner's day rule; a zone change recomputes XP and the streak.
@@ -114,6 +118,9 @@
 			// Duplicate cards arrive merged, their reviews re-pointed; the
 			// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(session.study, workspace, { force });
+			if (seq !== requestSeq) return;
+			// The words' companion kinds before the count (a failure counts them as before).
+			if (app.offline.online) await session.eligibility.ensure(companionEntryIds(data.cards));
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;

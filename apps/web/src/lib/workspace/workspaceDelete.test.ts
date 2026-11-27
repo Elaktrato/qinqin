@@ -70,7 +70,7 @@ describe('forgetWorkspace outbox v2', () => {
 		const local = fakeStorage({
 			'qinqin.study.pending.v2': JSON.stringify([item('a', 1, 7), item('b', 2, 7), item('c', 1, 3)])
 		});
-		forgetWorkspace(7, local, null);
+		forgetWorkspace(7, local);
 		expect(JSON.parse(local.getItem('qinqin.study.pending.v2') ?? '[]')).toEqual([item('c', 1, 3)]);
 	});
 });
@@ -94,12 +94,7 @@ describe('forgetWorkspace', () => {
 			]),
 			'qinqin.reader.prefs': '{}'
 		});
-		const session = fakeStorage({
-			'qinqin.study.ineligible': JSON.stringify({ '7': ['vocab:1'], '3': ['tone:2'] }),
-			'qinqin.study.session': '{}'
-		});
-
-		forgetWorkspace(7, local, session);
+		forgetWorkspace(7, local);
 
 		expect(dump(local)).toEqual({
 			'qinqin.workspace': '7',
@@ -113,10 +108,6 @@ describe('forgetWorkspace', () => {
 			]),
 			'qinqin.reader.prefs': '{}'
 		});
-		expect(dump(session)).toEqual({
-			'qinqin.study.ineligible': JSON.stringify({ '3': ['tone:2'] }),
-			'qinqin.study.session': '{}'
-		});
 	});
 
 	it('drops keys that only held the deleted workspace', () => {
@@ -126,17 +117,14 @@ describe('forgetWorkspace', () => {
 				{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }
 			])
 		});
-		const session = fakeStorage({ 'qinqin.study.ineligible': JSON.stringify({ '7': ['vocab:1'] }) });
-
-		forgetWorkspace(7, local, session);
+		forgetWorkspace(7, local);
 
 		expect(dump(local)).toEqual({});
-		expect(dump(session)).toEqual({});
 	});
 
 	it('leaves corrupt values alone and never throws', () => {
 		const local = fakeStorage({ 'qinqin.study.ineligible.x': '{', 'qinqin.study.pending.v2': 'nope' });
-		expect(() => forgetWorkspace(7, local, null)).not.toThrow();
+		expect(() => forgetWorkspace(7, local)).not.toThrow();
 		expect(dump(local)).toEqual({ 'qinqin.study.ineligible.x': '{', 'qinqin.study.pending.v2': 'nope' });
 
 		const throwing = {
@@ -144,7 +132,7 @@ describe('forgetWorkspace', () => {
 				throw new Error('denied');
 			}
 		} as unknown as Storage;
-		expect(() => forgetWorkspace(7, throwing, throwing)).not.toThrow();
-		expect(() => forgetWorkspace(7, null, null)).not.toThrow();
+		expect(() => forgetWorkspace(7, throwing)).not.toThrow();
+		expect(() => forgetWorkspace(7, null)).not.toThrow();
 	});
 });

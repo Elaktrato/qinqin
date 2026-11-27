@@ -756,6 +756,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "POST /api/study/eligibility",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/sync/push",
 		"access": "user"
 	},

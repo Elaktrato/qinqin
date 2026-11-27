@@ -120,6 +120,8 @@
 		if (entry && sentence.entryId === entry.id) {
 			entry = { ...entry, sentences: [...entry.sentences, sentence] };
 			refreshOfflineCopy(entry.id);
+			// Its study cards are planned from its sentences (#288): ask again.
+			session.eligibility.forget(entry.id);
 		}
 	}
 
@@ -132,6 +134,7 @@
 			const index = aiIds.indexOf(sentence.id);
 			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
 			refreshOfflineCopy(entry.id);
+			session.eligibility.forget(entry.id);
 			// The focus stays in the examples: the next AI example's first button,
 			// else the AI examples heading, the examples heading or the word.
 			await tick();

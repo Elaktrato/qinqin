@@ -7,7 +7,6 @@ import type { Workspace } from '$lib/api/types';
 import { workspaceDisplay } from '$lib/languages';
 import { setupCacheWorkspace } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { PENDING_REVIEWS_KEY } from '$lib/studycore/events';
-import { INELIGIBLE_KEY } from '$lib/features/flashcards/session/ineligible';
 
 /**
  * confirmLabel is what the user types to confirm deleting `ws`: the name
@@ -37,19 +36,6 @@ function attempt(fn: () => void): void {
 	}
 }
 
-/** Removes `id`'s entry from a JSON object keyed by workspace id. */
-function dropEntry(storage: Storage, key: string, id: number): void {
-	const raw = storage.getItem(key);
-	if (raw === null) return;
-	const parsed: unknown = JSON.parse(raw);
-	if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return;
-	const all = parsed as Record<string, unknown>;
-	if (!(String(id) in all)) return;
-	delete all[String(id)];
-	if (Object.keys(all).length === 0) storage.removeItem(key);
-	else storage.setItem(key, JSON.stringify(all));
-}
-
 /**
  * Removes the queued reviews of `id` from the review outbox: the
  * `{userId, queuedAt, event}` items of every user (a workspace id is global
@@ -75,11 +61,11 @@ function dropPending(storage: Storage, id: number): void {
 /**
  * forgetWorkspace removes what this browser keeps for a deleted
  * workspace: its daily session receipts, its cached study setups (every
- * user's: a workspace id is global) and queued reviews (localStorage), and this tab's ineligible-companion
- * memory (sessionStorage). Other workspaces' entries and global
- * preferences stay. The selection key is the store's business.
+ * user's: a workspace id is global) and queued reviews (localStorage). Other
+ * workspaces' entries and global preferences stay. The selection key is the
+ * store's business.
  */
-export function forgetWorkspace(id: number, local: Storage | null, session: Storage | null): void {
+export function forgetWorkspace(id: number, local: Storage | null): void {
 	if (local !== null) {
 		attempt(() => {
 			const prefix = sessionReceiptPrefix(id);
@@ -91,8 +77,5 @@ export function forgetWorkspace(id: number, local: Storage | null, session: Stor
 			for (const key of doomed) local.removeItem(key);
 		});
 		dropPending(local, id);
-	}
-	if (session !== null) {
-		attempt(() => dropEntry(session, INELIGIBLE_KEY, id));
 	}
 }

@@ -26,8 +26,10 @@ let ctx: TestContext;
 let saved: StudySetup;
 let update: ReturnType<typeof vi.spyOn>;
 
+const WRITTEN = ['', '学校', '水', '本', '私'];
+
 function vocab(n: number, deckIds = ['general']) {
-	return build.card({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written: `w${n}`, deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` });
+	return build.card({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written: WRITTEN[n], deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` });
 }
 
 const DECK = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00Z' };
@@ -46,11 +48,14 @@ async function open(): Promise<HTMLElement> {
 // PUT stores the body or throws `putError`.
 let rowsGate: Promise<void> | null;
 let putError: unknown;
+// POST /api/study/eligibility: the companion kinds of each asked entry (default: every kind).
+let eligible: (id: number) => string[];
 
 beforeEach(() => {
 	saved = defaultSetup();
 	rowsGate = null;
 	putError = null;
+	eligible = () => ['sentence', 'writing', 'tone', 'reverse', 'cloze'];
 	const row = () => ({ key: 'study-setup', userId: 1, workspaceId: 1, data: saved, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null });
 	ctx = testContext({
 		routes: {
@@ -58,6 +63,9 @@ beforeEach(() => {
 				if (rowsGate !== null) await rowsGate;
 				return [row()];
 			},
+			'POST /api/study/eligibility': (body: unknown) => ({
+				entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), eligible(id)]))
+			}),
 			'PUT /api/rows/study-setup': (body: unknown) => {
 				if (putError !== null) throw putError;
 				saved = body as StudySetup;
@@ -113,7 +121,7 @@ describe('the study modal', () => {
 		expect(within(dialog).queryByRole('checkbox', { name: 'Reverse' })).toBeNull();
 		cleanup();
 		vi.mocked(loadStudyHistory).mockResolvedValue(
-			build.history({ decks: [DECK], cards: [vocab(1)], deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
+			build.history({ decks: [DECK], cards: [vocab(1, ['d1'])], deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
 		);
 		const again = await open();
 		expect(((await within(again).findByRole('checkbox', { name: 'Reverse' })) as HTMLInputElement).checked).toBe(true);
@@ -177,6 +185,7 @@ describe('the study modal', () => {
 	});
 
 	it('with nothing to study it says so and Start is disabled', async () => {
+		eligible = () => [];
 		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
 		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
 		const dialog = await open();
@@ -225,6 +234,39 @@ describe('the study modal', () => {
 		await waitFor(() => expect(dialog.textContent).toContain('Could not load level schemes.'));
 		expect(dialog.textContent).not.toContain('Your level is no longer installed');
 		expect((within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	it('hides a card type with nothing to study and says why; it comes back with its cards (#289)', async () => {
+		saved = { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] };
+		eligible = (id) => (id === 1 ? ['writing'] : ['writing', 'reverse']);
+		const dialog = await open();
+		await waitFor(() => expect(dialog.textContent).toContain('Word Salad: no example sentences for these words yet.'));
+		expect(within(dialog).queryByRole('checkbox', { name: 'Word Salad' })).toBeNull();
+		expect(within(dialog).getByRole('checkbox', { name: 'Writing' })).toBeTruthy();
+		// Vocab is the last visible selected chip: locked, and the hidden choice is kept.
+		expect((within(dialog).getByRole('checkbox', { name: 'Vocab' }) as HTMLInputElement).disabled).toBe(true);
+		expect(dialog.textContent).toContain('This session: 2 cards');
+		expect(update).not.toHaveBeenCalled();
+
+		// A sentence arrives for 学校: the type is offered again, still checked.
+		cleanup();
+		ctx.session.studyModal.hide();
+		eligible = (id) => (id === 1 ? ['sentence', 'writing'] : ['writing']);
+		ctx.session.eligibility.forget(1);
+		const again = await open();
+		const salad = (await within(again).findByRole('checkbox', { name: 'Word Salad' })) as HTMLInputElement;
+		expect(salad.checked).toBe(true);
+		await waitFor(() => expect(again.textContent).toContain('This session: 3 cards'));
+		expect(again.textContent).not.toContain('no example sentences');
+	});
+
+	it('a deck selection with nothing at all to study shows no chips and the empty state', async () => {
+		eligible = () => [];
+		const reviewed = [1, 2].map((n) => build.review({ cardId: `c-vocab-${n}`, ts: new Date().toISOString(), grade: 4 }));
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [DECK], cards: [vocab(1), vocab(2, ['d1'])], reviews: reviewed }));
+		const dialog = await open();
+		await waitFor(() => expect(dialog.textContent).toContain('Nothing is due and no new cards are left in the selected decks.'));
+		expect(within(dialog).queryAllByRole('checkbox')).toEqual([]);
 	});
 
 	it('Escape closes it', async () => {

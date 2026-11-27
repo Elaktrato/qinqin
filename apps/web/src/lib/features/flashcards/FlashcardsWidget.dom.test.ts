@@ -188,6 +188,29 @@ describe('FlashcardsWidget and the saved study setup', () => {
 	});
 });
 
+describe('FlashcardsWidget counts what the session plans (#288)', () => {
+	it('a word salad of a studied word counts as new only when the server says the word has a sentence', async () => {
+		ctx = testContext({
+			routes: {
+				// The saved setup studies Vocab and Word Salad.
+				'GET /api/rows': [
+					{ key: 'study-setup', userId: 1, workspaceId: 1, data: { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] }, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null }
+				],
+				'POST /api/study/eligibility': (body: unknown) => ({
+					entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), id === 1 ? ['sentence'] : []]))
+				})
+			}
+		});
+		ctx.session.workspaces.set({ list: [{ id: 1, language: 'ja', name: 'ja' } as never], current: { id: 1, language: 'ja', name: 'ja' } as never });
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
+		const card = (n: number, written: string) => ({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written, deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z' });
+		const studied = (n: number) => ({ id: `r${n}`, workspaceId: 1, device: 'web', ts: new Date().toISOString(), type: 'review', payload: { cardId: `c-vocab-${n}`, mode: 'vocab', grade: 4 } });
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [card(1, '学校'), card(2, '水')], reviews: [studied(1), studied(2)], merged: 0 } as never);
+		const { container } = render(FlashcardsWidget, { context: ctx.context });
+		await waitFor(() => expect(text(container)).toMatch(/0 reviews · 1 new left today/));
+	});
+});
+
 describe('FlashcardsWidget Study', () => {
 	it('opens the study modal instead of following the link', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);

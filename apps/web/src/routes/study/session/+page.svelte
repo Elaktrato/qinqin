@@ -48,7 +48,7 @@
 		replaceSessionReview,
 		type GradedStep
 	} from '$lib/features/flashcards/session/regrade';
-	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/features/flashcards/session/ineligible';
+	import { companionEntryIds } from '$lib/features/flashcards/session/eligibility.svelte';
 	import {
 		acceptedClozeAnswers,
 		clozeCandidates,
@@ -584,6 +584,12 @@ import type { Run } from '$lib/studycore/vacation';
 
 			// Offline (or answered from the saved copy): real cards only, see planCompanions.
 			offlineSession = !app.offline.online || app.offline.servedFromCacheAt !== null;
+			// Online, the server says which words can make which companion (#288):
+			// none is planned that would be dropped when shown.
+			if (!offlineSession) {
+				await session.eligibility.ensure(companionEntryIds(data.cards));
+				if (seq !== requestSeq) return;
+			}
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
@@ -641,7 +647,7 @@ import type { Run } from '$lib/studycore/vacation';
 					kinds,
 					ctx,
 					hasStrokes: hasStrokeData,
-					skip: loadIneligible(workspaceId),
+					skip: session.eligibility.skip(),
 					excludeEntries: buriedLevelEntries(buried, data.cards),
 					newKey: keyOf ?? undefined,
 					studyAll: config.studyAll === true
@@ -664,8 +670,8 @@ import type { Run } from '$lib/studycore/vacation';
 					deckSettings: data.deckSettings,
 					offline: offlineSession,
 					language: language ?? '',
-					// Words this tab already found unsuitable are not fetched again.
-					skip: loadIneligible(workspaceId),
+					// Words the server (or this session, when shown) found unsuitable.
+					skip: session.eligibility.skip(),
 					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
 					studyAll: config.studyAll === true
 				});
@@ -833,19 +839,14 @@ import type { Run } from '$lib/studycore/vacation';
 	 * dropIneligible removes an ineligible item (nothing is written); a
 	 * dropped companion is replaced by the next reserve companion while the
 	 * session's backfill bound lasts. A non-null `entry` that definitively
-	 * lacks what the kind needs (see `rememberDrop`) is remembered: this tab skips
-	 * the word for that kind in later sessions. Failures that may be
-	 * transient (a rejected resolution, missing stroke data) are not
-	 * remembered.
+	 * lacks what the kind needs (see `rememberDrop`) is ruled out in the
+	 * session's eligibility index: later plans and counts skip the word for
+	 * that kind. Failures that may be transient (a rejected resolution,
+	 * missing stroke data) are not.
 	 */
 	function dropIneligible(item: FlowItem, entry: Entry | null): void {
-		const workspaceId = sessionWorkspaceId;
-		if (
-			entry !== null &&
-			workspaceId !== null &&
-			rememberDrop(item, item.written ?? entry.written, entry)
-		) {
-			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
+		if (entry !== null && rememberDrop(item, item.written ?? entry.written, entry)) {
+			session.eligibility.ruleOut(item.kind, item.entryId);
 		}
 		if (item.reshow !== undefined) {
 			// A re-show that cannot be shown again is just skipped.

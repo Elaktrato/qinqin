@@ -260,7 +260,7 @@ describe('character level session', () => {
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
-		expect(sessionStorage.getItem('qinqin.study.ineligible') ?? '').toContain('writing:11');
+		expect(ctx.session.eligibility.skip().has('writing:11')).toBe(true);
 	});
 });
 
@@ -1113,5 +1113,44 @@ describe('Starter mode on the session page (#214)', () => {
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		expect(await screen.findByTestId('starter-front')).toBeTruthy();
+	});
+});
+
+describe('the eligibility index plans the session (#288)', () => {
+	const jaWord = (id: number, written: string, sentence: boolean): Entry =>
+		({
+			id,
+			language: 'ja',
+			kind: 'word',
+			written,
+			readings: [{ type: 'kana', value: 'がっこう', plain: 'gakkou', ord: 0 }],
+			badges: [],
+			variants: [],
+			sentences: sentence ? [{ id: 900 + id, entryId: id, hanzi: `${written}に行く。`, pinyin: '', translation: 'x' }] : [],
+			senses: [{ dictionaryId: 1, dictionaryName: 'JMdict', packId: 'j', license: 'x', attribution: 'x', gloss: 'school' }]
+		}) as unknown as Entry;
+
+	it('a word the server says has no sentence never gets a word salad: the counter is the length from the start', async () => {
+		ctx = testContext({
+			routes: {
+				'POST /api/study/eligibility': (body: unknown) => ({
+					entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), id === 32 ? ['sentence'] : []]))
+				})
+			}
+		});
+		Object.assign(ctx.session.outbox, outboxFakes);
+		ctx.session.workspaces.set({ list: [{ id: 1, language: 'ja', name: 'ja' } as never], current: { id: 1, language: 'ja', name: 'ja' } as never });
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['sentence'] })
+		);
+		const card = (id: number, written: string): StudyCard => ({ id: `c-vocab-${id}`, kind: 'vocab', entryId: id, written, deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
+		history([card(31, '学校'), card(32, '水'), card(33, '本')], []);
+		vi.mocked(getEntry).mockImplementation(async (id: number) => jaWord(id, id === 32 ? '水' : '学校', id === 32));
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText(/^1 \/ 1/)).toBeTruthy();
+		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(32));
+		expect(getEntry).not.toHaveBeenCalledWith(31);
+		expect(getEntry).not.toHaveBeenCalledWith(33);
 	});
 });

@@ -2,9 +2,11 @@
 // chips show and how a click changes the setup, and the wording of its lines.
 
 import { t, type MessageKey } from '$lib/i18n';
+import { formatList } from '$lib/i18n/format';
 import { profileOf } from '$lib/languages/profiles';
 import { CARD_TYPES, type StudySessionMode } from '../session/session';
 import { setupKinds, type SetupNote, type StudySetup } from './setup';
+import type { HiddenReason, HiddenType } from './setupPlan';
 import { CARD_KINDS, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/studycore/types';
 
 export interface ChipView {
@@ -21,12 +23,23 @@ function isOptIn(kind: StudyCardKind): kind is OptInKind {
 
 /**
  * visibleChips: the kinds the language offers; Reverse and Cloze only when a
- * selected deck switches them on (`enabled`), and never for a level session.
+ * selected deck switches them on (`enabled`), and never for a level session;
+ * of those, only the ones with something to study (`available`, the plan's,
+ * #289; null while unknown: all). A hidden kind keeps its stored choice, and
+ * the last selected chip is locked among the visible ones.
  */
-export function visibleChips(setup: StudySetup, enabled: ReadonlySet<OptInKind>, language: string): ChipView[] {
+export function visibleChips(
+	setup: StudySetup,
+	enabled: ReadonlySet<OptInKind>,
+	language: string,
+	available: readonly StudyCardKind[] | null = null
+): ChipView[] {
 	const offered = profileOf(language).cardKinds;
-	const selected = setupKinds(setup, enabled, language).filter((kind) => setup.mode === 'decks' || !isOptIn(kind));
-	return CARD_KINDS.filter((kind) => offered.includes(kind) && (!isOptIn(kind) || (setup.mode === 'decks' && enabled.has(kind)))).map(
+	const shown = (kind: StudyCardKind) => available === null || available.includes(kind);
+	const selected = setupKinds(setup, enabled, language).filter((kind) => (setup.mode === 'decks' || !isOptIn(kind)) && shown(kind));
+	return CARD_KINDS.filter(
+		(kind) => offered.includes(kind) && (!isOptIn(kind) || (setup.mode === 'decks' && enabled.has(kind))) && shown(kind)
+	).map(
 		(kind) => {
 			const checked = selected.includes(kind);
 			return {
@@ -40,7 +53,13 @@ export function visibleChips(setup: StudySetup, enabled: ReadonlySet<OptInKind>,
 }
 
 /** toggleChip: the setup after a click on `id`; an opt-in chip changes only `unchecked`; nothing selected is refused. */
-export function toggleChip(setup: StudySetup, id: StudyCardKind, enabled: ReadonlySet<OptInKind>, language: string): StudySetup {
+export function toggleChip(
+	setup: StudySetup,
+	id: StudyCardKind,
+	enabled: ReadonlySet<OptInKind>,
+	language: string,
+	available: readonly StudyCardKind[] | null = null
+): StudySetup {
 	let next: StudySetup;
 	if (isOptIn(id)) {
 		next = setup.unchecked.includes(id)
@@ -51,7 +70,7 @@ export function toggleChip(setup: StudySetup, id: StudyCardKind, enabled: Readon
 			? { ...setup, cardTypes: setup.cardTypes.filter((kind) => kind !== id) }
 			: { ...setup, cardTypes: CARD_KINDS.filter((kind) => kind === id || setup.cardTypes.includes(kind)) };
 	}
-	return visibleChips(next, enabled, language).some((chip) => chip.checked) ? next : setup;
+	return visibleChips(next, enabled, language, available).some((chip) => chip.checked) ? next : setup;
 }
 
 /** chipPatch: the members a click on `id` changes (the store writes only these). */
@@ -59,9 +78,10 @@ export function chipPatch(
 	setup: StudySetup,
 	id: StudyCardKind,
 	enabled: ReadonlySet<OptInKind>,
-	language: string
+	language: string,
+	available: readonly StudyCardKind[] | null = null
 ): Pick<StudySetup, 'cardTypes'> | Pick<StudySetup, 'unchecked'> | Record<string, never> {
-	const next = toggleChip(setup, id, enabled, language);
+	const next = toggleChip(setup, id, enabled, language, available);
 	if (next === setup) return {};
 	return isOptIn(id) ? { unchecked: next.unchecked } : { cardTypes: next.cardTypes };
 }
@@ -94,4 +114,26 @@ const NOTE_KEYS: Record<SetupNote, MessageKey> = {
 /** noteText: the one line that says the saved setup was repaired, or null. */
 export function noteText(notes: readonly SetupNote[]): string | null {
 	return notes.length === 0 ? null : notes.map((note) => t(NOTE_KEYS[note])).join(' ');
+}
+
+const HIDDEN_KEYS: Record<HiddenReason, MessageKey> = {
+	noSentences: 'study.types.hidden.noSentences',
+	noWriting: 'study.types.hidden.noWriting',
+	noPinyin: 'study.types.hidden.noPinyin',
+	notInLevels: 'study.types.hidden.notInLevels',
+	nothingNow: 'study.types.hidden.nothingNow'
+};
+const HIDDEN_ORDER: readonly HiddenReason[] = ['noSentences', 'noWriting', 'noPinyin', 'notInLevels', 'nothingNow'];
+
+/**
+ * hiddenTypesText: one line per reason naming the card types left out (#289);
+ * for an administrator the sentence line says where example sentences come from.
+ */
+export function hiddenTypesText(hidden: readonly HiddenType[], opts: { admin: boolean }): string[] {
+	return HIDDEN_ORDER.flatMap((reason) => {
+		const kinds = hidden.filter((h) => h.reason === reason).map((h) => CARD_TYPES.find((type) => type.id === h.kind)?.label ?? h.kind);
+		if (kinds.length === 0) return [];
+		const line = t(HIDDEN_KEYS[reason], { types: formatList(kinds) });
+		return [reason === 'noSentences' && opts.admin ? `${line} ${t('study.types.hidden.seed')}` : line];
+	});
 }

@@ -354,6 +354,8 @@ func (s *server) routes() []route {
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil, tokReadGlobal},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil, tokReadGlobal},
 		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil, noTok},
+		// The companion kinds an entry can make, decided before a session is planned (#288).
+		{"POST /api/study/eligibility", s.handleStudyEligibility, accUser, nil, noTok},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil, tokWriteAny},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil, tokWriteAny},
 		// AI example sentences (#186): the caller's own AI key; no access tokens.
