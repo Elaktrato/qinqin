@@ -16,6 +16,7 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- Word Salad: drag the tiles (#291). Drag a placed tile to a new place, a tile from the pool straight to any place in your sentence, or a placed tile back to the pool, with a mouse, a finger or a pen; the other tiles make room and a marker shows where it lands. Tapping works as before. With the keyboard, Alt+← and Alt+→ move a focused placed tile. The same in grammar lessons' "Put the words in order".
 - Study: hide romanisation everywhere (#284). Settings → Study → **Romanisation** has **Show pinyin** and **Show bopomofo**
   (Chinese) and **Show romaji** (Japanese), each Always or Never. A hidden one appears nowhere: word pages, search,
   the reader (popup, phone sheet, ruby), word lists, Stats, every flashcard kind and the kana trainer. On a card it is

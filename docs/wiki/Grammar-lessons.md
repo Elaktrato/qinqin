@@ -34,7 +34,7 @@ Chinese lessons follow the reader's **Script** setting (original, simplified or 
 **Practice** (`…/practice`) runs the lesson's exercises one after another ("Exercise 2 of 7"):
 
 1. **Choose the word that fits the gap**: one per example that has a marked grammar point and wrong choices, in the order of the examples. The translation is shown above the sentence.
-2. **Put the words in order**: one per example, in a shuffled order; tap the word tiles into place, as in a [Word Salad flashcard](Flashcards-study-sessions#card-types). It counts as right only when solved on the first check without giving up.
+2. **Put the words in order**: one per example, in a shuffled order; tap or drag the word tiles into place (Alt+← and Alt+→ move a placed tile), as in a [Word Salad flashcard](Flashcards-study-sessions#card-types). It counts as right only when solved on the first check without giving up.
 
 After each answer the whole sentence and its reading are shown; **Next** goes on, **Finish** ends the run. The result says "Score: 5/7" and "Best so far: 6/7". **Retry** shuffles the exercises anew; **Back to lesson** and **Next lesson** leave.
 
