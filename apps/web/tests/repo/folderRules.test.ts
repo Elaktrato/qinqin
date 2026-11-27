@@ -165,7 +165,7 @@ describe('each check fails on a planted violation', () => {
 		]);
 	});
 
-	it('the study core or the exercises importing the flashcards feature (tests included; the other way is fine)', () => {
+	it('the study core or the exercises importing the flashcards feature (a test may; the other way is fine)', () => {
 		const planted = [
 			file('lib/features/flashcards/session/cardFlow.ts', "import { scheduleFor } from '$lib/studycore/scheduler';"),
 			file('lib/features/flashcards/face/hints.ts'),
@@ -185,7 +185,6 @@ describe('each check fails on a planted violation', () => {
 		expect(studyCoreImportFindings(planted)).toEqual([
 			'lib/studycore/known.ts imports lib/features/flashcards/session/cardFlow.ts',
 			'lib/exercises/cloze.ts imports lib/features/flashcards/face/hints.ts',
-			'lib/studycore/data.test.ts imports lib/features/flashcards/commands/cards.ts',
 			'lib/studycore/mastery.ts imports lib/features/flashcards/mascot.ts',
 			'lib/studycore/page.ts imports routes/study/session/+page.svelte'
 		]);

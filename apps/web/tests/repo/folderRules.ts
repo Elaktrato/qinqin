@@ -256,12 +256,15 @@ export function uiImportFindings(files: SourceFile[]): string[] {
 	return out;
 }
 
-/** Nothing in the study core (`STUDY_CORE_FOLDERS`), tests included, imports the flashcards feature. */
+/**
+ * Nothing shipped in the study core (`STUDY_CORE_FOLDERS`) imports the flashcards feature. A test may (record
+ * 0004: tests import anything): the core's data tests write their rows through the flashcards commands.
+ */
 export function studyCoreImportFindings(files: SourceFile[]): string[] {
 	const g = graph(files);
 	const out: string[] = [];
 	for (const f of files) {
-		if (!STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`))) continue;
+		if (!STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`)) || isTestOnly(f.path)) continue;
 		for (const t of g.imports.get(f.path) ?? []) {
 			if (FLASHCARDS.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
 		}
