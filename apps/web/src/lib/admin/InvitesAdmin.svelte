@@ -139,34 +139,37 @@
 	{/if}
 
 	{#if loaded && rows.length > 0}
-		<table class="ui-table" aria-label={t('admin.invites.title')}>
-			<thead>
-				<tr>
-					<th scope="col">{t('admin.invites.colNote')}</th>
-					<th scope="col">{t('admin.invites.colState')}</th>
-					<th scope="col">{t('admin.invites.colUses')}</th>
-					<th scope="col">{t('admin.invites.colExpires')}</th>
-					<th scope="col"><span class="visually-hidden">{t('admin.invites.colActions')}</span></th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.id)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrolling region is keyboard reachable, WCAG 2.1.1) -->
+		<div class="ui-table-scroll" tabindex="0" role="region" aria-label={t('admin.invites.title')}>
+			<table class="ui-table" aria-label={t('admin.invites.title')}>
+				<thead>
 					<tr>
-						<th scope="row">{row.note}</th>
-						<td><Chip>{row.state}</Chip></td>
-						<td>{row.uses}</td>
-						<td>{row.expires}</td>
-						<td>
-							{#if row.canRevoke}
-								<Button disabled={busy} aria-label={t('admin.invites.revokeNamed', { note: row.note })}
-									onclick={() => revoke(row.id)}>{t('admin.invites.revoke')}</Button
-								>
-							{/if}
-						</td>
+						<th scope="col">{t('admin.invites.colNote')}</th>
+						<th scope="col">{t('admin.invites.colState')}</th>
+						<th scope="col">{t('admin.invites.colUses')}</th>
+						<th scope="col">{t('admin.invites.colExpires')}</th>
+						<th scope="col"><span class="visually-hidden">{t('admin.invites.colActions')}</span></th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each rows as row (row.id)}
+						<tr>
+							<th scope="row">{row.note}</th>
+							<td><Chip>{row.state}</Chip></td>
+							<td>{row.uses}</td>
+							<td>{row.expires}</td>
+							<td>
+								{#if row.canRevoke}
+									<Button disabled={busy} aria-label={t('admin.invites.revokeNamed', { note: row.note })}
+										onclick={() => revoke(row.id)}>{t('admin.invites.revoke')}</Button
+									>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{:else if loaded}
 		<p class="hint">{t('admin.invites.none')}</p>
 	{/if}

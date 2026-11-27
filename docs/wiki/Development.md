@@ -85,6 +85,27 @@ npm run e2e -- --headed --debug    # watch and step through
 - A failure's trace holds the learner's session token and, in the sign-in tests, the password typed: they
   belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere.
 
+### Phone width
+
+Every screen fits a 360 px phone without scrolling sideways (#296). The guard is
+`expectNoSidewaysScroll(page, where)` in `apps/web/e2e/support/layout.ts` (`PHONE` is the 360 × 740 viewport;
+`sidewaysOverflow(page)` returns the measurements): it fails when the page widened the phone's viewport, when
+`document.documentElement.scrollWidth` (or the body's) is wider than the screen, or when any rendered element or
+text reaches past the screen's left or right edge. Content inside a box that scrolls or clips sideways is
+bounded by that box (an absolutely positioned element only by its containing block), so a wide table in its own
+scroller is fine; the page root's `overflow-x: hidden` does not hide anything. `tests/phone-width.spec.ts` runs
+it over every main page, every Settings tab and Admin section, the sign-in pages and Settings → Data with a
+pack whose id, attribution and package line are 120 characters without a space, and shows that a planted
+overflow fails it.
+
+- **A new screen adds its path** to `tests/phone-width.spec.ts` (with the data that makes it long or wide), or
+  calls `expectNoSidewaysScroll` in its own spec at `test.use({ viewport: PHONE, hasTouch: true, isMobile: true })`.
+- Long ids, URLs and other strings without spaces get `overflow-wrap: anywhere`; a flex or grid child that holds
+  one gets `min-width: 0`.
+- A table sits directly in `<div class="ui-table-scroll" tabindex="0" role="region" aria-label=…>` (`app.css`):
+  it scrolls sideways inside it and the box is positioned, so a visually hidden label cannot escape it.
+  `src/lib/ui/lint/tableScroll.test.ts` fails on a `.ui-table` without one.
+
 Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
 study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
 Back (#131), with the reviews the server stores; the reader popup on hover (desktop; the longest match first,
@@ -94,7 +115,8 @@ grading time, when back online and after a reload; the phone bottom bar at 360 p
 long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a
 journal conversation with the fake AI partner (its opening, the lookup popup on a reply, corrections in the
 margin, saving it as an entry); AI example sentences on an entry with the fake provider (generating them, the
-one without the word left out, keeping one, reporting one, the AI-written mark after a reload).
+one without the word left out, keeping one, reporting one, the AI-written mark after a reload); no sideways
+scroll at 360 px on every main page, Settings tab and Admin section (above).
 
 Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
 prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke
