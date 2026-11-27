@@ -72,6 +72,16 @@ func TestStudyEligibility(t *testing.T) {
 		VALUES (?, 'pack-a', 'ケーキを食べた。', '', 'I ate cake.', '2026-11-27T00:00:00Z')`, taberu); err != nil {
 		t.Fatal(err)
 	}
+	// Stroke data for 食 in a live pack; 水 only in an uninstalled one.
+	for _, q := range []string{
+		`INSERT INTO stroke_packs (pack_id, name, version, languages, license, attribution, ord, updated_at) VALUES ('live', 'L', '1', '["ja"]', 'x', 'x', 1, 't')`,
+		`INSERT INTO stroke_packs (pack_id, name, version, languages, license, attribution, ord, updated_at, deleted_at) VALUES ('gone', 'G', '1', '["ja"]', 'x', 'x', 2, 't', 't')`,
+		`INSERT INTO strokes (pack_id, char, data) VALUES ('live', '食', '{}'), ('gone', '水', '{}')`,
+	} {
+		if _, err := sqlDB.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
 	// Alice's own sentence on 水: hers, never Bob's.
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/entries/"+strconv.FormatInt(mizu, 10)+"/sentences", alice,
 		map[string]string{"hanzi": "水を飲む。", "translation": "I drink water."})
@@ -86,7 +96,7 @@ func TestStudyEligibility(t *testing.T) {
 		t.Fatalf("alice: status %d", status)
 	}
 	want := map[string]string{
-		key(taberu):  "sentence,reverse,cloze",
+		key(taberu):  "sentence,writing,reverse,cloze",
 		key(mizu):    "sentence,reverse,cloze",
 		key(watashi): "reverse",
 		"999999":     "",

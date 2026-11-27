@@ -1,10 +1,9 @@
 // Package eligibility answers, per dictionary entry, which companion cards
 // (docs/contracts/cards/) a study session can make of it: a word salad
-// (sentence), a tone card, a reverse card and a cloze card. They are the
-// rules a card applies when it is shown, decided before the session is
-// planned, so a count never promises a card the session then drops (#288;
-// docs/contracts/cards/eligibility.json). Writing is decided by the client
-// from the card's own snapshot and is not answered here.
+// (sentence), a writing card, a tone card, a reverse card and a cloze card.
+// They are the rules a card applies when it is shown, decided before the
+// session is planned, so a count never promises a card the session then
+// drops (#288; docs/contracts/cards/eligibility.json).
 package eligibility
 
 import (
@@ -12,6 +11,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -23,12 +23,14 @@ import (
 	"qinqin/internal/overlay"
 	"qinqin/internal/segment"
 	"qinqin/internal/sentences"
+	"qinqin/internal/strokes"
 )
 
 // The kinds this package answers, in the card kind order
 // (vocab, sentence, writing, tone, reverse, cloze).
 const (
 	Sentence = "sentence"
+	Writing  = "writing"
 	Tone     = "tone"
 	Reverse  = "reverse"
 	Cloze    = "cloze"
@@ -40,8 +42,9 @@ const ClozeCandidates = 8
 
 // Entry is what the rules read of an entry, as the viewer sees it: the
 // written form and readings after the viewer's own patch, the dictionary
-// forms, the number of glosses and the sentences the viewer may see (pack
-// sentences, then the viewer's own) in server order.
+// forms, the number of glosses, the sentences the viewer may see (pack
+// sentences, then the viewer's own) in server order, and which characters of
+// the written form have stroke data.
 type Entry struct {
 	ID                      int64
 	Language, Kind, Written string
@@ -49,6 +52,7 @@ type Entry struct {
 	Readings                []model.Reading
 	Glosses                 int
 	Sentences               []string
+	Strokes                 map[string]bool
 }
 
 // SegmentFunc segments a text in a language (the server's segmenter, the
@@ -68,6 +72,11 @@ func Kinds(ctx context.Context, e Entry, seg SegmentFunc) ([]string, error) {
 	}
 	if len(usable) > 0 {
 		kinds = append(kinds, Sentence)
+	}
+	// A character without glosses gets no writing card: a reading-only
+	// prompt matches many homophones.
+	if !(e.Kind == "character" && e.Glosses == 0) && writable(e.Written, e.Strokes) {
+		kinds = append(kinds, Writing)
 	}
 	if lang.ProfileOf(e.Language).Tones && hasCleanPinyin(e.Readings) {
 		kinds = append(kinds, Tone)
@@ -92,6 +101,25 @@ func Kinds(ctx context.Context, e Entry, seg SegmentFunc) ([]string, error) {
 		}
 	}
 	return kinds, nil
+}
+
+// writable reports whether a Han character of written has stroke data.
+func writable(written string, strokes map[string]bool) bool {
+	for _, r := range written {
+		if unicode.Is(unicode.Han, r) && strokes[string(r)] {
+			return true
+		}
+	}
+	return false
+}
+
+// hanChars are the distinct Han characters of written.
+func hanChars(written string, into map[string]bool) {
+	for _, r := range written {
+		if unicode.Is(unicode.Han, r) {
+			into[string(r)] = true
+		}
+	}
 }
 
 // jsSpace is white space as the web client trims and splits it (JavaScript's
@@ -180,7 +208,9 @@ func ForEntries(ctx context.Context, sqlDB *sql.DB, segmenter Segmenter, viewerI
 	if err != nil {
 		return nil, fmt.Errorf("eligibility: %w", err)
 	}
-	for _, e := range es {
+	bases := make([]model.EntryBase, len(es))
+	chars := map[string]bool{}
+	for i, e := range es {
 		base := model.EntryBase{ID: e.ID, Language: e.Language, Kind: e.Kind, Written: e.Headword()}
 		for _, r := range e.Readings {
 			base.Readings = append(base.Readings, model.Reading{Type: r.Type, Value: r.Value, Plain: r.Plain, Ord: r.Ord})
@@ -188,7 +218,21 @@ func ForEntries(ctx context.Context, sqlDB *sql.DB, segmenter Segmenter, viewerI
 		if err := overlay.Apply(ctx, sqlDB, viewerID, &base); err != nil {
 			return nil, fmt.Errorf("eligibility: %w", err)
 		}
-		entry := Entry{ID: e.ID, Language: e.Language, Kind: e.Kind, Written: base.Written, Readings: base.Readings, Sentences: texts[e.ID]}
+		bases[i] = base
+		hanChars(base.Written, chars)
+	}
+	list := make([]string, 0, len(chars))
+	for c := range chars {
+		list = append(list, c)
+	}
+	slices.Sort(list)
+	have, err := strokes.Has(ctx, sqlDB, list)
+	if err != nil {
+		return nil, fmt.Errorf("eligibility: %w", err)
+	}
+	for i, e := range es {
+		base := bases[i]
+		entry := Entry{ID: e.ID, Language: e.Language, Kind: e.Kind, Written: base.Written, Readings: base.Readings, Sentences: texts[e.ID], Strokes: have}
 		for _, f := range e.Forms {
 			entry.Forms = append(entry.Forms, f.Text)
 		}

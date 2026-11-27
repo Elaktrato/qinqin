@@ -17,7 +17,7 @@ const (
 // handleStudyEligibility serves POST /api/study/eligibility {"ids":[...]}:
 // for each of 1 to 500 entries, the companion card kinds a study session
 // can make of it for the caller (docs/contracts/cards/eligibility.json), as
-// {"entries": {"<id>": ["sentence", "tone", "reverse", "cloze"]}} in kind
+// {"entries": {"<id>": ["sentence", "writing", "tone", "reverse", "cloze"]}} in kind
 // order; every asked id is answered, an unknown entry with []. The caller's
 // own sentences and patch count, nobody else's. It segments sentences, so it
 // shares the per-user slots of POST /api/segment.

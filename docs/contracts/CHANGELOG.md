@@ -8,14 +8,13 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 ## #288 — companion eligibility decided when a session is planned (contract 14)
 
 - **New route:** `POST /api/study/eligibility {"ids": [...]}` (1 to 500 entry ids) answers, per entry, the companion
-  kinds a study session can make of it for the caller: `sentence`, `tone`, `reverse`, `cloze`, in kind order
+  kinds a study session can make of it for the caller: `sentence`, `writing`, `tone`, `reverse`, `cloze`, in kind order
   (`{"entries": {"<id>": [...]}}`, an unknown entry `[]`). Signed-in users only, no access tokens, not cached offline.
 - **New fixture** `cards/eligibility.json` (rule `cards/eligibility`), decoded by Go and web: the show-time rules of
-  the cards (a non-blank sentence; a cloze blank among the first 8 sentences, inflected forms counted through the
-  segmenter; clean toned pinyin in a tonal language; a word with a gloss) moved to planning.
-- **Planning:** a companion is planned only when the index allows it (an unknown entry as before); a writing
-  companion needs a Han character of the card's snapshot in the bundled stroke index (as level sessions already did).
-  The web client's per-tab memory of ineligible words (`qinqin.study.ineligible` in sessionStorage) is gone.
+  the cards (a non-blank sentence; a Han character with stroke data in an installed pack; a cloze blank among the
+  first 8 sentences, inflected forms counted through the segmenter; clean toned pinyin in a tonal language; a word
+  with a gloss) moved to planning.
+- **Planning:** a companion is planned only when the index allows it (an unknown entry as before). The web client's per-tab memory of ineligible words (`qinqin.study.ineligible` in sessionStorage) is gone.
 
 ## #62 — Japanese stroke order: the language of a stroke request (contract 13)
 

@@ -30,6 +30,7 @@ type fixtureCase struct {
 		Hanzi string `json:"hanzi"`
 	} `json:"sentences"`
 	MatchesBySentence map[string][]segment.Match `json:"matchesBySentence"`
+	Strokes           []string                   `json:"strokes"`
 	Kinds             []string                   `json:"kinds"`
 }
 
@@ -56,7 +57,10 @@ func TestEligibilityContract(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			e := eligibility.Entry{
 				ID: c.Entry.ID, Language: c.Entry.Language, Kind: c.Entry.Kind, Written: c.Entry.Written,
-				Readings: c.Entry.Readings, Glosses: c.Entry.Glosses,
+				Readings: c.Entry.Readings, Glosses: c.Entry.Glosses, Strokes: map[string]bool{},
+			}
+			for _, ch := range c.Strokes {
+				e.Strokes[ch] = true
 			}
 			for _, f := range c.Entry.Forms {
 				e.Forms = append(e.Forms, f.Text)
