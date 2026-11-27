@@ -27,6 +27,7 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Fixed
 
+- Tones cards accept the tone a syllable is spoken with (#300): 不客气 is right as 4-4-neutral (the dictionary) and as 2-4-neutral (spoken, 不 before a fourth tone is bú); the same for 一 and for third tones in a row (你好). The answer shows both where they differ, bù → bú. Settings → Study → **Tones**: **Show tone sandhi** (on) and **Grade spoken tones** (off), per workspace.
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or
   Reverse card is planned only for words that can make one (the server checks before the session starts), so a
   Japanese deck without example sentences no longer counts down from 20 to "no cards" (#288). The home widget's
