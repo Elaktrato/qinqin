@@ -251,6 +251,12 @@ Optional help a learner asks for during a review instead of looking at the answe
   offers it only when it has one, `hasPicture`: an images pack maps it, #216, and the Pictures visual aid is on,
   `aids/README.md`). A new kind is a new registry row with its own defaults; Starter mode
   (#214) uses the same kinds, rules and display, and replaces the modes of one card with `forced` ones (its stages).
+- **The romanisation kind** (#284, last): with a romanisation hidden (`settings/README.md`, key `romanisation`), the
+  `reading` kind offers only the readings that are shown (`hasReading`: at least one shown reading) and the hidden ones
+  are the kind `romanisation` (`hasRomanisation`: at least one hidden reading), revealed after every other kind and
+  counted like any hint. It is **derived, never stored** (`storedKinds` are the ones with a Settings row; `derived`):
+  its mode on a card kind is `never` when the reading kind's is `never`, else `hint` (a forced `reading` mode decides it
+  too); it does not apply to `tone` cards. Cases: `plans` (the romanisation cases) and `entries` (`hintsForEntry`).
 - **Modes**, per hint kind and card kind: `always` (part of the front, shown from the start), `hint` (hidden until the
   learner asks), `never`. **Defaults** are the table `defaults` in the fixture: reading is a hint on `vocab`
   (Recognise), `sentence`, `reverse` (Recall) and `cloze`, always on `writing` (the writing card has always shown

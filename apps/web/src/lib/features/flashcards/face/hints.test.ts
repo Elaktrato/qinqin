@@ -14,7 +14,7 @@ const plan: HintPlan = { always: ['reading'], onRequest: ['picture'] };
 
 describe('the hint registry', () => {
 	it('keeps one definition per kind in the fixed order', () => {
-		expect(HINT_REGISTRY.map((d) => d.id)).toEqual(['reading', 'picture']);
+		expect(HINT_REGISTRY.map((d) => d.id)).toEqual(['reading', 'picture', 'romanisation']);
 	});
 
 	it('picture is ready (#212) and offered only for an entry that has one', () => {
@@ -29,14 +29,15 @@ describe('hintsForEntry', () => {
 	it('reads what an entry offers', () => {
 		expect(hintsForEntry({ readings: [{ type: 'pinyin', value: 'ma1' }] })).toEqual({
 			hasReading: true,
-			hasPicture: false
+			hasPicture: false,
+			hasRomanisation: false
 		});
-		expect(hintsForEntry({ readings: [] })).toEqual({ hasReading: false, hasPicture: false });
+		expect(hintsForEntry({ readings: [] })).toEqual({ hasReading: false, hasPicture: false, hasRomanisation: false });
 	});
 
 	it('offers a picture only when the caller says the entry has one', () => {
-		expect(hintsForEntry({ readings: [] }, { hasPicture: true })).toEqual({ hasReading: false, hasPicture: true });
-		expect(hintsForEntry({ readings: [] }, {})).toEqual({ hasReading: false, hasPicture: false });
+		expect(hintsForEntry({ readings: [] }, { hasPicture: true })).toEqual({ hasReading: false, hasPicture: true, hasRomanisation: false });
+		expect(hintsForEntry({ readings: [] }, {})).toEqual({ hasReading: false, hasPicture: false, hasRomanisation: false });
 	});
 });
 

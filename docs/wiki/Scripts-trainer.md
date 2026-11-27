@@ -14,6 +14,8 @@ Each writing system has a chart grouped as the system is taught:
 
 Each cell shows the letter and its romanisation; its frame says how well you know it (not seen, learning, known; a ✓ marks known, a dashed frame learning, a darker frame due for review). Tap a cell for its sound (the play button), the keyboard key that types it and notes.
 
+
+**Romaji hidden.** With **Show romaji** on **Never** (Settings → Study → Romanisation), the kana charts show the letters without their romaji: tap a letter to hear it and see its romaji. **Recall**, **Type** and **Write** ask with the sound (the play button) and keep the romaji behind **Show romaji**. **Recognise** and **Read** answer by choosing a romaji, so they are not offered while it is hidden. Hangul and Cyrillic are not affected.
 ## Practice
 
 Five modes (four for Hangul and Cyrillic), ten questions a round, feedback after each:

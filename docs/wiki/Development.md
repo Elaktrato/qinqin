@@ -176,6 +176,18 @@ A language is a profile: a row in `docs/contracts/languages/profiles.json` and t
 code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").
 Availability checks ask the profile (`docs/contracts/languages/README.md` says which member decides what), not `language === 'zh'`; what remains language code is reading code (pinyin, kana, fonts, audio, the online-library sources) and the Chinese-only data notes.
 
+**Readings and hidden romanisation (#284).** A learner may hide romaji, pinyin or bopomofo per workspace
+(`settings/README.md`, key `romanisation`; one rule, `isReadingShown`, in `apps/web/src/lib/languages/romanisation.ts`).
+Every screen that shows a reading follows it, new screens included (drills, course lessons, sentence cards, the
+browser add-on): render a typed reading through `ReadingText` (or the flashcards' `ReadingTable`), which hide a
+hidden type, and ask `useRomanisation()` (`apps/web/src/lib/languages/useRomanisation.ts`) for anything else:
+`roman.shown(readings)` for a list, `roman.shows(type)` for one, `roman.text(value, language)` for a plain reading
+string (typed by its script). A hidden reading the learner asks for is a hint (on a card, the `romanisation` hint
+kind). The guard `apps/web/src/lib/languages/romanisation.lint.test.ts` scans the markup of every component for the
+known reading fields: a new component that prints one must use the helper and be added to its `RENDERERS` list, and a
+new reading field goes into `READING_FIELDS` (`romanisationGuard.ts`). Tone colours and furigana keep their own
+switches.
+
 ## CI
 
 `.github/workflows/build.yml` runs on pushes to `main` and `develop`, on `v*` tags and on pull requests into `main` and `develop`:

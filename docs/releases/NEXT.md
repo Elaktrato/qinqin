@@ -11,6 +11,14 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
+## New
+
+- Study: hide romanisation everywhere (#284). Settings → Study → **Romanisation** has **Show pinyin** and **Show bopomofo**
+  (Chinese) and **Show romaji** (Japanese), each Always or Never. A hidden one appears nowhere: word pages, search,
+  the reader (popup, phone sheet, ruby), word lists, Stats, every flashcard kind and the kana trainer. On a card it is
+  the last hint; Tones cards answer with tone numbers and contours; Starter mode starts at the kana or the
+  characters. Searching by romaji or pinyin still works. Tone colours and furigana keep their own switches.
+
 ## Fixed
 
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or

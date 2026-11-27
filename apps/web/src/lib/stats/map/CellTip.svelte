@@ -2,6 +2,7 @@
 	import { placePopup } from '$lib/features/reader/placement';
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { STAGE_INFO, type TipRequest } from '$lib/studycore/mapGrid';
 
 	let { tip, id, lang }: { tip: TipRequest | null; id: string; lang: string } = $props();
@@ -43,6 +44,7 @@
 		if (reviewedCards > 0) parts.push(t('stats.map.tipCards', { count: reviewedCards }));
 		return parts.join(' · ');
 	});
+	const roman = useRomanisation();
 </script>
 
 <!-- One shared popover for every cell; it never takes focus or the pointer. -->
@@ -59,7 +61,7 @@
 		<div class="top">
 			<span class="glyph" lang={studyLang(lang)}>{row.c}</span>
 			<span class="text">
-				{#if row.r}<span class="reading" lang={readingLang(lang.startsWith('ja') ? 'kana' : 'pinyin', lang)}>{row.r}</span>{/if}
+				{#if roman.text(row.r, lang)}<span class="reading" lang={readingLang(lang.startsWith('ja') ? 'kana' : 'pinyin', lang)}>{row.r}</span>{/if}
 				{#if row.m}<span class="gloss" lang={glossLang(undefined)}>{row.m}</span>{/if}
 				{#if row.v?.length}<span class="variants">{t('stats.map.alsoWritten', { variants: row.v.join(' ') })}</span>{/if}
 			</span>

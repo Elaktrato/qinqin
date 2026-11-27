@@ -8,6 +8,7 @@
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	const session = useSession();
 
 	let { pack, lessonId }: { pack: string; lessonId: string } = $props();
@@ -46,6 +47,8 @@
 	const bodyStart = $derived(lesson?.pattern.length ?? 0);
 	const exampleStart = $derived(bodyStart + (lesson?.body.length ?? 0));
 	const language = $derived(data?.view.pack.language ?? '');
+	// Hidden romanisation (#284): an example's reading line follows the workspace's switches.
+	const roman = useRomanisation();
 	const textLang = $derived(data?.textLang ?? '');
 
 	// Words are added to study in the current workspace only when it is the lesson's language.
@@ -73,7 +76,7 @@
 	});
 
 	const practiceHref = $derived(grammarHref({ view: 'practice', pack, lesson: lessonId }));
-	const hasReadings = $derived(lesson?.examples.some((e) => e.reading !== '') ?? false);
+	const hasReadings = $derived(lesson?.examples.some((e) => roman.text(e.reading, language) !== '') ?? false);
 </script>
 
 <div class="page-body lesson">
@@ -123,7 +126,7 @@
 									)}{:else}{example.text}{/if}</span
 							>
 						</p>
-						{#if showReadings && example.reading}<p class="reading">{example.reading}</p>{/if}
+						{#if showReadings && roman.text(example.reading, language)}<p class="reading">{example.reading}</p>{/if}
 						<p class="translation">{example.translation}</p>
 					</li>
 				{/each}

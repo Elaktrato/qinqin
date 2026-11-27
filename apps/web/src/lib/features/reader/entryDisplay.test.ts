@@ -94,6 +94,31 @@ describe('readingLine', () => {
 	it('is empty for a Japanese word (its reading is ruby)', () => {
 		expect(readingLine(result({}), 'ja')).toBe('');
 	});
+
+	it('leaves out a hidden romanisation (#284), the untyped fallback included', () => {
+		const hidden = (type: string) => type !== 'pinyin' && type !== 'romaji';
+		const r = result({ term: '行', reading: 'xíng', readings: [{ type: 'pinyin', value: 'xíng', plain: 'xing2' }] });
+		expect(readingLine(r, 'zh', hidden)).toBe('');
+		expect(readingLine(result({ term: '学', reading: 'xué' }), 'zh', hidden)).toBe('');
+		const both = result({
+			term: '行',
+			readings: [
+				{ type: 'pinyin', value: 'xíng', plain: 'xing2' },
+				{ type: 'bopomofo', value: 'ㄒㄧㄥˊ', plain: 'ㄒㄧㄥˊ' }
+			]
+		});
+		expect(readingLine(both, 'zh', hidden)).toBe('ㄒㄧㄥˊ');
+		expect(readingLine(both, 'zh', (type) => type !== 'pinyin' && type !== 'bopomofo')).toBe('');
+		const ja = result({
+			kind: 'character',
+			term: '下',
+			readings: [
+				{ type: 'on', value: 'カ', plain: 'か' },
+				{ type: 'romaji', value: 'ka', plain: 'ka' }
+			]
+		});
+		expect(readingLine(ja, 'ja', hidden)).toBe('On: カ');
+	});
 });
 
 describe('otherForms', () => {

@@ -7,6 +7,7 @@
 	import ToneText from '$lib/aids/ToneText.svelte';
 	import { readingLabel } from '$lib/languages/format';
 	import { readingLang } from '$lib/i18n/lang';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	interface Reading {
 		type: string;
@@ -26,10 +27,12 @@
 		/** Values in <strong> (the tone card's answer). */
 		emphasis?: boolean;
 	} = $props();
+	// Hidden romanisation (#284): a hidden type has no row.
+	const roman = useRomanisation();
 
 	const rows = $derived.by(() => {
 		const byType = new Map<string, string[]>();
-		for (const reading of readings) {
+		for (const reading of roman.shown(readings)) {
 			const key = reading.type.trim().toLowerCase();
 			const values = byType.get(key);
 			if (values === undefined) byType.set(key, [reading.value]);

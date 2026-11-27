@@ -3,6 +3,7 @@
 	import AiTag from '$lib/components/AiTag.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
@@ -35,6 +36,8 @@
 
 	let { item, entry, revealed, onDone, audio, starter = null }: Props = $props();
 	const front = $derived(starter?.front ?? null);
+	// Hidden romanisation (#284): the answer's reading table drops a hidden type (ReadingTable).
+	const roman = useRomanisation();
 
 	// A sentence id that no longer resolves is passed as null so the card
 	// simply has no sentence block. A virtual level card previews the
@@ -50,7 +53,7 @@
 
 	// The prompt is the word alone; its readings and example sentence belong
 	// to the answer, below the hairline (design §9, #101).
-	const hasReadings = $derived(faces.back.readings.length > 0);
+	const hasReadings = $derived(roman.shown(faces.back.readings).length > 0);
 
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 

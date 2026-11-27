@@ -5,6 +5,7 @@
 	import { partitionSenses } from '$lib/workspace/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
 	import { Chip } from '$lib/ui';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import {
 		dictionaryNames,
 		frequencyLabel,
@@ -52,7 +53,9 @@
 	} = $props();
 
 	const ruby = $derived(rubyReading(result, lang));
-	const reading = $derived(readingLine(result, lang));
+	// Hidden romanisation (#284): the popup and the phone sheet show no hidden reading.
+	const roman = useRomanisation();
+	const reading = $derived(readingLine(result, lang, roman.shows));
 	const forms = $derived(otherForms(result));
 	const sources = $derived(dictionaryNames(result));
 	const levels = $derived(levelChips(result));

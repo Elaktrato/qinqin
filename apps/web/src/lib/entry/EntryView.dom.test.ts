@@ -345,3 +345,38 @@ describe('kept AI examples on the entry', () => {
 		await waitFor(() => expect(document.activeElement?.id).toBe('ai-examples-heading'));
 	});
 });
+
+describe('hidden romanisation on the entry page (#284)', () => {
+	const hide = (settings: Record<string, unknown>) =>
+		ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh', settings } as never });
+
+	it('shows no pinyin anywhere on the page while pinyin is hidden, and keeps bopomofo', async () => {
+		hide({ romanisation: { pinyin: 'never' } });
+		getEntryMock.mockResolvedValue(
+			entry({
+				readings: [
+					{ type: 'pinyin', value: 'qínfèn', plain: 'qin2fen4', ord: 0 },
+					{ type: 'bopomofo', value: 'ㄑㄧㄣˊ ㄈㄣˋ', plain: 'ㄑㄧㄣˊ ㄈㄣˋ', ord: 1 }
+				],
+				characters: [
+					{ id: 6, written: '勤', reading: { type: 'pinyin', value: 'qín' }, gloss: 'diligent', radical: null, strokes: 13, levels: [] }
+				],
+				sentences: [{ id: 3, hanzi: '他很勤奋。', pinyin: 'tā hěn qínfèn.', translation: 'He is diligent.' } as never]
+			})
+		);
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		await waitFor(() => expect(container.textContent).toContain('ㄑㄧㄣˊ ㄈㄣˋ'));
+		expect(container.textContent).not.toMatch(/qín|qínfèn|tā hěn/);
+		expect(container.querySelector('[data-type="pinyin"]')).toBeNull();
+		expect(container.textContent).toContain('He is diligent.');
+	});
+
+	it('shows the pinyin again once the switch is back to Always', async () => {
+		hide({ romanisation: { pinyin: 'always' } });
+		getEntryMock.mockResolvedValue(entry());
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		expect(container.textContent).toContain('qínfèn');
+	});
+});

@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #284 — hidden romanisation (contract 16)
+
+- **New workspace-settings key** `romanisation` (`settings/README.md`): `{"pinyin" | "bopomofo" | "romaji": "always" |
+  "never"}`, default `always`, read member by member; written one type at a time by merge patch. New fixture
+  `settings/romanisation.json` (rule `settings/romanisation`), decoded by web and Go: the rule `isReadingShown`, a plain
+  reading string typed by its script, and the switches of each language.
+- **Language profiles:** a new member `romanisations` (`zh`: `pinyin`, `bopomofo`; `ja`: `romaji`; others none).
+- **Hints:** a new last hint kind `romanisation` (`cards/hints.json`): the hidden readings of the entry, offered only
+  when the entry has one, never stored (its mode follows the `reading` kind: `never` stays `never`, else `hint`); the
+  `reading` kind offers only the readings that are shown. An entry is now `{hasReading, hasPicture, hasRomanisation}`.
+- **Clients:** no route or stored data changes. A client that does not know the key shows every reading, as before.
+
 ## #277 — Grammar lesson runs are study events (contract 15)
 
 - **New event type:** `grammar`, one per finished lesson run, `{point: "<packId>:<lessonId>", mode: "lesson",

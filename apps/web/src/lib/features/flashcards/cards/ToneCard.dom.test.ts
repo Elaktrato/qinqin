@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, updateWorkspaces, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Entry } from '$lib/api/types';
@@ -130,5 +130,41 @@ describe('ToneCard on the open page (#101)', () => {
 		setup();
 		expect(document.querySelector('.face-prompt .fp-word')?.textContent).toBe('你好');
 		expect(pads()[0].closest('.face-work')).not.toBeNull();
+	});
+});
+
+describe('ToneCard with pinyin hidden (#284, owner decision)', () => {
+	function hidePinyin() {
+		const ws = { id: 4, language: 'zh', name: '', settings: { romanisation: { pinyin: 'never' } }, updatedAt: 't' };
+		updateWorkspaces(ctx.session.workspaces, () => ({ list: [ws], current: ws }));
+	}
+
+	it('asks for the tones of the characters and answers with tone numbers and contours, never pinyin', async () => {
+		hidePinyin();
+		const { container } = setup();
+		expect(pads().map((p) => p.getAttribute('aria-label'))).toEqual(['Syllable 1, 你: no tone yet', 'Syllable 2, 好: no tone yet']);
+		await key('3');
+		await key('2');
+		await key('Enter');
+		const answers = [...container.querySelectorAll<HTMLElement>('.answer')];
+		expect(answers.map((a) => a.dataset.answerTone)).toEqual(['3', '3']);
+		expect(answers[0].querySelector('svg.answer-contour')).not.toBeNull();
+		expect(answers[0].textContent).toContain('third tone, dipping');
+		expect(container.textContent).not.toMatch(/nǐ|hǎo|ni|hao/);
+	});
+
+	it('the answer has no pinyin table', () => {
+		hidePinyin();
+		const { container } = setup({ done: true });
+		expect(screen.queryByRole('table', { name: 'Readings' })).toBeNull();
+		expect(container.textContent).not.toContain('nǐ hǎo');
+	});
+
+	it('names syllables by number, not pinyin, when the characters do not line up', () => {
+		hidePinyin();
+		const erhua = { ...entry, written: '一点儿', readings: [{ type: 'pinyin', value: 'yì diǎnr', plain: 'yi4dianr3', ord: 0 }] } as unknown as Entry;
+		const { container } = setup({ entry: erhua });
+		expect(pads().map((p) => p.getAttribute('aria-label'))).toEqual(['Syllable 1: no tone yet', 'Syllable 2: no tone yet']);
+		expect(container.textContent).not.toMatch(/yi|dian/);
 	});
 });

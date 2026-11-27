@@ -41,6 +41,8 @@
 	import { Button, Chip, Field, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	const roman = useRomanisation();
 
 	let { deckId }: { deckId: string } = $props();
 
@@ -467,7 +469,7 @@
 							/>
 							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(session.workspaces.current?.language)}>{row.written}</a>
 							<span class="reading" lang={wordReadingLang(session.workspaces.current?.language)}
-								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
+								>{roman.text(readingBeside(row.written, bases.get(row.entryId)?.readings ?? []), session.workspaces.current?.language ?? '')}</span
 							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>
 							<span class="chips">

@@ -106,6 +106,8 @@ Every card can offer a small **Hint** button (and the H key) that shows one more
 
 What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
 
+With a romanisation hidden (Settings → Study → **Romanisation**), the reading hint shows only the readings you see (kana; zhuyin when only pinyin is hidden), and the hidden romanisation is the **last** hint step: it counts as a hint like the others, and it is never shown on the front or the back unasked. Tones cards with pinyin hidden name each pad by its character and show the answer as the tone number and its contour. In Starter mode a Japanese word starts at the kana (no romaji under it), and a Chinese word is introduced by its picture, sound and characters (zhuyin stands in for pinyin when it is shown).
+
 Asking for a hint costs a little: the suggested grade goes down one step (Easy to Good, Good to Hard; a card you grade yourself is suggested Hard, and Hard and Again stay as they are). One hint or three, the suggestion drops once. You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
 
 ## Starter mode

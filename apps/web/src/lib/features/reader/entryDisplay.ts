@@ -21,15 +21,22 @@ export function rubyReading(r: LookupResult, lang: string): string {
  * pinyin reading of a Chinese entry joined with " · " (Chinese keeps one
  * entry per written form), or the on/kun readings of a Japanese character
  * grouped by type. Empty for a Japanese word, whose reading is ruby.
+ * `shows` is the hidden-romanisation rule (#284, useRomanisation().shows):
+ * a hidden type is left out, and so is the untyped fallback of a Chinese
+ * entry (its pinyin); with pinyin hidden a Chinese entry shows its bopomofo.
  */
-export function readingLine(r: LookupResult, lang: string): string {
+export function readingLine(r: LookupResult, lang: string, shows: (type: string) => boolean = () => true): string {
 	if (lang === 'zh') {
-		const pinyin = [...new Set(r.readings.filter((x) => x.type === 'pinyin').map((x) => x.value))];
-		return pinyin.length > 0 ? pinyin.join(' · ') : r.reading;
+		// With pinyin hidden, bopomofo (when shown) stands in for it.
+		const type = shows('pinyin') ? 'pinyin' : shows('bopomofo') ? 'bopomofo' : null;
+		if (type === null) return '';
+		const values = [...new Set(r.readings.filter((x) => x.type === type).map((x) => x.value))];
+		return values.length > 0 ? values.join(' · ') : type === 'pinyin' ? r.reading : '';
 	}
 	if (r.kind !== 'character') return '';
 	const byType = new Map<string, string[]>();
 	for (const reading of r.readings) {
+		if (!shows(reading.type)) continue;
 		byType.set(reading.type, [...(byType.get(reading.type) ?? []), reading.value]);
 	}
 	return [...byType].map(([type, values]) => formatReading(type, values.join(', '))).join(' · ');

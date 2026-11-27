@@ -4,9 +4,11 @@ import fixture from '../../../../../../../docs/contracts/cards/hints.json';
 import {
 	HINT_KINDS,
 	HINT_MODES,
+	STORED_HINT_KINDS,
 	applyHints,
 	defaultHintMode,
 	hintApplies,
+	hintsForEntry,
 	lowerForHints,
 	readHintSettings,
 	resolveHints,
@@ -15,6 +17,7 @@ import {
 	type HintSettings
 } from './hints';
 import { CARD_KINDS, type ReviewGrade, type StudyCardKind } from '$lib/studycore/types';
+import { readRomanisation } from '$lib/languages/romanisation';
 
 type Expected = 'defaults' | Partial<Record<HintKind, 'defaults' | Record<string, string>>>;
 
@@ -33,6 +36,7 @@ describe('hints contract: kinds, modes and defaults', () => {
 	it('lists the kinds in their fixed order and the three modes', () => {
 		expect([...HINT_KINDS]).toEqual(fixture.kinds);
 		expect([...HINT_MODES]).toEqual(fixture.modes);
+		expect([...STORED_HINT_KINDS]).toEqual(fixture.storedKinds);
 	});
 
 	it('has the pinned defaults for every kind and card kind', () => {
@@ -74,6 +78,16 @@ describe('hints contract: resolveHints', () => {
 				forced: (c as { forced?: Partial<Record<HintKind, HintMode>> }).forced
 			});
 			expect(plan).toEqual({ always: c.always, onRequest: c.onRequest });
+		});
+	}
+});
+
+describe('hints contract: hintsForEntry with hidden romanisation (#284)', () => {
+	for (const c of fixture.entries) {
+		it(c.name, () => {
+			const entry = { readings: c.readings.map((type) => ({ type, value: 'x' })) };
+			const got = hintsForEntry(entry, { romanisation: readRomanisation(c.settings as Record<string, unknown>) });
+			expect({ hasReading: got.hasReading, hasRomanisation: got.hasRomanisation }).toEqual(c.expect);
 		});
 	}
 });

@@ -23,6 +23,7 @@
 	import HintSettings from '$lib/settings/HintSettings.svelte';
 	import StarterSettings from '$lib/starter/StarterSettings.svelte';
 	import VisualAidsSettings from '$lib/settings/VisualAidsSettings.svelte';
+	import RomanisationSettings from '$lib/settings/RomanisationSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -322,6 +323,7 @@
 				<HintSettings />
 				<StarterSettings />
 				<VisualAidsSettings />
+				<RomanisationSettings />
 				<KnownSettings />
 				<LevelCheck />
 				<FeedbackSettings />

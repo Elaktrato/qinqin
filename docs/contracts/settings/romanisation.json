@@ -1,0 +1,69 @@
+{
+ "version": 1,
+ "rule": "settings/romanisation",
+ "note": "Hidden romanisation (#284). The workspace-settings key `romanisation`: {type: mode}. Web: apps/web/src/lib/languages/romanisation.ts, decoded by romanisation.test.ts; Go: server/internal/lang/romanisation_test.go (types against the profiles).",
+ "key": "romanisation",
+ "types": ["pinyin", "bopomofo", "romaji"],
+ "modes": ["always", "never"],
+ "defaults": { "pinyin": "always", "bopomofo": "always", "romaji": "always" },
+ "parse": [
+  { "name": "no member: every type shown", "settings": {}, "expect": { "pinyin": "always", "bopomofo": "always", "romaji": "always" } },
+  { "name": "null settings", "settings": null, "expect": { "pinyin": "always", "bopomofo": "always", "romaji": "always" } },
+  {
+   "name": "every type hidden",
+   "settings": { "romanisation": { "pinyin": "never", "bopomofo": "never", "romaji": "never" } },
+   "expect": { "pinyin": "never", "bopomofo": "never", "romaji": "never" }
+  },
+  {
+   "name": "each member alone: pinyin hidden, bopomofo shown",
+   "settings": { "romanisation": { "pinyin": "never" } },
+   "expect": { "pinyin": "never", "bopomofo": "always", "romaji": "always" }
+  },
+  {
+   "name": "an invalid mode is the default",
+   "settings": { "romanisation": { "pinyin": false, "bopomofo": "hide", "romaji": "NEVER" } },
+   "expect": { "pinyin": "always", "bopomofo": "always", "romaji": "always" }
+  },
+  {
+   "name": "unknown members are ignored",
+   "settings": { "romanisation": { "jyutping": "never", "romaji": "never" } },
+   "expect": { "pinyin": "always", "bopomofo": "always", "romaji": "never" }
+  },
+  {
+   "name": "a member that is not an object is the default",
+   "settings": { "romanisation": ["never"] },
+   "expect": { "pinyin": "always", "bopomofo": "always", "romaji": "always" }
+  }
+ ],
+ "shown": [
+  { "name": "pinyin hidden", "type": "pinyin", "settings": { "romanisation": { "pinyin": "never" } }, "expect": false },
+  { "name": "the type is matched trimmed and case-blind", "type": " Pinyin ", "settings": { "romanisation": { "pinyin": "never" } }, "expect": false },
+  { "name": "bopomofo is its own switch", "type": "bopomofo", "settings": { "romanisation": { "pinyin": "never" } }, "expect": true },
+  { "name": "romaji hidden", "type": "romaji", "settings": { "romanisation": { "romaji": "never" } }, "expect": false },
+  { "name": "kana is never romanisation", "type": "kana", "settings": { "romanisation": { "pinyin": "never", "bopomofo": "never", "romaji": "never" } }, "expect": true },
+  { "name": "on and kun readings stay", "type": "on", "settings": { "romanisation": { "romaji": "never" } }, "expect": true },
+  { "name": "an unknown (pack-defined) type stays", "type": "jyutping", "settings": { "romanisation": { "pinyin": "never" } }, "expect": true },
+  { "name": "the default shows pinyin", "type": "pinyin", "settings": {}, "expect": true }
+ ],
+ "textType": [
+  { "name": "Latin letters in Chinese are pinyin", "text": "xué xí", "language": "zh", "expect": "pinyin" },
+  { "name": "a region subtag resolves to the profile", "text": "nǚ'ér", "language": "zh-TW", "expect": "pinyin" },
+  { "name": "Bopomofo letters are bopomofo", "text": "ㄒㄩㄝˊ ㄒㄧˊ", "language": "zh", "expect": "bopomofo" },
+  { "name": "Latin letters in Japanese are romaji", "text": "taberu", "language": "ja", "expect": "romaji" },
+  { "name": "kana is not romanisation", "text": "たべる", "language": "ja", "expect": null },
+  { "name": "hanzi is not romanisation", "text": "学习", "language": "zh", "expect": null },
+  { "name": "a language without romanisation", "text": "hola", "language": "es", "expect": null },
+  { "name": "empty text", "text": "", "language": "zh", "expect": null }
+ ],
+ "languages": [
+  { "language": "zh", "types": ["pinyin", "bopomofo"] },
+  { "language": "zh-Hant", "types": ["pinyin", "bopomofo"] },
+  { "language": "ja", "types": ["romaji"] },
+  { "language": "ko", "types": [] },
+  { "language": "es", "types": [] }
+ ],
+ "patch": [
+  { "type": "pinyin", "mode": "never", "expect": { "romanisation": { "pinyin": "never" } } },
+  { "type": "romaji", "mode": "always", "expect": { "romanisation": { "romaji": "always" } } }
+ ]
+}

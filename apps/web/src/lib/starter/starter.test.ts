@@ -126,3 +126,48 @@ describe('stageNote', () => {
 		expect(stageNote('ja', 4, { usuallyKana: true })).toBe('normal');
 	});
 });
+
+describe('Starter mode and hidden romanisation (#284)', () => {
+	const ja = { language: 'ja', written: '林檎', readings: [{ type: 'kana', value: 'りんご' }, { type: 'romaji', value: 'ringo' }] };
+	const zh = {
+		language: 'zh',
+		written: '苹果',
+		readings: [
+			{ type: 'pinyin', value: 'píngguǒ' },
+			{ type: 'bopomofo', value: 'ㄆㄧㄥˊ ㄍㄨㄛˇ' }
+		]
+	};
+	const noRomaji = (type: string) => type !== 'romaji';
+	const noPinyin = (type: string) => type !== 'pinyin';
+	const neither = (type: string) => type !== 'pinyin' && type !== 'bopomofo';
+	const word = { usuallyKana: false };
+
+	it('Japanese with romaji hidden starts at the kana, with no romaji under it', () => {
+		expect(starterFront('ja', 1, word, ja, { shows: noRomaji })).toMatchObject({ main: 'りんご', annotation: null, placement: null });
+		expect(starterFront('ja', 2, word, ja, { shows: noRomaji })).toMatchObject({ main: 'りんご', annotation: null });
+		expect(starterFront('ja', 5, word, ja, { shows: noRomaji })).toMatchObject({ main: '林檎', annotation: 'りんご' });
+	});
+
+	it('Chinese with pinyin and bopomofo hidden: no pinyin stage, the characters from the start', () => {
+		expect(starterFront('zh', 1, word, zh, { shows: neither })).toMatchObject({ main: '苹果', annotation: null });
+		expect(starterFront('zh', 2, word, zh, { shows: neither })).toMatchObject({ main: '苹果', annotation: null });
+	});
+
+	it('Chinese with only pinyin hidden: bopomofo stands in for it', () => {
+		expect(starterFront('zh', 1, word, zh, { shows: noPinyin })).toMatchObject({ main: 'ㄆㄧㄥˊ ㄍㄨㄛˇ' });
+		expect(starterFront('zh', 2, word, zh, { shows: noPinyin })).toMatchObject({ main: '苹果', annotation: 'ㄆㄧㄥˊ ㄍㄨㄛˇ', placement: 'above' });
+	});
+
+	it('no "now in kana" or "the romaji are gone" note with romaji hidden', () => {
+		expect(stageNote('ja', 2, word, { shows: noRomaji })).toBeNull();
+		expect(stageNote('ja', 3, word, { shows: noRomaji })).toBeNull();
+		expect(stageNote('ja', 4, word, { shows: noRomaji })).toBe('pictureHint');
+	});
+
+	it('no "now with the hanzi" or "the pinyin are gone" note when no reading stands in', () => {
+		expect(stageNote('zh', 2, word, { shows: neither })).toBeNull();
+		expect(stageNote('zh', 4, word, { shows: neither })).toBeNull();
+		expect(stageNote('zh', 3, word, { shows: neither })).toBe('pictureHint');
+		expect(stageNote('zh', 2, word, { shows: noPinyin })).toBe('hanzi');
+	});
+});

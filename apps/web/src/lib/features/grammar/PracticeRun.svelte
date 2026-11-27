@@ -12,6 +12,7 @@
 	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	const session = useSession();
 	// (attempt 0 keeps the plain lesson seed; a retry shuffles anew)
 
@@ -39,6 +40,8 @@
 	});
 
 	const language = $derived(data?.view.pack.language ?? '');
+	// Hidden romanisation (#284): an example's reading line follows the workspace's switches.
+	const roman = useRomanisation();
 	const textLang = $derived(data?.textLang ?? '');
 	let attempt = $state(0);
 	const exercises = $derived<Exercise[]>(
@@ -199,7 +202,7 @@
 		{#if answered}
 			<section class="reveal" aria-label={t('grammar.practice.sentence')}>
 				<p class="sentence" lang={textLang}>{current.example.text}</p>
-				{#if current.example.reading}<p class="reading">{current.example.reading}</p>{/if}
+				{#if roman.text(current.example.reading, language)}<p class="reading">{current.example.reading}</p>{/if}
 			</section>
 			<Button variant="primary" bind:element={nextButton} onclick={() => void advance()}>
 				{index + 1 >= exercises.length ? t('grammar.practice.finish') : t('grammar.practice.next')}

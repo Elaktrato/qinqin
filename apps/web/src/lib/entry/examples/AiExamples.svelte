@@ -22,6 +22,7 @@
 	} from '$lib/api/examples';
 	import type { Sentence } from '$lib/api/types';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { loadProviderNames } from '$lib/features/journal/providerNames';
 	import { newUlid } from '$lib/events/ulid';
 	import ExampleActions from './ExampleActions.svelte';
@@ -149,6 +150,7 @@
 			error = generateErrorText(err);
 		}
 	}
+	const roman = useRomanisation();
 </script>
 
 {#if shown}
@@ -174,7 +176,7 @@
 				{#each drafts as draft (draft.id)}
 					<li class="draft">
 						<p class="hanzi" id={`ai-draft-${draft.id}`} lang={studyLang(entry.language)}>{draft.hanzi}</p>
-						{#if draft.pinyin}<p class="pinyin" lang={readingLang('pinyin', entry.language)}>{draft.pinyin}</p>{/if}
+						{#if draft.pinyin && roman.showsText(draft.pinyin, entry.language)}<p class="pinyin" lang={readingLang('pinyin', entry.language)}>{draft.pinyin}</p>{/if}
 						<p class="translation" lang={glossLang(undefined)}>{draft.translation}</p>
 						<span class="origin">{aiLabel({ provider: draft.provider, model: draft.model }, names)}</span>
 						<ExampleActions describedBy={`ai-draft-${draft.id}`} onkeep={() => keep(draft)} onremove={(reason) => remove(draft, reason)} />

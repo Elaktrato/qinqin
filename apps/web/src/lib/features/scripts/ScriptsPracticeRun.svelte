@@ -16,6 +16,8 @@
 	import type { Mode, Question, ScriptSystem } from './types';
 	import ScriptsWritePad from './ScriptsWritePad.svelte';
 	import { writeAnswer, writeVerdict } from './write';
+	import { hidesRomaji, ROMAJI_ANSWER_MODES } from './romaji';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	let {
 		system,
@@ -37,6 +39,14 @@
 	let showKey = $state(false);
 
 	const q = $derived(run.done ? null : run.questions[run.index]);
+	// Hidden romaji (#284, ./romaji.ts): a sound prompt plays the sound and keeps the romaji behind a hint; the modes
+	// that answer by choosing a romaji are not run.
+	const roman = useRomanisation();
+	const noRomaji = $derived(hidesRomaji(system.id, roman.shows));
+	const blocked = $derived(noRomaji && ROMAJI_ANSWER_MODES.includes(mode));
+	let showRomaji = $state(false);
+	const soundPrompt = $derived(q !== null && (q.mode === 'recall' || q.mode === 'type' || q.mode === 'write'));
+	const promptHidden = $derived(noRomaji && soundPrompt && !showRomaji);
 	const back = $derived(scriptsHref({ view: 'overview', system: system.id }));
 
 	function answer(text: string): void {
@@ -65,6 +75,7 @@
 		given = '';
 		typed = '';
 		showKey = false;
+		showRomaji = false;
 	}
 
 	function again(): void {
@@ -72,6 +83,7 @@
 		given = '';
 		typed = '';
 		showKey = false;
+		showRomaji = false;
 	}
 
 	function onkeydown(e: KeyboardEvent): void {
@@ -90,7 +102,10 @@
 		{#if q}<span>{t('scripts.run.progress', { n: run.index + 1, total: run.questions.length })}</span>{/if}
 	</p>
 
-	{#if run.questions.length === 0}
+	{#if blocked}
+		<p data-testid="romaji-hidden">{t('scripts.mode.romajiHidden')}</p>
+		<Button href={back}>{t('scripts.run.back')}</Button>
+	{:else if run.questions.length === 0}
 		<p>{t('scripts.run.empty')}</p>
 		<Button href={back}>{t('scripts.run.back')}</Button>
 	{:else if q === null}
@@ -103,11 +118,14 @@
 	{:else}
 		<p class="ask">{promptLabel(mode)}</p>
 		<div class="prompt">
-			<span class="shown" lang={q.mode === 'recognise' || q.mode === 'read' ? system.language : undefined}>{q.prompt}</span>
+			{#if !promptHidden}<span class="shown" lang={q.mode === 'recognise' || q.mode === 'read' ? system.language : undefined}>{q.prompt}</span>{/if}
 			{#if q.speak !== null}
-				<PlayButton clips={[]} speakText={q.speak} lang={system.language} {deviceVoice} label={q.prompt} />
+				<PlayButton clips={[]} speakText={q.speak} lang={system.language} {deviceVoice} label={promptHidden ? t('scripts.run.playSound') : q.prompt} />
 			{/if}
 		</div>
+		{#if promptHidden}
+			<Button variant="plain" onclick={() => (showRomaji = true)} data-testid="show-romaji">{t('scripts.run.showRomaji')}</Button>
+		{/if}
 
 		{#if q.mode === 'type'}
 			<p class="hint">{keyboardNote(system.id)}</p>
@@ -124,7 +142,7 @@
 			{/if}
 		{:else if q.mode === 'write'}
 			{#key run.index}
-				<ScriptsWritePad glyph={q.answer} sound={q.prompt} language={system.language} done={run.answered} onfinish={finishWrite} onskip={skipWrite} />
+				<ScriptsWritePad glyph={q.answer} sound={promptHidden ? t('scripts.run.thisSound') : q.prompt} language={system.language} done={run.answered} onfinish={finishWrite} onskip={skipWrite} />
 			{/key}
 		{:else}
 			<ul class="options">

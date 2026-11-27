@@ -102,6 +102,7 @@ import type { Run } from '$lib/studycore/vacation';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
 	import { pictureFor } from '$lib/aids/pictures';
 	import { readVisualAids } from '$lib/aids/visualAids';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/features/flashcards/face/hints';
 	import {
 		readStarterSettings,
@@ -181,10 +182,10 @@ import type { Run } from '$lib/studycore/vacation';
 		if (!starterAppliesTo(starterSettings, current.entry.language, deckIds)) return null;
 		const word = { usuallyKana: profile === 'ja' && usuallyKanaOf(current.entry) };
 		const progress = replayStarter(profile, word, starterReviews.get(current.item.cardId) ?? []);
-		const front = starterFront(profile, progress.stage, word, current.entry);
+		const front = starterFront(profile, progress.stage, word, current.entry, { shows: romanisation.shows });
 		const kana = current.entry.readings.find((r) => r.type === 'kana')?.value ?? '';
 		const note = progress.justAdvanced
-			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana) })
+			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana), shows: romanisation.shows })
 			: null;
 		return {
 			front,
@@ -194,6 +195,8 @@ import type { Run } from '$lib/studycore/vacation';
 	}
 	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
 	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
+	// Hidden romanisation (#284): the hidden readings are the last hint step.
+	const romanisation = useRomanisation();
 	let pictureTick = $state(0);
 	const hasPicture = (id: number): boolean => {
 		void pictureTick;
@@ -203,7 +206,7 @@ import type { Run } from '$lib/studycore/vacation';
 		resolveHints({
 			cardKind: current.item.kind,
 			settings: hintSettings,
-			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) }),
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id), romanisation: romanisation.prefs }),
 			forced: starterOf(current)?.forced
 		});
 	$effect(() => {

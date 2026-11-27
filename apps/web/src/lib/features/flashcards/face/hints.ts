@@ -4,11 +4,23 @@
 // A hint KIND is registered once below (reading and picture, the picture when an images pack maps the entry and the
 // Pictures visual aid is on, #212/#216). Each kind has a MODE per card kind: always (part of the front), hint (hidden until asked)
 // or never. Starter mode (#214) reuses this: it passes `forced` modes per stage instead of the settings.
+// Hidden romanisation (#284): the `reading` kind offers only the readings that are shown; the hidden ones are the
+// `romanisation` kind, revealed last and never stored (its mode follows the reading kind's: `never` stays `never`,
+// `always` and `hint` become `hint`, so asking for it always counts as a hint).
 
 import { CARD_KINDS, type ReviewGrade, type ReviewMeta, type StudyCardKind } from '$lib/studycore/types';
+import { ROMANISATION_DEFAULTS, hiddenReadings, shownReadings, type Romanisation } from '$lib/languages/romanisation';
 
-export const HINT_KINDS = ['reading', 'picture'] as const;
+export const HINT_KINDS = ['reading', 'picture', 'romanisation'] as const;
 export type HintKind = (typeof HINT_KINDS)[number];
+
+/** The kinds with a row in Settings > Hints (stored under `hints`); the others derive their mode. */
+export const STORED_HINT_KINDS = ['reading', 'picture'] as const satisfies readonly HintKind[];
+export type StoredHintKind = (typeof STORED_HINT_KINDS)[number];
+
+/** A derived kind's mode from the kind it follows: never stays never, anything else is a hint. */
+const DERIVED: Partial<Record<HintKind, HintKind>> = { romanisation: 'reading' };
+const derivedMode = (followed: HintMode): HintMode => (followed === 'never' ? 'never' : 'hint');
 
 export const HINT_MODES = ['always', 'hint', 'never'] as const;
 export type HintMode = (typeof HINT_MODES)[number];
@@ -18,8 +30,11 @@ export const HINTS_SETTINGS_KEY = 'hints';
 
 /** What an entry can offer as a hint. */
 export interface HintEntry {
+	/** A reading the learner is shown (hidden romanisation left out). */
 	hasReading: boolean;
 	hasPicture: boolean;
+	/** A reading the hidden-romanisation setting hides (#284); absent = none. */
+	hasRomanisation?: boolean;
 }
 
 export interface HintKindDef {
@@ -51,6 +66,14 @@ export const HINT_REGISTRY: readonly HintKindDef[] = [
 		applies: () => true,
 		available: (entry) => entry.hasPicture,
 		defaults: { vocab: 'hint', sentence: 'never', writing: 'hint', tone: 'hint', reverse: 'hint', cloze: 'never' }
+	},
+	{
+		id: 'romanisation',
+		// #284: the readings the workspace hides, last. Its defaults are the reading kind's, derived.
+		ready: true,
+		applies: (cardKind) => cardKind !== 'tone',
+		available: (entry) => entry.hasRomanisation === true,
+		defaults: { vocab: 'hint', sentence: 'hint', writing: 'hint', tone: 'never', reverse: 'hint', cloze: 'hint' }
 	}
 ];
 
@@ -76,7 +99,7 @@ export function readHintSettings(settings: Record<string, unknown> | null | unde
 	const stored = settings?.[HINTS_SETTINGS_KEY];
 	const root = isObject(stored) ? stored : {};
 	const out = {} as HintSettings;
-	for (const kind of HINT_KINDS) {
+	for (const kind of STORED_HINT_KINDS) {
 		const cells = isObject(root[kind]) ? (root[kind] as Record<string, unknown>) : {};
 		const row = {} as Record<StudyCardKind, HintMode>;
 		for (const card of CARD_KINDS) {
@@ -85,20 +108,36 @@ export function readHintSettings(settings: Record<string, unknown> | null | unde
 		}
 		out[kind] = row;
 	}
+	for (const kind of HINT_KINDS) {
+		const followed = DERIVED[kind];
+		if (followed === undefined) continue;
+		const row = {} as Record<StudyCardKind, HintMode>;
+		for (const card of CARD_KINDS) row[card] = !hintApplies(kind, card) ? 'never' : derivedMode(out[followed][card]);
+		out[kind] = row;
+	}
 	return out;
 }
 
 /** hintPatch: the merge patch (settings contract) that sets one cell. */
-export function hintPatch(kind: HintKind, cardKind: StudyCardKind, mode: HintMode): Record<string, unknown> {
+export function hintPatch(kind: StoredHintKind, cardKind: StudyCardKind, mode: HintMode): Record<string, unknown> {
 	return { [HINTS_SETTINGS_KEY]: { [kind]: { [cardKind]: mode } } };
 }
 
 /**
- * hintsForEntry: what an entry can offer: its readings, and a picture when the caller knows one is shown
+ * hintsForEntry: what an entry can offer: its shown readings, its hidden ones (`romanisation`, the workspace's
+ * hidden-romanisation setting; the default hides none), and a picture when the caller knows one is shown
  * (`hasPicture`: an images pack maps the entry and the Pictures visual aid is on; the default is none).
  */
-export function hintsForEntry(entry: { readings: readonly unknown[] }, opts: { hasPicture?: boolean } = {}): HintEntry {
-	return { hasReading: entry.readings.length > 0, hasPicture: opts.hasPicture === true };
+export function hintsForEntry(
+	entry: { readings: readonly { type: string; value?: string }[] },
+	opts: { hasPicture?: boolean; romanisation?: Readonly<Romanisation> } = {}
+): HintEntry {
+	const prefs = opts.romanisation ?? ROMANISATION_DEFAULTS;
+	return {
+		hasReading: shownReadings(entry.readings, prefs).length > 0,
+		hasPicture: opts.hasPicture === true,
+		hasRomanisation: hiddenReadings(entry.readings, prefs).length > 0
+	};
 }
 
 /** The hints of one card: shown from the start, and offered one at a time (both in the fixed order). */
@@ -120,9 +159,11 @@ export function resolveHints(args: {
 	forced?: Partial<Record<HintKind, HintMode>>;
 }): HintPlan {
 	const plan: HintPlan = { always: [], onRequest: [] };
+	const modeOf = (kind: HintKind): HintMode => args.forced?.[kind] ?? args.settings[kind][args.cardKind];
 	for (const d of HINT_REGISTRY) {
 		if (!d.applies(args.cardKind) || !d.available(args.entry)) continue;
-		const mode = args.forced?.[d.id] ?? args.settings[d.id][args.cardKind];
+		const followed = DERIVED[d.id];
+		const mode = followed === undefined || args.forced?.[d.id] !== undefined ? modeOf(d.id) : derivedMode(modeOf(followed));
 		if (mode === 'always') plan.always.push(d.id);
 		else if (mode === 'hint') plan.onRequest.push(d.id);
 	}

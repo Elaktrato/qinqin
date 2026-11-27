@@ -3,6 +3,7 @@
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { onMount } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
@@ -38,6 +39,7 @@
 	}
 
 	let { entry, revealed, language, onDone, audio }: Props = $props();
+	const roman = useRomanisation();
 
 	const front = $derived(buildReverseFront(entry));
 	const faces = $derived(buildVocabFaces(entry, null, language).back);
@@ -129,9 +131,9 @@
 		{/if}
 		<p class="fa-word" lang={studyLang(language)}>{faces.written}</p>
 		<AnswerAids {entry} />
-		{#if faces.readings.length > 0 || audio}
+		{#if roman.shown(faces.readings).length > 0 || audio}
 			<div class="fa-readings">
-				{#if faces.readings.length > 0}
+				{#if roman.shown(faces.readings).length > 0}
 					<ReadingTable readings={faces.readings} language={entry.language} label={t('flashcards.card.readings')} />
 				{/if}
 				{#if audio}

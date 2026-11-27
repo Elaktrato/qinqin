@@ -22,6 +22,8 @@
 	import { Button, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	const roman = useRomanisation();
 
 	// A read-only level deck: its items with the learner's state, a level
 	// session, and "Add to my decks" (idempotent, see addToDeck.ts).
@@ -252,7 +254,7 @@
 			{#each items as item (item.id)}
 				<li>
 					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
-					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{roman.text(readingBeside(item.written, item.readings), workspace?.language ?? '')}</span>
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>
 			{/each}

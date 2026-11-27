@@ -108,3 +108,17 @@ export function annotateParagraph(
 	}
 	return pieces.sort((a, b) => a.start - b.start);
 }
+
+/**
+ * shownPieces: the readings the learner may see (hidden romanisation, #284): a piece whose ruby text the rule
+ * hides (`keep`, useRomanisation().showsText typed by the script) is left out. The same list when none is.
+ */
+export function shownPieces(pieces: Piece[], keep: (rt: string) => boolean): Piece[] {
+	return pieces.every((p) => p.rt === undefined || keep(p.rt)) ? pieces : pieces.filter((p) => p.rt === undefined || keep(p.rt));
+}
+
+/** shownRuns: a book's runs with the ruby of a hidden type taken off (the text stays). The same list when none is. */
+export function shownRuns(runs: Run[], keep: (rt: string) => boolean): Run[] {
+	if (runs.every((r) => r.ruby === undefined || keep(r.ruby))) return runs;
+	return runs.map((r) => (r.ruby === undefined || keep(r.ruby) ? r : { text: r.text }));
+}

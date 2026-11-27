@@ -28,6 +28,8 @@
 	import { Button } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	const roman = useRomanisation();
 
 	// A starter deck (#75): the pack's top words as the server resolves them,
 	// with the learner's state; known words are skipped and never added. It
@@ -200,7 +202,7 @@
 			{#each view.shown as item (item.id)}
 				<li>
 					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
-					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{roman.text(readingBeside(item.written, item.readings), workspace?.language ?? '')}</span>
 					{#if glosses.has(item.id)}
 						<span class="gloss" lang={glossLang(undefined)}>{glosses.get(item.id)}</span>
 					{/if}
