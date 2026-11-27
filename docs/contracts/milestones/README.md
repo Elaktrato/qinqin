@@ -53,8 +53,8 @@ Families in this fixed order (the order breaks ties in lists):
 | `words-studied` | `words-studied:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000 | distinct entries of live vocab cards in an existing deck with at least one valid review |
 | `words-mature` | `words-mature:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000 | live vocab cards in an existing deck whose replayed schedule is mature (`classifySchedule`) |
 | `characters-learned` | `characters-learned:<n>` | 10, 50, 100, 250, 500, 1000, 2000, 3000, 5000 | Han languages only: universe cells learned (`cellStates`, score ≥ `MASTERY_THRESHOLD`) |
-| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily review streak (`dailyStreak` rule), any run |
-| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`) or a counted `journal` event (string `entryId`) |
+| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily streak of reviews and grammar lessons (`dailyStreak` rule), any run |
+| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`), a counted `journal` event (string `entryId`) or a grammar lesson run |
 | `reading-hours` | `reading-hours:<n>` | 1, 5, 10, 25, 50, 100, 250, 500, 1000 | `readSeconds` of `read` events summed (the heatmap's clamping: < 30 s is 0, at most 2 h per event); `bookId` is not read |
 | `journal-entries` | `journal-entries:<n>` | 1, 10, 25, 50, 100, 250, 365, 500 | distinct **string** `entryId` of `journal` events |
 | `level-complete` | `level-complete:<levelDeckId>` | one per level of each installed scheme of the workspace language | every member learned at one instant (below) |
@@ -105,12 +105,12 @@ At the first event at which its quantity, applied in event order, reaches the th
   `t` equals a snapshot of every card's last point with `ts ≤ t`. The milestone is reached at the first such
   instant at which the value reaches the threshold.
 - `reachedAt` = that event's instant; `reachedDay` = `dayOf(reachedAt)` (the learner's zone history).
-- `streak:<n>`: the review dates (learner days with a valid review, vacation dates left out) form runs; a run
-  continues from date `d` to the next review date `e` when the nearest non-vacation date before `e` is `d`
-  (`dailyStreak`). The reached day is the date on which a run first reached `n` days; `reachedAt` is the first
-  valid review of that date.
+- `streak:<n>`: the study dates (learner days with a valid review or a grammar lesson run, #277
+  `grammar/runs.json`; vacation dates left out) form runs; a run continues from date `d` to the next study date
+  `e` when the nearest non-vacation date before `e` is `d` (`dailyStreak`). The reached day is the date on which a
+  run first reached `n` days; `reachedAt` is the first valid review or lesson run of that date.
 - `days-active`: a date counts once, when it is not a vacation date and has a valid review, a `read` event with
-  `readSeconds > 0` or a `journal` event with a non-empty string `entryId`.
+  `readSeconds > 0`, a `journal` event with a non-empty string `entryId` or a grammar lesson run.
 - `reading-hours:<n>`: reached when the running sum of `readSeconds` is at least `n × 3600`.
 - Mature: `classifySchedule` = review state (2) and stability ≥ 21 days. Scope: live vocab cards with at least one
   existing deck (a card in no existing deck, a reverse card, a deleted card never count).

@@ -15,6 +15,7 @@ Database migrations are embedded in the binary and run automatically at start (`
 | `pack <id>: stored license/attribution/notice differs from <manifest>; run "qinqin seed" to refresh` | The Sources page shows outdated pack terms. Run `qinqin seed` once. The check only reads; nothing changes until you seed, and the line goes away once the stored copies match. A pack it cannot read is skipped with a log line |
 | `pack <id>: no licence texts stored; run "qinqin seed"` | The pack was installed before the server kept licence files, so its data package carries only the licence name and attribution. Run `qinqin seed` once: the package gets a new revision with the texts |
 | `strokes: installed the bundled stroke data ...` | Normal on the first start of a release with data packages: the stroke-order data became a pack |
+| `migration 056: N grammar lesson progress rows became grammar events, N unreadable rows were dropped` | Normal once, on the upgrade that turns grammar lesson progress into study events (#277): each lesson's best score became one run in the study history. Dropped rows were unreadable (bad ids or stamps); nothing to do |
 | `WARNING: this database has N user edit(s) and N flashcard(s) ...` (printed by `qinqin seed`) | The database holds data that refers to entries by id; see "From v0.1.0" below |
 
 In the Portainer console the seed is `qinqin seed`; with plain compose `docker compose exec qinqin qinqin seed`.

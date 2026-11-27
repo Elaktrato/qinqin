@@ -10,7 +10,7 @@ Milestones mark how far you have come in one workspace: "1,000 reviews", "a 7-da
 | Words studied | 10, 50, 100, 250, 500, 1,000, 2,500, 5,000, 10,000 | different words with a flashcard in one of your decks that you have reviewed at least once |
 | Mature words | 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 | words whose flashcard is mature (in review with a stability of 21 days or more, as on the decks view) |
 | Characters learned | 10, 50, 100, 250, 500, 1,000, 2,000, 3,000, 5,000 | Chinese and Japanese only: characters with a score of 80 of 100 or more, as on the character map |
-| Streak | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1,000 days | days in a row with a flashcard review; vacation days neither break nor extend it |
+| Streak | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1,000 days | days in a row with a flashcard review or a finished grammar lesson; vacation days neither break nor extend it |
 | Days active | 10, 30, 50, 100, 200, 365, 500, 1,000 | days on which you reviewed, read for at least 30 seconds or wrote in your journal; vacation days are left out |
 | Reading | 1, 5, 10, 25, 50, 100, 250, 500, 1,000 hours | time read in the Reader (as on the heatmap: a stretch under 30 seconds counts nothing, at most 2 hours per stretch) |
 | Journal entries | 1, 10, 25, 50, 100, 250, 365, 500 | different journal entries you wrote |

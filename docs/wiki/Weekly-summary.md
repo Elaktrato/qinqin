@@ -21,7 +21,7 @@ The **Previous week** and **Next week** arrows step through the weeks; at the ol
 | Journal entries | journal entries written |
 | Other activity | each further activity type the server counted this week or last week |
 | Days active | days on which you did anything that counts (vacation days are left out, see below); today joins the count once you have done something today |
-| Streak | your review streak at the end of the week (today for the current week) |
+| Streak | your streak (days with a review or a finished grammar lesson) at the end of the week (today for the current week) |
 | Words reaching mature | words whose flashcard became mature that week: in review with a stability of 21 days or more, as on the decks view. A word that became mature and slipped back in the same week does not count |
 | Characters learned | Chinese and Japanese workspaces only: characters whose score reached 80 of 100 that week, as on the character map. This row appears a moment after the others ("Counting characters…") |
 | Daily goal | the days on which you reached your [daily goal](Daily-goals) out of the days it counted; today counts once its goal is reached |

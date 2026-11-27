@@ -13,7 +13,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `server/internal/datapkg`, `sync` | Data packages (ids, writers, builder, registry) and the paged sync pull |
 | `server/internal/auth`, `ratelimit`, `secretbox`, `netguard` | Accounts, sessions, two-step sign-in and tokens; throttling; sealing with `QINQIN_SECRET`; the outbound address guard |
 | `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, the journal's storage, photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
-| `server/internal/features`, `keyed`, `grammar` | The feature switches, the keyed rows store, grammar packs and lesson progress |
+| `server/internal/features`, `keyed`, `grammar` | The feature switches, the keyed rows store, grammar packs and the `grammar` lesson-run event |
 | `server/internal/lang` | Language code packs, the language registry and the language profiles (`profile.go`) |
 | `server/internal/webdist` | The embedded web app |
 | `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routing/routeAccess.ts`, core features (flashcards, reader, journal, grammar) in `src/lib/features/`, the language profiles in `src/lib/languages/profiles.ts`, the app and session contexts that hold the app's state in `src/lib/context/` |

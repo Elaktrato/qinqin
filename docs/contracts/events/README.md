@@ -18,7 +18,8 @@ Fixtures:
   (every step and the stored list), `apps/web/src/lib/studycore/scheduler.test.ts` (the order case) and
   `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pull case). `$ws` is a workspace of the caller,
   `$bobWs` one of another user.
-- `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
+- `payloads.json` — the payload of each written type (`build`; the `grammar` run's parse and replay rules are
+  `grammar/runs.json`), when the web emits `read` and `journal`
   events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
   `apps/web/src/lib/events/eventPayloads.test.ts` (the builders of `lib/events/eventPayloads.ts`, member order included),
   `features/reader/readingTimer.test.ts`, `features/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
@@ -153,6 +154,8 @@ alter every stored log and the pull's string comparison — cost: none.
 | `review` | flashcards | count (`flashcards`) |
 | `read` | the reader | measure `seconds` (min 30, max 7200, 300 per point) (`reader`) |
 | `journal` | the journal | distinct `entryId` (`journal`) |
+| `script` | the scripts trainer | count (`scripts`) |
+| `grammar` | grammar (a finished lesson run, #277) | distinct `point` (`grammar`) |
 
 The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
 there are no plugin manifests (#199). The server stores any type; a client writes only these.
@@ -166,6 +169,8 @@ there are no plugin manifests (#199). The server stores any type; a client write
 | `lookup` | (legacy `{query: string}`) | **never** (#72: the history is the `lookups` row) | ignore it; never ship or cache it |
 | `read` | `{bookId: int > 0, seconds: int ≥ 30}` | one event per flush of the reading timer when it holds ≥ 30 whole seconds (time accrues between activity pings while visible; a gap over 120 s counts 120 s; flushed every 5 minutes of accrued time, on page hide, `pagehide` and leaving the book; under 30 s is kept for the next flush of the same book and workspace and dropped on a book or workspace switch), in the **book's** workspace | count `readSeconds(payload)`: 0 unless `seconds` is a finite number ≥ 30, else `min(seconds, 7200)`; points `min(ceil(seconds/300), 24)`; `bookId` may be **absent** (restore of an unknown book) — the time still counts, book unknown |
 | `journal` | `{entryId: string}` (the journal entry's ULID) | when a save changed the text, at most once per entry per learner day | count distinct `entryId` **strings** per learner day; a non-string `entryId` never counts |
+| `script` | `{system, item, mode, ok}` | one per answer of the writing-system trainer | see `payloads.json` |
+| `grammar` | `{point: "<packId>:<lessonId>", mode: "lesson", score: int, total: int}` | once per finished lesson run, in the lesson's workspace, through the outbox (#277) | read a run only as `grammar/runs.json` `parse` says; count distinct `point` **strings** per learner day for activity; progress, EXP and the streak per `grammar/README.md` |
 
 Member order is part of the shape (`{bookId, seconds}`, not `{seconds, bookId}`): the server stores the JSON text
 as sent, so two clients writing the same event write the same bytes. The reading timer
@@ -261,8 +266,9 @@ members; `rules` in the fixture lists the built-in ones). A client that scores o
   (integer or real), else the event is ignored; values below `min` are ignored; each event counts
   `r = min(value, max)`; points = the sum over events of `ceil(r / pointsPer)` (per event, not from the day's
   total), raw = the sum of `r`. A `read` without `bookId` counts.
-- **distinct** (`journal`: `distinctBy` `entryId`): points = raw = the number of distinct JSON **string** values
-  of the field that day; a number never counts.
+- **distinct** (`journal`: `distinctBy` `entryId`; `grammar`: `distinctBy` `point`, one point per lesson finished,
+  once per lesson per day): points = raw = the number of distinct JSON **string** values of the field that day; a
+  number never counts. The server does not check that a `point` is valid; clients write only valid ones.
 - `raw` is what goals and the weekly summary read (seconds for `read`).
 
 The web's per-event clamp (`stats/readingTime.ts` `readingPoints`, `readSeconds`) equals the server's for every

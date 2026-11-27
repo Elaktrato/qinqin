@@ -83,7 +83,6 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | `GET /api/features`, `PUT /api/features/{id}` `{enabled}` | The caller's switch of each core feature (`flashcards`, `reader`, `journal`, `grammar`); a feature never switched is on ([Core data API](Core-data-api)) |
 | `GET /api/rows?workspace=&prefix=`, `GET`/`PUT`/`DELETE /api/rows/{key}?workspace=` | Keyed rows: notes, lookups, known marks, milestones, goals, vacations, layouts, appearance ([Core data API](Core-data-api)) |
 | `GET /api/journal/entries`, `GET`/`PUT`/`DELETE /api/journal/entries/{id}`, `GET /api/journal/entries/{id}/review`, `GET /api/journal/suggestions`, `GET`/`PUT /api/journal/settings` (each `?workspace=`) | The journal's documents ([Journal and AI](Journal-and-AI)) |
-| `GET`/`POST /api/grammar/progress?workspace=` | Grammar lesson progress; a run `{packId, lessonId, score, total}` keeps the best score ([Grammar lessons](Grammar-lessons)) |
 
 ## Workspaces
 
@@ -184,7 +183,7 @@ A body over its limit is a 413 with the JSON body `{"error": "too_large", "messa
 |---|---|
 | `POST /api/auth/login`, `/register` | 4 KiB |
 | `POST /api/workspaces`, `PUT /api/workspaces/{id}` | 16 KiB; the merged workspace settings may total 64 KiB (413 "workspace settings too large") |
-| `PUT /api/features/{id}`, `POST /api/grammar/progress` | 4 KiB |
+| `PUT /api/features/{id}` | 4 KiB |
 | `PUT /api/rows/{key}`, `PUT /api/journal/entries/{id}`, `PUT /api/journal/settings` | 256 KiB per value; the same cap applies to each keyed row inside `POST /api/sync/push` |
 | `PUT /api/ai/keys/{provider}`, `PUT /api/ai/active`, `POST /api/ai/custom-providers`, `POST /api/journal/review`, `POST /api/journal/suggestions`, `POST /api/journal/transcribe`, `POST /api/journal/conversations`, `POST /api/journal/conversations/{id}/save`, `POST /api/entries/{id}/examples`, `POST /api/admin/packs/staged/{token}` | 4 KiB |
 | `POST /api/journal/conversations/{id}/turn` | 16 KiB |
