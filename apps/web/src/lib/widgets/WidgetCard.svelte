@@ -18,6 +18,8 @@
 		loadingText?: string;
 		/** The failure, shown with a Try again button when onretry is set. */
 		error?: string;
+		/** A refresh failed while the content is shown (#290): a quiet line under it, with Try again. */
+		stale?: string;
 		onretry?: () => void;
 		emptyText?: string;
 		/** Links or buttons on the right of the title. */
@@ -32,6 +34,7 @@
 		noWorkspaceText = t('widgets.card.noWorkspace'),
 		loadingText = t('common.loading'),
 		error = '',
+		stale = '',
 		onretry,
 		emptyText = t('widgets.card.empty'),
 		actions,
@@ -60,6 +63,14 @@
 		<p class="hint">{emptyText}</p>
 	{:else}
 		{@render children?.()}
+		{#if stale}
+			<p class="hint muted stale" role="status" title={stale}>
+				{t('widgets.card.notRefreshed')}
+				{#if onretry}
+					<button type="button" class="retry" onclick={onretry}>{t('common.action.retry')}</button>
+				{/if}
+			</p>
+		{/if}
 	{/if}
 </section>
 
@@ -93,6 +104,10 @@
 
 	.muted {
 		color: var(--readable-muted);
+	}
+
+	.stale {
+		font-size: var(--font-size-s);
 	}
 
 	.retry {
