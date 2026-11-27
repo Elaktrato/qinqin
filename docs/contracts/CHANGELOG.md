@@ -5,6 +5,14 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #290 — Serving held rows while a round runs (no contract number)
+
+- **Sync notes:** "Serving held rows" in [`sync/README.md`](sync/README.md#serving-held-rows-290): a client answers
+  display reads at once from the rows it holds and refreshes them with a background delta round; a first load, an
+  explicit refresh, a full round, rows marked stale and a write's planning read wait. A failed background round
+  keeps the held rows with a quiet notice. A client rule only: no route, payload or fixture changes, so the
+  ContractVersion stays.
+
 ## #277 — Grammar lesson runs are study events (contract 15)
 
 - **New event type:** `grammar`, one per finished lesson run, `{point: "<packId>:<lessonId>", mode: "lesson",

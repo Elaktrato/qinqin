@@ -7,7 +7,10 @@
 // A slot older than `freshMs` is refreshed with a delta round from its cursor
 // (one page in the usual case), with a full round when its last full round is
 // older than `fullMs` (the service worker keeps full rounds for offline study)
-// or the cursor expired (410). A round's `until` is the server clock truncated
+// or the cursor expired (410). A held slot is served at once and refreshed in
+// the background (stale-while-revalidate, #290); the listeners hear when the
+// refresh changed rows. Only a first load, `force`, `full`, a slot marked
+// stale and a `current` read (a write plans against the newest rows) wait. A round's `until` is the server clock truncated
 // to the second, so a row stamped in that second comes next round: while
 // anything listens, each round a reader or writer caused is followed by one
 // delta round `followUpMs` later, and a round that changed rows tells the
@@ -52,6 +55,8 @@ export interface StudyCacheDeps {
 	followUpMs?: number;
 	/** Called after every stored round with its view (the unreadable report). */
 	onRound?: (workspaceId: number, view: StudyView, full: boolean) => void;
+	/** A refresh of a loaded slot failed and its held rows were served instead (the quiet notice). */
+	onRefreshFailed?: (workspaceId: number, err: unknown) => void;
 }
 
 interface Slot {
@@ -93,21 +98,36 @@ export class StudyCache {
 	}
 
 	/**
-	 * view: the slot's view, refreshed by the rules above. `force` reads a delta
-	 * now (a widget's "Try again") and fails when it fails; `full` reads a full
-	 * round (offline preparation). A failed refresh of a loaded slot otherwise
-	 * serves the rows it holds (offline, the delta is not in the worker's copy).
+	 * view: the slot's view, refreshed by the rules above. A loaded slot answers
+	 * at once with its rows and refreshes in the background when it is older
+	 * than the window. `current` waits for that refresh (a write's planning
+	 * view); `force` reads a delta now (a widget's "Try again") and fails when it
+	 * fails; `full` reads a full round (offline preparation). A failed refresh of
+	 * a loaded slot otherwise serves the rows it holds (offline, the delta is not
+	 * in the worker's copy) and is reported to `onRefreshFailed`.
 	 */
-	async view(workspaceId: number, opts: { force?: boolean; full?: boolean } = {}): Promise<StudyView> {
+	async view(workspaceId: number, opts: { force?: boolean; full?: boolean; current?: boolean } = {}): Promise<StudyView> {
 		const slot = this.#slot(workspaceId);
 		const now = this.#deps.now();
-		if (slot.rows !== null && !opts.force && !opts.full && !slot.stale && now - slot.readAt < this.#freshMs) {
+		const generation = this.#generation;
+		const fresh = now - slot.readAt < this.#freshMs;
+		const waits = slot.rows === null || opts.force === true || opts.full === true || slot.stale;
+		if (!waits && (fresh || opts.current !== true)) {
+			if (!fresh && slot.inFlight === null) {
+				// Stale-while-revalidate: the held rows now, the refresh behind them.
+				this.#round(workspaceId, slot, this.#kindFor(slot, now), true).catch((err: unknown) => this.#refreshFailed(workspaceId, err, generation));
+			}
 			return this.#viewOf(slot);
 		}
 		const loaded = slot.rows !== null;
 		// Every reader of a loaded slot gets the rows held when the refresh fails, joining or not.
 		const held = (run: Promise<StudyView>): Promise<StudyView> =>
-			!loaded || opts.force === true || opts.full === true ? run : run.catch(() => this.#viewOf(slot));
+			!loaded || opts.force === true || opts.full === true
+				? run
+				: run.catch((err: unknown) => {
+						this.#refreshFailed(workspaceId, err, generation);
+						return this.#viewOf(slot);
+					});
 		if (slot.inFlight !== null) {
 			// A full read waits for a delta in flight, then reads its own full round.
 			if (opts.full === true && !slot.inFlightFull) {
@@ -116,12 +136,16 @@ export class StudyCache {
 			}
 			return held(slot.inFlight);
 		}
-		const full =
-			opts.full === true ||
-			slot.rows === null ||
-			slot.cursor === null ||
-			now - slot.fullAt >= (this.#deps.fullMs ?? STUDY_FULL_ROUND_MS);
-		return held(this.#round(workspaceId, slot, full ? 'full' : 'delta', true));
+		return held(this.#round(workspaceId, slot, opts.full === true ? 'full' : this.#kindFor(slot, now), true));
+	}
+
+	#kindFor(slot: Slot, now: number): Kind {
+		return slot.rows === null || slot.cursor === null || now - slot.fullAt >= (this.#deps.fullMs ?? STUDY_FULL_ROUND_MS) ? 'full' : 'delta';
+	}
+
+	/** A refresh started before a clear (the session end) reports nothing. */
+	#refreshFailed(workspaceId: number, err: unknown, generation: number): void {
+		if (generation === this.#generation) this.#deps.onRefreshFailed?.(workspaceId, err);
 	}
 
 	/** peek: the slot's view without reading anything, or null when the workspace is not loaded. */
