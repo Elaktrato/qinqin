@@ -391,8 +391,6 @@ func (s *server) routes() []route {
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},
-		{"GET /api/grammar/progress", s.handleListGrammarProgress, accUser, nil, noTok},
-		{"POST /api/grammar/progress", s.handleRecordGrammarRun, accUser, nil, noTok},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil, tokReadAny},
 		{"POST /api/audio/resolve", s.handleAudioResolve, accUser, nil, noTok},
 		{"GET /api/audio/clips/{file}", s.handleAudioClip, accUser, nil, tokReadAny},

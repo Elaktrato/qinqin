@@ -1,7 +1,8 @@
 // Package grammar stores grammar packs: lessons by level, each with a
 // pattern, an explanation and example sentences, imported from
-// lessons.json and served read-only. Practice progress lives in
-// grammar_progress (progress.go).
+// lessons.json and served read-only. A finished practice run is a
+// `grammar` study event (#277, events.go); the progress is replayed from
+// the events by the clients.
 package grammar
 
 import (

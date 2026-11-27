@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"qinqin/internal/avatar"
-	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -459,8 +458,8 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 }
 
 // writeRows writes the rows family: the live keyed rows, then every live
-// typed study row in its keyed form (rows.ToLegacy), the journal's documents
-// and the grammar progress in theirs.
+// typed study row in its keyed form (rows.ToLegacy) and the journal's
+// documents in theirs. Grammar lesson runs are events (#277).
 func writeRows(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
 	pw := &partWriter{a: a, fam: NameRows}
 	rs, err := tx.QueryContext(ctx, `SELECT workspace_id, key, data, version, updated_at, modified_at FROM keyed_rows
@@ -517,10 +516,6 @@ func writeRows(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, 
 		ws := d.WorkspaceID
 		return pw.encode(Row{WorkspaceID: &ws, Key: d.Key, Data: d.Data, Version: 1, UpdatedAt: d.UpdatedAt})
 	}); err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
-	}
-	// grammar lesson progress in its keyed form (grammar/progress.go)
-	if err := writeGrammarProgress(ctx, tx, pw, userID); err != nil {
 		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 	}
 	return pw.total, pw.close()
@@ -686,12 +681,4 @@ func hiddenDictionaryIDs(settings json.RawMessage) []int64 {
 		}
 	}
 	return out
-}
-
-// writeGrammarProgress writes every lesson's progress of the user as a row
-// of its keyed form, stamped with the row's write time.
-func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userID int64) error {
-	return grammar.EachKeyed(ctx, tx, userID, func(ws int64, key string, data json.RawMessage, at string) error {
-		return pw.encode(Row{WorkspaceID: &ws, Key: key, Data: data, Version: 1, UpdatedAt: at})
-	})
 }

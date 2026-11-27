@@ -112,8 +112,6 @@ var userTables = []UserTable{
 	{Name: "journal_conversations", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_conversations WHERE user_id = ?1`},
 		PreviewKey: "journalConversations", Count: `SELECT COUNT(*) FROM journal_conversations WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_messages", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_messages WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
-	// Grammar lesson progress (migration 045): exported in its keyed form, replaced on restore.
-	{Name: "grammar_progress", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM grammar_progress WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	// The profile picture (#189, migration 050): its row here, its files in
 	// <data>/avatars/<id> (UserDirs). A personal export carries the picture as
 	// account/avatar.jpg; a restore replaces it.

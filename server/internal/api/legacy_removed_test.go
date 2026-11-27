@@ -273,7 +273,9 @@ func TestLegacyCompatCodeStaysGone(t *testing.T) {
 		"legacyRows", "LegacyPluginRow", "sentencePlugins", "warnEntryIDUsers", "dataPlugin(",
 		// #199: the code plugins, their registry, states and data store
 		"plugin_data", "PluginData", "/api/plugins", "plugin_states", "plugin_registry", "PluginState", "PluginInfo",
-		"isHiddenBuiltin", "RegisterBuiltin", "internal/plugins\""}
+		"isHiddenBuiltin", "RegisterBuiltin", "internal/plugins\"",
+		// #277: grammar lesson progress is events; its table and routes are gone
+		"grammar_progress", "/api/grammar/progress", "ListProgress(", "RecordRun("}
 	err := filepath.WalkDir("../..", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -286,8 +288,8 @@ func TestLegacyCompatCodeStaysGone(t *testing.T) {
 			return err
 		}
 		for _, s := range banned {
-			// the frozen migration steps of 038 still read the old table
-			if (s == "plugin_data" || s == "plugin_states" || s == "plugin_registry") && strings.Contains(filepath.ToSlash(path), "internal/db/") {
+			// the frozen migration steps (038, 045, 056) still read the old tables
+			if (s == "plugin_data" || s == "plugin_states" || s == "plugin_registry" || s == "grammar_progress") && strings.Contains(filepath.ToSlash(path), "internal/db/") {
 				continue
 			}
 			if strings.Contains(string(b), s) {
@@ -298,5 +300,20 @@ func TestLegacyCompatCodeStaysGone(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// #277: the grammar progress routes are gone; a finished run is a `grammar`
+// event of the events routes.
+func TestGrammarProgressRoutesAreGone(t *testing.T) {
+	ts, _ := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	ws := createWorkspace(t, ts.URL, alice, "zh", "")
+	for _, m := range []string{http.MethodGet, http.MethodPost} {
+		r := doJSON(t, m, ts.URL, "/api/grammar/progress?workspace="+itoa(ws), alice, map[string]any{"packId": "p", "lessonId": "l", "score": 1, "total": 1})
+		r.Body.Close()
+		if r.StatusCode != http.StatusNotFound {
+			t.Errorf("%s /api/grammar/progress = %d, want 404", m, r.StatusCode)
+		}
 	}
 }

@@ -514,9 +514,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 				}
 			}
 		case kindGrammar:
+			// The lesson progress of a backup from before #277 becomes the one
+			// grammar event it stands for (grammar/runs.json, legacy).
 			if ok = nr.WorkspaceID != nil; ok {
 				var err error
-				if ok, err = grammar.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+				if ok, err = restoreLegacyGrammar(ctx, tx, userID, *nr.WorkspaceID, nr, now); err != nil {
 					return fmt.Errorf("backup: grammar progress: %w", err)
 				}
 			}
@@ -598,6 +600,25 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		}
 	}
 	return oldBooks, nil
+}
+
+// restoreLegacyGrammar writes an old backup's lesson progress row as a
+// grammar event of workspace ws with a fresh id of its instant; ok is false
+// for a row the conversion refuses.
+func restoreLegacyGrammar(ctx context.Context, tx *sql.Tx, userID, ws int64, r Row, now string) (bool, error) {
+	at, payload, ok := grammar.LegacyEvent(r.Key, r.Data, r.UpdatedAt)
+	if !ok {
+		return false, nil
+	}
+	id, err := ulid.New(ulid.Timestamp(at), crand.Reader)
+	if err != nil {
+		return false, nil
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at)
+		VALUES (?, ?, ?, 'restore', ?, ?, ?, ?)`, id.String(), userID, ws, at.Format(time.RFC3339), grammar.EventType, string(payload), now); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Chunk sizes of the event inserts (variables so tests can shrink them).

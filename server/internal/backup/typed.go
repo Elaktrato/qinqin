@@ -65,7 +65,7 @@ const (
 	kindKeyed                  // a keyed settings row (internal/keyed)
 	kindTyped                  // a typed study row in its keyed form
 	kindJournal                // a journal document in its keyed form
-	kindGrammar                // grammar lesson progress in its keyed form
+	kindGrammar                // grammar lesson progress of a backup from before #277: restored as an event
 )
 
 // kindOf decides where a remapped row goes; a keyed row of no family or in
@@ -74,7 +74,7 @@ func kindOf(r Row) rowKind {
 	switch {
 	case journal.IsKeyed(r.Key):
 		return kindJournal
-	case grammar.IsKeyed(r.Key):
+	case grammar.IsLegacyKeyed(r.Key):
 		return kindGrammar
 	}
 	if _, typed := rows.FamilyOf(r.Key); typed {
