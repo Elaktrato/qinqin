@@ -96,6 +96,48 @@ type "grammar", payload {point: "<packId>:<lessonId>", mode: "lesson", score: <i
   and the milestones (core and other features) read the runs, and #181 and the courses will too; record 0004 puts
   logic more than one feature reads in the core — cost: none.
 
+- Ruling (made while building): the dry run now also drops an old `grammar:progress:` row that does not convert to an
+  event (before, it counted every such row with a workspace as restored, while the restore could refuse it) — the
+  dry run must predict the restore — cost: none.
+- Ruling (made while building): the practice result's "Try saving again" is gone and the failure text says "This run
+  was not saved: its workspace was deleted." — with the outbox a failed POST is queued, never an error; the only run
+  that is lost is one of a deleted workspace, where a retry cannot help — cost: one string changed, one removed.
+- Ruling (made while building): `StudyHistory.grammarRuns` is a required member — every reader of the history then
+  gets the runs; the test mocks were updated mechanically — cost: 20 test files touched.
+
 ## Execution record
 
-(filled in as the tasks land)
+Commits: plan; the event and its replay (`grammar/runs.json`, `studycore/grammarRuns.ts`); the server (activity rule,
+migration 056 with its frozen step, `grammar.LegacyEvent`, routes, table, delete rules and backup paths gone or
+converted); EXP, streak, activity source, outbox `recordEvent`; the grammar pages; docs and contract 14; two test
+fixes found by the full suite.
+
+Test-first, seen failing before the code: `grammarRuns.test.ts` (module missing), `eventPayloads.test.ts` (builder
+count), `TestContractActivity` (4 rules, fixture 5), `TestMigration056GrammarEvents` (no events), the `exp.test.ts`
+fixture cases (xp and streak), `events.test.ts` `recordEvent` and `recentSent.test.ts`, the milestones `reached.json`
+case, `features/grammar/progress.test.ts`, `TestRestoreTurnsOldGrammarProgressIntoEvents` (it found the dry-run
+mismatch above). Written with or after the code (not seen failing first): `TestRunsContract` (Go), the summary and
+weekly streak tests, the PracticeRun DOM test, `TestGrammarProgressRoutesAreGone`, the `historyOf` test.
+
+Honest notes: the commit `feat(study)…` left two web tests red (the goal picker's offline list and the history
+helper's `toStrictEqual`), found by the full vitest run and fixed in the last commit; the server commit left the web
+calling the removed routes for one commit (no test noticed: no test hits them). `GrammarBrowse` reads the progress
+once per workspace load; it does not refresh on a run made in another tab.
+
+Real-app check: the base build (contract 13) on a scratch data dir, a user, a workspace and three runs through
+`POST /api/grammar/progress`, two messy rows added by hand; then this branch's build on the same data: migration 056
+logged "3 grammar lesson progress rows became grammar events, 1 unreadable rows were dropped", the table was gone,
+`/api/version` said 14, the old route 404, the events carried the expected points and stamps (a bad `completed_at`
+took `updated_at`), and three new runs (one lesson twice, one already migrated today) gave a `grammar` cell of 3
+points for the day.
+
+Gates: Go full `./...` — 60 packages ok, only the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`
+(no IPv6) fails; web `check` 0 errors (1977 files); `build` ok; full vitest on Node 26: 711 files, 14085 passed, 2
+skipped; e2e 3 runs, 35 passed each; `node --test scripts/*.test.mjs` 189 passed, 1 skipped; `gen-api-docs --check`
+clean.
+
+## Local follow-up
+
+- A hand check in a browser and on a phone with a grammar pack installed (e2e has none): finish a lesson, see "Best so
+  far", the heatmap point and the 20 XP in the flashcards widget; finish it offline (the run waits in the outbox,
+  counts at once, is sent on reconnect); a daily goal "Grammar lessons".
