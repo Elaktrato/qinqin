@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199, #185. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #185, #296. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -35,6 +35,12 @@ main flows through those refactors and stays green.
   `docs/superpowers/plans/2026-11-23-e2e.md`).
 - **No network** but the local server: the browser context aborts a request to any other host and the test
   fails (`apps/web/e2e/support/fixtures.ts`).
+- **Phone width** (#296): every screen fits a 360 × 740 phone without scrolling sideways. The guard
+  `expectNoSidewaysScroll` (`apps/web/e2e/support/layout.ts`) fails on a page that widens the phone's viewport,
+  a document or body wider than the screen, or an element or text past the screen's left or right edge that no
+  sideways scroller or clipping box bounds. `apps/web/e2e/tests/phone-width.spec.ts` runs it over every main
+  page, Settings tab and Admin section with long data, and plants overflows that must fail it. A new screen is
+  added there, or checked with the guard in its own spec (docs/wiki/Development.md, "Phone width").
 - **Secrets:** a failure's trace and video hold the learner's session token and, in the sign-in tests, the
   typed password. They belong to the throw-away instance, which is deleted with the runner, and are never
   real credentials. The server logs were checked to contain no token or password.
@@ -57,6 +63,9 @@ Allowed:
 - A new spec in `apps/web/e2e/tests/` for a flow that is cheap and stable, with its fixture data written
   through the API.
 - New tiny fixture packs under `apps/web/e2e/fixtures/packs` (hand-written, CC0).
+- `expectNoSidewaysScroll` at the `PHONE` viewport for a new screen; `page.route` that adds rows to a real
+  answer of the local server when writing them would change the worker's shared data (the long pack of
+  Settings → Data: packs are server-wide).
 - `seedRandom` and condition polls (`expect.poll`, `settled` in `support/study.ts`).
 
 Not allowed:
@@ -73,6 +82,10 @@ Not allowed:
   config, a spec, the support code or the CI command.
 - The network guard in `apps/web/e2e/support/fixtures.ts` fails a test that reaches another host.
 - `npm run check` type-checks the suite (`tsc -p e2e`).
+- `apps/web/e2e/tests/phone-width.spec.ts` checks the phone width of the listed screens and that the guard
+  fails on planted overflow; `apps/web/src/lib/ui/lint/tableScroll.test.ts` fails on a `.ui-table` outside a
+  `.ui-table-scroll` region.
+- Review: a new screen that is not in `phone-width.spec.ts` and not checked with the guard elsewhere.
 - Review: shared data between tests, network access, and selectors by CSS class instead of role or text.
 
 ## Open questions
