@@ -7,7 +7,7 @@
 	import ClozeChoice from '$lib/features/grammar/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
-	import { recordRun } from './progress';
+	import { loadProgress, progressKey, recordRun } from './progress';
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
@@ -99,10 +99,17 @@
 		saveError = '';
 		const ws = session.workspaces.current;
 		if (ws === null || data === null) return;
+		// The progress before this run, replayed from the workspace's events (#277);
+		// unreadable now (offline, no saved copy): this run starts it.
+		const before = await loadProgress(session, ws.id).then(
+			(map) => map.get(progressKey(pack, lessonId)),
+			() => undefined
+		);
 		try {
-			saved = await recordRun(ws.id, pack, lessonId, score, exercises.length);
+			// A run that cannot be sent now waits in the outbox and is sent later.
+			saved = await recordRun(session, ws.id, pack, lessonId, score, exercises.length, before);
 		} catch {
-			// The run was not stored (the server keeps the best score when it is).
+			// Its workspace was deleted: the run is lost.
 			saveError = t('grammar.practice.saveFailed');
 		}
 	}
@@ -141,7 +148,6 @@
 			{/if}
 			{#if saveError}
 				<p class="error" role="alert">{saveError}</p>
-				<Button onclick={() => void saveResult()}>{t('grammar.practice.saveAgain')}</Button>
 			{/if}
 			<div class="actions">
 				<Button variant="primary" onclick={retry}>{t('grammar.practice.retry')}</Button>

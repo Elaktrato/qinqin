@@ -1,12 +1,14 @@
 // Milestones of the event log alone (no replay): reviews, words studied,
 // streak, days active, reading hours, journal entries. One ordered pass over
-// the valid reviews and the `read` / `journal` events; a milestone is reached
+// the valid reviews and the `read` / `journal` / `grammar` events (a grammar
+// lesson day counts for the streak and days active, #277); a milestone is reached
 // at the first event at which its quantity reaches the threshold. Pure and
 // memoised. Rule and fixtures: docs/contracts/milestones/ (reached.json).
 
 import type { StudyEvent } from '$lib/events';
 import { readSeconds } from '$lib/stats/readingTime';
 import { streakRuns } from '$lib/studycore/exp';
+import { parseGrammarRun } from '$lib/studycore/grammarRuns';
 import { isValidReview } from '$lib/studycore/scheduler';
 import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { isVacationDay, type Run } from '$lib/studycore/vacation';
@@ -24,7 +26,7 @@ export interface Reached {
 export interface LogInputs {
 	/** The study history's reviews (canonical merge, outbox included). */
 	reviews: readonly ReviewEvent[];
-	/** The workspace's full event log (only `read` and `journal` are read). */
+	/** The workspace's full event log (only `read`, `journal` and `grammar` are read). */
 	events: readonly StudyEvent[];
 	/** Live cards; deckIds: the existing decks, `general` included. */
 	cards: readonly StudyCard[];
@@ -70,7 +72,8 @@ class Crossings {
 type Item =
 	| { at: number; id: string; kind: 'review'; cardId: string }
 	| { at: number; id: string; kind: 'read'; seconds: number }
-	| { at: number; id: string; kind: 'journal'; entryId: string };
+	| { at: number; id: string; kind: 'journal'; entryId: string }
+	| { at: number; id: string; kind: 'grammar' };
 
 function compute(input: LogInputs): Reached[] {
 	reachedStats.passes += 1;
@@ -92,6 +95,8 @@ function compute(input: LogInputs): Reached[] {
 		} else if (event.type === 'journal') {
 			const entryId = journalEntryId(event.payload);
 			if (entryId !== null) items.push({ at, id: String(event.id), kind: 'journal', entryId });
+		} else if (parseGrammarRun(event) !== null) {
+			items.push({ at, id: String(event.id), kind: 'grammar' });
 		}
 	}
 	items.sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -117,8 +122,8 @@ function compute(input: LogInputs): Reached[] {
 	const studied = new Set<number>();
 	const entries = new Set<string>();
 	const activeDays = new Set<string>();
-	/** The first counting review of each non-vacation review date, in date order. */
-	const firstReview = new Map<string, number>();
+	/** The first counting review or grammar lesson run of each non-vacation study date, in date order. */
+	const firstStudy = new Map<string, number>();
 	let reviewCount = 0;
 	let seconds = 0;
 
@@ -133,7 +138,9 @@ function compute(input: LogInputs): Reached[] {
 				studied.add(entry);
 				words?.reach(studied.size, item.at, date);
 			}
-			if (!vacationDay && !firstReview.has(date)) firstReview.set(date, item.at);
+			if (!vacationDay && !firstStudy.has(date)) firstStudy.set(date, item.at);
+		} else if (item.kind === 'grammar') {
+			if (!vacationDay && !firstStudy.has(date)) firstStudy.set(date, item.at);
 		} else if (item.kind === 'read') {
 			seconds += item.seconds;
 			reading?.reach(seconds / 3600, item.at, date);
@@ -150,9 +157,9 @@ function compute(input: LogInputs): Reached[] {
 	const streak = crossing('streak');
 	if (streak !== null) {
 		// Dates arrive in order (dayOf is monotone), so the map is sorted.
-		const dates = [...firstReview.keys()];
+		const dates = [...firstStudy.keys()];
 		const runs = streakRuns(dates, vacation);
-		dates.forEach((date, i) => streak.reach(runs[i], firstReview.get(date) as number, date));
+		dates.forEach((date, i) => streak.reach(runs[i], firstStudy.get(date) as number, date));
 	}
 	return out.sort((a, b) => a.at - b.at || compareIds(a.id, b.id));
 }

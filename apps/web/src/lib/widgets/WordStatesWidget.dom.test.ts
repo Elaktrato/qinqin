@@ -27,7 +27,7 @@ beforeEach(() => {
 			{ id: 'c-vocab-2', kind: 'vocab', entryId: 2, deckIds: ['d1'], createdAt: '2026-01-01T00:00:00.000Z' }
 		],
 		reviews: [],
-		merged: 0
+		merged: 0, grammarRuns: []
 	});
 });
 afterEach(() => {

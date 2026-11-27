@@ -22,6 +22,11 @@ server while its answer was lost, so a rewritten item (same id) would be a dupli
 dropped one would leave the stored wrong grade in place. Items flush oldest first, so a replacement normally
 arrives after its target; if not, the rule still holds (the late target is replaced when it arrives).
 
+A finished grammar lesson run (#277, `grammar/README.md`) is a `grammar` event recorded the same way: write-ahead in
+the outbox, retried, merged into the study history while it waits and remembered for a while after it was sent (as
+reviews are). The outbox's count (the offline banner, the sign-out dialog) includes it; their messages say
+"reviews".
+
 ## Outbox v3 (`outbox-v3.json`)
 
 The queue is an IndexedDB object store (database `qinqin-outbox`, store `items`, key = `event.id`) of

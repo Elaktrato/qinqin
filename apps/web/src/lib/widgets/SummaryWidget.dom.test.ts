@@ -65,7 +65,7 @@ function flashcards(enabled: boolean): void {
 beforeEach(() => {
 	select(1);
 	flashcards(true);
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
 	vi.mocked(summaryNumbers).mockReturnValue(NUMBERS);
 });
 afterEach(() => {
@@ -170,10 +170,10 @@ describe('SummaryWidget', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0
+			merged: 0, grammarRuns: []
 		} as never);
 		await waitFor(() => expect(screen.getByText('30')).toBeTruthy());
-		first.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
 		await tick();
 		await Promise.resolve();
 		expect(screen.getByText('30')).toBeTruthy();

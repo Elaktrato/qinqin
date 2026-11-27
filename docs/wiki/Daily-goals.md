@@ -11,7 +11,7 @@ Set the goal under Settings, Study, **Daily goal** (`/settings?tab=study`). Pick
 | Flashcard reviews | every review you grade, learning steps included (the same count as the heatmap) | 1 to 9999 |
 | New cards | cards reviewed for the first time that day | 1 to 9999 |
 | Flashcard study time | the time spent answering cards, at most 60 seconds per card, so an open tab does not count as study | 1 to 1440 minutes |
-| Reading, Journal entries and other activity | whatever the activity statistics count for that source (reading in minutes, journal entries as a count) | 1 to 9999, or 1 to 1440 minutes |
+| Reading, Journal entries, Grammar lessons and other activity | whatever the activity statistics count for that source (reading in minutes, journal entries as a count, grammar lessons finished, each lesson once a day) | 1 to 9999, or 1 to 1440 minutes |
 
 There is one goal per workspace. Choose **No daily goal** or press **Remove goal** to stop. If your new-card goal is above the workspace's daily new-card limit, Settings says so ("Your daily new-card limit is 20; raise it to reach this goal"); nothing is changed for you.
 

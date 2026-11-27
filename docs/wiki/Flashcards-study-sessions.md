@@ -163,9 +163,10 @@ XP, level and streak are derived from the history per workspace:
 
 - base XP per review: Vocab 10, Word Salad 15, Writing 20, Tone 8 (Reverse and Cloze count too);
 - a grade bonus: Good +5, Easy +10, Again and Hard nothing;
-- a daily bonus of +10 for each learner day with at least one review.
+- a daily bonus of +10 for each learner day with at least one review;
+- 20 XP for each finished [grammar lesson](Grammar-lessons) run.
 
-Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
+Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review or a finished grammar lesson (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
 
 A study-buddy mascot appears in the flashcards widget and the session summary: it grows at levels 5, 10 and 20, and its mood (sleepy, happy, cheering, proud) follows your streak. Its drawings are placeholders for now.
 

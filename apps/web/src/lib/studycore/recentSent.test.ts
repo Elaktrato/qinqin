@@ -39,6 +39,12 @@ describe('recent sent reviews', () => {
 		expect(recentSentReviews(2, 7, NOW, store).map((e) => e.id)).toEqual(['c']);
 	});
 
+	it('keeps sent grammar lesson runs too (#277), never other events', () => {
+		const typed = (id: string, type: string) => ({ ...(ev(id) as object), type }) as never;
+		rememberSent(1, [typed('g', 'grammar'), typed('r', 'read'), typed('s', 'session')], NOW, store);
+		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['g']);
+	});
+
 	it('forgets entries older than three days', () => {
 		rememberSent(1, [ev('old')], NOW - RECENT_SENT_TTL_MS - 1, store);
 		rememberSent(1, [ev('new')], NOW, store);

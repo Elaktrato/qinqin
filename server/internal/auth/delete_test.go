@@ -43,7 +43,6 @@ var seedSQL = map[string][]string{
 	"journal_settings":      {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
 	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, 1, 'c', '', 'beginner', 't', 't')`},
 	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't1', 't')`},
-	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
 	"reminder_facts":        {`INSERT INTO reminder_facts (user_id, workspace_id, as_of, data, updated_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 't', '{}', 't')`},
 	"push_subscriptions":    {`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_at) VALUES (?1, 'https://push.example/' || ?1, 'k', 'a', 't')`},
 	"reminder_deliveries":   {`INSERT INTO reminder_deliveries (user_id, channel, kind, day, sent_at, outcome) VALUES (?1, 'email', 'due', '2026-11-25', 't', 'sent')`},
@@ -326,7 +325,7 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
 		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
 		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true,
-		"journal_conversations": true, "journal_messages": true, "grammar_progress": true, "user_avatars": true}
+		"journal_conversations": true, "journal_messages": true, "user_avatars": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)

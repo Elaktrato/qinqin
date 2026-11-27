@@ -205,6 +205,17 @@ export class ReviewOutbox {
 	}
 
 	/**
+	 * recordEvent records an already-built study event that must not be lost
+	 * the way a review is recorded: write-ahead in the outbox, posted, kept for
+	 * retry on failure, seen by the study history while it waits. A grammar
+	 * lesson run (#277) takes this path. Resolves with the event, or null when
+	 * its workspace was deleted (the caller says so); never rejects.
+	 */
+	recordEvent(event: StudyEventBody): Promise<StudyEventBody | null> {
+		return this.#record(event, null);
+	}
+
+	/**
 	 * flush retries every queued review one event at a time. A single bad row
 	 * cannot wedge the outbox: a permanent 4xx (other than 401/408/429, which
 	 * are worth retrying) drops just that event, while network errors and
@@ -312,7 +323,7 @@ export class ReviewOutbox {
 		}
 	}
 
-	async #record(event: ReviewEvent): Promise<ReviewEvent | null> {
+	async #record<E extends StudyEventBody>(event: E, goneNotice: string | null = t('study.outbox.notSaved')): Promise<E | null> {
 		// Write-ahead: the review is committed to the outbox before anything is
 		// sent, so a kill or a hanging request cannot lose what the UI shows as saved.
 		this.#inFlight.add(event.id);
@@ -329,7 +340,7 @@ export class ReviewOutbox {
 			if (isWorkspaceGone(err)) {
 				console.warn('review not recorded; its workspace was deleted', err);
 				void this.#store.remove([event.id]);
-				this.#deps.notify(t('study.outbox.notSaved'));
+				if (goneNotice !== null) this.#deps.notify(goneNotice);
 				return null;
 			}
 			console.warn('review not recorded; queued for retry', err);

@@ -6,6 +6,7 @@ import {
 	BASE_XP,
 	DAILY_BONUS,
 	GRADE_BONUS,
+	LESSON_RUN_XP,
 	dailyStreak,
 	levelFromXp,
 	levelProgress,
@@ -17,6 +18,8 @@ import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
 import xpFixture from '../../../../../docs/contracts/scheduler/xp.json';
 import { studyDay, type ZoneChange } from '$lib/time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
+import { grammarPayload } from '$lib/events/eventPayloads';
+import { parseGrammarRun, type GrammarRun } from './grammarRuns';
 import * as build from '$lib/testing/study';
 
 // Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
@@ -240,12 +243,19 @@ describe('the learner\'s day', () => {
 	});
 });
 
+function lessonRun(n: number, ts: string): GrammarRun {
+	const run = parseGrammarRun({ id: `g${n}`, workspaceId: 1, ts, type: 'grammar', payload: grammarPayload('p', `l${n}`, 1, 1) });
+	if (run === null) throw new Error(`not a run: ${ts}`);
+	return run;
+}
+
 describe('fixtures: streak with vacation days', () => {
 	for (const c of streakFixture.cases) {
 		it(c.name, () => {
 			const day = c.zone === 'UTC' ? UTC : studyDay([{ zone: c.zone, from: null }]);
 			const reviews = c.reviews.map((ts, i) => ev(i + 1, ts));
-			expect(dailyStreak(reviews, Date.parse(c.now), day, c.vacation)).toEqual(c.expect);
+			const lessons = ((c as { lessons?: string[] }).lessons ?? []).map((ts, i) => lessonRun(i + 1, ts));
+			expect(dailyStreak(reviews, Date.parse(c.now), day, c.vacation, lessons)).toEqual(c.expect);
 		});
 	}
 });
@@ -266,6 +276,7 @@ describe('docs/contracts/scheduler/xp.json', () => {
 		baseXp: Record<StudyCardKind, number>;
 		gradeBonus: Record<string, number>;
 		dailyBonus: number;
+		lessonRunXp: number;
 		levelRule: string;
 		cases: { name: string; history: ZoneChange[]; events: ReviewEvent[]; expect: { xp: number; byKind: Record<StudyCardKind, number> } }[];
 		levels: { xp: number | 'NaN' | 'Infinity'; expect: { level: number; xpInto: number; xpForNext: number } }[];
@@ -276,6 +287,7 @@ describe('docs/contracts/scheduler/xp.json', () => {
 		expect(BASE_XP).toEqual(fixture.baseXp);
 		expect(GRADE_BONUS).toEqual(fixture.gradeBonus);
 		expect(DAILY_BONUS).toBe(fixture.dailyBonus);
+		expect(LESSON_RUN_XP).toBe(fixture.lessonRunXp);
 		expect(fixture.levelRule).toContain('100 * L');
 		// The level rule in words, checked against the code at its first boundaries.
 		for (let level = 1; level <= 5; level++) {
@@ -285,7 +297,8 @@ describe('docs/contracts/scheduler/xp.json', () => {
 	});
 	for (const c of fixture.cases) {
 		it(c.name, () => {
-			expect(xpFromReviews(c.events, studyDay(c.history).dayOf)).toBe(c.expect.xp);
+			const runs = c.events.map((e) => parseGrammarRun(e)).filter((r): r is GrammarRun => r !== null);
+			expect(xpFromReviews(c.events, studyDay(c.history).dayOf, runs)).toBe(c.expect.xp);
 			expect(xpByKind(c.events)).toEqual(c.expect.byKind);
 		});
 	}

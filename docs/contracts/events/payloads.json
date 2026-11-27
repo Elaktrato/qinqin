@@ -12,7 +12,8 @@
     {"type": "lookup", "write": false},
     {"type": "read", "write": true, "builder": "readPayload"},
     {"type": "journal", "write": true, "builder": "journalPayload"},
-    {"type": "script", "write": true, "builder": "scriptPayload"}
+    {"type": "script", "write": true, "builder": "scriptPayload"},
+    {"type": "grammar", "write": true, "builder": "grammarPayload"}
   ],
   "cases": [
     {
@@ -40,6 +41,12 @@
       "note": "{system, item, mode, ok} in this member order: system is hiragana, katakana, hangul or cyrillic; item is the chart item (\"hiragana:あ\") or example word (\"hiragana:word:ねこ\"); mode is recognise, recall, read, type or write (write: kana drawn on the writing pad, #62; a client that does not know a mode ignores the event); ok is a boolean",
       "args": ["hiragana", "hiragana:あ", "recognise", true],
       "expect": {"system": "hiragana", "item": "hiragana:あ", "mode": "recognise", "ok": true}
+    },
+    {
+      "kind": "build", "type": "grammar", "name": "grammar names the grammar point, the mode, the score and the total",
+      "note": "{point, mode, score, total} in this member order (#277): point is <packId>:<lessonId> (neither id holds a colon); mode is lesson (a finished lesson run; a client ignores a mode it does not know); score and total are whole numbers with 0 <= score <= total <= 1000. Parse and replay rules: grammar/runs.json",
+      "args": ["zh-grammar", "le-change", 3, 4],
+      "expect": {"point": "zh-grammar:le-change", "mode": "lesson", "score": 3, "total": 4}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",

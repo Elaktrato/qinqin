@@ -1,66 +1,61 @@
-// Lesson progress (docs/contracts/grammar/): the workspace's rows of
-// GET /api/grammar/progress, and a finished run recorded with
-// POST /api/grammar/progress. The server keeps the best score.
+// Lesson progress (#277, docs/contracts/grammar/runs.json): a finished run is a
+// `grammar` study event, recorded through the session's outbox like a review;
+// the progress of each lesson (best score, last run) is replayed from the
+// workspace's events (lib/studycore/grammarRuns.ts), never stored.
 
-import { api } from '$lib/api/client';
+import type { StudyEventBody } from '$lib/api/types';
+import type { Session } from '$lib/context/session.svelte';
+import { grammarPayload } from '$lib/events/eventPayloads';
+import { newUlid } from '$lib/events/ulid';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { GRAMMAR_EVENT, applyRun, grammarPoint, grammarProgress } from '$lib/studycore/grammarRuns';
 import type { Progress } from './types';
 
-/** progressKey: the map key of a lesson's progress. */
+/** progressKey: the map key of a lesson's progress (its grammar point). */
 export function progressKey(packId: string, lessonId: string): string {
-	return `${packId}:${lessonId}`;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** parseProgress reads the progress members of a row; null unless every member holds. */
-export function parseProgress(raw: unknown): Progress | null {
-	if (!isRecord(raw)) return null;
-	const { completedAt, best, total } = raw;
-	if (typeof completedAt !== 'string') return null;
-	if (!Number.isInteger(best) || !Number.isInteger(total)) return null;
-	const b = best as number;
-	const t = total as number;
-	if (b < 0 || t < 0 || b > t) return null;
-	return { completedAt, best: b, total: t };
-}
-
-/** parseProgressRow reads one row of the list; null when it is not one. */
-export function parseProgressRow(raw: unknown): { packId: string; lessonId: string; progress: Progress } | null {
-	if (!isRecord(raw) || typeof raw.packId !== 'string' || raw.packId === '' || typeof raw.lessonId !== 'string' || raw.lessonId === '') return null;
-	const progress = parseProgress(raw);
-	return progress === null ? null : { packId: raw.packId, lessonId: raw.lessonId, progress };
-}
-
-/** loadProgress reads the workspace's lesson progress by progressKey; malformed rows are skipped. */
-export async function loadProgress(workspaceId: number): Promise<Map<string, Progress>> {
-	const rows = await api<unknown>(`/api/grammar/progress?workspace=${workspaceId}`);
-	const out = new Map<string, Progress>();
-	for (const raw of Array.isArray(rows) ? rows : []) {
-		const row = parseProgressRow(raw);
-		if (row !== null) out.set(progressKey(row.packId, row.lessonId), row.progress);
-	}
-	return out;
+	return grammarPoint(packId, lessonId);
 }
 
 /**
- * recordRun stores a finished run and answers the stored progress: the
- * server keeps the best score of runs with the same number of exercises.
- * A failed request throws for the caller to show and retry.
+ * loadProgress replays the workspace's grammar runs (the study history: the
+ * event log, queued and just-sent events included) into each lesson's
+ * progress, by progressKey.
+ */
+export async function loadProgress(session: Pick<Session, 'study'>, workspaceId: number, opts: { force?: boolean } = {}): Promise<Map<string, Progress>> {
+	const history = await loadStudyHistory(session.study, workspaceId, opts);
+	return grammarProgress(history.grammarRuns);
+}
+
+/** runEvent builds the event of one finished run. */
+export function runEvent(workspaceId: number, packId: string, lessonId: string, score: number, total: number, now: number = Date.now()): StudyEventBody {
+	return {
+		id: newUlid(now),
+		workspaceId,
+		device: 'web',
+		ts: new Date(now).toISOString(),
+		type: GRAMMAR_EVENT,
+		payload: grammarPayload(packId, lessonId, score, total)
+	};
+}
+
+/**
+ * recordRun records a finished run (write-ahead in the outbox: a run that
+ * cannot be sent now is sent later) and answers the lesson's progress with
+ * it, from `previous` (the progress before the run). Throws when the run was
+ * not kept: its workspace was deleted.
  */
 export async function recordRun(
+	session: { outbox: Pick<Session['outbox'], 'recordEvent'> },
 	workspaceId: number,
 	packId: string,
 	lessonId: string,
 	score: number,
-	total: number
+	total: number,
+	previous: Progress | undefined,
+	now: number = Date.now()
 ): Promise<Progress> {
-	const answer = await api<unknown>(`/api/grammar/progress?workspace=${workspaceId}`, {
-		method: 'POST',
-		body: { packId, lessonId, score, total }
-	});
-	const progress = parseProgress(answer);
-	if (progress === null) throw new Error('grammar: the server answered no progress');
-	return progress;
+	const event = runEvent(workspaceId, packId, lessonId, score, total, now);
+	const kept = await session.outbox.recordEvent(event);
+	if (kept === null) throw new Error('grammar: the run was not saved, its workspace is gone');
+	return applyRun(previous, { ts: event.ts, score, total });
 }

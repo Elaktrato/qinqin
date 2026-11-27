@@ -67,7 +67,7 @@ function deferred<T>() {
 beforeEach(() => {
 	select(1);
 	flashcards(true);
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
 	vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-17': 21, '2026-11-18': 7 }));
 });
 afterEach(() => {
@@ -163,9 +163,9 @@ describe('ReviewsPerDayWidget', () => {
 		select(2);
 		await tick();
 		vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-18': 5 }));
-		second.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		second.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
 		await waitFor(() => expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy());
-		first.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
 		await tick();
 		await Promise.resolve();
 		expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy();

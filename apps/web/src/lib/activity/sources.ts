@@ -12,14 +12,16 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
 	{ type: 'review', feature: 'flashcards', unit: 'count' },
 	{ type: 'read', feature: 'reader', unit: 'seconds' },
 	{ type: 'journal', feature: 'journal', unit: 'count' },
-	{ type: 'script', feature: 'scripts', unit: 'count' }
+	{ type: 'script', feature: 'scripts', unit: 'count' },
+	{ type: 'grammar', feature: 'grammar', unit: 'count' }
 ];
 
 const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {
 	review: { label: 'activity.source.review.label', count: 'activity.source.review.count' },
 	read: { label: 'activity.source.read.label', count: 'activity.source.read.count' },
 	journal: { label: 'activity.source.journal.label', count: 'activity.source.journal.count' },
-	script: { label: 'activity.source.script.label', count: 'activity.source.script.count' }
+	script: { label: 'activity.source.script.label', count: 'activity.source.script.count' },
+	grammar: { label: 'activity.source.grammar.label', count: 'activity.source.grammar.count' }
 };
 
 /** activityChangesLog: the event types that change what the readers of the full event log show. */

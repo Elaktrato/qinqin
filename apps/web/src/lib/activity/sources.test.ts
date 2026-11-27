@@ -13,7 +13,7 @@ describe('the activity sources', () => {
 				unit: 'measure' in r.rule && r.rule.measure?.field === 'seconds' ? 'seconds' : 'count'
 			}))
 		);
-		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script']);
+		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script', 'grammar']);
 	});
 
 	it('word themselves from the catalogue; an unknown type shows its id', () => {
@@ -21,6 +21,9 @@ describe('the activity sources', () => {
 		expect(activityLabel({ type: 'drill' })).toBe('drill');
 		expect(activityText({ type: 'journal' }, 1, '1')).toBe('1 journal entry');
 		expect(activityText({ type: 'read' }, 7, '7')).toBe('7 minutes of reading');
+		expect(activityLabel({ type: 'grammar' })).toBe('Grammar lessons');
+		expect(activityText({ type: 'grammar' }, 1, '1')).toBe('1 grammar lesson');
+		expect(activityText({ type: 'grammar' }, 3, '3')).toBe('3 grammar lessons');
 		expect(activityText({ type: 'drill' }, 2, '2')).toBe('2 drill');
 	});
 });

@@ -58,4 +58,6 @@ var Rules = []Rule{
 	{Type: "read", Feature: "reader", Measure: &Measure{Field: "seconds", Min: 30, Max: 7200}, PointsPer: 300},
 	{Type: "journal", Feature: "journal", DistinctBy: "entryId"},
 	{Type: "script", Feature: "scripts"},
+	// A grammar lesson run (#277): one point per lesson finished, once per lesson per learner day.
+	{Type: "grammar", Feature: "grammar", DistinctBy: "point"},
 }

@@ -13,6 +13,7 @@
 	import type { VacationPeriod } from '$lib/studycore/vacation';
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/studycore/exp';
+	import type { GrammarRun } from '$lib/studycore/grammarRuns';
 	import Mascot from './Mascot.svelte';
 	import { setupKinds } from './setup/setup';
 	import { loadStudyHistory } from '$lib/studycore/data';
@@ -32,6 +33,8 @@
 	let decks = $state<Deck[]>([]);
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
+	// Grammar lesson runs earn EXP and keep the streak (#277).
+	let grammarRuns = $state.raw<readonly GrammarRun[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	// Vacation days and the study clock of this workspace (rebuilt at midnight).
@@ -86,7 +89,7 @@
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
-	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns));
 	const vacationText = $derived(
 		workspaceId === null
 			? null
@@ -94,7 +97,7 @@
 	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);
@@ -109,6 +112,7 @@
 			decks = [];
 			cards = [];
 			reviews = [];
+			grammarRuns = [];
 			noWorkspace = true;
 			loading = false;
 			return;
@@ -125,6 +129,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			grammarRuns = data.grammarRuns;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			ctx = contextForData(session.zone, data, workspace);
@@ -134,6 +139,7 @@
 			decks = [];
 			cards = [];
 			reviews = [];
+			grammarRuns = [];
 			error = errorText(err, t('flashcards.widget.loadError'));
 		} finally {
 			if (seq === requestSeq) loading = false;

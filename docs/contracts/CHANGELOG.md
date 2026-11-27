@@ -5,6 +5,28 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #277 — Grammar lesson runs are study events (contract 15)
+
+- **New event type:** `grammar`, one per finished lesson run, `{point: "<packId>:<lessonId>", mode: "lesson",
+  score, total}` (member order pinned), written through `POST /api/events/batch` like a review. New fixture
+  `grammar/runs.json` (rule `grammar/runs`: the payload, which events are runs, the progress replay, the conversion of
+  old progress rows); `events/payloads.json` gains its `build` case. `mode` leaves room for grammar review (#181); a
+  client ignores a mode it does not know.
+- **Removed routes and table:** `GET /api/grammar/progress` and `POST /api/grammar/progress` are gone (404), and so
+  is the table `grammar_progress`; no compatibility layer. A client replays the progress (best score, last run, runs)
+  from the workspace's `grammar` events. Retired fixture: `grammar/progress.json`.
+- **Migration 056:** each `grammar_progress` row becomes one `grammar` event (its best score at its `completedAt`, or
+  its write time; device `migration`); a row the rules refuse is dropped. Then the table is dropped.
+- **Backups:** an export carries the runs as events and writes no `grammar:progress:` rows; a restore of an older
+  archive turns each such row into the same event (device `restore`), counted under `restored.rows` (the dry run
+  agrees, and now also drops a row that does not convert).
+- **Activity:** a new core rule `grammar` (feature `grammar`, `distinctBy: "point"`): 1 point per lesson finished, once
+  per lesson per learner day; the activity route lists it as a source (`events/activity.json`), so a daily goal can be
+  `activity:grammar` and the weekly summary shows it.
+- **EXP and streak:** 20 EXP per lesson run (`scheduler/xp.json` `lessonRunXp`; the daily bonus stays a review bonus);
+  a learner day with a run counts for the streak (`scheduler/streak.json` `lessons`), in Stats, the weekly summary and
+  the milestones' `streak` and `days-active` families (`milestones/reached.json`).
+
 ## #288 — companion eligibility decided when a session is planned (contract 14)
 
 - **New route:** `POST /api/study/eligibility {"ids": [...]}` (1 to 500 entry ids) answers, per entry, the companion

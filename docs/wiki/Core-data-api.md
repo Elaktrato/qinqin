@@ -25,6 +25,6 @@ Without `?workspace=<id>` a row is user-global; with it, it belongs to that work
 ## Journal and grammar
 
 - The journal's entries, reviews, topic ideas and settings: `GET /api/journal/entries`, `GET`/`PUT`/`DELETE /api/journal/entries/{id}`, `GET /api/journal/entries/{id}/review`, `GET /api/journal/suggestions`, `GET`/`PUT /api/journal/settings`, each with `?workspace=` ([Journal and AI](Journal-and-AI); contract `docs/contracts/journal/`).
-- Grammar lesson progress: `GET /api/grammar/progress?workspace=` and `POST /api/grammar/progress?workspace=` `{packId, lessonId, score, total}`; the server keeps the best score ([Grammar lessons](Grammar-lessons); contract `docs/contracts/grammar/`).
+- Grammar lesson runs are study events (`grammar`, `{point, mode, score, total}`, through `POST /api/events/batch`); the client works out the best score from them ([Grammar lessons](Grammar-lessons); contract `docs/contracts/grammar/`). The former `/api/grammar/progress` routes are gone (#277).
 
-Access tokens cannot reach the journal or grammar routes; they may read and write the feature switches and the keyed rows ([API access tokens](API-Access-tokens)).
+Access tokens cannot reach the journal routes; they may read and write the feature switches and the keyed rows ([API access tokens](API-Access-tokens)).

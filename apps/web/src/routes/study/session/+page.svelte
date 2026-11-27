@@ -63,6 +63,7 @@ import { contextForData } from '$lib/studycore/currentContext';
 import { IDENTITY_CLOCK, type StudyClock } from '$lib/studycore/studyClock';
 import type { Run } from '$lib/studycore/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/studycore/exp';
+	import type { GrammarRun } from '$lib/studycore/grammarRuns';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/features/flashcards/session/grade';
 	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
@@ -372,6 +373,8 @@ import type { Run } from '$lib/studycore/vacation';
 	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
 	let sessionVacation = $state.raw<readonly Run[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
+	// The workspace's grammar lesson runs: EXP and the streak count them (#277).
+	let grammarRuns = $state.raw<readonly GrammarRun[]>([]);
 	// Back (#131): the graded showings of this session (newest last) and the
 	// one shown again, if any (an index into `steps`; null: the current card).
 	let steps = $state.raw<GradedStep<Resolved>[]>([]);
@@ -484,11 +487,11 @@ import type { Run } from '$lib/studycore/vacation';
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
-	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
+	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf, grammarRuns));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation, grammarRuns));
 	// Per-kind XP of this session; whatever the kinds do not explain is
 	// the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
@@ -538,6 +541,7 @@ import type { Run } from '$lib/studycore/vacation';
 		backfillLeft = 0;
 		reviews = [];
 		sessionReviews = [];
+		grammarRuns = [];
 		steps = [];
 		backAt = null;
 		index = 0;
@@ -592,6 +596,7 @@ import type { Run } from '$lib/studycore/vacation';
 			}
 			const history = data.reviews;
 			reviews = history;
+			grammarRuns = data.grammarRuns;
 			weights = activeWeights(data);
 			const loaded = contextForData(session.zone, data, workspaceId);
 			sessionClock = loaded.clock;

@@ -92,7 +92,7 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		reviews,
-		merged: 0
+		merged: 0, grammarRuns: []
 	}));
 	vi.mocked(loadRawStudyData).mockImplementation(async () => ({
 		decks: structuredClone(decks),

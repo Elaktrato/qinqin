@@ -1,6 +1,6 @@
 # Grammar lessons
 
-**Grammar** (`/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a core feature: it is on for everyone until you switch it off in [Settings → Features](Settings-tour#features). Your best score of each lesson is kept on the server.
+**Grammar** (`/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a core feature: it is on for everyone until you switch it off in [Settings → Features](Settings-tour#features). Each finished run is saved in your study history, and your best score of each lesson is worked out from it.
 
 ## What there is to learn
 
@@ -40,9 +40,16 @@ After each answer the whole sentence and its reading are shown; **Next** goes on
 
 ## Your progress
 
-Your best score per lesson is saved for the workspace, on the server: it syncs to your devices and is in [your data](Your-data). A run never lowers a best score. If the result cannot be saved, the page says "Could not save your progress, so nothing was changed" and offers **Try saving again**. A lesson whose number of exercises changed (for example after the pack was updated) starts a new best score.
+Each finished run is saved to the workspace's study history, like a flashcard review: it syncs to your devices and is in [your data](Your-data). Your best score per lesson and the time of your last run are worked out from these runs, so a run never lowers a best score, even one made on another device. A run made without a connection waits on this device and is sent when you are back online (it already counts on this device). Only when the workspace was deleted in the meantime does the page say "This run was not saved: its workspace was deleted." A lesson whose number of exercises changed (for example after the pack was updated) starts a new best score.
 
-Grammar practice does not create flashcards and does not count for streaks, the heatmap, daily goals or milestones.
+A finished lesson counts:
+
+- on the [heatmap](Stats-and-heatmap) and in the [weekly summary](Weekly-summary) as "Grammar lessons": one point per lesson finished, once per lesson a day (practising the same lesson again that day adds nothing);
+- for a [daily goal](Daily-goals) of grammar lessons (Settings → Study → Daily goal);
+- 20 XP per run, whatever the score, towards your level ([XP and streaks](Flashcards-study-sessions#scheduling-xp-and-streaks));
+- for your streak: a day with a finished lesson keeps it going like a day with a review, and for the streak and days-active [milestones](Milestones).
+
+Grammar practice does not create flashcards.
 
 ## Offline
 

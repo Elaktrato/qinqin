@@ -27,3 +27,8 @@ export function journalPayload(entryId: string): { entryId: string } {
 export function scriptPayload(system: string, item: string, mode: string, ok: boolean): { system: string; item: string; mode: string; ok: boolean } {
 	return { system, item, mode, ok };
 }
+
+/** `grammar`: one finished grammar lesson run (#277): the grammar point (`<packId>:<lessonId>`), the mode, the score and the number of exercises. */
+export function grammarPayload(packId: string, lessonId: string, score: number, total: number): { point: string; mode: 'lesson'; score: number; total: number } {
+	return { point: `${packId}:${lessonId}`, mode: 'lesson', score, total };
+}

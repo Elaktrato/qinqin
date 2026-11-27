@@ -4,7 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('./lessonData', () => ({ loadDisplayLesson: vi.fn() }));
-vi.mock('./progress', () => ({ recordRun: vi.fn(async () => ({ best: 1, total: 1 })) }));
+vi.mock('./progress', () => ({
+	recordRun: vi.fn(async () => ({ best: 1, total: 1, completedAt: '2026-11-27T10:00:00Z', runs: 2 })),
+	loadProgress: vi.fn(async () => new Map([['basics:l1', { best: 0, total: 1, completedAt: '2026-11-26T10:00:00Z', runs: 1 }]])),
+	progressKey: (pack: string, lesson: string) => `${pack}:${lesson}`
+}));
 vi.mock('./exercises', async (importOriginal) => ({
 	...(await importOriginal<typeof import('./exercises')>()),
 	buildExercises: () => [
@@ -24,6 +28,7 @@ vi.mock('./exercises', async (importOriginal) => ({
 }));
 
 import { loadDisplayLesson } from './lessonData';
+import { recordRun } from './progress';
 import { primaryActions } from '$lib/ui/testing/primary';
 import PracticeRun from './PracticeRun.svelte';
 
@@ -71,5 +76,14 @@ describe('grammar practice in the lighter look (#106)', () => {
 		const retry = await screen.findByRole('button', { name: 'Retry' });
 		expect(primaryActions(document.body)).toEqual([retry]);
 		expect(screen.getByRole('status').textContent).toContain('Score: 1/1');
+	});
+
+	it('records the finished run as an event with the progress before it, and shows the best score (#277)', async () => {
+		render(PracticeRun, { props: { pack: 'basics', lessonId: 'l1' }, context: ctx.context });
+		await screen.findByRole('heading', { name: 'The は particle' });
+		await fireEvent.click(screen.getByRole('button', { name: '学生' }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Finish' }));
+		await screen.findByText('Best so far: 1/1');
+		expect(recordRun).toHaveBeenCalledWith(expect.anything(), 1, 'basics', 'l1', 1, 1, { best: 0, total: 1, completedAt: '2026-11-26T10:00:00Z', runs: 1 });
 	});
 });

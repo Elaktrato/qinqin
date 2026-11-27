@@ -118,6 +118,53 @@ function sentEvents(): Record<string, unknown>[] {
 	});
 }
 
+describe('recordEvent (#277: a grammar lesson run takes the review path)', () => {
+	beforeEach(() => {
+		setOutboxUser(1, 'secret');
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 }));
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	const run = {
+		id: '01KA00000000000000000000G1',
+		workspaceId: 7,
+		device: 'web',
+		ts: '2026-03-15T08:30:00.000Z',
+		type: 'grammar',
+		payload: { point: 'zh-grammar:le', mode: 'lesson', score: 3, total: 4 }
+	};
+
+	it('posts the event as built and queues nothing once accepted', async () => {
+		await expect(outbox.recordEvent(run)).resolves.toEqual(run);
+		expect(lastBatch().events).toEqual([run]);
+		expect(pending()).toEqual([]);
+	});
+
+	it('queues a failed one, where the study history sees it', async () => {
+		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await expect(outbox.recordEvent(run)).resolves.toEqual(run);
+		expect(pending()).toEqual([run]);
+		expect(outbox.pendingReviews(1, 7)).toEqual([run]);
+		warn.mockRestore();
+	});
+
+	it('of a deleted workspace: null, and no notice about a review', async () => {
+		notices.dismiss();
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.mocked(fetch).mockResolvedValue(new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 }));
+		await expect(outbox.recordEvent(run)).resolves.toBeNull();
+		expect(pending()).toEqual([]);
+		expect(notices.text).toBeNull();
+		warn.mockRestore();
+	});
+});
+
 describe('recordReview', () => {
 	beforeEach(() => {
 		setOutboxUser(1, 'secret');

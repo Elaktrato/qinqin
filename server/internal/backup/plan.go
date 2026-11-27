@@ -422,7 +422,7 @@ var typedLiveCount = func() string {
 	for _, t := range study.Tables() {
 		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1 AND deleted_at IS NULL)`
 	}
-	for _, t := range append(journal.Tables(), grammar.ProgressTables()...) {
+	for _, t := range journal.Tables() {
 		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1)`
 	}
 	return out
@@ -455,11 +455,17 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 
 // planDrops reports whether the restore drops a row the maps kept, as
 // restore.go decides: a row no store takes, a typed study row the codec
-// cannot read, and a journal or grammar row without a workspace.
+// cannot read, a journal row without a workspace, and an old grammar
+// progress row without a workspace or that does not convert to an event.
 func planDrops(nr Row) bool {
 	kind := kindOf(nr)
 	if _, typed, ok := typedRow(nr); kind == kindDrop || (typed && !ok) {
 		return true
 	}
-	return (kind == kindJournal || kind == kindGrammar) && nr.WorkspaceID == nil
+	if kind == kindGrammar {
+		// an old lesson progress row becomes an event only when it converts (#277)
+		_, _, converts := grammar.LegacyEvent(nr.Key, nr.Data, nr.UpdatedAt)
+		return nr.WorkspaceID == nil || !converts
+	}
+	return kind == kindJournal && nr.WorkspaceID == nil
 }

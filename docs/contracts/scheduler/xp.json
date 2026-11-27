@@ -16,6 +16,7 @@
   "4": 10
  },
  "dailyBonus": 10,
+ "lessonRunXp": 20,
  "levelRule": "level L to L+1 costs 100 * L XP; xp is floored, a negative or non-finite xp is 0 (\"NaN\" and \"Infinity\" stand for those numbers)",
  "cases": [
   {
@@ -394,6 +395,163 @@
      "sentence": 0,
      "writing": 30,
      "tone": 8,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "a grammar lesson run earns 20 whatever its score",
+   "note": "#277: lessonRunXp per readable grammar lesson run (grammar/runs.json), a 0 of 4 as much as a 4 of 4; runs belong to no card kind and a day with runs only has no daily bonus",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le",
+      "mode": "lesson",
+      "score": 0,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:10:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "xp": 40,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "grammar runs and reviews add up; the daily bonus stays a review bonus",
+   "note": "a Good vocab review (10 + 5) and its day's bonus (10), plus one lesson run (20); the run on the next day earns 20 and no bonus",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:30:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le",
+      "mode": "lesson",
+      "score": 2,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-02T09:30:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "lesson",
+      "score": 1,
+      "total": 1
+     }
+    }
+   ],
+   "expect": {
+    "xp": 65,
+    "byKind": {
+     "vocab": 15,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "an unreadable grammar event earns nothing",
+   "note": "a score above its total, an unknown mode and a ts that is no time are no lesson runs",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:l",
+      "mode": "lesson",
+      "score": 5,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:l",
+      "mode": "review",
+      "score": 1,
+      "total": 1
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G3",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "later",
+     "type": "grammar",
+     "payload": {
+      "point": "p:l",
+      "mode": "lesson",
+      "score": 1,
+      "total": 1
+     }
+    }
+   ],
+   "expect": {
+    "xp": 0,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
      "reverse": 0,
      "cloze": 0
     }
