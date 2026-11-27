@@ -12,6 +12,7 @@
 	import { SOURCES_HREF, bookHref } from './route';
 	import { Button } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { heldValue, holdValue } from '$lib/widgets/widgetLoad.svelte';
 	const session = useSession();
 
 	const MAX_BYTES = 20 * 1024 * 1024;
@@ -27,6 +28,8 @@
 	let books = $state<Book[]>([]);
 	let loading = $state(true);
 	let loadError = $state('');
+	// A refresh failed while the last books of this session are shown (#290).
+	let stale = $state('');
 	let actionError = $state('');
 	let status = $state('');
 	let uploading = $state(false);
@@ -41,14 +44,21 @@
 	// A response for a workspace that is no longer selected is dropped.
 	let loadSeq = 0;
 
-	async function load(id: number): Promise<void> {
+	/** The books shown: held for the session, so the library opened again shows them at once (#290). */
+	function show(id: number, list: Book[]): void {
+		books = list;
+		holdValue(session, 'library', id, list);
+	}
+
+	async function load(id: number, held = false): Promise<void> {
 		const seq = ++loadSeq;
-		loading = true;
+		loading = !held;
 		loadError = '';
 		try {
 			const list = await listBooks(id);
 			if (seq !== loadSeq) return;
-			books = list;
+			show(id, list);
+			stale = '';
 			if (list.length === 0) {
 				// Only a hint: a failure here leaves the plain empty state.
 				const all = await listAllBooks().catch(() => [] as Book[]);
@@ -57,8 +67,11 @@
 			}
 		} catch (err) {
 			if (seq !== loadSeq) return;
-			books = [];
-			loadError = apiErrorMessage(err, 'list');
+			if (held) stale = apiErrorMessage(err, 'list');
+			else {
+				books = [];
+				loadError = apiErrorMessage(err, 'list');
+			}
 		} finally {
 			if (seq === loadSeq) loading = false;
 		}
@@ -66,7 +79,9 @@
 
 	$effect(() => {
 		const id = workspaceId;
-		books = [];
+		const held = id === null ? undefined : heldValue<Book[]>(session, 'library', id);
+		books = held ?? [];
+		stale = '';
 		elsewhere = [];
 		actionError = '';
 		status = '';
@@ -76,7 +91,7 @@
 			loading = true;
 			return;
 		}
-		void load(id);
+		void load(id, held !== undefined);
 	});
 
 	async function onFile(event: Event): Promise<void> {
@@ -99,7 +114,7 @@
 		try {
 			// The language fills in for an epub that does not declare one.
 			const book = await uploadBook(file, id, bookLanguage);
-			if (id === workspaceId) books = [book, ...books];
+			if (id === workspaceId) show(id, [book, ...books]);
 			status = t('reader.library.added', { title: book.title });
 		} catch (err) {
 			actionError = apiErrorMessage(err, 'upload');
@@ -115,7 +130,9 @@
 		status = '';
 		try {
 			await deleteBook(book.id);
-			books = books.filter((b) => b.id !== book.id);
+			const left = books.filter((b) => b.id !== book.id);
+			if (workspaceId === book.workspaceId) show(book.workspaceId, left);
+			else books = left;
 			status = t('reader.library.deleted', { title: book.title });
 			confirmingId = null;
 		} catch (err) {
@@ -172,6 +189,9 @@
 		<p class="error" role="alert">{actionError}</p>
 	{/if}
 
+	{#if stale}
+		<p class="not-refreshed" role="status" title={stale}>{t('common.notRefreshed')}</p>
+	{/if}
 	{#if loading}
 		<p>{t('reader.library.loading')}</p>
 	{:else if loadError}
@@ -236,6 +256,12 @@
 </div>
 
 <style>
+	.not-refreshed {
+		margin: 0 0 var(--space-3);
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
 	.upload,
 	.books {
 		margin-top: var(--space-6);

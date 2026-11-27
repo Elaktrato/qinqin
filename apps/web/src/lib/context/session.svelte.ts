@@ -16,6 +16,7 @@ import { createStudyState, type StudyState } from '$lib/studycore/data';
 import { ReviewOutbox } from '$lib/studycore/events';
 import { createOutboxStore } from '$lib/studycore/outboxStore';
 import { clearRecentSent, rememberSent } from '$lib/studycore/recentSent';
+import { forgetHomeCopies } from '$lib/widgets/homeData';
 import { StudySetups } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { StudyModalState } from '$lib/features/flashcards/setup/studyModal.svelte';
 import { EligibilityIndex } from '$lib/features/flashcards/session/eligibility.svelte';
@@ -89,7 +90,10 @@ export class Session {
 			timers: deps.timers,
 			local,
 			studyDay: () => this.zone.day(),
-			whenStudyDaySettled: () => this.zone.settled()
+			whenStudyDaySettled: () => this.zone.settled(),
+			onRefresh: (workspaceId, ok) => {
+				if (this.#alive) this.study.refresh.record('log', workspaceId, ok);
+			}
 		});
 		this.onDispose(() => this.events.dispose());
 		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
@@ -141,6 +145,7 @@ export class Session {
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
 			if (reason === 'signOut') {
 				clearRecentSent(local());
+				forgetHomeCopies(local());
 				this.setups.forget();
 			}
 		});

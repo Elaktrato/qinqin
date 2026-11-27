@@ -61,3 +61,39 @@ describe('Library in the lighter look (#106)', () => {
 		expect(file.classList.contains('visually-hidden')).toBe(true);
 	});
 });
+
+describe('Library opened again (#290)', () => {
+	function deferred<T>() {
+		let resolve!: (v: T) => void;
+		let reject!: (e: unknown) => void;
+		const promise = new Promise<T>((res, rej) => {
+			resolve = res;
+			reject = rej;
+		});
+		return { promise, resolve, reject };
+	}
+
+	it('shows the last books at once, with no loading line, and refreshes them behind', async () => {
+		const first = render(Library, { context: ctx.context });
+		await screen.findByText('Book 2');
+		first.unmount();
+		const later = deferred<Book[]>();
+		vi.mocked(listBooks).mockReturnValueOnce(later.promise);
+		render(Library, { context: ctx.context });
+		expect(screen.getByText('Book 2')).toBeTruthy();
+		expect(screen.queryByText('Loading your library…')).toBeNull();
+		later.resolve([book(1), book(2), book(3)]);
+		expect(await screen.findByText('Book 3')).toBeTruthy();
+	});
+
+	it('a failed refresh keeps the books with a quiet notice', async () => {
+		const first = render(Library, { context: ctx.context });
+		await screen.findByText('Book 2');
+		first.unmount();
+		vi.mocked(listBooks).mockRejectedValueOnce(new TypeError('offline'));
+		render(Library, { context: ctx.context });
+		expect(await screen.findByText(/Could not refresh/)).toBeTruthy();
+		expect(screen.getByText('Book 2')).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+});

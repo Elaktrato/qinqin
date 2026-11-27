@@ -13,16 +13,19 @@ import { StudyDays } from '$lib/time/studyDays';
 // A fresh event log and study day per test (record 0009: the session's).
 let eventLog: EventLog;
 let days: StudyDays;
-beforeEach(() => {
-	days = new StudyDays({ local: () => webStorage('localStorage') });
-	eventLog = new EventLog({
+function logDeps() {
+	return {
 		api,
 		now: () => Date.now(),
 		timers: browserTimers,
 		local: () => webStorage('localStorage'),
 		studyDay: () => days.day(),
 		whenStudyDaySettled: () => days.settled()
-	});
+	};
+}
+beforeEach(() => {
+	days = new StudyDays({ local: () => webStorage('localStorage') });
+	eventLog = new EventLog(logDeps());
 });
 
 function fakeStorage(): Storage {
@@ -355,6 +358,34 @@ describe('loadWorkspaceEvents', () => {
 		expect(logReads()).toHaveLength(3);
 		expect(changed).toHaveBeenCalledWith(7);
 		expect(changed).toHaveBeenCalledTimes(1);
+	});
+
+	it('after a post the held log answers at once; the reload behind it tells the listeners when it changed (#290)', async () => {
+		const held = await eventLog.load(7);
+		const changed = vi.fn();
+		const off = eventLog.onChange(changed);
+		const more = [...log, { ...log[0], id: 'e2' }];
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) =>
+			String(input).startsWith('/api/events?') ? jsonResponse(more) : jsonResponse({ accepted: 1, duplicates: 0 })
+		);
+		await eventLog.post([{ id: 'e2', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }]);
+		expect(await eventLog.load(7)).toBe(held);
+		await new Promise((r) => setTimeout(r, 0));
+		off();
+		expect(changed).toHaveBeenCalledTimes(2);
+		expect((await eventLog.load(7)).map((e) => e.id)).toEqual(['e1', 'e2']);
+		expect(logReads()).toHaveLength(2);
+	});
+
+	it('a failed background reload keeps the held log and is reported (#290)', async () => {
+		const failed = vi.fn();
+		const own = new EventLog({ ...logDeps(), onRefresh: failed });
+		const held = await own.load(7);
+		await own.post([{ id: 'e2', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }]);
+		vi.mocked(fetch).mockRejectedValueOnce(new TypeError('offline'));
+		expect(await own.load(7)).toBe(held);
+		await new Promise((r) => setTimeout(r, 0));
+		expect(failed).toHaveBeenCalledWith(7, false);
 	});
 
 	it.each(['session', 'view', 'lookup'])('a posted %s event keeps the cached log', async (type) => {

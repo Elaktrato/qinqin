@@ -94,7 +94,7 @@ describe('StudyCache: rounds', () => {
 		s.server.putTyped('cards', cardAt('c', 4, new Date(s.clock.now - 2_000).toISOString()));
 		s.server.putTyped('cards', cardAt('a', 1, new Date(s.clock.now - 2_000).toISOString(), new Date(s.clock.now - 2_000).toISOString()));
 		s.server.resetCounts();
-		const view = await s.cache.view(WS);
+		const view = await s.cache.view(WS, { current: true });
 		expect(s.server.counts.pullPages).toBe(1);
 		expect(s.server.log[0]).toContain('since=');
 		expect(ids(view.data.cards)).toEqual(['b', 'c']);
@@ -237,7 +237,7 @@ describe('StudyCache: unreadable rows across rounds', () => {
 		expect(first.snapshot.unreadable.has('cards:bad')).toBe(true);
 		await s.advance(9_000);
 		s.server.putTyped('cards', cardAt('bad', 2, new Date(s.clock.now - 2_000).toISOString()));
-		const second = await s.cache.view(WS);
+		const second = await s.cache.view(WS, { current: true });
 		expect(ids(second.data.cards)).toEqual(['a', 'bad']);
 		expect(second.counts).toEqual({});
 		expect(second.snapshot.unreadable.size).toBe(0);
@@ -365,7 +365,7 @@ describe('StudyCache: readers joining a round (review fixes)', () => {
 		s.clock.now += 9_000;
 		let release: () => void = () => undefined;
 		s.hold(new Promise<void>((resolve) => (release = resolve)));
-		const running = s.cache.view(WS);
+		const running = s.cache.view(WS, { current: true });
 		await settle();
 		s.cache.markStale(WS);
 		s.hold(null);
@@ -419,5 +419,95 @@ describe('StudyCache: change detection (review fixes)', () => {
 		const view = await running;
 		expect(view.snapshot.unreadable.has('cards:a')).toBe(true);
 		expect(view.data.cards).toEqual([]);
+	});
+});
+
+describe('StudyCache: stale-while-revalidate (#290)', () => {
+	function loaded() {
+		const failures: number[] = [];
+		const s = setup({ onRefreshFailed: (ws) => failures.push(ws) });
+		s.server.putTyped('cards', cardAt('a', 1, '2026-01-01T00:00:00Z'));
+		return { s, failures };
+	}
+
+	it('a held slot older than the window answers at once and refreshes in the background', async () => {
+		const { s } = loaded();
+		const first = await s.cache.view(WS);
+		const changed: number[] = [];
+		s.cache.onChange((ws) => changed.push(ws));
+		s.clock.now += 9_000;
+		s.server.putTyped('cards', cardAt('c', 3, new Date(s.clock.now - 2_000).toISOString()));
+		s.server.resetCounts();
+		// The held rows: the delta has not answered yet.
+		expect(await s.cache.view(WS)).toBe(first);
+		expect(s.server.counts.pullPages).toBe(1);
+		expect(s.server.log[0]).toContain('since=');
+		await settle();
+		expect(changed).toEqual([WS]);
+		expect(ids(s.cache.peek(WS)!.data.cards)).toEqual(['a', 'c']);
+	});
+
+	it('a reader during the background refresh joins it instead of starting another', async () => {
+		const { s } = loaded();
+		await s.cache.view(WS);
+		s.clock.now += 9_000;
+		s.server.resetCounts();
+		await Promise.all([s.cache.view(WS), s.cache.view(WS), s.cache.view(WS)]);
+		await settle();
+		expect(s.server.counts.pullPages).toBe(1);
+	});
+
+	it('a background refresh that brings nothing new tells no listener', async () => {
+		const { s } = loaded();
+		await s.cache.view(WS);
+		const changed: number[] = [];
+		s.cache.onChange((ws) => changed.push(ws));
+		s.clock.now += 9_000;
+		await s.cache.view(WS);
+		await settle();
+		expect(changed).toEqual([]);
+	});
+
+	it('current waits for the delta, as a write plans against the newest rows', async () => {
+		const { s } = loaded();
+		await s.cache.view(WS);
+		s.clock.now += 9_000;
+		s.server.putTyped('cards', cardAt('c', 3, new Date(s.clock.now - 2_000).toISOString()));
+		const view = await s.cache.view(WS, { current: true });
+		expect(ids(view.data.cards)).toEqual(['a', 'c']);
+	});
+
+	it('force and a stale mark still wait', async () => {
+		const { s } = loaded();
+		await s.cache.view(WS);
+		s.server.putTyped('cards', cardAt('c', 3, new Date(s.clock.now - 2_000).toISOString()));
+		s.clock.now += 3_000;
+		expect(ids((await s.cache.view(WS, { force: true })).data.cards)).toEqual(['a', 'c']);
+		s.server.putTyped('cards', cardAt('d', 4, new Date(s.clock.now - 2_000).toISOString()));
+		s.clock.now += 3_000;
+		s.cache.markStale(WS);
+		expect(ids((await s.cache.view(WS)).data.cards)).toEqual(['a', 'c', 'd']);
+	});
+
+	it('a failed background refresh keeps the rows and reports it once', async () => {
+		const { s, failures } = loaded();
+		const first = await s.cache.view(WS);
+		s.clock.now += 9_000;
+		s.server.beforeAnswer = () => {
+			throw new TypeError('offline');
+		};
+		expect(await s.cache.view(WS)).toBe(first);
+		await settle();
+		expect(failures).toEqual([WS]);
+		expect(s.cache.peek(WS)).toBe(first);
+	});
+
+	it('a first load still waits and fails as before', async () => {
+		const { s, failures } = loaded();
+		s.server.beforeAnswer = () => {
+			throw new TypeError('offline');
+		};
+		await expect(s.cache.view(WS)).rejects.toThrow('offline');
+		expect(failures).toEqual([]);
 	});
 });

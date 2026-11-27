@@ -11,6 +11,7 @@
 	import { MASTERY_THRESHOLD } from '$lib/studycore/mastery';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -19,15 +20,18 @@
 	// many of the language's characters are learned, the stage bar and a
 	// link to the full map under Stats.
 
-	let stats = $state.raw<SectionStats | null>(null);
-	let stale = $state(false);
-	let unresolved = $state(0);
-	let loading = $state(true);
-	let error = $state('');
+	interface Shown {
+		stats: SectionStats;
+		stale: boolean;
+		unresolved: number;
+	}
 	let noWorkspace = $state(false);
 	let notHan = $state(false);
-
-	let requestSeq = 0;
+	// The last map summary of this workspace shows at once on a revisit (#290).
+	const shown = new WidgetLoad<Shown>(session, 'character-map-summary', session.workspaces.current?.id ?? null);
+	const stats = $derived(shown.value?.stats ?? null);
+	const stale = $derived(shown.value?.stale ?? false);
+	const unresolved = $derived(shown.value?.unresolved ?? 0);
 
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
@@ -36,9 +40,9 @@
 	const status = $derived<WidgetStatus>(
 		noWorkspace
 			? 'no-workspace'
-			: loading
+			: shown.loading
 				? 'loading'
-				: error
+				: shown.error
 					? 'error'
 					: notHan || (stats?.total ?? 0) === 0
 						? 'empty'
@@ -46,51 +50,34 @@
 	);
 
 	async function load(id: number | null, lang: string, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-		notHan = false;
-		stale = false;
-		unresolved = 0;
-
-		if (id === null) {
-			stats = null;
-			noWorkspace = true;
-			loading = false;
+		noWorkspace = id === null;
+		notHan = id !== null && !hasCharacterMap(lang);
+		if (id === null || notHan) {
+			shown.clear();
 			return;
 		}
-		if (!hasCharacterMap(lang)) {
-			// The registry hides the tile for such languages; this is a guard.
-			stats = null;
-			notHan = true;
-			loading = false;
-			return;
-		}
-
-		try {
-			const data = await loadCharacterMapData(session, id, lang, { force });
-			if (seq !== requestSeq) return;
-			const now = new Date();
-			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);
-			stale = data.list.stale === true;
-			loading = false;
-
-			// Legacy cards without a written snapshot: resolve them like the
-			// map does, then count once more.
-			if (data.cards.some((card) => card.written === undefined)) {
+		await shown.run(
+			id,
+			async (show) => {
+				const data = await loadCharacterMapData(session, id, lang, { force });
+				const now = new Date();
+				const first = {
+					stats: characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock),
+					stale: data.list.stale === true,
+					unresolved: 0
+				};
+				if (!data.cards.some((card) => card.written === undefined)) return first;
+				// The counts show now; cards from before written snapshots resolve behind them.
+				show(first);
 				const filled = await withLegacyWritten(session, data.cards);
-				if (seq !== requestSeq) return;
-				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock);
-				unresolved = filled.unresolved;
-			}
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			stats = null;
-			error = errorText(err, t('widgets.characters.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+				return {
+					...first,
+					stats: characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock),
+					unresolved: filled.unresolved
+				};
+			},
+			(err) => errorText(err, t('widgets.characters.loadFailed'))
+		);
 	}
 
 	$effect(() => {
@@ -106,7 +93,8 @@
 		{status}
 		noWorkspaceText={t('widgets.characters.noWorkspace')}
 		loadingText={t('widgets.characters.loading')}
-		{error}
+		error={shown.error}
+		stale={shown.stale}
 		onretry={() => void load(workspaceId, language, true)}
 		emptyText={notHan
 			? t('widgets.characters.notHan')

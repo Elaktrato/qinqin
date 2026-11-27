@@ -185,4 +185,40 @@ describe('SummaryWidget', () => {
 		vi.mocked(onContextStale).mock.calls[0][1]();
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
 	});
+
+	it('mounted again, it shows the last numbers at once and refreshes them behind, with no loading line (#290)', async () => {
+		const first = render(SummaryWidget, { context: ctx.context });
+		expect(await screen.findByText('23')).toBeTruthy();
+		first.unmount();
+		const later = deferred<never>();
+		vi.mocked(loadStudyHistory).mockReturnValueOnce(later.promise);
+		render(SummaryWidget, { context: ctx.context });
+		expect(screen.getByText('23')).toBeTruthy();
+		expect(screen.queryByText('Loading…')).toBeNull();
+		vi.mocked(summaryNumbers).mockReturnValue({ ...NUMBERS, streak: 24 });
+		later.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
+		await waitFor(() => expect(screen.getByText('24')).toBeTruthy());
+	});
+
+	it('a failed refresh keeps the numbers with a quiet notice and Try again (#290)', async () => {
+		render(SummaryWidget, { context: ctx.context });
+		await screen.findByText('23');
+		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
+		vi.mocked(onStudyChange).mock.calls.at(-1)![1](1);
+		await waitFor(() => expect(screen.getByText('Could not refresh. Showing what was loaded last.')).toBeTruthy());
+		expect(screen.getByText('23')).toBeTruthy();
+		expect(screen.queryByText('Could not load your summary.')).toBeNull();
+		screen.getByRole('button', { name: 'Try again' }).click();
+		await waitFor(() => expect(screen.queryByText('Could not refresh. Showing what was loaded last.')).toBeNull());
+	});
+
+	it("another workspace's numbers are not shown while its own load", async () => {
+		render(SummaryWidget, { context: ctx.context }).unmount();
+		await Promise.resolve();
+		select(2);
+		vi.mocked(loadStudyHistory).mockReturnValueOnce(deferred<never>().promise);
+		render(SummaryWidget, { context: ctx.context });
+		expect(await screen.findByText('Loading…')).toBeTruthy();
+		expect(screen.queryByText('23')).toBeNull();
+	});
 });

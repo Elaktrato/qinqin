@@ -18,6 +18,7 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
   the reader (popup, phone sheet, ruby), word lists, Stats, every flashcard kind and the kana trainer. On a card it is
   the last hint; Tones cards answer with tone numbers and contours; Starter mode starts at the kana or the
   characters. Searching by romaji or pinyin still works. Tone colours and furigana keep their own switches.
+- Home shows what it showed last at once when you come back to it and refreshes quietly behind, with no loading lines (#290). The decks page, the Reader's library and the Stats widgets work the same way. After a reload or in the Android app your widget layout shows at once too. When a refresh fails the page keeps what it shows and says so in one quiet line.
 
 ## Fixed
 

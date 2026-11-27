@@ -65,6 +65,12 @@ export class StudyServer {
 	now: () => number;
 	/** Called before each answer: a test can change data between pages. */
 	beforeAnswer: ((url: string) => void) | null = null;
+	/** The event log GET /api/events answers (one bare array: the whole log). */
+	events: unknown[] = [];
+	/** Answers for other routes (a test's own); undefined falls through to the 404. */
+	extra: ((url: URL, init?: RequestInit) => Response | undefined) | null = null;
+	/** Waited before each answer (real time), so a test can see what waits on the network. */
+	latencyMs = 0;
 
 	constructor(opts: { now?: () => number; pageSize?: number } = {}) {
 		this.now = opts.now ?? Date.now;
@@ -109,6 +115,7 @@ export class StudyServer {
 		const url = new URL(String(input), 'http://x.invalid');
 		this.log.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`);
 		this.beforeAnswer?.(String(input));
+		if (this.latencyMs > 0) await new Promise((resolve) => setTimeout(resolve, this.latencyMs));
 		const method = init?.method ?? 'GET';
 		if (url.pathname === '/api/sync/pull') {
 			this.counts.pullPages++;
@@ -120,7 +127,8 @@ export class StudyServer {
 		}
 		if (url.pathname === '/api/events') {
 			this.counts.events++;
-			return json([]);
+			const ws = url.searchParams.get('workspace');
+			return json(ws === null ? this.events : this.events.filter((e) => (e as { workspaceId?: number }).workspaceId === Number(ws)));
 		}
 		const m = /^\/api\/rows(?:\/(.+))?$/.exec(url.pathname);
 		if (m !== null) {
@@ -136,6 +144,11 @@ export class StudyServer {
 				return json(rows);
 			}
 			return this.dataRoute(method, workspaceId, decodeURIComponent(m[1]), init);
+		}
+		const answer = this.extra?.(url, init);
+		if (answer !== undefined) {
+			this.counts.other++;
+			return answer;
 		}
 		this.counts.other++;
 		return json({ error: 'not_found', message: 'no such route' }, 404);

@@ -33,6 +33,7 @@
 	import { allWidgets } from '$lib/widgets/registry';
 	import { Button, Chip, Panel, Section } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { rememberHeatmapLayout, rememberLayout } from '$lib/widgets/homeData';
 
 	const session = useSession();
 
@@ -94,6 +95,7 @@
 				const value = heatmapLayout;
 				try {
 					await saveHeatmapLayout(value);
+					rememberHeatmapLayout(session, value);
 					savedLayout = value;
 					failure = null;
 				} catch (err) {
@@ -199,6 +201,7 @@
 				pending = false;
 				const value = editableLayout(stored);
 				await saveLayout(value);
+				rememberLayout(session, value);
 				confirmed = value;
 			} while (pending);
 			saveStatus = 'saved';

@@ -73,6 +73,24 @@ Round order (fixed): `workspaces`, `features`, `rows`, `cards`, `decks`, `deckSe
   `sync_page_invalid`.
 - 410 `sync_cursor_expired` (defined, not yet sent): discard local user data and pull without `since`.
 
+#### Serving held rows (#290)
+
+A client rule, not a wire change: how a client that holds the rows of earlier rounds (the web study cache) uses
+them while a new round runs. Android follows the same rule.
+
+- A read for display (a widget, a list, a "is this word studied" check) is answered at once from the held rows;
+  when they are older than the client's freshness window (web: 8 s) the client starts a delta round from its
+  cursor in the background, and tells whatever shows the rows when the round changed one. Readers that come
+  while it runs join it; they never start a second one.
+- Only these wait for a round: the first load of a workspace (nothing held), an explicit refresh ("Try again"),
+  a full round (offline preparation), rows marked stale because a write failed or the push skipped one (the
+  server holds newer rows), and a write's planning read, which always plans against rows no older than the
+  window.
+- A background round that fails keeps the held rows; the client shows a quiet notice ("could not refresh")
+  until a later round of that workspace lands, and never replaces what it shows with an error.
+- A held copy belongs to the signed-in session: it is dropped when the session ends, and an answer that arrives
+  after the end is not stored.
+
 ### Scope and the language filter
 
 - `workspace=<id>` narrows workspace rows (`workspaces`, `rows`, typed rows, library rows, `events`) to

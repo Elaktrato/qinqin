@@ -14,6 +14,12 @@
 // - getStudyData: "is this word studied" checks and settings (raw rows), shared.
 // - loadRawStudyData: planners (raw rows and the snapshot to plan against).
 //
+// loadStudyHistory and getStudyData answer at once from held rows and refresh
+// them in the background (#290; onStudyChange tells when the refresh changed
+// something); loadStudyData, loadRawStudyData and planningView wait for a
+// refresh of rows older than 8 s, so a page that schedules and a write plan
+// against the newest rows.
+//
 // The study cache belongs to the session (StudyState, record 0009): every
 // function here takes the session's study state first.
 
@@ -27,6 +33,7 @@ import type { StudyRow } from './rows';
 import { pullStudyRound } from './sync/pull';
 import { UnreadableRowError } from './unreadable';
 import { UnreadableRows } from './unreadableReport.svelte';
+import { RefreshReport } from './refreshReport.svelte';
 import type { Deck, StudyCard, StudyData, StudyHistory } from './types';
 import type { DeckSettings } from './deckSettings';
 
@@ -57,6 +64,8 @@ export class StudyState {
 	readonly deps: StudyDeps;
 	readonly cache: StudyCache;
 	readonly unreadable = new UnreadableRows();
+	/** Failed background refreshes (#290): the pages' quiet notice. */
+	readonly refresh = new RefreshReport();
 	/** loadStudyHistory's memo, one per cache view. */
 	readonly historyMemo = new WeakMap<StudyView, { events: readonly StudyEvent[]; queued: string; value: StudyHistory }>();
 
@@ -68,7 +77,13 @@ export class StudyState {
 			epoch: () => (deps.alive() ? 0 : 1),
 			setTimer: (fn, ms) => deps.timers.set(fn, ms),
 			clearTimer: (timer) => deps.timers.clear(timer),
-			onRound: (workspaceId, view) => this.unreadable.record(workspaceId, view.counts, view.unreadableKeys)
+			onRound: (workspaceId, view) => {
+				this.unreadable.record(workspaceId, view.counts, view.unreadableKeys);
+				this.refresh.record('study', workspaceId, true);
+			},
+			onRefreshFailed: (workspaceId) => {
+				if (deps.alive()) this.refresh.record('study', workspaceId, false);
+			}
 		});
 	}
 
@@ -76,6 +91,7 @@ export class StudyState {
 	dispose(): void {
 		this.cache.clear();
 		this.unreadable.clear();
+		this.refresh.clear();
 	}
 }
 
@@ -120,9 +136,9 @@ export function studyPullPages(study: StudyState, workspaceId: number): number {
 	return study.cache.pages(workspaceId);
 }
 
-/** planningView: the view a write plans against (the cache, refreshed when older than 8 s). */
+/** planningView: the view a write plans against (the cache, waiting for a refresh when older than 8 s). */
 export function planningView(study: StudyState, workspaceId: number): Promise<StudyView> {
-	return study.cache.view(workspaceId);
+	return study.cache.view(workspaceId, { current: true });
 }
 
 /**
@@ -160,7 +176,8 @@ function queued(study: StudyState, workspaceId: number): StudyEvent[] {
  */
 export async function loadStudyData(study: StudyState, workspaceId: number): Promise<StudyHistory> {
 	requireWorkspaceArg(workspaceId, 'loadStudyData');
-	const [view, events] = await Promise.all([study.cache.view(workspaceId), fetchFullLog(workspaceId), study.deps.outbox.ready()]);
+	// `current`: the page schedules against these rows (and reads the log fresh anyway).
+	const [view, events] = await Promise.all([study.cache.view(workspaceId, { current: true }), fetchFullLog(workspaceId), study.deps.outbox.ready()]);
 	// A copy: pages keep it in their state.
 	return historyOf(workspaceId, copyData(view.data), mergeQueued(events, queued(study, workspaceId)));
 }
@@ -239,7 +256,7 @@ export async function loadRawStudyData(study: StudyState, workspaceId: number): 
 	deckSettings?: Record<string, DeckSettings>;
 }> {
 	requireWorkspaceArg(workspaceId, 'loadRawStudyData');
-	const { data, snapshot } = await study.cache.view(workspaceId);
+	const { data, snapshot } = await study.cache.view(workspaceId, { current: true });
 	return {
 		decks: [...data.decks],
 		cards: [...data.cards],

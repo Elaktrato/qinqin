@@ -47,6 +47,8 @@ Settings, Sources and the account pages are reached from here; they belong to no
 
 The home page greets you by the time of day on your device ("Good morning"), shows today's date in your study day, and has a search box (**Search entries…**) that opens Search. Below it come a card for new [milestones](Milestones), when there are any, and your widgets ([Settings → Home](Settings-tour#home) chooses them). If none of your widgets fits the current workspace, the page says so and links to Settings.
 
+Coming back to the home page shows what it showed last straight away, and the widgets refresh quietly behind it: there is no loading line on a return visit. After a reload, or in the Android app, the widget layout you chose shows at once too (it is kept on the device for your account and removed when you sign out). When a refresh fails, for example while you are offline, the page keeps what it shows and says "Could not refresh your study data. Showing what was loaded last." The decks page and the Reader's library work the same way.
+
 ## Pages you can open without signing in
 
 The **Sources** page (`/sources`) is open to everyone, so the licence and attribution credits can always be read. Signed out it shows a small bar with the logo and **Sign in**; signed in it has the usual frame. `/login` and `/register` are for signed-out visitors only; every other page asks you to sign in.

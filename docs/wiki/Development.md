@@ -171,6 +171,18 @@ tones, writing) are in `apps/web/src/lib/exercises/`. Flashcard-only code (sessi
 setup, the optimizer, the card and deck commands) is in `apps/web/src/lib/features/flashcards/`. The core never
 imports flashcards (`studyCoreImportFindings`); a new feature such as a drill reads the core and adds its own folder.
 
+Pages show held data first and refresh it behind (#290). The study cache (`lib/studycore/cache.ts`) answers a
+loaded workspace at once and reads a delta round in the background; only a first load, `force`, `full`, a slot
+marked stale and a `current` read (`planningView`, `loadRawStudyData`, `loadStudyData`: a write and a page that
+schedules plan against the newest rows) wait. The event log (`EventLog.load`) does the same after its 8 s or a
+post. A change that the refresh brings reaches the page through `onStudyChange` and `session.events.onChange`, so a
+widget that reads either listens to both. A widget loads through `WidgetLoad`
+(`lib/widgets/widgetLoad.svelte.ts`): its last value per workspace is held in the session (`SessionCaches.held`),
+the loading line is only for a first load, and a failed refresh keeps the value with the quiet `stale` line of
+`WidgetCard`. A failed background refresh is in the session's `RefreshReport` (`session.study.refresh`). Home's
+layout and widget options are held by `lib/widgets/homeData.ts`, with a device copy per user id that the sign-out
+removes. The rule clients follow is "Serving held rows" in `docs/contracts/sync/README.md`.
+
 A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
 `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`, then its data packs, and reading
 code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").

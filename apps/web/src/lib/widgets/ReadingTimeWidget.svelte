@@ -5,6 +5,7 @@
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 
@@ -14,22 +15,24 @@
 	// Reading time (the reader feature): tracked time in the active workspace,
 	// all time, the last 7 and 30 days, and the five most read books.
 
-	let totals = $state.raw<ReadingTotals | null>(null);
-	let titles = $state.raw<Map<number, string> | null>(null);
-	let loading = $state(true);
-	let error = $state('');
 	let noWorkspace = $state(false);
-
-	let requestSeq = 0;
+	// The last totals of this workspace show at once on a revisit (#290).
+	const shown = new WidgetLoad<{ totals: ReadingTotals; titles: Map<number, string> | null }>(
+		session,
+		'reading-time',
+		session.workspaces.current?.id ?? null
+	);
+	const totals = $derived(shown.value?.totals ?? null);
+	const titles = $derived(shown.value?.titles ?? null);
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const top = $derived(totals === null ? [] : topBooks(totals.books, titles));
 	const status = $derived<WidgetStatus>(
 		noWorkspace
 			? 'no-workspace'
-			: loading
+			: shown.loading
 				? 'loading'
-				: error
+				: shown.error
 					? 'error'
 					: (totals?.totalSeconds ?? 0) === 0
 						? 'empty'
@@ -51,41 +54,21 @@
 	}
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-
+		noWorkspace = workspace === null;
 		if (workspace === null) {
-			totals = null;
-			noWorkspace = true;
-			loading = false;
+			shown.clear();
 			return;
 		}
-
-		try {
-			// All-time totals need the whole event log of the workspace (every
-			// type: the endpoint has no type filter). The read is shared with
-			// the flashcards widgets (events.ts: loadWorkspaceEvents); if logs
-			// grow large enough to make it slow, a server-side summary endpoint
-			// is the planned follow-up.
-			const [events, names] = await Promise.all([
-				session.events.load(workspace, { force }),
-				loadTitles()
-			]);
-			if (seq !== requestSeq) return;
-			const own = events.filter(
-				(event) => event.workspaceId === workspace
-			);
-			totals = readingTotals(own, new Date(), session.zone.day());
-			titles = names;
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			totals = null;
-			error = errorText(err, t('widgets.reading.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await shown.run(
+			workspace,
+			async () => {
+				const [events, names] = await Promise.all([session.events.load(workspace, { force }), loadTitles()]);
+				// Only this workspace's reading counts (the log is per workspace already).
+				const own = events.filter((event) => event.workspaceId === workspace);
+				return { totals: readingTotals(own, new Date(), session.zone.day()), titles: names };
+			},
+			(err) => errorText(err, t('widgets.reading.loadFailed'))
+		);
 	}
 
 	$effect(() => {
@@ -94,6 +77,13 @@
 
 	// A zone change moves the 7 and 30 day windows.
 	$effect(() => session.zone.onChange(() => void load(workspaceId)));
+	// A posted read event, or a reload behind the held log (#290), changes the totals.
+	$effect(() => {
+		const id = workspaceId;
+		return session.events.onChange((touched) => {
+			if (touched === id) void load(id);
+		});
+	});
 </script>
 
 <WidgetCard
@@ -102,7 +92,8 @@
 	{status}
 	noWorkspaceText={t('widgets.reading.noWorkspace')}
 	loadingText={t('widgets.reading.loading')}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => void load(workspaceId, true)}
 	emptyText={t('widgets.reading.empty')}
 >

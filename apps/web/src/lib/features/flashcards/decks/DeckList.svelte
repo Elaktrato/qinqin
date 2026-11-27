@@ -163,6 +163,12 @@
 	<p role="alert">{store.error}</p>
 	<Button onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
 {:else if summary !== null}
+	{#if store.stale}
+		<p class="not-refreshed" role="status">
+			{t('common.notRefreshed')}
+			<Button variant="plain" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
+		</p>
+	{/if}
 	<DeckStatsPanel numbers={summary.overall} />
 
 	<Section title={t('flashcards.list.yourDecks')}>
@@ -278,6 +284,12 @@
 {/if}
 
 <style>
+	.not-refreshed {
+		margin: 0 0 var(--space-3);
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
 	.decks {
 		list-style: none;
 		margin: 0;

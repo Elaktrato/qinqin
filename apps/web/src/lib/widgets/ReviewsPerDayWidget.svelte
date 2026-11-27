@@ -11,18 +11,17 @@
 	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
 	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/studycore/data';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 
 
 	const session = useSession();
 
-	let series = $state.raw<ReviewDay[] | null>(null);
-	let loading = $state(true);
-	let error = $state('');
 	let noWorkspace = $state(false);
-
-	let requestSeq = 0;
+	// The last series of this workspace shows at once on a revisit (#290).
+	const shown = new WidgetLoad<ReviewDay[]>(session, 'reviews-per-day', session.workspaces.current?.id ?? null);
+	const series = $derived(shown.value);
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
@@ -43,9 +42,9 @@
 			? 'no-workspace'
 			: !flashcardsOn
 				? 'empty'
-				: loading
+				: shown.loading
 					? 'loading'
-					: error
+					: shown.error
 						? 'error'
 						: series !== null && total === 0
 							? 'empty'
@@ -63,44 +62,26 @@
 	}
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-
+		noWorkspace = workspace === null;
 		if (workspace === null) {
-			series = null;
-			noWorkspace = true;
-			loading = false;
+			shown.clear();
 			return;
 		}
-
-		try {
-			const data = await loadStudyHistory(session.study, workspace, { force });
-			if (seq !== requestSeq) return;
-			const ctx = contextForData(session.zone, data, workspace);
-			series = reviewsPerDay({
-				workspaceId: workspace,
-				now: Date.now(),
-				day: ctx.day,
-				reviews: data.reviews
-			});
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			series = null;
-			error = errorText(err, t('widgets.reviewsPerDay.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await shown.run(
+			workspace,
+			async () => {
+				const data = await loadStudyHistory(session.study, workspace, { force });
+				const ctx = contextForData(session.zone, data, workspace);
+				return reviewsPerDay({ workspaceId: workspace, now: Date.now(), day: ctx.day, reviews: data.reviews });
+			},
+			(err) => errorText(err, t('widgets.reviewsPerDay.loadFailed'))
+		);
 	}
 
 	$effect(() => {
 		if (!flashcardsOn) {
-			// Switching the feature off drops the chart at once; no reviews
-			// can be made, so the historical counts are not shown.
-			requestSeq += 1;
-			series = null;
-			loading = false;
+			// Switching the feature off drops the series and a load still running.
+			shown.clear();
 			noWorkspace = workspaceId === null;
 			return;
 		}
@@ -128,7 +109,8 @@
 	title={t('widgets.reviewsPerDay.title')}
 	headingId="reviews-per-day-heading"
 	{status}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => void load(workspaceId, true)}
 	{emptyText}
 >

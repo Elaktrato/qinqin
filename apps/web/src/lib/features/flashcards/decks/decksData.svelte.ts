@@ -1,7 +1,10 @@
 // The decks page's data: one load of the workspace's study history, the
 // schedule index built once from it, and the clock/day captured at load so
 // every number on the page agrees. Shared by the list, the detail and the
-// settings view; each calls `load` for the selected workspace.
+// settings view; each calls `load` for the selected workspace. The last
+// snapshot of a workspace is held for the session (#290): the decks opened
+// again show it at once and refresh it behind; a failed refresh keeps it with
+// a quiet notice (`stale`).
 
 import type { Session } from '$lib/context/session.svelte';
 import { untrack } from 'svelte';
@@ -16,6 +19,7 @@ import { addDays } from '$lib/time/studyDay';
 import { contextForData } from '$lib/studycore/currentContext';
 import type { StudyContext } from '$lib/studycore/studyContext';
 import { scheduleIndex, type ScheduleIndex } from './deckStats';
+import { heldValue, holdValue } from '$lib/widgets/widgetLoad.svelte';
 
 export interface DecksSnapshot {
 	workspaceId: number;
@@ -35,9 +39,12 @@ export interface DecksSnapshot {
 export type DecksStatus = 'loading' | 'ready' | 'error' | 'no-workspace';
 
 export function createDecksData(session: Session) {
-	let status = $state<DecksStatus>('loading');
+	const opened = session.workspaces.current?.id ?? null;
+	const held = opened === null ? undefined : heldValue<DecksSnapshot>(session, 'decks', opened);
+	let status = $state<DecksStatus>(held === undefined ? 'loading' : 'ready');
 	let error = $state('');
-	let snapshot = $state.raw<DecksSnapshot | null>(null);
+	let stale = $state('');
+	let snapshot = $state.raw<DecksSnapshot | null>(held ?? null);
 	// A slow earlier request never overwrites a newer one.
 	let seq = 0;
 
@@ -51,7 +58,13 @@ export function createDecksData(session: Session) {
 		// A reload after a write keeps the old view on screen until the new one arrives.
 		// Untracked: a component calls load from an effect, which must not depend on the snapshot.
 		const current = untrack(() => snapshot);
-		if (current === null || current.workspaceId !== workspaceId) status = 'loading';
+		const shown = current !== null && current.workspaceId === workspaceId;
+		if (!shown) {
+			// Another workspace: its held snapshot, or loading.
+			const other = heldValue<DecksSnapshot>(session, 'decks', workspaceId);
+			snapshot = other ?? null;
+			status = other === undefined ? 'loading' : 'ready';
+		}
 		error = '';
 		try {
 			const data = await loadStudyHistory(session.study, workspaceId, { force });
@@ -71,11 +84,18 @@ export function createDecksData(session: Session) {
 				ctx,
 				addDays
 			};
+			holdValue(session, 'decks', workspaceId, snapshot);
 			status = 'ready';
+			stale = '';
 		} catch (err) {
 			if (mine !== seq) return;
-			snapshot = null;
-			error = errorText(err, t('flashcards.decks.loadError'));
+			const text = errorText(err, t('flashcards.decks.loadError'));
+			if (untrack(() => snapshot) !== null) {
+				// The data on screen stays: say quietly that it is not up to date.
+				stale = text;
+				return;
+			}
+			error = text;
 			status = 'error';
 		}
 	}
@@ -86,6 +106,10 @@ export function createDecksData(session: Session) {
 		},
 		get error() {
 			return error;
+		},
+		/** A refresh failed while data is shown (the quiet notice). */
+		get stale() {
+			return stale;
 		},
 		get data() {
 			return snapshot;

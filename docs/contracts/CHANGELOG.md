@@ -16,6 +16,12 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   when the entry has one, never stored (its mode follows the `reading` kind: `never` stays `never`, else `hint`); the
   `reading` kind offers only the readings that are shown. An entry is now `{hasReading, hasPicture, hasRomanisation}`.
 - **Clients:** no route or stored data changes. A client that does not know the key shows every reading, as before.
+## #290 — Serving held rows while a round runs (no contract number)
+- **Sync notes:** "Serving held rows" in [`sync/README.md`](sync/README.md#serving-held-rows-290): a client answers
+  display reads at once from the rows it holds and refreshes them with a background delta round; a first load, an
+  explicit refresh, a full round, rows marked stale and a write's planning read wait. A failed background round
+  keeps the held rows with a quiet notice. A client rule only: no route, payload or fixture changes, so the
+  ContractVersion stays.
 
 ## #277 — Grammar lesson runs are study events (contract 15)
 

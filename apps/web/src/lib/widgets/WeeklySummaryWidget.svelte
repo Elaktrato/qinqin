@@ -10,44 +10,37 @@
 	import Button from '$lib/ui/Button.svelte';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import { weekOf } from '$lib/weekly/week';
+	import { onStudyChange, touches } from '$lib/studycore/data';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 
 	const session = useSession();
 
-	let view = $state.raw<WeekView | null>(null);
-	let loading = $state(true);
-	let error = $state('');
-	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
+	/** The week shown: one scope per workspace and week, so a new week never shows the last one's numbers. */
+	function scopeOf(workspace: number): string {
+		return `${workspace}:${weekOf(session.zone.day().today())}`;
+	}
+	// The last summary of this week shows at once on a revisit (#290).
+	const current = session.workspaces.current;
+	const shown = new WidgetLoad<WeekView>(session, 'weekly-summary', current === null ? null : scopeOf(current.id));
+	const view = $derived(shown.value);
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const status = $derived<WidgetStatus>(
-		workspaceId === null ? 'no-workspace' : loading && view === null ? 'loading' : error ? 'error' : 'ready'
+		workspaceId === null ? 'no-workspace' : shown.loading ? 'loading' : shown.error ? 'error' : 'ready'
 	);
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		error = '';
 		if (workspace === null) {
-			view = null;
-			loading = false;
+			shown.clear();
 			return;
 		}
-		loading = true;
-		try {
-			const monday = weekOf(session.zone.day().today());
-			const next = await loadWeek(session, workspace, monday, { force });
-			if (seq !== requestSeq) return;
-			view = next;
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			view = null;
-			error = errorText(err, t('widgets.week.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		const monday = weekOf(session.zone.day().today());
+		await shown.run(`${workspace}:${monday}`, () => loadWeek(session, workspace, monday, { force }), (err) =>
+			errorText(err, t('widgets.week.loadFailed'))
+		);
 	}
 
 	$effect(() => {
@@ -55,6 +48,19 @@
 	});
 	// Midnight and zone changes: on Monday 00:00 this becomes a new week.
 	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
+	// A write, a refresh behind the held rows (#290) or a posted review changes the week.
+	$effect(() => {
+		const id = workspaceId;
+		const again = (touched: number): void => {
+			if (touches(touched, id)) void load(id);
+		};
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
+		return () => {
+			offLog();
+			offWrite();
+		};
+	});
 </script>
 
 <WidgetCard
@@ -63,7 +69,8 @@
 	{status}
 	noWorkspaceText={t('widgets.week.noWorkspace')}
 	loadingText={t('widgets.week.loading')}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}

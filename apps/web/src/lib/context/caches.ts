@@ -20,6 +20,7 @@ import type { SeenMilestone } from '../milestones/seen';
 import type { Reached } from '../milestones/reached';
 import type { Timelines } from '../weekly/replay';
 import type { WeekPasses } from '../weekly/summary';
+import type { WidgetOptions } from '../widgets/options';
 
 /** AudioCache: a per-session cache (record 0009). */
 export class AudioCache {
@@ -203,6 +204,27 @@ export class MilestoneFlushes {
 	}
 }
 
+/** HomeCache: Home's own setup, held for the session (widgets/homeData.ts, #290). */
+export class HomeCache {
+	/** The stored layout (ids, or null for the default), once read. */
+	layout: { ids: string[] | null } | null = null;
+	options: WidgetOptions | null = null;
+
+	clear(): void {
+		this.layout = null;
+		this.options = null;
+	}
+}
+
+/** HeldValues: the last value each widget showed, by widget and workspace (widgets/widgetLoad.svelte.ts, #290). */
+export class HeldValues {
+	readonly values = new Map<string, unknown>();
+
+	clear(): void {
+		this.values.clear();
+	}
+}
+
 export class SessionCaches {
 	/** Weekly replay timelines by log content (weekly/replay.ts timelinesFor). */
 	readonly timelines = new Map<string, Timelines>();
@@ -233,6 +255,10 @@ export class SessionCaches {
 	readonly strokes = new StrokeCache();
 	/** The pictures of entries for the visual aids (aids/pictures.ts). */
 	readonly pictures = new PictureCache();
+	/** Home's layout and widget options (widgets/homeData.ts). */
+	readonly home = new HomeCache();
+	/** The widgets' last values (widgets/widgetLoad.svelte.ts). */
+	readonly held = new HeldValues();
 
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
@@ -257,7 +283,9 @@ export class SessionCaches {
 			this.written,
 			this.ranks,
 			this.strokes,
-			this.pictures
+			this.pictures,
+			this.home,
+			this.held
 		]) {
 			cache.clear();
 		}
