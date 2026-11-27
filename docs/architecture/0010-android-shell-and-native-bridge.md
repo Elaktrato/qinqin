@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #35, #36, #37, #148. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #35, #36, #37, #148, #283. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -52,6 +52,12 @@ UI in native code.
   `Drawer` through `modal.ts`, and an open `Menu` register while open), then an Escape key press offered to
   overlays the stack does not know (a reader popup, the highlight editor), then the browser history, then the
   app goes to the background (`lib/native/back.ts`).
+- **No title bar (#283).** The activity starts on the splash theme `AppTheme.NoActionBarLaunch`; the first call of
+  `MainActivity.onCreate` is `SplashScreen.installSplashScreen`, which switches to `AppTheme.NoActionBar` before
+  `EdgeToEdge.enable` builds the window's decor (a decor built under the launch theme kept a window title with the
+  activity label). Every theme of the activity says no title and no action bar in both the AppCompat and the
+  framework attributes (`apps/android/src/theme.test.ts`); the emulator job checks the window's view hierarchy
+  for a title or action bar and that the WebView starts at the top (`apps/android/e2e/chrome.mjs`).
 - **System bars follow the theme.** The bars are transparent over the page (edge to edge, Android 15+ enforces
   it; MainActivity enables it on older versions); the page paints under them and clears them with
   `env(safe-area-inset-*)`. `lib/native/bars.ts` maps the painted `--chrome` colour to the icon style (dark icons

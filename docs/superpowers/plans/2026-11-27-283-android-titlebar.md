@@ -58,8 +58,55 @@ Fix:
 
 ## Execution record
 
-(filled in as the work goes)
+- Root cause read from the code, not seen: Capacitor 8.6.2's `BridgeActivity.onCreate`
+  (`node_modules/@capacitor/android/capacitor/src/main/java/com/getcapacitor/BridgeActivity.java`) sets
+  `AppTheme_NoActionBar` after `super.onCreate`; `MainActivity` called `EdgeToEdge.enable` (which touches the
+  decor view) before either. The emulator run confirms or refutes it (Local follow-up).
+- Tasks 2 and 3 of the change are one commit (the suites stay green at each commit). Test-first: `src/theme.test.ts`
+  and `e2e/chrome.test.mjs` were written and run before the change: 4 theme/source tests failed (no
+  `android:windowNoTitle` on either theme, no `installSplashScreen`, no import) and `chrome.test.mjs` failed on the
+  missing module; after the change all pass.
+- Gradle here: `gradle --no-daemon tasks` in `apps/android/android` fails at configuration: `Could not resolve
+  com.android.tools.build:gradle:8.13.0` (dl.google.com refused by the container's proxy, 403). So nothing Java
+  compiled or ran here: neither `MainActivity.java` nor the existing JVM unit tests (`testDebugUnitTest`), and the
+  emulator check in `e2e/drive.mjs` never ran. `node --check e2e/drive.mjs` passes.
+- Gates: `apps/android`: `npx vitest run` 11 files, 163 tests passed; `npm run check` (tsc) clean.
+  `apps/web` `npx vitest run tests/repo` (the architecture-record and docs tests): 9 files, 587 passed, 1 skipped.
+  `node --test scripts/*.test.mjs`: 190 tests, 189 passed, 1 skipped, 0 failed. No Go and no web app code changed.
+- Not checked: the APK build, the title bar on a device or emulator, the splash screen still showing, the system
+  bar colours from `setBars`, the screenshot for the PR. All below.
 
 ## Local follow-up
 
-(see below, filled in with the work)
+The PR's emulator job (`.github/workflows/android-emulator.yml`, core: `shell,core`) runs the new checks; on the
+owner's machine, with the Android SDK, an emulator (API 35 or 36, google_apis) and the repository's Go and Node:
+
+1. **Build and unit-test the APK** (compiles `MainActivity.java` with the new import):
+   ```sh
+   cd apps/web && npm ci && npm run build && cd ../..
+   apps/android/e2e/build-server.sh /tmp/qinqin-e2e/qinqin
+   cd apps/android && npm ci && npm run sync && cd android
+   ./gradlew --no-daemon testDebugUnitTest assembleDebug
+   ```
+   Look for: BUILD SUCCESSFUL. If `SplashScreen` does not resolve, check that `androidx.core:core-splashscreen`
+   is still in `app/build.gradle`'s dependencies.
+2. **Run the emulator checks and take the screenshot** (emulator booted, `adb devices` lists it):
+   ```sh
+   cd <repo root>
+   E2E_SUITES=shell E2E_BIN=/tmp/qinqin-e2e/qinqin \
+   E2E_APK=apps/android/android/app/build/outputs/apk/debug/app-debug.apk \
+   E2E_OUT=apps/android/e2e-out node apps/android/e2e/drive.mjs
+   ```
+   Look for: the steps "first-run screen: no title bar, the WebView starts at the top (#283)" and "web app: no
+   title bar, …" pass; `apps/android/e2e-out/01-first-run.png` and `03-web-app.png` show no black "qinqin" bar
+   (the page's own top bar sits directly under the status bar); `chrome-first-run.xml` / `chrome-web-app.xml`
+   hold the dumps. Attach `03-web-app.png` to the PR.
+   If a step fails: its message lists the title nodes and `webViewTop`. A title node still there means the decor
+   is built under a titled theme: check `adb shell dumpsys activity top | grep -i theme`, and whether a Capacitor
+   update moved `setTheme`. `webViewTop` > 0 with no title node means the window is not edge to edge on that
+   image: check `EdgeToEdge.enable` and compare the status bar height (`adb shell dumpsys window | grep -i
+   statusbar`); loosen the check only if the WebView top equals the status bar's bottom on an image that does
+   not draw under the bars.
+3. **By hand:** the splash screen still shows at a cold start (icon on the qinqin chrome colour); no title after
+   "Change server" (long-press the launcher icon) and after a restart; status and navigation bars take the theme's
+   colours in Day and Night.

@@ -8,6 +8,8 @@
 // seeds a learner with four cards, and walks: first-run screen, address, web app, bridge, service worker, offline
 // preparation, storage numbers, airplane mode + server down, cold start from the cache, an offline study session,
 // a restart with unsent reviews, going online, and the exactly-once check on the server (and after two more restarts).
+// After the first-run screen and after the web app opens, the window is checked for a title or action bar above
+// the WebView (#283, chrome.mjs).
 // Passwords are generated per run and live only in this process and the throw-away data directory.
 //
 // Suites (#37), chosen by E2E_SUITES (comma list; default: all): `shell` = the offline, native-feature and storage
@@ -24,6 +26,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { PKG, OUT, Recorder, adb, appPid, connectPage, gmsSettled, logcatTail, screenshot, sleep, startRelaunchWatch, waitFor } from './lib.mjs';
 import { strokesPack } from './suites/common.mjs';
+import { windowChrome } from './chrome.mjs';
 import * as core from './suites/core.mjs';
 import * as pages from './suites/pages.mjs';
 import * as ime from './suites/ime.mjs';
@@ -48,6 +51,25 @@ const GRADES = [
 	['Easy', 4]
 ];
 const FILL_CAP_MB = Number(process.env.E2E_FILL_CAP_MB || 1024);
+
+/** noTitleBar: the window's view hierarchy (uiautomator) has no title or action bar and the WebView is at y = 0. */
+async function noTitleBar(where) {
+	// A busy emulator answers "could not get idle state" now and then: try the dump again.
+	const xml = await waitFor(
+		'a uiautomator dump',
+		() => {
+			const out = adb(['shell', 'uiautomator', 'dump', '/sdcard/chrome.xml'], { soft: true, timeout: 60_000 });
+			if (!/dumped to/i.test(out)) return false;
+			const x = adb(['shell', 'cat', '/sdcard/chrome.xml'], { soft: true });
+			return x.includes('<hierarchy') ? x : false;
+		},
+		{ timeout: 90_000, interval: 3000 }
+	);
+	writeFileSync(join(OUT, `chrome-${where}.xml`), xml);
+	const r = windowChrome(xml, PKG);
+	if (!r.ok) throw new Error(`title bar check (${where}): ${JSON.stringify(r)}`);
+	return r;
+}
 
 const rec = new Recorder();
 const num = rec.numbers;
@@ -293,6 +315,9 @@ async function main() {
 	});
 	if (rec.failed) return;
 
+	await rec.step('first-run screen: no title bar, the WebView starts at the top (#283)', async () => noTitleBar('first-run'));
+	if (rec.failed) return;
+
 	await rec.step('first-run screen: address entry, plain-http warning, Open', async () => {
 		// The emulator image may kill the app here too (a Google Play services restart): start the screen anew, twice at most.
 		for (let attempt = 1; ; attempt++) {
@@ -331,6 +356,9 @@ async function main() {
 		if (!r.native || !r.secure) throw new Error(JSON.stringify(r));
 		return r;
 	});
+	if (rec.failed) return;
+
+	await rec.step('web app: no title bar, the WebView starts at the top (#283)', async () => noTitleBar('web-app'));
 	if (rec.failed) return;
 
 	await rec.step('sign in (token in localStorage), service worker registers and controls', async () => {
