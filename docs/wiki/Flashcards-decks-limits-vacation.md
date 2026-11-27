@@ -18,7 +18,7 @@ When the server has a frequency list for the workspace language, the page shows 
 
 ## Daily limits
 
-Each deck admits at most N new cards (default 20) and N reviews (default 200) per study day, however many sessions you start. Set the workspace value under Settings, Study, Daily limits; it is the default for every deck. A deck's own settings can use that value, its own number, or no limit. A card in several decks must fit every one. Cards you are not shown stay due and come back later; scheduling is not touched. The home widget shows what is left today ("18 reviews · 5 new left today", or "Done for today — daily limit reached"), and each deck on the Decks page its own "… left today". A [daily goal](Daily-goals) of new cards above the workspace's new-card limit cannot be reached by studying; Settings says so, and does not raise the limit for you.
+Each deck admits at most N new cards (default 20) and N reviews (default 200) per study day, however many sessions you start. Set the workspace value under Settings, Study, Daily limits; it is the default for every deck. A deck's own settings can use that value, its own number, or no limit. A card in several decks must fit every one. Cards you are not shown stay due and come back later; scheduling is not touched. The home widget shows what is left today ("18 reviews · 5 new left today", or "Done for today — daily limit reached"; the new cards include the Word Salad, writing, tone, reverse and cloze cards a session would make of your words for the card types you study), and each deck on the Decks page its own "… left today". A [daily goal](Daily-goals) of new cards above the workspace's new-card limit cannot be reached by studying; Settings says so, and does not raise the limit for you.
 
 ## Vacation mode
 
