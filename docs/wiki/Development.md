@@ -140,6 +140,12 @@ Web code goes in the folder of its owner ([record 0004](https://github.com/Elakt
 blocks in `apps/web/src/lib/ui/`, a widget in `apps/web/src/lib/components/` only once a second feature uses
 it, no component in a logic folder and nothing loose at the top of `lib/`. A new route folder names its
 feature in `ROUTE_FEATURES` (`apps/web/tests/repo/folderRules.ts`); `folderRules.test.ts` checks the rest.
+What every feature reads of studying (the study cache and read model, the event log, the derived FSRS schedules,
+mastery and known words, the learner's day, EXP, vacations, levels) is the study core in
+`apps/web/src/lib/studycore/`; the exercise rules flashcards share with grammar and the drills (cloze, word salad,
+tones, writing) are in `apps/web/src/lib/exercises/`. Flashcard-only code (sessions, queues, grading, hints, the
+setup, the optimizer, the card and deck commands) is in `apps/web/src/lib/features/flashcards/`. The core never
+imports flashcards (`studyCoreImportFindings`); a new feature such as a drill reads the core and adds its own folder.
 
 A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
 `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`, then its data packs, and reading
