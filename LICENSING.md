@@ -77,6 +77,9 @@ Both packs are adaptations of KanjiVG and stay under CC BY-SA 3.0 (the stroke pa
 centre lines were widened into outlines in the stroke-data format). Like every BY-SA pack (OpenMoji, Mulberry,
 KanjiVG) each stays its own data pack, served by the running server: never compiled into the Go binary
 (`go:embed`), never in the web build and never in the Android APK. See `docs/sources.md`, "Stroke-order data".
+Two small test fixtures are KanjiVG data under the same CC BY-SA 3.0, each with a README: six SVG files in
+`scripts/testdata/kanjivg/` and the stroke medians of 18 characters in `apps/web/src/lib/writing/fixtures/joins.json`
+(an adaptation, made by `apps/web/scripts/make-join-fixtures.mjs`, #292). Tests read them; no app code imports them.
 
 ### The HSK lists
 
