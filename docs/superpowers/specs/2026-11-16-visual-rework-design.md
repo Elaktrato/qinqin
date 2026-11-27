@@ -251,7 +251,10 @@ write). Not inside `home-layout`, because today's `home-layout` writer rewrites 
 **Flashcards — "open page".** No card box. Every kind (Recognise, Recall, Fill the gap, Build the sentence, Write,
 Tones) has the same four parts in the same places: kind label (with deck and level on the right), prompt, the answer
 area (nothing / underline field / choices / word tiles / writing pad / tone pads, all hairline), and the answer below
-a hairline (reading + play, meaning + source, the learner's note). Session top: close, a thin progress line, count.
+a hairline (reading + play, meaning + source, the learner's note). The writing pad is not a fixed 200 px any more
+(#285): square, as wide as the content on a phone where the height allows, never pushing the feedback line under the
+docked actions, at least 10rem, at most 22.5rem on touch screens and 17.5rem with a mouse (the rule is in the
+writing-feel design, "Writing pad"). Session top: close, a thin progress line, count.
 Actions docked at the bottom: before the answer one soft-accent button (Show answer / Check / Show strokes); after,
 four grade buttons as coloured text with a thin underline in their grade colour, **each showing its next interval**
 (<1m, 6m, 1d, 4d — computed by the same scheduler); the suggested grade gets a faint wash. Kinds are not

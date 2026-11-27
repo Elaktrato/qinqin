@@ -219,6 +219,13 @@ A harsher hand (wobble 0.04, ends ±20 %, ±15°) passes 95 % (before: 55 %).
 ### Writing pad (`WritingPad.svelte`, used by `WritingCard`)
 
 - Square pad with a faint guide grid (cross + diagonals), our own styling.
+- **Size (#285):** the pad is as wide as its container allows and square, but no taller than what keeps the
+  last line below it (the card's feedback line, the scripts trainer's Hint / Show row) above the docked actions
+  with the page at its top: `side = min(width, clamp(side + slack, 10rem, max))`, `max` 22.5rem on a touch
+  screen and 17.5rem with a fine pointer (`lib/writing/padSize.ts`, `fitPad`). Re-measured when the container or
+  the window changes size (rotation, browser bar); the canvas follows through its `ResizeObserver`. Ink is 3 % of
+  the side wide (at least 4 px). Strokes are judged in pad units, so the size does not change the matcher. Both
+  pads (flashcards and the scripts trainer) use the same rule.
 - Pointer Events with coalesced events; ink drawn on a canvas layer each frame;
   `touch-action: none`.
 - On accept: the matched reference outline(s) are drawn; the learner's ink
