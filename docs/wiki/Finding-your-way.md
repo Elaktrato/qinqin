@@ -7,10 +7,10 @@ Every signed-in page sits in the same frame. On a screen 720 px wide or more it 
 - **The logo**, on the left, is the link to the home page (its tooltip says "Home"). There is no separate Home icon.
 - **The sections**, in the middle, as icons. Hover or focus one to see its name. In order:
   1. **Search** (also the place of entries and the [lookup history](Searching-and-entries#lookup-history)),
-  2. **Decks**, **Reader**, **Journal** and **Grammar**, unless you switched them off in Settings → Features,
-  3. **Stats**, always last.
+  2. **Decks**, **Reader**, **Journal**, **Grammar** and **Scripts** (Scripts only in a workspace whose language has a writing system to practise), unless you switched them off in Settings → Features,
+  3. **Stats**, last, unless you switched it off too.
 
-  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search and Stats show, so a feature you switched off never flashes in.
+  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search shows, so a feature you switched off (Stats included) never flashes in.
 - **On the right**: the flag of the current workspace and your avatar.
 
 ## On a phone (under 720 px)
@@ -55,7 +55,7 @@ A session that must do one thing first (choose a new password an administrator a
 
 ## Switched-off features
 
-A page of a feature you switched off (Decks, Reader) says "You switched this off for yourself" with a link to Settings → Features. Nothing was deleted.
+A page of a feature you switched off (Decks, Reader, Stats …) says "You switched this off for yourself" with a link to Settings → Features. Nothing was deleted. With Stats off, that is every page under `/stats`, and the links into Stats from elsewhere (the **This week** widget's **See the week**, the milestone card's **See all milestones**, the Reader's **What is the score?**, the mastery-map link in Advanced study settings) are gone.
 
 ## Keyboard and screen readers
 

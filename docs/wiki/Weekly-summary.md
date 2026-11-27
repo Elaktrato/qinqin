@@ -2,7 +2,7 @@
 
 The weekly summary shows what you did in one workspace over one week, Monday to Sunday, compared with the week before. It is in the app only: there is no email and nothing is sent anywhere. The numbers are worked out from what you did each time you open it; nothing is stored.
 
-Open it under **Stats**, tab **Week** (`/stats/week`), or from the **This week** widget on the home page (its link **See the week**).
+Open it under **Stats**, tab **Week** (`/stats/week`), or from the **This week** widget on the home page (its link **See the week**). With Stats switched off the widget stays on the home page without that link.
 
 ## Which week
 

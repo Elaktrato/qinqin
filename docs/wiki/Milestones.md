@@ -33,7 +33,7 @@ The home page counts reviews, words studied, streak, days active, reading and jo
 
 ## The list
 
-**Stats → Week** has a **Milestones** section (`/stats/week#milestones`): every milestone you have reached, newest first, the title as a plain row and the date you reached it as muted text. Ones you have not seen yet say **New**. The week's summary also has a **Milestone this week** line with the milestones of the week shown; it follows the **Previous week** and **Next week** arrows.
+**Stats → Week** has a **Milestones** section (`/stats/week#milestones`; with Stats switched off the home card has no **See all milestones** link): every milestone you have reached, newest first, the title as a plain row and the date you reached it as muted text. Ones you have not seen yet say **New**. The week's summary also has a **Milestone this week** line with the milestones of the week shown; it follows the **Previous week** and **Next week** arrows.
 
 ## Offline, other devices and your data
 
