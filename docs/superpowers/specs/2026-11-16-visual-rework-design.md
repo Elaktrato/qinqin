@@ -258,7 +258,9 @@ column of icons at the right edge (Contents, Bookmarks, Highlights, Words, Displ
 text. Word marks: new = thin accent underline with pinyin/furigana above, learning = dotted `warn` underline, known =
 none; highlight = soft `warn` wash; selected word = accent wash. The lookup popup appears **below the word**, as a
 stack of entries (term, reading, level and frequency chips, glosses, source, "Add to deck" / "I know this"). Phone:
-rail moves into one top-bar button; the lookup is a **bottom sheet**.
+rail moves into one top-bar button; the lookup is a **bottom sheet** that takes at most 55 % of the screen
+(`55dvh`, #282; the other sheets stop at 85 %), so the text being read stays in view: a long entry scrolls inside
+the sheet, and the looked-up word is kept above its top edge.
 
 **Journal.** Three columns: entries (date, title, a small `good` dot when reviewed, "New entry", "Ideas for today"),
 the page (date, title, text), and the **margin** (topic ideas while writing; corrections after a review, like
