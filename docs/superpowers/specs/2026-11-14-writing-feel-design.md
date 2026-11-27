@@ -144,6 +144,35 @@ naturally flows on (口's 横折 + 横 does not join). This does not by itself r
 whose strokes double back on each other (等's first three strokes); the per-stroke direction
 test does. The corner between joined strokes must be present in the ink.
 
+**Flow joins (#292).** The gap rule alone missed the joins people write in kana: き's
+hooked diagonal ends 0.35 from the bottom curve it flows into. A second rule offers a join
+of two strokes when stroke k **ends pointing at** stroke k+1's start: the chord over its last
+15 % (`flowTail`, at least 0.03) points within ±60° (`flowCos` 0.5) of the move to that
+start, the start is at most `flowGap` 0.5 away, and stroke k+1 keeps at least `flowClear`
+0.4 of that distance away from where stroke k ended (so 口's 横折 + 横, whose 横 runs back
+along the move, still does not join). `joinLink(a, b)` answers `near` (gap rule), `flow` or
+null. A join through a flow link covers two strokes, never three: three-stroke flow joins
+let a short middle stroke be skipped (ふ 2+4 credited as 2+3+4) and added no real join.
+
+Measured on KanjiVG (r20260714, the `kanjivg-strokes` medians;
+`apps/web/scripts/make-join-fixtures.mjs --report` prints every pair): of the 339
+consecutive stroke pairs of hiragana and katakana, 73 lie within the gap rule. The flow rule
+adds 36, which are the cursive joins: い, う, え, き 3+4, け 1+2, こ, さ 2+3, せ 2+3, た 3+4,
+に 1+2 and 2+3, は 1+2, ふ 2+3 and 3+4, む 2+3, や 2+3, シ 2+3, ン 1+2 (and their voiced and
+small forms). Their gaps are 0.21–0.46 and their end directions point on (cosine 0.53–1.0);
+the pairs nobody writes in one motion (き 1+2, さ 1+2, ち 1+2, た 2+3, キ, サ) point elsewhere
+(cosine ≤ −0.4). Raising `maxGap` for kana instead would offer every nearby pair whatever
+its direction, so the list the issue proposed is not needed: the rule covers each example
+(そ is one stroke already; ち 1+2 is not a join). Sweep (each stroke drawn as its median and
+in the hand model, two hands, before → after): single strokes accepted unchanged (kana
+3678/3830, KanjiVG Jōyō grades 1–2 12332/12362, Hanzi Writer HSK 1 12537/12593); later
+stroke, earlier stroke again, next stroke credited as a join: 0 → 0; reversed unchanged.
+Flow joins drawn in one motion: 36/36 kana, 38/38 kanji, 69/69 HSK 1 pairs as straight
+joins, and 86 / 88 / 78 % of their hand-model variants. Cost: a learner who skips a stroke
+in one motion (stroke k and k+2 drawn together) is credited a little more often: kana 14 →
+14 of 181, Jōyō 119 → 126 of 1239, HSK 1 154 → 169 of 1230 (the gap rule already credits
+most of these: the left-out stroke is a dot or tick).
+
 All thresholds live in `params.ts` with a comment each.
 
 **Ruling: rank-based acceptance replaces endpoint anchoring and the later-stroke ratio** —
@@ -292,7 +321,8 @@ correct pinyin with its tone mark, as the answer line does today.
 ## My calls (made without asking; reject any)
 
 - Order stays enforced; joins only cover consecutive strokes in order, at most 3,
-  and only where the strokes flow into each other (gap limit).
+  and only where the strokes flow into each other (gap limit; from #292 also the flow
+  rule, two strokes per flow join).
 - No rotation in the alignment (a rotated stroke is a different stroke); the generous
   direction and shape ceilings absorb the ±10° a hand rotates.
 - Hint after 3 misses (owner, #287, replacing "the outline then stays for that

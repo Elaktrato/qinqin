@@ -172,6 +172,46 @@ test.describe('on a phone', () => {
 	});
 });
 
+/**
+ * Serves き (KanjiVG medians from the joins fixture, #292) for every /hanzi/ request, in the stroke-data format:
+ * the 1024 box, y up, baseline 900; the outlines are the medians as open paths (enough to draw).
+ */
+async function serveKi(page: Page): Promise<number[][][]> {
+	const joins = JSON.parse(readFileSync(join(webRoot, 'src/lib/writing/fixtures/joins.json'), 'utf8')) as { scale: number; chars: Record<string, number[][]> };
+	const unit = joins.chars['き'].map((flatPts) => {
+		const pts: number[][] = [];
+		for (let i = 0; i + 1 < flatPts.length; i += 2) pts.push([flatPts[i] / joins.scale, flatPts[i + 1] / joins.scale]);
+		return pts;
+	});
+	const medians = unit.map((m) => m.map(([x, y]) => [Math.round(x * 1024), Math.round(900 - y * 1024)]));
+	const strokes = medians.map((m) => `M ${m.map(([x, y]) => `${x} ${y}`).join(' L ')}`);
+	await page.route(/\/hanzi\/U[0-9A-F]+\.json/, (route) => route.fulfill({ status: 200, contentType: 'application/json', json: { strokes, medians } }));
+	return unit;
+}
+
+test.describe('joined strokes on a phone (#292)', () => {
+	test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
+
+	test('the scripts trainer accepts き with strokes 3 and 4 in one motion', async ({ page, learner }) => {
+		await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.ja);
+		const ki = await serveKi(page);
+		await page.goto('/scripts/hiragana/practice/write');
+		const pad = page.locator('.pad[data-card-input]');
+		await expect(pad).toBeVisible();
+		await expect.poll(async () => Math.round((await pad.boundingBox())!.width)).not.toBe(200);
+		const box = (await pad.boundingBox())!;
+		const stroke = (i: number) => ki[i].map(([x, y]) => [x, y] as [number, number]);
+		await draw(page, box, stroke(0));
+		await draw(page, box, stroke(1));
+		await expect(page.locator('.pad .outline.filled')).toHaveCount(2);
+		// The hooked diagonal and the bottom curve in one motion.
+		await draw(page, box, [...stroke(2), ...stroke(3)]);
+		await expect(page.locator('.pad .outline.filled')).toHaveCount(4);
+		await expect(page.getByText('Correct.')).toBeVisible();
+		await expectNoSidewaysScroll(page, 'the scripts trainer after a joined stroke');
+	});
+});
+
 test.describe('on a tall phone', () => {
 	test.use({ viewport: { width: PHONE.width, height: 860 }, hasTouch: true, isMobile: true });
 
