@@ -65,7 +65,7 @@
 		{@render children?.()}
 		{#if stale}
 			<p class="hint muted stale" role="status" title={stale}>
-				{t('widgets.card.notRefreshed')}
+				{t('common.notRefreshed')}
 				{#if onretry}
 					<button type="button" class="retry" onclick={onretry}>{t('common.action.retry')}</button>
 				{/if}
