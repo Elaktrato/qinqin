@@ -187,7 +187,7 @@ const BATCH = {
 	language: 'zh',
 	batch: 1,
 	reviewers: { suggest: 'zh-suggester', a: 'zh-teacher-1', b: 'zh-teacher-2', c: 'zh-teacher-3' },
-	items: [{ i: 1, key: '茶', form: '茶' }, { i: 2, key: '行', form: '行' }, { i: 3, key: '狗', form: '狗' }],
+	items: [{ i: 1, key: '茶', form: '茶', reading: 'chá' }, { i: 2, key: '行', form: '行', reading: 'xíng / háng' }, { i: 3, key: '狗', form: '狗' }],
 	suggest: [{ i: 1, t: ['drink'] }, { i: 2, t: ['movement'], s: { 1: ['work'] } }, { i: 3, t: ['animals'] }],
 	a: [{ i: 1, v: 'ok' }, { i: 2, v: 'ok' }, { i: 3, v: 'ok' }],
 	b: [{ i: 1, v: 'ok' }, { i: 2, v: 'change', t: ['movement', 'qualities'], s: { 1: ['work'] }, n: 'also capable' }, { i: 3, v: 'ok' }],
@@ -211,6 +211,7 @@ test('buildLabels: words first in list order, sense rows after their word, then 
 	assert.deepEqual(file.labels[1].by, ['zh-teacher-1', 'zh-teacher-2', 'zh-teacher-3']);
 	assert.equal(file.labels[1].note, 'also capable | keep');
 	assert.equal(file.labels[4].basis, 'picture');
+	assert.ok(file.labels.every((l) => l.reading === undefined), 'Chinese labels carry no reading');
 	assert.equal(formatLabels(file), formatLabels(buildLabels('zh', [BATCH], picture, IDS2, meta)));
 });
 

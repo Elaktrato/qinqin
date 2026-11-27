@@ -270,7 +270,8 @@ export function buildLabels(language, batches, picture, ids, meta) {
 			const d = decide(s, { a: a.get(item.i), b: b.get(item.i), c: c.get(item.i) });
 			const by = [r.a, r.b, ...(c.has(item.i) && d.review === 'adjudicated' ? [r.c] : [])];
 			const base = { key: item.key || item.form, form: item.form };
-			if (item.reading) base.reading = item.reading;
+			// a Chinese label is the whole simplified-form entry: its readings are only shown to the agents
+			if (item.reading && language !== 'zh') base.reading = item.reading;
 			const row = (sense, topics) => {
 				const l = { ...base };
 				if (sense) l.sense = sense;
