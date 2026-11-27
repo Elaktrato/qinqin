@@ -64,9 +64,9 @@ describe('review', () => {
 
 describe('history', () => {
 	it('is empty by default and takes overrides', () => {
-		expect(history()).toStrictEqual({ decks: [], cards: [], reviews: [], merged: 0 });
+		expect(history()).toStrictEqual({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
 		const cards = [card()];
-		expect(history({ cards, merged: 2 })).toStrictEqual({ decks: [], cards, reviews: [], merged: 2 });
+		expect(history({ cards, merged: 2 })).toStrictEqual({ decks: [], cards, reviews: [], merged: 2, grammarRuns: [] });
 	});
 });
 

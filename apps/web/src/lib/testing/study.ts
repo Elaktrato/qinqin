@@ -51,7 +51,7 @@ export function review(spec: ReviewSpec): ReviewEvent {
 	};
 }
 
-/** A study history: no decks, cards or reviews, nothing merged, unless overridden. */
+/** A study history: no decks, cards, reviews or grammar runs, nothing merged, unless overridden. */
 export function history(over: Partial<StudyHistory> = {}): StudyHistory {
 	return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], ...over };
 }
