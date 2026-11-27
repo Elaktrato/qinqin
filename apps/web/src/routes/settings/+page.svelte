@@ -24,6 +24,7 @@
 	import StarterSettings from '$lib/starter/StarterSettings.svelte';
 	import VisualAidsSettings from '$lib/settings/VisualAidsSettings.svelte';
 	import RomanisationSettings from '$lib/settings/RomanisationSettings.svelte';
+	import ToneSettings from '$lib/settings/ToneSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -324,6 +325,7 @@
 				<StarterSettings />
 				<VisualAidsSettings />
 				<RomanisationSettings />
+				<ToneSettings />
 				<KnownSettings />
 				<LevelCheck />
 				<FeedbackSettings />
