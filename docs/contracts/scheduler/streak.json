@@ -186,6 +186,67 @@
         "todayDone": true
       },
       "note": "Tokyo days: 01-06, 01-08 (vacation, ignored), 01-10, 01-11 (today); in UTC the same instants would be 01-05, 01-07, 01-09, 01-10"
+    },
+    {
+      "name": "a finished grammar lesson keeps the run",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [],
+      "reviews": [
+        "2026-01-08T10:00:00Z",
+        "2026-01-10T10:00:00Z"
+      ],
+      "lessons": [
+        "2026-01-09T18:00:00Z"
+      ],
+      "expect": {
+        "current": 3,
+        "best": 3,
+        "todayDone": true
+      },
+      "note": "#277: a learner day with a grammar lesson run (grammar/runs.json) counts like a day with a review"
+    },
+    {
+      "name": "grammar lessons alone make a streak",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [],
+      "reviews": [],
+      "lessons": [
+        "2026-01-08T10:00:00Z",
+        "2026-01-09T10:00:00Z",
+        "2026-01-09T11:00:00Z"
+      ],
+      "expect": {
+        "current": 2,
+        "best": 2,
+        "todayDone": false
+      },
+      "note": "two lesson days ending yesterday; today has none yet, so the run counts back from yesterday"
+    },
+    {
+      "name": "a grammar lesson on a vacation day does not count",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-09",
+          "end": "2026-01-09"
+        }
+      ],
+      "reviews": [
+        "2026-01-08T10:00:00Z"
+      ],
+      "lessons": [
+        "2026-01-09T10:00:00Z",
+        "2026-01-10T10:00:00Z"
+      ],
+      "expect": {
+        "current": 2,
+        "best": 2,
+        "todayDone": true
+      },
+      "note": "vacation days are neutral for lessons as for reviews"
     }
   ]
 }

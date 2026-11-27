@@ -76,6 +76,7 @@
 				cards: data.cards,
 				decks: data.decks,
 				reviews: data.reviews,
+				grammarRuns: data.grammarRuns,
 				known: data.known,
 				vacation: ctx.vacation,
 				w: activeWeights(data),

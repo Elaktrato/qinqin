@@ -151,6 +151,8 @@
 	"account.verify.newCodeSent": "A new code was sent to {address}.",
 	"account.verify.resendFailed": "Could not send a new code.",
 	"account.verify.sendNew": "Send a new code",
+	"activity.source.grammar.count": "{count, plural, one {{n} grammar lesson} other {{n} grammar lessons}}",
+	"activity.source.grammar.label": "Grammar lessons",
 	"activity.source.journal.count": "{count, plural, one {{n} journal entry} other {{n} journal entries}}",
 	"activity.source.journal.label": "Journal entries",
 	"activity.source.read.count": "{count, plural, one {{n} minute of reading} other {{n} minutes of reading}}",

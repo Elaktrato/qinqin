@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import runsFixture from '../../../../../docs/contracts/grammar/runs.json';
 import { grammarPayload } from '$lib/events/eventPayloads';
 import type { StudyEvent } from '$lib/events';
+import { historyOf } from './readModel';
 import { GRAMMAR_MAX_EXERCISES, grammarPoint, grammarProgress, grammarRunsOf, parseGrammarRun, splitPoint } from './grammarRuns';
 
 interface Fixture {
@@ -60,5 +61,15 @@ describe('grammarRunsOf', () => {
 		const at = (id: string, ts: string, ws = 7): StudyEvent => ({ id, workspaceId: ws, device: 'web', ts, type: 'grammar', payload: grammarPayload('p', 'a', 1, 1) });
 		const runs = grammarRunsOf(7, [at('b', '2026-11-19T08:00:00Z'), at('a', '2026-11-19T08:00:00Z'), at('c', '2026-11-18T08:00:00Z'), at('d', '2026-11-17T08:00:00Z', 8)]);
 		expect(runs.map((r) => r.id)).toEqual(['c', 'a', 'b']);
+	});
+});
+
+describe('the study history carries the grammar runs', () => {
+	it('historyOf keeps the workspace runs beside the reviews', () => {
+		const run: StudyEvent = { id: 'g1', workspaceId: 7, device: 'web', ts: '2026-11-19T08:00:00Z', type: 'grammar', payload: grammarPayload('p', 'a', 1, 2) };
+		const other: StudyEvent = { ...run, id: 'g2', workspaceId: 8 };
+		const history = historyOf(7, { decks: [], cards: [] } as never, [run, other]);
+		expect(history.grammarRuns.map((r) => r.id)).toEqual(['g1']);
+		expect(history.reviews).toEqual([]);
 	});
 });

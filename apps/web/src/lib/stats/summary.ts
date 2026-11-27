@@ -12,6 +12,7 @@ import {
 import { flashcardAmounts } from '$lib/goals/amounts';
 import type { DeckSettings } from '$lib/studycore/deckSettings';
 import { dailyStreak } from '$lib/studycore/exp';
+import type { GrammarRun } from '$lib/studycore/grammarRuns';
 import { knownEntries } from '$lib/studycore/known';
 import { isValidReview, type Schedule } from '$lib/studycore/scheduler';
 import { contextFor } from '$lib/studycore/studyContext';
@@ -30,6 +31,8 @@ export interface SummaryInput {
 	decks: readonly Deck[];
 	/** The local review log (any workspaces; only `workspaceId` counts). */
 	reviews: readonly ReviewEvent[];
+	/** The grammar lesson runs (only `workspaceId`'s count): they keep the streak (#277). */
+	grammarRuns?: readonly GrammarRun[];
 	/** The live manual `known:<entryId>` marks. */
 	known?: readonly number[];
 	/** The merged vacation runs of this workspace. */
@@ -44,7 +47,7 @@ export interface SummaryInput {
 }
 
 export interface SummaryNumbers {
-	/** Consecutive learner days with a review (`dailyStreak.current`). */
+	/** Consecutive learner days with a review or a grammar lesson (`dailyStreak.current`). */
 	streak: number;
 	/** Entries known by the one known predicate (known.ts). */
 	wordsKnown: number;
@@ -118,7 +121,13 @@ export function summaryNumbers(input: SummaryInput): SummaryNumbers {
 	});
 
 	return {
-		streak: dailyStreak(reviews, input.now, input.day, vacation).current,
+		streak: dailyStreak(
+			reviews,
+			input.now,
+			input.day,
+			vacation,
+			(input.grammarRuns ?? []).filter((run) => run.workspaceId === input.workspaceId)
+		).current,
 		wordsKnown: known.size,
 		recall: { share: recall.retention, base: recall.retentionBase },
 		studiedSeconds: monthSeconds(input, reviews, today)

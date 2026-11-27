@@ -6,6 +6,8 @@ import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import type { Run } from '$lib/studycore/vacation';
 import type { Schedule } from '$lib/studycore/scheduler';
 import fixture from '../../../../../docs/contracts/stats/summary-numbers.json';
+import { grammarPayload } from '$lib/events/eventPayloads';
+import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
 
 // The recall figure must be the decks page's own function, called once for
 // the overall scope; the spy proves the reuse (the rest of the module stays
@@ -119,6 +121,22 @@ describe('summaryNumbers, every contract case', () => {
 });
 
 describe('summaryNumbers', () => {
+	it('counts a grammar lesson day in the streak, of this workspace only (#277)', () => {
+		const input = inputOf(cases[0]);
+		const day = input.day;
+		const today = day.today(input.now);
+		const run = (id: string, ws: number, date: string): GrammarRun => {
+			const r = parseGrammarRun({ id, workspaceId: ws, ts: `${date}T12:00:00Z`, type: 'grammar', payload: grammarPayload('p', 'a', 1, 1) });
+			if (r === null) throw new Error('no run');
+			return r;
+		};
+		const base = summaryNumbers({ ...input, reviews: [], vacation: [] }).streak;
+		expect(base).toBe(0);
+		const own = [run('g1', input.workspaceId, addDays(today, -1)), run('g2', input.workspaceId, today)];
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: own }).streak).toBe(2);
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: [run('g3', input.workspaceId + 1, today)] }).streak).toBe(0);
+	});
+
 	it('uses the decks page’s 30-day window, one constant for both', () => {
 		expect(STATS_WINDOW_DAYS).toBe(DECK_WINDOW_DAYS);
 	});

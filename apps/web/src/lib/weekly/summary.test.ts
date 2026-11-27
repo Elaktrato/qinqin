@@ -7,10 +7,12 @@ import { usesHan } from '$lib/languages';
 import { GENERAL_DECK_ID } from '$lib/studycore/types';
 import type { Run } from '$lib/studycore/vacation';
 import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
-import { studyDay, type ZoneChange } from '../time/studyDay';
+import { addDays, studyDay, type ZoneChange } from '../time/studyDay';
 import { charactersLearned, givenTimelines, wordsReachingMature } from './replay';
 import { weekSummary, type WeekInputs, type WeekPasses } from './summary';
 import { oldestWeek } from './week';
+import { grammarPayload } from '$lib/events/eventPayloads';
+import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
 
 // A fresh memo per test (record 0009: the session owns one).
 let weekPasses = new Map() as WeekPasses;
@@ -105,6 +107,24 @@ const base = cases.find((c) => c.name.startsWith('a completed week'))!;
 describe('weekSummary', () => {
 	it('throws for a week after the current one', () => {
 		expect(() => weekSummary(weekPasses, { ...inputsOf(base), monday: '2026-11-23' })).toThrow(RangeError);
+	});
+
+	it('counts grammar lesson days of the workspace in the streak (#277)', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const runAt = (id: string, ws: number, ts: string): GrammarRun => {
+			const r = parseGrammarRun({ id, workspaceId: ws, ts, type: 'grammar', payload: grammarPayload('p', 'a', 1, 1) });
+			if (r === null) throw new Error('no run');
+			return r;
+		};
+		// A run on each day of the (completed) week: a seven-day run at least.
+		const runs = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => runAt(`g${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withRun = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], grammarRuns: runs(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, grammarRuns: runs(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withRun).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
 	});
 
 	it('throws for a date that is not a Monday', () => {

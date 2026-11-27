@@ -53,7 +53,7 @@ export function review(spec: ReviewSpec): ReviewEvent {
 
 /** A study history: no decks, cards or reviews, nothing merged, unless overridden. */
 export function history(over: Partial<StudyHistory> = {}): StudyHistory {
-	return { decks: [], cards: [], reviews: [], merged: 0, ...over };
+	return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], ...over };
 }
 
 /** A ULID-shaped event id (26 characters by default) that sorts by n: prefix, then n zero-padded. */

@@ -48,7 +48,7 @@ beforeEach(() => {
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(onStudyDayChange).mockReturnValue(() => {});
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
 	vi.mocked(fetchActivity).mockImplementation(async (from, to) => ({ from, to, timeZone: 'UTC', sources: [], cells: [] }));
 	ctx.session.workspaces.set({ list: [WS], current: WS });
 });

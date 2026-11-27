@@ -1,4 +1,4 @@
-// Reviews this device sent in the last days. Offline, the cached event log may
+// Reviews (and grammar lesson runs, #277) this device sent in the last days. Offline, the cached event log may
 // be older than the reviews done online since; without these a card answered
 // minutes ago would show as due again. Merged into the history like queued
 // reviews (store.ts), deduplicated by id, so a refreshed log makes them moot.
@@ -8,6 +8,9 @@ import type { StudyEventBody } from '$lib/api/types';
 export const RECENT_SENT_KEY = 'qinqin.study.sent.v1';
 export const RECENT_SENT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 export const RECENT_SENT_MAX = 300;
+
+/** The events the study history reads: reviews and grammar lesson runs (#277). */
+const REMEMBERED_TYPES: ReadonlySet<string> = new Set(['review', 'grammar']);
 
 // Kept per user id, so another account never reads them; an explicit sign-out
 // still drops them (the session's dispose, context/session.svelte.ts).
@@ -50,7 +53,7 @@ export function rememberSent(
 	if (store === null) return;
 	try {
 		const kept = read(store).filter((i) => nowMs - i.sentAt <= RECENT_SENT_TTL_MS);
-		const next = [...kept, ...events.filter((e) => e.type === 'review').map((event) => ({ userId, sentAt: nowMs, event }))];
+		const next = [...kept, ...events.filter((e) => REMEMBERED_TYPES.has(e.type)).map((event) => ({ userId, sentAt: nowMs, event }))];
 		store.setItem(RECENT_SENT_KEY, JSON.stringify(next.slice(-RECENT_SENT_MAX)));
 	} catch {
 		// Storage full or denied: the cache refresh covers it.
