@@ -34,7 +34,8 @@
 	let finished = $state(false);
 
 	let filled = $state<number[]>([]);
-	let scaffold = $state(false);
+	// The stroke traced after three misses on it (#287): dimmed, with its start, until it is drawn.
+	let trace = $state<number | null>(null);
 	let glow = $state<{ stroke: number; token: number } | null>(null);
 	let glowToken = 0;
 
@@ -173,6 +174,7 @@
 		const result = matchStroke(ink, strokes.medians, quiz.next);
 		const { state, effect } = applyResult(quiz, result);
 		quiz = state;
+		trace = quiz.trace;
 		if (!('none' in effect)) {
 			onChange?.({ mistakes: quiz.mistakes, remaining: quiz.total - quiz.next });
 		}
@@ -193,7 +195,6 @@
 		} else if ('miss' in effect) {
 			// Reduced motion keeps a static red cue instead of a fade.
 			fades.push({ ink, target: null, start: now, duration: MISS_MS, color: null, hold: instant });
-			if (quiz.outline) scaffold = true;
 			if (effect.glow !== undefined) showGlow(effect.glow);
 		}
 	}
@@ -308,15 +309,20 @@
 					d={outline}
 					class="outline"
 					class:filled={filled.includes(index)}
-					class:scaffold={scaffold && !filled.includes(index)}
 				/>
 			{/each}
+			{#if trace !== null && !filled.includes(trace)}
+				<path d={strokes.outlines[trace]} class="trace" />
+			{/if}
 			{#if glow !== null}
 				{#key glow.token}
 					<path d={strokes.outlines[glow.stroke]} class="glow" />
 				{/key}
 			{/if}
 		</g>
+		{#if trace !== null && !filled.includes(trace)}
+			<circle cx={startPoint(trace).x * 1024} cy={startPoint(trace).y * 1024} r="26" class="trace-start" />
+		{/if}
 		{#if glow !== null}
 			{#key glow.token}
 				<circle
@@ -387,7 +393,9 @@
 		transition: opacity 140ms ease-out;
 	}
 
-	.outline.scaffold {
+	/* The stroke traced after three misses: only that stroke, faint, until it is drawn. */
+	.trace,
+	.trace-start {
 		fill: currentColor;
 		opacity: 0.18;
 	}

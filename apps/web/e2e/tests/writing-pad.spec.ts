@@ -68,11 +68,18 @@ async function draw(page: Page, box: { x: number; y: number; width: number; heig
 	await page.mouse.up();
 }
 
-/** The first stroke of 水 as unit-box points (the data's 1024 box, y up, baseline 900). */
-function firstStroke(): [number, number][] {
+/** Stroke `i` of 水 as unit-box points (the data's 1024 box, y up, baseline 900). */
+function strokeOf(i: number): [number, number][] {
 	const data = JSON.parse(strokeFile('水')) as { medians: [number, number][][] };
-	return data.medians[0].map(([x, y]) => [x / 1024, (900 - y) / 1024]);
+	return data.medians[i].map(([x, y]) => [x / 1024, (900 - y) / 1024]);
 }
+const firstStroke = () => strokeOf(0);
+/** A line no stroke of 水 has: along the bottom, right to left. */
+const WRONG: [number, number][] = [
+	[0.9, 0.95],
+	[0.5, 0.95],
+	[0.1, 0.95]
+];
 
 /** Opens a writing card of 水 with the strokes and the eligibility routed. */
 async function openWritingCard(page: Page, learner: Learner): Promise<void> {
@@ -115,6 +122,37 @@ test.describe('on a phone', () => {
 		await draw(page, box, firstStroke());
 		await expect(page.locator('.pad .outline.filled')).toHaveCount(1);
 		await expect(page.getByText('Mistakes: 0')).toBeVisible();
+	});
+
+	test('three misses on a stroke trace that stroke only, again on a later stroke, each a hint (#287)', async ({ page, learner }) => {
+		await openWritingCard(page, learner);
+		const { box } = await layout(page);
+		const before = (await learner.api.reviews(learner.workspaces.ja)).length;
+		const trace = page.locator('.pad path.trace');
+		for (let i = 0; i < 2; i++) await draw(page, box, WRONG);
+		await expect(page.locator('.actions .count')).toHaveText('Mistakes: 2');
+		await expect(trace).toHaveCount(0);
+		await draw(page, box, WRONG);
+		// The third miss: that stroke alone stays, faint, with its start; no other stroke is shown.
+		await expect(trace).toHaveCount(1);
+		await expect(page.locator('.pad circle.trace-start')).toHaveCount(1);
+		await expect(page.locator('.pad .outline.filled')).toHaveCount(0);
+		await expect(page.locator('.pad .outline.scaffold')).toHaveCount(0);
+		await draw(page, box, strokeOf(0));
+		await expect(page.locator('.pad .outline.filled')).toHaveCount(1);
+		await expect(trace).toHaveCount(0);
+		// The second stroke gets three misses too: it alone is traced.
+		for (let i = 0; i < 3; i++) await draw(page, box, WRONG);
+		await expect(trace).toHaveCount(1);
+		const traced = await trace.getAttribute('d');
+		const second = await page.locator('.pad path.outline').nth(1).getAttribute('d');
+		expect(traced).toBe(second);
+		// Show strokes, then the suggested grade: two automatic hints and the shown character.
+		await page.getByRole('button', { name: 'Show strokes' }).click();
+		await page.getByRole('button', { name: /^Again\b/ }).click();
+		await expect.poll(async () => (await learner.api.reviews(learner.workspaces.ja)).length - before).toBe(1);
+		const review = (await learner.api.reviews(learner.workspaces.ja)).slice(before)[0];
+		expect(review.payload.meta).toMatchObject({ mistakes: 6, hints: 3 });
 	});
 
 	test('the scripts trainer’s Write mode fills the width and keeps its buttons on screen', async ({ page, learner }) => {
