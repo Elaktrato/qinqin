@@ -12,7 +12,6 @@ import {
 	GRADE_LEVEL_MAX,
 	HSK30_NOTICE,
 	JLPT_KANJI_NOTICE,
-	JLPT_VOCAB_NOTICE,
 	OLD2_N3_MAX_FREQ,
 	PackError,
 	approxJlptLevels,
@@ -325,62 +324,12 @@ test('--hsk writes the local-only packs deterministically', () => {
 	}
 });
 
-test('--jlpt-vocab fails clearly when the upstream files are missing', () => {
-	const dir = mkdtempSync(join(tmpdir(), 'jlpt-missing-'));
-	try {
-		const r = spawnSync(process.execPath, [script, '--jlpt-vocab', dir, join(dir, 'out')], { encoding: 'utf8' });
-		assert.equal(r.status, 1);
-		assert.match(r.stderr, /n5\.csv is missing/);
-		assert.match(r.stderr, /not bundled/);
-		assert.equal(existsSync(join(dir, 'out')), false);
-	} finally {
-		rmSync(dir, { recursive: true, force: true });
-	}
-});
-
-test('--jlpt-vocab writes the local-only pack deterministically', () => {
-	const dir = mkdtempSync(join(tmpdir(), 'jlpt-local-'));
-	try {
-		const rows = {
-			'n5.csv': 'expression,reading,meaning\n風,かぜ,wind\n',
-			'n4.csv': 'expression,reading,meaning\n勉強する,べんきょうする,study\n',
-			'n3.csv': 'expression,reading,meaning\n学校,がっこう,school\n',
-			'n2.csv': 'expression,reading,meaning\n猫,ねこ,cat\n',
-			'n1.csv': 'expression,reading,meaning\n鳥,とり,bird\n'
-		};
-		for (const [name, text] of Object.entries(rows)) writeFileSync(join(dir, name), text);
-		writeFileSync(join(dir, 'LICENSE'), 'MIT licence text\n');
-		const run = (out) => {
-			const r = spawnSync(process.execPath, [script, '--jlpt-vocab', dir, out], { encoding: 'utf8' });
-			assert.equal(r.status, 0, r.stderr);
-			return ['manifest.json', 'levels.json', 'LICENSE', 'ATTRIBUTION.md'].map((f) =>
-				readFileSync(join(out, 'jlpt-words', f), 'utf8')
-			);
-		};
-		const a = run(join(dir, 'a'));
-		const b = run(join(dir, 'b'));
-		assert.deepEqual(a, b);
-		assert.match(a[0], /NOT BUNDLED, local use only/);
-		assert.match(a[0], /"JLPT \(vocabulary\)"/);
-		assert.equal(JSON.parse(a[0]).notice, JLPT_VOCAB_NOTICE);
-		assert.match(a[3], /not bundled/i);
-		assert.match(a[3], /tanos\.co\.uk/);
-		assert.match(a[3], /could not be (reached|verified)/);
-		assert.equal(existsSync(join(dir, 'a', 'jlpt-kanji')), false);
-	} finally {
-		rmSync(dir, { recursive: true, force: true });
-	}
-});
-
 test('the pack notices carry the Sources page caveats in the notice mini-markup', () => {
-	for (const notice of [JLPT_KANJI_NOTICE, JLPT_VOCAB_NOTICE, HSK30_NOTICE]) assertValidNotice(notice);
+	for (const notice of [JLPT_KANJI_NOTICE, HSK30_NOTICE]) assertValidNotice(notice);
 	assert.match(JLPT_KANJI_NOTICE, /^The JLPT kanji levels are approximate: the JLPT has published no official kanji lists since 2010\./);
 	assert.match(JLPT_KANJI_NOTICE, /\[kanjiapi\.dev\]\(https:\/\/github\.com\/onlyskin\/kanjiapi\.dev\) \(MIT\)/);
 	assert.match(JLPT_KANJI_NOTICE, /\[KANJIDIC2\]\(https:\/\/www\.edrdg\.org\/wiki\/index\.php\/KANJIDIC_Project\)/);
 	assert.match(JLPT_KANJI_NOTICE, /分, 可, 無 and 的/);
-	assert.match(JLPT_VOCAB_NOTICE, /installed locally by its operator/);
-	assert.match(JLPT_VOCAB_NOTICE, /\[open-anki-jlpt-decks\]\(https:\/\/github\.com\/jamsinclair\/open-anki-jlpt-decks\)/);
-	assert.match(JLPT_VOCAB_NOTICE, /unverified\)\.$/);
 	assert.match(HSK30_NOTICE, /superseded by the bundled official word and character lists/);
 	assert.match(HSK30_NOTICE, /\[ivankra\/hsk30\]\(https:\/\/github\.com\/ivankra\/hsk30\)/);
 	assert.match(HSK30_NOTICE, /版权所有：中华人民共和国教育部/);

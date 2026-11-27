@@ -12,8 +12,8 @@ export type Stage = MasteryStage;
 // Re-exported from mastery.ts, the single source of the `learned` edge.
 export { MASTERY_THRESHOLD };
 
-// Level packs (the bundled HSK 3.0 characters and words and JLPT kanji, and any locally
-// installed scheme such as JLPT vocabulary, which is not bundled) are
+// Level packs (the bundled HSK 3.0 characters and words, JLPT kanji and the
+// estimated JLPT words, and any locally installed scheme) are
 // offered as `scheme:` groupings; a word scheme groups the characters its
 // words are written with (GET /api/schemes/{id}/characters).
 export type GroupKey =

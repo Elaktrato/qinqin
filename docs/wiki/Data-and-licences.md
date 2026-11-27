@@ -31,6 +31,7 @@ The image ships these under `/opt/qinqin/packs` (source: `plugins/data/`):
 | HSK 3.0 words (`hsk-words`) | The official word list, HSK 1–6 and 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07) | No reuse licence granted; see "The HSK lists" |
 | Jōyō grades (`joyo-grades`) | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
 | 通用规范汉字表 (`tgh-chars`) | The 2013 standard characters list in three levels (3,500 / 3,000 / 1,605), derived from Unihan's `kTGH` | Unicode License v3 |
+| JLPT words (`jlpt-words`) | An estimate of the JLPT vocabulary levels ≈ N5 to ≈ N1 (9,999 words), computed by qinqin from the Jiten ranks, JMdict and the JLPT kanji levels | CC BY-SA 4.0 |
 | JLPT kanji (`jlpt-kanji`) | Approximate N5–N1 kanji levels: kanjiapi.dev's list (of unstated provenance) plus levels derived from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …) | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) |
 | Spanish–English demo dictionary (`es-demo`) | A hand-written sample | CC0 1.0 |
 | Chinese grammar (HSK-aligned) (`zh-grammar`) | Grammar lessons ≈ HSK 1 to 7–9, written for qinqin; the HSK 3.0 syllabus grammar outline is used as a topic index only, no syllabus text is reproduced | CC BY 4.0 (the lessons) |
@@ -66,19 +67,7 @@ The HSK packs include only the word list and the list of characters to recognise
 
 The JLPT has published no official kanji list since 2010, so the kanji levels are approximate and labelled that way.
 
-**JLPT vocabulary is not bundled**: its upstream licence chain could not be verified (open-anki-jlpt-decks is labelled MIT, but says its data came from other decks based on the tanos.co.uk lists, described as CC BY; that page could not be reached). You can generate it for your own server as a local-only pack, from the repository root:
-
-```sh
-mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
-base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
-for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
-curl -fsSLo LICENSE $base/LICENSE
-cd -
-node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
-qinqin seed --packs plugins/data,plugins/data-local
-```
-
-Under Docker mount `plugins/data-local` and name it in `--packs` ([Data packs on the server](Admin-data-packs)). The character map's "Group by" and the Sources page pick it up once installed.
+The JLPT has published no official vocabulary list either. The bundled **JLPT words (approximate)** are qinqin's own estimate, labelled "≈ N5" … "≈ N1": a word gets the harder of two levels, the hardest JLPT level of its kanji and a level from how often it is used (the Jiten frequency rank; kana words by frequency alone), with the cuts set so the levels have the commonly cited sizes (about 800, 1,500, 3,700, 6,000 and 10,000 words up to N5 … N1). The words and readings are JMdict's. No published JLPT word list is copied, so the pack is CC BY-SA 4.0 like its inputs. A word can be a level off. It badges words, offers level sessions and level decks, and groups the character map like any level list. The method and its consistency checks: `docs/sources.md`; the generator `scripts/prepare-jlpt-words.mjs` can also take a base list once one with a confirmed licence exists.
 
 ## Local-only packs
 

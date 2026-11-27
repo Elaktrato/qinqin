@@ -56,6 +56,15 @@ CC BY-SA, which asks for share-alike). They are listed, with links and pinned ve
 [`docs/sources.md`](docs/sources.md) and on the app's Sources page, and each pack carries its licence text
 and an `ATTRIBUTION.md` in `plugins/data/<pack>/`.
 
+### The estimated JLPT word levels (`jlpt-words`): CC BY-SA 4.0
+
+`plugins/data/jlpt-words` is computed by `scripts/prepare-jlpt-words.mjs` from three bundled packs: the Jiten
+frequency ranks (CC BY-SA 4.0), JMdict (CC BY-SA 4.0, EDRDG) and the JLPT kanji levels (`jlpt-kanji`: kanjiapi.dev,
+MIT, and KANJIDIC2, CC BY-SA 4.0). It copies no published JLPT vocabulary list. Being an adaptation of the Jiten ranks
+and JMdict, it is shared under **CC BY-SA 4.0**, not under the project's CC BY 4.0, and keeps the credits of its inputs
+and kanjiapi.dev's MIT notice (`LICENSE-kanjiapi.dev`). It is a levels pack served on its own, so no CC BY pack embeds
+it (a course pack refers to it by pack id). See `docs/sources.md`, "JLPT words (approximate)".
+
 ### Pictures (OpenMoji and Mulberry Symbols)
 
 The bundled word pictures are [OpenMoji](https://openmoji.org) 17.0.0 (CC BY-SA 4.0) and

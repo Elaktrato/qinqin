@@ -1,0 +1,11 @@
+{
+  "id": "jlpt-words",
+  "name": "JLPT words (approximate)",
+  "version": "jiten@2026-11-12+jmdict@2026-11-11+kanjiapi.dev@76aa080+kanjidic2@2026-11-11",
+  "type": "levels",
+  "language": "ja",
+  "license": "CC BY-SA 4.0",
+  "attribution": "An estimate of JLPT N5–N1 vocabulary levels by qinqin (scripts/prepare-jlpt-words.mjs; no official JLPT vocabulary list since 2010), derived from the Jiten frequency list (CC BY-SA 4.0, © Jitensoft, https://jiten.moe), JMdict (CC BY-SA 4.0, © EDRDG, https://www.edrdg.org/) and the approximate JLPT kanji levels (kanjiapi.dev, MIT, © 2023 Iridium Szreter; KANJIDIC2, CC BY-SA 4.0, © EDRDG)",
+  "notice": "The JLPT word levels are an estimate, not an official list: no official JLPT vocabulary list has been published since 2010. qinqin computes them from data it already bundles: a word gets the harder of two levels, the hardest JLPT level of its kanji (from the approximate JLPT kanji list, itself from [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev), MIT, and KANJIDIC2) and a level from how often it is used ([Jiten](https://jiten.moe/frequency-dictionaries) frequency ranks, CC BY-SA 4.0); kana words go by frequency alone. The words and readings are [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) entries (CC BY-SA 4.0, EDRDG). The level sizes follow the commonly cited ones (about 800, 1,500, 3,700, 6,000 and 10,000 words up to N5 … N1); a word can be a level off. The list is CC BY-SA 4.0.",
+  "format": "json"
+}
