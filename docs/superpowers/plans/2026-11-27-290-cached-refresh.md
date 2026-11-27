@@ -124,7 +124,9 @@ Tasks:
 8. Home's quiet notice and the pinned revisit (ce6a5f3d; the tests were written after the notice).
 9. Decks and library (bbc4e437): `decksData.test.ts` and the two Library tests were written first and failed.
 10. Sign-out isolation readers for held values and Home's layout (abac9128; passed at once: the session owns them).
-11. E2E `home-revisit.spec.ts` (bc7a6341): passes on the branch, fails on the base (12 loading lines seen).
+11. E2E `home-revisit.spec.ts` (bc7a6341): passes on the branch, fails on the base (12 loading lines seen). A first full
+    triple run showed a race in the test (a follow-up round could send the pull while the clock moved, before the
+    request listener); fixed by listening before the clock moves, then 15 repeats of the spec passed.
 12. Docs: wiki (Finding your way, Development), record 0009, NEXT.md.
 
 Not done, listed for the PR:

@@ -42,12 +42,14 @@ test('Home revisited shows its widgets at once and refreshes them behind', async
 		};
 		new MutationObserver(look).observe(document.body, { childList: true, subtree: true, characterData: true });
 	});
-	// Past the study cache's freshness window: the revisit refreshes behind the held data.
-	await page.clock.fastForward(20_000);
+	// Past the study cache's freshness window: the held data is refreshed behind it. The
+	// refresh may go out while the clock moves (a same-second follow-up round fires then)
+	// or on the revisit; either way it goes out, and no widget waits for it.
 	const pulls: string[] = [];
 	page.on('request', (request) => {
 		if (request.url().includes('/api/sync/pull')) pulls.push(request.url());
 	});
+	await page.clock.fastForward(20_000);
 
 	await bar.getByRole('link', { name: 'Home' }).click();
 	await expect(page).toHaveURL(/\/$/);
