@@ -68,6 +68,16 @@ export const FEATURE_FOLDERS = [
  */
 export const STRUCTURE_FOLDERS = ['ui', 'frame', 'components', 'features', 'testing', 'assets'];
 
+/**
+ * The shared study core (#278): the study cache and read model, the event log, the derived schedules and mastery,
+ * the learner's day, and the exercises flashcards share with grammar and the drills. Every feature may read them;
+ * they never import the flashcards feature (`FLASHCARDS`), so a feature that reads them does not pull in flashcards.
+ */
+export const STUDY_CORE_FOLDERS = ['studycore', 'exercises'];
+
+/** What the study core must not import: the flashcards feature and the routes that show it. */
+export const FLASHCARDS = ['lib/features/flashcards/', 'routes/study/', 'routes/flashcards/'];
+
 /** Loose files allowed directly in `lib/`, each with its reason. None today. */
 export const LOOSE_ALLOWED: Record<string, string> = {};
 
@@ -241,6 +251,19 @@ export function uiImportFindings(files: SourceFile[]): string[] {
 		if (!f.path.startsWith('lib/ui/') || f.path.startsWith('lib/ui/testing/')) continue;
 		for (const t of g.imports.get(f.path) ?? []) {
 			if (!UI_MAY_IMPORT.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
+		}
+	}
+	return out;
+}
+
+/** Nothing in the study core (`STUDY_CORE_FOLDERS`), tests included, imports the flashcards feature. */
+export function studyCoreImportFindings(files: SourceFile[]): string[] {
+	const g = graph(files);
+	const out: string[] = [];
+	for (const f of files) {
+		if (!STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`))) continue;
+		for (const t of g.imports.get(f.path) ?? []) {
+			if (FLASHCARDS.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
 		}
 	}
 	return out;

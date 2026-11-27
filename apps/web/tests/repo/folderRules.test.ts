@@ -13,6 +13,7 @@ import {
 	logicFolderFindings,
 	looseFileFindings,
 	sharedComponentFindings,
+	studyCoreImportFindings,
 	uiImportFindings,
 	unclassifiedFolderFindings,
 	unmappedRouteFindings,
@@ -161,6 +162,32 @@ describe('each check fails on a planted violation', () => {
 			'lib/entry/EntryView.svelte: $lib/entry/Gone.svelte names no file',
 			'lib/entry/EntryView.svelte: ./missing names no file',
 			'lib/entry/lazy.ts: ./alsoGone names no file'
+		]);
+	});
+
+	it('the study core or the exercises importing the flashcards feature (tests included; the other way is fine)', () => {
+		const planted = [
+			file('lib/features/flashcards/session/cardFlow.ts', "import { scheduleFor } from '$lib/studycore/scheduler';"),
+			file('lib/features/flashcards/face/hints.ts'),
+			file('lib/features/flashcards/mascot.ts'),
+			file('lib/features/flashcards/commands/cards.ts'),
+			file('lib/goals/goals.ts'),
+			file('routes/study/session/+page.svelte'),
+			file('lib/studycore/scheduler.ts'),
+			file('lib/studycore/known.ts', "import { cardFlow } from '$lib/features/flashcards/session/cardFlow';"),
+			file('lib/exercises/cloze.ts', "export { HINT_KINDS } from '../features/flashcards/face/hints.js';"),
+			file('lib/studycore/data.test.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('lib/studycore/mastery.ts', 'const m = import(`$lib/features/flashcards/mascot`);'),
+			file('lib/studycore/page.ts', "import P from '../../routes/study/session/+page.svelte';"),
+			file('lib/studycore/types.ts', "import type { ParsedGoals } from '../goals/goals';"),
+			file('lib/studycore/exp.ts', "// import { x } from '$lib/features/flashcards/mascot';")
+		];
+		expect(studyCoreImportFindings(planted)).toEqual([
+			'lib/studycore/known.ts imports lib/features/flashcards/session/cardFlow.ts',
+			'lib/exercises/cloze.ts imports lib/features/flashcards/face/hints.ts',
+			'lib/studycore/data.test.ts imports lib/features/flashcards/commands/cards.ts',
+			'lib/studycore/mastery.ts imports lib/features/flashcards/mascot.ts',
+			'lib/studycore/page.ts imports routes/study/session/+page.svelte'
 		]);
 	});
 
