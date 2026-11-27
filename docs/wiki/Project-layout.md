@@ -41,7 +41,8 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, through `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/fetch-kanjivg-components.sh` | Rebuilds the bundled KanjiVG component index from the pinned KanjiVG tag (manual, licence-checked) |
 | `scripts/prepare-ids-components.mjs` | Prepares a local-only Chinese components pack from an IDS file |
-| `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); `--jlpt-vocab` generates the optional local-only JLPT vocabulary pack |
+| `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds) |
+| `scripts/prepare-jlpt-words.mjs` | Rebuilds the estimated JLPT word pack `jlpt-words` from the bundled Jiten ranks, JMdict and JLPT kanji levels (`--calibrate` prints the threshold fit and the consistency checks; `--base <dir>` reads an optional base list) |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 | `scripts/prepare-strokes-pack.mjs` | Builds the stroke-order pack from the pinned `hanzi-writer-data` package |

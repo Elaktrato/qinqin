@@ -4,6 +4,11 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Upgrading
 
+- The bundled level list `jlpt-words` (#219) takes the id of the former local-only JLPT vocabulary pack
+  (`prepare-level-packs.mjs --jlpt-vocab`, removed). If you generated that pack, delete `plugins/data-local/jlpt-words`
+  before seeding: both have the id `jlpt-words`, and a seed keeps whichever it imports last (path order). Run `qinqin seed` to install the new list on an
+  existing server.
+
 - Migration 055 rebuilds `feature_switches` without its list of feature ids (#294); every switch is kept. Nothing to do beyond the usual backup.
 - Migration 056 turns grammar lesson progress into study events (#277): each lesson's best score becomes one finished run at the time of its last run, then the `grammar_progress` table is dropped. What an upgrade loses: the run history before it is one run per lesson (the best one), and a progress row with an unreadable lesson id or time is dropped. The routes `GET/POST /api/grammar/progress` are gone. A backup made before the upgrade still restores; its lesson progress becomes the same runs.
 
@@ -15,6 +20,13 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
 ## New
+
+- Japanese words now carry an estimated JLPT level, "≈ N5" to "≈ N1", from the new bundled list **JLPT words
+  (approximate)** (#219): about 10,000 words, with badges on word pages, level sessions and level decks, and a
+  grouping on the character map, like the JLPT kanji. It is qinqin's estimate (the JLPT has published no official
+  vocabulary list since 2010): each word gets the harder of its kanji's JLPT level and a level from how often it is
+  used, so a word can be a level off. A fresh install gets it automatically; an existing server gets it with
+  `qinqin seed`.
 
 - Settings → Workspaces → **Interface language** (#297): each workspace may choose its own interface language, for
   example a Japanese workspace in Japanese for immersion and a Chinese one in English; "Use my account setting" is the

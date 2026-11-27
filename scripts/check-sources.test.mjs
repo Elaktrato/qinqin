@@ -19,7 +19,7 @@ const DOC = [
 	'| Pack | Provides |',
 	'|---|---|',
 	'| **A** (`pack-a`) | x |',
-	'Optional: **J** (`jlpt-words`).',
+	'Optional: **H** (`hsk30-words`).',
 	'- **B** (`pack-b`, unit `word`): list item',
 	''
 ].join('\n');

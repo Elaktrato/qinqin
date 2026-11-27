@@ -50,7 +50,6 @@ export const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
 
 /** Optional packs the docs describe that are never in the repository. */
 export const LOCAL_ONLY_PACKS = [
-	'jlpt-words',
 	'hsk30-chars',
 	'hsk30-words',
 	'commons-audio-zh',
