@@ -57,10 +57,16 @@ UI in native code.
   `EdgeToEdge.enable` builds the window's decor (a decor built under the launch theme kept a window title with the
   activity label). Every theme of the activity says no title and no action bar in both the AppCompat and the
   framework attributes (`apps/android/src/theme.test.ts`); the emulator job checks the window's view hierarchy
-  for a title or action bar and that the WebView starts at the top (`apps/android/e2e/chrome.mjs`).
+  for a title or action bar and that the WebView starts at or above the bottom of the status bar
+  (`apps/android/e2e/chrome.mjs`; a title would add its height below the bar).
 - **System bars follow the theme.** The bars are transparent over the page (edge to edge, Android 15+ enforces
   it; MainActivity enables it on older versions); the page paints under them and clears them with
-  `env(safe-area-inset-*)`. `lib/native/bars.ts` maps the painted `--chrome` colour to the icon style (dark icons
+  `env(safe-area-inset-*)`. That holds on Android System WebView 140 and later: Capacitor 8's built-in SystemBars
+  plugin passes the insets through to the page only there (both of our pages declare `viewport-fit=cover`). On an
+  older WebView, where `env(safe-area-inset-*)` is unreliable (Chromium bug 40699457), it pads the window by the
+  system bar insets instead: the WebView starts right under the status bar and the insets the page sees are 0, so
+  the same CSS still clears the bars (#283: the API 34 emulator job, Pixel 6 profile at 2.625x,
+  put the WebView's top at 128 px, about the height of its status bar). `lib/native/bars.ts` maps the painted `--chrome` colour to the icon style (dark icons
   on a light colour) and sends it, with the colour, to `QinqinShell.setBars`, which sets the colour behind the
   bars (what shows where the WebView does not paint under them) and the icon appearance.
 - **Bridge level and features** (`docs/contracts/version/`): the shell knows what it implements (SHELL_BRIDGE in
