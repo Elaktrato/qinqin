@@ -7,7 +7,7 @@
 // rules without a request. Segment requests always ask for readings, so
 // switching readings on later costs no second segmentation.
 import type { SegmentMatch } from '$lib/api/types';
-import type { KnownIndex } from '$lib/study/known';
+import type { KnownIndex } from '$lib/studycore/known';
 import { createAnnotationLoader, type SegmentFn } from './annotations';
 import type { ReaderDisplay } from './displaySettings';
 import { paragraphString, type Run } from './paragraphText';

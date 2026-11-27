@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ActivityCell } from '../api/stats';
 import { parseGoalsRow, type GoalsRow } from '../goals/goals';
-import type { ReviewEvent } from '../study/types';
+import type { ReviewEvent } from '$lib/studycore/types';
 import { studyDay } from '../time/studyDay';
 import { stageAmounts, stagesFor } from './stages';
 import * as build from '$lib/testing/study';

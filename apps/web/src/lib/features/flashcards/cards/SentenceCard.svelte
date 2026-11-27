@@ -12,13 +12,13 @@
 	import HintShown from '../face/HintShown.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary, type FacePrimary } from '../face/cardFace.svelte';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
 	import {
 		loadTokens,
 		splitWithin,
 		suggestSaladGrade,
 		type SaladTier
-	} from '$lib/study/wordSalad';
+	} from '$lib/exercises/wordSalad';
 
 	interface Props {
 		item: FlowItem;

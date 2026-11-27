@@ -40,7 +40,7 @@
 	import { variantLabel } from './variant';
 	import { characterMeta } from './characterMeta';
 	import { getEntryRanks } from '$lib/api/frequency';
-	import { getStudyData } from '$lib/study/data';
+	import { getStudyData } from '$lib/studycore/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';

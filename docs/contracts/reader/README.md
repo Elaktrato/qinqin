@@ -59,7 +59,7 @@ is the display form (`nǐ hǎo`, `たべる`). This `reading` object is unrelate
 
 `Familiarity = new | learning | known` per entry; a match takes the state of its **first candidate** (the
 entry whose reading is shown), never of a homograph further down. The shared predicate lives in
-`apps/web/src/lib/study/known.ts` (`frequency/` uses it for starter decks):
+`apps/web/src/lib/studycore/known.ts` (`frequency/` uses it for starter decks):
 
 1. **known**: the entry has a live manual mark, or its best reviewed live vocab card has
    `cardScore(stability) >= threshold`;

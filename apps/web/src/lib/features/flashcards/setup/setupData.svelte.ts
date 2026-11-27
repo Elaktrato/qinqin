@@ -10,14 +10,14 @@ import { errorText } from '$lib/api/apiErrors';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
 import { t } from '$lib/i18n';
-import { contextForData, currentContext } from '$lib/study/currentContext';
-import { loadStudyData, loadStudyHistory } from '$lib/study/data';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { activeWeights } from '$lib/study/readModel';
-import type { StudyContext } from '$lib/study/studyContext';
-import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
-import type { VacationPeriod } from '$lib/study/vacation';
+import { contextForData, currentContext } from '$lib/studycore/currentContext';
+import { loadStudyData, loadStudyHistory } from '$lib/studycore/data';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { activeWeights } from '$lib/studycore/readModel';
+import type { StudyContext } from '$lib/studycore/studyContext';
+import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/studycore/types';
+import type { VacationPeriod } from '$lib/studycore/vacation';
 
 export type SetupDataStatus = 'no-workspace' | 'loading' | 'ready' | 'error';
 

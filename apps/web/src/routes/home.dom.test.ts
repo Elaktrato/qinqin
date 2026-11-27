@@ -20,8 +20,8 @@ vi.mock('$lib/api/account', async (importOriginal) => ({
 	getAuthOptions: vi.fn(() => Promise.reject(new Error('offline')))
 }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	onStudyChange: vi.fn(() => () => {})
 }));
 
@@ -29,7 +29,7 @@ import { goto } from '$app/navigation';
 import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { studyDay } from '$lib/time/studyDay';
-import { onStudyChange } from '$lib/study/data';
+import { onStudyChange } from '$lib/studycore/data';
 import Page from './+page.svelte';
 
 // The session's StudyDays (record 0009): its methods, faked on the class.

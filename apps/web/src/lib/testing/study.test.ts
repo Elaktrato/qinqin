@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { scheduleFor } from '$lib/study/scheduler';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { scheduleFor } from '$lib/studycore/scheduler';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { card, eventId, history, review, strongReviews } from './study';
 
 describe('card', () => {

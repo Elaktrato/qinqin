@@ -29,16 +29,16 @@ const ALLOWED: Record<string, Record<string, string>> = {
 		'Date.UTC(': 'the rule itself: civil date arithmetic and wall-clock offsets',
 		'/ DAY': 'daysBetweenDates divides a difference of UTC-anchored civil dates (always whole days)'
 	},
-	'/src/lib/study/fsrs/preview.ts': {
+	'/src/lib/features/flashcards/fsrs/preview.ts': {
 		'/ DAY': 'FSRS elapsed-time arithmetic stays as ts-fsrs computes it (a non-goal of the study day)'
 	},
-	'/src/lib/study/fsrs/dataset.ts': {
+	'/src/lib/features/flashcards/fsrs/dataset.ts': {
 		'/ 86_400_000)': 'real UTC day numbers for the optimizer holdout split, not a learner day'
 	},
 	'/src/lib/settings/PackManager.svelte': {
 		'toISOString().slice(0, 10)': "a pack's install date label, a calendar date of an instant"
 	},
-	'/src/lib/study/intervalText.ts': {
+	'/src/lib/features/flashcards/session/intervalText.ts': {
 		'/ DAY': 'intervalParts: the length of a grade interval (a duration in 24 h units, docs/contracts/scheduler), not a day bucket'
 	},
 	'/src/lib/account/tokensView.ts': {

@@ -9,9 +9,9 @@
 	import { readPayload } from '$lib/events/eventPayloads';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
-	import { onStudyChange, loadRawStudyData, loadStudyHistory, withStudy } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
-	import { contextForData } from '$lib/study/currentContext';
+	import { onStudyChange, loadRawStudyData, loadStudyHistory, withStudy } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
+	import { contextForData } from '$lib/studycore/currentContext';
 	import { createReadingTimer } from './readingTimer';
 	import { workspaceForBook } from './readingWorkspace';
 	import {
@@ -36,11 +36,11 @@
 	import { DEFAULT_DISPLAY } from './displaySettings';
 	import { ReadingsController } from './readings.svelte';
 	import { createReveal, revealKey } from './reveal';
-	import { EMPTY_KNOWN_INDEX, familiarity, knownIndex, type KnownIndex } from '$lib/study/known';
+	import { EMPTY_KNOWN_INDEX, familiarity, knownIndex, type KnownIndex } from '$lib/studycore/known';
 	import { loadEntryBases } from '$lib/api/entryBases';
-	import { pushStudy } from '$lib/study/commands/write';
-	import { setKnownMarks } from '$lib/study/commands/keyed';
-	import type { Deck } from '$lib/study/types';
+	import { pushStudy } from '$lib/studycore/commands/write';
+	import { setKnownMarks } from '$lib/studycore/commands/keyed';
+	import type { Deck } from '$lib/studycore/types';
 	import WordsPanel from './WordsPanel.svelte';
 	import { stateLineText, wordCountsSupported } from './wordsPanel';
 	import { createLatestLoad, type LatestLoad } from './latestLoad';
@@ -237,7 +237,7 @@
 	let showAll = $state(false);
 	const reveal = createReveal({ onAll: (v) => (showAll = v) });
 
-	// The known index (study/known.ts: cards, scores and manual marks) is only
+	// The known index (studycore/known.ts: cards, scores and manual marks) is only
 	// needed to hide readings (smart): one replay of the workspace's review
 	// log per open, again after study writes.
 	let index = $state.raw<KnownIndex>(EMPTY_KNOWN_INDEX);

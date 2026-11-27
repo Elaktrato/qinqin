@@ -54,7 +54,7 @@ passed, every other option is the library default. `parameters` in the file is t
 
 Grades map 1 Again, 2 Hard, 3 Good, 4 Easy. States: 0 New, 1 Learning, 2 Review, 3 Relearning.
 
-- **Weights** (`weights` cases; web `study/fsrs/params.ts` `checkWeights`, `validWeights`): a weight list is
+- **Weights** (`weights` cases; web `studycore/fsrsParams.ts` `checkWeights`, `validWeights`): a weight list is
   17, 19 or 21 JSON numbers, all finite (ts-fsrs `checkParameters`), each raw value inside
   `clampRanges[i]` (`CLAMP_PARAMETERS(2, true)`, by position, ends included). A value outside is **rejected**,
   never clipped. A valid list is migrated to 21 by ts-fsrs `migrateParameters` (19: append `0, 0.5`; 17: convert
@@ -111,7 +111,7 @@ at the frozen instant (`optimizer-steps.inside` cases).
 
 ## XP and levels (`xp.json`)
 
-Derived from the review log, never stored (web: `lib/study/exp.ts`, decoded by `exp.test.ts`; no server code).
+Derived from the review log, never stored (web: `lib/studycore/exp.ts`, decoded by `exp.test.ts`; no server code).
 Only reviews that count (`events/review-parse.json`: parsable `ts`, non-empty `cardId`, grade 1–4) earn XP.
 
 - Per review: `baseXp[mode]` (vocab 10, sentence 15, writing 20, tone 8, reverse 10, cloze 15; a missing or

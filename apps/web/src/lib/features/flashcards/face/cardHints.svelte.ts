@@ -1,8 +1,8 @@
 // The hints of the card on screen (#215): the session provides one CardHints per card (HintScope), the cards
-// show them (HintShown) and offer the one Hint control (HintControl). The rules are in lib/study/hints.ts.
+// show them (HintShown) and offer the one Hint control (HintControl). The rules are in lib/features/flashcards/face/hints.ts.
 
 import { getContext, setContext } from 'svelte';
-import { EMPTY_PLAN, nextHint, visibleHints, type HintKind, type HintPlan } from '$lib/study/hints';
+import { EMPTY_PLAN, nextHint, visibleHints, type HintKind, type HintPlan } from './hints';
 
 export class CardHints {
 	#plan: () => HintPlan;

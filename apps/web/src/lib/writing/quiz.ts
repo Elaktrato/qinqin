@@ -1,4 +1,4 @@
-import type { CharOutcome } from '$lib/study/writing';
+import type { CharOutcome } from '$lib/exercises/writing';
 import type { MatchResult } from './matcher';
 
 export interface QuizState {

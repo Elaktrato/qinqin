@@ -6,12 +6,12 @@
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { saveConfig } from '$lib/study/session';
+	import { saveConfig } from '../session/session';
 	import { here } from '$lib/routing/here';
 	import { PartialPushError } from '$lib/sync/push';
-	import { loadRawStudyData } from '$lib/study/data';
-	import { pushStudy } from '$lib/study/commands/write';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { loadRawStudyData } from '$lib/studycore/data';
+	import { pushStudy } from '$lib/studycore/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';

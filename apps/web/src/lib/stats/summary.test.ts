@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
 import { studyDay, type ZoneChange } from '$lib/time/studyDay';
 import { addDays } from '$lib/time/studyDay';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
-import type { Run } from '$lib/study/vacation';
-import type { Schedule } from '$lib/study/scheduler';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
+import type { Schedule } from '$lib/studycore/scheduler';
 import fixture from '../../../../../docs/contracts/stats/summary-numbers.json';
 
 // The recall figure must be the decks page's own function, called once for

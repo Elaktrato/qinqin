@@ -1,7 +1,7 @@
 // The payloads of the study events the web app writes, one builder per
 // type, pinned by docs/contracts/events/payloads.json. `lookup` has no
 // builder: it is never written since #72 (the history is the `lookups`
-// row). `review` payloads are built by study/events.ts.
+// row). `review` payloads are built by studycore/events.ts.
 
 /** `session`: no payload (JSON null). */
 export function sessionPayload(): null {

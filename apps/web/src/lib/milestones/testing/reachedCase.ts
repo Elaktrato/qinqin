@@ -4,9 +4,9 @@
 import type { CharRow } from '$lib/api/types';
 import type { StudyEvent } from '$lib/events';
 import { usesHan } from '$lib/languages';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
-import type { Run } from '$lib/study/vacation';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
 import { studyDay, type StudyDay, type ZoneChange } from '$lib/time/studyDay';
 import { givenTimelines, type Timelines } from '$lib/weekly/replay';
 import { FAMILIES, enabledFamilies, type MilestoneFamily } from '../catalogue';

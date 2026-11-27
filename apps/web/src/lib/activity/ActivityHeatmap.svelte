@@ -25,9 +25,9 @@
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
 	import { formatNumber } from '$lib/i18n/format';
-	import { loadStudyHistory, getStudyData } from '$lib/study/data';
-	import type { ReviewEvent } from '$lib/study/types';
-	import { vacationRuns } from '$lib/study/vacation';
+	import { loadStudyHistory, getStudyData } from '$lib/studycore/data';
+	import type { ReviewEvent } from '$lib/studycore/types';
+	import { vacationRuns } from '$lib/studycore/vacation';
 	import type { HeatmapLayout } from '$lib/widgets/options';
 	import {
 		activityViewFor,
@@ -46,7 +46,7 @@
 		saveActivityView,
 		type StoredActivityView
 	} from '$lib/activity/viewPrefs';
-	import type { VacationPeriod } from '$lib/study/vacation';
+	import type { VacationPeriod } from '$lib/studycore/vacation';
 	import { workspaceDisplay } from '$lib/languages';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';

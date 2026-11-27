@@ -6,8 +6,8 @@
 	import { untrack } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { fetchStrokeData } from '$lib/study/strokeData';
-	import type { CharOutcome } from '$lib/study/writing';
+	import { fetchStrokeData } from '$lib/writing/strokeData';
+	import type { CharOutcome } from '$lib/exercises/writing';
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
 	import WritingPad from '$lib/features/flashcards/cards/WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';

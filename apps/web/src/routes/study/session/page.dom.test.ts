@@ -7,7 +7,7 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Scheme } from '$lib/api/types';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({ getEntry: vi.fn() }));
@@ -20,19 +20,19 @@ vi.mock('$lib/api/images', async (importOriginal) => ({
 // The session's outbox, faked (record 0009: the page records through useSession().outbox).
 const outboxFakes = vi.hoisted(() => ({
 	flush: vi.fn(async () => {}),
-	recordReview: vi.fn<import('$lib/study/events').ReviewOutbox['recordReview']>(async () => null),
-	recordReplacement: vi.fn<import('$lib/study/events').ReviewOutbox['recordReplacement']>(async () => null)
+	recordReview: vi.fn<import('$lib/studycore/events').ReviewOutbox['recordReview']>(async () => null),
+	recordReplacement: vi.fn<import('$lib/studycore/events').ReviewOutbox['recordReplacement']>(async () => null)
 }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
 	addCard: vi.fn()
 }));
-vi.mock('$lib/study/writing', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/writing')>()),
+vi.mock('$lib/exercises/writing', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/exercises/writing')>()),
 	usableChars: vi.fn()
 }));
 const { fakeCard } = vi.hoisted(() => ({
@@ -50,8 +50,8 @@ vi.mock('$lib/notes/store', () => ({
 }));
 vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/study/sessionMix', async (importOriginal) => {
-	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
+vi.mock('$lib/features/flashcards/session/sessionMix', async (importOriginal) => {
+	const real = await importOriginal<typeof import('$lib/features/flashcards/session/sessionMix')>();
 	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
 });
 
@@ -60,20 +60,20 @@ import { entryPicture } from '$lib/api/images';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 const { recordReplacement, recordReview } = outboxFakes;
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { mixFlowQueue } from '$lib/study/sessionMix';
-import { addCard } from '$lib/study/commands/cards';
-import { loadStudyData } from '$lib/study/data';
-import { usableChars } from '$lib/study/writing';
+import { SESSION_CONFIG_KEY } from '$lib/features/flashcards/session/session';
+import { mixFlowQueue } from '$lib/features/flashcards/session/sessionMix';
+import { addCard } from '$lib/features/flashcards/commands/cards';
+import { loadStudyData } from '$lib/studycore/data';
+import { usableChars } from '$lib/exercises/writing';
 import { studyDay } from '$lib/time/studyDay';
 import Page from './+page.svelte';
 import { goto } from '$app/navigation';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { shortInterval } from '$lib/study/intervalText';
-import { scheduleFor } from '$lib/study/scheduler';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { shortInterval } from '$lib/features/flashcards/session/intervalText';
+import { scheduleFor } from '$lib/studycore/scheduler';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import * as build from '$lib/testing/study';
 
 // The session's StudyDays (record 0009): its methods, faked on the class.
@@ -694,7 +694,7 @@ describe('order of card types (#132)', () => {
 	});
 
 	it('mixed follows the session seed, Recognise first for a new word', async () => {
-		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/study/sessionMix')>('$lib/study/sessionMix');
+		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/features/flashcards/session/sessionMix')>('$lib/features/flashcards/session/sessionMix');
 		const first = (seed: number) => real(plan, [], { seed, order: 'mixed', vocabFirst: true })[0];
 		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
 		// A new word's writing card waits for its vocab card: the first card is always a vocab card.

@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { segmentBatch } from '$lib/api/segment';
-	import { loadTokens } from '$lib/study/wordSalad';
+	import { loadTokens } from '$lib/exercises/wordSalad';
 	import WordSaladBoard from '$lib/features/flashcards/cards/WordSaladBoard.svelte';
 	import ClozeChoice from '$lib/features/grammar/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';

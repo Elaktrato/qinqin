@@ -1,13 +1,13 @@
 // What is left of today's daily limits for one deck (or everything): the
 // number the decks list and detail show beside Due and New.
 
-import { dayCountsCached } from '$lib/study/limits';
-import { leftToday } from '$lib/study/dueCounts';
-import { limitsOf } from '$lib/study/scheduler';
-import type { DeckSettings } from '$lib/study/deckSettings';
+import { dayCountsCached } from '$lib/studycore/limits';
+import { leftToday } from '../session/dueCounts';
+import { limitsOf } from '$lib/studycore/scheduler';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
 import type { ScheduleIndex } from './deckStats';
-import type { StudyContext } from '$lib/study/studyContext';
-import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
+import type { StudyContext } from '$lib/studycore/studyContext';
+import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
 import type { LimitsLeftToday } from './DeckLimitsSlot';
 
 export interface LeftInput {

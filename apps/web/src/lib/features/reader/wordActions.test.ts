@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { EntryBase } from '$lib/api/types';
-import type { Deck, StudyCard } from '$lib/study/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { addWords, allNew, markWords } from './wordActions';
-import { type StudyWrite } from '$lib/study/plan';
+import { type StudyWrite } from '$lib/studycore/plan';
 import { toLegacy } from '$lib/testing/legacyCodec';
 
 const base = (id: number): EntryBase => ({ id, language: 'zh', kind: 'word', written: `w${id}`, readings: [], attrs: {}, radicalId: null });

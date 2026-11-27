@@ -4,9 +4,9 @@
 // Idempotent: a word that already has a card joins the deck, a second run adds nothing.
 
 import { starterSet, type StarterSetEntry } from '$lib/api/starter';
-import { loadRawStudyData, getStudyData } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
-import { starterSetDeckId } from '$lib/study/starter';
+import { loadRawStudyData, getStudyData } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
+import { starterSetDeckId } from '$lib/starter/starter';
 import type { useSession } from '$lib/context/context';
 import { addPlanRows, planAddToDeck, type AddItem, type AddPlan } from './addToDeck';
 

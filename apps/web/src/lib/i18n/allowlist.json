@@ -90,12 +90,12 @@
 		"reason": "Catalogue machinery: a developer report of a message that does not parse (test and dev-script output); never shown in the app."
 	},
 	{
-		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"file": "lib/features/flashcards/fsrs/optimizer.worker.ts",
 		"text": "e.message",
 		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
 	},
 	{
-		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"file": "lib/features/flashcards/fsrs/optimizer.worker.ts",
 		"text": "String(e)",
 		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
 	},

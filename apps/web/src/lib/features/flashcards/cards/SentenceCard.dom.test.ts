@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Sentence } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
+import type { FlowItem } from '../session/cardFlow';
 
 // Three tokens: the segmenter finds the two words, the full stop is its own tile.
 vi.mock('$lib/api/segment', () => ({

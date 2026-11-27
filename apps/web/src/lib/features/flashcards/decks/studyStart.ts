@@ -3,11 +3,11 @@
 // orders. The saved setup itself is never changed; only the tab's running
 // session (session.ts) is written.
 
-import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-import { newSessionSeed, type StudySessionConfig } from '$lib/study/session';
-import { setupKinds, setupSessionConfig, type StudySetup } from '$lib/study/setup';
-import type { StudySetups } from '$lib/study/setupStore.svelte';
-import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
+import { enabledKinds, type DeckSettings } from '$lib/studycore/deckSettings';
+import { newSessionSeed, type StudySessionConfig } from '../session/session';
+import { setupKinds, setupSessionConfig, type StudySetup } from '../setup/setup';
+import type { StudySetups } from '../setup/setupStore.svelte';
+import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/studycore/types';
 
 /**
  * loadedSetup: the workspace's saved setup once the server answered in this

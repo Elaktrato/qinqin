@@ -3,19 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/keyed')>()),
 	setKnownMarks: vi.fn(() => Promise.resolve())
 }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { setKnownMarks } from '$lib/study/commands/keyed';
-import { getStudyData } from '$lib/study/data';
-import type { StudyData } from '$lib/study/types';
+import { setKnownMarks } from '$lib/studycore/commands/keyed';
+import { getStudyData } from '$lib/studycore/data';
+import type { StudyData } from '$lib/studycore/types';
 import KnownSettings from './KnownSettings.svelte';
 
 const word = (id: number) => ({ id, language: 'zh', kind: 'word', written: `字${id}`, readings: [], attrs: {}, radicalId: null });

@@ -9,12 +9,12 @@ vi.mock('$lib/features/flashcards/decks/studyStart', () => ({
 	loadedSetup: vi.fn(() => Promise.resolve({})),
 	levelSessionConfig: vi.fn((_setup: unknown, schemeId: number, levelName: string) => ({ mode: 'levels', schemeId, levelName }))
 }));
-vi.mock('$lib/study/session', () => ({ saveConfig: vi.fn() }));
+vi.mock('$lib/features/flashcards/session/session', () => ({ saveConfig: vi.fn() }));
 
 import { goto } from '$app/navigation';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { knownIndex } from '$lib/study/known';
-import { saveConfig } from '$lib/study/session';
+import { knownIndex } from '$lib/studycore/known';
+import { saveConfig } from '$lib/features/flashcards/session/session';
 import { loadKnownIndex } from './knownIndexLoad';
 import LevelCheck from './LevelCheck.svelte';
 

@@ -9,7 +9,7 @@
 	import Msg from '$lib/ui/Msg.svelte';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
-	import { levelAttributionLine } from '$lib/study/levelAttribution';
+	import { levelAttributionLine } from '$lib/studycore/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
 	import CellTip from '$lib/stats/map/CellTip.svelte';
 	import CharGrid from '$lib/stats/map/CharGrid.svelte';
@@ -26,7 +26,7 @@
 		type SchemeLevelMembers,
 		type Stage,
 		type StageFilter
-	} from '$lib/study/charGroups';
+	} from '$lib/studycore/charGroups';
 	import {
 		LEVEL_ALL,
 		filterByLevel,
@@ -34,8 +34,8 @@
 		parseLevelValue,
 		readLevelChoice,
 		writeLevelChoice
-	} from '$lib/study/charLevels';
-	import { fillMissingWrittenProgressively } from '$lib/study/entriesCache';
+	} from '$lib/studycore/charLevels';
+	import { fillMissingWrittenProgressively } from '$lib/studycore/entriesCache';
 	import {
 		STAGE_INFO,
 		defaultOpenSections,
@@ -48,14 +48,14 @@
 		sectionsFor,
 		writeGroupBy,
 		type TipRequest
-	} from '$lib/study/mapGrid';
-	import { contextForData, currentContext } from '$lib/study/currentContext';
-	import type { StudyContext } from '$lib/study/studyContext';
-	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { loadStudyData } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
-	import type { ReviewEvent, StudyCard } from '$lib/study/types';
+	} from '$lib/studycore/mapGrid';
+	import { contextForData, currentContext } from '$lib/studycore/currentContext';
+	import type { StudyContext } from '$lib/studycore/studyContext';
+	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/studycore/mastery';
+	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+	import { loadStudyData } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
+	import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';

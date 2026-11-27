@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import type { CharOutcome } from '$lib/study/writing';
+	import type { CharOutcome } from '$lib/exercises/writing';
 	import { joinPaths } from '$lib/writing/geometry';
 	import { appendInk, createPalmGate, morphPath, toPadUnit } from '$lib/writing/ink';
 	import { matchStroke } from '$lib/writing/matcher';

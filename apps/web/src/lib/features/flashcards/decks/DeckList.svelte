@@ -2,11 +2,11 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { saveConfig } from '$lib/study/session';
+	import { saveConfig } from '../session/session';
 	import { here } from '$lib/routing/here';
-	import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { knownEntries } from '$lib/study/known';
+	import { createDeck, deleteDeck, renameDeck } from '../commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
+	import { knownEntries } from '$lib/studycore/known';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
@@ -15,12 +15,12 @@
 	import SystemDecks from './SystemDecks.svelte';
 	import StarterDecks from './StarterDecks.svelte';
 	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
-	import { onContextStale } from '$lib/study/currentContext';
-	import { deckLeftText } from '$lib/study/limitsText';
+	import { onContextStale } from '$lib/studycore/currentContext';
+	import { deckLeftText } from '../session/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
 	import { useSession } from '$lib/context/context';
-	import type { StudyCardKind } from '$lib/study/types';
+	import type { StudyCardKind } from '$lib/studycore/types';
 	const session = useSession();
 
 	const store = createDecksData(session);

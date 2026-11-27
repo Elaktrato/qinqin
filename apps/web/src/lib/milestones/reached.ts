@@ -6,10 +6,10 @@
 
 import type { StudyEvent } from '$lib/events';
 import { readSeconds } from '$lib/stats/readingTime';
-import { streakRuns } from '$lib/study/exp';
-import { isValidReview } from '$lib/study/scheduler';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
-import { isVacationDay, type Run } from '$lib/study/vacation';
+import { streakRuns } from '$lib/studycore/exp';
+import { isValidReview } from '$lib/studycore/scheduler';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
+import { isVacationDay, type Run } from '$lib/studycore/vacation';
 import type { StudyDay } from '$lib/time/studyDay';
 import { reviewsKey } from '$lib/weekly/replay';
 import { FAMILIES, compareIds, type MilestoneFamily, type ThresholdFamily } from './catalogue';

@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
-import type { FlowItem } from '$lib/study/cardFlow';
-import type { HintPlan } from '$lib/study/hints';
+import type { FlowItem } from '../session/cardFlow';
+import type { HintPlan } from './hints';
 import type { CardHints } from './cardHints.svelte';
 
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));

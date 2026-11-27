@@ -1,6 +1,6 @@
 // Pure exercise logic for a lesson: cloze (fill the gap) and word order.
 
-import { shuffleTokens } from '$lib/study/wordSalad';
+import { shuffleTokens } from '$lib/exercises/wordSalad';
 import type { Example, Lesson } from './types';
 
 export type Exercise =

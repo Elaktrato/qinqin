@@ -5,12 +5,12 @@
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
 	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
-	import { deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/commands/decks';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { deleteDeck, renameDeck, saveDeckNewOrder } from '../commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { FrequencyPack, Scheme } from '$lib/api/types';
-	import { decodeOrder, deckOrderControl } from '$lib/study/newOrderView';
+	import { decodeOrder, deckOrderControl } from '../session/newOrderView';
 	import { flashcardsHref } from '../route';
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteDeckText } from './deleteText';

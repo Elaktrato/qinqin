@@ -4,7 +4,7 @@
 // darkened or lightened toward the theme's text colour until they read on the panel. Contract: docs/contracts/aids/.
 
 import { t } from '$lib/i18n';
-import { parsePinyin } from '$lib/study/tones';
+import { parsePinyin } from '$lib/exercises/tones';
 import { MIN_TEXT, ratio } from '$lib/theme/contrast';
 import type { ThemeColors } from '$lib/theme/types';
 

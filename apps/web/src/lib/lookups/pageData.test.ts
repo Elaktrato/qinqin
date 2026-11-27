@@ -1,20 +1,20 @@
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { StudyCard } from '$lib/study/types';
+import type { StudyCard } from '$lib/studycore/types';
 
 const mem = vi.hoisted(() => ({ cards: new Map<string, unknown>(), pushes: 0 }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/api/entryBases', () => ({
 	loadEntryBases: vi.fn(async (_cache: unknown, ids: readonly number[]) => new Map(ids.filter((id) => id !== 404).map((id) => [id, { id, written: `w${id}`, readings: [] }])))
 }));
-vi.mock('$lib/study/data', async (orig) => ({
-	...(await orig<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (orig) => ({
+	...(await orig<typeof import('$lib/studycore/data')>()),
 	loadRawStudyData: vi.fn(async () => ({ decks: [], cards: [...mem.cards.values()] as StudyCard[], knownAt: new Map() }))
 }));
-vi.mock('$lib/study/commands/write', async (orig) => {
-	const { cardOf } = await import('$lib/study/rows');
+vi.mock('$lib/studycore/commands/write', async (orig) => {
+	const { cardOf } = await import('$lib/studycore/rows');
 	return {
-		...(await orig<typeof import('$lib/study/commands/write')>()),
+		...(await orig<typeof import('$lib/studycore/commands/write')>()),
 		pushStudy: vi.fn(async (_study: unknown, _ws: number, writes: { collection: string; row: { id: string } }[]) => {
 			mem.pushes++;
 			for (const w of writes) if (w.collection === 'cards') mem.cards.set(`card:${w.row.id}`, cardOf(w.row as never));

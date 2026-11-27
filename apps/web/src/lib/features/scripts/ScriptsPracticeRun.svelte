@@ -9,7 +9,7 @@
 	import { isImeKey } from '$lib/ui/ime';
 	import { keyboardNote, modeLabel, promptLabel, systemLabel } from './labels';
 	import { buildRound } from './queue';
-	import type { CharOutcome } from '$lib/study/writing';
+	import type { CharOutcome } from '$lib/exercises/writing';
 	import { advance, startRun, submit, type RunState } from './run';
 	import { scriptsHref } from './route';
 	import type { ItemState } from './progress';

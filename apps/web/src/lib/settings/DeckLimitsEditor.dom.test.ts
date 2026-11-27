@@ -2,17 +2,17 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
+vi.mock('$lib/features/flashcards/commands/settings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/settings')>()),
 	saveDeckLimits: vi.fn(() => Promise.resolve())
 }));
 
-import { saveDeckLimits } from '$lib/study/commands/settings';
-import { getStudyData } from '$lib/study/data';
+import { saveDeckLimits } from '$lib/features/flashcards/commands/settings';
+import { getStudyData } from '$lib/studycore/data';
 import DeckLimitsEditor from './DeckLimitsEditor.svelte';
 
 let ctx: TestContext = testContext();

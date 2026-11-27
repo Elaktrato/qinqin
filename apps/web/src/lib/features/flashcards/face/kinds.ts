@@ -2,7 +2,7 @@
 // the learner is doing. Settings, decks and the XP breakdown keep the card
 // type names (study.cardType.*).
 import { t } from '$lib/i18n';
-import type { StudyCardKind } from '$lib/study/types';
+import type { StudyCardKind } from '$lib/studycore/types';
 
 export const KIND_TASK_LABELS: Readonly<Record<StudyCardKind, string>> = {
 	get vocab() {

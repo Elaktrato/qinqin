@@ -5,8 +5,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	onStudyChange: vi.fn(() => () => {})
 }));
@@ -14,14 +14,14 @@ vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	summaryNumbers: vi.fn()
 }));
-vi.mock('$lib/study/currentContext', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
+vi.mock('$lib/studycore/currentContext', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
 
 import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
-import { onContextStale } from '$lib/study/currentContext';
-import { onStudyChange, loadStudyHistory } from '$lib/study/data';
+import { onContextStale } from '$lib/studycore/currentContext';
+import { onStudyChange, loadStudyHistory } from '$lib/studycore/data';
 import SummaryWidget from './SummaryWidget.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.

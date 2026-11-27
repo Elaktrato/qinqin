@@ -1,10 +1,10 @@
 // The rows of the decks list: General (only when it holds cards), then the
 // user's decks by name, each with its numbers, plus the overall numbers.
 
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
-import type { StudyContext } from '$lib/study/studyContext';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import { enabledKinds, type DeckSettings } from '$lib/studycore/deckSettings';
+import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
+import type { StudyContext } from '$lib/studycore/studyContext';
 import { deckNumbers, type DeckNumbers, type ScheduleIndex } from './deckStats';
 
 export interface DeckSummary {

@@ -2,11 +2,11 @@
 // system/starter detail pages (addToDeck.ts), without the target picker. The
 // deck gets its usual owned id and name; adding again joins only what is new.
 
-import type { StudyState } from '$lib/study/data';
-import type { NewOrder } from '$lib/study/newOrder';
-import { loadRawStudyData } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
-import type { Deck } from '$lib/study/types';
+import type { StudyState } from '$lib/studycore/data';
+import type { NewOrder } from '$lib/studycore/newOrder';
+import { loadRawStudyData } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
+import type { Deck } from '$lib/studycore/types';
 import { addPlanRows, planAddToDeck, type AddItem, type AddPlan } from './addToDeck';
 
 export interface OverviewAddInput {

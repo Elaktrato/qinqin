@@ -29,8 +29,8 @@ vi.mock('$lib/api/lookup', async (orig) => ({
 				]
 			: []
 }));
-vi.mock('$lib/study/data', async (orig) => ({
-	...(await orig<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (orig) => ({
+	...(await orig<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));

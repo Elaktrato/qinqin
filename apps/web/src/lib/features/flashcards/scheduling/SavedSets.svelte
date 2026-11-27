@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import type { ParamSet } from '$lib/study/fsrs/params';
+	import type { ParamSet } from '$lib/studycore/fsrsParams';
 	import { Button, Section } from '$lib/ui';
 
 	let {

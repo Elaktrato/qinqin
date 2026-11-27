@@ -7,7 +7,7 @@ import type { EntryBase, Scheme } from '$lib/api/types';
 import type { LevelItemsCache } from '$lib/context/caches';
 import { loadLevelItems } from '$lib/features/flashcards/decks/systemDeckItems';
 import { levelDecks } from '$lib/features/flashcards/decks/systemDecks';
-import { isSampleScheme } from '$lib/study/charGroups';
+import { isSampleScheme } from '$lib/studycore/charGroups';
 import type { LevelMembers } from './declare';
 
 export interface SchemeLevels {

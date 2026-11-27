@@ -7,14 +7,14 @@
 import type { Session } from '$lib/context/session.svelte';
 import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 import type { CharRow } from '$lib/api/types';
-import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
-import { fillMissingWritten } from '$lib/study/entriesCache';
-import { masteryForChars } from '$lib/study/mastery';
-import type { StudyClock } from '$lib/study/studyClock';
-import { contextForData } from '$lib/study/currentContext';
-import { loadStudyHistory } from '$lib/study/data';
-import { activeWeights } from '$lib/study/readModel';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/studycore/charGroups';
+import { fillMissingWritten } from '$lib/studycore/entriesCache';
+import { masteryForChars } from '$lib/studycore/mastery';
+import type { StudyClock } from '$lib/studycore/studyClock';
+import { contextForData } from '$lib/studycore/currentContext';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { activeWeights } from '$lib/studycore/readModel';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 
 /** characterSummary counts the characters per mastery stage and those learned. */
 export function characterSummary(

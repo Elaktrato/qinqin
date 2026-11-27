@@ -8,8 +8,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(),
 	loadStudyHistory: vi.fn()
 }));
@@ -24,7 +24,7 @@ vi.mock('./options', async (importOriginal) => ({
 }));
 
 import { fetchActivity } from '$lib/api/stats';
-import { loadStudyHistory, getStudyData } from '$lib/study/data';
+import { loadStudyHistory, getStudyData } from '$lib/studycore/data';
 import { studyDay } from '$lib/time/studyDay';
 import ActivityHome from './ActivityHome.svelte';
 import { loadWidgetOptions } from './options';

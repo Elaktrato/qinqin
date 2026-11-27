@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "starter/stages",
- "note": "The per-word stage of Starter mode (#214): derived from one card's review history, never stored. Web: apps/web/src/lib/study/starter.ts, decoded by starter.contract.test.ts. A review is {at, grade}; reviews are replayed in time order (a stable sort on `at`; a review with an unreadable time or a grade outside 1-4 is skipped).",
+ "note": "The per-word stage of Starter mode (#214): derived from one card's review history, never stored. Web: apps/web/src/lib/starter/starter.ts, decoded by starter.contract.test.ts. A review is {at, grade}; reviews are replayed in time order (a stable sort on `at`; a review with an unreadable time or a grade outside 1-4 is skipped).",
  "minGapMinutes": 720,
  "successGrades": [3, 4],
  "pauseGrades": [2],

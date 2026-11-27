@@ -11,8 +11,8 @@
 	//
 	// API: <GradeBar intervals suggested chosen? busy ongrade bind:buttons />
 	import { t } from '$lib/i18n';
-	import { longInterval, shortInterval } from '$lib/study/intervalText';
-	import type { ReviewGrade } from '$lib/study/types';
+	import { longInterval, shortInterval } from '../session/intervalText';
+	import type { ReviewGrade } from '$lib/studycore/types';
 
 	type Source = 'click' | 'activation';
 

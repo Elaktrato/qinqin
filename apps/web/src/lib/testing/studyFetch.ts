@@ -4,9 +4,9 @@
 // and keyed-row writes read back as legacy rows, and the one-storage check.
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { StudyEvent } from "$lib/events";
-import type { Deck, StudyCard } from "../study/types";
+import type { Deck, StudyCard } from "$lib/studycore/types";
 import { legacyFamily, pagedPull, toLegacy } from "./legacyCodec";
-import { STUDY_COLLECTIONS, type StudyCollection } from "../study/rows";
+import { STUDY_COLLECTIONS, type StudyCollection } from "$lib/studycore/rows";
 import * as build from "./study";
 
 export const WORKSPACE_ID = 7;

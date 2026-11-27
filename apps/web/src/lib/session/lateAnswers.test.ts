@@ -71,8 +71,8 @@ describe('a new session starts with empty content-keyed memos (#173, record 0009
 		const { summaryStats, weekSummary } = await import('../weekly/summary');
 		const { reachedFromLog, reachedStats } = await import('../milestones/reached');
 		const { studyDay } = await import('../time/studyDay');
-		const { IDENTITY_CLOCK } = await import('../study/studyClock');
-		const { DEFAULT_W } = await import('../study/fsrs/params');
+		const { IDENTITY_CLOCK } = await import('$lib/studycore/studyClock');
+		const { DEFAULT_W } = await import('$lib/studycore/fsrsParams');
 		const ctx = testContext();
 		const day = studyDay([]);
 		const now = Date.parse('2026-11-17T12:00:00Z');

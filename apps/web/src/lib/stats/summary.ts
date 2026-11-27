@@ -10,13 +10,13 @@ import {
 	type ScheduleIndex
 } from '$lib/features/flashcards/decks/deckStats';
 import { flashcardAmounts } from '$lib/goals/amounts';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import { dailyStreak } from '$lib/study/exp';
-import { knownEntries } from '$lib/study/known';
-import { isValidReview, type Schedule } from '$lib/study/scheduler';
-import { contextFor } from '$lib/study/studyContext';
-import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
-import type { Run } from '$lib/study/vacation';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import { dailyStreak } from '$lib/studycore/exp';
+import { knownEntries } from '$lib/studycore/known';
+import { isValidReview, type Schedule } from '$lib/studycore/scheduler';
+import { contextFor } from '$lib/studycore/studyContext';
+import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
 import { addDays, type StudyDay } from '$lib/time/studyDay';
 
 export { STATS_WINDOW_DAYS };

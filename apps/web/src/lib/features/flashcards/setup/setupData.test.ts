@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn(),
 	loadStudyHistory: vi.fn()
 }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { Scheme } from '$lib/api/types';
-import { loadStudyData, loadStudyHistory } from '$lib/study/data';
+import { loadStudyData, loadStudyHistory } from '$lib/studycore/data';
 import { testContext, type TestContext } from '$lib/testing/context';
 import * as build from '$lib/testing/study';
 import { createSetupData } from './setupData.svelte';

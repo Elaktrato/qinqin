@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { withStudy } from '$lib/study/data';
+	import { withStudy } from '$lib/studycore/data';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { t, type MessageKey } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { loadEntryBases } from '$lib/api/entryBases';
 	import type { EntryBase } from '$lib/api/types';
-	import type { Deck } from '$lib/study/types';
+	import type { Deck } from '$lib/studycore/types';
 	import { WORD_STATES, type WordState } from '$lib/stats/wordStates';
-	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
-	import { enabledKinds } from '$lib/study/deckSettings';
-	import { saveConfig } from '$lib/study/session';
+	import { createCardActions, type CardActionsState } from './cardActions';
+	import { enabledKinds } from '$lib/studycore/deckSettings';
+	import { saveConfig } from '../session/session';
 	import { here } from '$lib/routing/here';
 	import {
 		deleteCards,
@@ -19,8 +19,8 @@
 		restoreCards,
 		skipKind,
 		unskipKind
-	} from '$lib/study/commands/cards';
-	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/study/types';
+	} from '../commands/cards';
+	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
@@ -34,8 +34,8 @@
 	import { copiedFrom } from './systemDecks';
 	import { deckNumbers } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
-	import { onContextStale } from '$lib/study/currentContext';
-	import { deckLeftText } from '$lib/study/limitsText';
+	import { onContextStale } from '$lib/studycore/currentContext';
+	import { deckLeftText } from '../session/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';

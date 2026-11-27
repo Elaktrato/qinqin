@@ -3,30 +3,30 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
+vi.mock('$lib/features/flashcards/commands/settings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/settings')>()),
 	saveParamSet: vi.fn(),
 	setActiveSet: vi.fn(),
 	deleteParamSet: vi.fn()
 }));
-vi.mock('$lib/study/currentContext', () => ({
+vi.mock('$lib/studycore/currentContext', () => ({
 	currentContext: vi.fn(() => ({ clock: {} })),
 	contextForData: vi.fn(() => ({ clock: {} }))
 }));
-vi.mock('$lib/study/fsrs/dataset', () => ({
+vi.mock('$lib/features/flashcards/fsrs/dataset', () => ({
 	buildDataset: vi.fn(() => ({ cards: [], labelled: 500 }))
 }));
-vi.mock('$lib/study/fsrs/optimizerClient', () => ({
+vi.mock('$lib/features/flashcards/fsrs/optimizerClient', () => ({
 	runOptimizer: vi.fn(),
 	runPreview: vi.fn()
 }));
 
-import { loadStudyData } from '$lib/study/data';
-import { runOptimizer, runPreview } from '$lib/study/fsrs/optimizerClient';
+import { loadStudyData } from '$lib/studycore/data';
+import { runOptimizer, runPreview } from '$lib/features/flashcards/fsrs/optimizerClient';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 

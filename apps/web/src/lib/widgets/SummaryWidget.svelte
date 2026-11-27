@@ -11,9 +11,9 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration } from '$lib/stats/readingTime';
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
-	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -65,7 +65,7 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			const ctx = contextForData(session.zone, data, workspace);

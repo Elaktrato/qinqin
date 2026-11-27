@@ -6,10 +6,10 @@
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
-	import type { StarterFront } from '$lib/study/starter';
-	import { buildVocabFaces } from '$lib/study/cardView';
+	import type { CardAudio } from '$lib/audio/cue';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
+	import type { StarterFront } from '$lib/starter/starter';
+	import { buildVocabFaces } from './cardView';
 	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';

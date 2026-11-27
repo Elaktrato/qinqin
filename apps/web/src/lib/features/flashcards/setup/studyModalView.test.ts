@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import type { OptInKind } from '$lib/study/types';
+import { defaultSetup, type StudySetup } from './setup';
+import type { OptInKind } from '$lib/studycore/types';
 import { chipPatch, noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
 
 const none = new Set<OptInKind>();

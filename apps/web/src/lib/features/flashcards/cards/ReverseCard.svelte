@@ -7,15 +7,15 @@
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
-	import { buildVocabFaces } from '$lib/study/cardView';
+	import type { CardAudio } from '$lib/audio/cue';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
+	import { buildVocabFaces } from './cardView';
 	import {
 		acceptedReverseAnswers,
 		buildReverseFront,
 		suggestReverseGrade
-	} from '$lib/study/reverse';
-	import type { ReviewMeta } from '$lib/study/types';
+	} from './reverse';
+	import type { ReviewMeta } from '$lib/studycore/types';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import AnswerAids from '../face/AnswerAids.svelte';
@@ -55,7 +55,7 @@
 	/** Finishes the card with what was typed; the runner's Space/Enter calls it too. */
 	export function finish(): void {
 		if (revealed) return;
-		// A hint asked for with the Hint control is added by the session (lib/study/hints.ts).
+		// A hint asked for with the Hint control is added by the session (lib/features/flashcards/face/hints.ts).
 		const suggested = suggestReverseGrade({ typed, accepted });
 		const meta: ReviewMeta = {};
 		if (suggested === 1) meta.mistakes = 1;

@@ -5,8 +5,8 @@
 	import type { Entry, Sentence } from '$lib/api/types';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import { choiceForKeyEvent } from '$lib/components/clozeKeys';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
-	import { normalizeAnswer, suggestClozeGrade, type ClozeMode, type ClozePrompt } from '$lib/study/cloze';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
+	import { normalizeAnswer, suggestClozeGrade, type ClozeMode, type ClozePrompt } from '$lib/exercises/cloze';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';

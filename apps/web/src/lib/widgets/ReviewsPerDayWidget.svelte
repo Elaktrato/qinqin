@@ -8,8 +8,8 @@
 	import { formatDay } from '$lib/i18n/format';
 	import { errorText } from '$lib/api/apiErrors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
-	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
+	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/studycore/data';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';

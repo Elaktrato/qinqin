@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import daysFixture from '../../../../../docs/contracts/goals/goal-days.json';
 import streakFixture from '../../../../../docs/contracts/goals/goal-streak.json';
 import { addDays } from '../time/studyDay';
-import type { Run } from '../study/vacation';
+import type { Run } from '$lib/studycore/vacation';
 import { NO_AMOUNTS, type DayAmounts } from './amounts';
 import { parseGoalsRow, type GoalsRow } from './goals';
 import { goalDay, goalDays, goalStreak, type UnitOf } from './progress';

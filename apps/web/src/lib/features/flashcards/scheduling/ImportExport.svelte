@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { formatWeights, parseWeightString } from '$lib/study/fsrs/params';
+	import { formatWeights, parseWeightString } from '$lib/studycore/fsrsParams';
 	import { Button, Field, Section } from '$lib/ui';
 
 	let {

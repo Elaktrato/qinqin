@@ -3,7 +3,7 @@
 // the rows it uses with readableRow. A row that does not decode is
 // unreadable: the consumer skips it (and reports it), never the whole page.
 // Typed study rows decode strictly as docs/contracts/study/rows.json.
-import { parseRow, STUDY_COLLECTIONS, type StudyCollection } from '../study/rows';
+import { parseRow, STUDY_COLLECTIONS, type StudyCollection } from '$lib/studycore/rows';
 
 const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;
 

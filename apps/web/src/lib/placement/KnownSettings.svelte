@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Settings → Study → "What you already know" (#74): declare a level range
 	// as known, take the placement test, and undo a declaration. A declaration
-	// is a set of the reader's `known:` marks with a batch id (lib/study/
+	// is a set of the reader's `known:` marks with a batch id (lib/studycore/
 	// knownMarks.ts); it creates no card and changes no review history.
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
@@ -9,9 +9,9 @@
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
 	import { useSession } from '$lib/context/context';
-	import { setKnownMarks } from '$lib/study/commands/keyed';
-	import { getStudyData } from '$lib/study/data';
-	import type { KnownBatch } from '$lib/study/knownMarks';
+	import { setKnownMarks } from '$lib/studycore/commands/keyed';
+	import { getStudyData } from '$lib/studycore/data';
+	import type { KnownBatch } from '$lib/studycore/knownMarks';
 	import { Button, Section, Select } from '$lib/ui';
 	import {
 		declarations,

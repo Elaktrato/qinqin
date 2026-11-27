@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../../../docs/contracts/decks/add-to-deck.json';
-import type { Deck, StudyCard } from '$lib/study/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { addPlanRows, planAddToDeck, type AddPlan } from './addToDeck';
-import { cardRow, identityOf, parseRow, studyKey } from '$lib/study/rows';
-import { type StudyWrite } from '$lib/study/plan';
+import { cardRow, identityOf, parseRow, studyKey } from '$lib/studycore/rows';
+import { type StudyWrite } from '$lib/studycore/plan';
 
 const keyOf = (w: StudyWrite) => studyKey(w.collection, identityOf(w.collection, w.row));
 

@@ -9,9 +9,9 @@ vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
-vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	onStudyChange: vi.fn(() => () => {})
 }));
 
@@ -19,8 +19,8 @@ import { goto } from '$app/navigation';
 import { fireEvent, within } from '@testing-library/svelte';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { givenTimelines } from '$lib/weekly/replay';
-import { onContextStale } from '$lib/study/currentContext';
-import { onStudyChange } from '$lib/study/data';
+import { onContextStale } from '$lib/studycore/currentContext';
+import { onStudyChange } from '$lib/studycore/data';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';

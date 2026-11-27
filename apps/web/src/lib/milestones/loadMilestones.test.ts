@@ -7,12 +7,12 @@ import { EventLog } from '$lib/events';
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
-vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/keyed')>()),
 	saveSeenMilestones: vi.fn()
 }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
@@ -21,10 +21,10 @@ import type { CharRow, Scheme } from '$lib/api/types';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { StudyEvent } from '$lib/events';
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { PartialPushError } from '$lib/sync/push';
-import { saveSeenMilestones } from '$lib/study/commands/keyed';
-import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
+import { saveSeenMilestones } from '$lib/studycore/commands/keyed';
+import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/studycore/types';
 import { givenTimelines, replayStats } from '$lib/weekly/replay';
 import { levelMilestoneId } from './catalogue';
 import { flushOnOnline, loadMilestones, markSeen } from './loadMilestones';

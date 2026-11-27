@@ -5,11 +5,11 @@
 	import type { StarterEntry } from '$lib/api/frequency';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { knownEntries } from '$lib/study/known';
+	import { knownEntries } from '$lib/studycore/known';
 	import { PartialPushError } from '$lib/sync/push';
-	import { loadRawStudyData } from '$lib/study/data';
-	import { pushStudy } from '$lib/study/commands/write';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { loadRawStudyData } from '$lib/studycore/data';
+	import { pushStudy } from '$lib/studycore/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';

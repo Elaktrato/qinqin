@@ -4,17 +4,17 @@
 // Pure. Rule and fixtures: docs/contracts/weekly/.
 
 import type { CharRow } from '../api/types';
-import { cellStates, masteryGlyphs } from '../study/charGroups';
-import { weightsKey } from '../study/fsrs/params';
-import { MASTERY_THRESHOLD, masteryFromSchedules } from '../study/mastery';
+import { cellStates, masteryGlyphs } from '$lib/studycore/charGroups';
+import { weightsKey } from '$lib/studycore/fsrsParams';
+import { MASTERY_THRESHOLD, masteryFromSchedules } from '$lib/studycore/mastery';
 import {
 	isValidReview,
 	scheduleAt,
 	scheduleTimeline,
 	type TimelinePoint
-} from '../study/scheduler';
-import type { StudyClock } from '../study/studyClock';
-import type { ReviewEvent, StudyCard } from '../study/types';
+} from '$lib/studycore/scheduler';
+import type { StudyClock } from '$lib/studycore/studyClock';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { classifySchedule } from '../stats/wordStates';
 
 export interface Timelines {

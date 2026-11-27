@@ -1,10 +1,10 @@
 // Which readings the reader shows, and which of them it conceals because
 // the learner already knows the word (docs/contracts/reader/). "Known" is
-// the shared predicate of study/known.ts: the learner's manual mark, or the
+// the shared predicate of studycore/known.ts: the learner's manual mark, or the
 // best vocab card of an entry has a memory score (cardScore) at or above
 // the reader's threshold.
 import type { SegmentMatch } from '$lib/api/types';
-import { isKnownEntry, type KnownIndex } from '$lib/study/known';
+import { isKnownEntry, type KnownIndex } from '$lib/studycore/known';
 import type { ReaderDisplay } from './displaySettings';
 import { alignFurigana, fold } from './furigana';
 import type { Run } from './paragraphText';

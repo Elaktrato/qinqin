@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loadStrokeData } from '$lib/study/strokeData';
+	import { loadStrokeData } from '$lib/writing/strokeData';
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/routing/pageTitle';
@@ -12,9 +12,9 @@
 	import { getEntry } from '$lib/api/entries';
 	import { segmentBatch } from '$lib/api/segment';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
-	import { withShownWritten } from '$lib/study/cardView';
+	import { withShownWritten } from '$lib/features/flashcards/cards/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
-	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
+	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/audio/cue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
 	import ClozeCard from '$lib/features/flashcards/cards/ClozeCard.svelte';
@@ -39,7 +39,7 @@
 		tierForCard,
 		type CardResult,
 		type FlowItem
-	} from '$lib/study/cardFlow';
+	} from '$lib/features/flashcards/session/cardFlow';
 	import {
 		backFrom,
 		pushStep,
@@ -47,8 +47,8 @@
 		regradeQueue,
 		replaceSessionReview,
 		type GradedStep
-	} from '$lib/study/regrade';
-	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
+	} from '$lib/features/flashcards/session/regrade';
+	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/features/flashcards/session/ineligible';
 	import {
 		acceptedClozeAnswers,
 		clozeCandidates,
@@ -57,29 +57,29 @@
 		resolveClozeShowing,
 		type ClozeMode,
 		type ClozePrompt
-	} from '$lib/study/cloze';
-	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
-import { contextForData } from '$lib/study/currentContext';
-import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
-import type { Run } from '$lib/study/vacation';
-	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	} from '$lib/exercises/cloze';
+	import { buriedLevelEntries, buriedNow } from '$lib/features/flashcards/session/siblings';
+import { contextForData } from '$lib/studycore/currentContext';
+import { IDENTITY_CLOCK, type StudyClock } from '$lib/studycore/studyClock';
+import type { Run } from '$lib/studycore/vacation';
+	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/studycore/exp';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
-	import { gradeItem } from '$lib/study/grade';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
-	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
-	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { gradeItem } from '$lib/features/flashcards/session/grade';
+	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+	import { buildLevelPlan, type LevelUnit } from '$lib/features/flashcards/session/levelQueue';
+	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/features/flashcards/session/requeue';
+	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/features/flashcards/session/session';
 	import { safeFrom } from '$lib/routing/here';
-	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
-	import { addCard } from '$lib/study/commands/cards';
-	import { loadStudyData, withStudy } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { companionNote, sessionStartError, showCompanionNote } from '$lib/features/flashcards/session/sessionStart';
+	import { addCard } from '$lib/features/flashcards/commands/cards';
+	import { loadStudyData, withStudy } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import { getFrequencyPacks } from '$lib/api/frequency';
-	import { loadRanks } from '$lib/study/frequencyRanks';
-	import { loadLevelKeys } from '$lib/study/levelKeys';
-	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/study/session';
-	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
-	import { mixFlowQueue } from '$lib/study/sessionMix';
+	import { loadRanks } from '$lib/features/flashcards/session/frequencyRanks';
+	import { loadLevelKeys } from '$lib/features/flashcards/session/levelKeys';
+	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/features/flashcards/session/session';
+	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/features/flashcards/session/sessionOrder';
+	import { mixFlowQueue } from '$lib/features/flashcards/session/sessionMix';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -87,10 +87,10 @@ import type { Run } from '$lib/study/vacation';
 		type ReviewMeta,
 		type StudyCard,
 		type StudyCardKind
-	} from '$lib/study/types';
-	import { shuffleTokens, type SaladTier } from '$lib/study/wordSalad';
-	import { usableChars } from '$lib/study/writing';
-	import { hasStrokeData } from '$lib/study/strokeIndex';
+	} from '$lib/studycore/types';
+	import { shuffleTokens, type SaladTier } from '$lib/exercises/wordSalad';
+	import { usableChars } from '$lib/exercises/writing';
+	import { hasStrokeData } from '$lib/writing/strokeIndex';
 	import { newUlid } from '$lib/events/ulid';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
@@ -101,7 +101,7 @@ import type { Run } from '$lib/study/vacation';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
 	import { pictureFor } from '$lib/aids/pictures';
 	import { readVisualAids } from '$lib/aids/visualAids';
-	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/study/hints';
+	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/features/flashcards/face/hints';
 	import {
 		readStarterSettings,
 		replayStarter,
@@ -113,10 +113,10 @@ import type { Run } from '$lib/study/vacation';
 		usuallyKanaOf,
 		type StarterFront,
 		type StarterReview
-	} from '$lib/study/starter';
+	} from '$lib/starter/starter';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
-	import { nextIntervals } from '$lib/study/scheduler';
-	import { longInterval } from '$lib/study/intervalText';
+	import { nextIntervals } from '$lib/studycore/scheduler';
+	import { longInterval } from '$lib/features/flashcards/session/intervalText';
 	import { formatNumber } from '$lib/i18n/format';
 	import Button from '$lib/ui/Button.svelte';
 	import Chip from '$lib/ui/Chip.svelte';

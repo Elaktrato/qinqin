@@ -17,12 +17,12 @@ vi.mock('$lib/api/schemes', () => ({
 }));
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
+vi.mock('$lib/features/flashcards/commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/decks')>()),
 	saveDeckCardTypesForDecks: vi.fn()
 }));
 const cardManager = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
@@ -36,10 +36,10 @@ vi.mock('$lib/features/flashcards/decks/CardManager.svelte', () => ({
 import { fetchCharacters } from '$lib/api/characters';
 import { getFrequencyPacks } from '$lib/api/frequency';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-import { loadStudyData } from '$lib/study/data';
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import { StudySetups } from '$lib/study/setupStore.svelte';
+import { saveDeckCardTypesForDecks } from '$lib/features/flashcards/commands/decks';
+import { loadStudyData } from '$lib/studycore/data';
+import { defaultSetup, type StudySetup } from '$lib/features/flashcards/setup/setup';
+import { StudySetups } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
 import * as build from '$lib/testing/study';

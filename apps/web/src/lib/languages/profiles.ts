@@ -6,7 +6,7 @@
 // kana, deinflection) stays language code. The Go table is
 // server/internal/lang/profile.go; both are pinned to the fixture.
 
-import type { StudyCardKind } from '$lib/study/types';
+import type { StudyCardKind } from '$lib/studycore/types';
 
 export type Script = 'han' | 'latin' | 'other';
 export type PracticeMode = 'decks' | 'levels' | 'characterMap';

@@ -1,8 +1,8 @@
-import { UTC_CONTEXT } from '$lib/study/studyContext';
+import { UTC_CONTEXT } from '$lib/studycore/studyContext';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { addDays } from '$lib/time/studyDay';
 import { summarizeDecks } from './deckSummaries';
 import * as build from '$lib/testing/study';

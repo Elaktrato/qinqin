@@ -3,13 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
 
 import { getSchemes } from '$lib/api/schemes';
-import { getStudyData } from '$lib/study/data';
+import { getStudyData } from '$lib/studycore/data';
 import PlacementOffer from './PlacementOffer.svelte';
 
 let ctx: TestContext;

@@ -8,9 +8,9 @@
 		wordStateSummary,
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
-	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
+	import { loadStudyHistory } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import { flashcardsHref } from '$lib/features/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -63,7 +63,7 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (study/data.ts loadStudyHistory).
+			// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(session.zone, data, workspace).clock);

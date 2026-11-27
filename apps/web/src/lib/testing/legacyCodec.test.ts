@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../docs/contracts/backup/study-rows.json';
-import { parseRow, bodyOf, type StudyCollection } from '../study/rows';
+import { parseRow, bodyOf, type StudyCollection } from '$lib/studycore/rows';
 import { fromLegacy, legacyFamily, toLegacy, typedPull } from './legacyCodec';
 
 interface Case {

@@ -4,9 +4,9 @@ import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
-vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
+vi.mock('$lib/studycore/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
 
-import { onContextStale } from '$lib/study/currentContext';
+import { onContextStale } from '$lib/studycore/currentContext';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
 import { weekOf } from '$lib/weekly/week';

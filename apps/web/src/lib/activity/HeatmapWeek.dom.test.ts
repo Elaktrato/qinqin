@@ -8,8 +8,8 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/svelt
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(),
 	loadStudyHistory: vi.fn()
 }));
@@ -22,7 +22,7 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
-import { loadStudyHistory, getStudyData } from '$lib/study/data';
+import { loadStudyHistory, getStudyData } from '$lib/studycore/data';
 import { addDays, studyDay } from '$lib/time/studyDay';
 
 // The session's StudyDays (record 0009): its methods, faked on the class.

@@ -13,12 +13,12 @@
 	import { t } from '$lib/i18n';
 	import { here } from '$lib/routing/here';
 	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
-	import { enabledKinds } from '$lib/study/deckSettings';
-	import { loadIneligible } from '$lib/study/ineligible';
-	import { newSessionSeed, saveConfig } from '$lib/study/session';
-	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from '$lib/study/setup';
-	import { planSetup } from '$lib/study/setupPlan';
-	import type { StudyCardKind } from '$lib/study/types';
+	import { enabledKinds } from '$lib/studycore/deckSettings';
+	import { loadIneligible } from '../session/ineligible';
+	import { newSessionSeed, saveConfig } from '../session/session';
+	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from './setup';
+	import { planSetup } from './setupPlan';
+	import type { StudyCardKind } from '$lib/studycore/types';
 	import { Button, Dialog, IconButton, Sheet } from '$lib/ui';
 	import UnreadableRowsNotice from '../UnreadableRowsNotice.svelte';
 	import { createSetupData } from './setupData.svelte';

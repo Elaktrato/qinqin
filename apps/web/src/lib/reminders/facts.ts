@@ -12,12 +12,12 @@ import type { Session } from '$lib/context/session.svelte';
 import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
 import { deckNumbers, scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
 import { sessionKinds } from '$lib/features/flashcards/decks/studyStart';
-import { loadStudyHistory } from '$lib/study/data';
-import { contextForData } from '$lib/study/currentContext';
-import { activeWeights } from '$lib/study/readModel';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import { vacationRuns, type Run } from '$lib/study/vacation';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { contextForData } from '$lib/studycore/currentContext';
+import { activeWeights } from '$lib/studycore/readModel';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import { vacationRuns, type Run } from '$lib/studycore/vacation';
 import { addDays } from '$lib/time/studyDay';
 
 export const MAX_BUCKETS = 400;

@@ -8,7 +8,7 @@
 	import { useSession } from '$lib/context/context';
 	import { addStarterSet, starterSetTarget } from '$lib/features/flashcards/decks/starterSet';
 	import { flashcardsHref } from '$lib/features/flashcards/route';
-	import { starterPatch } from '$lib/study/starter';
+	import { starterPatch } from './starter';
 	import { Button } from '$lib/ui';
 
 	let {

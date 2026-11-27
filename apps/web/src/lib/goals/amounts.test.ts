@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/goals/goal-amounts.json';
 import { studyDay, type ZoneChange } from '../time/studyDay';
 import type { ActivityCell } from '../api/stats';
-import type { ReviewEvent } from '../study/types';
+import type { ReviewEvent } from '$lib/studycore/types';
 import { MAX_REVIEW_MS, NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
 import * as build from '$lib/testing/study';
 

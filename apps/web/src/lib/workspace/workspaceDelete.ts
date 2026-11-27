@@ -5,9 +5,9 @@
 
 import type { Workspace } from '$lib/api/types';
 import { workspaceDisplay } from '$lib/languages';
-import { setupCacheWorkspace } from '$lib/study/setupStore.svelte';
-import { PENDING_REVIEWS_KEY } from '$lib/study/events';
-import { INELIGIBLE_KEY } from '$lib/study/ineligible';
+import { setupCacheWorkspace } from '$lib/features/flashcards/setup/setupStore.svelte';
+import { PENDING_REVIEWS_KEY } from '$lib/studycore/events';
+import { INELIGIBLE_KEY } from '$lib/features/flashcards/session/ineligible';
 
 /**
  * confirmLabel is what the user types to confirm deleting `ws`: the name
