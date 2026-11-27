@@ -9,6 +9,7 @@
 	import type { CardAudio } from '$lib/audio/cue';
 	import { type CardResult, type FlowItem } from '../session/cardFlow';
 	import {
+		markedSyllable,
 		suggestToneGrade,
 		toneFromGesture,
 		type GesturePoint,
@@ -28,6 +29,7 @@
 	import { usePrimary } from '../face/cardFace.svelte';
 	import { useSession } from '$lib/context/context';
 	import { useRomanisation } from '$lib/languages/useRomanisation';
+	import { readToneSettings } from '$lib/exercises/toneSettings';
 	const session = useSession();
 
 	interface Props {
@@ -73,6 +75,9 @@
 	const roman = useRomanisation();
 	const showPinyin = $derived(roman.shows('pinyin'));
 	const padText = (index: number, plain: string): string => labels?.[index] ?? (showPinyin ? plain : '');
+	// Tone sandhi (#300): by default the citation or the spoken tone is right; the workspace can grade spoken tones
+	// only, and show or never show the spoken tone beside the citation tone on the answer.
+	const toneSettings = $derived(readToneSettings(session.workspaces.current?.settings));
 
 	let chosen = $state<(Tone | null)[]>([]);
 	let active = $state(0);
@@ -111,7 +116,7 @@
 
 	function check(): void {
 		if (done || !complete) return;
-		const result = toneVerdict(chosen as Tone[], candidates);
+		const result = toneVerdict(chosen as Tone[], candidates, { chars: labels, gradeSpoken: toneSettings.gradeSpoken });
 		verdict = result;
 		announcement = result.correct ? t('flashcards.card.correct') : t('flashcards.tone.wrong', { count: result.wrong });
 		onDone({ suggested: suggestToneGrade(result.wrong), meta: { mistakes: result.wrong } });
@@ -228,6 +233,7 @@
 <FacePrompt>
 	<p class="fp-word written" lang={textLang}>{entry.written}</p>
 	<p class="fp-sub prompt">{t('flashcards.tone.prompt')}</p>
+	{#if toneSettings.gradeSpoken}<p class="fp-sub prompt">{t('flashcards.tone.gradesSpoken')}</p>{/if}
 	<HintShown {entry} />
 </FacePrompt>
 
@@ -292,15 +298,42 @@
 			</div>
 			{#if verdict !== null}
 				{@const answer = verdict.best?.[index] ?? syllable}
-				<p class="answer" class:right={mark === true} class:wrong={mark === false} data-answer-tone={answer.tone}>
+				{@const spokenTone = verdict.spoken?.[index] ?? answer.tone}
+				{@const sandhi = toneSettings.showSandhi && spokenTone !== answer.tone}
+				<p
+					class="answer"
+					class:right={mark === true}
+					class:wrong={mark === false}
+					data-answer-tone={answer.tone}
+					data-spoken-tone={spokenTone}
+				>
 					{#if showPinyin}
-						{answer.text}
+						<span class="citation">{answer.text}</span>
+						{#if sandhi}
+							<span class="spoken"
+								><span aria-hidden="true" class="arrow">→</span><span aria-hidden="true" class="shown"
+									>{markedSyllable(answer.plain, spokenTone)}</span
+								><span class="sr-only">{t('flashcards.tone.spokenAs', { tone: markedSyllable(answer.plain, spokenTone) })}</span></span
+							>
+						{/if}
 					{:else}
-						<span aria-hidden="true">{answer.tone}{TONES[answer.tone - 1].glyph}</span>
-						<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
-							{#if answer.tone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[answer.tone]} />{/if}
-						</svg>
-						<span class="sr-only">{nameOf(answer.tone)}</span>
+						<span class="citation">
+							<span aria-hidden="true">{answer.tone}{TONES[answer.tone - 1].glyph}</span>
+							<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
+								{#if answer.tone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[answer.tone]} />{/if}
+							</svg>
+							<span class="sr-only">{nameOf(answer.tone)}</span>
+						</span>
+						{#if sandhi}
+							<span class="spoken">
+								<span aria-hidden="true" class="arrow">→</span>
+								<span aria-hidden="true" class="shown">{spokenTone}{TONES[spokenTone - 1].glyph}</span>
+								<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
+									{#if spokenTone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[spokenTone]} />{/if}
+								</svg>
+								<span class="sr-only">{t('flashcards.tone.spokenAs', { tone: nameOf(spokenTone) })}</span>
+							</span>
+						{/if}
 					{/if}
 				</p>
 			{/if}
@@ -495,12 +528,29 @@
 
 	.answer {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
 		margin: 0;
 		font-size: var(--font-size-m);
 		font-weight: var(--weight-strong);
+	}
+
+	.citation,
+	.spoken {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	/* Tone sandhi: the spoken tone after the citation tone, lighter. */
+	.spoken {
+		font-weight: var(--weight-regular);
+	}
+
+	.arrow {
+		color: var(--readable-muted);
 	}
 
 	/* The answer as a tone with pinyin hidden (hidden romanisation): its number and contour, no letters. */

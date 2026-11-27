@@ -69,6 +69,12 @@
    "shape": "object {grading: built-in key | \"pack:<packId>\", includeOutside: boolean, levels: {packId: [level ord]}}",
    "default": "the language's default grading, outside off, every level; see settings/mastery-map.json",
    "owner": "apps/web/src/lib/stats/mapGrading.ts"
+  },
+  {
+   "key": "tones",
+   "shape": "object: {showSandhi: boolean, gradeSpoken: boolean}",
+   "default": "showSandhi true, gradeSpoken false, member by member; see settings/tones.json",
+   "owner": "apps/web/src/lib/exercises/toneSettings.ts"
   }
  ],
  "parse": [

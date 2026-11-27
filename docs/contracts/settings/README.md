@@ -33,6 +33,9 @@ Fixtures:
   language and its installed packs give a stored setting), `studySet` (the levels of a pack the map shows) and
   `patch` (web: `lib/stats/mapGrading.test.ts`; Go: `internal/levels/mastery_map_test.go`, the default packs against
   the bundled level packs).
+- `tones.json` — the workspace-settings key `tones` (#300, below): `parse`, `languages` (where Settings shows the
+  switches: the profiles with tones) and `patch` (web: `lib/exercises/toneSettings.test.ts`; Go:
+  `internal/lang/tone_settings_test.go`, the languages against the profiles).
 
 ## Workspace settings
 
@@ -52,6 +55,7 @@ collection). Keys in use:
 | `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
 | `interfaceLanguage` | string: a language tag (`i18n/language-tags.json`, not empty) | absent: the account's interface language (`""`, `null`, a malformed tag or any other value reads the same); see `interface-language.json` | `i18n/workspaceLanguage.ts` | Settings > Workspaces > Interface language (`null` clears it) |
 | `masteryMap` | object `{grading, includeOutside, levels}` | each member alone: the language's default grading, `includeOutside` false, every level; see `mastery-map.json` | `stats/mapGrading.ts` | Stats → Characters (a member at a time, by merge patch) |
+| `tones` | object `{showSandhi: boolean, gradeSpoken: boolean}` | `showSandhi` true, `gradeSpoken` false, member by member (anything but a boolean is the default); see `tones.json` | `exercises/toneSettings.ts` | Settings > Study > Tones (a switch at a time, by merge patch; Chinese workspaces) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -140,6 +144,15 @@ The character map (Stats → Characters) goes by **one grading** per workspace:
 - It is the map's only: level sessions, the level check, courses and the Home widget "Characters" ignore it.
 Writes are merge patches of one member (`patch`); "every level" deletes the pack's set (`null`).
 Ruling: Android reads `masteryMap` with the same rule and fixture — cost: none.
+## Tone sandhi (`tones`, #300)
+Two switches per workspace for tone exercises (the Tones card, the tone-pair drill #180), steering the rules of
+`tones/` (citation and spoken tones):
+- **`showSandhi`** ("Show tone sandhi", default `true`): an answer shows a sandhi syllable's spoken tone beside its
+  citation tone (`bù → bú`). `false`: sandhi is never shown, only citation tones.
+- **`gradeSpoken`** ("Grade spoken tones", default `false`): grade the spoken tones only. `false`: a syllable is
+  right with its citation tone or its spoken tone.
+Each member is read alone; anything but a boolean is its default. Settings shows them for a language whose profile
+has tones. Clients that do not know the key grade citation tones only, as before.
 
 ## User-global keyed rows
 

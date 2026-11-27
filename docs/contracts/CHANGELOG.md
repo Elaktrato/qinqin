@@ -5,6 +5,21 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #300 — tone sandhi: spoken tones on tone cards (contract 21)
+
+- **New contract `tones/`** (shared with the tone-pair drill #180): citation tones (the dictionary's) and spoken
+  tones (tone sandhi: 不 before a 4th tone is 2; 一 is 2 before a 4th tone and 4 before tones 1–3, and stays 1 alone,
+  at the end, before a neutral tone, after 第/初 and next to a numeral; a 3rd tone before a 3rd tone is 2, right to
+  left, by word boundaries). New fixture `tones/sandhi.json` (rule `tones/sandhi`: the spoken tones of each case and
+  the tone card's verdict), decoded by web and Go.
+- **Grading of a tone answer:** each syllable is right with its citation **or** its spoken tone (before: citation
+  only); with the setting `tones.gradeSpoken` the spoken tone only. The verdict also reports the reading's spoken
+  tones.
+- **New workspace-settings key** `tones` (`settings/README.md`): `{"showSandhi": boolean, "gradeSpoken": boolean}`,
+  defaults `true` and `false`, read member by member, written one member at a time by merge patch. New fixture
+  `settings/tones.json` (rule `settings/tones`). `showSandhi: false` never shows a spoken tone.
+- **Clients:** no route or stored data changes. A client that does not know the key grades citation tones only.
+
 ## #163 — the mastery map's grading (contract 20)
 
 - **New workspace-settings key** `masteryMap` (`settings/README.md`): `{grading, includeOutside, levels}`: one

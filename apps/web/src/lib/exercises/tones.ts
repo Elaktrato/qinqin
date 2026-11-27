@@ -1,5 +1,6 @@
 import { profileOf } from '$lib/languages/profiles';
 import type { ReviewGrade } from '$lib/studycore/types';
+import { spokenTones } from './toneSandhi';
 import { isHan } from './writing';
 
 /** Mandarin tone; 5 is the neutral tone. */
@@ -60,6 +61,11 @@ function markIndex(plain: string): number {
 	if (ou >= 0) return ou;
 	for (let i = plain.length - 1; i >= 0; i--) if (vowels.includes(plain[i])) return i;
 	return plain.length - 1;
+}
+
+/** markedSyllable: `plain` with the mark of `tone` (`bu`, 2 → `bú`); the neutral tone has none. */
+export function markedSyllable(plain: string, tone: Tone): string {
+	return tone === 5 ? plain : withMark(plain, tone);
 }
 
 function withMark(plain: string, tone: Tone): string {
@@ -198,37 +204,53 @@ export interface ToneVerdict {
 	marks: boolean[];
 	/** The reading the answer was checked against, null when none fits. */
 	best: Syllable[] | null;
+	/** That reading's spoken tones (tone sandhi, #300), null when none fits. */
+	spoken: Tone[] | null;
+}
+
+export interface VerdictOptions {
+	/** One Han character per syllable (`tonePadLabels`), for the 不 and 一 rules; null or absent: none. */
+	chars?: readonly string[] | null;
+	/** Word boundaries (syllable counts per word); absent: the reading is one word. */
+	words?: readonly number[];
+	/** Grade the spoken tones only (the workspace's "Grade spoken tones"); by default citation or spoken. */
+	gradeSpoken?: boolean;
 }
 
 /**
  * toneVerdict checks chosen tones against every reading with the same
  * syllable count (cleanReadings output) and keeps the closest one, so a
  * polyphone answer for any of its readings is right. Ties keep the first.
+ * A syllable is right with its citation tone or its spoken tone (tone sandhi,
+ * docs/contracts/tones/), or with `gradeSpoken` its spoken tone only.
  */
 export function toneVerdict(
 	chosen: readonly Tone[],
-	candidates: readonly (readonly Syllable[])[]
+	candidates: readonly (readonly Syllable[])[],
+	options: VerdictOptions = {}
 ): ToneVerdict {
-	let best: readonly Syllable[] | null = null;
+	let best: { reading: readonly Syllable[]; spoken: Tone[]; marks: boolean[] } | null = null;
 	let bestWrong = chosen.length;
 	for (const candidate of candidates) {
 		if (candidate.length !== chosen.length) continue;
-		const wrong = candidate.reduce((sum, syllable, i) => sum + (syllable.tone === chosen[i] ? 0 : 1), 0);
+		const chars = options.chars?.length === candidate.length ? options.chars : null;
+		const spoken = spokenTones(
+			candidate.map((syllable, i) => ({ char: chars?.[i] ?? null, plain: syllable.plain, tone: syllable.tone })),
+			options.words
+		);
+		const marks = candidate.map((syllable, i) =>
+			options.gradeSpoken ? spoken[i] === chosen[i] : syllable.tone === chosen[i] || spoken[i] === chosen[i]
+		);
+		const wrong = marks.filter((right) => !right).length;
 		if (best === null || wrong < bestWrong) {
-			best = candidate;
+			best = { reading: candidate, spoken, marks };
 			bestWrong = wrong;
 		}
 	}
 	if (best === null) {
-		return { correct: false, wrong: chosen.length, marks: chosen.map(() => false), best: null };
+		return { correct: false, wrong: chosen.length, marks: chosen.map(() => false), best: null, spoken: null };
 	}
-	const reading = best;
-	return {
-		correct: bestWrong === 0,
-		wrong: bestWrong,
-		marks: chosen.map((tone, i) => reading[i].tone === tone),
-		best: [...reading]
-	};
+	return { correct: bestWrong === 0, wrong: bestWrong, marks: best.marks, best: [...best.reading], spoken: best.spoken };
 }
 
 /**
