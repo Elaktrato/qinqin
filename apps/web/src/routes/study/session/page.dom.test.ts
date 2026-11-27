@@ -506,6 +506,7 @@ describe('the open page (#101)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await fireEvent.click(await screen.findByRole('button', { name: /^Again, next review/ }));
 		await waitFor(() => expect(screen.getByText(/Again, look 2 of/)).toBeTruthy());
+		expect(screen.getByText(/Again, look 2 of/).getAttribute('data-tag')).toBe('neutral'); // an outline tag (#286)
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await screen.findByRole('group', { name: 'Grade this card' });
 		expect(shown()).toEqual(Array(4).fill('practice'));
@@ -565,18 +566,18 @@ describe('the open page (#101)', () => {
 		await waitFor(() => expect(recordReview).toHaveBeenCalledWith(1, 'c-vocab-11', 3, 'vocab', expect.anything()));
 	});
 
-	it('the kind label reads Recognise and the deck · level shows the level', async () => {
+	it('the kind label reads Recognise and the level shows as a tag', async () => {
 		// A level item has no deck yet: the level alone.
 		configure(['vocab']);
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		const head = document.querySelector('.face-head')!;
 		expect(head.querySelector('.kind')?.textContent).toBe('Recognise');
-		expect(head.querySelector('.deck')?.textContent).toBe('JLPT kanji N5');
+		expect([...head.querySelectorAll('[data-tag]')].map((el) => el.textContent)).toEqual(['JLPT kanji N5']);
 	});
 });
 
-describe('deck · level in a deck session (#101)', () => {
+describe('deck and level tags in a deck session (#101, #286)', () => {
 	it('names the card\'s first deck and its level badge', async () => {
 		sessionStorage.setItem(
 			SESSION_CONFIG_KEY,
@@ -594,7 +595,12 @@ describe('deck · level in a deck session (#101)', () => {
 		} as never);
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
-		await waitFor(() => expect(document.querySelector('.face-head .deck')?.textContent).toBe('Kanji · JLPT kanji N5'));
+		await waitFor(() =>
+			expect([...document.querySelectorAll('.face-head [data-tag]')].map((el) => [el.textContent, el.getAttribute('data-tag')])).toEqual([
+				['Kanji', 'neutral'],
+				['JLPT kanji N5', 'accent']
+			])
+		);
 	});
 });
 
@@ -821,7 +827,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 		expect(await screen.findByText('日')).toBeTruthy();
 		// The answer side as it was left, the previous grade marked.
 		expect(screen.getByLabelText('Readings')).toBeTruthy();
-		expect(screen.getByText('Graded Again')).toBeTruthy();
+		expect(screen.getByText('Graded Again').getAttribute('data-tag')).toBe('neutral');
 		expect(gradeButton('Again').getAttribute('aria-pressed')).toBe('true');
 		expect(gradeButton('Good').getAttribute('aria-pressed')).toBe('false');
 

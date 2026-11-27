@@ -14,7 +14,8 @@
 		chips,
 		status,
 		kindLabel = 'Recognise',
-		deckLevel = null,
+		deck = null,
+		level = null,
 		done = false,
 		onend,
 		hintPlan = EMPTY_PLAN,
@@ -26,7 +27,8 @@
 		chips?: Snippet;
 		status?: Snippet;
 		kindLabel?: string;
-		deckLevel?: string | null;
+		deck?: string | null;
+		level?: string | null;
 		done?: boolean;
 		onend?: () => void;
 		/** The hints of the card (#215); none by default. */
@@ -51,7 +53,8 @@
 
 <StudyFace
 	{kindLabel}
-	{deckLevel}
+	{deck}
+	{level}
 	cardLabel="{kindLabel} card"
 	headingLabel="{kindLabel} card, 1 of 3"
 	progress={{ position: 1, total: 3 }}
