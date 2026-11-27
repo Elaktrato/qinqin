@@ -130,8 +130,9 @@ the record before changing the structure it covers; an issue that changes a rule
 ## When you add a feature or a language
 
 There are no plugins ([record 0006](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0006-core-features-instead-of-code-plugins.md)).
-A feature is core code with a switch: its id in `server/internal/features/features.go`, the check constraint of
-`feature_switches` (a migration), `docs/contracts/features/switches.json` and `apps/web/src/lib/features/index.ts`;
+A feature is core code with a switch: its id in `server/internal/features/features.go` (the only list the server
+checks; `feature_switches` has no list of ids since migration 055), `docs/contracts/features/switches.json` and
+`apps/web/src/lib/features/index.ts`;
 its data gets typed storage in its own package with a contract. Content is a data pack
 ([Data pack format](Data-pack-format)).
 
