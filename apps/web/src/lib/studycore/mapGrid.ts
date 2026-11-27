@@ -120,40 +120,6 @@ function primarySubtag(code: string): string {
 	return code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
 }
 
-function groupByKey(language: string): string {
-	return `qinqin.map.groupBy.${primarySubtag(language)}`;
-}
-
-/**
- * readGroupBy returns the grouping remembered for a language when it is
- * still offered, else the first option (null when there is none).
- * Storage that is missing or throws counts as empty.
- */
-export function readGroupBy(
-	storage: Storage | null,
-	language: string,
-	options: readonly GroupOption[]
-): GroupKey | null {
-	if (options.length === 0) return null;
-	let stored: string | null = null;
-	try {
-		stored = storage?.getItem(groupByKey(language)) ?? null;
-	} catch {
-		stored = null;
-	}
-	const match = options.find((option) => option.key === stored);
-	return (match ?? options[0]).key;
-}
-
-/** writeGroupBy remembers the grouping for a language; failures are ignored. */
-export function writeGroupBy(storage: Storage | null, language: string, key: GroupKey): void {
-	try {
-		storage?.setItem(groupByKey(language), key);
-	} catch {
-		// Private mode or denied storage: the choice lasts for this visit.
-	}
-}
-
 /** jumpGlyph is the character a "Jump to" input asks for: its first code point. */
 export function jumpGlyph(input: string): string | null {
 	const first = Array.from(input.trim())[0];
