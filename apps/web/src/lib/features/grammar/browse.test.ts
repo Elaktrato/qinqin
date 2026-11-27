@@ -19,7 +19,7 @@ const pack: PackInfo = {
 		{ id: 'b', level: 'l2', title: 'B', summary: '', examples: 4 }
 	]
 };
-const done: Progress = { completedAt: '2026-01-01T00:00:00Z', best: 3, total: 8 };
+const done: Progress = { completedAt: '2026-01-01T00:00:00Z', best: 3, total: 8, runs: 1 };
 
 describe('browseSections', () => {
 	// Ruling (#198): every installed pack shows; the pack's old plugin state is not read.

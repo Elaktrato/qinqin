@@ -1,6 +1,8 @@
 // TypeScript mirrors of the grammar API (server/internal/grammar). The
 // server always sends `pattern`, `distractors` and `schemeLevels` as arrays.
 
+import type { GrammarProgress } from '$lib/studycore/grammarRuns';
+
 export interface SchemeLevel {
 	scheme: string;
 	level: string;
@@ -61,9 +63,5 @@ export interface LessonView {
 	next: string;
 }
 
-/** A learner's result for one lesson. */
-export interface Progress {
-	completedAt: string;
-	best: number;
-	total: number;
-}
+/** A learner's result for one lesson, replayed from its runs (lib/studycore/grammarRuns.ts). */
+export type Progress = GrammarProgress;

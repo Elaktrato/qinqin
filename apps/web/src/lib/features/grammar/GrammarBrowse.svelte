@@ -30,7 +30,7 @@
 		void Promise.all([
 			listGrammar(ws.language),
 			getSchemes().catch(() => [] as Scheme[]),
-			loadProgress(ws.id).catch(() => new Map<string, Progress>())
+			loadProgress(session, ws.id).catch(() => new Map<string, Progress>())
 		]).then(
 			([p, s, pr]) => {
 				if (mine !== seq) return;
