@@ -74,6 +74,15 @@ export const coreCredits: SourceCredit[] = [
 		attribution: 'qinqin contributors, CC BY 4.0',
 		licenseTexts: [licenceText('CC BY 4.0', '/QINQIN-LICENSE.TXT')]
 	}, { notice: 'sources.core.qinqinThemes' }),
+	// The topic labels of words (#220): built into the server (server/internal/topics/labels), written for the
+	// project; the same licence text as the house themes.
+	credit({
+		name: 'qinqin topic labels',
+		url: 'https://github.com/Elaktrato/qinqin',
+		license: 'CC BY 4.0',
+		attribution: 'qinqin contributors, CC BY 4.0',
+		licenseTexts: [licenceText('CC BY 4.0', '/QINQIN-LICENSE.TXT')]
+	}, { notice: 'sources.core.topicLabels' }),
 	credit({
 		name: 'uqr',
 		url: 'https://github.com/unjs/uqr',
