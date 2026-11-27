@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allWidgets } from '$lib/widgets/registry';
 import type { FeatureSwitch } from './switches.svelte';
-import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID, coreFeatures, featureById, featureEnabled, findFeature, widgetFeatures, widgetOffFeature } from './index';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID, coreFeatures, featureById, featureEnabled, featureKnownOff, findFeature, widgetFeatures, widgetOffFeature } from './index';
 
 function state(id: string, enabled = true): FeatureSwitch {
 	return { id, enabled };
@@ -26,6 +26,13 @@ describe('core features', () => {
 		expect(featureEnabled(READER_ID, [])).toBe(true);
 		expect(featureEnabled(READER_ID, [state(READER_ID, false)])).toBe(false);
 		expect(featureEnabled(READER_ID, [state(FLASHCARDS_ID, false)])).toBe(true);
+	});
+
+	it('featureKnownOff: only loaded switches that say off; loading, failed or no row is not known off (links stay)', () => {
+		expect(featureKnownOff(STATS_ID, { list: [state(STATS_ID, false)], status: 'ready' })).toBe(true);
+		expect(featureKnownOff(STATS_ID, { list: [state(STATS_ID)], status: 'ready' })).toBe(false);
+		expect(featureKnownOff(STATS_ID, { list: [], status: 'ready' })).toBe(false);
+		for (const status of ['idle', 'loading', 'error'] as const) expect(featureKnownOff(STATS_ID, { list: [], status })).toBe(false);
 	});
 
 	it('findFeature resolves an enabled feature by its slug', () => {

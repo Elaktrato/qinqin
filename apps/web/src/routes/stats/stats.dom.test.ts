@@ -15,8 +15,9 @@ beforeEach(() => {
 
 const view = createRawSnippet(() => ({ render: () => '<p>the view</p>' }));
 
-function mount(path: string, language: string | null) {
+function mount(path: string, language: string | null, stats = true) {
 	setUrl(path);
+	ctx.session.features.set({ list: [{ id: 'stats', enabled: stats }], status: 'ready' });
 	ctx.session.workspaces.set({
 		list: [],
 		current: language === null ? null : ({ id: 1, language, name: 'w1' } as never)
@@ -28,6 +29,24 @@ beforeEach(() => localStorage.clear());
 afterEach(() => {
 	cleanup();
 	ctx.session.workspaces.set({ list: [], current: null });
+});
+
+describe('Stats switched off (#295)', () => {
+	it('shows the switched-off notice with the link to Settings -> Features, and no tabs or view', () => {
+		mount('/stats/week', 'zh', false);
+		expect(screen.getByRole('heading', { level: 1, name: 'Stats are switched off' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Settings → Features' }).getAttribute('href')).toBe('/settings?tab=features');
+		expect(screen.queryByRole('navigation', { name: 'Stats views' })).toBeNull();
+		expect(screen.queryByText('the view')).toBeNull();
+	});
+
+	it('waits for the switches before showing a view', () => {
+		setUrl('/stats');
+		ctx.session.features.set({ list: [], status: 'loading' });
+		render(Layout, { props: { children: view }, context: ctx.context });
+		expect(screen.getByRole('status').textContent).toBe('Loading…');
+		expect(screen.queryByText('the view')).toBeNull();
+	});
 });
 
 describe('Stats layout tabs', () => {

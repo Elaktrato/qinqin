@@ -8,7 +8,7 @@ import { primaryActions } from '$lib/ui/testing/primary';
 import FeaturePage from './FeaturePage.svelte';
 import FeatureStub from './FeatureStub.test.svelte';
 import { FLASHCARDS_ID, READER_ID } from './index';
-import source from './FeaturePage.svelte?raw';
+import source from './FeatureGate.svelte?raw';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

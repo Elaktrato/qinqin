@@ -91,6 +91,14 @@ describe('WeeklySummaryWidget', () => {
 		expect(loadWeekCharacters).not.toHaveBeenCalled();
 	});
 
+	it('has no link to the Week tab while Stats is switched off; the week still shows (#295)', async () => {
+		ctx.session.features.set({ list: [{ id: 'stats', enabled: false }], status: 'ready' });
+		render(WeeklySummaryWidget, { context: ctx.context });
+		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		expect(screen.queryByRole('link', { name: 'See the week' })).toBeNull();
+		ctx.session.features.set({ list: [], status: 'idle' });
+	});
+
 	it('asks for a workspace without one', async () => {
 		select(null);
 		render(WeeklySummaryWidget, { context: ctx.context });

@@ -22,7 +22,7 @@ import ScriptsPage from '$lib/features/scripts/ScriptsPage.svelte';
 import { scriptsDef } from '$lib/features/scripts/manifest';
 import { statsDef } from '$lib/stats/manifest';
 import { writingSystemsOf } from '$lib/languages/profiles';
-import type { FeatureSwitch } from './switches.svelte';
+import type { FeatureSwitch, FeatureSwitchesValue } from './switches.svelte';
 
 export const FLASHCARDS_ID = 'flashcards';
 export const READER_ID = 'reader';
@@ -129,6 +129,14 @@ export function widgetFeatures(widget: Pick<WidgetDef, 'owner' | 'requires'>): s
  */
 export function widgetOffFeature(widget: Pick<WidgetDef, 'owner' | 'requires'>, states: readonly FeatureSwitch[]): string | null {
 	return widgetFeatures(widget).find((id) => stateOf(id, states)?.enabled !== true) ?? null;
+}
+
+/**
+ * featureKnownOff: the switches are loaded and say the feature is off. A link into a feature's pages from
+ * elsewhere hides then; while loading or after a failed load it stays, and the page says what it knows (#295).
+ */
+export function featureKnownOff(id: string, value: FeatureSwitchesValue): boolean {
+	return value.status === 'ready' && !featureEnabled(id, value.list);
 }
 
 /**
