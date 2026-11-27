@@ -89,7 +89,10 @@ export class Session {
 			timers: deps.timers,
 			local,
 			studyDay: () => this.zone.day(),
-			whenStudyDaySettled: () => this.zone.settled()
+			whenStudyDaySettled: () => this.zone.settled(),
+			onRefresh: (workspaceId, ok) => {
+				if (this.#alive) this.study.refresh.record('log', workspaceId, ok);
+			}
 		});
 		this.onDispose(() => this.events.dispose());
 		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive, dropReviews: (id) => void this.outbox.dropWorkspace(id) });

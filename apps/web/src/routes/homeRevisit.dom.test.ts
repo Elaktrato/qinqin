@@ -57,30 +57,33 @@ afterEach(() => {
 const loadingLines = (): number =>
 	[...document.querySelectorAll('[data-widget] *')].filter((el) => el.children.length === 0 && /^\s*Loading\b/.test(el.textContent ?? '')).length;
 
+/** Every default widget shows its content (no loading line; the flashcards line and the week are there). */
+const contentShown = (): boolean =>
+	document.querySelectorAll('[data-widget]').length === 4 &&
+	loadingLines() === 0 &&
+	(document.body.textContent ?? '').includes('reviews ·') &&
+	(document.body.textContent ?? '').includes('Days active');
+
 /** visit renders Home and waits until every default widget shows content; returns what it cost. */
-async function visit(): Promise<{ requests: string[]; sawLoading: number; ms: number }> {
+async function visit(): Promise<{ requests: string[]; sawLoading: number; beforeContent: number }> {
 	server.resetCounts();
 	let sawLoading = 0;
-	const observer = new MutationObserver(() => {
+	// How many requests were sent before every widget showed its content (a count, not a clock: record 0005).
+	let beforeContent = -1;
+	const look = (): void => {
 		sawLoading = Math.max(sawLoading, loadingLines());
-	});
+		if (beforeContent < 0 && contentShown()) beforeContent = server.log.length;
+	};
+	const observer = new MutationObserver(look);
 	observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-	const started = performance.now();
 	const { unmount } = render(Page, { context: ctx.context });
-	sawLoading = Math.max(sawLoading, loadingLines());
-	await waitFor(
-		() => {
-			expect(document.querySelectorAll('[data-widget]').length).toBe(4);
-			expect(loadingLines()).toBe(0);
-			expect(document.body.textContent).toContain('reviews ·');
-		},
-		{ timeout: 10_000, interval: 5 }
-	);
-	const ms = performance.now() - started;
+	look();
+	await waitFor(() => expect(contentShown()).toBe(true), { timeout: 10_000, interval: 5 });
+	look();
 	observer.disconnect();
 	const requests = [...server.log];
 	unmount();
-	return { requests, sawLoading, ms };
+	return { requests, sawLoading, beforeContent };
 }
 
 const kinds = (requests: readonly string[]): Record<string, number> => {
@@ -92,8 +95,10 @@ const kinds = (requests: readonly string[]): Record<string, number> => {
 	return out;
 };
 
-function report(name: string, v: { requests: string[]; sawLoading: number; ms: number }): void {
-	process.stdout.write(`\n${name}: ${v.requests.length} requests, ${Math.round(v.ms)} ms, ${v.sawLoading} loading lines seen ${JSON.stringify(kinds(v.requests))}`);
+function report(name: string, v: { requests: string[]; sawLoading: number; beforeContent: number }): void {
+	if (process.env.QINQIN_MEASURE === '1') {
+		process.stdout.write(`\n${name}: ${v.requests.length} requests (${v.beforeContent} before the content), ${v.sawLoading} loading lines seen ${JSON.stringify(kinds(v.requests))}`);
+	}
 }
 
 describe('Home revisited (#290)', () => {
