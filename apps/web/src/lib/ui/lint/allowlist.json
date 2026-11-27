@@ -73,9 +73,9 @@
 	{
 		"rule": "opacity",
 		"file": "lib/features/flashcards/cards/WritingPad.svelte",
-		"text": ".outline.scaffold",
+		"text": ".trace, .trace-start",
 		"count": 1,
-		"reason": "The writing pad's scaffold: a faint drawing of the character to trace over (a graphic, not text)."
+		"reason": "The writing pad's traced stroke after three misses (#287): a faint drawing of that one stroke and its start to trace over (a graphic, not text)."
 	},
 	{
 		"rule": "opacity",
