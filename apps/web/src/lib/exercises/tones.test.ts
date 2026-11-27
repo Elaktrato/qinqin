@@ -3,6 +3,7 @@ import {
 	checkTones,
 	cleanReadings,
 	eligibleForTone,
+	markedSyllable,
 	parsePinyin,
 	pinyinReadings,
 	tonePadLabels,
@@ -240,7 +241,8 @@ describe('toneVerdict', () => {
 			correct: true,
 			wrong: 0,
 			marks: [true, true],
-			best: candidates[0]
+			best: candidates[0],
+			spoken: [2, 2]
 		});
 		const verdict = toneVerdict([2, 4], candidates);
 		expect(verdict.wrong).toBe(1);
@@ -258,7 +260,51 @@ describe('toneVerdict', () => {
 
 	it('marks everything wrong when no reading has the same length', () => {
 		const verdict = toneVerdict([1, 1], [parsePinyin('hǎo')]);
-		expect(verdict).toEqual({ correct: false, wrong: 2, marks: [false, false], best: null });
+		expect(verdict).toEqual({ correct: false, wrong: 2, marks: [false, false], best: null, spoken: null });
+	});
+});
+
+describe('toneVerdict and tone sandhi (#300)', () => {
+	const buKeQi = [parsePinyin('bù kè qi')];
+	const chars = ['不', '客', '气'];
+
+	it('不客气 accepts 4-4-5 and 2-4-5 by default, only 2-4-5 when spoken tones are graded', () => {
+		expect(toneVerdict([4, 4, 5], buKeQi, { chars }).correct).toBe(true);
+		expect(toneVerdict([2, 4, 5], buKeQi, { chars }).correct).toBe(true);
+		expect(toneVerdict([2, 4, 5], buKeQi, { chars, gradeSpoken: true }).correct).toBe(true);
+		const citation = toneVerdict([4, 4, 5], buKeQi, { chars, gradeSpoken: true });
+		expect(citation.correct).toBe(false);
+		expect(citation.marks).toEqual([false, true, true]);
+	});
+
+	it('the answer it reports is the citation reading with its spoken tones (the "1-1-5" report)', () => {
+		const verdict = toneVerdict([1, 1, 5], buKeQi, { chars });
+		expect(verdict.best?.map((s) => [s.text, s.tone])).toEqual([
+			['bù', 4],
+			['kè', 4],
+			['qi', 5]
+		]);
+		expect(verdict.spoken).toEqual([2, 4, 5]);
+		expect(verdict.marks).toEqual([false, false, true]);
+	});
+
+	it('without characters 不 is not recognised, 3-3 still is', () => {
+		expect(toneVerdict([2, 4, 5], buKeQi).correct).toBe(false);
+		expect(toneVerdict([2, 3], [parsePinyin('nǐ hǎo')]).correct).toBe(true);
+	});
+
+	it('characters of another length are ignored', () => {
+		expect(toneVerdict([2, 4, 5], buKeQi, { chars: ['不', '客'] }).correct).toBe(false);
+	});
+});
+
+describe('markedSyllable', () => {
+	it('puts the tone mark on the right vowel', () => {
+		expect(markedSyllable('bu', 2)).toBe('bú');
+		expect(markedSyllable('yi', 4)).toBe('yì');
+		expect(markedSyllable('hao', 2)).toBe('háo');
+		expect(markedSyllable('qi', 5)).toBe('qi');
+		expect(markedSyllable('lü', 4)).toBe('lǜ');
 	});
 });
 
