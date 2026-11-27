@@ -9,6 +9,7 @@
 	import { fetchStrokeData } from '$lib/writing/strokeData';
 	import type { CharOutcome } from '$lib/exercises/writing';
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
+	import { fitPad } from '$lib/writing/padSize';
 	import WritingPad from '$lib/features/flashcards/cards/WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';
 
@@ -31,8 +32,11 @@
 		onskip: () => void;
 	} = $props();
 
-	// 12.5rem at the default font size, as the flashcards' writing pad.
-	const SIZE = 200;
+	// The pad's size follows the screen as the flashcards' writing pad does (#285, lib/writing/padSize.ts): the
+	// Hint / Show row, or the end of the pad once it is answered, stays on screen.
+	let below = $state<HTMLElement>();
+	let padBox = $state<HTMLElement>();
+	const padFit = { end: () => below ?? padBox };
 
 	const session = useSession();
 	let phase = $state<'loading' | 'ready' | 'missing' | 'failed'>('loading');
@@ -90,11 +94,10 @@
 			<Button variant="plain" onclick={onskip}>{t('scripts.write.skip')}</Button>
 		</div>
 	{:else if strokes !== null}
-		<div class="pad" style:max-width={`${SIZE / 16}rem`}>
+		<div class="pad" use:fitPad={padFit} bind:this={padBox}>
 			{#key strokes}
 				<WritingPad
 					{strokes}
-					size={SIZE}
 					onComplete={complete}
 					onChange={(progress) => (mistakes = progress.mistakes)}
 					{revealSignal}
@@ -104,7 +107,7 @@
 			{/key}
 		</div>
 		{#if !done && !finished}
-			<div class="actions">
+			<div class="actions" bind:this={below}>
 				<Button variant="secondary" onclick={() => (hintSignal += 1)}>{t('scripts.write.hint')}</Button>
 				<Button variant="plain" onclick={() => (revealSignal += 1)}>{t('scripts.write.show')}</Button>
 				<span class="count" role="status" aria-live="polite">{mistakes > 0 ? t('scripts.write.wrongStroke', { count: mistakes }) : ''}</span>
@@ -125,7 +128,9 @@
 	}
 
 	.pad {
-		width: 100%;
+		/* Until fitPad has measured: the flashcards' former size. */
+		width: 12.5rem;
+		max-width: 100%;
 	}
 
 	.actions {

@@ -9,8 +9,6 @@
 
 	interface Props {
 		strokes: CharStrokes;
-		/** Largest side in CSS px; the pad shrinks to fit narrower containers. */
-		size: number;
 		onComplete: (outcome: CharOutcome, hints: number) => void;
 		/** Incrementing triggers a reveal of the whole character. */
 		revealSignal: number;
@@ -22,7 +20,7 @@
 		onChange?: (progress: { mistakes: number; remaining: number }) => void;
 	}
 
-	let { strokes, size, onComplete, revealSignal, hintSignal, label, onChange }: Props = $props();
+	let { strokes, onComplete, revealSignal, hintSignal, label, onChange }: Props = $props();
 
 	const SNAP_MS = 140;
 	const MISS_MS = 250;
@@ -44,8 +42,9 @@
 	let ctx: CanvasRenderingContext2D | null = null;
 	let raf = 0;
 	let dpr = 1;
-	// Current side of the pad in CSS px, measured; the canvas backing store follows it.
-	let side = untrack(() => size);
+	// Current side of the pad in CSS px, measured; the canvas backing store follows it. The pad takes its
+	// container's width (lib/writing/padSize.ts sizes the container, #285).
+	let side = 200;
 
 	interface Fade {
 		ink: Pt[];
@@ -94,7 +93,8 @@
 		if (ctx === null || canvas === null) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, side, side);
-		ctx.lineWidth = 6;
+		// The ink follows the pad: 6 px at 200 px, as before #285.
+		ctx.lineWidth = Math.max(4, side * 0.03);
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 		// Canvas cannot use var(): the ink reads the theme's tokens (#101).
@@ -294,7 +294,6 @@
 	class="pad"
 	class:done={finished}
 	data-card-input
-	style:max-width={`${size}px`}
 	role="img"
 	aria-label={label}
 >

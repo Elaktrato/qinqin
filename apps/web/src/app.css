@@ -203,7 +203,8 @@ body {
 	position: absolute;
 	width: 1px;
 	height: 1px;
-	margin: -1px;
+	/* No negative margin: at the left edge it would stick out of a phone's screen (#285, the 360 px guard). */
+	margin: 0;
 	padding: 0;
 	overflow: hidden;
 	clip-path: inset(50%);

@@ -33,7 +33,7 @@
 </script>
 
 <div class="sentinel" bind:this={sentinel} aria-hidden="true"></div>
-<div class="dock" class:under>
+<div class="dock" class:under data-action-dock>
 	{#if done}
 		{@render grades?.()}
 	{:else if face.primary !== null}
