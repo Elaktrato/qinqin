@@ -3,6 +3,7 @@ package qinqin.shell;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
+import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 import androidx.webkit.WebViewFeature;
 import com.getcapacitor.CapConfig;
@@ -31,6 +32,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // The activity starts on the splash theme (AppTheme.NoActionBarLaunch). installSplashScreen switches it to
+        // postSplashScreenTheme (AppTheme.NoActionBar: no title, no action bar) before EdgeToEdge.enable builds the
+        // window's decor; a decor built under the launch theme kept a window title with the activity label (#283).
+        SplashScreen.installSplashScreen(this);
         EdgeToEdge.enable(this);
         registerPlugin(ShellPlugin.class);
         registerPlugin(SpeechPlugin.class);
