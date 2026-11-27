@@ -25,6 +25,10 @@ Fixtures:
   `isReadingShown`), `textType` (a plain reading string typed by its script), `languages` (the switches of a
   language, its profile's `romanisations`) and `patch` (web: `lib/languages/romanisation.test.ts`; Go:
   `internal/lang/romanisation_test.go`, the types against the profiles).
+- `interface-language.json` — the workspace-settings key `interfaceLanguage` (#297, below): `parse` (settings → the
+  workspace's own setting), `resolve` (workspace, account, browser and catalogues → the interface language) and
+  `reminder` (the setting of a mail about several workspaces) (web: `lib/i18n/workspaceLanguage.test.ts`; Go:
+  `internal/i18n/workspace_test.go`).
 
 ## Workspace settings
 
@@ -42,6 +46,7 @@ collection). Keys in use:
 | `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `starter/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
 | `visualAids` | object: aid (`pictures`, `toneColors`, `toneContour`, `anatomy`) → boolean | each switch alone: `true` (absent, not a boolean, unknown members ignored; `toneContour` is `false` when only `toneColors: false` is stored); see `aids/visual-aids.json` | `aids/visualAids.ts` | Settings > Study > Visual aids (a switch at a time, by merge patch) |
 | `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
+| `interfaceLanguage` | string: a language tag (`i18n/language-tags.json`, not empty) | absent: the account's interface language (`""`, `null`, a malformed tag or any other value reads the same); see `interface-language.json` | `i18n/workspaceLanguage.ts` | Settings > Workspaces > Interface language (`null` clears it) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -83,6 +88,32 @@ profile's `romanisations` (`languages/profiles.json`); kana, on, kun and pack-de
 
 Ruling: Android reads `romanisation` with the same rule and fixture, and writes one type at a time by merge patch —
 cost: none.
+
+## Interface language per workspace (`interfaceLanguage`, #297)
+
+A workspace may choose its own interface language: `{"interfaceLanguage": "de"}`. Without one it uses the account's
+(`me.interfaceLanguage`, `i18n/README.md`), which without one follows the browser or device.
+
+- **The setting that applies** (`resolve`): in a workspace, its own setting, else the account's; outside a workspace
+  (signed out: the browser; an account with no workspace yet) the account's. That setting, else the browser's or
+  device's languages, is negotiated by `i18n/negotiate.json` against the catalogues that exist. A tag without a
+  catalogue is English, not the account's language (as for the account setting).
+- **Choices:** a client offers "use my account setting" (the key removed: `null` in the merge patch) and one choice
+  per interface catalogue it has. Readers treat `""` and any value that is not a well-formed tag as "use my account
+  setting"; the server stores the key like any other and validates nothing.
+- **Web:** the catalogue is chosen once per page load, before the app mounts (`i18n/README.md`), from a mirror in
+  localStorage: per workspace the workspace's own setting (`qq.interfaceLanguage.workspace.<id>`, removed when it has
+  none), and the account's resolved language (`qq.interfaceLanguage`). A start in a remembered workspace (offline
+  too) opens in its language. Switching to a workspace with another language, or changing the setting, reloads once,
+  under the guard of the account setting: only when the next start would pick the language, its catalogue differs
+  from the running one, and no language reload happened at this start. Settings → Account and Admin are in the same
+  page load and keep the running language. Android is the web app and follows the same rule.
+- **Server text** (`reminder`): a reminder mail counts every workspace with live facts (`reminders/`). Each one's
+  applying setting is taken; when they all agree that one is used, else (or with none) the account's. Every other
+  mail and page (account mails, the unsubscribe page) uses the account's. The mail catalogue negotiates it as before.
+
+Ruling: one key in the workspace's settings, not a keyed row or a column — it syncs, merges and backs up with the
+other per-workspace preferences — cost: no server-side validation on write.
 
 ## User-global keyed rows
 

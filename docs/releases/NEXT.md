@@ -16,6 +16,11 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- Settings → Workspaces → **Interface language** (#297): each workspace may choose its own interface language, for
+  example a Japanese workspace in Japanese for immersion and a Chinese one in English; "Use my account setting" is the
+  default. Switching to a workspace with another language reloads the page once into it, an offline start in that
+  workspace opens in its language, and reminder mails follow the workspaces they count when those share a language.
+  English is the only interface language for now; German and Japanese join as their catalogues land.
 - Study: hide romanisation everywhere (#284). Settings → Study → **Romanisation** has **Show pinyin** and **Show bopomofo**
   (Chinese) and **Show romaji** (Japanese), each Always or Never. A hidden one appears nowhere: word pages, search,
   the reader (popup, phone sheet, ruby), word lists, Stats, every flashcard kind and the kana trainer. On a card it is

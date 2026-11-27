@@ -1,0 +1,314 @@
+{
+ "version": 1,
+ "rule": "settings/interface-language",
+ "key": "interfaceLanguage",
+ "note": "The workspace-settings key interfaceLanguage (#297): a language tag (i18n/language-tags.json, not empty) chooses the workspace's interface language; absent, \"\", or anything else is \"use my account setting\". parse: settings -> the workspace's own setting (\"\" = none). resolve: the setting that applies is the workspace's, else the account's (\"\" = follow the browser); then i18n/negotiate.json with that setting, else the browser's languages, against `supported` (the catalogues that exist); workspace null is a page load outside a workspace. reminder: a reminder mail counts several workspaces; each live workspace's applying setting (its own, else the account's) — all equal: that one; they differ or there are none: the account's. Web: lib/i18n/workspaceLanguage.test.ts; Go: internal/i18n/workspace_test.go.",
+ "parse": [
+  {
+   "name": "no settings object",
+   "settings": null,
+   "expect": ""
+  },
+  {
+   "name": "no key",
+   "settings": {
+    "audioAutoplay": true
+   },
+   "expect": ""
+  },
+  {
+   "name": "a language",
+   "settings": {
+    "interfaceLanguage": "de"
+   },
+   "expect": "de"
+  },
+  {
+   "name": "language and script",
+   "settings": {
+    "interfaceLanguage": "zh-Hant"
+   },
+   "expect": "zh-Hant"
+  },
+  {
+   "name": "language and region",
+   "settings": {
+    "interfaceLanguage": "pt-BR"
+   },
+   "expect": "pt-BR"
+  },
+  {
+   "name": "empty string is the account setting",
+   "settings": {
+    "interfaceLanguage": ""
+   },
+   "expect": ""
+  },
+  {
+   "name": "null is the account setting",
+   "settings": {
+    "interfaceLanguage": null
+   },
+   "expect": ""
+  },
+  {
+   "name": "wrong case is not a tag",
+   "settings": {
+    "interfaceLanguage": "DE"
+   },
+   "expect": ""
+  },
+  {
+   "name": "underscore is not a tag",
+   "settings": {
+    "interfaceLanguage": "en_US"
+   },
+   "expect": ""
+  },
+  {
+   "name": "a number",
+   "settings": {
+    "interfaceLanguage": 5
+   },
+   "expect": ""
+  },
+  {
+   "name": "an object",
+   "settings": {
+    "interfaceLanguage": {
+     "language": "de"
+    }
+   },
+   "expect": ""
+  },
+  {
+   "name": "padded with spaces",
+   "settings": {
+    "interfaceLanguage": " de"
+   },
+   "expect": ""
+  }
+ ],
+ "resolve": [
+  {
+   "name": "the workspace's language wins",
+   "workspace": {
+    "interfaceLanguage": "de"
+   },
+   "account": "ja",
+   "browser": [
+    "en-GB"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "a workspace without one uses the account's",
+   "workspace": {},
+   "account": "ja",
+   "browser": [
+    "de-DE"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "ja"
+  },
+  {
+   "name": "neither: the browser's languages",
+   "workspace": {
+    "audioAutoplay": true
+   },
+   "account": "",
+   "browser": [
+    "fr-FR",
+    "de-AT"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "neither and no match: en",
+   "workspace": {},
+   "account": "",
+   "browser": [
+    "fr-FR"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "en"
+  },
+  {
+   "name": "a workspace language without a catalogue is en, not the account's",
+   "workspace": {
+    "interfaceLanguage": "ko"
+   },
+   "account": "ja",
+   "browser": [
+    "de"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "en"
+  },
+  {
+   "name": "a malformed workspace value uses the account's",
+   "workspace": {
+    "interfaceLanguage": "German"
+   },
+   "account": "ja",
+   "browser": [],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "ja"
+  },
+  {
+   "name": "the workspace's region falls back to its language",
+   "workspace": {
+    "interfaceLanguage": "de-CH"
+   },
+   "account": "",
+   "browser": [],
+   "supported": [
+    "en",
+    "de"
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "outside a workspace: the account's",
+   "workspace": null,
+   "account": "ja",
+   "browser": [
+    "de"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "ja"
+  },
+  {
+   "name": "outside a workspace, no account setting: the browser's",
+   "workspace": null,
+   "account": "",
+   "browser": [
+    "ja-JP"
+   ],
+   "supported": [
+    "en",
+    "de",
+    "ja"
+   ],
+   "expect": "ja"
+  },
+  {
+   "name": "only en today",
+   "workspace": {
+    "interfaceLanguage": "de"
+   },
+   "account": "ja",
+   "browser": [
+    "ja"
+   ],
+   "supported": [
+    "en"
+   ],
+   "expect": "en"
+  }
+ ],
+ "reminder": [
+  {
+   "name": "no live workspace: the account's",
+   "account": "ja",
+   "workspaces": [],
+   "expect": "ja"
+  },
+  {
+   "name": "one workspace with its own language",
+   "account": "",
+   "workspaces": [
+    {
+     "interfaceLanguage": "de"
+    }
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "one workspace following the account",
+   "account": "ja",
+   "workspaces": [
+    {}
+   ],
+   "expect": "ja"
+  },
+  {
+   "name": "two workspaces that agree",
+   "account": "",
+   "workspaces": [
+    {
+     "interfaceLanguage": "de"
+    },
+    {
+     "interfaceLanguage": "de"
+    }
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "one own, one following an account of the same language",
+   "account": "de",
+   "workspaces": [
+    {
+     "interfaceLanguage": "de"
+    },
+    {}
+   ],
+   "expect": "de"
+  },
+  {
+   "name": "two workspaces that differ: the account's",
+   "account": "en",
+   "workspaces": [
+    {
+     "interfaceLanguage": "de"
+    },
+    {
+     "interfaceLanguage": "ja"
+    }
+   ],
+   "expect": "en"
+  },
+  {
+   "name": "one own, one following the account: they differ",
+   "account": "",
+   "workspaces": [
+    {
+     "interfaceLanguage": "ja"
+    },
+    null
+   ],
+   "expect": ""
+  }
+ ]
+}

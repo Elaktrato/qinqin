@@ -11,6 +11,18 @@ import { forgetWorkspace } from './workspaceDelete';
 
 export const WORKSPACE_KEY = 'qinqin.workspace';
 
+/** The remembered current workspace in `storage` (what the next start selects first), or null. */
+export function rememberedWorkspace(storage: Storage | null): number | null {
+	try {
+		const raw = storage?.getItem(WORKSPACE_KEY) ?? null;
+		if (raw === null) return null;
+		const id = Number(raw);
+		return Number.isInteger(id) ? id : null;
+	} catch {
+		return null;
+	}
+}
+
 export interface WorkspacesState {
 	list: Workspace[];
 	current: Workspace | null;
@@ -170,14 +182,7 @@ export class Workspaces {
 	}
 
 	#readSelection(): number | null {
-		try {
-			const raw = this.#deps.local()?.getItem(WORKSPACE_KEY) ?? null;
-			if (raw === null) return null;
-			const id = Number(raw);
-			return Number.isInteger(id) ? id : null;
-		} catch {
-			return null;
-		}
+		return rememberedWorkspace(this.#deps.local());
 	}
 
 	#persistSelection(id: number | null): void {

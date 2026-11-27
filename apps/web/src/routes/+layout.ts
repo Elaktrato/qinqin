@@ -8,6 +8,7 @@ export const prerender = false;
 import { getLanguage, loadCatalogue } from '$lib/i18n';
 import { applyDocumentLanguage, startupLanguage } from '$lib/i18n/interfaceLanguage';
 import { TOKEN_KEY } from '$lib/api/client';
+import { rememberedWorkspace } from '$lib/workspace/workspaces.svelte';
 import { applyStartupTheme } from '$lib/theme/apply';
 
 function storage(): Storage | null {
@@ -20,8 +21,9 @@ function storage(): Storage | null {
 
 /**
  * Before the app mounts: the interface catalogue (signed out the browser's languages; signed in the mirrored
- * language of the account, so the first paint and an offline start need no request) and `<html lang>`/`dir`.
- * When `me` brings another language, `loadMe` reloads once (lib/i18n/interfaceLanguage.ts).
+ * language of the remembered workspace, else of the account, so the first paint and an offline start need no
+ * request) and `<html lang>`/`dir`. When `me` and the workspaces bring another language, the layout reloads once
+ * (lib/i18n/interfaceLanguage.ts followInterfaceLanguage).
  */
 export async function load(): Promise<Record<string, never>> {
 	// The theme first: the last tokens of this device or the compiled-in
@@ -35,7 +37,7 @@ export async function load(): Promise<Record<string, never>> {
 		signedIn = false;
 	}
 	const browser = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
-	await loadCatalogue(startupLanguage({ signedIn, storage: store, browser }));
+	await loadCatalogue(startupLanguage({ signedIn, storage: store, browser, workspace: rememberedWorkspace(store) }));
 	if (typeof document !== 'undefined') applyDocumentLanguage(document.documentElement, getLanguage());
 	return {};
 }

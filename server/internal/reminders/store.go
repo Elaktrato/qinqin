@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"qinqin/internal/i18n"
 	"qinqin/internal/secretbox"
 	"qinqin/internal/webpush"
 )
@@ -117,6 +118,48 @@ func LoadFacts(ctx context.Context, db *sql.DB, userID int64) ([]Facts, error) {
 		}
 	}
 	return out, rows.Err()
+}
+
+// LiveWorkspaces is the workspaces whose facts count at now (not older than
+// StaleAfter), in the order of facts.
+func LiveWorkspaces(facts []Facts, now time.Time) []int64 {
+	var out []int64
+	for _, f := range facts {
+		if now.Sub(f.AsOf) <= StaleAfter {
+			out = append(out, f.Workspace)
+		}
+	}
+	return out
+}
+
+// WorkspaceLanguages returns the own interface-language setting of each of the
+// user's workspaces in ids, in that order ("" = it uses the account's; #297,
+// i18n.WorkspaceSetting). An id that is not the user's is left out.
+func WorkspaceLanguages(ctx context.Context, db *sql.DB, userID int64, ids []int64) ([]string, error) {
+	rows, err := db.QueryContext(ctx, `SELECT id, settings FROM workspaces WHERE user_id = ?`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("reminders: workspace languages: %w", err)
+	}
+	defer rows.Close()
+	byID := map[int64]string{}
+	for rows.Next() {
+		var id int64
+		var settings string
+		if err := rows.Scan(&id, &settings); err != nil {
+			return nil, fmt.Errorf("reminders: workspace languages: %w", err)
+		}
+		byID[id] = i18n.WorkspaceSetting(json.RawMessage(settings))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("reminders: workspace languages: %w", err)
+	}
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if lang, ok := byID[id]; ok {
+			out = append(out, lang)
+		}
+	}
+	return out, nil
 }
 
 // NewSubscription is what a browser's PushSubscription holds.

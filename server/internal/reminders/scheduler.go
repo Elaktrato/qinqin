@@ -156,14 +156,14 @@ func (s *Scheduler) account(ctx context.Context, now time.Time, c candidate) {
 		return
 	}
 	if set.Channels.Email && c.verified && c.email.Valid && s.Mail != nil && s.Mail.Configured(ctx) {
-		s.email(ctx, now, c, due)
+		s.email(ctx, now, c, due, LiveWorkspaces(facts, now))
 	}
 	if set.Channels.Push && s.Push != nil {
 		s.push(ctx, now, c, due, set, history.Zone())
 	}
 }
 
-func (s *Scheduler) email(ctx context.Context, now time.Time, c candidate, due []Slot) {
+func (s *Scheduler) email(ctx context.Context, now time.Time, c candidate, due []Slot, live []int64) {
 	var claimed []Slot
 	for _, sl := range due {
 		ok, err := Claim(ctx, s.DB, c.id, "email", sl.Kind, sl.Day, now)
@@ -185,6 +185,13 @@ func (s *Scheduler) email(ctx context.Context, now time.Time, c candidate, due [
 	d := mail.ReminderData{Link: base + "/study"}
 	if s.Seal != nil {
 		d.Unsubscribe = base + "/api/reminders/unsubscribe?t=" + UnsubscribeToken(s.Seal, c.id)
+	}
+	// The mail is written in the interface language of the workspaces it
+	// counts when they share one (#297); a failed read leaves the account's.
+	if langs, err := WorkspaceLanguages(ctx, s.DB, c.id, live); err == nil {
+		d.Workspaces = langs
+	} else {
+		s.logf("reminders: user=%d workspace languages: %v", c.id, err)
 	}
 	for _, sl := range claimed {
 		n := 0

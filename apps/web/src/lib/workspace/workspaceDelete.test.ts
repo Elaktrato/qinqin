@@ -92,7 +92,10 @@ describe('forgetWorkspace', () => {
 				{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } },
 				{ userId: 2, queuedAt: 't', event: { id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} } }
 			]),
-			'qinqin.reader.prefs': '{}'
+			'qinqin.reader.prefs': '{}',
+			'qq.interfaceLanguage': 'en',
+			'qq.interfaceLanguage.workspace.7': 'de',
+			'qq.interfaceLanguage.workspace.17': 'ja'
 		});
 		forgetWorkspace(7, local);
 
@@ -106,7 +109,9 @@ describe('forgetWorkspace', () => {
 			'qinqin.study.pending.v2': JSON.stringify([
 				{ userId: 2, queuedAt: 't', event: { id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} } }
 			]),
-			'qinqin.reader.prefs': '{}'
+			'qinqin.reader.prefs': '{}',
+			'qq.interfaceLanguage': 'en',
+			'qq.interfaceLanguage.workspace.17': 'ja'
 		});
 	});
 
