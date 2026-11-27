@@ -21,6 +21,10 @@ Fixtures:
   (visible section ids + `bar` → the bottom bar's items, the More rows and the current item; `bar: null` is the
   default pins) (web: `lib/frame/navLayout.test.ts`, `lib/frame/barItems.test.ts`; Go:
   `cmd/qinqin/core_rows_test.go`, `internal/backup/nav_layout_test.go`).
+- `romanisation.json` — the workspace-settings key `romanisation` (#284, below): `parse`, `shown` (the rule
+  `isReadingShown`), `textType` (a plain reading string typed by its script), `languages` (the switches of a
+  language, its profile's `romanisations`) and `patch` (web: `lib/languages/romanisation.test.ts`; Go:
+  `internal/lang/romanisation_test.go`, the types against the profiles).
 
 ## Workspace settings
 
@@ -37,6 +41,7 @@ collection). Keys in use:
 | `hints` | object: hint kind → card kind → `always` \| `hint` \| `never` | per cell the default of `cards/hints.json` (absent, unknown or invalid cells included) | `features/flashcards/face/hints.ts` | Settings > Study > Hints (a cell at a time, by merge patch) |
 | `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `starter/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
 | `visualAids` | object: aid (`pictures`, `toneColors`, `toneContour`, `anatomy`) → boolean | each switch alone: `true` (absent, not a boolean, unknown members ignored; `toneContour` is `false` when only `toneColors: false` is stored); see `aids/visual-aids.json` | `aids/visualAids.ts` | Settings > Study > Visual aids (a switch at a time, by merge patch) |
+| `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -55,6 +60,29 @@ Before the merge the server decodes the patch into a JSON object and encodes it 
 members come out in alphabetical order, numbers pass through a 64-bit float (an integer above 2^53 loses
 precision), and `<`, `>`, `&` are escaped as `\u003c`, `\u003e`, `\u0026` — six bytes each toward the 64 KiB cap.
 Compare stored settings as JSON values, never as text.
+
+## Hidden romanisation (`romanisation`, #284)
+
+A learner may hide each romanisation of the workspace's language: **romaji** (Japanese), **pinyin** and
+**bopomofo** (zhuyin; Chinese), each on its own: `{"romanisation": {"pinyin": "never"}}`. Modes `always` (the
+default) and `never`; each member is read alone and anything else is `always`. The types with a switch are the
+profile's `romanisations` (`languages/profiles.json`); kana, on, kun and pack-defined types are never hidden.
+
+- **One rule** (`isReadingShown(type, prefs)`): a reading is shown unless its (trimmed, lower-cased) type is a
+  romanisation whose mode is `never`. The server keeps deriving and sending every reading (`internal/lang`); only
+  the client hides them. Searching by romaji or pinyin and typing through the IME are unchanged.
+- **Plain reading strings** (a word list's reading, a sentence's reading line, a book's own ruby) are typed by their
+  script (`readingTypeOfText`): Bopomofo letters are `bopomofo`, Latin letters the language's Latin romanisation
+  (`pinyin` in Chinese, `romaji` in Japanese), anything else (kana, hanzi) is not romanisation.
+- **Asking counts as a hint**: on a flashcard a hidden reading is the last hint step (`cards/hints.json`, kind
+  `romanisation`); the kana trainer shows a hidden romaji on tap or behind its hint control.
+- Where it applies (every client): the entry page, search results, the lookup popup and sheet, the reader's
+  readings and ruby, word lists, the stats tooltip, every flashcard kind, Starter mode, grammar examples, the
+  writing-system trainer, and every new screen. Tone colours (`visualAids`) and furigana (`reader.readings`,
+  `reader.bookRuby`) keep their own switches.
+
+Ruling: Android reads `romanisation` with the same rule and fixture, and writes one type at a time by merge patch —
+cost: none.
 
 ## User-global keyed rows
 

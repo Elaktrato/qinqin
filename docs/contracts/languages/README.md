@@ -19,6 +19,7 @@ without a profile gets the fallback (`code: "*"`).
 | `cardKinds` | the card kinds a session and the setup may hold | the session's kinds, Study → card types |
 | `practiceModes` | `decks`, `levels`, `characterMap` | web `hasCharacterMap`: Stats → Characters and the character-map widget; `decks` and `levels` are every language's and decide nothing today |
 | `writingSystems` | the scripts the writing-system trainer teaches: `hiragana`, `katakana`, `hangul`, `cyrillic` (#204); empty for no trainer | web `writingSystemsOf`: the `scripts` feature appears in the bar, the drawer and the widget picker only when this is not empty |
+| `romanisations` | the reading types that are romanisation, each with its own Show switch: `pinyin`, `bopomofo` (zh), `romaji` (ja) (#284) | web `romanisationsOf`: Settings > Study > Romanisation shows these switches; `settings/romanisation.json` |
 
 The fallback is the plain set: no readings, space segmentation, no tones, strokes, kana or variants, the card
 kinds `vocab`, `sentence`, `reverse`, `cloze`, decks and levels. The Spanish demo is exactly that with

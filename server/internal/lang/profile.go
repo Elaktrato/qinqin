@@ -17,9 +17,11 @@ const (
 
 // Profile is one language's core definition.
 type Profile struct {
-	Code          string   `json:"code"` // the primary subtag, "*" for the fallback
-	Script        string   `json:"script"`
-	Readings      []string `json:"readings"`
+	Code     string   `json:"code"` // the primary subtag, "*" for the fallback
+	Script   string   `json:"script"`
+	Readings []string `json:"readings"`
+	// Romanisations are the reading types that are romanisation (#284), each with its own Show switch.
+	Romanisations []string `json:"romanisations"`
 	Segmentation  string   `json:"segmentation"` // "dictionary" or "spaces"
 	Tones         bool     `json:"tones"`
 	Strokes       bool     `json:"strokes"`
@@ -48,14 +50,14 @@ var (
 
 // Profiles are the profiles in the fixture's order; the fallback is last.
 var Profiles = []Profile{
-	{Code: "zh", Script: ScriptHan, Readings: []string{"pinyin"}, Segmentation: "dictionary", Tones: true, Strokes: true, Variants: true,
+	{Code: "zh", Script: ScriptHan, Readings: []string{"pinyin"}, Romanisations: []string{"pinyin", "bopomofo"}, Segmentation: "dictionary", Tones: true, Strokes: true, Variants: true,
 		CardKinds: []string{"vocab", "sentence", "writing", "tone", "reverse", "cloze"}, PracticeModes: allPractice, WritingSystems: []string{}},
-	{Code: "ja", Script: ScriptHan, Readings: []string{"kana"}, Segmentation: "dictionary", Kana: true,
+	{Code: "ja", Script: ScriptHan, Readings: []string{"kana"}, Romanisations: []string{"romaji"}, Segmentation: "dictionary", Kana: true,
 		CardKinds: []string{"vocab", "sentence", "writing", "reverse", "cloze"}, PracticeModes: allPractice, WritingSystems: []string{"hiragana", "katakana"}},
-	{Code: "es", Script: ScriptLatin, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
-	{Code: "ko", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"hangul"}},
-	{Code: "ru", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"cyrillic"}},
-	{Code: "*", Script: ScriptOther, Readings: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
+	{Code: "es", Script: ScriptLatin, Readings: []string{}, Romanisations: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
+	{Code: "ko", Script: ScriptOther, Readings: []string{}, Romanisations: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"hangul"}},
+	{Code: "ru", Script: ScriptOther, Readings: []string{}, Romanisations: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{"cyrillic"}},
+	{Code: "*", Script: ScriptOther, Readings: []string{}, Romanisations: []string{}, Segmentation: "spaces", CardKinds: plainKinds, PracticeModes: []string{"decks", "levels"}, WritingSystems: []string{}},
 }
 
 // ProfileOf resolves a code by its primary subtag, case-insensitive
