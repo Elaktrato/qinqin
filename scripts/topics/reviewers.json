@@ -6,7 +6,7 @@
    { "id": "zh-labeller", "kind": "agent", "stage": "suggest", "role": "An experienced lexicographer and teacher of Chinese who labels each word with topics from the list, using its CC-CEDICT senses and the topic of its OpenMoji picture as a hint." },
    { "id": "zh-teacher-1", "kind": "agent", "stage": "review", "role": "A native Mandarin speaker from Beijing who has taught Chinese to adult learners for fifteen years and prepares students for the HSK." },
    { "id": "zh-teacher-2", "kind": "agent", "stage": "review", "role": "A native Mandarin speaker from Shanghai who teaches Chinese at a university language centre and writes theme-based course units for beginners and intermediate learners." },
-   { "id": "zh-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Mandarin speaker who heads a Chinese-as-a-foreign-language department and designs curricula; decides where the two teachers disagree." }
+   { "id": "zh-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Mandarin speaker who heads a Chinese-as-a-foreign-language department and designs curricula; decides where the two teachers disagree and checks every sense entry the decision kept." }
   ]
  },
  "ja": {
@@ -15,7 +15,7 @@
    { "id": "ja-labeller", "kind": "agent", "stage": "suggest", "role": "An experienced lexicographer and teacher of Japanese who labels each word with topics from the list, using its JMdict senses and the topic of its OpenMoji picture as a hint." },
    { "id": "ja-teacher-1", "kind": "agent", "stage": "review", "role": "A native Japanese speaker from Tokyo who has taught Japanese to adult learners for fifteen years and prepares students for the JLPT N5 to N3." },
    { "id": "ja-teacher-2", "kind": "agent", "stage": "review", "role": "A native Japanese speaker from Osaka who teaches at a Japanese-language school (日本語学校) and writes theme-based lesson plans for beginners and intermediate learners." },
-   { "id": "ja-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Japanese speaker who leads the curriculum of a Japanese-language school; decides where the two teachers disagree." }
+   { "id": "ja-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Japanese speaker who leads the curriculum of a Japanese-language school; decides where the two teachers disagree and checks every sense entry the decision kept." }
   ]
  }
 }

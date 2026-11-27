@@ -251,7 +251,7 @@ export function decide(suggestion, { a, b, c }) {
 // ---- the labels file
 
 /**
- * Batches (items, the suggestion, teacher answers a and b, adjudication c) and the picture topics -> the labels file of
+ * Batches (items, the suggestion, teacher answers a and b, adjudication c, the sense check d) and the picture topics -> the labels file of
  * a language. Words come in batch and item order, each followed by its sense rows; the words the pictures label and no
  * batch covers follow, by key. Same inputs, same file.
  */
@@ -263,12 +263,23 @@ export function buildLabels(language, batches, picture, ids, meta) {
 		const a = readAnswers(batch.a ?? [], ids);
 		const b = readAnswers(batch.b ?? [], ids);
 		const c = readAnswers(batch.c ?? [], ids);
+		const senseCheck = new Map((batch.d ?? []).filter((x) => Number.isInteger(x.i) && Array.isArray(x.keep)).map((x) => [x.i, x.keep.map(Number)]));
 		const r = batch.reviewers;
 		for (const item of batch.items) {
 			const s = suggest.get(item.i);
 			if (!s || s.ok) continue;
 			const d = decide(s, { a: a.get(item.i), b: b.get(item.i), c: c.get(item.i) });
 			const by = [r.a, r.b, ...(c.has(item.i) && d.review === 'adjudicated' ? [r.c] : [])];
+			// the sense check: a teacher keeps only the sense rows a learner of these levels needs
+			const check = senseCheck.get(item.i);
+			if (check && d.s) {
+				const dropped = Object.keys(d.s).filter((n) => !check.includes(Number(n)));
+				for (const n of dropped) delete d.s[n];
+				if (dropped.length) {
+					d.note = [d.note.slice(0, MAX_NOTE - 40), `sense check: sense ${dropped.join(', ')} dropped`].filter(Boolean).join(' | ');
+					if (!by.includes(r.d)) by.push(r.d);
+				}
+			}
 			const base = { key: item.key || item.form, form: item.form };
 			// a Chinese label is the whole simplified-form entry: its readings are only shown to the agents
 			if (item.reading && language !== 'zh') base.reading = item.reading;

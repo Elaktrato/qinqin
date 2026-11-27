@@ -246,3 +246,14 @@ test('coverage counts the share of each level with a topic', () => {
 		{ level: 'HSK 2', words: 1, labelled: 1, share: 1, missing: [] }
 	]);
 });
+
+test('buildLabels: the sense check keeps only the sense rows it names and says which went', () => {
+	const batch = { ...BATCH, reviewers: { ...BATCH.reviewers, d: 'zh-teacher-3' }, d: [{ i: 2, keep: [] }] };
+	const file = buildLabels('zh', [batch], new Map(), IDS2, { attribution: 'A', reviewers: [] });
+	const rows = file.labels.filter((l) => l.form === '行');
+	assert.deepEqual(rows.map((l) => l.sense ?? 0), [0]);
+	assert.deepEqual(rows[0].by, ['zh-teacher-1', 'zh-teacher-2', 'zh-teacher-3']);
+	assert.match(rows[0].note, /sense check: sense 1 dropped/);
+	const kept = buildLabels('zh', [{ ...batch, d: [{ i: 2, keep: [1] }] }], new Map(), IDS2, { attribution: 'A', reviewers: [] });
+	assert.deepEqual(kept.labels.filter((l) => l.form === '行').map((l) => l.sense ?? 0), [0, 1]);
+});
