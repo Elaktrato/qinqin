@@ -86,12 +86,13 @@ Reference implementation `apps/web/scripts/i18n-android.mjs` (`node scripts/i18n
 
 ## Interface language
 
-Resolution (fixture `negotiate.json`, implemented on the web, on Android and in Go): candidates = the stored
-setting if non-empty, else `navigator.languages` (web), the device list (Android), or `Accept-Language` by
+Resolution (fixture `negotiate.json`, implemented on the web, on Android and in Go): candidates = the setting that
+applies if non-empty (the workspace's own, else the account's: `settings/interface-language.json`, #297), else `navigator.languages` (web), the device list (Android), or `Accept-Language` by
 q-value (server). For each candidate in order: an exact match ignoring case in the supported list; then for a
 `zh` candidate without a script the script is inserted (`zh-TW`, `zh-HK`, `zh-MO` → `zh-Hant`, every other `zh`
 → `zh-Hans`); then trailing subtags are dropped one at a time. First hit wins, spelled as the supported list
-spells it; no hit → `en`. Today the supported list is `["en"]`.
+spells it; no hit → `en`. The supported list is the catalogues that exist: on the web every
+`messages/<tag>.json` (`catalogueLanguages`), `en` first; today `["en"]`.
 
 Formatting locale (web and Android; `negotiate.json` `formatLocale`): dates and numbers use the interface
 language plus the region of the first device language with the same primary subtag (`en` + `en-GB` → `en-GB`),

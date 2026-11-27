@@ -22,7 +22,7 @@ database and the SvelteKit web app embedded in the binary.
 - **Workspaces**: keep Chinese and Japanese apart, or split one language into several named workspaces.
 - **Themes**: a light and a dark colour theme of your choice, accent, corners, spacing and the hanzi font.
 - **Interface language**: every interface text comes from one catalogue (English today); the language is a
-  per-user setting.
+  per-user setting, and each workspace may choose its own.
 - **Accounts**: registration modes and invites, two-step sign-in, password reset by mail, personal backup
   and restore, and a server backup for administrators.
 - **Installable app**: the web app installs as a PWA and keeps studying offline; reviews sync when you are
