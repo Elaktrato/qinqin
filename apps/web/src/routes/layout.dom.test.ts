@@ -144,7 +144,9 @@ describe('layout auth guard', () => {
 		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
 		expect(within(phone).queryByRole('button', { name: 'Open menu' })).toBeNull();
 		expect(within(phone).getByRole('button', { name: 'Account menu' })).toBeTruthy();
-		expect(phone.querySelector('.title')?.textContent).toBe('Search');
+		// The logo, a link to Home, instead of the section's name (#293).
+		expect(phone.querySelector('.title')).toBeNull();
+		expect(within(phone).getByRole('link', { name: 'qinqin, home' }).getAttribute('href')).toBe('/');
 		const nav = container.querySelector('[data-frame="phone-nav"]') as HTMLElement;
 		expect(nav.classList.contains('phone')).toBe(true);
 		// After the page in the reading order, outside the banner.

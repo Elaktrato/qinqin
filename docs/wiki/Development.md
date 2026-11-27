@@ -113,7 +113,7 @@ no stale lookup) and from a selection (phone sheet), and on a phone a long entry
 inside, with the word above it; offline study after the service worker cached the app and
 today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
 grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
-long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a
+long page scrolls), the top bar's logo link to Home on every page in bottom-bar mode with the page's one h1, More, and the side menu option of Settings → Layout, kept for the account, and back; a
 journal conversation with the fake AI partner (its opening, the lookup popup on a reply, corrections in the
 margin, saving it as an entry); AI example sentences on an entry with the fake provider (generating them, the
 one without the word left out, keeping one, reporting one, the AI-written mark after a reload); no sideways

@@ -7,7 +7,9 @@
 	//
 	// Bottom-bar mode (#188, the person's `nav-layout`): the sections are in
 	// the bottom bar (BottomBar.svelte), so there is no menu button and no
-	// drawer; the avatar (the account menu) follows the flag instead.
+	// drawer; the avatar (the account menu) follows the flag instead. The bar
+	// starts with the logo, a link to Home (#293), instead of the title: the
+	// bottom bar marks the section, and a page's own title is its h1.
 	import { page } from '$app/state';
 	import { t } from '$lib/i18n';
 	import Drawer from '$lib/ui/Drawer.svelte';
@@ -20,6 +22,8 @@
 	import type { FrameSection } from './sections';
 	import WorkspaceMenu from './WorkspaceMenu.svelte';
 	import { useApp } from '$lib/context/context';
+	import { APP_NAME } from './app';
+	import Logo from './Logo.svelte';
 	const app = useApp();
 
 	let {
@@ -74,7 +78,17 @@
 			onclick={() => (open = true)}
 		/>
 	{/if}
-	<span class="title">{title}</span>
+	{#if mode === 'bar'}
+		<a
+			class="brand"
+			href="/"
+			aria-label={t('nav.brand.home', { app: APP_NAME })}
+			aria-current={current === 'home' ? 'page' : undefined}><Logo size={32} /></a
+		>
+		<span class="spacer"></span>
+	{:else}
+		<span class="title">{title}</span>
+	{/if}
 	{#if app.frame.actions}<span class="actions">{@render app.frame.actions()}</span>{/if}
 	<WorkspaceMenu />
 	{#if mode === 'bar'}<AccountMenu />{/if}
@@ -94,9 +108,27 @@
 		min-height: 3rem;
 		padding: 0 var(--space-2);
 	}
-	/* No menu button before the title: it starts at the bar's edge. */
-	.bar-mode .title {
-		padding-inline-start: var(--space-2);
+	/* The logo (bottom-bar mode): the desktop brand's mark and colour in a
+	   44 px touch target; the spacer keeps the actions, flag and avatar right. */
+	.brand {
+		display: inline-grid;
+		place-items: center;
+		flex: none;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: var(--radius);
+		color: var(--accent);
+		text-decoration: none;
+	}
+	.brand:hover {
+		background: var(--raised);
+	}
+	.brand:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
+	}
+	.spacer {
+		flex: 1;
 	}
 	.title {
 		flex: 1;
@@ -107,6 +139,11 @@
 		white-space: nowrap;
 		font-size: var(--font-size-m);
 		font-weight: var(--weight-strong);
+	}
+	@media (forced-colors: active) {
+		.brand {
+			color: Highlight;
+		}
 	}
 	.actions {
 		display: inline-flex;
