@@ -6,6 +6,7 @@
 	import { studyLang, readingLang } from '$lib/i18n/lang';
 	import type { SearchHit } from '$lib/api/types';
 	import { firstGloss, kindLevel } from '$lib/search/rowText';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	let {
 		hit,
@@ -27,7 +28,9 @@
 		onkey?: (event: KeyboardEvent) => void;
 	} = $props();
 
-	const reading = $derived(hit.readings[0]);
+	// Hidden romanisation (#284): the first reading the workspace shows; typing it to search still works.
+	const roman = useRomanisation();
+	const reading = $derived(roman.shown(hit.readings)[0]);
 	const gloss = $derived(firstGloss(hit, hidden));
 	const meta = $derived(kindLevel(hit));
 	const id = $derived(`hit-${hit.id}`);

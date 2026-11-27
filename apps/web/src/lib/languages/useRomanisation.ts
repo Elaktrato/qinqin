@@ -22,6 +22,8 @@ export interface RomanisationView {
 	shows(type: string): boolean;
 	/** Whether a reading string without a type (typed by its script) shows in this language. */
 	showsText(text: string | null | undefined, language: string): boolean;
+	/** The reading string itself when it shows, else '' (for markup that prints a plain reading string). */
+	text(text: string | null | undefined, language: string): string;
 	/** The readings that show, in their order. */
 	shown<T extends { type: string }>(readings: readonly T[]): T[];
 	/** The readings the setting hides (the romanisation hint), in their order. */
@@ -36,6 +38,7 @@ export function romanisationView(prefs: () => Readonly<Romanisation>): Romanisat
 		},
 		shows: (type) => isReadingShown(type, prefs()),
 		showsText: (text, language) => isReadingTextShown(text ?? '', language, prefs()),
+		text: (text, language) => (text && isReadingTextShown(text, language, prefs()) ? text : ''),
 		shown: (readings) => shownReadings(readings, prefs()),
 		hidden: (readings) => hiddenReadings(readings, prefs())
 	};

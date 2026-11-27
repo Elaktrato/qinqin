@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import type { Snippet } from 'svelte';
 	import type { Sentence, SentenceAi } from '$lib/api/types';
 	import { aiMark } from '$lib/api/examples';
@@ -40,6 +41,7 @@
 		}
 		return sentence.sourcePack || t('entry.sentences.shared');
 	}
+	const roman = useRomanisation();
 </script>
 
 {#if sentences.length > 0}
@@ -53,7 +55,7 @@
 						>{#each parts(sentence.hanzi) as part, index (index)}{#if part.match}<b class="term">{part.text}</b
 								>{:else}{part.text}{/if}{/each}</p
 					>
-					{#if sentence.pinyin}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
+					{#if sentence.pinyin && roman.showsText(sentence.pinyin, language)}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
 					{#if sentence.translation}<p class="translation" lang={glossLang(undefined)}>{sentence.translation}</p>{/if}
 					{#if mark !== null}
 						<AiTag ai={sentence.ai} label={aiLabelOf?.(mark)} />

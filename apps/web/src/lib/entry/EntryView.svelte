@@ -44,6 +44,7 @@
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import AiExamples from './examples/AiExamples.svelte';
 	import ExampleActions from './examples/ExampleActions.svelte';
 	import { aiLabel, generateErrorText } from './examples/examples';
@@ -52,6 +53,7 @@
 	import { loadProviderNames } from '$lib/features/journal/providerNames';
 
 	const session = useSession();
+	const roman = useRomanisation();
 	const app = useApp();
 
 	let {
@@ -445,7 +447,7 @@
 									<a class="char" href={`/entry/${c.id}`}>
 										<span class="glyph" lang={studyLang(entry.language)}>{c.written}</span>
 										<span class="char-meta">
-											{#if c.reading}<span class="reading" lang={readingLang(c.reading.type, entry.language)}>{c.reading.value}</span>{/if}
+											{#if c.reading && roman.shows(c.reading.type)}<span class="reading" lang={readingLang(c.reading.type, entry.language)}>{c.reading.value}</span>{/if}
 											{#if c.gloss}<span class="gloss" lang={glossLang(undefined)}>{c.gloss}</span>{/if}
 											{#if characterMeta(c)}<small>{characterMeta(c)}</small>{/if}
 										</span>
@@ -497,8 +499,9 @@
 						{#if lookupLinks.browse}<p class="browse"><a href={lookupLinks.browse}>{t('entry.page.browseStrokes')}</a></p>{/if}
 						<ul class="plain-list">
 							{#each chars as char (char.id)}
+								{@const charReading = roman.shown(char.readings)[0]}
 								<li><a href={`/entry/${char.id}`} lang={studyLang(entry.language)}>{char.written}</a>
-									{#if char.readings.length > 0}<span class="reading"><ReadingText type={char.readings[0].type} value={char.readings[0].value} language={entry.language} /></span>{/if}
+									{#if charReading}<span class="reading"><ReadingText type={charReading.type} value={charReading.value} language={entry.language} /></span>{/if}
 								</li>
 							{/each}
 						</ul>
