@@ -44,7 +44,8 @@ Owner picked A, with B's set as the default for people who never open the settin
   **More**.
 - **Default pins** (no stored choice): Home, Decks, Reader, Search. With Journal, Grammar or Stats switched on
   that gives Home, Decks, Reader, Search, More.
-- Home is in the bar because the phone has no logo to tap.
+- Home is in the bar because the phone had no logo to tap (since #293 the top bar's logo also goes Home; Home
+  stays in the bar).
 - **Items:** icon with a short label under it (small, muted). The current section has its icon and label in the
   accent colour and a short accent mark, following the lighter design rules (no pills, no filled
   backgrounds). Targets at least 44 × 44 px.
@@ -65,7 +66,10 @@ Owner picked A, with B's set as the default for people who never open the settin
   note).
 
 **The top bar on the phone**
-- Bottom-bar mode: page title, workspace flag, avatar (account menu). No menu button.
+- Bottom-bar mode: the logo (a link to Home, `aria-current="page"` on Home, 44 px target, the first focusable
+  item), page actions, workspace flag, avatar (account menu). No menu button and, since #293 (owner, 2026-11-26),
+  no title on any page, including pages with their own title (an entry, a book, a journal entry): the bottom bar
+  marks the section, and the page's own h1 carries its title.
 - Side-menu mode: today's layout, unchanged (menu button, title, flag; the drawer).
 
 **The setting**

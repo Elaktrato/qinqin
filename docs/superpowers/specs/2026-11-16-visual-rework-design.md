@@ -224,7 +224,11 @@ The avatar opens the account menu: name, Settings, Theme (quick switch), **Admin
 **Frame — phone.** Top bar: menu button, page title, flag. The menu is a drawer from the left: workspaces as a row
 of flags at the top (tap to switch, + to add) with the current one named under it; sections with icon + label
 (including Home, since there is no logo to tap); the account at the bottom (avatar, name, Settings/Admin). Same
-frame for the installable web app now and Android later.
+frame for the installable web app now and Android later. In bottom-bar mode (#188) the top bar is the **logo**
+(the desktop brand's mark and accent colour, a link to Home named "qinqin, home", `aria-current="page"` on Home, a
+44 px target, the bar's first focusable item), the page's actions, the flag and the avatar: no section name and
+no page title, on every page (#293, owner 2026-11-26); a page's own title is its h1. Side-menu mode keeps the menu
+button and the title.
 
 **Home.** Widgets keep the existing layout system (Settings → Home). Cards lose their boxes (§5). The activity
 heatmap gets **three layouts the person chooses per widget** in Settings → Home: **Garden grid** (13 weeks, today's

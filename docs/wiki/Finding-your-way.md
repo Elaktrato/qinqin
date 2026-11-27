@@ -1,6 +1,6 @@
 # Finding your way
 
-Every signed-in page sits in the same frame. On a screen 720 px wide or more it is a raised page under a top bar; below 720 px (a phone) it is a slim bar with a menu. There is no footer and no tab bar at the bottom.
+Every signed-in page sits in the same frame. On a screen 720 px wide or more it is a raised page under a top bar; below 720 px (a phone) it is a slim bar at the top, with the sections in a bar at the bottom or in a side menu. There is no footer.
 
 ## The top bar (720 px and wider)
 
@@ -15,7 +15,11 @@ Every signed-in page sits in the same frame. On a screen 720 px wide or more it 
 
 ## On a phone (under 720 px)
 
-The bar has the **menu button**, the title of the page and the workspace flag. The menu button opens a drawer:
+A phone shows the sections either in a **bottom bar** (the default) or in a **side menu**; you choose in Settings → Layout.
+
+With the **bottom bar**, the sections are at the bottom of the screen and the top bar has **the logo** on the left (a link to the home page, as on the desktop), the page's own buttons, the workspace flag and your avatar (the account menu). The top bar shows no section or page name: the bottom bar marks the section, and the page's heading names the page.
+
+With the **side menu**, the top bar has the **menu button**, the title of the page and the workspace flag. The menu button opens a drawer:
 
 - at the top, your workspaces as a row of flags (tap one to switch) and **+** (**Add workspace**, which opens Settings → Workspaces); the current workspace is named under the row,
 - the sections with their names: **Home** first (there is no logo to tap), then the same sections as on the desktop, Stats last,
