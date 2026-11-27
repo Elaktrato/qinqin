@@ -6,6 +6,7 @@
 	// becomes the containing block of their fixed position.
 	import Button from '../Button.svelte';
 	import Chip from '../Chip.svelte';
+	import Tag from '../Tag.svelte';
 	import Dialog from '../Dialog.svelte';
 	import Drawer from '../Drawer.svelte';
 	import Field from '../Field.svelte';
@@ -132,6 +133,16 @@
 			<Chip>HSK 1</Chip>
 			<Chip tone="accent">Top 500</Chip>
 			<Chip tone="good">In 2 decks</Chip>
+		</div>
+	</section>
+
+	<section data-gallery="Tag">
+		<h2>Tags</h2>
+		<div class="row">
+			<Tag>new</Tag>
+			<Tag>Again, look 2 of 3</Tag>
+			<Tag>General</Tag>
+			<Tag tone="accent">≈ HSK 2</Tag>
 		</div>
 	</section>
 
