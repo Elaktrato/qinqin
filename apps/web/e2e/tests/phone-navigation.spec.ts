@@ -106,3 +106,50 @@ test('the bottom bar navigates; the side menu option replaces it and the choice 
 	await expect(page.getByRole('button', { name: 'Open menu' })).toHaveCount(0);
 	await expectAtBottom(page.getByRole('navigation', { name: 'Main' }));
 });
+
+// #293: in bottom-bar mode the top bar starts with the logo, a link to Home,
+// on every page (pages with their own title too); the page keeps its h1.
+test('in bottom-bar mode the top bar shows the logo, a link to Home, on every page', async ({ page, learner }) => {
+	const entry = await learner.entryId('ja', '学校');
+	const banner = page.getByRole('banner');
+	const pages: { path: string; heading: RegExp; hidden: string[] }[] = [
+		{ path: '/', heading: /./, hidden: [] },
+		{ path: '/flashcards', heading: /./, hidden: ['Decks'] },
+		{ path: '/reader', heading: /^Library/, hidden: ['Reader', 'Library'] },
+		{ path: '/search', heading: /./, hidden: ['Search'] },
+		{ path: `/entry/${entry}`, heading: /^学校$/, hidden: ['学校', 'Search'] },
+		{ path: '/settings', heading: /^Settings$/, hidden: ['Settings'] }
+	];
+	for (const { path, heading, hidden } of pages) {
+		await test.step(path, async () => {
+			await page.goto(path);
+			await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+			await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+			const logo = banner.getByRole('link', { name: 'qinqin, home' });
+			await expect(logo).toBeVisible();
+			await expect(logo).toHaveAttribute('href', '/');
+			if (path === '/') await expect(logo).toHaveAttribute('aria-current', 'page');
+			else await expect(logo).not.toHaveAttribute('aria-current', 'page');
+			// The logo is the bar's first focusable item; the bar names no section or page.
+			const first = await banner.evaluate((el) => el.querySelector('a[href], button, input, select, textarea, [tabindex]')?.getAttribute('aria-label'));
+			expect(first).toBe('qinqin, home');
+			const text = (await banner.innerText()).trim();
+			for (const name of hidden) expect(text, `the bar on ${path}`).not.toContain(name);
+			// A 44 px touch target in the 3 rem bar.
+			const box = await logo.boundingBox();
+			expect(box!.width).toBeGreaterThanOrEqual(44);
+			expect(box!.height).toBeGreaterThanOrEqual(44);
+		});
+	}
+	// The logo goes Home.
+	await banner.getByRole('link', { name: 'qinqin, home' }).click();
+	await expect(page).toHaveURL(/\/$/);
+	await expect(banner.getByRole('link', { name: 'qinqin, home' })).toHaveAttribute('aria-current', 'page');
+
+	// Side menu: the menu button and the title are back, no logo.
+	await page.goto('/settings?tab=layout');
+	await page.getByRole('radio', { name: /Side menu/ }).check();
+	await expect(banner.getByRole('button', { name: 'Open menu' })).toBeVisible();
+	await expect(banner.getByRole('link', { name: 'qinqin, home' })).toHaveCount(0);
+	await expect(banner).toContainText('Settings');
+});
