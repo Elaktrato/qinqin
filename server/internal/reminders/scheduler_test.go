@@ -477,3 +477,32 @@ func TestAnAccountsPushSendsAreBoundedAndOurOwnDeadlineIsNoFailure(t *testing.T)
 		t.Fatalf("our own deadline is not the endpoint's fault: %d %v", n, ok)
 	}
 }
+
+// The reminder mail names the interface language of the workspaces it counts
+// (#297): each live workspace's own setting, in workspace order; a workspace
+// whose facts are stale counts for nothing, so it is not named.
+func TestEmailNamesTheLiveWorkspacesLanguages(t *testing.T) {
+	w := newWorld(t, emailOnly)
+	ctx := context.Background()
+	if _, err := w.db.Exec(`UPDATE workspaces SET settings = '{"interfaceLanguage":"de","audioAutoplay":true}' WHERE id = ?`, w.ws); err != nil {
+		t.Fatal(err)
+	}
+	second := dbtest.Workspace(t, w.db, w.user, "ja")
+	if err := SaveFacts(ctx, w.db, w.user, Facts{Workspace: second, AsOf: w.now.Add(-time.Hour), DueNow: 2}, w.now); err != nil {
+		t.Fatal(err)
+	}
+	stale := dbtest.Workspace(t, w.db, w.user, "es")
+	if _, err := w.db.Exec(`UPDATE workspaces SET settings = '{"interfaceLanguage":"ja"}' WHERE id = ?`, stale); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveFacts(ctx, w.db, w.user, Facts{Workspace: stale, AsOf: w.now.Add(-StaleAfter - time.Hour), DueNow: 9}, w.now); err != nil {
+		t.Fatal(err)
+	}
+	w.s.Tick(ctx)
+	if len(w.mail.sent) != 1 {
+		t.Fatalf("sent %d", len(w.mail.sent))
+	}
+	if got := w.mail.sent[0].d.Workspaces; strings.Join(got, ",") != "de," {
+		t.Fatalf("workspaces %q, want [de \"\"]", got)
+	}
+}

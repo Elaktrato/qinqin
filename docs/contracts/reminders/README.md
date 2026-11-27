@@ -151,3 +151,7 @@ At most **one delivery per (account, channel, kind, learner day)**, recorded in 
 delivery needs `enabled`, the channel switch, the kind, a slot whose `at` lies within the last 2 hours and not in the
 future, and (email) SMTP configured and a verified address, (push) at least one subscription. Quiet hours and vacation
 are part of the plan. Kinds that fall due in the same check go out in **one** email.
+
+The email's language (#297, `settings/interface-language.json` `reminder`): the interface-language setting the
+workspaces with live facts share (each one's own, else the account's), else the account's; the test message
+(`POST /api/reminders/test`) uses the account's. Push texts are written by the web app from its running catalogue.
