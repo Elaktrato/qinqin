@@ -25,6 +25,9 @@ Fixtures:
   `isReadingShown`), `textType` (a plain reading string typed by its script), `languages` (the switches of a
   language, its profile's `romanisations`) and `patch` (web: `lib/languages/romanisation.test.ts`; Go:
   `internal/lang/romanisation_test.go`, the types against the profiles).
+- `tones.json` — the workspace-settings key `tones` (#300, below): `parse`, `languages` (where Settings shows the
+  switches: the profiles with tones) and `patch` (web: `lib/exercises/toneSettings.test.ts`; Go:
+  `internal/lang/tone_settings_test.go`, the languages against the profiles).
 
 ## Workspace settings
 
@@ -42,6 +45,7 @@ collection). Keys in use:
 | `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `starter/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
 | `visualAids` | object: aid (`pictures`, `toneColors`, `toneContour`, `anatomy`) → boolean | each switch alone: `true` (absent, not a boolean, unknown members ignored; `toneContour` is `false` when only `toneColors: false` is stored); see `aids/visual-aids.json` | `aids/visualAids.ts` | Settings > Study > Visual aids (a switch at a time, by merge patch) |
 | `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
+| `tones` | object `{showSandhi: boolean, gradeSpoken: boolean}` | `showSandhi` true, `gradeSpoken` false, member by member (anything but a boolean is the default); see `tones.json` | `exercises/toneSettings.ts` | Settings > Study > Tones (a switch at a time, by merge patch; Chinese workspaces) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -83,6 +87,19 @@ profile's `romanisations` (`languages/profiles.json`); kana, on, kun and pack-de
 
 Ruling: Android reads `romanisation` with the same rule and fixture, and writes one type at a time by merge patch —
 cost: none.
+
+## Tone sandhi (`tones`, #300)
+
+Two switches per workspace for tone exercises (the Tones card, the tone-pair drill #180), steering the rules of
+`tones/` (citation and spoken tones):
+
+- **`showSandhi`** ("Show tone sandhi", default `true`): an answer shows a sandhi syllable's spoken tone beside its
+  citation tone (`bù → bú`). `false`: sandhi is never shown, only citation tones.
+- **`gradeSpoken`** ("Grade spoken tones", default `false`): grade the spoken tones only. `false`: a syllable is
+  right with its citation tone or its spoken tone.
+
+Each member is read alone; anything but a boolean is its default. Settings shows them for a language whose profile
+has tones. Clients that do not know the key grade citation tones only, as before.
 
 ## User-global keyed rows
 

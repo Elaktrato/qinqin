@@ -57,6 +57,12 @@
    "shape": "object: romanisation type (pinyin, bopomofo, romaji) -> \"always\" | \"never\"",
    "default": "each type always; see settings/romanisation.json",
    "owner": "apps/web/src/lib/languages/romanisation.ts"
+  },
+  {
+   "key": "tones",
+   "shape": "object: {showSandhi: boolean, gradeSpoken: boolean}",
+   "default": "showSandhi true, gradeSpoken false, member by member; see settings/tones.json",
+   "owner": "apps/web/src/lib/exercises/toneSettings.ts"
   }
  ],
  "parse": [
