@@ -131,6 +131,8 @@
 			const text = paragraph && !isCharacter ? bookSentence(paragraph, result.start, result.end) : '';
 			if (text) {
 				const saved = await resolveBookSentence({ getEntry, addSentence }, entryId, text);
+				// The word may make a Word Salad or cloze card now (#288).
+				session.eligibility.forget(entryId);
 				sentenceId = saved.sentenceId;
 				if (saved.failed) note = t('reader.study.noSentence');
 			}
