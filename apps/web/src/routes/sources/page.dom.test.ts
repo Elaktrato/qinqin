@@ -120,7 +120,9 @@ describe('sources in the lighter look (#106)', () => {
 			expect(table.classList.contains('ui-table')).toBe(true);
 			expect(table.querySelector('th[scope="col"]')).toBeTruthy();
 		}
-		for (const wrap of document.querySelectorAll('.table-wrap')) {
+		const wraps = document.querySelectorAll('.ui-table-scroll');
+		expect(wraps.length).toBe(document.querySelectorAll('table').length);
+		for (const wrap of wraps) {
 			expect(wrap.getAttribute('tabindex')).toBe('0');
 			expect(wrap.getAttribute('role')).toBe('region');
 			expect(wrap.getAttribute('aria-labelledby')).toBeTruthy();
@@ -141,8 +143,9 @@ describe('sources in the lighter look (#106)', () => {
 		expect(css).toMatch(/a\s*\{[^}]*color:\s*var\(--reading-accent\)/);
 		expect(css).toMatch(/a\s*\{[^}]*text-decoration:\s*underline/);
 		expect(css).not.toMatch(/text-transform:\s*uppercase/);
-		expect(css).toMatch(/\.table-wrap\s*\{[^}]*overflow-x:\s*auto/);
-		expect(css).not.toMatch(/\.table-wrap\s*\{[^}]*border:/);
+		// The tables scroll in the shared .ui-table-scroll box (app.css, #296), which has no border of its own.
+		expect(source).toMatch(/class="ui-table-scroll"/);
+		expect(css).not.toMatch(/\.ui-table-scroll\s*\{[^}]*border:/);
 		expect(css).toMatch(/\.credit\s*\+\s*\.credit\s*\{[^}]*border-top:\s*1px solid var\(--hair\)/);
 		expect(css).toMatch(/\.notes dd\s*\{[^}]*border-inline-start:\s*1px solid var\(--hair\)/);
 	});

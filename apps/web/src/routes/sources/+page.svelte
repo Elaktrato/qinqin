@@ -366,7 +366,7 @@
 			</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-dictionaries">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-dictionaries">
 				<table class="ui-table" aria-labelledby="sources-dictionaries">
 					<thead>
 						<tr>
@@ -410,7 +410,7 @@
 			<p>{t('sources.frequency.none')}</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-frequency">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-frequency">
 				<table class="ui-table" aria-labelledby="sources-frequency">
 					<thead>
 						<tr>
@@ -454,7 +454,7 @@
 		<section>
 			<h2 id="sources-sentences">{t('sources.sentences.title')}</h2>
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-sentences">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-sentences">
 				<table class="ui-table" aria-labelledby="sources-sentences">
 					<thead>
 						<tr>
@@ -492,7 +492,7 @@
 				<Button onclick={loadComponents}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-components">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-components">
 					<table class="ui-table" aria-labelledby="sources-components">
 						<thead>
 							<tr>
@@ -534,7 +534,7 @@
 				<Button onclick={loadLemma}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-lemma">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-lemma">
 					<table class="ui-table" aria-labelledby="sources-lemma">
 						<thead>
 							<tr>
@@ -576,7 +576,7 @@
 				<Button onclick={loadThemes}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-themes">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-themes">
 					<table class="ui-table" aria-labelledby="sources-themes">
 						<thead>
 							<tr>
@@ -626,7 +626,7 @@
 				<Button onclick={loadStrokes}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-strokes">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-strokes">
 					<table class="ui-table" aria-labelledby="sources-strokes">
 						<thead>
 							<tr>
@@ -674,7 +674,7 @@
 				<Button onclick={loadImages}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-images">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-images">
 					<table class="ui-table" aria-labelledby="sources-images">
 						<thead>
 							<tr>
@@ -722,7 +722,7 @@
 				<Button onclick={loadFonts}>{t('sources.retry')}</Button>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-fonts">
+				<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-fonts">
 					<table class="ui-table" aria-labelledby="sources-fonts">
 						<thead>
 							<tr>
@@ -770,7 +770,7 @@
 			<h2 id="sources-audio">{t('sources.audio.title')}</h2>
 
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-audio">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-audio">
 				<table class="ui-table" aria-labelledby="sources-audio">
 					<thead>
 						<tr>
@@ -830,7 +830,7 @@
 			<p>{t('sources.levels.none')}</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-levels">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-levels">
 				<table class="ui-table" aria-labelledby="sources-levels">
 					<thead>
 						<tr>
@@ -876,7 +876,7 @@
 			<p>{t('sources.grammar.none')}</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-grammar">
+			<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="sources-grammar">
 				<table class="ui-table" aria-labelledby="sources-grammar">
 					<thead>
 						<tr>
@@ -972,15 +972,6 @@
 	}
 
 	/* A wide table scrolls inside its own named region; no box (#106). */
-	.table-wrap {
-		overflow-x: auto;
-	}
-
-	.table-wrap:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: var(--focus-ring-offset);
-	}
-
 	.name {
 		font-weight: var(--weight-strong);
 		white-space: nowrap;
@@ -1123,7 +1114,6 @@
 		a {
 			color: LinkText;
 		}
-		.table-wrap:focus-visible,
 		.notes dt:focus-visible {
 			outline-color: Highlight;
 		}

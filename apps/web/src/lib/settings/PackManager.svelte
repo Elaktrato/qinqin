@@ -307,7 +307,7 @@
 					{#each staged.themes as theme (theme.id)}
 						{@const view = contrastView(theme)}
 						<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
-						<div class="table-wrap" tabindex="0" role="region" aria-label={view.caption}>
+						<div class="ui-table-scroll" tabindex="0" role="region" aria-label={view.caption}>
 							<table class="ui-table">
 								<caption>{view.caption}</caption>
 								<thead>
@@ -536,8 +536,12 @@
 		margin: 0;
 		padding: 0;
 	}
+	/* A pack's text never widens the page on a phone (#296): ids, URLs in
+	   attributions and package lines have no break opportunity of their own. */
 	.pack-list li {
 		padding-block: var(--space-3);
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 	.pack-list li + li {
 		border-top: 1px solid var(--hair);
@@ -550,6 +554,9 @@
 		flex-wrap: wrap;
 		gap: var(--space-1) var(--space-3);
 		align-items: baseline;
+	}
+	.pack-head > * {
+		min-width: 0;
 	}
 	.package {
 		font-size: var(--font-size-label);
@@ -575,20 +582,10 @@
 	.contrast h4 {
 		margin-block: var(--space-4) var(--space-1);
 	}
-	.contrast .table-wrap {
-		overflow-x: auto;
+	.contrast .ui-table-scroll {
 		margin-block: var(--space-2);
-	}
-	.contrast .table-wrap:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: var(--focus-ring-offset);
 	}
 	.contrast tr.below .result {
 		font-weight: var(--weight-strong);
-	}
-	@media (forced-colors: active) {
-		.contrast .table-wrap:focus-visible {
-			outline-color: Highlight;
-		}
 	}
 </style>

@@ -78,39 +78,42 @@
 	{#if loaded && rows.length === 0 && !error}
 		<p>{t('settings.tokens.none')}</p>
 	{:else if rows.length > 0}
-		<table class="ui-table" aria-label={t('settings.tokens.title')}>
-			<thead>
-				<tr>
-					<th scope="col">{t('settings.tokens.colName')}</th>
-					<th scope="col">{t('settings.tokens.colAccess')}</th>
-					<th scope="col">{t('settings.tokens.colExpiry')}</th>
-					<th scope="col">{t('settings.tokens.colLastUsed')}</th>
-					<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.id)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrolling region is keyboard reachable, WCAG 2.1.1) -->
+		<div class="ui-table-scroll" tabindex="0" role="region" aria-label={t('settings.tokens.title')}>
+			<table class="ui-table" aria-label={t('settings.tokens.title')}>
+				<thead>
 					<tr>
-						<th scope="row">{row.name}<br /><code>{row.masked}</code></th>
-						<td>{row.scopeLabel}<br />{row.workspaceLabel}</td>
-						<td>{row.expiryText}</td>
-						<td>{row.lastUsedText}</td>
-						<td>
-							<Button disabled={busy} aria-label={t('settings.tokens.revokeNamed', { name: row.name })} onclick={() => (confirmOne = row.id)}
-								>{t('settings.tokens.revoke')}</Button
-							>
-							{#if confirmOne === row.id}
-								<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeNamed', { name: row.name })}>
-									<p>{t('settings.tokens.confirmRevokeText', { name: row.name })}</p>
-									<Button tone="danger" disabled={busy} onclick={() => revokeOne(row.id)}>{t('settings.tokens.confirmRevokeYes')}</Button>
-									<Button disabled={busy} onclick={() => (confirmOne = null)}>{t('common.action.cancel')}</Button>
-								</div>
-							{/if}
-						</td>
+						<th scope="col">{t('settings.tokens.colName')}</th>
+						<th scope="col">{t('settings.tokens.colAccess')}</th>
+						<th scope="col">{t('settings.tokens.colExpiry')}</th>
+						<th scope="col">{t('settings.tokens.colLastUsed')}</th>
+						<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each rows as row (row.id)}
+						<tr>
+							<th scope="row">{row.name}<br /><code>{row.masked}</code></th>
+							<td>{row.scopeLabel}<br />{row.workspaceLabel}</td>
+							<td>{row.expiryText}</td>
+							<td>{row.lastUsedText}</td>
+							<td>
+								<Button disabled={busy} aria-label={t('settings.tokens.revokeNamed', { name: row.name })} onclick={() => (confirmOne = row.id)}
+									>{t('settings.tokens.revoke')}</Button
+								>
+								{#if confirmOne === row.id}
+									<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeNamed', { name: row.name })}>
+										<p>{t('settings.tokens.confirmRevokeText', { name: row.name })}</p>
+										<Button tone="danger" disabled={busy} onclick={() => revokeOne(row.id)}>{t('settings.tokens.confirmRevokeYes')}</Button>
+										<Button disabled={busy} onclick={() => (confirmOne = null)}>{t('common.action.cancel')}</Button>
+									</div>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 	<div class="actions">
 		<Button disabled={busy} onclick={() => (creating = true)}>{t('settings.tokens.new')}</Button>
