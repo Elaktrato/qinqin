@@ -126,6 +126,48 @@ test.describe('on a phone', () => {
 		await expect(sheet).toContainText('water');
 		await expectAboveSheet(page, sheet, paragraph, '水');
 	});
+
+	test('a long entry: the sheet takes at most 60 % of the screen and scrolls inside, the word above it (#282)', async ({ page, learner }) => {
+		const filler = Array.from({ length: 12 }, () => '私は学校に行きます。');
+		const bookId = await addBook(learner, 'ja', '辞書の本', [...filler, '辞書を読みます。', ...filler]);
+		await page.goto(`/reader/book/${bookId}/0`);
+		const paragraph = page.getByText('辞書を読みます。');
+		await expect(paragraph).toBeVisible();
+		// Low on the screen, where the sheet comes up.
+		await paragraph.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - window.innerHeight * 0.8));
+		const word = await centreOf(paragraph, '辞');
+		await page.touchscreen.tap(word.x, word.y);
+		const sheet = page.getByRole('dialog', { name: /辞書/ });
+		await expect(sheet).toContainText('dictionary sense 30');
+		await expectAboveSheet(page, sheet, paragraph, '辞書');
+
+		const viewport = page.viewportSize()!;
+		const measure = () =>
+			sheet.evaluate((el) => {
+				const body = el.querySelector('.body') as HTMLElement;
+				return { height: el.getBoundingClientRect().height, scrolls: body.scrollHeight > body.clientHeight + 1 };
+			});
+		const opened = await measure();
+		expect(opened.height, `sheet height ${opened.height} of ${viewport.height}`).toBeLessThanOrEqual(viewport.height * 0.6);
+		expect(opened.scrolls, 'the long entry scrolls inside the sheet').toBe(true);
+
+		// The content scrolls to its end inside the sheet; the sheet stays put.
+		const last = sheet.getByText('dictionary sense 30', { exact: false });
+		await last.scrollIntoViewIfNeeded();
+		await expect(last).toBeInViewport();
+		expect((await measure()).height).toBeCloseTo(opened.height, 0);
+		await expectAboveSheet(page, sheet, paragraph, '辞書');
+
+		// Dragging the handle up does not grow it past the cap.
+		const handle = sheet.locator('.grab');
+		const grab = await handle.boundingBox();
+		await handle.dispatchEvent('pointerdown', { clientX: grab!.x + 10, clientY: grab!.y + 10, pointerId: 3, isPrimary: true });
+		await handle.dispatchEvent('pointermove', { clientX: grab!.x + 10, clientY: 20, pointerId: 3 });
+		expect((await measure()).height).toBeLessThanOrEqual(viewport.height * 0.6);
+		expect((await sheet.boundingBox())!.y).toBeCloseTo(viewport.height - opened.height, 0);
+		await handle.dispatchEvent('pointerup', { clientX: grab!.x + 10, clientY: 20, pointerId: 3 });
+		await expect(sheet).toBeVisible();
+	});
 });
 
 /**

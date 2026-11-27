@@ -109,7 +109,8 @@ overflow fails it.
 Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
 study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
 Back (#131), with the reviews the server stores; the reader popup on hover (desktop; the longest match first,
-no stale lookup) and from a selection (phone sheet); offline study after the service worker cached the app and
+no stale lookup) and from a selection (phone sheet), and on a phone a long entry in a sheet capped at 60 % of the screen that scrolls
+inside, with the word above it; offline study after the service worker cached the app and
 today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
 grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
 long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a

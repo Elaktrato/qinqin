@@ -5,18 +5,20 @@
 		onclose = () => {},
 		onnext,
 		onprev,
-		onescape
+		onescape,
+		maxHeight
 	}: {
 		onclose?: () => void;
 		onnext?: () => void;
 		onprev?: () => void;
 		onescape?: () => void;
+		maxHeight?: string;
 	} = $props();
 	let open = $state(false);
 </script>
 
 <button type="button" onclick={() => (open = true)}>Look up</button>
-<Sheet bind:open label="学习" {onclose} {onnext} {onprev}>
+<Sheet bind:open label="学习" {onclose} {onnext} {onprev} {maxHeight}>
 	<p>xué xí — to study</p>
 	<input aria-label="Note" />
 	{#if onescape}

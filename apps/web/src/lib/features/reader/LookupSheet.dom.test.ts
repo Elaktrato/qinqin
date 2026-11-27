@@ -95,6 +95,17 @@ describe('the lookup on the phone (#102)', () => {
 		expect(within(sheet).getByRole('group', { name: /Highlight/ })).toBeTruthy();
 	});
 
+	it('the lookup sheet is capped at 55 % of the screen; entries, actions and the highlight bar scroll inside it (#282)', async () => {
+		stubPhone(true);
+		mount('selection');
+		const sheet = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+		expect(sheet.style.getPropertyValue('--sheet-max-height')).toBe('55dvh');
+		const body = sheet.querySelector('.body') as HTMLElement;
+		expect(within(body).getByText('hometown')).toBeTruthy();
+		expect(await within(body).findByRole('button', { name: 'Add to deck: 故乡' })).toBeTruthy();
+		expect(within(body).getByRole('group', { name: /Highlight/ })).toBeTruthy();
+	});
+
 	it('closing the sheet (close button, Escape) closes the lookup', async () => {
 		stubPhone(true);
 		let lookup = mount();
