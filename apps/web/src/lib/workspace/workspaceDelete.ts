@@ -7,6 +7,7 @@ import type { Workspace } from '$lib/api/types';
 import { workspaceDisplay } from '$lib/languages';
 import { setupCacheWorkspace } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { PENDING_REVIEWS_KEY } from '$lib/studycore/events';
+import { forgetWorkspaceMirror } from '$lib/i18n/interfaceLanguage';
 
 /**
  * confirmLabel is what the user types to confirm deleting `ws`: the name
@@ -61,12 +62,13 @@ function dropPending(storage: Storage, id: number): void {
 /**
  * forgetWorkspace removes what this browser keeps for a deleted
  * workspace: its daily session receipts, its cached study setups (every
- * user's: a workspace id is global) and queued reviews (localStorage). Other
- * workspaces' entries and global preferences stay. The selection key is the
- * store's business.
+ * user's: a workspace id is global), queued reviews and its interface-language
+ * mirror (localStorage). Other workspaces' entries and global preferences
+ * stay. The selection key is the store's business.
  */
 export function forgetWorkspace(id: number, local: Storage | null): void {
 	if (local !== null) {
+		forgetWorkspaceMirror(local, id);
 		attempt(() => {
 			const prefix = sessionReceiptPrefix(id);
 			const doomed: string[] = [];

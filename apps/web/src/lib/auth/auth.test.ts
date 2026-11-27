@@ -128,7 +128,7 @@ describe('auth store', () => {
 		expect(app.auth.state).toEqual({ token: 'stored', user });
 	});
 
-	it('mirrors the account interface language and reloads only when it differs from the running one', async () => {
+	it('mirrors the account interface language and never reloads by itself (the layout decides with the workspace)', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		reloadPage.mockReset();
 		await app.auth.loadMe();

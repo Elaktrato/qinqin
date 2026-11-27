@@ -7,7 +7,10 @@
 	import { isShell, startIncoming, startNative, type IncomingHandle } from '$lib/native';
 	import { setDevicePort } from '$lib/reminders/device/port';
 	import { shellPort } from '$lib/reminders/device/shellPort';
-	import { t } from '$lib/i18n';
+	import { catalogueLanguage, getLanguage, t } from '$lib/i18n';
+	import { followInterfaceLanguage } from '$lib/i18n/interfaceLanguage';
+	import { reloadPage } from '$lib/i18n/reloadPage';
+	import { rememberedWorkspace } from '$lib/workspace/workspaces.svelte';
 	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
@@ -188,6 +191,35 @@
 		current.outbox.start();
 		void current.features.load();
 		void loadShellWorkspaces();
+	});
+
+	// The interface language of this page load (#297, lib/i18n/interfaceLanguage.ts): once `me` and the workspace
+	// list are in, and whenever the current workspace, its setting or the account setting changes, the current
+	// workspace's language (else the account's) is mirrored and, when its catalogue is not the running one, the page
+	// reloads once under the guard. Until the list loads (offline, a failing list) the start's language stays. A
+	// restricted session loads no workspaces: it follows the account unless a remembered workspace decides the start.
+	$effect(() => {
+		const user = app.auth.user;
+		if (!booted || user === null) return;
+		const restrictedNow = app.auth.restriction !== null;
+		const workspaces = session?.workspaces;
+		if (!restrictedNow && (workspaces === undefined || !workspaces.loaded || workspaces.loadError !== '')) return;
+		const current = restrictedNow ? null : (workspaces?.current ?? null);
+		const storage = app.deps.local();
+		untrack(() =>
+			followInterfaceLanguage(
+				{ account: user.interfaceLanguage, workspace: current === null ? null : { id: current.id, settings: current.settings } },
+				{
+					running: getLanguage(),
+					storage,
+					session: app.deps.session(),
+					browser: typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]),
+					catalogue: catalogueLanguage,
+					reload: reloadPage,
+					remembered: current === null ? rememberedWorkspace(storage) : null
+				}
+			)
+		);
 	});
 
 	// Keep today's study queue available offline: a few seconds after the
