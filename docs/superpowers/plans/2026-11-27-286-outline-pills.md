@@ -37,11 +37,22 @@ tier, the re-grade chip). A shared `Tag` in `lib/ui` gives the look to later use
 - Ruling: the session's status chips (tier, re-show, new, the re-grade chip "Graded Good") all become `Tag`s; `Chip`
   stays for the entry page, the search filters and the reader until they adopt `Tag` (the issue says "later") —
   cost if wrong: two looks for a while, which the issue expects.
-- Ruling: the pill radius is `999px` (rounded ends) and the padding 0 0.5em at the label size, line-height tight,
-  so a header with three tags is no taller than one line of the label — cost if wrong: cosmetic.
+- Ruling: the pill radius is `999px` (rounded ends), the padding 0 0.6em, the label size and the body line height
+  (as the kind label beside it), so a tag line is no taller than the label line — cost if wrong: cosmetic.
 - Ruling: the "no pills" rule of the visual rework stays for navigation and buttons; it is amended in §2 and §5 as
   the owner's decision for tags only (the issue's wording) — cost if wrong: a doc line.
+- Ruling: `Tag` gets a row in `docs/contracts/themes/README.md` (base components, design rules) without a
+  ContractVersion bump — the table documents components, not data a client decodes; no fixture changes — cost if
+  wrong: one number and a CHANGELOG line.
 
 ## Execution record
 
-(filled in as the work goes)
+- Task 2, test first: `Tag.contrast.test.ts` run before `Tag.svelte` existed (failed: no module), then the
+  component: 2 source checks + 2 tones × every built-in theme and accent pass. The gallery shows the tags
+  (`gallery.gallery.test.ts` requires every exported component).
+- Task 3, test first: the header tests in `StudyFace.dom.test.ts` and the session page tests
+  (`page.dom.test.ts`: level tag, deck and level tags in a deck session, the re-show and re-grade labels are tags)
+  were changed first: 6 failed; then `FaceHeader`/`StudyFace`/the session page; all pass.
+- Checked by eye (headless Chromium): the gallery's tags in Catppuccin Latte, Catppuccin Mocha, Gruvbox and forced
+  colours, and a Word Salad card at 360 px in the e2e app (the tier and "new" wrap onto a second line with the
+  deck at its end, no sideways scroll). Not checked: the other themes by eye (the contrast test measures them all).
