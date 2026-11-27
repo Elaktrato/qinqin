@@ -11,6 +11,7 @@ import {
 	MIRROR_KEY,
 	RELOAD_MARKER_KEY,
 	followInterfaceLanguage,
+	mirrorWorkspaceLanguage,
 	startupLanguage,
 	switchInterfaceLanguage,
 	workspaceMirrorKey
@@ -200,6 +201,21 @@ describe('startupLanguage in a workspace (#297): the first paint and an offline 
 		const storage = memoryStorage({ [MIRROR_KEY]: 'xx', [workspaceMirrorKey(7)]: 'Y Y' });
 		expect(startupLanguage({ signedIn: true, storage, browser: [], workspace: 7 })).toBe('xx');
 		expect(startupLanguage({ signedIn: false, storage, browser: ['yy'], workspace: 7 })).toBe('yy');
+	});
+});
+
+describe('mirrorWorkspaceLanguage (Settings → Workspaces save)', () => {
+	it('mirrors the workspace\'s own setting and says whether the next start shows it', () => {
+		const storage = memoryStorage({ [MIRROR_KEY]: 'en' });
+		expect(mirrorWorkspaceLanguage(storage, { id: 4, settings: { interfaceLanguage: 'xx' } }, '', [])).toBe(true);
+		expect(storage.getItem(workspaceMirrorKey(4))).toBe('xx');
+		expect(mirrorWorkspaceLanguage(storage, { id: 4, settings: {} }, '', [])).toBe(true);
+		expect(storage.getItem(workspaceMirrorKey(4))).toBeNull();
+	});
+
+	it('false when the browser blocks site storage', () => {
+		expect(mirrorWorkspaceLanguage(blocked, { id: 4, settings: { interfaceLanguage: 'xx' } }, '', [])).toBe(false);
+		expect(mirrorWorkspaceLanguage(null, { id: 4, settings: { interfaceLanguage: 'xx' } }, '', [])).toBe(false);
 	});
 });
 

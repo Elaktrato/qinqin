@@ -55,6 +55,7 @@
     "sources.plugins.sources",
     "sources.plugins.title",
     "flashcards.card.showReading",
-    "flashcards.writing.hint"
+    "flashcards.writing.hint",
+    "settings.account.interfaceLanguage.hint"
   ]
 }

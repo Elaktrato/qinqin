@@ -24,6 +24,7 @@
 	import StarterSettings from '$lib/starter/StarterSettings.svelte';
 	import VisualAidsSettings from '$lib/settings/VisualAidsSettings.svelte';
 	import RomanisationSettings from '$lib/settings/RomanisationSettings.svelte';
+	import WorkspaceLanguageSettings from '$lib/settings/WorkspaceLanguageSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -296,6 +297,8 @@
 
 		{#if session.workspaces.current}
 			{@const active = session.workspaces.current}
+			<!-- Next to the study language (#297): the current workspace's interface language. -->
+			<WorkspaceLanguageSettings label={workspaceName(active)} />
 			<Section title={t('settings.workspaces.audioTitle')} level={3}>
 				<p class="hint">{t('settings.workspaces.audioHint')}</p>
 				<AudioSettings

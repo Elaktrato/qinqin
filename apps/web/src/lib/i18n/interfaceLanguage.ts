@@ -87,6 +87,21 @@ export function startupLanguage(o: {
 	return resolveInterfaceLanguage(mirrored ?? undefined, o.browser);
 }
 
+/**
+ * Settings saved a workspace's own setting: mirror it, and say whether the next start in that workspace opens in its
+ * language (false: the browser blocks site storage, so this page cannot switch to it).
+ */
+export function mirrorWorkspaceLanguage(
+	storage: Storage | null,
+	workspace: { id: number; settings?: Readonly<Record<string, unknown>> | null },
+	account: string,
+	browser: readonly string[]
+): boolean {
+	writeWorkspaceMirror(storage, workspace.id, workspaceSetting(workspace.settings));
+	const next = startupLanguage({ signedIn: true, storage, browser, workspace: workspace.id });
+	return next === resolveWorkspaceLanguage(workspace, account, browser);
+}
+
 /** sessionStorage: set just before a language reload, so the start it causes never reloads again. */
 export const RELOAD_MARKER_KEY = 'qq.interfaceLanguage.reloaded';
 

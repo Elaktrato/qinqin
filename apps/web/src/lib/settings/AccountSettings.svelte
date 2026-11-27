@@ -295,7 +295,7 @@
 				...languageChoices.map((choice) => ({ value: choice.code, label: choice.label }))
 			]}
 		/>
-		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
+		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hintDefault')}</p>
 		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
 		{#if languageNotice}<p class="hint" role="status">{languageNotice}</p>{/if}
 		<Button type="submit" variant="primary" disabled={languageBusy}
