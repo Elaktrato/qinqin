@@ -118,13 +118,26 @@ export function featureEnabled(id: string, states: readonly FeatureSwitch[]): bo
 	return stateOf(id, states)?.enabled ?? true;
 }
 
+/** widgetFeatures: the features a widget needs on: its owner (unless core), then the ones it `requires`. */
+export function widgetFeatures(widget: Pick<WidgetDef, 'owner' | 'requires'>): string[] {
+	return [...(widget.owner === 'core' ? [] : [widget.owner]), ...(widget.requires ?? [])];
+}
+
 /**
- * featureWidgets: the widgets of the features the server lists as on. A
- * feature without a row (no switches loaded yet) shows none, so a
- * switched-off feature's widget never flashes in.
+ * widgetOffFeature: the first feature a widget needs that the server does not list as on (switched off, or no
+ * row yet), or null when all are on.
+ */
+export function widgetOffFeature(widget: Pick<WidgetDef, 'owner' | 'requires'>, states: readonly FeatureSwitch[]): string | null {
+	return widgetFeatures(widget).find((id) => stateOf(id, states)?.enabled !== true) ?? null;
+}
+
+/**
+ * featureWidgets: the widgets of the features the server lists as on (and
+ * every feature a widget requires). A feature without a row (no switches
+ * loaded yet) shows none, so a switched-off feature's widget never flashes in.
  */
 export function featureWidgets(states: readonly FeatureSwitch[]): WidgetDef[] {
-	return coreFeatures.flatMap((f) => (stateOf(f.id, states)?.enabled ? (f.def.widgets ?? []) : []));
+	return coreFeatures.flatMap((f) => f.def.widgets ?? []).filter((widget) => widgetOffFeature(widget, states) === null);
 }
 
 /** featureById: the core feature of an id. */

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { allWidgets } from '$lib/widgets/registry';
 import type { FeatureSwitch } from './switches.svelte';
-import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID, coreFeatures, featureById, featureEnabled, findFeature } from './index';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID, coreFeatures, featureById, featureEnabled, findFeature, widgetFeatures, widgetOffFeature } from './index';
 
 function state(id: string, enabled = true): FeatureSwitch {
 	return { id, enabled };
 }
 
-const ALL_ON = [state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)];
+const ALL_ON = [state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID), state(STATS_ID)];
 
 describe('core features', () => {
 	it('are the six core features, with fixed ids and routes', () => {
@@ -63,12 +63,25 @@ describe('feature widgets', () => {
 		expect(ids([])).not.toContain('reading-time');
 	});
 
+	it('a widget that requires another feature needs it on too (word states: flashcards and Stats, #295)', () => {
+		const wordStates = coreFeatures.flatMap((f) => f.def.widgets ?? []).find((w) => w.id === 'word-states')!;
+		expect(wordStates.requires).toEqual([STATS_ID]);
+		expect(widgetFeatures(wordStates)).toEqual([FLASHCARDS_ID, STATS_ID]);
+		expect(widgetOffFeature(wordStates, [state(FLASHCARDS_ID), state(STATS_ID, false)])).toBe(STATS_ID);
+		expect(widgetOffFeature(wordStates, [state(FLASHCARDS_ID, false), state(STATS_ID, false)])).toBe(FLASHCARDS_ID);
+		expect(widgetOffFeature(wordStates, [state(FLASHCARDS_ID), state(STATS_ID)])).toBeNull();
+	});
+
 	it('are owned by the feature id', () => {
 		expect(coreFeatures.flatMap((f) => (f.def.widgets ?? []).map((w) => [w.id, w.owner]))).toEqual([
 			['flashcards-summary', FLASHCARDS_ID],
 			['word-states', FLASHCARDS_ID],
 			['reading-time', READER_ID],
-			['scripts-progress', 'scripts']
+			['scripts-progress', 'scripts'],
+			['activity-heatmap', STATS_ID],
+			['character-map-summary', STATS_ID],
+			['summary-numbers', STATS_ID],
+			['reviews-per-day', STATS_ID]
 		]);
 	});
 });

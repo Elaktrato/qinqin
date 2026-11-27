@@ -17,6 +17,8 @@ export interface WidgetDef {
 	description: string;
 	/** 'core' for the app's own widgets, else the owning feature id (e.g. 'flashcards'). */
 	owner: 'core' | string;
+	/** Other features that must be on too (word states: flashcards' and needs Stats, #295); omitted = none. */
+	requires?: readonly string[];
 	/** 'wide' spans the whole row of the widget grid. */
 	size: 'normal' | 'wide';
 	/** Show only for these languages; omitted = every language. */

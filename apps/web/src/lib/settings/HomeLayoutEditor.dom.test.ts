@@ -25,7 +25,8 @@ beforeEach(() => {
 });
 
 beforeEach(() => {
-	ctx.session.features.set({ list: [], status: 'ready' });
+	// Stats on: its heatmap is the widget with the layout fieldset (#295).
+	ctx.session.features.set({ list: [{ id: 'stats', enabled: true }], status: 'ready' });
 	vi.mocked(loadLayout).mockResolvedValue(null);
 	vi.mocked(loadWidgetOptions).mockResolvedValue({ row: null, heatmapLayout: 'garden' });
 	vi.mocked(saveHeatmapLayout).mockResolvedValue(undefined);
@@ -132,16 +133,32 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 describe('Settings -> Home with a feature switched off', () => {
 	it("lists the flashcards widgets while Flashcards is on and leaves them out when it is off", async () => {
-		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }], status: 'ready' });
+		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }, { id: 'stats', enabled: true }], status: 'ready' });
 		const { unmount } = render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		expect(screen.getAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(1);
 		unmount();
-		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: false }], status: 'ready' });
+		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: false }, { id: 'stats', enabled: true }], status: 'ready' });
 		render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		// No row; the parked note says it stays in the layout for when the feature is back.
 		expect(screen.queryAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(0);
 		expect(screen.queryByText('Words', { selector: '.items strong' })).toBeNull();
+	});
+});
+
+describe('Settings -> Home with Stats switched off (#295)', () => {
+	it('leaves out the Stats widgets and word states; the parked ones name Stats', async () => {
+		vi.mocked(loadLayout).mockResolvedValue(['activity-heatmap', 'word-states', 'flashcards-summary', 'daily-goal']);
+		ctx.session.features.set({ list: [{ id: 'flashcards', enabled: true }, { id: 'stats', enabled: false }], status: 'ready' });
+		render(HomeLayoutEditor, { context: ctx.context });
+		await screen.findByRole('heading', { name: 'On the home page' });
+		const rows = [...document.querySelectorAll('.items strong')].map((el) => el.textContent);
+		expect(rows).toEqual(expect.arrayContaining(['Flashcards', 'Daily goal']));
+		for (const title of ['Activity', 'Words', 'Summary', 'Reviews per day', 'Characters']) expect(rows).not.toContain(title);
+		expect(screen.queryByRole('group', { name: 'Heatmap layout' })).toBeNull();
+		const parked = document.querySelector('.parked')?.textContent ?? '';
+		expect(parked).toContain('Activity (Stats)');
+		expect(parked).toContain('Words (Stats)');
 	});
 });

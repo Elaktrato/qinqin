@@ -10,7 +10,7 @@
 	import { t } from '$lib/i18n';
 	import { errorText } from '$lib/api/apiErrors';
 	import { languageLabel } from '$lib/languages';
-	import { coreFeatures } from '$lib/features';
+	import { coreFeatures, widgetOffFeature } from '$lib/features';
 	import {
 		displayItems,
 		editableLayout,
@@ -142,7 +142,10 @@
 			if (shown.has(id)) return [];
 			for (const feature of owners) {
 				const widget = feature.def.widgets?.find((w) => w.id === id);
-				if (widget) return [{ id, title: widget.title, feature: feature.title }];
+				if (!widget) continue;
+				// The feature that keeps it away: its own, or one it requires (word states needs Stats, #295).
+				const off = widgetOffFeature(widget, states) ?? feature.id;
+				return [{ id, title: widget.title, feature: ownerLabel(off) }];
 			}
 			return [];
 		});

@@ -64,7 +64,8 @@ describe('document titles on every route', () => {
 	it('finds every registered core feature page', () => {
 		// The source scan must see exactly the pages coreFeatures registers, so a
 		// page registered in another form cannot slip past the title check.
-		expect(featurePages).toHaveLength(coreFeatures.length);
+		// Stats has no page component: its pages are routes (#295), checked above.
+		expect(featurePages).toHaveLength(coreFeatures.filter((f) => f.component !== undefined).length);
 	});
 
 	it.each(featurePages.map((p) => [relative(web, p), p]))('feature page %s sets a title', (_name, page) => {

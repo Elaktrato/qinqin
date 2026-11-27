@@ -44,59 +44,69 @@ describe('allWidgets', () => {
 	});
 
 	it('registers the shipped core and feature widgets', () => {
-		const list = allWidgets([state('flashcards'), state('reader')], 'zh');
+		const list = allWidgets([state('flashcards'), state('reader'), state('stats')], 'zh');
 
 		expect(ids(list)).toEqual([
-			'activity-heatmap',
-			'character-map-summary',
 			'daily-goal',
-			'summary-numbers',
-			'reviews-per-day',
 			'weekly-summary',
 			'flashcards-summary',
 			'word-states',
-			'reading-time'
-		]);
-		expect(list.map((w) => [w.owner, w.size])).toEqual([
-			['core', 'wide'],
-			['core', 'normal'],
-			['core', 'normal'],
-			['core', 'wide'],
-			['core', 'wide'],
-			['core', 'normal'],
-			['flashcards', 'normal'],
-			['flashcards', 'normal'],
-			['reader', 'normal']
-		]);
-		// The reader has no state row here: its widget stays away, as in v0.3.0.
-		expect(ids(allWidgets([state('flashcards', false)], 'zh'))).toEqual([
+			'reading-time',
 			'activity-heatmap',
 			'character-map-summary',
-			'daily-goal',
 			'summary-numbers',
-			'reviews-per-day',
-			'weekly-summary'
+			'reviews-per-day'
+		]);
+		expect(list.map((w) => [w.owner, w.size])).toEqual([
+			['core', 'normal'],
+			['core', 'normal'],
+			['flashcards', 'normal'],
+			['flashcards', 'normal'],
+			['reader', 'normal'],
+			['stats', 'wide'],
+			['stats', 'normal'],
+			['stats', 'wide'],
+			['stats', 'wide']
+		]);
+		// The reader has no state row here: its widget stays away, as in v0.3.0.
+		expect(ids(allWidgets([state('flashcards', false), state('stats')], 'zh'))).toEqual([
+			'daily-goal',
+			'weekly-summary',
+			'activity-heatmap',
+			'character-map-summary',
+			'summary-numbers',
+			'reviews-per-day'
 		]);
 	});
 
-	it('summary-numbers is core, wide, on Stats and Home, not in the default home layout', () => {
-		const list = allWidgets([state('flashcards')], 'zh');
+	it('Stats switched off takes its widgets and word states away; the goal, the week and the features stay (#295)', () => {
+		const list = ids(allWidgets([state('flashcards'), state('reader'), state('stats', false)], 'zh'));
+		expect(list).toEqual(['daily-goal', 'weekly-summary', 'flashcards-summary', 'reading-time']);
+		// No switches loaded yet: no Stats widget flashes in.
+		expect(ids(allWidgets([], 'zh'))).toEqual(['daily-goal', 'weekly-summary']);
+		// Word states needs flashcards and Stats.
+		expect(ids(allWidgets([state('flashcards', false), state('stats')], 'zh'))).not.toContain('word-states');
+		expect(ids(allWidgets([state('flashcards'), state('stats')], 'zh'))).toContain('word-states');
+	});
+
+	it('summary-numbers is Stats\', wide, on Stats and Home, not in the default home layout', () => {
+		const list = allWidgets([state('flashcards'), state('stats')], 'zh');
 		const summary = list.find((w) => w.id === 'summary-numbers')!;
 		expect(summary).toMatchObject({
 			title: 'Summary',
-			owner: 'core',
+			owner: 'stats',
 			size: 'wide',
 			surfaces: ['stats', 'home']
 		});
 		expect(DEFAULT_LAYOUT).not.toContain('summary-numbers');
 	});
 
-	it('reviews-per-day is core, wide, on Stats and Home, not in the default home layout', () => {
-		const list = allWidgets([state('flashcards')], 'zh');
+	it('reviews-per-day is Stats\', wide, on Stats and Home, not in the default home layout', () => {
+		const list = allWidgets([state('flashcards'), state('stats')], 'zh');
 		const reviews = list.find((w) => w.id === 'reviews-per-day')!;
 		expect(reviews).toMatchObject({
 			title: 'Reviews per day',
-			owner: 'core',
+			owner: 'stats',
 			size: 'wide',
 			surfaces: ['stats', 'home']
 		});
@@ -114,7 +124,7 @@ describe('allWidgets', () => {
 	});
 
 	it('the activity heatmap has a home component (the chosen layout); Stats keeps the garden', () => {
-		const heatmap = allWidgets([], 'zh').find((w) => w.id === 'activity-heatmap')!;
+		const heatmap = allWidgets([state('stats')], 'zh').find((w) => w.id === 'activity-heatmap')!;
 		expect(heatmap.homeComponent).toBe(ActivityHome);
 		expect(heatmap.component).toBe(ActivityHeatmap);
 		expect(heatmap.homeComponent).not.toBe(heatmap.component);
@@ -126,7 +136,7 @@ describe('allWidgets', () => {
 	});
 
 	it('shows the character map tile for Han languages only', () => {
-		const states = [state('flashcards'), state('reader')];
+		const states = [state('flashcards'), state('reader'), state('stats')];
 
 		expect(ids(allWidgets(states, 'ja'))).toContain('character-map-summary');
 		expect(ids(allWidgets(states, 'zh-TW'))).toContain('character-map-summary');

@@ -10,6 +10,10 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Features:** a sixth core feature id `stats` (`features/switches.json`: `features` and the GET order end in
   `stats`; a new PUT case). `PUT /api/features/stats` stores the switch; no migration (since 055 the table has no list
   of ids). The README lists what a client hides while Stats is off and what stays.
+- **Widgets:** `activity-heatmap`, `character-map-summary`, `summary-numbers` and `reviews-per-day` are Stats'
+  widgets now (owner `stats`), and `word-states` (flashcards') needs Stats on too. The widget catalogue of
+  `settings/core-rows.json` is in the new registry order (core, then the features'); the ids are unchanged, so a
+  stored `home-layout` keeps working.
 - **Clients:** a client that does not know `stats` ignores its row (the list is read leniently) and keeps showing
   Stats.
 

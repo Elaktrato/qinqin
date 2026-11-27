@@ -29,6 +29,8 @@ export const flashcardsDef: FeatureDef = {
 				return t('flashcards.widget.wordsDescription');
 			},
 			owner: 'flashcards',
+			// A Stats widget too: it hides with Stats switched off (#295).
+			requires: ['stats'],
 			size: 'normal',
 			surfaces: ['stats', 'home'],
 			component: WordStatesWidget,
