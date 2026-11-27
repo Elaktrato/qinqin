@@ -1,6 +1,6 @@
 # Stats and the activity heatmap
 
-**Stats** is the bar-chart icon in the top bar (in the menu drawer on a phone) of every signed-in page (`/stats`). It has up to three tabs.
+**Stats** is the bar-chart icon in the top bar (in the menu drawer on a phone) of every signed-in page (`/stats`). It has up to three tabs. Stats is a feature like the Reader or the Journal: you can switch it off for yourself in [Settings → Features](Settings-tour#features), which hides these pages and their widgets and deletes nothing.
 
 The tabs are text links at the top of the page, on desktop and on the phone; the current one has an accent underline.
 

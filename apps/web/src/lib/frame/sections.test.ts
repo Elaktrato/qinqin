@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID } from '$lib/features';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID } from '$lib/features';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
 import { currentSection, frameSections, homeSection, iconOf } from './sections';
 
@@ -10,10 +10,22 @@ const ready = (list: FeatureSwitch[]) => ({ list, status: 'ready' as const });
 const all = ready([state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)]);
 
 describe('frameSections', () => {
-	it('shows only Search and Stats before the switches are ready (nothing switched off flashes in)', () => {
+	it('shows only Search before the switches are ready (nothing switched off flashes in, Stats included, #295)', () => {
 		for (const status of ['idle', 'loading', 'error'] as const) {
-			expect(frameSections({ list: [], status }).map((s) => s.id)).toEqual(['search', 'stats']);
+			expect(frameSections({ list: [], status }).map((s) => s.id)).toEqual(['search']);
 		}
+	});
+
+	it('leaves out Stats while it is switched off (#295)', () => {
+		const sections = frameSections(ready([...all.list, state(STATS_ID, false)]));
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar']);
+		expect(currentSection('/stats/week', sections)).toBeNull();
+		expect(frameSections(ready([state(STATS_ID)])).find((s) => s.id === 'stats')).toMatchObject({
+			label: 'Stats',
+			href: '/stats',
+			icon: 'stats',
+			match: ['/stats']
+		});
 	});
 
 	it('Search first, then the core features in their fixed order, Stats last', () => {

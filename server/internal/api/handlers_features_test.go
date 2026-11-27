@@ -39,7 +39,7 @@ func TestFeatureRoutes(t *testing.T) {
 		return out
 	}
 	got := list(alice)
-	want := []string{"flashcards", "reader", "journal", "grammar", "scripts"}
+	want := []string{"flashcards", "reader", "journal", "grammar", "scripts", "stats"}
 	if len(got) != len(want) {
 		t.Fatalf("list = %+v", got)
 	}

@@ -95,6 +95,16 @@ describe('MilestoneCard', () => {
 		expect(link.getAttribute('href')).toBe('/stats/week#milestones');
 	});
 
+	it('summary without the history link: Stats switched off (#295)', () => {
+		render(MilestoneCard, {
+			view: view({ kind: 'summary', count: 14, named: [r('streak:3', '2026-11-13')], more: 13, ids: [] }),
+			ondismiss: () => {},
+			historyLink: false
+		});
+		expect(screen.getByText('and 13 more')).toBeTruthy();
+		expect(screen.queryByRole('link', { name: 'See all milestones' })).toBeNull();
+	});
+
 	it('Dismiss calls ondismiss and moves focus to the page heading', async () => {
 		const h1 = withH1();
 		const ondismiss = vi.fn();

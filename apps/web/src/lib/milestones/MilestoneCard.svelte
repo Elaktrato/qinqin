@@ -17,9 +17,11 @@
 		/** The card heading's level: 2 on home, 3 inside the Week tab's section. */
 		headingLevel?: 2 | 3;
 		locale?: string;
+		/** The summary's "See all" link into Stats → Week; false while Stats is switched off (#295). */
+		historyLink?: boolean;
 	}
 
-	let { view, ondismiss, headingLevel = 2, locale }: Props = $props();
+	let { view, ondismiss, headingLevel = 2, locale, historyLink = true }: Props = $props();
 
 	const headingId = $props.id();
 	const plan = $derived(view?.plan ?? { kind: 'none' as const });
@@ -57,7 +59,9 @@
 				</ul>
 				{#if plan.kind === 'summary'}
 					{#if plan.more > 0}<p class="more">{moreText(plan.more, locale)}</p>{/if}
-					<p class="more"><a href="/stats/week#milestones" onclick={ondismiss}>{MILESTONE_TEXT.seeAll}</a></p>
+					{#if historyLink}
+						<p class="more"><a href="/stats/week#milestones" onclick={ondismiss}>{MILESTONE_TEXT.seeAll}</a></p>
+					{/if}
 				{/if}
 				<div class="dismiss">
 					<Button variant="secondary" aria-describedby={headingId} onclick={dismiss}>{MILESTONE_TEXT.dismiss}</Button>

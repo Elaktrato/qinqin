@@ -8,6 +8,7 @@
 	import { onContextStale } from '$lib/studycore/currentContext';
 	import { loadWeek, type WeekView } from '$lib/weekly/loadWeek';
 	import Button from '$lib/ui/Button.svelte';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import { weekOf } from '$lib/weekly/week';
 	import { onStudyChange, touches } from '$lib/studycore/data';
@@ -74,7 +75,10 @@
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}
-		<Button variant="plain" href="/stats/week">{t('widgets.week.more')}</Button>
+		<!-- The Week tab is a Stats page: no link while Stats is switched off (#295). -->
+		{#if !featureKnownOff(STATS_ID, session.features)}
+			<Button variant="plain" href="/stats/week">{t('widgets.week.more')}</Button>
+		{/if}
 	{/snippet}
 
 	{#if view !== null}

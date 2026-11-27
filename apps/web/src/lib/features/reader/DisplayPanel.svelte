@@ -6,8 +6,10 @@
 	import type { Variant } from './variants';
 	import type { HanziFont } from '$lib/theme/appearance';
 	import Select from '$lib/ui/Select.svelte';
-	import { useApp } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 	const app = useApp();
+	const session = useSession();
 
 	// `default` follows the app-wide hanzi font (#97); its label names the current one.
 	const APP_FONT_LABELS: Record<HanziFont, MessageKey> = {
@@ -146,7 +148,8 @@
 						{t('reader.display.hideReadings', { score: display.smartThreshold })}
 					{/if}
 					{t('reader.display.markedKnown')}
-					<a href="/stats/characters">{t('reader.display.whatScore')}</a>
+					<!-- The character map is a Stats page: no link while Stats is switched off (#295). -->
+					{#if !featureKnownOff(STATS_ID, session.features)}<a href="/stats/characters">{t('reader.display.whatScore')}</a>{/if}
 				</p>
 			</div>
 		{/if}

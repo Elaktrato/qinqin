@@ -222,4 +222,18 @@ describe('home with a feature switched off', () => {
 		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });
 		expect(link.getAttribute('href')).toBe('/settings?tab=layout');
 	});
+
+	it('shows no Stats widget while Stats is switched off; the other features stay (#295)', async () => {
+		const actual = await vi.importActual<typeof import('$lib/widgets/registry')>('$lib/widgets/registry');
+		vi.mocked(allWidgets).mockImplementation((states, language) => actual.allWidgets(states, language, []));
+		const on = [{ id: 'flashcards', enabled: true }];
+		ctx.session.features.set({ list: [...on, { id: 'stats', enabled: true }], status: 'ready' });
+		const { unmount } = render(Page, { context: ctx.context });
+		await waitFor(() => expect(document.querySelector('[data-widget="activity-heatmap"]')).not.toBeNull());
+		unmount();
+		ctx.session.features.set({ list: [...on, { id: 'stats', enabled: false }], status: 'ready' });
+		render(Page, { context: ctx.context });
+		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
+		expect(document.querySelector('[data-widget="activity-heatmap"]')).toBeNull();
+	});
 });

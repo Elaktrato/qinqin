@@ -89,7 +89,7 @@ describe('the main landmark', () => {
 		'routes/study/+page.svelte',
 		'routes/study/scheduling/+page.svelte',
 		'routes/study/session/+page.svelte',
-		'lib/features/FeaturePage.svelte',
+		'lib/features/FeatureGate.svelte',
 		'lib/features/reader/BookView.svelte',
 		'lib/features/reader/Library.svelte',
 		'lib/features/reader/SourceBrowser.svelte',

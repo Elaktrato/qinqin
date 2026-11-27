@@ -107,6 +107,15 @@ describe('DisplayPanel', () => {
 		expect(onchange).not.toHaveBeenCalled();
 	});
 
+	it('the score link to the character map hides while Stats is switched off (#295)', async () => {
+		ctx.session.features.set({ list: [{ id: 'stats', enabled: false }], status: 'ready' });
+		mount({ readings: 'smart', smartThreshold: 80 });
+		await open();
+		expect(screen.getByRole('slider')).toBeTruthy();
+		expect(screen.queryByRole('link', { name: /score/i })).toBeNull();
+		ctx.session.features.set({ list: [], status: 'idle' });
+	});
+
 	it('the highlighting checkbox reports its value, the legend shows when on', async () => {
 		const { onchange } = mount({ highlightWords: false });
 		await open();

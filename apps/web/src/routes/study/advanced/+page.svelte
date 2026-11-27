@@ -11,6 +11,7 @@
 	import { fetchSchemeCharacters } from '$lib/api/schemes';
 	import type { CharRow, FrequencyPack, Level } from '$lib/api/types';
 	import { useApp, useSession } from '$lib/context/context';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { createSetupData } from '$lib/features/flashcards/setup/setupData.svelte';
@@ -361,7 +362,7 @@
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
 	<UnreadableRowsNotice {workspaceId} />
-	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
+	{#if session.workspaces.current && usesHan(session.workspaces.current.language) && !featureKnownOff(STATS_ID, session.features)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 	{#if note !== null}<p class="hint" role="status">{note}</p>{/if}
