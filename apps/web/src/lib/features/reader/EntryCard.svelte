@@ -4,6 +4,7 @@
 	import type { LookupResult } from '$lib/api/types';
 	import { partitionSenses } from '$lib/workspace/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
+	import type { BookPlace } from './useLookup.svelte';
 	import { Chip } from '$lib/ui';
 	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import {
@@ -44,6 +45,8 @@
 		study?: {
 			workspaceId: number;
 			paragraph: string | null;
+			/** The paragraph's place in a library book (#280); null outside one. */
+			place?: BookPlace | null;
 			hold: (on: boolean) => void;
 			/** The word-state line of an entry (word highlighting on), else absent. */
 			stateLine?: ((entryId: number) => string) | null;
@@ -159,6 +162,7 @@
 			{result}
 			workspaceId={study.workspaceId}
 			paragraph={study.paragraph}
+			place={study.place ?? null}
 			hold={study.hold}
 			stateLine={study.stateLine ? study.stateLine(result.entryId) : null}
 			{first}

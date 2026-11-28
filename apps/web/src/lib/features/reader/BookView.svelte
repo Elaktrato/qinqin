@@ -83,7 +83,7 @@
 	import { topParagraph as firstInView } from './visibility';
 	import { BookmarkList, bookmarkKey, inWidget, isTextEntry } from './bookmarkList.svelte';
 	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
-	import { paragraphElement } from './dom';
+	import { paragraphElement, rangeForSpan } from './dom';
 	import { apiErrorMessage } from './errors';
 	import { displayRuns, paragraphString } from './paragraphText';
 	import { inPopup } from './popupPointer.svelte';
@@ -91,7 +91,7 @@
 	import { jumpPlan, restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
 	import { browserStorage, loadPrefs, saveFurigana, saveVariant } from './prefs';
-	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
+	import { LIBRARY_HREF, bookHref, safeHttpUrl, type SourcePlace } from './route';
 	import { LookupController } from './useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
 	import { prepareVariant, type Variant } from './variants';
@@ -99,7 +99,7 @@
 
 	const session = useSession();
 
-	let { id, chapter }: { id: number; chapter: number } = $props();
+	let { id, chapter, at = null }: { id: number; chapter: number; at?: SourcePlace | null } = $props();
 
 	const SAVE_DELAY_MS = 1000;
 	const ACTIVITY_THROTTLE_MS = 1000;
@@ -350,7 +350,9 @@
 		onTapNoWord: (target) => {
 			const hit = highlightMark(target);
 			if (hit) editFromText(hit.id, hit.el);
-		}
+		},
+		// A sentence saved from a popup keeps the book, chapter and place (#280).
+		book: () => (book && content && content.n === chapter ? { bookId: book.id, chapter: content.n } : null)
 	});
 	$effect(() => lookup.attach());
 	// One read of the history for the popup's "looked up N times" hint.
@@ -434,10 +436,40 @@
 	let tracking = $state(false);
 	const saver = new PositionSaver(setPosition, SAVE_DELAY_MS);
 
+	// --- a saved sentence's link (#280): ?at=paragraph:start-end ---
+
+	// The word to mark once its paragraph is scrolled to; the mark is a CSS
+	// highlight, gone when the chapter changes or another word is looked up.
+	const SOURCE_HIGHLIGHT = 'reader-source';
+	let sourceMark: SourcePlace | null = null;
+	function markSource(place: SourcePlace | null): void {
+		if (typeof CSS === 'undefined' || !('highlights' in CSS)) return;
+		const runs = place ? paragraphs[place.paragraph] : undefined;
+		const range = place && runs && container ? rangeForSpan(container, place.paragraph, runs, place.start, place.end) : null;
+		if (range) CSS.highlights.set(SOURCE_HIGHLIGHT, new Highlight(range));
+		else CSS.highlights.delete(SOURCE_HIGHLIGHT);
+	}
+	$effect(() => {
+		void content;
+		untrack(() => markSource(null));
+	});
+	$effect(() => {
+		if (lookup.info !== null) untrack(() => markSource(null));
+	});
+	onDestroy(() => markSource(null));
+
 	function planRestore(loaded: Book): void {
 		if (restoredBook === loaded.id) return;
 		restoredBook = loaded.id;
 		saver.reset(loaded.position);
+		// The link names the chapter in the URL: go to the word there instead
+		// of the saved position (like a bookmark jump, the position follows).
+		if (at && chapter < loaded.chapterCount) {
+			sourceMark = at;
+			focusAfterRestore = true;
+			restoreTo = { chapter, paragraph: at.paragraph };
+			return;
+		}
 		const plan = restorePlan(loaded.position, loaded.chapterCount, chapter);
 		if (plan.kind === 'none') {
 			tracking = true;
@@ -468,8 +500,10 @@
 		restoreTo = null;
 		const focus = focusAfterRestore;
 		const mark = focusMark;
+		const word = sourceMark;
 		focusAfterRestore = false;
 		focusMark = null;
+		sourceMark = null;
 		if (decision === 'skip') {
 			tracking = true;
 			return;
@@ -482,6 +516,7 @@
 			// A highlight jump focuses the highlight itself (Enter edits it).
 			const markEl = mark !== null && el ? el.querySelector<HTMLElement>(`mark[data-h="${mark}"]`) : null;
 			if (el && focus) focusQuietly(markEl ?? el);
+			if (word) markSource(word);
 			tracking = true;
 		});
 	});

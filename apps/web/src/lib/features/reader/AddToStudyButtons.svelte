@@ -14,6 +14,8 @@
 	import { bookSentence, resolveBookSentence } from './sentence';
 	import { autoSaveApplies, saveBookSentence, type SaveDeps, type SaveOutcome } from './savedSentences';
 	import { useSession } from '$lib/context/context';
+	import type { BookPlace } from './useLookup.svelte';
+	import type { SentenceSourceRequest } from '$lib/api/types';
 	const session = useSession();
 
 	// The study actions of one popup entry (design §9 "Reader", #102): the
@@ -30,6 +32,7 @@
 		result,
 		workspaceId,
 		paragraph,
+		place = null,
 		hold,
 		stateLine = null,
 		first = false
@@ -39,6 +42,8 @@
 		workspaceId: number;
 		/** The paragraph the result's offsets refer to; null in nested popups. */
 		paragraph: string | null;
+		/** Where `paragraph` is in a library book: the saved sentence keeps it with the word's range (#280). */
+		place?: BookPlace | null;
 		/** Pins the popup while the deck menu is open. */
 		hold: (on: boolean) => void;
 		/** "New word", "Learning", "Known — …"; null hides the line. */
@@ -76,6 +81,10 @@
 	// The book sentence of this result (#279); '' hides Save this sentence.
 	const sentenceText = $derived(
 		paragraph && result.kind !== 'character' ? bookSentence(paragraph, result.start, result.end) : ''
+	);
+	// Where the sentence was read (#280): the book, chapter, paragraph and the word's range.
+	const source = $derived<SentenceSourceRequest | undefined>(
+		place ? { ...place, start: result.start, end: result.end } : undefined
 	);
 	let savingSentence = $state(false);
 	// The sentence was saved (or found saved) in this popup: the button goes.
@@ -115,7 +124,8 @@
 				workspaceId,
 				entryId,
 				entryKind: result.kind,
-				text: sentenceText
+				text: sentenceText,
+				source
 			});
 			if (out.outcome !== 'none') {
 				sentenceDone = true;
@@ -203,7 +213,7 @@
 			const isCharacter = result.kind === 'character';
 			const text = paragraph && !isCharacter ? bookSentence(paragraph, result.start, result.end) : '';
 			if (text) {
-				const saved = await resolveBookSentence({ getEntry, addSentence }, entryId, text);
+				const saved = await resolveBookSentence({ getEntry, addSentence }, entryId, text, source);
 				// The word may make a Word Salad or cloze card now (#288).
 				session.eligibility.forget(entryId);
 				sentenceId = saved.sentenceId;

@@ -19,6 +19,8 @@ import (
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
+
+	"qinqin/internal/sentences"
 )
 
 // ErrNotFound reports a book (or chapter) that does not exist for the
@@ -334,7 +336,9 @@ func (s Store) SetPosition(ctx context.Context, userID, id int64, position strin
 }
 
 // Delete removes one of the user's books: its row, its bookmarks and
-// highlights (in the same transaction) and its content file.
+// highlights (in the same transaction) and its content file. The user's
+// sentences saved from it keep their title and place without the book
+// (#280, sentences.DetachBooks, same transaction).
 func (s Store) Delete(ctx context.Context, userID, id int64) error {
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -366,6 +370,9 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 	} else if n == 0 {
 		return ErrNotFound
 	}
+	if err := sentences.DetachBooks(ctx, tx, userID, []int64{id}); err != nil {
+		return fmt.Errorf("library: delete %d: %w", id, err)
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("library: delete %d: %w", id, err)
 	}
@@ -379,7 +386,7 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 
 // DeleteWorkspaceBooks deletes, inside the caller's transaction, every
 // book of one of userID's workspaces with its bookmarks and highlights,
-// and returns the deleted book ids in id order. The content files stay:
+// detaches the user's sentences saved from them (#280), and returns the deleted book ids in id order. The content files stay:
 // the caller removes them with RemoveContent once the transaction has
 // committed, so a rollback never loses a book's text. Another user's
 // workspace deletes nothing.
@@ -417,6 +424,9 @@ func DeleteWorkspaceBooks(ctx context.Context, tx *sql.Tx, userID, workspaceID i
 		return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
 	}
 	slices.Sort(ids)
+	if err := sentences.DetachBooks(ctx, tx, userID, ids); err != nil {
+		return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
+	}
 	return ids, nil
 }
 

@@ -116,7 +116,8 @@
    "translation",
    "updatedAt",
    "deletedAt",
-   "ai"
+   "ai",
+   "source"
   ],
   "events": [
    "id",
@@ -479,7 +480,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -1214,7 +1216,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -1358,7 +1361,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -1612,7 +1616,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -2942,7 +2947,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -3088,7 +3094,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -3233,7 +3240,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -3378,7 +3386,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -3524,7 +3533,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [
@@ -3669,7 +3679,8 @@
        "translation": "Hello, world.",
        "updatedAt": "2026-11-12T09:45:00Z",
        "deletedAt": null,
-       "ai": null
+       "ai": null,
+       "source": { "kind": "book", "bookId": 3, "title": "Sample book", "chapter": 0, "paragraph": 2, "start": 0, "end": 2 }
       }
      ],
      "events": [

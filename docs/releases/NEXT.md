@@ -4,6 +4,9 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Upgrading
 
+- Migration 059 adds the source of a saved sentence (#280). An upgrade wipes nothing; sentences saved earlier have no
+  source until they are saved again from a book.
+
 - Migration 057 adds the picture reports (#274). An upgrade wipes nothing. Images packs now build a data package; the
   server builds it at start. Re-seed (`qinqin seed`) to install the reviewed picture maps of a rebuilt image.
 - Run `qinqin seed` once after upgrading (#346): it re-imports CC-CEDICT and JMdict so each meaning knows its reading. Until then a Starter word's card shows the meanings of all its readings. Starter cards added before this release keep doing so (a pin is set when a word is first added); everyday meanings still come first on them. Nothing is wiped.
@@ -29,6 +32,10 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
 ## New
+
+- Reader: a sentence saved from a book keeps where you read it (#280). The word's page shows "From *title*, chapter n"
+  under it, linked to the book at that place with the word marked; cards show the line as text. A deleted book's
+  title stays, without the link. Backups carry it.
 
 - **Mistake notebook** (#227, `/notebook`, linked from Decks, Practice and Grammar): everything you got wrong in one place: cards answered Again, drill items answered wrong, grammar runs and course lessons below 80 %, unit tests and section exams not passed, grouped into words, characters, tones, grammar and course, newest first, each with what went wrong and a link. An item leaves after three right answers in a row, or when you remove it; **Clear the notebook** empties it (your answers and schedules stay). **Practise my mistakes** asks its drill items in one round and starts a session of its cards that are due now. Nothing new is stored but what you removed, as study events (synced, in backups).
 - **Graded readers** in the Reader (#231): short stories, dialogues and simple informational texts written for qinqin, five for each level — Chinese ≈ HSK 1–4 and Japanese ≈ N5–N3. The Sources page (Reader → browse graded readers and public-domain texts) opens on them in Chinese and Japanese workspaces, with a level filter; each text shows its level, kind, length and the few words above its level with a reading and meaning; **Read** adds it to your library and opens it. Every text is checked against its level's word list (95 % of the words at or below the level). Written for qinqin (CC BY 4.0) and reviewed by agents acting as native-speaker teachers, not yet by a person. Nothing to install.

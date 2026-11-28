@@ -6,6 +6,8 @@
 
 import { compareCanonical } from '$lib/studycore/canonical';
 import type { StudyCard } from '$lib/studycore/types';
+import type { SentenceSourceRequest } from '$lib/api/types';
+import { adoptSource, wantsSource, type SourcedSentence } from './sentence';
 
 /** The contract's whitespace: a run of these is one space in a sentence's text. */
 export const SENTENCE_SPACE: readonly string[] = [
@@ -99,9 +101,9 @@ export function autoSaveApplies(c: {
 export interface SaveDeps {
 	/** The workspace's live cards. */
 	cards(workspaceId: number): Promise<readonly StudyCard[]>;
-	getEntry(entryId: number): Promise<{ sentences?: readonly { id: number; hanzi: string }[] | null }>;
-	/** POST the text; the server answers an existing sentence with the same text. */
-	addSentence(entryId: number, hanzi: string): Promise<{ id: number }>;
+	getEntry(entryId: number): Promise<{ sentences?: readonly SourcedSentence[] | null }>;
+	/** POST the text (with where it was read, #280); the server answers an existing sentence with the same text. */
+	addSentence(entryId: number, hanzi: string, source?: SentenceSourceRequest): Promise<{ id: number }>;
 	addCard(
 		workspaceId: number,
 		entryId: number,
@@ -122,7 +124,7 @@ export type SaveOutcome =
  */
 export async function saveBookSentence(
 	deps: SaveDeps,
-	req: { workspaceId: number; entryId: number; entryKind: string; text: string }
+	req: { workspaceId: number; entryId: number; entryKind: string; text: string; source?: SentenceSourceRequest }
 ): Promise<SaveOutcome> {
 	if (req.entryKind === 'character' || normalizeSentence(req.text) === '') return { outcome: 'none' };
 	const cards = await deps.cards(req.workspaceId);
@@ -130,6 +132,11 @@ export async function saveBookSentence(
 	if (pre.action === 'none') return { outcome: 'none' };
 	const entry = await deps.getEntry(req.entryId);
 	const plan = planSentenceSave({ ...req, sentences: entry.sentences ?? [], cards });
+	// The same text already on the entry: an own sentence without a source takes this one (#280).
+	if ((plan.action === 'card' || plan.action === 'already') && req.source) {
+		const same = (entry.sentences ?? []).find((s) => s.id === plan.sentenceId);
+		if (same && wantsSource(same, req.source)) await adoptSource(deps, req.entryId, normalizeSentence(req.text), req.source);
+	}
 	switch (plan.action) {
 		case 'none':
 			return { outcome: 'none' };
@@ -139,7 +146,9 @@ export async function saveBookSentence(
 			await deps.addCard(req.workspaceId, req.entryId, { kind: 'sentence', sentenceId: plan.sentenceId, ...plan.card });
 			return { outcome: 'saved', sentenceId: plan.sentenceId };
 		case 'save': {
-			const created = await deps.addSentence(req.entryId, plan.text);
+			const created = req.source
+				? await deps.addSentence(req.entryId, plan.text, req.source)
+				: await deps.addSentence(req.entryId, plan.text);
 			if (plan.card === null) return { outcome: 'savedNoCard', sentenceId: created.id };
 			await deps.addCard(req.workspaceId, req.entryId, { kind: 'sentence', sentenceId: created.id, ...plan.card });
 			return { outcome: 'saved', sentenceId: created.id };

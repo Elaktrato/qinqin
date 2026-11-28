@@ -235,15 +235,30 @@ type Overlay struct {
 }
 
 // OwnSentence is a sentence the user added, or a kept AI example (#186)
-// with its mark.
+// with its mark, and where the reader saved it (#280).
 type OwnSentence struct {
-	ID          int64       `json:"id"`
-	EntryID     int64       `json:"entryId"`
-	Hanzi       string      `json:"hanzi"`
-	Pinyin      string      `json:"pinyin"`
-	Translation string      `json:"translation"`
-	UpdatedAt   string      `json:"updatedAt"`
-	AI          *SentenceAI `json:"ai,omitempty"`
+	ID          int64           `json:"id"`
+	EntryID     int64           `json:"entryId"`
+	Hanzi       string          `json:"hanzi"`
+	Pinyin      string          `json:"pinyin"`
+	Translation string          `json:"translation"`
+	UpdatedAt   string          `json:"updatedAt"`
+	AI          *SentenceAI     `json:"ai,omitempty"`
+	Source      *SentenceSource `json:"source,omitempty"`
+}
+
+// SentenceSource is where the reader saved an own sentence (#280,
+// docs/contracts/reader/sentence-sources.json): kind "book", the book's
+// archive id (a book of library/books.json; null once the book was
+// deleted), its title and the word's place.
+type SentenceSource struct {
+	Kind      string `json:"kind"`
+	BookID    *int64 `json:"bookId"`
+	Title     string `json:"title"`
+	Chapter   int    `json:"chapter"`
+	Paragraph int    `json:"paragraph"`
+	Start     int    `json:"start"`
+	End       int    `json:"end"`
 }
 
 // SentenceAI is the mark of a kept AI example: the provider id and the

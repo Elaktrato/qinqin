@@ -207,6 +207,27 @@ describe('resolveBookSentence', () => {
 		});
 	});
 
+	const source = { bookId: 5, chapter: 2, paragraph: 4, start: 10, end: 12 };
+
+	it('posts the source with a new sentence (#280)', async () => {
+		const api = fakeApi();
+		await resolveBookSentence(api, 42, '我学习中文。', source);
+		expect(api.addSentence).toHaveBeenCalledWith(42, '我学习中文。', source);
+	});
+
+	it('posts again for an own sentence without a source, so the server adopts it', async () => {
+		const api = fakeApi([{ id: 5, hanzi: '我学习中文。', userId: 4 } as { id: number; hanzi: string }]);
+		api.addSentence.mockResolvedValueOnce({ id: 5 });
+		expect(await resolveBookSentence(api, 42, '我学习中文。', source)).toEqual({ sentenceId: 5, failed: false });
+		expect(api.addSentence).toHaveBeenCalledWith(42, '我学习中文。', source);
+	});
+
+	it('keeps the existing id when the adoption fails', async () => {
+		const api = fakeApi([{ id: 5, hanzi: '我学习中文。', userId: 4 } as { id: number; hanzi: string }]);
+		api.addSentence.mockRejectedValueOnce(new Error('422'));
+		expect(await resolveBookSentence(api, 42, '我学习中文。', source)).toEqual({ sentenceId: 5, failed: false });
+	});
+
 	it('does nothing for an empty sentence', async () => {
 		const api = fakeApi();
 		expect(await resolveBookSentence(api, 42, '  ')).toEqual({ sentenceId: undefined, failed: false });

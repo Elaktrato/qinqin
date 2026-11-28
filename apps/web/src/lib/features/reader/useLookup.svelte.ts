@@ -52,6 +52,19 @@ export interface StackInfo {
 	 * saved with a study card is cut from it).
 	 */
 	paragraph: string;
+	/**
+	 * Where the root popup's paragraph is in a library book (#280): the
+	 * book, chapter and paragraph a saved sentence keeps as its source;
+	 * null or absent outside a book (grammar lessons, conversations).
+	 */
+	source?: BookPlace | null;
+}
+
+/** A paragraph of a library book. */
+export interface BookPlace {
+	bookId: number;
+	chapter: number;
+	paragraph: number;
 }
 
 export interface LookupOptions {
@@ -74,6 +87,8 @@ export interface LookupOptions {
 	 * gap): what it landed on, so the reader can open a highlight there.
 	 */
 	onTapNoWord?: (target: Element) => void;
+	/** The book and chapter on screen (the reader); absent elsewhere: saved sentences then get no source (#280). */
+	book?: () => { bookId: number; chapter: number } | null;
 }
 
 /** A word under a point: paragraph p, its text, and the code point there. */
@@ -489,7 +504,7 @@ export class LookupController {
 		});
 		if (id === null) return;
 		this.tapped = true;
-		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: at.text };
+		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: at.text, source: this.#placeOf(at.p) };
 		if (first) this.#opts.onLookup?.(first.entryId, 'selection');
 	}
 
@@ -533,7 +548,8 @@ export class LookupController {
 			lang: this.#opts.lang(),
 			textLang: this.#opts.textLang(),
 			note: '',
-			paragraph: runs ? paragraphString(runs) : ''
+			paragraph: runs ? paragraphString(runs) : '',
+			source: this.#placeOf(shown.span.p)
 		};
 		this.#dwell.shown(shown.results[0]?.entryId ?? null);
 	}
@@ -586,7 +602,7 @@ export class LookupController {
 			results: null
 		});
 		if (id === null) return;
-		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: text };
+		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: text, source: this.#placeOf(span.p) };
 		try {
 			const found = await lookupSelection(lang, text, target, this.#lookup, abort.signal);
 			if (seq !== this.#selectionSeq || !this.info) return;
@@ -622,6 +638,11 @@ export class LookupController {
 	}
 
 	// --- shared ---
+
+	#placeOf(p: number): BookPlace | null {
+		const book = this.#opts.book?.();
+		return book ? { ...book, paragraph: p } : null;
+	}
 
 	#rangeOf(span: Span): Range | null {
 		const container = this.#opts.container();

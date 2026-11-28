@@ -169,3 +169,28 @@ rule of `frequency/display-form.json` over the result's `forms`, `readings` (wit
 (`tags`), without a list form — の for 1469800 (not the search-only 乃), こと for the usually-kana 事, and the
 entry's display form, not the text's spelling, for a form match (解る in a text snapshots 分かる). The popup's
 headword is the server's `term`: the matched written form unless it is search-only, else the display form.
+
+## Sentence sources (`sentence-sources.json`, #280)
+
+An own sentence saved from the reader (the add-to-deck path and Save this sentence, #279) keeps where it was read.
+Grammar lessons and conversations save no source.
+
+- **The source:** `{kind: "book", bookId, title, chapter, paragraph, start, end}`: the library book (`null` once it is
+  deleted), the book's title when saved (the server copies it), the chapter and paragraph (zero-based) and the word's
+  code-point range `[start, end)` of the paragraph's displayed text, as highlights and lookup offsets address it.
+  Own sentences only; pack sentences never carry one. It is private like the sentence.
+- **The request** (`check`): `POST /api/entries/{id}/sentences` with `source: {bookId, chapter, paragraph, start,
+  end}`. Valid when the book is one of the caller's, of the entry's language, `0 ≤ chapter < chapterCount`,
+  `0 ≤ paragraph ≤ 100000` and `0 ≤ start < end ≤ 100000` (`limits`); anything else is 422 and stores nothing
+  (another user's book is the same 422 as a missing one).
+- **The same text** (`merge`): the 200 answer of #279. An own sentence without a source takes the request's; one with
+  a source keeps it; a pack sentence gets none. A change moves `updatedAt` (the pull ships it). Clients that find the
+  same own sentence without a source on the entry post again with the source, so the server adopts it.
+- **A deleted book** (`detach`): a book delete or a workspace delete sets `bookId` to `null` in the same transaction
+  and moves `updatedAt`; kind, title and place stay. Other users' sentences are never touched.
+- **The link** (`link`): `/reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}`; none without a book or for
+  another kind. **`at`** (`at`): `^\d+:\d+-\d+$` with `start < end ≤ 100000` and `paragraph ≤ 100000`, else ignored.
+  The reader scrolls to the paragraph instead of the saved position, marks the word and saves the position from
+  there.
+- **The label** (`label`): "From *title*, chapter n" with n one-based; an empty (blank) title reads as an untitled
+  book; without a book the text has no link.
