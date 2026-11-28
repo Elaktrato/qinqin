@@ -57,6 +57,12 @@ describe('recent sent reviews', () => {
 		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['c']);
 	});
 
+	it('keeps sent notebook marks too (#227): a removed item stays out before the log refreshes', () => {
+		const typed = (id: string, type: string) => ({ ...(ev(id) as object), type }) as never;
+		rememberSent(1, [typed('n', 'notebook'), typed('v', 'view')], NOW, store);
+		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['n']);
+	});
+
 	it('forgets entries older than three days', () => {
 		rememberSent(1, [ev('old')], NOW - RECENT_SENT_TTL_MS - 1, store);
 		rememberSent(1, [ev('new')], NOW, store);
