@@ -1,5 +1,9 @@
-// Package segment finds dictionary words in running zh/ja text by greedy
-// longest match, on top of the lookup engine: one match per position is
+// Package segment finds dictionary words in running zh/ja text on top of
+// the lookup engine. A language with segmentation rules (rules/, the
+// contract docs/contracts/segment/: Japanese) is read a whole text at a
+// time: the cheapest path through the lattice of every match at every
+// position (lattice.go). Any other language (Chinese, data-only
+// languages) is read by greedy longest match: one match per position is
 // the longest text the ranked lookup matched there. Offsets are Unicode
 // code points, never bytes or UTF-16.
 package segment
@@ -49,6 +53,10 @@ type Match struct {
 	// reading, for a reading match the matched one; Chinese pinyin. It is
 	// unrelated to Candidate.Reading, the "matched by a reading" flag.
 	Reading *Reading `json:"reading,omitempty"`
+	// Function is true for a function word (a particle, the copula, an
+	// auxiliary: docs/contracts/segment/): never new, learning or
+	// unreached. Languages with segmentation rules only.
+	Function bool `json:"function,omitempty"`
 }
 
 // Reading is one reading of a match: its type ("pinyin", "kana", ...) and
@@ -77,18 +85,30 @@ func (s Service) MatchAt(ctx context.Context, language, text string, offset int)
 }
 
 // Segment returns the non-overlapping matches of text in ascending order;
-// runs without a match are skipped. A match is the longest one at its
-// position, except that an expression never cuts a longer word
-// (splitParticle).
+// runs without a match are skipped. With segmentation rules the matches
+// are the cheapest reading of the whole text (lattice); otherwise a match
+// is the longest one at its position. Either way an expression never cuts
+// a longer word (splitParticle).
 func (s Service) Segment(ctx context.Context, language, text string) ([]Match, error) {
 	runes := []rune(text)
-	matches := []Match{}
 	// One table for the whole text, even if the tables reload meanwhile.
 	l := lookup.LangOf(language)
 	// The whole text shares one work budget; once it is spent the rest is
 	// matched exactly (docs/contracts/lemma/README.md, Lookup bounds).
 	l.Budget = lookup.NewBudget(lookup.MaxRequestWork)
+	// And one memo of the store reads: the same prefixes recur.
+	l.Cache = lookup.NewCache()
+	if r := rulesFor(language); r != nil {
+		return s.lattice(ctx, l, runes, r)
+	}
+	return s.greedy(ctx, l, runes)
+}
+
+// greedy is the longest match at each position, left to right.
+func (s Service) greedy(ctx context.Context, l lookup.Lang, runes []rune) ([]Match, error) {
+	matches := []Match{}
 	hints := hintsOf(l)
+	at := func(offset int) (*Match, []lookup.Result, error) { return s.lookupAt(ctx, l, runes, offset) }
 	for i := 0; i < len(runes); {
 		m, results, err := s.lookupAt(ctx, l, runes, i)
 		if err != nil {
@@ -98,7 +118,7 @@ func (s Service) Segment(ctx context.Context, language, text string) ([]Match, e
 			i++
 			continue
 		}
-		if p, err := s.splitParticle(ctx, l, runes, i, m, results, hints); err != nil {
+		if p, err := s.splitParticle(at, i, m, results, hints); err != nil {
 			return nil, err
 		} else if p != nil {
 			m = p
@@ -129,7 +149,8 @@ func hintsOf(l lookup.Lang) lemma.Hints {
 // hints.KeepWhole — the token is the particle: 仕事をしている is
 // 仕事 | を | している, not 仕事 | をして | いる, and 仕事をして帰った is
 // 仕事 | を | して | 帰った. Nil when the rule does not apply.
-func (s Service) splitParticle(ctx context.Context, language lookup.Lang, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
+// at is the match and ranked results at an offset of the text.
+func (s Service) splitParticle(at func(int) (*Match, []lookup.Result, error), offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
 	best := results[0]
 	if len(hints.ExpressionPOS) == 0 || len(hints.ParticlePOS) == 0 || len(best.Reasons) > 0 || best.Pri > 0 || !everySense(best, hints.ExpressionPOS) {
 		return nil, nil
@@ -143,7 +164,7 @@ func (s Service) splitParticle(ctx context.Context, language lookup.Lang, runes 
 	if short < 0 || !anySense(results[short], hints.ParticlePOS) {
 		return nil, nil
 	}
-	next, nextResults, err := s.lookupAt(ctx, language, runes, offset+results[short].End-results[short].Start)
+	next, nextResults, err := at(offset + results[short].End - results[short].Start)
 	if err != nil || next == nil || next.End < m.End {
 		return nil, err
 	}

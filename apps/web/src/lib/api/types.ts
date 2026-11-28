@@ -355,6 +355,8 @@ export interface SegmentMatch {
 	entries: SegmentCandidate[];
 	/** Only with `readings: true`: the best candidate's reading, the caller's overlay applied. */
 	reading?: { type: string; value: string };
+	/** A function word (a particle, the copula, an auxiliary: docs/contracts/segment/): never new, learning or unreached. Sent only when true. */
+	function?: boolean;
 }
 
 // SegmentCandidate is one entry a match resolves to; reading is true when

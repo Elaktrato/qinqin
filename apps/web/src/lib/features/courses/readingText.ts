@@ -1,6 +1,7 @@
 // The reading lesson's text (#222, Ruling 23): the unit's text cut into plain runs and the words the segmenter found,
 // each word with its reading when the learner has not reached it (not met in a lesson, not marked known), and the
-// list of those words for their glosses. Offsets are code points, as the segmenter counts them. Pure.
+// list of those words for their glosses. A function word (`function`, #348) never gets a reading. Offsets are code
+// points, as the segmenter counts them. Pure.
 
 import type { SegmentMatch } from '$lib/api/types';
 
@@ -23,7 +24,9 @@ export function readingParts(text: string, matches: readonly SegmentMatch[], rea
 		const entry = match.entries[0];
 		if (entry === undefined || match.start < at || match.end > chars.length || match.end <= match.start) continue;
 		plain(match.start);
-		const reading = !reached.has(entry.id) && match.reading ? { type: match.reading.type, value: match.reading.value } : null;
+		// A function word (a particle, the copula) is never unreached (docs/contracts/segment/).
+		const reading =
+			!match.function && !reached.has(entry.id) && match.reading ? { type: match.reading.type, value: match.reading.value } : null;
 		out.push({ text: chars.slice(match.start, match.end).join(''), entryId: entry.id, reading });
 		at = match.end;
 	}

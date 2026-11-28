@@ -176,6 +176,8 @@ type Lang struct {
 	Rules *lemma.Table // nil: no deinflection
 	// Budget, when set, is the request's shared work budget.
 	Budget *Budget
+	// Cache, when set, memoises the request's store reads (NewCache).
+	Cache *Cache
 }
 
 // LangOf takes the pack and rule table of language now.
@@ -250,7 +252,7 @@ func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, 
 			plains = append(plains, pl)
 		}
 	}
-	byForm, err := s.Lexicon.ByForm(ctx, language, forms)
+	byForm, err := s.byForm(ctx, l, forms)
 	if err != nil {
 		return nil, fmt.Errorf("lookup: %w", err)
 	}
@@ -259,7 +261,7 @@ func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, 
 	// kanji. ByReadingKind never loads those entries.
 	var byReading map[string][]lexicon.Entry
 	if len(plains) > 0 && (len(kinds) == 0 || slices.Contains(kinds, kindWord)) {
-		if byReading, err = s.Lexicon.ByReadingKind(ctx, language, kindWord, plains); err != nil {
+		if byReading, err = s.byReadingWord(ctx, l, plains); err != nil {
 			return nil, fmt.Errorf("lookup: %w", err)
 		}
 	}
@@ -293,7 +295,7 @@ func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, 
 			consider(e, p, slices.IndexFunc(e.Readings, func(r lexicon.Reading) bool { return r.Plain == pl }))
 		}
 	}
-	if order, err = s.dropRetired(ctx, order, best); err != nil {
+	if order, err = s.dropRetired(ctx, l.Cache, order, best); err != nil {
 		return nil, err
 	}
 	if len(order) == 0 {
@@ -305,7 +307,7 @@ func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, 
 	for i, id := range order {
 		matches[i], entries[i] = best[id], best[id].entry
 	}
-	freqs, packIDs := s.frequencies(ctx, language, entries)
+	freqs, packIDs := s.cachedFrequencies(ctx, l, entries)
 	ranks := rankingRanks(packIDs, freqs)
 
 	cands := make([]candidate, len(matches))
@@ -321,7 +323,7 @@ func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, 
 	sortCandidates(cands)
 	cands = cands[:min(len(cands), MaxEntries)]
 
-	names, err := s.dictionaryNames(ctx, cands, matches)
+	names, err := s.dictionaryNames(ctx, l.Cache, cands, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -563,15 +565,21 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 // when some entry has no active sense. It relies on sense tombstones not
 // being purged: a purge of an uninstalled dictionary's senses would make
 // its words look like sense-less characters again.
-func (s Service) dropRetired(ctx context.Context, order []int64, best map[int64]*match) ([]int64, error) {
+func (s Service) dropRetired(ctx context.Context, c *Cache, order []int64, best map[int64]*match) ([]int64, error) {
 	var ids []any
+	retired := map[int64]bool{}
 	for _, id := range order {
-		if len(best[id].entry.Senses) == 0 {
-			ids = append(ids, id)
+		if len(best[id].entry.Senses) > 0 {
+			continue
 		}
+		if r, ok := c.retiredOf(id); ok {
+			retired[id] = r
+			continue
+		}
+		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		return order, nil
+		return slices.DeleteFunc(order, func(id int64) bool { return retired[id] }), nil
 	}
 	rows, err := s.DB.QueryContext(ctx, `SELECT DISTINCT entry_id FROM senses WHERE entry_id IN (`+
 		strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")+`)`, ids...)
@@ -579,7 +587,10 @@ func (s Service) dropRetired(ctx context.Context, order []int64, best map[int64]
 		return nil, fmt.Errorf("lookup: retired entries: %w", err)
 	}
 	defer rows.Close()
-	retired := map[int64]bool{}
+	// An entry without an active sense is retired when it has senses at all.
+	for _, id := range ids {
+		retired[id.(int64)] = false
+	}
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
@@ -590,24 +601,32 @@ func (s Service) dropRetired(ctx context.Context, order []int64, best map[int64]
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("lookup: retired entries: %w", err)
 	}
+	if c != nil {
+		for _, id := range ids {
+			c.retired[id.(int64)] = retired[id.(int64)]
+		}
+	}
 	return slices.DeleteFunc(order, func(id int64) bool { return retired[id] }), nil
 }
 
 // dictionaryNames returns the names of the dictionaries the senses of
 // the ranked candidates come from, in one query; a dictionary without a
 // name is named by its pack id.
-func (s Service) dictionaryNames(ctx context.Context, cands []candidate, matches []*match) (map[int64]string, error) {
+func (s Service) dictionaryNames(ctx context.Context, cache *Cache, cands []candidate, matches []*match) (map[int64]string, error) {
 	var ids []any
 	seen := map[int64]bool{}
+	names := map[int64]string{}
+	if cache != nil {
+		names = cache.names
+	}
 	for _, c := range cands {
 		for _, sn := range matches[c.at].entry.Senses {
-			if !seen[sn.DictionaryID] {
+			if _, known := names[sn.DictionaryID]; !known && !seen[sn.DictionaryID] {
 				seen[sn.DictionaryID] = true
 				ids = append(ids, sn.DictionaryID)
 			}
 		}
 	}
-	names := map[int64]string{}
 	if len(ids) == 0 {
 		return names, nil
 	}

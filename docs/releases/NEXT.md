@@ -86,6 +86,10 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Fixed
 
+- Japanese texts are read a whole sentence at a time (#348): the reader and course reading lessons no longer split
+  kana across words (妹がいます is 妹 | が | います, 花がきれい is 花 | が | きれい), and particles such as は, が and の
+  are never shown as new or unreached words, nor counted in a text's coverage. Japanese segmentation is also faster.
+
 - Tones cards accept the tone a syllable is spoken with (#300): 不客气 is right as 4-4-neutral (the dictionary) and as 2-4-neutral (spoken, 不 before a fourth tone is bú); the same for 一 and for third tones in a row (你好). The answer shows both where they differ, bù → bú. Settings → Study → **Tones**: **Show tone sandhi** (on) and **Grade spoken tones** (off), per workspace.
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or
   Reverse card is planned only for words that can make one (the server checks before the session starts), so a

@@ -67,7 +67,8 @@ entry whose reading is shown), never of a homograph further down. The shared pre
 2. **learning**: otherwise, the entry has a live vocab card (reviewed or not);
 3. **new**: otherwise.
 
-Only vocab cards enter the scores and the carded set (a writing or reverse card alone leaves a word new).
+A **function word** (a match with `function: true`, `segment/README.md`: a particle, the copula) has no state: it is
+never new or learning, whatever its entry's cards. Only vocab cards enter the scores and the carded set (a writing or reverse card alone leaves a word new).
 The reader passes its `smartThreshold` (a word is coloured known exactly when smart mode hides its reading);
 every other caller passes 80. The mark wins over every card and threshold. Level lists never make a word
 known or learning.
@@ -97,6 +98,8 @@ highlight no state is drawn. The text and its offsets are unchanged.
 - **Token**: a match whose surface holds at least one word character: Han, `々`, `〆` (zh); also hiragana
   and katakana, but not the lone `ー` (ja). Punctuation, digits (ASCII or full width), Latin and symbols
   never form tokens; Han numerals do.
+- A **function word** (`function: true`, `segment/README.md`) is not a token, and its characters are covered, so
+  not unmatched either.
 - **Type**: the first candidate's entry id (inflected forms share their lemma's entry).
 - **Unmatched**: maximal runs of word characters outside every match, counted ("3 passages are not in the
   dictionary") but never in the percentage.

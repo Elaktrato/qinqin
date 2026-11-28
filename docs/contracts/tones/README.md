@@ -20,8 +20,8 @@ numbered pinyin gives the marked reading the server sends, `pinyin.ToMarked`, an
 The rules look at each syllable's citation tone, its **character** — only when the written form has exactly one Han
 character per syllable (otherwise no syllable has one, and 不 and 一 cannot be told from the pinyin: 一 and 衣 are
 both yī) — and the **word boundaries** (`words`: syllable counts per word; absent, or not adding up to the syllable
-count, the reading is one word). A dictionary entry is one word: the segmenter returns an entry whole (greedy
-longest match), so a card never needs it; running text (a sentence) passes the segmenter's words.
+count, the reading is one word). A dictionary entry is one word: the segmenter returns an entry whole (Chinese is
+read by greedy longest match), so a card never needs it; running text (a sentence) passes the segmenter's words.
 
 1. **不**: the character 不 on the syllable `bu` with citation tone 4, before a syllable whose citation tone is 4, is
    spoken **2** (不客气 bú kè qi, 不是 bú shì). Before any other tone, alone or at the end it stays 4.
