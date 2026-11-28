@@ -4,8 +4,9 @@
 // build or a test.
 //
 //   node scripts/topic-agents.mjs plan <zh|ja> [--list <levels.json>]
-//       splits the words to label into scripts/topics/<lang>/batch-NN.json
-//       (items only). Chinese: HSK 1-4 of plugins/data/hsk-words. Japanese:
+//       puts the words no batch has yet into new batches
+//       scripts/topics/<lang>/batch-NN.json (items only); existing batches
+//       are kept, so a changed list only adds work. Chinese: HSK 1-4 of plugins/data/hsk-words. Japanese:
 //       ≈ N5-N3 of --list (default plugins/data/jlpt-words/levels.json).
 //   node scripts/topic-agents.mjs run <zh|ja> <suggest|a|b|c|d> [--list <levels.json>] [--jobs N] [--batches 1,3]
 //       asks the stage's agent (scripts/topics/reviewers.json) about every
@@ -90,6 +91,9 @@ function prompt(lang, stage, role, words, batch) {
 	return `${head}Two teachers reviewed the proposed labels of these words and disagree. As the head of the curriculum, decide each word's labels. ${fmt}\n\n${words.map((w) => `${wordLine(w)}\n   proposal: ${labelText(sug.get(w.i))}\n   teacher A: ${show(a.get(w.i))}\n   teacher B: ${show(b.get(w.i))}`).join('\n')}\n\nAnswer with one JSON object per line and nothing else, one line per word: {"i": <number>, "t": [...], "s": {...} (only if needed), "n": "<short reason in English>"}.`;
 }
 
+/** Which listed word a batch item is: the form (Chinese, one item per form), or the form and reading (Japanese). */
+const identity = (lang, w) => (lang === 'zh' ? w.form : `${w.form}\t${w.reading ?? ''}`);
+
 let idList;
 const ids = () => (idList ??= inputs().ids);
 
@@ -118,12 +122,13 @@ function pending(stage, batch) {
 	return batch.items.filter((it) => !have.has(it.i) && sug.has(it.i) && decided(it).s).map((it) => ({ ...it, decided: decided(it) }));
 }
 
-async function runBatch(lang, stage, file, byI, role) {
+async function runBatch(lang, stage, file, byWord, role) {
 	for (let attempt = 0; attempt < 3; attempt++) {
 		const batch = JSON.parse(readFileSync(file, 'utf8'));
-		const todo = pending(stage, batch);
+		// a word the current list no longer has is left as it is
+		const todo = pending(stage, batch).filter((it) => byWord.has(identity(lang, it)));
 		if (!todo.length) return;
-		const words = todo.map((it) => ({ ...byI.get(it.i), decided: it.decided }));
+		const words = todo.map((it) => ({ ...byWord.get(identity(lang, it)), i: it.i, decided: it.decided }));
 		const answer = await ask(prompt(lang, stage, role, words, batch));
 		const want = new Set(todo.map((it) => it.i));
 		const got = parseJsonLines(answer).filter((x) => want.has(x.i));
@@ -159,16 +164,23 @@ async function main() {
 		const [suggest] = id('suggest');
 		const [a, b] = id('review');
 		const [c] = id('adjudicate');
-		for (let n = 0; n * BATCH < t.length; n++) {
-			const items = t.slice(n * BATCH, (n + 1) * BATCH).map((w, k) => {
-				const it = { i: n * BATCH + k + 1, key: w.key, form: w.form };
+		// existing batches stay as they are: only words no batch has get new batches, numbered after the last
+		const old = batchFiles(lang).map((f) => JSON.parse(readFileSync(f, 'utf8')));
+		const have = new Set(old.flatMap((b) => b.items.map((it) => identity(lang, it))));
+		const fresh = t.filter((w) => !have.has(identity(lang, w)));
+		let i = Math.max(0, ...old.flatMap((b) => b.items.map((it) => it.i)));
+		const first = Math.max(0, ...old.map((b) => b.batch));
+		for (let n = 0; n * BATCH < fresh.length; n++) {
+			const items = fresh.slice(n * BATCH, (n + 1) * BATCH).map((w) => {
+				const it = { i: ++i, key: w.key, form: w.form };
 				if (w.reading) it.reading = w.reading;
 				return it;
 			});
-			const file = join(dir, `batch-${String(n + 1).padStart(2, '0')}.json`);
-			writeFileSync(file, formatBatch({ language: lang, batch: n + 1, reviewers: { suggest, a, b, c }, items }));
+			const number = first + n + 1;
+			const file = join(dir, `batch-${String(number).padStart(2, '0')}.json`);
+			writeFileSync(file, formatBatch({ language: lang, batch: number, reviewers: { suggest, a, b, c }, items }));
 		}
-		console.log(`${lang}: ${t.length} words in ${Math.ceil(t.length / BATCH)} batches`);
+		console.log(`${lang}: ${t.length} words, ${fresh.length} new in ${Math.ceil(fresh.length / BATCH)} new batches`);
 		return;
 	}
 	if (cmd !== 'run') throw new Error(`unknown command ${cmd}`);
@@ -176,13 +188,9 @@ async function main() {
 	if (!['suggest', 'a', 'b', 'c', 'd'].includes(stage)) throw new Error('stage: suggest, a, b, c or d');
 	const o = opts(more);
 	const t = targets(lang, o.list, inputs().picture(lang));
-	const byI = new Map(t.map((w, k) => [k + 1, { ...w, i: k + 1 }]));
+	const byWord = new Map(t.map((w) => [identity(lang, w), w]));
 	const meta = JSON.parse(readFileSync(join(root, 'scripts/topics/reviewers.json'), 'utf8'))[lang].reviewers;
 	const files = batchFiles(lang).filter((f) => !o.batches || o.batches.includes(Number(/batch-(\d+)/.exec(f)[1])));
-	for (const f of files) {
-		const b = JSON.parse(readFileSync(f, 'utf8'));
-		for (const it of b.items) if (byI.get(it.i)?.form !== it.form) throw new Error(`${f}: item ${it.i} is ${it.form}, the list says ${byI.get(it.i)?.form}: plan again`);
-	}
 	const roleOf = (f) => {
 		const b = JSON.parse(readFileSync(f, 'utf8'));
 		return meta.find((r) => r.id === (b.reviewers[stage] ?? b.reviewers.c)).role;
@@ -192,7 +200,7 @@ async function main() {
 		while (next < files.length) {
 			const f = files[next++];
 			try {
-				await runBatch(lang, stage, f, byI, roleOf(f));
+				await runBatch(lang, stage, f, byWord, roleOf(f));
 			} catch (e) {
 				console.error(`${f}: ${e.message}`);
 			}
