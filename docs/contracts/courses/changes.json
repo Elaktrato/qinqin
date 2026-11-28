@@ -1,0 +1,2586 @@
+{
+ "version": 1,
+ "rule": "courses/changes",
+ "note": "Content changes (#221, README \"Content changes\"): events recorded against an earlier version of a course, replayed over the course as it is now (`change` says what changed). Unit ids are stable, lesson ids are derived within a unit, words added to a finished unit become catch-up lessons, units added before the learner's position are unlocked. Same shape as derive.json; course id `zh-test`. Go: server/internal/courses/derive_contract_test.go; web: apps/web/src/lib/studycore/courseProgress.test.ts.",
+ "course": "zh-test",
+ "cases": [
+  {
+   "name": "words added to a finished unit become a catch-up lesson; the unit stays done",
+   "change": "u1 gained x, y, z, w, v after the learner finished it with a, b, c",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         },
+         {
+          "key": "x"
+         },
+         {
+          "key": "y"
+         },
+         {
+          "key": "z"
+         },
+         {
+          "key": "w"
+         },
+         {
+          "key": "v"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c",
+           "x"
+          ]
+         },
+         {
+          "id": "words-2",
+          "kind": "words",
+          "words": [
+           "y",
+           "z",
+           "w",
+           "v"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000026",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "intro",
+      "lesson": "listening",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000027",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "script",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000028",
+     "ts": "2026-11-28T10:03:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000029",
+     "ts": "2026-11-28T10:04:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "practice",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000030",
+     "ts": "2026-11-28T10:05:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u1",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": false
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u2",
+     "next": "words-1"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "done",
+        "skipped": false,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-2",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": [
+         {
+          "id": "catch-up-1",
+          "kind": "words",
+          "words": [
+           "x",
+           "y",
+           "z",
+           "w",
+           "v"
+          ]
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "a",
+     "b",
+     "c"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "a finished catch-up lesson's words are met; the rest stay to catch up",
+   "change": "as before, then the learner finished catch-up-1 with x, y, z",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         },
+         {
+          "key": "x"
+         },
+         {
+          "key": "y"
+         },
+         {
+          "key": "z"
+         },
+         {
+          "key": "w"
+         },
+         {
+          "key": "v"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c",
+           "x"
+          ]
+         },
+         {
+          "id": "words-2",
+          "kind": "words",
+          "words": [
+           "y",
+           "z",
+           "w",
+           "v"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000026",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "intro",
+      "lesson": "listening",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000027",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "script",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000028",
+     "ts": "2026-11-28T10:03:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000029",
+     "ts": "2026-11-28T10:04:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "practice",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000030",
+     "ts": "2026-11-28T10:05:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u1",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": false
+     }
+    },
+    {
+     "id": "01JD0000000000000000000031",
+     "ts": "2026-11-28T10:06:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "catch-up-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "x",
+       "y",
+       "z"
+      ]
+     }
+    }
+   ],
+   "known": [
+    "v"
+   ],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u2",
+     "next": "words-1"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "done",
+        "skipped": false,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-2",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": [
+         {
+          "id": "catch-up-1",
+          "kind": "words",
+          "words": [
+           "w"
+          ]
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "a",
+     "b",
+     "c",
+     "x",
+     "y",
+     "z"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "a unit added before the learner's position is unlocked, not current",
+   "change": "u1b was inserted between u1 and u2 after the learner passed u2",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u1b",
+        "test": true,
+        "words": [
+         {
+          "key": "p"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "p"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000026",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "intro",
+      "lesson": "listening",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000027",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "script",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000028",
+     "ts": "2026-11-28T10:03:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000029",
+     "ts": "2026-11-28T10:04:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "practice",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000030",
+     "ts": "2026-11-28T10:05:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u1",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": false
+     }
+    },
+    {
+     "id": "01JD0000000000000000000032",
+     "ts": "2026-11-28T10:06:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u2",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "d",
+       "e"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000033",
+     "ts": "2026-11-28T10:07:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u2",
+      "lesson": "practice",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000034",
+     "ts": "2026-11-28T10:08:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u2",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": false
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u3",
+     "next": "words-1"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "done",
+        "skipped": false,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u1b",
+        "status": "unlocked",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u2",
+        "status": "done",
+        "skipped": false,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "a",
+     "b",
+     "c",
+     "d",
+     "e"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "a word moved to a later unit stays met; the finished unit needs no catch-up",
+   "change": "c moved from u1 to u2",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "c"
+         },
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "c",
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000026",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "intro",
+      "lesson": "listening",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000027",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "script",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000028",
+     "ts": "2026-11-28T10:03:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000029",
+     "ts": "2026-11-28T10:04:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "practice",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000030",
+     "ts": "2026-11-28T10:05:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u1",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": false
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u2",
+     "next": "words-1"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "done",
+        "skipped": false,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u2",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "a",
+     "b",
+     "c"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "events of a removed unit are ignored, but its words stay met",
+   "change": "the unit old was removed",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000035",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "old",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "q"
+      ]
+     }
+    },
+    {
+     "id": "01JD0000000000000000000036",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "old",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": true
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "current": {
+     "section": "start",
+     "unit": "intro",
+     "next": "listening"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "listening",
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "next",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u2",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "q"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "a lesson inserted before the learner's position in a unit is unlocked; the next lesson follows the last finished one",
+   "change": "grammar-x was inserted before words-1 after the learner finished script and words-1",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "grammar-x",
+          "kind": "grammar",
+          "point": "g:x",
+          "available": true
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000037",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "intro",
+      "lesson": "listening",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000038",
+     "ts": "2026-11-28T10:02:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "script",
+      "score": 5,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01JD0000000000000000000039",
+     "ts": "2026-11-28T10:03:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-test",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 5,
+      "total": 5,
+      "words": [
+       "a",
+       "b",
+       "c"
+      ]
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u1",
+     "next": "practice"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "practice",
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "grammar-x",
+          "status": "unlocked",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "next",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u2",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [
+     "a",
+     "b",
+     "c"
+    ],
+    "known": []
+   }
+  },
+  {
+   "name": "a word added to a skipped unit is output as known",
+   "change": "u1 gained k after the learner tested out of it",
+   "course": {
+    "sections": [
+     {
+      "id": "start",
+      "units": [
+       {
+        "id": "intro",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "units": [
+       {
+        "id": "u1",
+        "test": true,
+        "words": [
+         {
+          "key": "a"
+         },
+         {
+          "key": "b"
+         },
+         {
+          "key": "c"
+         },
+         {
+          "key": "k"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a",
+           "b",
+           "c",
+           "k"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "test": true,
+        "words": [
+         {
+          "key": "d"
+         },
+         {
+          "key": "e"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "d",
+           "e"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "test": true,
+        "words": [
+         {
+          "key": "f"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "units": [
+       {
+        "id": "u4",
+        "test": true,
+        "words": [
+         {
+          "key": "g"
+         },
+         {
+          "key": "h"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "g",
+           "h"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01JD0000000000000000000040",
+     "ts": "2026-11-28T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-test",
+      "unit": "u2",
+      "score": 18,
+      "total": 20,
+      "passed": true,
+      "early": true
+     }
+    }
+   ],
+   "known": [
+    "a",
+    "b",
+    "c"
+   ],
+   "expect": {
+    "current": {
+     "section": "one",
+     "unit": "u3",
+     "next": "words-1"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "status": "done",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "intro",
+        "status": "done",
+        "skipped": true,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "listening",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "status": "current",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u1",
+        "status": "done",
+        "skipped": true,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "script",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u2",
+        "status": "done",
+        "skipped": true,
+        "testPassed": true,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "done",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "done",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       },
+       {
+        "id": "u3",
+        "status": "current",
+        "skipped": false,
+        "testPassed": false,
+        "next": "words-1",
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "next",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "status": "locked",
+      "examPassed": false,
+      "units": [
+       {
+        "id": "u4",
+        "status": "locked",
+        "skipped": false,
+        "testPassed": false,
+        "next": null,
+        "lessons": [
+         {
+          "id": "words-1",
+          "status": "locked",
+          "started": false
+         },
+         {
+          "id": "practice",
+          "status": "locked",
+          "started": false
+         }
+        ],
+        "catchUp": []
+       }
+      ]
+     }
+    ],
+    "met": [],
+    "known": [
+     "k",
+     "d",
+     "e"
+    ]
+   }
+  }
+ ]
+}
