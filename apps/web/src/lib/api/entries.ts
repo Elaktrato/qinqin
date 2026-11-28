@@ -42,3 +42,12 @@ export function getCharsUnderRadical(id: number): Promise<EntryBase[]> {
 export function addSentence(entryId: number, hanzi: string): Promise<Sentence> {
 	return api<Sentence>(`/api/entries/${entryId}/sentences`, { method: 'POST', body: { hanzi } });
 }
+
+/**
+ * removeSentence deletes one of the caller's own sentences of the entry
+ * (DELETE /api/entries/{id}/sentences/{sentenceId}, #279): a saved book
+ * sentence or a kept AI example. Pack sentences are 404.
+ */
+export async function removeSentence(entryId: number, sentenceId: number): Promise<void> {
+	await api<void>(`/api/entries/${entryId}/sentences/${sentenceId}`, { method: 'DELETE' });
+}

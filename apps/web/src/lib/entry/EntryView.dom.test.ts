@@ -10,7 +10,8 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(async () => []),
-	getSharedEntry: vi.fn()
+	getSharedEntry: vi.fn(),
+	removeSentence: vi.fn(async () => {})
 }));
 vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
 vi.mock('$lib/api/frequency', () => ({
@@ -19,7 +20,8 @@ vi.mock('$lib/api/frequency', () => ({
 vi.mock('$lib/entry/StrokePlayer.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
-	addCard: vi.fn(async () => ({}))
+	addCard: vi.fn(async () => ({})),
+	deleteCards: vi.fn(async () => [])
 }));
 vi.mock('$lib/studycore/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/studycore/data')>()),
@@ -44,7 +46,8 @@ vi.mock('$lib/notes/store', async (orig) => ({
 
 import { fireEvent, within } from '@testing-library/svelte';
 import { ApiError } from '$lib/api/client';
-import { getEntry } from '$lib/api/entries';
+import { getEntry, removeSentence } from '$lib/api/entries';
+import { deleteCards } from '$lib/features/flashcards/commands/cards';
 import { getEntryRanks } from '$lib/api/frequency';
 import { getStudyData } from '$lib/studycore/data';
 import { setUrl } from '$lib/testing/appState.svelte';
@@ -378,5 +381,45 @@ describe('hidden romanisation on the entry page (#284)', () => {
 		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });
 		expect(container.textContent).toContain('qínfèn');
+	});
+});
+
+// #279: the learner's own sentences (saved from the reader) can be removed;
+// their Word Salad cards go too, in each workspace of the entry's language.
+describe('removing a saved sentence', () => {
+	const own = { id: 3, entryId: 5, sourcePack: '', userId: 1, hanzi: '他很勤奋。', pinyin: '', translation: '' };
+	const pack = { id: 2, entryId: 5, sourcePack: 'sample', userId: null, hanzi: '勤奋好。', pinyin: '', translation: '' };
+	beforeEach(() => {
+		const zh = { id: 1, language: 'zh', name: 'zh' };
+		ctx.session.workspaces.set({ list: [zh, { id: 2, language: 'ja', name: 'ja' }] as never, current: zh as never });
+		vi.mocked(getStudyData).mockImplementation((async () => ({
+			decks: [],
+			known: [],
+			cards: [{ id: 's3', kind: 'sentence', entryId: 5, sentenceId: 3, deckIds: ['general'], createdAt: '2026-11-01T00:00:00Z' }]
+		})) as never);
+	});
+
+	it('offers Remove on own sentences only and removes the sentence and its card', async () => {
+		getEntryMock.mockResolvedValue(entry({ sentences: [pack, own] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		const remove = await screen.findAllByRole('button', { name: 'Remove' });
+		expect(remove).toHaveLength(1);
+		expect(remove[0].getAttribute('aria-describedby')).toBe('sentence-3');
+		await fireEvent.click(remove[0]);
+		await waitFor(() => expect(removeSentence).toHaveBeenCalledWith(5, 3));
+		await waitFor(() => expect(deleteCards).toHaveBeenCalledWith(expect.anything(), 1, ['s3']));
+		expect(deleteCards).toHaveBeenCalledOnce();
+		await waitFor(() => expect(document.getElementById('sentence-3')).toBeNull());
+		expect(document.getElementById('sentence-2')?.textContent).toBe('勤奋好。');
+	});
+
+	it('a failed remove keeps the sentence and says so', async () => {
+		vi.mocked(removeSentence).mockRejectedValueOnce(new Error('offline'));
+		getEntryMock.mockResolvedValue(entry({ sentences: [own] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+		await screen.findByText('Could not remove this sentence.');
+		expect(document.getElementById('sentence-3')?.textContent).toBe('他很勤奋。');
+		expect(deleteCards).not.toHaveBeenCalled();
 	});
 });
