@@ -1,10 +1,10 @@
 // Package segment finds dictionary words in running zh/ja text on top of
 // the lookup engine. A language with segmentation rules (rules/, the
-// contract docs/contracts/segment/: Japanese) is read a whole text at a
-// time: the cheapest path through the lattice of every match at every
-// position (lattice.go). Any other language (Chinese, data-only
-// languages) is read by greedy longest match: one match per position is
-// the longest text the ranked lookup matched there. Offsets are Unicode
+// contract docs/contracts/segment/: Japanese, Chinese) is read a whole
+// text at a time: the cheapest path through the lattice of every match at
+// every position (lattice.go). Any other language (data-only languages)
+// is read by greedy longest match: one match per position is the longest
+// text the ranked lookup matched there. Offsets are Unicode
 // code points, never bytes or UTF-16.
 package segment
 
@@ -52,6 +52,8 @@ type Match struct {
 	// has WithReadings: for a Japanese form match the entry's first
 	// reading, for a reading match the matched one; Chinese pinyin. It is
 	// unrelated to Candidate.Reading, the "matched by a reading" flag.
+	// Under rules that choose readings (Chinese) it is the function
+	// word's reading or the common reading (reading.go).
 	Reading *Reading `json:"reading,omitempty"`
 	// Function is true for a function word (a particle, the copula, an
 	// auxiliary: docs/contracts/segment/): never new, learning or
