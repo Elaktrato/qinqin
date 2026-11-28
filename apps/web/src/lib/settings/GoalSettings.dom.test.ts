@@ -221,7 +221,9 @@ describe('GoalSettings', () => {
 			'Grammar lessons',
 			'Journal entries',
 			'Reading',
-			'Script practice'
+			'Script practice',
+			// The registered drills (#180).
+			'Tone pairs'
 		]);
 		expect(screen.getByText(/Could not load the activity list/)).toBeTruthy();
 		vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: SOURCES, cells: [] });

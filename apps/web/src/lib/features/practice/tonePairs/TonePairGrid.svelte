@@ -129,7 +129,7 @@
 		border-color: var(--good);
 	}
 	.cell.none {
-		opacity: 0.5;
+		color: var(--readable-muted);
 		border-style: dashed;
 	}
 	.legend {
