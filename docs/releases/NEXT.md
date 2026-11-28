@@ -16,6 +16,9 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- Topic labels for words (#220): 49 themes (food, family, travel, work …) for about 2,000 Chinese words (HSK 1–4)
+  and 3,700 Japanese words (≈ N5–N3), plus the words with a picture, so the coming courses can fill their units by
+  theme. Reviewed by agents acting as native-speaker teachers, not yet by a person; credited on the Sources page.
 - Settings → Workspaces → **Interface language** (#297): each workspace may choose its own interface language, for
   example a Japanese workspace in Japanese for immersion and a Chinese one in English; "Use my account setting" is the
   default. Switching to a workspace with another language reloads the page once into it, an offline start in that

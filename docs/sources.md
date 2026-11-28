@@ -161,6 +161,26 @@ the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They a
 for 100 to 300; a person has not yet read every word against the dictionary.
 Licence confirmed by the owner on 2026-11-26.
 
+## Topic labels (courses, #220)
+
+`server/internal/topics/labels/zh.json` and `ja.json` (embedded in the server) give words their **topics** (49
+themes such as food, family, travel, `docs/contracts/topics/topics.json`), so a course can fill its units by theme.
+The **project wrote them** and they are under **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0"):
+
+- Words of HSK 1–4 (the bundled `hsk-words` list, used only to choose which words to label; no levels are copied)
+  and ≈ N5–N3 (the estimated JLPT word list of #219) were labelled by an agent from their CC-CEDICT or JMdict senses
+  and reviewed by two agents acting as native-speaker teachers of the language; a third decided where they disagreed.
+  Each label keeps its confidence, review state, reviewers and their notes. **Reviewed by agents, not yet by a person**
+  (`humanReviewed: false`).
+- Other words with an OpenMoji picture (#216) get the topic of the picture's emoji group and subgroup, through the
+  project's table `scripts/topics/openmoji-topics.tsv` (basis `picture`, not teacher-reviewed). The concept → group
+  table `scripts/topics/openmoji-groups.tsv` comes from OpenMoji 17.0.0 `openmoji.json` (CC BY-SA 4.0) and keeps that
+  licence; the labels files hold no emoji data and no dictionary glosses.
+
+They are built by `scripts/build-topic-labels.mjs` from the committed batches (`scripts/topics/`); the agent step is
+`scripts/topic-agents.mjs`, the coverage report `scripts/topic-coverage.mjs`. The Sources page credits them under
+"Built into the app".
+
 ## Example sentences (Tatoeba)
 
 The example sentences on entry pages and in "Fill the gap" and "Build the
