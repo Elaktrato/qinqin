@@ -194,3 +194,16 @@ No separate scratch-server run: the e2e spec runs the real binary with a JMdict-
   table (#165).
 - **Later families** from both reviews: 〜たい, 〜ている, 〜ないで/〜なくて, the imperative, the causative-passive, the
   adjectives' adverbial form.
+
+## Merge of feature/v0.9.0 (57732281: #180 tone pairs, #222 courses)
+
+Both drills registered, `tone-pairs` then `conjugation` (Go `drills.IDs`, `drills.json`, `events/activity.json`, web
+`DRILL_IDS`, `DRILLS`, `DRILL_WORDS`); contract renumbered to 31. The "no drill applies" e2e test moved to its own
+spec on its own server with a one-word Korean pack (`practice-no-drill.spec.ts`, `fixtures/no-drill`); the sample
+drill's e2e runs in Japanese, where the conjugation drill has no items in the shared e2e pack; the tone-pair DOM test
+"not offered in Japanese" now sees Conjugation there. No teacher review after the merge (no new content).
+
+Gates after the merge: Go `go vet`/`go test ./...` 65 packages ok, only the known `internal/ai` IPv6 test; web
+`check` 0 errors (2156 files); full vitest 780 files, 15546 passed, 3 skipped; e2e 73 passed (the first run stopped on
+a full disk: the Go build cache was cleaned); `node --test scripts/*.test.mjs` 243 passed, 1 skipped;
+`gen-api-docs --check` clean; no conflict markers.
