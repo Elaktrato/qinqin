@@ -68,6 +68,14 @@ describe('loadConfig', () => {
 		expect(loadConfig()).toEqual(DEFAULT_CONFIG);
 	});
 
+	it('keeps grammar review on only when it is true (#181)', () => {
+		const base = { mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] };
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, grammar: true }));
+		expect(loadConfig().grammar).toBe(true);
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, grammar: 'yes' }));
+		expect(loadConfig().grammar).toBeUndefined();
+	});
+
 	it('keeps the page a session was started from only when it is a path of this app (review)', () => {
 		const base = { mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] };
 		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, from: '/flashcards?x=1' }));

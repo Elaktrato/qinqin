@@ -2,9 +2,13 @@
 
 import type { Level, LessonSummary, PackInfo, Progress } from './types';
 import { progressKey } from './progress';
+import { pointStatus, type PointStatus } from './review/review';
+import type { GrammarPointState } from '$lib/studycore/grammarReview';
 
 export interface BrowseLesson extends LessonSummary {
 	progress: Progress | null;
+	/** A learned lesson's review (#181): due or when, and the last review; null before it is learned. */
+	review: PointStatus | null;
 }
 
 export interface BrowseLevel {
@@ -41,12 +45,15 @@ function badgesFor(level: Level, schemes: SchemeRef[]): string[] {
  * browseSections shows every installed pack level by level (packs are
  * managed in Settings → Data; a pack has no switch, #198). Progress rows of
  * lessons that no longer exist are ignored; levels without lessons are
- * omitted; a scheme badge appears only when that scheme's level is installed.
+ * omitted; a scheme badge appears only when that scheme's level is installed. Each learned lesson carries its
+ * review status at `now` (#181).
  */
 export function browseSections(
 	packs: PackInfo[],
 	schemes: SchemeRef[],
-	progress: Map<string, Progress>
+	progress: Map<string, Progress>,
+	reviews: ReadonlyMap<string, GrammarPointState> = new Map(),
+	now: number = Date.now()
 ): Section[] {
 	const sections: Section[] = [];
 	for (const pack of packs) {
@@ -57,7 +64,8 @@ export function browseSections(
 				.filter((l) => l.level === level.id)
 				.map((l) => ({
 					...l,
-					progress: progress.get(progressKey(pack.packId, l.id)) ?? null
+					progress: progress.get(progressKey(pack.packId, l.id)) ?? null,
+					review: pointStatus(reviews.get(progressKey(pack.packId, l.id)), now)
 				}));
 			if (inLevel.length === 0) continue;
 			levels.push({

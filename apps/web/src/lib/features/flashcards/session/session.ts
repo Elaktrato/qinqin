@@ -50,6 +50,8 @@ export interface StudySessionConfig {
 	typeOrder?: TypeOrder;
 	/** The app path the session was started from; its Back returns there (absent: home). */
 	from?: string;
+	/** Run the grammar review round after the cards (#181, the setup's `grammar` while the feature is on). */
+	grammar?: boolean;
 }
 
 /** sessionNewOrder is the setup's order of new cards, random by default. */
@@ -192,7 +194,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder, from } =
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder, from, grammar } =
 		parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
@@ -213,6 +215,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		reviewLimit,
 		cardTypes: [...cardTypes],
 		...(studyAll === true ? { studyAll: true } : {}),
+		...(grammar === true ? { grammar: true } : {}),
 		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
 		// An unknown order of card types is the default (mixed); it never discards the setup.
 		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {}),

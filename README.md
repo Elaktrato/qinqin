@@ -15,7 +15,7 @@ database and the SvelteKit web app embedded in the binary.
   Word Salad, writing, tone, reverse and cloze cards, daily limits, vacation mode and an optimizer.
 - **Reader**: import epubs or public-domain works from Aozora Bunko and Project Gutenberg, a Yomitan-style
   lookup popup, pinyin or furigana over words, coverage of what you know, bookmarks, highlights and notes.
-- **Grammar lessons** and a **Journal** with an optional AI review, using your own key for the provider you
+- **Grammar lessons** with spaced review of the points you learned, and a **Journal** with an optional AI review, using your own key for the provider you
   choose (Anthropic, OpenAI, Gemini, DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom endpoint), and
   photo import read offline (Tesseract) or by AI.
 - **Statistics**: an activity heatmap, daily goals, a weekly summary, milestones and a character mastery map.
