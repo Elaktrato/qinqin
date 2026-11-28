@@ -1039,12 +1039,13 @@ Bundled pictures for words (issue #216): two **images packs**, each its own pack
 credit. They are data packs of type `images` (see the wiki's Data-pack-format page and
 `docs/contracts/images/README.md`), fetched at image build time, never committed, never compiled into the binary and
 never bundled in the web build or the APK's web assets: the web app and the APK get pictures from the server
-(`GET /api/images/entries/{id}`). Licence evidence checked 2026-11-25 against the upstream files.
+(`GET /api/images/entries/{id}`, and for offline use the server-built data package `images.<packId>`, #274, which
+the device keeps under the pack's licence and notice). Licence evidence checked 2026-11-25 against the upstream files.
 
 | Pack | Upstream | Licence | Pictures | Word mappings |
 |---|---|---|---|---|
-| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 962 (1.7 MB of SVG) | 3,172 (zh 1,936, ja 1,236) |
-| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 711 (4.6 MB of SVG, in colour) | 2,570 (zh 541, ja 2,029) |
+| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 967 (1.7 MB of SVG) | 3,165 (zh 1,935, ja 1,230) |
+| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 707 (4.6 MB of SVG, in colour) | 2,315 (zh 514, ja 1,801) |
 
 - **Credit** (shown on the Sources page and in each pack's `ATTRIBUTION.md`): OpenMoji's own wording, "All emojis
   designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0"; Mulberry's, "Mulberry Symbols
@@ -1066,7 +1067,9 @@ never bundled in the web build or the APK's web assets: the web app and the APK 
   and tags, and Mulberry's English symbol names; it is distributed with the packs under CC BY-SA 4.0 and carries the
   Unicode notice. `scripts/build-picture-map.mjs` makes it (rules in `scripts/picture-match.mjs`, tested); 92 rows are
   hand-checked overrides (`scripts/images/openmoji/manual.tsv`). Only words an unambiguous match covers have a
-  picture; the rest wait on a review list. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
+  picture. The doubtful automatic rows of the Starter words, HSK 1-2 and ≈ N5-N4 (532) were reviewed by teacher
+  agents (#274, `scripts/images/review/`, not yet by a person): 262 removed (`scripts/images/<pack>/removed.tsv`), 14
+  changed to another OpenMoji picture (manual rows; 106 in all now), 256 kept. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
   selection gate at build time; no list data is copied); for Japanese, only JMdict words with a priority marking.
 - **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
 - **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are

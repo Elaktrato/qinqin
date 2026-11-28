@@ -144,4 +144,15 @@ rebuilt them from the reviewed map (2 Japanese picture-only labels fewer), no fo
 
 ## Local follow-up
 
-(filled in at the end)
+1. **A picture offline on a phone and in the installed app** (#274): on an https server with the images packs
+   installed, open the app online with the Pictures aid on, wait for Settings → Account → App to say "Offline: ready",
+   turn the network off and open a saved word's page and a card's answer: the picture shows with its credit. In the
+   Android shell the same (`apps/android`, an emulator or phone). Look for: the picture, no sideways scroll, the
+   Report picture button reachable with the keyboard closed. If it fails: Cache Storage `qinqin-packages-v1` should
+   hold `/api/packages/images.<packId>`; if it is empty, the catalogue row may still have been building.
+2. **A full Docker build** with the images stage (`WITH_IMAGES=1`, the default): the reviewed `map.tsv` files build
+   the packs, and the server builds `images.images-openmoji` and `images.images-mulberry` at start (`GET
+   /api/packages?languages=all` lists them `ready`, about 0.5 MB and 1.6 MB).
+3. **A person's look at the review** (`scripts/images/review/*.json`): the agents removed 262 pictures, most of them
+   Mulberry symbols of abstract Japanese words; a teacher may want some back (delete the row from `removed.tsv` and
+   rerun `node scripts/build-picture-map.mjs --cache <dir>`).

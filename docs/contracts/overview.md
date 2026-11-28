@@ -33,7 +33,7 @@ where the rule is implemented today.
 | Data safety | `backup/` (archive format 2, id remapping) |
 | Starter mode | `starter/` (the stage of a word from its own review history, what the front shows at each stage, the `starter` workspace setting, the Starter set format and its routes; builds on `cards/` hints and `images/`) |
 | Courses (data) | `topics/` (the topic list and the topic labels of words that fill course units by theme; nothing stored per user) |
-| Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the picture vocabulary, theming and credits) |
+| Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the images package for offline pictures, picture reports, the picture vocabulary, theming and credits) |
 | Visual aids | `aids/` (the `visualAids` workspace setting; pictures on entries and cards, tone colours and contours, character anatomy) |
 | Stroke order | `strokes/` (`GET /hanzi/U<HEX>.json`, the optional `?lang=` and which strokes pack answers for it) |
 | Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`), `fonts/` (font packs, `faces.json`, `GET /api/fonts`, the slice files) |
