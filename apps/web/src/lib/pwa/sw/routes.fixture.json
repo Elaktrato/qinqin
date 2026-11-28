@@ -248,8 +248,20 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/courses",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/courses/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/dictionaries",
 		"access": "public"
+	},
+	{
+		"pattern": "GET /api/drills/counters",
+		"access": "user"
 	},
 	{
 		"pattern": "GET /api/entries/{id}",
@@ -288,10 +300,6 @@
 		"access": "public"
 	},
 	{
-		"pattern": "GET /api/grammar/progress",
-		"access": "user"
-	},
-	{
 		"pattern": "GET /api/grammar/{pack}/{lesson}",
 		"access": "public"
 	},
@@ -301,6 +309,10 @@
 	},
 	{
 		"pattern": "GET /api/images/entries/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/images/reports",
 		"access": "user"
 	},
 	{
@@ -365,6 +377,10 @@
 	},
 	{
 		"pattern": "GET /api/library/books/{id}/highlights",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/graded",
 		"access": "user"
 	},
 	{
@@ -668,6 +684,14 @@
 		"access": "public"
 	},
 	{
+		"pattern": "POST /api/drills/conjugation/words",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/drills/measure-words/words",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/entries/bases",
 		"access": "user"
 	},
@@ -692,7 +716,7 @@
 		"access": "user"
 	},
 	{
-		"pattern": "POST /api/grammar/progress",
+		"pattern": "POST /api/images/reports",
 		"access": "user"
 	},
 	{
@@ -753,6 +777,10 @@
 	},
 	{
 		"pattern": "POST /api/segment",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/study/eligibility",
 		"access": "user"
 	},
 	{

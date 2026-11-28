@@ -1,0 +1,62 @@
+{
+ "version": 1,
+ "rule": "tones/pairs",
+ "note": "The tone-pair drill (#180, drill id tone-pairs, docs/contracts/drills/). pairs: the 20 item keys `<t1>-<t2>` (citation tones, 5 the neutral tone) in grid order, which is the order new pairs are introduced. words: which pair a dictionary word practises (numbered: CC-CEDICT, readings: what the server sends, ToMarked of each, or the numbered pinyin as written when it does not convert; empty numbered: a reading of another pack; expect null: the word is left out). typed: how a typed answer reads (null: not an answer of two tones). accuracy: a pair's accuracy over its last `window` answers (right: grade 2 or more) and its band. Web: apps/web/src/lib/exercises/tonePairs.contract.test.ts; Go: server/internal/pinyin/pairs_contract_test.go (pairs, words).",
+ "pairs": ["1-1", "1-2", "1-3", "1-4", "1-5", "2-1", "2-2", "2-3", "2-4", "2-5", "3-1", "3-2", "3-3", "3-4", "3-5", "4-1", "4-2", "4-3", "4-4", "4-5"],
+ "words": [
+  {"name": "a 3rd tone before a 3rd tone keeps its citation pair", "written": "你好", "numbered": ["ni3 hao3"], "readings": ["nǐ hǎo"], "expect": "3-3"},
+  {"name": "2-2", "written": "学习", "numbered": ["xue2 xi2"], "readings": ["xué xí"], "expect": "2-2"},
+  {"name": "a proper noun (CC-CEDICT capitalises it, the server sends it in lower case)", "written": "中国", "numbered": ["Zhong1 guo2"], "readings": ["zhōng guó"], "expect": "1-2"},
+  {"name": "a neutral second syllable", "written": "妈妈", "numbered": ["ma1 ma5"], "readings": ["mā ma"], "expect": "1-5"},
+  {"name": "2-5", "written": "朋友", "numbered": ["peng2 you5"], "readings": ["péng you"], "expect": "2-5"},
+  {"name": "3-5", "written": "喜欢", "numbered": ["xi3 huan5"], "readings": ["xǐ huan"], "expect": "3-5"},
+  {"name": "4-5", "written": "谢谢", "numbered": ["xie4 xie5"], "readings": ["xiè xie"], "expect": "4-5"},
+  {"name": "不 keeps its citation 4th tone in the key", "written": "不是", "numbered": ["bu4 shi4"], "readings": ["bù shì"], "expect": "4-4"},
+  {"name": "一 keeps its citation 1st tone in the key", "written": "一起", "numbered": ["yi1 qi3"], "readings": ["yī qǐ"], "expect": "1-3"},
+  {"name": "3-1", "written": "老师", "numbered": ["lao3 shi1"], "readings": ["lǎo shī"], "expect": "3-1"},
+  {"name": "2-3", "written": "苹果", "numbered": ["ping2 guo3"], "readings": ["píng guǒ"], "expect": "2-3"},
+  {"name": "4-1", "written": "面包", "numbered": ["mian4 bao1"], "readings": ["miàn bāo"], "expect": "4-1"},
+  {"name": "readings of two patterns: left out", "written": "东西", "numbered": ["dong1 xi1", "dong1 xi5"], "readings": ["dōng xī", "dōng xi"], "expect": null},
+  {"name": "a reading of another length does not count against the pair", "written": "地方", "numbered": ["di4 fang5", "di4 fang1 zheng4 fu3"], "readings": ["dì fang", "dì fāng zhèng fǔ"], "expect": "4-5"},
+  {"name": "a neutral first syllable: no pair", "written": "的话", "numbered": ["de5 hua4"], "readings": ["de huà"], "expect": null},
+  {"name": "one syllable: no pair", "written": "好", "numbered": ["hao3"], "readings": ["hǎo"], "expect": null},
+  {"name": "three characters: no pair", "written": "一点儿", "numbered": ["yi1 dian3 r5"], "readings": ["yi1 dian3 r5"], "expect": null},
+  {"name": "erhua: CC-CEDICT's r5 does not convert and is sent as written, so the word has no clean reading", "written": "哪儿", "numbered": ["na3 r5"], "readings": ["na3 r5"], "expect": null},
+  {"name": "erhua written with a lone r folds into the syllable before it", "written": "哪儿", "numbered": [], "readings": ["nǎ r"], "expect": null},
+  {"name": "three syllables: no pair", "written": "图书馆", "numbered": ["tu2 shu1 guan3"], "readings": ["tú shū guǎn"], "expect": null}
+ ],
+ "typed": [
+  {"name": "two digits", "text": "34", "expect": [3, 4]},
+  {"name": "digits with a space", "text": "3 4", "expect": [3, 4]},
+  {"name": "digits with a hyphen", "text": "3-4", "expect": [3, 4]},
+  {"name": "0 is the neutral tone", "text": "1 0", "expect": [1, 5]},
+  {"name": "5 is the neutral tone", "text": "15", "expect": [1, 5]},
+  {"name": "full-width digits (a CJK keyboard)", "text": "３４", "expect": [3, 4]},
+  {"name": "numbered pinyin", "text": "ni3 hao3", "expect": [3, 3]},
+  {"name": "numbered pinyin without a space", "text": "ni3hao3", "expect": [3, 3]},
+  {"name": "tone-marked pinyin", "text": "nǐ hǎo", "expect": [3, 3]},
+  {"name": "tone-marked pinyin with a neutral syllable", "text": "mā ma", "expect": [1, 5]},
+  {"name": "surrounding space", "text": "  2 3 ", "expect": [2, 3]},
+  {"name": "one tone", "text": "3", "expect": null},
+  {"name": "three tones", "text": "345", "expect": null},
+  {"name": "a digit that is no tone", "text": "3 6", "expect": null},
+  {"name": "nothing", "text": "", "expect": null},
+  {"name": "pinyin without any mark", "text": "ni hao", "expect": null},
+  {"name": "one marked syllable", "text": "nǐ", "expect": null}
+ ],
+ "accuracy": {
+  "window": 10,
+  "weakBelow": 0.6,
+  "strongFrom": 0.85,
+  "cases": [
+   {"name": "no answer: new", "grades": [], "expect": {"answers": 0, "right": 0, "accuracy": null, "band": "new"}},
+   {"name": "all right: strong", "grades": [3, 3, 3], "expect": {"answers": 3, "right": 3, "accuracy": 1, "band": "strong"}},
+   {"name": "Hard counts as right", "grades": [2, 1], "expect": {"answers": 2, "right": 1, "accuracy": 0.5, "band": "weak"}},
+   {"name": "60 % is fair", "grades": [3, 3, 3, 1, 1], "expect": {"answers": 5, "right": 3, "accuracy": 0.6, "band": "fair"}},
+   {"name": "80 % of the last 10 is fair", "grades": [1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1], "expect": {"answers": 10, "right": 8, "accuracy": 0.8, "band": "fair"}},
+   {"name": "only the last 10 answers count", "grades": [1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], "expect": {"answers": 10, "right": 10, "accuracy": 1, "band": "strong"}},
+   {"name": "90 % is strong", "grades": [3, 3, 3, 3, 1, 3, 3, 3, 3, 3], "expect": {"answers": 10, "right": 9, "accuracy": 0.9, "band": "strong"}},
+   {"name": "the last 10 of 12: 40 % is weak", "grades": [3, 3, 3, 3, 3, 1, 1, 1, 1, 3, 1, 1], "expect": {"answers": 10, "right": 4, "accuracy": 0.4, "band": "weak"}}
+  ]
+ }
+}

@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { errorText } from '$lib/api/apiErrors';
-	import { noPackHint } from '$lib/study/newOrderView';
+	import { noPackHint } from '../session/newOrderView';
 	import { flashcardsHref } from '../route';
 	import { Button, Section } from '$lib/ui';
 	import { addDeckFromOverview } from './addDeckFromOverview';

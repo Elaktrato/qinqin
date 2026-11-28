@@ -1,4 +1,4 @@
-# Card ids, burying, cloze, deck sessions, the session queue, the session mix and hints (reverse and cloze cards, #65; #132; #175; #215)
+# Card ids, burying, cloze, eligibility, deck sessions, the session queue, the session mix and hints (reverse and cloze cards, #65; #132; #175; #215; #288)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
 `deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
@@ -72,9 +72,9 @@ spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings
 
 A deck session studies the cards of the chosen decks (`deckIds`) and kinds (`kinds`) with a session new-card
 limit (`newLimit`) and review limit (`reviewLimit`). Level sessions follow their own plan
-(`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/study/cardFlow.ts`, with
+(`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/features/flashcards/session/cardFlow.ts`, with
 `companions.ts`, `scheduler.ts` `queueCandidates` and `sessionQueue.ts`) returns `{queue, reserve, backfillLeft}`; `plans` cases pin
-the ids of each, decoded by `apps/web/src/lib/study/cardFlow.test.ts`. Inputs: zone `history`, `now`,
+the ids of each, decoded by `apps/web/src/lib/features/flashcards/session/cardFlow.test.ts`. Inputs: zone `history`, `now`,
 `language`, `cards`, `reviews` (`{cardId, ts, grade}`; event ids are given in list order, `mode` is the card's
 kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (deck id → enabled opt-in kinds),
 `newRank` (entry id → frequency rank, the `orderNew` key of `frequency/`), `skip` and `offline`; `weights`
@@ -93,8 +93,8 @@ kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (d
 5. **Companions** (virtual items, created on their first grade): for every vocab card in a session deck,
    oldest first (`createdAt`, then id), one item per selected companion kind it has no card of: `sentence`,
    `writing`, `tone`, then the opt-in `reverse` and `cloze`. Never for a kind the word skips, a `kind:entryId`
-   in `skip` (remembered ineligible), a kind buried today, or writing when the vocab card's `written` snapshot
-   has no Han character (no snapshot: decided when shown). Character vocab cards (`entryKind: "character"`)
+   in `skip` (ruled out by the eligibility index, below), a kind buried today, or writing when the vocab card's
+   `written` snapshot has no Han character (no snapshot: decided when shown). Character vocab cards (`entryKind: "character"`)
    get only writing, from the learner day after their first review. Opt-in kinds: only from a session deck that
    enables them, never for a word with a queued real card, **at most one per word, reverse preferred** (cloze
    when reverse cannot be planned). Items are taken round-robin by kind (one of each kind per round, in kind
@@ -129,13 +129,51 @@ virtual item is graded — sentence choice and cloze are already pinned (`cloze.
 deferred (spec D2) — cost: none.
 
 
+## Eligibility (`eligibility.json`, #288)
+
+Which companion cards an entry can make is decided **when the session is planned**, not when the card is shown, so
+the counts (the study modal's "This session", the home widget, the session counter) only promise cards the session
+shows. The rules are the show-time rules above (`eligible`), moved to planning:
+
+| Kind | Eligible when | Decided by |
+|---|---|---|
+| `sentence` | the entry has a sentence whose text is not blank (JavaScript `trim`) | server |
+| `cloze` | one of the first 8 non-blank sentences has a blank span (`cloze.json`), with the server's segmenter (`POST /api/segment`, deinflection and lemma packs included: 食べた in a sentence counts for 食べる and the card blanks 食べた); a language the server cannot segment has no cloze | server |
+| `tone` | a tonal language (`languages/`) and a pinyin reading that parses as clean toned pinyin (tone marks, no numbers or punctuation; a lone neutral `r` joins the syllable before it) | server |
+| `reverse` | a `word` entry with at least one gloss | server |
+| `writing` | a Han character of the written form has stroke data in an installed strokes pack (whatever its language), and the entry is not a `character` without glosses | server |
+
+The sentences are those the viewer may see (pack sentences, then the viewer's own); the written form and readings
+are the viewer's (their entry patch applied). Another user's sentences never count.
+
+**Route.** `POST /api/study/eligibility {"ids": [<entry id>, ...]}` (1 to 500 positive ids; duplicates once) →
+`200 {"entries": {"<id>": ["sentence", "writing", "tone", "reverse", "cloze"]}}`, each list in kind order, every asked id
+answered, an unknown entry with `[]`. `400 bad_request` for a malformed body or ids, `401` without a session, `429
+rate_limited` while the user's segmentation slots (shared with `POST /api/segment`) are taken. No access tokens; not
+cached by the service worker (an offline session plans no companions).
+
+**Planning.** A client keeps the answers as an index per session. A companion is planned only when the index
+lists its kind for the entry (`skip` in the deck-session cases:
+the `kind:entryId` keys the index rules out). An entry the index does not know yet (not asked, or the request failed)
+is planned as before and checked when shown. A card that still turns out unusable when shown (a pack removed since
+planning) is dropped and the client removes the kind from the entry's index row; `dropItem` replaces a dropped
+companion from the reserve, which holds eligible items only, so the counter never drops by more than the cards
+removed. Entries are asked again after 10 minutes, and adding a sentence forgets the entry.
+
+Case: `{name, entry: {id, language, kind, written, forms: [{text}], readings: [{type, value}], glosses},
+segmentable, sentences: [{id, hanzi}], matchesBySentence: {"<id>": [{start, end, entries: [{id}]}]}, strokes, kinds}`;
+`glosses` is the number of glosses; a sentence without `matchesBySentence` has no match; `strokes` are the characters
+with stroke data. Go:
+`server/internal/eligibility/contract_test.go`; web: `apps/web/src/lib/features/flashcards/session/eligibility.contract.test.ts`
+(the same cases through the show-time rules).
+
 ## Session queue (`session-queue.json`, #175)
 
 The admission every session shares: deck sessions (above), level sessions (`levels/`) and the counts (due/new
 numbers, "left today"). Each lists its **candidates** in queue order its own way, `{cardId, deckIds, bucket}` with
 `bucket` = `continuing` (due, already reviewed today), `review` (due) or `new` (never reviewed, or virtual); the
-builder never reorders them. Web: `lib/study/sessionQueue.ts` (`admitSession`, `buildSessionQueue`), decoded by
-`apps/web/src/lib/study/sessionQueue.test.ts`. Spec: `docs/superpowers/specs/2026-11-23-queue-builder-design.md`.
+builder never reorders them. Web: `lib/features/flashcards/session/sessionQueue.ts` (`admitSession`, `buildSessionQueue`), decoded by
+`apps/web/src/lib/features/flashcards/session/sessionQueue.test.ts`. Spec: `docs/superpowers/specs/2026-11-23-queue-builder-design.md`.
 
 1. **Vacation day** (`vacationToday`): nothing is admitted; queue and reserve are empty, `left` is all zero.
 2. **Caps**: `cap(x)` = `floor(x)` for a finite `x`, at least 0 (fixture caps such as `1.7` and `-2`); anything
@@ -159,8 +197,8 @@ nothing, and a card created from a virtual item takes the next free id (`freshCa
 
 The order of the card types inside a session, applied **after** the plan (deck sessions above, level sessions
 `levels/`): it reorders the planned queue and never adds, drops or re-admits an item, so limits, caps, the
-reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
-`apps/web/src/lib/study/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
+reserve and burying are unchanged. Web: `lib/features/flashcards/session/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
+`apps/web/src/lib/features/flashcards/session/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
 
 - **Blocks**: the due block (a real card with a valid review) and the new block (never reviewed or virtual), each
   keeping its items; output `[...due, ...new]`.
@@ -205,14 +243,20 @@ vocabFirst, items: [{cardId, kind, entryId, review}], expect: [cardId]}` (`items
 ## Hints (`hints.json`, #215)
 
 Optional help a learner asks for during a review instead of looking at the answer, on every card kind. Web:
-`lib/study/hints.ts` (`HINT_REGISTRY`, `readHintSettings`, `resolveHints`, `lowerForHints`, `applyHints`), decoded by
-`apps/web/src/lib/study/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
+`lib/features/flashcards/face/hints.ts` (`HINT_REGISTRY`, `readHintSettings`, `resolveHints`, `lowerForHints`, `applyHints`), decoded by
+`apps/web/src/lib/features/flashcards/face/hints.contract.test.ts`. Spec: `docs/superpowers/specs/2026-11-26-hints-design.md`.
 
 - **Hint kinds** (the registry, in the fixed order they are revealed in): `reading` (the entry's readings: kana,
   pinyin, zhuyin, romaji, on and kun), then `picture` (ready since #212: an entry
   offers it only when it has one, `hasPicture`: an images pack maps it, #216, and the Pictures visual aid is on,
   `aids/README.md`). A new kind is a new registry row with its own defaults; Starter mode
   (#214) uses the same kinds, rules and display, and replaces the modes of one card with `forced` ones (its stages).
+- **The romanisation kind** (#284, last): with a romanisation hidden (`settings/README.md`, key `romanisation`), the
+  `reading` kind offers only the readings that are shown (`hasReading`: at least one shown reading) and the hidden ones
+  are the kind `romanisation` (`hasRomanisation`: at least one hidden reading), revealed after every other kind and
+  counted like any hint. It is **derived, never stored** (`storedKinds` are the ones with a Settings row; `derived`):
+  its mode on a card kind is `never` when the reading kind's is `never`, else `hint` (a forced `reading` mode decides it
+  too); it does not apply to `tone` cards. Cases: `plans` (the romanisation cases) and `entries` (`hintsForEntry`).
 - **Modes**, per hint kind and card kind: `always` (part of the front, shown from the start), `hint` (hidden until the
   learner asks), `never`. **Defaults** are the table `defaults` in the fixture: reading is a hint on `vocab`
   (Recognise), `sentence`, `reverse` (Recall) and `cloze`, always on `writing` (the writing card has always shown
@@ -235,7 +279,8 @@ Optional help a learner asks for during a review instead of looking at the answe
   lowers no further. The learner can still pick any grade; this
   only moves the suggestion. Cases: `grades`.
 - **Recording** (`applyHints(result, used)`): the review's `meta.hints` is the card's own help count plus `used`
-  (writing: stroke hints and shown strokes; sentence: the translation shown and giving up). The card's own help is
+  (writing: stroke hints and shown strokes, where the stroke hints are the presses of the stroke-hint button plus one
+  for every stroke hinted automatically after 3 misses on it (#287); sentence: the translation shown and giving up). The card's own help is
   not changed by this rule and, as before, does not lower the suggestion by itself. Cases: `results`.
 
 Ruling (owner, 2026-11-26; replaces "capped at Hard") — a hint lowers the suggestion by one step, a card without a

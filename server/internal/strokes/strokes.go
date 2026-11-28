@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"unicode/utf8"
 
 	"qinqin/internal/model"
@@ -356,6 +357,43 @@ func LookupFor(ctx context.Context, q Querier, char, lang string) (data json.Raw
 		return nil, false, nil
 	}
 	return json.RawMessage(best), true, nil
+}
+
+// Has reports which of chars any live strokes pack has stroke data for
+// (whatever the language: LookupFor serves a character from any pack that
+// has it). One query per 500 characters.
+func Has(ctx context.Context, q Querier, chars []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	const chunk = 500
+	for start := 0; start < len(chars); start += chunk {
+		part := chars[start:min(start+chunk, len(chars))]
+		args := make([]any, len(part))
+		marks := make([]string, len(part))
+		for i, c := range part {
+			args[i] = c
+			marks[i] = "?"
+		}
+		rows, err := q.QueryContext(ctx, `
+			SELECT DISTINCT s.char FROM strokes s JOIN stroke_packs p ON p.pack_id = s.pack_id
+			WHERE p.deleted_at IS NULL AND s.char IN (`+strings.Join(marks, ",")+`)`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("strokes: has: %w", err)
+		}
+		for rows.Next() {
+			var c string
+			if err := rows.Scan(&c); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("strokes: has: %w", err)
+			}
+			out[c] = true
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, fmt.Errorf("strokes: has: %w", err)
+		}
+	}
+	return out, nil
 }
 
 // Packs returns the live strokes packs in lookup order (ord).

@@ -39,7 +39,7 @@ func TestFeatureRoutes(t *testing.T) {
 		return out
 	}
 	got := list(alice)
-	want := []string{"flashcards", "reader", "journal", "grammar", "scripts"}
+	want := []string{"flashcards", "reader", "journal", "grammar", "scripts", "practice", "courses", "stats"}
 	if len(got) != len(want) {
 		t.Fatalf("list = %+v", got)
 	}
@@ -65,6 +65,45 @@ func TestFeatureRoutes(t *testing.T) {
 	}
 	if r := doJSON(t, http.MethodPut, ts.URL, "/api/features/journal", alice, map[string]any{}); r.StatusCode != 400 {
 		t.Errorf("no enabled: %d, want 400", r.StatusCode)
+	}
+}
+
+// Every feature the server knows can be switched off and on again (#294): a
+// feature added to features.IDs without the database accepting it fails here.
+func TestEveryFeatureSwitchesOffAndOn(t *testing.T) {
+	ts, _ := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	state := func(id string) bool {
+		t.Helper()
+		var out []struct {
+			ID      string `json:"id"`
+			Enabled bool   `json:"enabled"`
+		}
+		r := doJSON(t, http.MethodGet, ts.URL, "/api/features", alice, nil)
+		decodeJSON(t, r, &out)
+		for _, s := range out {
+			if s.ID == id {
+				return s.Enabled
+			}
+		}
+		t.Fatalf("%s missing from GET /api/features", id)
+		return false
+	}
+	for _, id := range features.IDs {
+		for _, on := range []bool{false, true, false, true} {
+			var got struct {
+				ID      string `json:"id"`
+				Enabled bool   `json:"enabled"`
+			}
+			r := doJSON(t, http.MethodPut, ts.URL, "/api/features/"+id, alice, map[string]any{"enabled": on})
+			decodeJSON(t, r, &got)
+			if r.StatusCode != 200 || got.ID != id || got.Enabled != on {
+				t.Fatalf("PUT %s enabled=%v: %d %+v", id, on, r.StatusCode, got)
+			}
+			if state(id) != on {
+				t.Errorf("%s: GET does not show enabled=%v", id, on)
+			}
+		}
 	}
 }
 

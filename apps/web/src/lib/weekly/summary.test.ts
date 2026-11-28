@@ -4,13 +4,17 @@ import type { ActivityCell, ActivitySource } from '../api/stats';
 import type { CharRow } from '../api/types';
 import { parseGoalsRow, type GoalsRow } from '../goals/goals';
 import { usesHan } from '$lib/languages';
-import { GENERAL_DECK_ID } from '../study/types';
-import type { Run } from '../study/vacation';
-import type { ReviewEvent, StudyCard } from '../study/types';
-import { studyDay, type ZoneChange } from '../time/studyDay';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
+import { addDays, studyDay, type ZoneChange } from '../time/studyDay';
 import { charactersLearned, givenTimelines, wordsReachingMature } from './replay';
 import { weekSummary, type WeekInputs, type WeekPasses } from './summary';
 import { oldestWeek } from './week';
+import { drillPayload, grammarPayload } from '$lib/events/eventPayloads';
+import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
+import { parseDrillAnswer, type DrillAnswer } from '$lib/studycore/drills';
+import { courseStepOf, type CourseStep } from '$lib/studycore/courseCounting';
 
 // A fresh memo per test (record 0009: the session owns one).
 let weekPasses = new Map() as WeekPasses;
@@ -105,6 +109,59 @@ const base = cases.find((c) => c.name.startsWith('a completed week'))!;
 describe('weekSummary', () => {
 	it('throws for a week after the current one', () => {
 		expect(() => weekSummary(weekPasses, { ...inputsOf(base), monday: '2026-11-23' })).toThrow(RangeError);
+	});
+
+	it('counts drill answer days of the workspace in the streak', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const answerAt = (id: string, ws: number, ts: string): DrillAnswer => {
+			const a = parseDrillAnswer({ id, workspaceId: ws, ts, type: 'drill.counters', payload: drillPayload('5678', 'produce', 3) });
+			if (a === null) throw new Error('no answer');
+			return a;
+		};
+		const answers = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => answerAt(`d${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withAnswers = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], drillAnswers: answers(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, drillAnswers: answers(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withAnswers).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
+	});
+
+	it('counts course step days of the workspace in the streak (#225)', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const stepAt = (id: string, ws: number, ts: string): CourseStep => {
+			const payload = { kind: 'unit-test', course: 'c', unit: 'u', score: 1, total: 2, passed: false, early: false };
+			const s = courseStepOf({ id, workspaceId: ws, ts, type: 'course', payload });
+			if (s === null) throw new Error('no step');
+			return s;
+		};
+		const steps = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => stepAt(`k${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withSteps = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], courseSteps: steps(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, courseSteps: steps(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withSteps).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
+	});
+
+	it('counts grammar lesson days of the workspace in the streak (#277)', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const runAt = (id: string, ws: number, ts: string): GrammarRun => {
+			const r = parseGrammarRun({ id, workspaceId: ws, ts, type: 'grammar', payload: grammarPayload('p', 'a', 1, 1) });
+			if (r === null) throw new Error('no run');
+			return r;
+		};
+		// A run on each day of the (completed) week: a seven-day run at least.
+		const runs = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => runAt(`g${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withRun = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], grammarRuns: runs(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, grammarRuns: runs(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withRun).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
 	});
 
 	it('throws for a date that is not a Monday', () => {

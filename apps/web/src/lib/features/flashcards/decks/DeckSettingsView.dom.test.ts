@@ -4,14 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn(),
 	getStudyData: vi.fn(() => Promise.resolve({ decks: [], cards: [] }))
 }));
-vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
+vi.mock('../commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../commands/decks')>()),
 	renameDeck: vi.fn(),
 	deleteDeck: vi.fn(),
 	saveDeckCardTypes: vi.fn(),
@@ -20,11 +20,11 @@ vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []) }));
 
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { getFrequencyPacks } from '$lib/api/frequency';
 import { getSchemes } from '$lib/api/schemes';
-import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '$lib/study/commands/decks';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '../commands/decks';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckSettingsView from './DeckSettingsView.svelte';
 import LimitsStub from './testing/LimitsStub.svelte';
@@ -50,7 +50,7 @@ beforeEach(() => {
 		decks: [greetings, verbs],
 		cards: [card(1, ['d1']), card(2, ['d1', 'd2']), card(3, ['d1'])],
 		reviews: [],
-		merged: 0,
+		merged: 0, grammarRuns: [], courseEvents: [],
 		deckSettings: { d1: { deckId: 'd1', cardTypes: ['cloze'], extra: {} } }
 	});
 	vi.mocked(renameDeck).mockResolvedValue({ ...greetings, name: 'Hello' });
@@ -205,7 +205,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0,
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });
@@ -228,7 +228,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0,
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });
@@ -245,7 +245,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0,
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });

@@ -1,15 +1,18 @@
 <script lang="ts">
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
-	import type { StarterFront } from '$lib/study/starter';
-	import { buildVocabFaces } from '$lib/study/cardView';
+	import type { CardAudio } from '$lib/audio/cue';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
+	import type { StarterFront } from '$lib/starter/starter';
+	import { buildVocabFaces } from './cardView';
+	import CardGlosses from './CardGlosses.svelte';
 	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
@@ -35,6 +38,8 @@
 
 	let { item, entry, revealed, onDone, audio, starter = null }: Props = $props();
 	const front = $derived(starter?.front ?? null);
+	// Hidden romanisation (#284): the answer's reading table drops a hidden type (ReadingTable).
+	const roman = useRomanisation();
 
 	// A sentence id that no longer resolves is passed as null so the card
 	// simply has no sentence block. A virtual level card previews the
@@ -46,11 +51,12 @@
 				? null
 				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null)
 	);
-	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language));
+	// A card pinned to a reading (#346, a Starter word's) shows only that reading's meanings.
+	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language, item.card?.reading));
 
 	// The prompt is the word alone; its readings and example sentence belong
 	// to the answer, below the hairline (design §9, #101).
-	const hasReadings = $derived(faces.back.readings.length > 0);
+	const hasReadings = $derived(roman.shown(faces.back.readings).length > 0);
 
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
@@ -128,17 +134,9 @@
 			<p class="sentence">{line}</p>
 		{/each}
 		{#if faces.back.sentenceLines.length > 0}<AiTag ai={shownSentence?.ai} />{/if}
+		{#if faces.back.sentenceLines.length > 0 && shownSentence?.source}<SentenceSource source={shownSentence.source} linked={false} />{/if}
 		{#if faces.back.glosses.length > 0}
-			{#each faces.back.glosses as group (group.dictionaryName)}
-				<article class="dictionary">
-					<ol class="fa-glosses">
-						{#each group.glosses as gloss, glossIndex (glossIndex)}
-							<li>{gloss}</li>
-						{/each}
-					</ol>
-					<p class="fa-source">{group.dictionaryName}</p>
-				</article>
-			{/each}
+			{#key entry.id}<CardGlosses glosses={faces.back.glosses} folded={faces.back.folded} />{/key}
 		{:else if entry.kind !== 'character'}
 			<p class="hint">{t('flashcards.card.noGlosses')}</p>
 		{/if}
@@ -175,9 +173,5 @@
 	}
 	.hint {
 		color: var(--readable-muted);
-	}
-	.dictionary {
-		display: grid;
-		gap: var(--space-1);
 	}
 </style>

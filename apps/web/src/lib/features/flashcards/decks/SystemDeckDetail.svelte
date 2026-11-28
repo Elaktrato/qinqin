@@ -6,12 +6,12 @@
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { saveConfig } from '$lib/study/session';
+	import { saveConfig } from '../session/session';
 	import { here } from '$lib/routing/here';
 	import { PartialPushError } from '$lib/sync/push';
-	import { loadRawStudyData } from '$lib/study/data';
-	import { pushStudy } from '$lib/study/commands/write';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { loadRawStudyData } from '$lib/studycore/data';
+	import { pushStudy } from '$lib/studycore/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -22,6 +22,8 @@
 	import { Button, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	const roman = useRomanisation();
 
 	// A read-only level deck: its items with the learner's state, a level
 	// session, and "Add to my decks" (idempotent, see addToDeck.ts).
@@ -252,7 +254,7 @@
 			{#each items as item (item.id)}
 				<li>
 					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
-					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{roman.text(readingBeside(item.written, item.readings), workspace?.language ?? '')}</span>
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>
 			{/each}

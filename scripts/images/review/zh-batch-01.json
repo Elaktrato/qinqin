@@ -1,0 +1,4327 @@
+{
+ "version": 1,
+ "rule": "images/review",
+ "note": "Doubtful automatic word -> picture mappings (#274): word, reading, the sense the picture is for (0: the whole entry) and the senses, the picture (pack, concept, English name), its score and how the matcher found it, and why it is doubtful. a and b: two teacher agents, c: the adjudicator where they disagree (scripts/images/review/reviewers.json); decision: what was applied. scripts/picture-review.mjs.",
+ "language": "zh",
+ "batch": 1,
+ "items": [
+  {
+   "i": 1,
+   "id": "mulberry|zh|咖啡|1|coffee",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "咖啡",
+   "word": "咖啡",
+   "reading": "ka1 fei1",
+   "sources": [
+    "starter",
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) (loanword) coffee; CL:杯[bei1]"
+   ],
+   "concept": "coffee",
+   "picture": "coffee",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 2,
+   "id": "mulberry|zh|月亮|1|Moon",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "月亮",
+   "word": "月亮",
+   "reading": "yue4 liang5",
+   "sources": [
+    "starter"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) the moon"
+   ],
+   "concept": "Moon",
+   "picture": "Moon",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 3,
+   "id": "mulberry|zh|树|1|tree",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "树",
+   "word": "树",
+   "reading": "shu4",
+   "sources": [
+    "starter"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) tree; CL:棵[ke1]; to cultivate; to set up"
+   ],
+   "concept": "tree",
+   "picture": "tree",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 4,
+   "id": "mulberry|zh|水|2|water",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "水",
+   "word": "水",
+   "reading": "shuǐ",
+   "sources": [
+    "starter",
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Shui; Shui ethnic group",
+    "2) water; (after a name) ... River; to swim (used mostly in 會水|会水[hui4 shui3] and 水性[shui3 xing4]); (coll.) lacking in substance; shoddy"
+   ],
+   "concept": "water",
+   "picture": "water",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 5,
+   "id": "mulberry|zh|灯|1|lamp",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "灯",
+   "word": "灯",
+   "reading": "deng1",
+   "sources": [
+    "starter"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) lamp; light; lantern; CL:盞|盏[zhan3]"
+   ],
+   "concept": "lamp",
+   "picture": "lamp",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 6,
+   "id": "mulberry|zh|电脑|1|computer_1",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "电脑",
+   "word": "电脑",
+   "reading": "dian4 nao3",
+   "sources": [
+    "starter",
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) computer; CL:臺|台[tai2]"
+   ],
+   "concept": "computer_1",
+   "picture": "computer",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 7,
+   "id": "mulberry|zh|花|2|flower",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "花",
+   "word": "花",
+   "reading": "huā",
+   "sources": [
+    "starter",
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Hua",
+    "2) flower; blossom; CL:朵[duo3],支[zhi1],束[shu4],把[ba3],盆[pen2],簇[cu4]; fancy pattern",
+    "3) old variant of 花[hua1]",
+    "4) variant of 花[hua1]; flower; blossom; also pr. [wei3]"
+   ],
+   "concept": "flower",
+   "picture": "flower",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 8,
+   "id": "mulberry|zh|茶|1|tea",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "茶",
+   "word": "茶",
+   "reading": "cha2",
+   "sources": [
+    "starter",
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) tea; tea plant; CL:杯[bei1],壺|壶[hu2]"
+   ],
+   "concept": "tea",
+   "picture": "tea",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 9,
+   "id": "mulberry|zh|雨|1|rain",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "雨",
+   "word": "雨",
+   "reading": "yǔ",
+   "sources": [
+    "starter",
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) rain; CL:陣|阵[zhen4],場|场[chang2]",
+    "2) (literary) to rain; (of rain, snow etc) to fall; to precipitate; to wet"
+   ],
+   "concept": "rain",
+   "picture": "rain",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 10,
+   "id": "mulberry|zh|雪|2|snow",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "雪",
+   "word": "雪",
+   "reading": "xuě",
+   "sources": [
+    "starter",
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Xue",
+    "2) snow; CL:場|场[chang2]; (literary) to wipe away (a humiliation etc)"
+   ],
+   "concept": "snow",
+   "picture": "snow",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 11,
+   "id": "mulberry|zh|音乐|1|music",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "音乐",
+   "word": "音乐",
+   "reading": "yin1 yue4",
+   "sources": [
+    "starter"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) music; CL:張|张[zhang1],曲[qu3],段[duan4]"
+   ],
+   "concept": "music",
+   "picture": "music",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 12,
+   "id": "mulberry|zh|一|1|one",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "一",
+   "word": "一",
+   "reading": "yī",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) one; single; a (article); as soon as"
+   ],
+   "concept": "one",
+   "picture": "one",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 13,
+   "id": "mulberry|zh|七|1|seven",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "七",
+   "word": "七",
+   "reading": "qī",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) seven; 7"
+   ],
+   "concept": "seven",
+   "picture": "seven",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 14,
+   "id": "mulberry|zh|三|2|three",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "三",
+   "word": "三",
+   "reading": "sān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname San",
+    "2) three; 3"
+   ],
+   "concept": "three",
+   "picture": "three",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 15,
+   "id": "mulberry|zh|上午|1|morning",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "上午",
+   "word": "上午",
+   "reading": "shàngwǔ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) morning"
+   ],
+   "concept": "morning",
+   "picture": "morning",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 16,
+   "id": "mulberry|zh|下|1|down",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "下",
+   "word": "下",
+   "reading": "xià",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) down; downwards; below; lower"
+   ],
+   "concept": "down",
+   "picture": "down",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 17,
+   "id": "mulberry|zh|下午|1|afternoon",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "下午",
+   "word": "下午",
+   "reading": "xiàwǔ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) afternoon; CL:個|个[ge4]; p.m."
+   ],
+   "concept": "afternoon",
+   "picture": "afternoon",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 18,
+   "id": "mulberry|zh|两|1|two",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "两",
+   "word": "两",
+   "reading": "liǎng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) two; both; some; a few"
+   ],
+   "concept": "two",
+   "picture": "two",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 19,
+   "id": "mulberry|zh|九|1|nine",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "九",
+   "word": "九",
+   "reading": "jiǔ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) nine; 9"
+   ],
+   "concept": "nine",
+   "picture": "nine",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 20,
+   "id": "mulberry|zh|二|1|two",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "二",
+   "word": "二",
+   "reading": "èr",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) two; 2; (Beijing dialect) stupid"
+   ],
+   "concept": "two",
+   "picture": "two",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 21,
+   "id": "mulberry|zh|五|1|five",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "五",
+   "word": "五",
+   "reading": "wǔ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) five; 5"
+   ],
+   "concept": "five",
+   "picture": "five",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 22,
+   "id": "mulberry|zh|什么|1|what",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "什么",
+   "word": "什么",
+   "reading": "shénme",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) what?; something; anything"
+   ],
+   "concept": "what",
+   "picture": "what",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 23,
+   "id": "mulberry|zh|今天|1|today",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "今天",
+   "word": "今天",
+   "reading": "jīntiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) today; the present time; now"
+   ],
+   "concept": "today",
+   "picture": "today",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
+  },
+  {
+   "i": 24,
+   "id": "mulberry|zh|儿子|1|son",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "儿子",
+   "word": "儿子",
+   "reading": "érzi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) son"
+   ],
+   "concept": "son",
+   "picture": "son",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 25,
+   "id": "mulberry|zh|八|1|eight",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "八",
+   "word": "八",
+   "reading": "bā",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) eight"
+   ],
+   "concept": "eight",
+   "picture": "eight",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 26,
+   "id": "mulberry|zh|六|1|six",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "六",
+   "word": "六",
+   "reading": "liù",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) six; 6",
+    "2) used in place names"
+   ],
+   "concept": "six",
+   "picture": "six",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 27,
+   "id": "mulberry|zh|分|2|part",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "分",
+   "word": "分",
+   "reading": "fēn",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) to divide; to separate; to distribute; to allocate; to distinguish (good and bad); (bound form) branch of (an organization); sub- (as in 分局[fen1 ju2])",
+    "2) part; share; ingredient; component"
+   ],
+   "concept": "part",
+   "picture": "part",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 28,
+   "id": "mulberry|zh|分钟|1|minute",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "分钟",
+   "word": "分钟",
+   "reading": "fēnzhōng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) minute"
+   ],
+   "concept": "minute",
+   "picture": "minute",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 29,
+   "id": "mulberry|zh|前|1|front",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "前",
+   "word": "前",
+   "reading": "qián",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) front; forward; ahead; first"
+   ],
+   "concept": "front",
+   "picture": "front",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 30,
+   "id": "mulberry|zh|十|1|ten",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "十",
+   "word": "十",
+   "reading": "shí",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) ten; 10"
+   ],
+   "concept": "ten",
+   "picture": "ten",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 31,
+   "id": "mulberry|zh|千|1|thousand",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "千",
+   "word": "千",
+   "reading": "qiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) thousand",
+    "2) used in 鞦韆|秋千[qiu1 qian1]"
+   ],
+   "concept": "thousand",
+   "picture": "thousand",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 32,
+   "id": "mulberry|zh|午饭|1|lunch_1",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "午饭",
+   "word": "午饭",
+   "reading": "wǔfàn",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) lunch; CL:份[fen4],頓|顿[dun4],次[ci4],餐[can1]"
+   ],
+   "concept": "lunch_1",
+   "picture": "lunch",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 33,
+   "id": "mulberry|zh|后|3|back",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "后",
+   "word": "后",
+   "reading": "hòu",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) surname Hou",
+    "2) empress; queen; (archaic) monarch; ruler",
+    "3) back; behind; rear; afterwards"
+   ],
+   "concept": "back",
+   "picture": "back",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 34,
+   "id": "mulberry|zh|吗|1|what",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "吗",
+   "word": "吗",
+   "reading": "ma",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) (coll.) what?",
+    "2) used in 嗎啡|吗啡[ma3 fei1]",
+    "3) (question particle for \"yes-no\" questions)"
+   ],
+   "concept": "what",
+   "picture": "what",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 35,
+   "id": "mulberry|zh|听见|1|hear_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "听见",
+   "word": "听见",
+   "reading": "tīngjiàn",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to hear"
+   ],
+   "concept": "hear_to",
+   "picture": "hear",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 36,
+   "id": "mulberry|zh|哪|1|how",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪",
+   "word": "哪",
+   "reading": "nǎ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) how; which",
+    "2) (emphatic sentence-final particle, used instead of 啊[a5] after a word ending in \"n\")",
+    "3) used in 哪吒[Ne2 zha1]; Taiwan pr. [nuo2]",
+    "4) which? (interrogative, followed by classifier or numeral-classifier)"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 37,
+   "id": "mulberry|zh|哪|4|which",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪",
+   "word": "哪",
+   "reading": "nǎ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) how; which",
+    "2) (emphatic sentence-final particle, used instead of 啊[a5] after a word ending in \"n\")",
+    "3) used in 哪吒[Ne2 zha1]; Taiwan pr. [nuo2]",
+    "4) which? (interrogative, followed by classifier or numeral-classifier)"
+   ],
+   "concept": "which",
+   "picture": "which",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 38,
+   "id": "mulberry|zh|哪个|1|which",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪个",
+   "word": "哪个",
+   "reading": "nǎge",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) which; who"
+   ],
+   "concept": "which",
+   "picture": "which",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 39,
+   "id": "mulberry|zh|哪儿|1|where",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪儿",
+   "word": "哪儿",
+   "reading": "nǎr",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) where?; wherever; anywhere; somewhere; (used in rhetorical questions) how can ...?; how could ...?"
+   ],
+   "concept": "where",
+   "picture": "where",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 40,
+   "id": "mulberry|zh|哪里|1|where",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪里",
+   "word": "哪里",
+   "reading": "nǎlǐ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) where?; somewhere; anywhere; wherever",
+    "2) where?; somewhere; anywhere; wherever"
+   ],
+   "concept": "where",
+   "picture": "where",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 41,
+   "id": "mulberry|zh|哪里|2|where",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "哪里",
+   "word": "哪里",
+   "reading": "nǎlǐ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) where?; somewhere; anywhere; wherever",
+    "2) where?; somewhere; anywhere; wherever"
+   ],
+   "concept": "where",
+   "picture": "where",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 42,
+   "id": "mulberry|zh|喂|1|hello",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "喂",
+   "word": "喂",
+   "reading": "wèi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) hello (when answering the phone)",
+    "2) hey; to feed (an animal, baby, invalid etc)",
+    "3) variant of 餵|喂[wei4]",
+    "4) to feed"
+   ],
+   "concept": "hello",
+   "picture": "hello",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 43,
+   "id": "mulberry|zh|喝|1|drink_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "喝",
+   "word": "喝",
+   "reading": "hē",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to drink; variant of 嗬[he1]",
+    "2) to shout"
+   ],
+   "concept": "drink_to",
+   "picture": "drink",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 44,
+   "id": "mulberry|zh|四|1|four",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "四",
+   "word": "四",
+   "reading": "sì",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) four; 4"
+   ],
+   "concept": "four",
+   "picture": "four",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 45,
+   "id": "mulberry|zh|外|1|outside",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "外",
+   "word": "外",
+   "reading": "wài",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) outside; in addition; foreign; external"
+   ],
+   "concept": "outside",
+   "picture": "outside",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 46,
+   "id": "mulberry|zh|外边|1|outside",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "外边",
+   "word": "外边",
+   "reading": "wàibian",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) outside; outer surface; abroad; place other than one's home"
+   ],
+   "concept": "outside",
+   "picture": "outside",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 47,
+   "id": "mulberry|zh|天|1|day",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "天",
+   "word": "天",
+   "reading": "tiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) day; sky; heaven"
+   ],
+   "concept": "day",
+   "picture": "day",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "adjudicator"
+   }
+  },
+  {
+   "i": 48,
+   "id": "mulberry|zh|太|1|highest",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "太",
+   "word": "太",
+   "reading": "tài",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) highest; greatest; too (much); very"
+   ],
+   "concept": "highest",
+   "picture": "highest",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 49,
+   "id": "mulberry|zh|女儿|1|daughter",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "女儿",
+   "word": "女儿",
+   "reading": "nǚ’ér",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) daughter"
+   ],
+   "concept": "daughter",
+   "picture": "daughter",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 50,
+   "id": "mulberry|zh|好|1|good",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "好",
+   "word": "好",
+   "reading": "hǎo",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) good; appropriate; proper; all right!; (before a verb) easy to",
+    "2) to be fond of; to have a tendency to; to be prone to"
+   ],
+   "concept": "good",
+   "picture": "good",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 51,
+   "id": "mulberry|zh|字|1|letter",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "字",
+   "word": "字",
+   "reading": "zì",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) letter; symbol; character; word"
+   ],
+   "concept": "letter",
+   "picture": "letter",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 52,
+   "id": "mulberry|zh|少|2|young",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "少",
+   "word": "少",
+   "reading": "shǎo",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) few; less; to lack; to be missing",
+    "2) young"
+   ],
+   "concept": "young",
+   "picture": "young",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 53,
+   "id": "mulberry|zh|工作|1|work_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "工作",
+   "word": "工作",
+   "reading": "gōngzuò",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to work; (of a machine) to operate; job; work"
+   ],
+   "concept": "work_to",
+   "picture": "work",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 54,
+   "id": "mulberry|zh|忙|1|busy",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "忙",
+   "word": "忙",
+   "reading": "máng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) busy; hurriedly; to hurry; to rush"
+   ],
+   "concept": "busy",
+   "picture": "busy",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 55,
+   "id": "mulberry|zh|怎么|1|how",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "怎么",
+   "word": "怎么",
+   "reading": "zěnme",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) how?; what?; why?",
+    "2) variant of 怎麼|怎么[zen3 me5]"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 56,
+   "id": "mulberry|zh|怎么样|1|how",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "怎么样",
+   "word": "怎么样",
+   "reading": "zěnmeyàng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) how?; how about?; how was it?; how are things?"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 57,
+   "id": "mulberry|zh|房间|1|room",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "房间",
+   "word": "房间",
+   "reading": "fángjiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) room; CL:間|间[jian1]"
+   ],
+   "concept": "room",
+   "picture": "room",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 58,
+   "id": "mulberry|zh|早饭|1|breakfast_1",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "早饭",
+   "word": "早饭",
+   "reading": "zǎofàn",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) breakfast; CL:份[fen4],頓|顿[dun4],次[ci4],餐[can1]"
+   ],
+   "concept": "breakfast_1",
+   "picture": "breakfast",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 59,
+   "id": "mulberry|zh|明天|1|tomorrow",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "明天",
+   "word": "明天",
+   "reading": "míngtiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) tomorrow"
+   ],
+   "concept": "tomorrow",
+   "picture": "tomorrow",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
+  },
+  {
+   "i": 60,
+   "id": "mulberry|zh|星期|1|week",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "星期",
+   "word": "星期",
+   "reading": "xīngqī",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) week; CL:個|个[ge4]; day of the week; Sunday"
+   ],
+   "concept": "week",
+   "picture": "week",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 61,
+   "id": "mulberry|zh|昨天|1|yesterday",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "昨天",
+   "word": "昨天",
+   "reading": "zuótiān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) yesterday"
+   ],
+   "concept": "yesterday",
+   "picture": "yesterday",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
+  },
+  {
+   "i": 62,
+   "id": "mulberry|zh|月|1|Moon",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "月",
+   "word": "月",
+   "reading": "yuè",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) moon; month; monthly; CL:個|个[ge4],輪|轮[lun2]"
+   ],
+   "concept": "Moon",
+   "picture": "Moon",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 63,
+   "id": "mulberry|zh|有些|1|some",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "有些",
+   "word": "有些",
+   "reading": "yǒuxiē",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) some; somewhat; rather; a bit"
+   ],
+   "concept": "some",
+   "picture": "some",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 64,
+   "id": "mulberry|zh|有的|1|some",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "有的",
+   "word": "有的",
+   "reading": "yǒude",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) (there are) some (who are...); some (exist)"
+   ],
+   "concept": "some",
+   "picture": "some",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 65,
+   "id": "mulberry|zh|桌子|1|table",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "桌子",
+   "word": "桌子",
+   "reading": "zhuōzi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) table; desk; CL:張|张[zhang1],套[tao4]"
+   ],
+   "concept": "table",
+   "picture": "table",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 66,
+   "id": "mulberry|zh|水果|1|fruit",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "水果",
+   "word": "水果",
+   "reading": "shuǐguǒ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) fruit"
+   ],
+   "concept": "fruit",
+   "picture": "fruit",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 67,
+   "id": "mulberry|zh|百|2|hundred",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "百",
+   "word": "百",
+   "reading": "bǎi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Bai",
+    "2) hundred; numerous; all kinds of"
+   ],
+   "concept": "hundred",
+   "picture": "hundred",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 68,
+   "id": "mulberry|zh|苹果|2|apple",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "苹果",
+   "word": "苹果",
+   "reading": "píngguǒ",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) Apple (American tech company)",
+    "2) apple; CL:個|个[ge4],顆|颗[ke1]"
+   ],
+   "concept": "apple",
+   "picture": "apple",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 69,
+   "id": "mulberry|zh|谁|1|who",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "谁",
+   "word": "谁",
+   "reading": "shéi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) who; also pr. [shui2]"
+   ],
+   "concept": "who",
+   "picture": "who",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 70,
+   "id": "mulberry|zh|车|2|car",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "车",
+   "word": "车",
+   "reading": "chē",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Che",
+    "2) car; vehicle; CL:輛|辆[liang4]; machine",
+    "3) war chariot (archaic); rook (in Chinese chess); rook (in chess)"
+   ],
+   "concept": "car",
+   "picture": "car",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 71,
+   "id": "mulberry|zh|边|1|side",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "边",
+   "word": "边",
+   "reading": "biān",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) side; edge; margin; border",
+    "2) suffix of a noun of locality"
+   ],
+   "concept": "side",
+   "picture": "side",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 72,
+   "id": "mulberry|zh|零|1|Zero",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "零",
+   "word": "零",
+   "reading": "líng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) zero; nought; zero sign; fractional"
+   ],
+   "concept": "Zero",
+   "picture": "Zero",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 73,
+   "id": "openmoji|zh|先生|1|1F9D1-200D-1F3EB",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "先生",
+   "word": "先生",
+   "reading": "xiānsheng",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) teacher; gentleman; sir; mister (Mr.); husband; (dialect) doctor"
+   ],
+   "concept": "1F9D1-200D-1F3EB",
+   "picture": "teacher",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 74,
+   "id": "openmoji|zh|出租车|1|1F695",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "出租车",
+   "word": "出租车",
+   "reading": "chūzūchē",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) taxi; (Tw) rental car"
+   ],
+   "concept": "1F695",
+   "picture": "taxi",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 75,
+   "id": "openmoji|zh|口|1|1F444",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "口",
+   "word": "口",
+   "reading": "kǒu",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) mouth; classifier for things with mouths (people, domestic animals, cannons, wells etc); classifier for bites or mouthfuls"
+   ],
+   "concept": "1F444",
+   "picture": "mouth",
+   "score": 90,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 76,
+   "id": "openmoji|zh|日|1|2600",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "日",
+   "word": "日",
+   "reading": "rì",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) (bound form) sun; day; day of the month; (bound form) Japan (abbr. for 日本[Ri4 ben3])"
+   ],
+   "concept": "2600",
+   "picture": "sun",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 77,
+   "id": "openmoji|zh|老师|1|1F9D1-200D-1F3EB",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "老师",
+   "word": "老师",
+   "reading": "lǎoshī",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) teacher"
+   ],
+   "concept": "1F9D1-200D-1F3EB",
+   "picture": "teacher",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 78,
+   "id": "openmoji|zh|饭|1|1F35A",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "饭",
+   "word": "饭",
+   "reading": "fàn",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) cooked rice; CL:碗[wan3]; meal; CL:頓|顿[dun4]"
+   ],
+   "concept": "1F35A",
+   "picture": "cooked rice",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 79,
+   "id": "openmoji|zh|饺子|1|1F95F",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "饺子",
+   "word": "饺子",
+   "reading": "jiǎozi",
+   "sources": [
+    "hsk1"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) dumpling; pot-sticker; CL:個|个[ge4],隻|只[zhi1]"
+   ],
+   "concept": "1F95F",
+   "picture": "dumpling",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 80,
+   "id": "mulberry|zh|丈夫|1|husband",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "丈夫",
+   "word": "丈夫",
+   "reading": "zhàngfu",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) husband"
+   ],
+   "concept": "husband",
+   "picture": "husband",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 81,
+   "id": "mulberry|zh|下面|1|below",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "下面",
+   "word": "下面",
+   "reading": "xiàmiàn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) below; under; next; the following",
+    "2) to boil noodles"
+   ],
+   "concept": "below",
+   "picture": "below",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 82,
+   "id": "mulberry|zh|不错|1|correct",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "不错",
+   "word": "不错",
+   "reading": "búcuò",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) correct; right; not bad; pretty good"
+   ],
+   "concept": "correct",
+   "picture": "correct",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 83,
+   "id": "mulberry|zh|为什么|1|why",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "为什么",
+   "word": "为什么",
+   "reading": "wèi shénme",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) why?; for what reason?"
+   ],
+   "concept": "why",
+   "picture": "why",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 84,
+   "id": "mulberry|zh|前面|1|ahead",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "前面",
+   "word": "前面",
+   "reading": "qiánmiàn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) ahead; in front; preceding; above"
+   ],
+   "concept": "ahead",
+   "picture": "ahead",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 85,
+   "id": "mulberry|zh|周|3|week",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "周",
+   "word": "周",
+   "reading": "zhōu",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) surname Zhou; Zhou Dynasty (1046–256 BC)",
+    "2) to make a circuit; to circle; circle; circumference",
+    "3) week; weekly; variant of 周[zhou1]"
+   ],
+   "concept": "week",
+   "picture": "week",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 86,
+   "id": "mulberry|zh|地|2|Earth",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "地",
+   "word": "地",
+   "reading": "de",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) -ly; structural particle: used before a verb or adjective, linking it to preceding modifying adverbial adjunct",
+    "2) earth; ground; field; place"
+   ],
+   "concept": "Earth",
+   "picture": "Earth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 87,
+   "id": "mulberry|zh|坏|1|bad",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "坏",
+   "word": "坏",
+   "reading": "huài",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) bad; spoiled; broken; to break down"
+   ],
+   "concept": "bad",
+   "picture": "bad",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 88,
+   "id": "mulberry|zh|外面|1|outside",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "外面",
+   "word": "外面",
+   "reading": "wàimiàn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) outside (also pr. [wai4 mian5] for this sense); surface; exterior; external appearance"
+   ],
+   "concept": "outside",
+   "picture": "outside",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 89,
+   "id": "mulberry|zh|头|1|head",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "头",
+   "word": "头",
+   "reading": "tóu",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) head; hair style; the top; end",
+    "2) suffix for nouns"
+   ],
+   "concept": "head",
+   "picture": "head",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 90,
+   "id": "mulberry|zh|妻子|2|wife",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "妻子",
+   "word": "妻子",
+   "reading": "qīzi",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) wife and children",
+    "2) wife"
+   ],
+   "concept": "wife",
+   "picture": "wife",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 91,
+   "id": "mulberry|zh|左|2|left",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "左",
+   "word": "左",
+   "reading": "zuǒ",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Zuo",
+    "2) left; the Left (politics); east; unorthodox"
+   ],
+   "concept": "left",
+   "picture": "left",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 92,
+   "id": "mulberry|zh|左边|1|left",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "左边",
+   "word": "左边",
+   "reading": "zuǒbian",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) left; the left side; to the left of"
+   ],
+   "concept": "left",
+   "picture": "left",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 93,
+   "id": "mulberry|zh|正|2|straight",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "正",
+   "word": "正",
+   "reading": "zhèng",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) first month of the lunar year",
+    "2) straight; upright; proper; main"
+   ],
+   "concept": "straight",
+   "picture": "straight",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 94,
+   "id": "mulberry|zh|游|2|swim_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "游",
+   "word": "游",
+   "reading": "yóu",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname You",
+    "2) to swim; variant of 遊|游[you2]",
+    "3) to walk; to tour; to roam; to travel"
+   ],
+   "concept": "swim_to",
+   "picture": "swim",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 95,
+   "id": "mulberry|zh|球|2|ball",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "球",
+   "word": "球",
+   "reading": "qiú",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) ball used for playing games (variant of 球[qiu2])",
+    "2) ball; sphere; globe; CL:個|个[ge4]"
+   ],
+   "concept": "ball",
+   "picture": "ball",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 96,
+   "id": "mulberry|zh|白色|1|white",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "白色",
+   "word": "白色",
+   "reading": "báisè",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) white; fig. reactionary; anti-communist"
+   ],
+   "concept": "white",
+   "picture": "white",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 97,
+   "id": "mulberry|zh|红色|1|red",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "红色",
+   "word": "红色",
+   "reading": "hóngsè",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) red (color); revolutionary"
+   ],
+   "concept": "red",
+   "picture": "red",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 98,
+   "id": "mulberry|zh|绿色|1|green",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "绿色",
+   "word": "绿色",
+   "reading": "lǜsè",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) green"
+   ],
+   "concept": "green",
+   "picture": "green",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 99,
+   "id": "mulberry|zh|肉|1|meat",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "肉",
+   "word": "肉",
+   "reading": "ròu",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) meat; flesh; pulp (of a fruit); (coll.) (of a fruit) squashy"
+   ],
+   "concept": "meat",
+   "picture": "meat",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 100,
+   "id": "mulberry|zh|药|2|medicine",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "药",
+   "word": "药",
+   "reading": "yào",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) leaf of the iris; variant of 藥|药[yao4]",
+    "2) medicine; drug; substance used for a specific purpose (e.g. poisoning, explosion, fermenting); CL:種|种[zhong3],服[fu4],味[wei4]"
+   ],
+   "concept": "medicine",
+   "picture": "medicine",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 101,
+   "id": "mulberry|zh|跑|2|run_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "跑",
+   "word": "跑",
+   "reading": "pǎo",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) (of an animal) to paw (the ground)",
+    "2) to run; to run away; to escape; to run around (on errands etc)"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 102,
+   "id": "mulberry|zh|跑步|1|run_to",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "跑步",
+   "word": "跑步",
+   "reading": "pǎobù",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to run; to jog; (military) to march at the double"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 103,
+   "id": "mulberry|zh|跟|1|heel",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "跟",
+   "word": "跟",
+   "reading": "gēn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) heel; to follow closely; to go with; (of a woman) to marry sb"
+   ],
+   "concept": "heel",
+   "picture": "heel",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 104,
+   "id": "mulberry|zh|路|2|road",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "路",
+   "word": "路",
+   "reading": "lù",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Lu",
+    "2) road (CL:條|条[tiao2]); journey; route; line (bus etc)"
+   ],
+   "concept": "road",
+   "picture": "road",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 105,
+   "id": "mulberry|zh|近|1|near",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "近",
+   "word": "近",
+   "reading": "jìn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) near; close to; approximately"
+   ],
+   "concept": "near",
+   "picture": "near",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 106,
+   "id": "mulberry|zh|长|1|long",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "长",
+   "word": "长",
+   "reading": "cháng",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) long; (bound form) length; (bound form) strong point; forte; (bound form) to be good at",
+    "2) chief; head; elder; to grow"
+   ],
+   "concept": "long",
+   "picture": "long",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 107,
+   "id": "mulberry|zh|间|1|between",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "间",
+   "word": "间",
+   "reading": "jiān",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) between; among; within a definite time or space; room",
+    "2) gap; to separate; to thin out (seedlings); to sow discontent"
+   ],
+   "concept": "between",
+   "picture": "between",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "single-character"
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
+  },
+  {
+   "i": 108,
+   "id": "mulberry|zh|高|2|high",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "高",
+   "word": "高",
+   "reading": "gāo",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) surname Gao",
+    "2) high; tall; above average; loud"
+   ],
+   "concept": "high",
+   "picture": "high",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 109,
+   "id": "mulberry|zh|黑色|1|black",
+   "pack": "mulberry",
+   "language": "zh",
+   "target": "黑色",
+   "word": "黑色",
+   "reading": "hēisè",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) black"
+   ],
+   "concept": "black",
+   "picture": "black",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 110,
+   "id": "openmoji|zh|公交车|0|1F68C",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "公交车",
+   "word": "公交车",
+   "reading": "gōngjiāochē",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 0,
+   "senses": [
+    "1) public transport vehicle; town bus; CL:輛|辆[liang4]"
+   ],
+   "concept": "1F68C",
+   "picture": "bus",
+   "score": 90,
+   "basis": "name",
+   "why": [
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 111,
+   "id": "openmoji|zh|商场|1|1F3EC",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "商场",
+   "word": "商场",
+   "reading": "shāngchǎng",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) shopping mall; shopping center; department store; emporium"
+   ],
+   "concept": "1F3EC",
+   "picture": "department store",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 112,
+   "id": "openmoji|zh|洗手间|1|1F6BD",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "洗手间",
+   "word": "洗手间",
+   "reading": "xǐshǒujiān",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) toilet; lavatory; washroom"
+   ],
+   "concept": "1F6BD",
+   "picture": "toilet",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 113,
+   "id": "openmoji|zh|票|1|1F3AB",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "票",
+   "word": "票",
+   "reading": "piào",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) ticket; ballot; banknote; CL:張|张[zhang1]"
+   ],
+   "concept": "1F3AB",
+   "picture": "ticket",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 114,
+   "id": "openmoji|zh|站|1|1F689",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "站",
+   "word": "站",
+   "reading": "zhàn",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) station; to stand; to halt; to stop"
+   ],
+   "concept": "1F689",
+   "picture": "station",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 115,
+   "id": "openmoji|zh|笔|0|1F58A",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "笔",
+   "word": "笔",
+   "reading": "bǐ",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 0,
+   "senses": [
+    "1) writing brush; writing implement (pen, pencil etc) (CL:支[zhi1],枝[zhi1]); brushstroke; stroke (in painting or calligraphy); (bound form) style of writing; literary manner; technique of brushwork; (classifier) stroke of a Chinese character"
+   ],
+   "concept": "1F58A",
+   "picture": "pen",
+   "score": 90,
+   "basis": "name",
+   "why": [
+    "shared-picture",
+    "single-character"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  },
+  {
+   "i": 116,
+   "id": "openmoji|zh|门票|1|1F3AB",
+   "pack": "openmoji",
+   "language": "zh",
+   "target": "门票",
+   "word": "门票",
+   "reading": "ménpiào",
+   "sources": [
+    "hsk2"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) ticket (for theater, cinema etc)"
+   ],
+   "concept": "1F3AB",
+   "picture": "ticket",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  }
+ ],
+ "a": [
+  {
+   "i": 1,
+   "v": "accept"
+  },
+  {
+   "i": 2,
+   "v": "accept"
+  },
+  {
+   "i": 3,
+   "v": "accept"
+  },
+  {
+   "i": 4,
+   "v": "accept"
+  },
+  {
+   "i": 5,
+   "v": "accept"
+  },
+  {
+   "i": 6,
+   "v": "accept"
+  },
+  {
+   "i": 7,
+   "v": "accept"
+  },
+  {
+   "i": 8,
+   "v": "accept"
+  },
+  {
+   "i": 9,
+   "v": "accept"
+  },
+  {
+   "i": 10,
+   "v": "accept"
+  },
+  {
+   "i": 11,
+   "v": "accept"
+  },
+  {
+   "i": 12,
+   "v": "accept"
+  },
+  {
+   "i": 13,
+   "v": "accept"
+  },
+  {
+   "i": 14,
+   "v": "accept"
+  },
+  {
+   "i": 15,
+   "v": "accept"
+  },
+  {
+   "i": 16,
+   "v": "accept"
+  },
+  {
+   "i": 17,
+   "v": "accept"
+  },
+  {
+   "i": 18,
+   "v": "accept"
+  },
+  {
+   "i": 19,
+   "v": "accept"
+  },
+  {
+   "i": 20,
+   "v": "accept"
+  },
+  {
+   "i": 21,
+   "v": "accept"
+  },
+  {
+   "i": 22,
+   "v": "remove",
+   "r": "question word too abstract; symbol not distinguishable from how/which/who"
+  },
+  {
+   "i": 23,
+   "v": "accept"
+  },
+  {
+   "i": 24,
+   "v": "accept"
+  },
+  {
+   "i": 25,
+   "v": "accept"
+  },
+  {
+   "i": 26,
+   "v": "accept"
+  },
+  {
+   "i": 27,
+   "v": "remove",
+   "r": "'part' is abstract; beginners learn 分 as minute/cent/point"
+  },
+  {
+   "i": 28,
+   "v": "accept"
+  },
+  {
+   "i": 29,
+   "v": "accept"
+  },
+  {
+   "i": 30,
+   "v": "accept"
+  },
+  {
+   "i": 31,
+   "v": "accept"
+  },
+  {
+   "i": 32,
+   "v": "accept"
+  },
+  {
+   "i": 33,
+   "v": "remove",
+   "r": "'back' symbol likely shows the body part, not 'behind/after'"
+  },
+  {
+   "i": 34,
+   "v": "remove",
+   "r": "吗 is the yes-no question particle; 'what' picture teaches the wrong meaning"
+  },
+  {
+   "i": 35,
+   "v": "accept"
+  },
+  {
+   "i": 36,
+   "v": "remove",
+   "r": "哪 means which, not how; wrong picture"
+  },
+  {
+   "i": 37,
+   "v": "remove",
+   "r": "'which' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 38,
+   "v": "remove",
+   "r": "'which' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 39,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with other question symbols"
+  },
+  {
+   "i": 40,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with other question symbols"
+  },
+  {
+   "i": 41,
+   "v": "remove",
+   "r": "duplicate sense; question word too abstract to picture"
+  },
+  {
+   "i": 42,
+   "v": "remove",
+   "r": "generic waving 'hello' suggests 你好; 喂 is the telephone hello"
+  },
+  {
+   "i": 43,
+   "v": "accept"
+  },
+  {
+   "i": 44,
+   "v": "accept"
+  },
+  {
+   "i": 45,
+   "v": "accept"
+  },
+  {
+   "i": 46,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "accept"
+  },
+  {
+   "i": 48,
+   "v": "remove",
+   "r": "'highest' is not the meaning beginners learn; 太 = too/very"
+  },
+  {
+   "i": 49,
+   "v": "accept"
+  },
+  {
+   "i": 50,
+   "v": "accept"
+  },
+  {
+   "i": 51,
+   "v": "remove",
+   "r": "'letter' symbol likely shows a mail envelope (信), not a written character"
+  },
+  {
+   "i": 52,
+   "v": "remove",
+   "r": "'young' is the shào reading; card is shǎo = few/little"
+  },
+  {
+   "i": 53,
+   "v": "accept"
+  },
+  {
+   "i": 54,
+   "v": "accept"
+  },
+  {
+   "i": 55,
+   "v": "remove",
+   "r": "'how' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 56,
+   "v": "remove",
+   "r": "'how' picture doesn't convey 'how about/how is it'; too abstract"
+  },
+  {
+   "i": 57,
+   "v": "accept"
+  },
+  {
+   "i": 58,
+   "v": "accept"
+  },
+  {
+   "i": 59,
+   "v": "accept"
+  },
+  {
+   "i": 60,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "accept"
+  },
+  {
+   "i": 62,
+   "v": "accept"
+  },
+  {
+   "i": 63,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 64,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 65,
+   "v": "accept"
+  },
+  {
+   "i": 66,
+   "v": "accept"
+  },
+  {
+   "i": 67,
+   "v": "accept"
+  },
+  {
+   "i": 68,
+   "v": "accept"
+  },
+  {
+   "i": 69,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with person/他"
+  },
+  {
+   "i": 70,
+   "v": "accept"
+  },
+  {
+   "i": 71,
+   "v": "remove",
+   "r": "'side' is vague; 边 is mainly learned as a locality suffix"
+  },
+  {
+   "i": 72,
+   "v": "accept"
+  },
+  {
+   "i": 73,
+   "v": "remove",
+   "r": "beginners learn 先生 as Mr./husband; 'teacher' picture is misleading (老师)"
+  },
+  {
+   "i": 74,
+   "v": "accept"
+  },
+  {
+   "i": 75,
+   "v": "accept"
+  },
+  {
+   "i": 76,
+   "v": "accept"
+  },
+  {
+   "i": 77,
+   "v": "accept"
+  },
+  {
+   "i": 78,
+   "v": "accept"
+  },
+  {
+   "i": 79,
+   "v": "accept"
+  },
+  {
+   "i": 80,
+   "v": "accept"
+  },
+  {
+   "i": 81,
+   "v": "accept"
+  },
+  {
+   "i": 82,
+   "v": "remove",
+   "r": "checkmark teaches 对 'correct'; beginners learn 不错 as 'pretty good'"
+  },
+  {
+   "i": 83,
+   "v": "remove",
+   "r": "'why' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 84,
+   "v": "accept"
+  },
+  {
+   "i": 85,
+   "v": "accept"
+  },
+  {
+   "i": 86,
+   "v": "remove",
+   "r": "reading de is the adverbial particle; Earth picture fits dì and shows the planet"
+  },
+  {
+   "i": 87,
+   "v": "accept"
+  },
+  {
+   "i": 88,
+   "v": "accept"
+  },
+  {
+   "i": 89,
+   "v": "accept"
+  },
+  {
+   "i": 90,
+   "v": "accept"
+  },
+  {
+   "i": 91,
+   "v": "accept"
+  },
+  {
+   "i": 92,
+   "v": "accept"
+  },
+  {
+   "i": 93,
+   "v": "remove",
+   "r": "'straight' is not how beginners learn 正 (正在 / just); too abstract"
+  },
+  {
+   "i": 94,
+   "v": "accept"
+  },
+  {
+   "i": 95,
+   "v": "accept"
+  },
+  {
+   "i": 96,
+   "v": "accept"
+  },
+  {
+   "i": 97,
+   "v": "accept"
+  },
+  {
+   "i": 98,
+   "v": "accept"
+  },
+  {
+   "i": 99,
+   "v": "accept"
+  },
+  {
+   "i": 100,
+   "v": "accept"
+  },
+  {
+   "i": 101,
+   "v": "accept"
+  },
+  {
+   "i": 102,
+   "v": "accept"
+  },
+  {
+   "i": 103,
+   "v": "remove",
+   "r": "'heel' is not the beginner meaning; 跟 = with/to follow"
+  },
+  {
+   "i": 104,
+   "v": "accept"
+  },
+  {
+   "i": 105,
+   "v": "accept"
+  },
+  {
+   "i": 106,
+   "v": "accept"
+  },
+  {
+   "i": 107,
+   "v": "remove",
+   "r": "'between' is abstract; beginners meet 间 as the room classifier"
+  },
+  {
+   "i": 108,
+   "v": "accept"
+  },
+  {
+   "i": 109,
+   "v": "accept"
+  },
+  {
+   "i": 110,
+   "v": "accept"
+  },
+  {
+   "i": 111,
+   "v": "accept"
+  },
+  {
+   "i": 112,
+   "v": "accept"
+  },
+  {
+   "i": 113,
+   "v": "accept"
+  },
+  {
+   "i": 114,
+   "v": "accept"
+  },
+  {
+   "i": 115,
+   "v": "accept"
+  },
+  {
+   "i": 116,
+   "v": "accept"
+  }
+ ],
+ "b": [
+  {
+   "i": 1,
+   "v": "accept"
+  },
+  {
+   "i": 2,
+   "v": "accept"
+  },
+  {
+   "i": 3,
+   "v": "accept"
+  },
+  {
+   "i": 4,
+   "v": "accept"
+  },
+  {
+   "i": 5,
+   "v": "accept"
+  },
+  {
+   "i": 6,
+   "v": "accept"
+  },
+  {
+   "i": 7,
+   "v": "accept"
+  },
+  {
+   "i": 8,
+   "v": "accept"
+  },
+  {
+   "i": 9,
+   "v": "accept"
+  },
+  {
+   "i": 10,
+   "v": "accept"
+  },
+  {
+   "i": 11,
+   "v": "accept"
+  },
+  {
+   "i": 12,
+   "v": "accept"
+  },
+  {
+   "i": 13,
+   "v": "accept"
+  },
+  {
+   "i": 14,
+   "v": "accept"
+  },
+  {
+   "i": 15,
+   "v": "accept"
+  },
+  {
+   "i": 16,
+   "v": "accept"
+  },
+  {
+   "i": 17,
+   "v": "accept"
+  },
+  {
+   "i": 18,
+   "v": "accept"
+  },
+  {
+   "i": 19,
+   "v": "accept"
+  },
+  {
+   "i": 20,
+   "v": "accept"
+  },
+  {
+   "i": 21,
+   "v": "accept"
+  },
+  {
+   "i": 22,
+   "v": "remove",
+   "r": "question word; a 'what' symbol is too abstract to teach"
+  },
+  {
+   "i": 23,
+   "v": "remove",
+   "r": "calendar-style 'today' symbol is easily confused with yesterday/tomorrow"
+  },
+  {
+   "i": 24,
+   "v": "accept"
+  },
+  {
+   "i": 25,
+   "v": "accept"
+  },
+  {
+   "i": 26,
+   "v": "accept"
+  },
+  {
+   "i": 27,
+   "v": "remove",
+   "r": "'part' is abstract; beginners learn 分 as minute/cent/divide"
+  },
+  {
+   "i": 28,
+   "v": "accept"
+  },
+  {
+   "i": 29,
+   "v": "accept"
+  },
+  {
+   "i": 30,
+   "v": "accept"
+  },
+  {
+   "i": 31,
+   "v": "accept"
+  },
+  {
+   "i": 32,
+   "v": "accept"
+  },
+  {
+   "i": 33,
+   "v": "remove",
+   "r": "'back' likely shows the body part, not 'behind/after'"
+  },
+  {
+   "i": 34,
+   "v": "remove",
+   "r": "吗 is a yes-no question particle, not 'what'"
+  },
+  {
+   "i": 35,
+   "v": "accept"
+  },
+  {
+   "i": 36,
+   "v": "remove",
+   "r": "哪 means which, not how; question word too abstract"
+  },
+  {
+   "i": 37,
+   "v": "remove",
+   "r": "question word; 'which' symbol too abstract to teach"
+  },
+  {
+   "i": 38,
+   "v": "remove",
+   "r": "question word; 'which' symbol too abstract to teach"
+  },
+  {
+   "i": 39,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 40,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 41,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 42,
+   "v": "remove",
+   "r": "a waving 'hello' suggests 你好; 喂 is the phone greeting/hey"
+  },
+  {
+   "i": 43,
+   "v": "accept"
+  },
+  {
+   "i": 44,
+   "v": "accept"
+  },
+  {
+   "i": 45,
+   "v": "accept"
+  },
+  {
+   "i": 46,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "remove",
+   "r": "'day' symbol is vague; 天 also means sky, picture may read as 太阳"
+  },
+  {
+   "i": 48,
+   "v": "remove",
+   "r": "beginners learn 太 as 'too'; 'highest' is the wrong sense"
+  },
+  {
+   "i": 49,
+   "v": "accept"
+  },
+  {
+   "i": 50,
+   "v": "accept"
+  },
+  {
+   "i": 51,
+   "v": "remove",
+   "r": "'letter' is ambiguous (mail letter vs alphabet letter); 字 is a Chinese character"
+  },
+  {
+   "i": 52,
+   "v": "remove",
+   "r": "'young' is shào; 少 shǎo means few/little"
+  },
+  {
+   "i": 53,
+   "v": "accept"
+  },
+  {
+   "i": 54,
+   "v": "accept"
+  },
+  {
+   "i": 55,
+   "v": "remove",
+   "r": "question word; 'how' symbol too abstract to teach"
+  },
+  {
+   "i": 56,
+   "v": "remove",
+   "r": "question word; 'how' symbol too abstract to teach"
+  },
+  {
+   "i": 57,
+   "v": "accept"
+  },
+  {
+   "i": 58,
+   "v": "accept"
+  },
+  {
+   "i": 59,
+   "v": "remove",
+   "r": "calendar-style 'tomorrow' symbol is easily confused with today/yesterday"
+  },
+  {
+   "i": 60,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "remove",
+   "r": "calendar-style 'yesterday' symbol is easily confused with today/tomorrow"
+  },
+  {
+   "i": 62,
+   "v": "accept"
+  },
+  {
+   "i": 63,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 64,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 65,
+   "v": "accept"
+  },
+  {
+   "i": 66,
+   "v": "accept"
+  },
+  {
+   "i": 67,
+   "v": "accept"
+  },
+  {
+   "i": 68,
+   "v": "accept"
+  },
+  {
+   "i": 69,
+   "v": "remove",
+   "r": "question word; 'who' symbol too abstract to teach"
+  },
+  {
+   "i": 70,
+   "v": "accept"
+  },
+  {
+   "i": 71,
+   "v": "remove",
+   "r": "'side' is too abstract; 边 is mostly a locality suffix for beginners"
+  },
+  {
+   "i": 72,
+   "v": "accept"
+  },
+  {
+   "i": 73,
+   "v": "remove",
+   "r": "in Taiwan 先生 mainly means Mr./husband; a teacher picture is misleading"
+  },
+  {
+   "i": 74,
+   "v": "accept"
+  },
+  {
+   "i": 75,
+   "v": "accept"
+  },
+  {
+   "i": 76,
+   "v": "accept"
+  },
+  {
+   "i": 77,
+   "v": "accept"
+  },
+  {
+   "i": 78,
+   "v": "accept"
+  },
+  {
+   "i": 79,
+   "v": "accept"
+  },
+  {
+   "i": 80,
+   "v": "accept"
+  },
+  {
+   "i": 81,
+   "v": "accept"
+  },
+  {
+   "i": 82,
+   "v": "remove",
+   "r": "不错 is 'not bad/pretty good'; a 'correct' symbol misleads"
+  },
+  {
+   "i": 83,
+   "v": "remove",
+   "r": "question word; 'why' symbol too abstract to teach"
+  },
+  {
+   "i": 84,
+   "v": "accept"
+  },
+  {
+   "i": 85,
+   "v": "accept"
+  },
+  {
+   "i": 86,
+   "v": "remove",
+   "r": "reading de is the particle; Earth (planet) picture is the dì sense and not 'ground'"
+  },
+  {
+   "i": 87,
+   "v": "accept"
+  },
+  {
+   "i": 88,
+   "v": "accept"
+  },
+  {
+   "i": 89,
+   "v": "accept"
+  },
+  {
+   "i": 90,
+   "v": "accept"
+  },
+  {
+   "i": 91,
+   "v": "accept"
+  },
+  {
+   "i": 92,
+   "v": "accept"
+  },
+  {
+   "i": 93,
+   "v": "remove",
+   "r": "'straight' is abstract; beginners learn 正 as in 正在 (in progress)"
+  },
+  {
+   "i": 94,
+   "v": "accept"
+  },
+  {
+   "i": 95,
+   "v": "accept"
+  },
+  {
+   "i": 96,
+   "v": "accept"
+  },
+  {
+   "i": 97,
+   "v": "accept"
+  },
+  {
+   "i": 98,
+   "v": "accept"
+  },
+  {
+   "i": 99,
+   "v": "accept"
+  },
+  {
+   "i": 100,
+   "v": "accept"
+  },
+  {
+   "i": 101,
+   "v": "accept"
+  },
+  {
+   "i": 102,
+   "v": "accept"
+  },
+  {
+   "i": 103,
+   "v": "remove",
+   "r": "beginners learn 跟 as 'with/and/follow'; a heel picture misleads"
+  },
+  {
+   "i": 104,
+   "v": "accept"
+  },
+  {
+   "i": 105,
+   "v": "accept"
+  },
+  {
+   "i": 106,
+   "v": "accept"
+  },
+  {
+   "i": 107,
+   "v": "remove",
+   "r": "'between' is abstract; beginners learn 间 as room/classifier for rooms"
+  },
+  {
+   "i": 108,
+   "v": "accept"
+  },
+  {
+   "i": 109,
+   "v": "accept"
+  },
+  {
+   "i": 110,
+   "v": "accept"
+  },
+  {
+   "i": 111,
+   "v": "accept"
+  },
+  {
+   "i": 112,
+   "v": "accept"
+  },
+  {
+   "i": 113,
+   "v": "accept"
+  },
+  {
+   "i": 114,
+   "v": "accept"
+  },
+  {
+   "i": 115,
+   "v": "accept"
+  },
+  {
+   "i": 116,
+   "v": "accept"
+  }
+ ],
+ "c": [
+  {
+   "i": 23,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "remove",
+   "r": "'day' symbol is vague and likely read as 太阳 or 白天; 天 covers both day and sky, so one picture misleads"
+  },
+  {
+   "i": 59,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "accept"
+  }
+ ]
+}

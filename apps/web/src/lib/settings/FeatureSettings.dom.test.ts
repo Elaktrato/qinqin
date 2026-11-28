@@ -46,13 +46,14 @@ afterEach(() => {
 });
 
 describe('Settings -> Features', () => {
-	it('lists the four core features with the user switch', () => {
+	it('lists the core features with the user switch, Stats included (#295)', () => {
 		render(FeatureSettings, { context: ctx.context });
 		const checked = (name: RegExp) => (screen.getByRole('checkbox', { name }) as HTMLInputElement).checked;
 		expect(checked(/Decks/)).toBe(true);
 		expect(checked(/Reader/)).toBe(false);
 		expect(checked(/Journal/)).toBe(true);
 		expect(checked(/Grammar/)).toBe(false);
+		expect(checked(/Stats/)).toBe(true);
 	});
 
 	it('a switch PUTs {enabled} for the feature and refreshes the shared switches', async () => {
@@ -73,7 +74,7 @@ describe('Settings -> Features', () => {
 
 	it('the switches are hairline rows and the view has no primary action (#106)', () => {
 		render(FeatureSettings, { context: ctx.context });
-		expect(document.querySelectorAll('.features li').length).toBe(5);
+		expect(document.querySelectorAll('.features li').length).toBe(8);
 		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 

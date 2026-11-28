@@ -7,7 +7,7 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Scheme } from '$lib/api/types';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({ getEntry: vi.fn() }));
@@ -20,19 +20,19 @@ vi.mock('$lib/api/images', async (importOriginal) => ({
 // The session's outbox, faked (record 0009: the page records through useSession().outbox).
 const outboxFakes = vi.hoisted(() => ({
 	flush: vi.fn(async () => {}),
-	recordReview: vi.fn<import('$lib/study/events').ReviewOutbox['recordReview']>(async () => null),
-	recordReplacement: vi.fn<import('$lib/study/events').ReviewOutbox['recordReplacement']>(async () => null)
+	recordReview: vi.fn<import('$lib/studycore/events').ReviewOutbox['recordReview']>(async () => null),
+	recordReplacement: vi.fn<import('$lib/studycore/events').ReviewOutbox['recordReplacement']>(async () => null)
 }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
 	addCard: vi.fn()
 }));
-vi.mock('$lib/study/writing', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/writing')>()),
+vi.mock('$lib/exercises/writing', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/exercises/writing')>()),
 	usableChars: vi.fn()
 }));
 const { fakeCard } = vi.hoisted(() => ({
@@ -49,9 +49,10 @@ vi.mock('$lib/notes/store', () => ({
 	loadNoteCfg: vi.fn(async () => ({ onAnswer: true, extra: {} }))
 }));
 vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/features/grammar/review/ReviewRound.svelte', async () => ({ default: (await import('$lib/testing/FakeGrammarReview.svelte')).default }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/study/sessionMix', async (importOriginal) => {
-	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
+vi.mock('$lib/features/flashcards/session/sessionMix', async (importOriginal) => {
+	const real = await importOriginal<typeof import('$lib/features/flashcards/session/sessionMix')>();
 	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
 });
 
@@ -60,20 +61,20 @@ import { entryPicture } from '$lib/api/images';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 const { recordReplacement, recordReview } = outboxFakes;
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { mixFlowQueue } from '$lib/study/sessionMix';
-import { addCard } from '$lib/study/commands/cards';
-import { loadStudyData } from '$lib/study/data';
-import { usableChars } from '$lib/study/writing';
+import { SESSION_CONFIG_KEY } from '$lib/features/flashcards/session/session';
+import { mixFlowQueue } from '$lib/features/flashcards/session/sessionMix';
+import { addCard } from '$lib/features/flashcards/commands/cards';
+import { loadStudyData } from '$lib/studycore/data';
+import { usableChars } from '$lib/exercises/writing';
 import { studyDay } from '$lib/time/studyDay';
 import Page from './+page.svelte';
 import { goto } from '$app/navigation';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { shortInterval } from '$lib/study/intervalText';
-import { scheduleFor } from '$lib/study/scheduler';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { shortInterval } from '$lib/features/flashcards/session/intervalText';
+import { scheduleFor } from '$lib/studycore/scheduler';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import * as build from '$lib/testing/study';
 
 // The session's StudyDays (record 0009): its methods, faked on the class.
@@ -260,7 +261,7 @@ describe('character level session', () => {
 		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
-		expect(sessionStorage.getItem('qinqin.study.ineligible') ?? '').toContain('writing:11');
+		expect(ctx.session.eligibility.skip().has('writing:11')).toBe(true);
 	});
 });
 
@@ -506,6 +507,7 @@ describe('the open page (#101)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await fireEvent.click(await screen.findByRole('button', { name: /^Again, next review/ }));
 		await waitFor(() => expect(screen.getByText(/Again, look 2 of/)).toBeTruthy());
+		expect(screen.getByText(/Again, look 2 of/).getAttribute('data-tag')).toBe('neutral'); // an outline tag (#286)
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await screen.findByRole('group', { name: 'Grade this card' });
 		expect(shown()).toEqual(Array(4).fill('practice'));
@@ -565,18 +567,18 @@ describe('the open page (#101)', () => {
 		await waitFor(() => expect(recordReview).toHaveBeenCalledWith(1, 'c-vocab-11', 3, 'vocab', expect.anything()));
 	});
 
-	it('the kind label reads Recognise and the deck · level shows the level', async () => {
+	it('the kind label reads Recognise and the level shows as a tag', async () => {
 		// A level item has no deck yet: the level alone.
 		configure(['vocab']);
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		const head = document.querySelector('.face-head')!;
 		expect(head.querySelector('.kind')?.textContent).toBe('Recognise');
-		expect(head.querySelector('.deck')?.textContent).toBe('JLPT kanji N5');
+		expect([...head.querySelectorAll('[data-tag]')].map((el) => el.textContent)).toEqual(['JLPT kanji N5']);
 	});
 });
 
-describe('deck · level in a deck session (#101)', () => {
+describe('deck and level tags in a deck session (#101, #286)', () => {
 	it('names the card\'s first deck and its level badge', async () => {
 		sessionStorage.setItem(
 			SESSION_CONFIG_KEY,
@@ -594,7 +596,12 @@ describe('deck · level in a deck session (#101)', () => {
 		} as never);
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
-		await waitFor(() => expect(document.querySelector('.face-head .deck')?.textContent).toBe('Kanji · JLPT kanji N5'));
+		await waitFor(() =>
+			expect([...document.querySelectorAll('.face-head [data-tag]')].map((el) => [el.textContent, el.getAttribute('data-tag')])).toEqual([
+				['Kanji', 'neutral'],
+				['JLPT kanji N5', 'accent']
+			])
+		);
 	});
 });
 
@@ -694,7 +701,7 @@ describe('order of card types (#132)', () => {
 	});
 
 	it('mixed follows the session seed, Recognise first for a new word', async () => {
-		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/study/sessionMix')>('$lib/study/sessionMix');
+		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/features/flashcards/session/sessionMix')>('$lib/features/flashcards/session/sessionMix');
 		const first = (seed: number) => real(plan, [], { seed, order: 'mixed', vocabFirst: true })[0];
 		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
 		// A new word's writing card waits for its vocab card: the first card is always a vocab card.
@@ -821,7 +828,7 @@ describe('Back: change a misclicked grade (#131)', () => {
 		expect(await screen.findByText('日')).toBeTruthy();
 		// The answer side as it was left, the previous grade marked.
 		expect(screen.getByLabelText('Readings')).toBeTruthy();
-		expect(screen.getByText('Graded Again')).toBeTruthy();
+		expect(screen.getByText('Graded Again').getAttribute('data-tag')).toBe('neutral');
 		expect(gradeButton('Again').getAttribute('aria-pressed')).toBe('true');
 		expect(gradeButton('Good').getAttribute('aria-pressed')).toBe('false');
 
@@ -1113,5 +1120,93 @@ describe('Starter mode on the session page (#214)', () => {
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		expect(await screen.findByTestId('starter-front')).toBeTruthy();
+	});
+});
+
+describe('the eligibility index plans the session (#288)', () => {
+	const jaWord = (id: number, written: string, sentence: boolean): Entry =>
+		({
+			id,
+			language: 'ja',
+			kind: 'word',
+			written,
+			readings: [{ type: 'kana', value: 'がっこう', plain: 'gakkou', ord: 0 }],
+			badges: [],
+			variants: [],
+			sentences: sentence ? [{ id: 900 + id, entryId: id, hanzi: `${written}に行く。`, pinyin: '', translation: 'x' }] : [],
+			senses: [{ dictionaryId: 1, dictionaryName: 'JMdict', packId: 'j', license: 'x', attribution: 'x', gloss: 'school' }]
+		}) as unknown as Entry;
+
+	it('a word the server says has no sentence never gets a word salad: the counter is the length from the start', async () => {
+		ctx = testContext({
+			routes: {
+				'POST /api/study/eligibility': (body: unknown) => ({
+					entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), id === 32 ? ['sentence'] : []]))
+				})
+			}
+		});
+		Object.assign(ctx.session.outbox, outboxFakes);
+		ctx.session.workspaces.set({ list: [{ id: 1, language: 'ja', name: 'ja' } as never], current: { id: 1, language: 'ja', name: 'ja' } as never });
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['sentence'] })
+		);
+		const card = (id: number, written: string): StudyCard => ({ id: `c-vocab-${id}`, kind: 'vocab', entryId: id, written, deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
+		history([card(31, '学校'), card(32, '水'), card(33, '本')], []);
+		vi.mocked(getEntry).mockImplementation(async (id: number) => jaWord(id, id === 32 ? '水' : '学校', id === 32));
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText(/^1 \/ 1/)).toBeTruthy();
+		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(32));
+		expect(getEntry).not.toHaveBeenCalledWith(31);
+		expect(getEntry).not.toHaveBeenCalledWith(33);
+	});
+});
+
+describe('grammar review in a session (#181)', () => {
+	function configure(grammar: boolean): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], grammar })
+		);
+	}
+	const grammarOn = (enabled: boolean) => ctx.session.features.set({ list: [{ id: 'grammar', enabled }], status: 'ready' });
+	const word = (id: number): StudyCard => build.card({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'] });
+
+	it('runs the round after the cards, then the summary counts the points and their EXP', async () => {
+		configure(true);
+		grammarOn(true);
+		history([word(11)], []);
+		render(Page, { context: ctx.context });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(screen.getByRole('button', { name: /^Good/ }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Finish grammar' }));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		expect(screen.getByText('grammar point')).toBeTruthy();
+		expect(screen.getByRole('list', { name: 'XP by card type' }).textContent).toContain('Grammar +20');
+	});
+
+	it('runs the round when no card is due', async () => {
+		configure(true);
+		grammarOn(true);
+		history([], []);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByRole('heading', { name: 'Grammar review', level: 1 })).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Finish grammar' }));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+	});
+
+	it('runs no round when the setup leaves it out or the grammar feature is off', async () => {
+		configure(true);
+		grammarOn(false);
+		history([], []);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText('Nothing to study')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Finish grammar' })).toBeNull();
+		cleanup();
+		configure(false);
+		grammarOn(true);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText('Nothing to study')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Finish grammar' })).toBeNull();
 	});
 });

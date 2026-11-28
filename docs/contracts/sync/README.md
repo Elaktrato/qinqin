@@ -7,8 +7,8 @@ limited to the languages of the caller's workspaces. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (Q6–Q8, Q13; issue #93).
 
 Owner code: `server/internal/sync` (`page.go`, `token.go`, `page_collections.go`, `sync.go`),
-`server/internal/api/handlers_sync.go`. Web: `apps/web/src/lib/sync/pager.ts`, `apps/web/src/lib/sync/keyed.ts`, `apps/web/src/lib/study/sync/pull.ts`,
-`apps/web/src/lib/study/cache.ts`, `apps/web/src/lib/study/readModel.ts`.
+`server/internal/api/handlers_sync.go`. Web: `apps/web/src/lib/sync/pager.ts`, `apps/web/src/lib/sync/keyed.ts`, `apps/web/src/lib/studycore/sync/pull.ts`,
+`apps/web/src/lib/studycore/cache.ts`, `apps/web/src/lib/studycore/readModel.ts`.
 
 Fixtures:
 
@@ -73,6 +73,24 @@ Round order (fixed): `workspaces`, `features`, `rows`, `cards`, `decks`, `deckSe
   `sync_page_invalid`.
 - 410 `sync_cursor_expired` (defined, not yet sent): discard local user data and pull without `since`.
 
+#### Serving held rows (#290)
+
+A client rule, not a wire change: how a client that holds the rows of earlier rounds (the web study cache) uses
+them while a new round runs. Android follows the same rule.
+
+- A read for display (a widget, a list, a "is this word studied" check) is answered at once from the held rows;
+  when they are older than the client's freshness window (web: 8 s) the client starts a delta round from its
+  cursor in the background, and tells whatever shows the rows when the round changed one. Readers that come
+  while it runs join it; they never start a second one.
+- Only these wait for a round: the first load of a workspace (nothing held), an explicit refresh ("Try again"),
+  a full round (offline preparation), rows marked stale because a write failed or the push skipped one (the
+  server holds newer rows), and a write's planning read, which always plans against rows no older than the
+  window.
+- A background round that fails keeps the held rows; the client shows a quiet notice ("could not refresh")
+  until a later round of that workspace lands, and never replaces what it shows with an error.
+- A held copy belongs to the signed-in session: it is dropped when the session ends, and an answer that arrives
+  after the end is not stored.
+
 ### Scope and the language filter
 
 - `workspace=<id>` narrows workspace rows (`workspaces`, `rows`, typed rows, library rows, `events`) to
@@ -110,7 +128,7 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 | `cards` … `fsrsActive` | the typed rows of `docs/contracts/study/rows.json` (strict decode) |
 | `books`, `bookmarks`, `highlights` | the rows of `docs/contracts/library/rows.json` plus `deletedAt: null`; a tombstone is exactly `{id, workspaceId, updatedAt, deletedAt}` (from `library_deletions`, `updatedAt` = `deletedAt`) |
 | `overlays` | `{entryId, written, readings, updatedAt}` (`null` = untouched; no tombstones) |
-| `sentences` | own sentences only: `{id, entryId, sourcePack: "", userId, hanzi, pinyin, translation, updatedAt, deletedAt, ai}`; `ai` is `{provider, model}` for a kept AI example (#186, `examples/`), else `null` |
+| `sentences` | own sentences only: `{id, entryId, sourcePack: "", userId, hanzi, pinyin, translation, updatedAt, deletedAt, ai, source}`; `ai` is `{provider, model}` for a kept AI example (#186, `examples/`), else `null`; `source` is where the reader saved it (`{kind: "book", bookId, title, chapter, paragraph, start, end}`, `bookId` null once the book is deleted, #280, `reader/sentence-sources.json`), else `null` |
 | `events` | `{id, workspaceId, device, ts, type, payload, updatedAt}`, every type but `lookup` (no tombstones) |
 
 ### Reading rows (`unreadable-rows.json`, #167)

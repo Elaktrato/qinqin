@@ -144,6 +144,35 @@ naturally flows on (口's 横折 + 横 does not join). This does not by itself r
 whose strokes double back on each other (等's first three strokes); the per-stroke direction
 test does. The corner between joined strokes must be present in the ink.
 
+**Flow joins (#292).** The gap rule alone missed the joins people write in kana: き's
+hooked diagonal ends 0.35 from the bottom curve it flows into. A second rule offers a join
+of two strokes when stroke k **ends pointing at** stroke k+1's start: the chord over its last
+15 % (`flowTail`, at least 0.03) points within ±60° (`flowCos` 0.5) of the move to that
+start, the start is at most `flowGap` 0.5 away, and stroke k+1 keeps at least `flowClear`
+0.4 of that distance away from where stroke k ended (so 口's 横折 + 横, whose 横 runs back
+along the move, still does not join). `joinLink(a, b)` answers `near` (gap rule), `flow` or
+null. A join through a flow link covers two strokes, never three: three-stroke flow joins
+let a short middle stroke be skipped (ふ 2+4 credited as 2+3+4) and added no real join.
+
+Measured on KanjiVG (r20260714, the `kanjivg-strokes` medians;
+`apps/web/scripts/make-join-fixtures.mjs --report` prints every pair): of the 339
+consecutive stroke pairs of hiragana and katakana, 73 lie within the gap rule. The flow rule
+adds 36, which are the cursive joins: い, う, え, き 3+4, け 1+2, こ, さ 2+3, せ 2+3, た 3+4,
+に 1+2 and 2+3, は 1+2, ふ 2+3 and 3+4, む 2+3, や 2+3, シ 2+3, ン 1+2 (and their voiced and
+small forms). Their gaps are 0.21–0.46 and their end directions point on (cosine 0.53–1.0);
+the pairs nobody writes in one motion (き 1+2, さ 1+2, ち 1+2, た 2+3, キ, サ) point elsewhere
+(cosine ≤ −0.4). Raising `maxGap` for kana instead would offer every nearby pair whatever
+its direction, so the list the issue proposed is not needed: the rule covers each example
+(そ is one stroke already; ち 1+2 is not a join). Sweep (each stroke drawn as its median and
+in the hand model, two hands, before → after): single strokes accepted unchanged (kana
+3678/3830, KanjiVG Jōyō grades 1–2 12332/12362, Hanzi Writer HSK 1 12537/12593); later
+stroke, earlier stroke again, next stroke credited as a join: 0 → 0; reversed unchanged.
+Flow joins drawn in one motion: 36/36 kana, 38/38 kanji, 69/69 HSK 1 pairs as straight
+joins, and 86 / 88 / 78 % of their hand-model variants. Cost: a learner who skips a stroke
+in one motion (stroke k and k+2 drawn together) is credited a little more often: kana 14 →
+14 of 181, Jōyō 119 → 126 of 1239, HSK 1 154 → 169 of 1230 (the gap rule already credits
+most of these: the left-out stroke is a dot or tick).
+
 All thresholds live in `params.ts` with a comment each.
 
 **Ruling: rank-based acceptance replaces endpoint anchoring and the later-stroke ratio** —
@@ -219,15 +248,26 @@ A harsher hand (wobble 0.04, ends ±20 %, ±15°) passes 95 % (before: 55 %).
 ### Writing pad (`WritingPad.svelte`, used by `WritingCard`)
 
 - Square pad with a faint guide grid (cross + diagonals), our own styling.
+- **Size (#285):** the pad is as wide as its container allows and square, but no taller than what keeps the
+  last line below it (the card's feedback line, the scripts trainer's Hint / Show row) above the docked actions
+  with the page at its top: `side = min(width, clamp(side + slack, 10rem, max))`, `max` 22.5rem on a touch
+  screen and 17.5rem with a fine pointer (`lib/writing/padSize.ts`, `fitPad`). Re-measured when the container or
+  the window changes size (rotation, browser bar); the canvas follows through its `ResizeObserver`. Ink is 3 % of
+  the side wide (at least 4 px). Strokes are judged in pad units, so the size does not change the matcher. Both
+  pads (flashcards and the scripts trainer) use the same rule.
 - Pointer Events with coalesced events; ink drawn on a canvas layer each frame;
   `touch-action: none`.
 - On accept: the matched reference outline(s) are drawn; the learner's ink
   morphs into the median and fades into the filled outline in ~120–160 ms.
   Several matched strokes snap together.
 - On miss: the ink flashes red and fades (~250 ms); the mistake counts on the
-  expected stroke. After 3 misses on one stroke the next stroke glows briefly
-  in place with its start marked; as today, the character outline then stays
-  visible as a scaffold for the rest of that character (one hint per character).
+  expected stroke. After 3 misses on one stroke that stroke glows briefly in
+  place with its start marked, then stays faintly visible (dimmed, with its
+  start) until the learner draws it. **Only that stroke**: no outline of the
+  character, no other stroke (#287; until then the whole outline stayed as a
+  scaffold, once per character). Per stroke: any later stroke that reaches 3
+  misses is hinted again, and each automatic hint counts as one hint in
+  `meta.hints` (`lib/writing/quiz.ts`: `autoHints`, `trace`).
 - "Hint" button (shows the next stroke briefly, each press counts as a hint) and "Show
   character" (as today, makes the character revealed → Again).
 - On the last stroke: a short completion flash, then the next character, as
@@ -281,12 +321,15 @@ correct pinyin with its tone mark, as the answer line does today.
 ## My calls (made without asking; reject any)
 
 - Order stays enforced; joins only cover consecutive strokes in order, at most 3,
-  and only where the strokes flow into each other (gap limit).
+  and only where the strokes flow into each other (gap limit; from #292 also the flow
+  rule, two strokes per flow join).
 - No rotation in the alignment (a rotated stroke is a different stroke); the generous
   direction and shape ceilings absorb the ±10° a hand rotates.
-- Hint after 3 misses keeps today's behaviour (brief glow of the next stroke,
-  then the outline stays for that character); a manual Hint button adds
-  one hint per press. Re-checked with the forgiving matcher (2026-11-15): kept — with
+- Hint after 3 misses (owner, #287, replacing "the outline then stays for that
+  character"): the glow of that stroke, which then stays dimmed until it is
+  drawn; only that stroke, once per stroke, each one a hint in `meta.hints`; the
+  suggested grade is not lowered by it beyond the misses themselves. A manual
+  Hint button adds one hint per press. Re-checked with the forgiving matcher (2026-11-15): kept — with
   correct strokes now accepted in nearly any hand, three misses on one stroke mean the
   learner does not know it, which is exactly when the glow helps.
 - Tone pads keep today's layout (all syllables visible), just larger.

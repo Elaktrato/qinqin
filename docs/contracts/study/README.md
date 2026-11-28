@@ -14,11 +14,11 @@ Fixtures:
 - `rows.json` — valid and invalid wire rows per collection (the strict wire decode).
 - `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
 - `setup.json` — the saved study setup, the keyed row `study-setup` (see Study setup below; web:
-  `apps/web/src/lib/study/setup.test.ts`; Go: `server/internal/keyed/setup_contract_test.go`, key and scope).
+  `apps/web/src/lib/features/flashcards/setup/setup.test.ts`; Go: `server/internal/keyed/setup_contract_test.go`, key and scope).
 - `canonical.json` — duplicate cards merged at read time: `{cards, reviews}` and the merged `{cards, reviews,
-  merged}` (web: `apps/web/src/lib/study/canonical.test.ts`).
+  merged}` (web: `apps/web/src/lib/studycore/canonical.test.ts`).
 
-Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
+Web: `apps/web/src/lib/studycore/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
 pull and push; a write is never sent when it would change nothing). The web decodes `rows.json` and
 `lww.json`; its test-only mirror of the keyed-row codec (`lib/testing/legacyCodec.ts`) decodes
 `backup/study-rows.json`.
@@ -85,6 +85,10 @@ typed value always wins: the server drops `extra` members shadowed by a set type
 `entryId`, `deckIds`, `createdAt` of a card; `deckId`, `cardTypes`, `updatedAt` of deck settings;
 `version` of limits; and every optional member that is not `null`), and a writer must not send them.
 
+Members of `extra` a client reads (written by clients, never by the server): `reading` on a card (#346), a string,
+the reading the card is pinned to (the Starter add flow writes it from the set's `reading`); its back shows only that
+reading's meanings (`senses/README.md`). Anything else (not a string, empty) is no pin.
+
 ## Last-write-wins and tombstones (`lww.json`)
 
 The keyed-row rule, per row: a push item's edit time is its `updatedAt`, or its `deletedAt` when later,
@@ -143,7 +147,8 @@ keyed row and never reads its members.
  "unchecked": ["reverse" | "cloze"],   // opt-in kinds the learner switched off
  "newLimit": 1..999, "reviewLimit": 1..999,
  "newOrder": "random" | "deck" | {"by": "added"} | {"by": "frequency"} | {"by": "level", "packId": string},
- "typeOrder": "mixed" | "grouped"}
+ "typeOrder": "mixed" | "grouped",
+ "grammar": false | true}   // #181: run the grammar review round after the cards
 ```
 
 - **Read** member by member (`parse` cases): a missing or bad member is its default (`defaults`), never the
@@ -158,5 +163,8 @@ keyed row and never reads its members.
   the note; the repaired value is used but written back only when the learner changes something.
 - **Write** (`write` cases): the stored object with the setup's members replaced; unknown members kept; a stored
   integer `version` ≥ 1 kept, else 1. A client re-reads the row before it writes.
+- **Grammar review** (`grammar`, #181): `true` runs the grammar review round (`grammar/README.md`, "Review") after a
+  session's cards, also when no card is due; anything but `true` is `false`. A client offers it only while the
+  grammar feature is on, and a session runs no round while the feature is off.
 - **Not in the row:** a running session (its seed, Study all and the page it was started from) stays in the tab;
   a one-off start from a deck or a level never changes the row.

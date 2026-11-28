@@ -23,19 +23,21 @@
 // an unreadable identity is left alone and counted in `unreadable`. Cards
 // still join the target (its deck row exists on the server).
 
-import { newCardId } from '$lib/study/canonical';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import type { NewOrder } from '$lib/study/newOrder';
-import { cardRow, deckRow, settingsRow, studyKey } from '$lib/study/rows';
-import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/plan';
-import { GENERAL_DECK_ID } from '$lib/study/types';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { newCardId } from '$lib/studycore/canonical';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import type { NewOrder } from '$lib/studycore/newOrder';
+import { cardRow, deckRow, settingsRow, studyKey } from '$lib/studycore/rows';
+import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/studycore/plan';
+import { GENERAL_DECK_ID } from '$lib/studycore/types';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 
 export interface AddItem {
 	entryId: number;
 	written: string;
 	/** Set for the items of a character level: no sentence or tone companions follow. */
 	entryKind?: 'character';
+	/** A reading a new card is pinned to (#346: a Starter word's); a card that exists keeps its own. */
+	reading?: string;
 }
 
 export interface AddPlan {
@@ -101,6 +103,7 @@ export function planAddToDeck(input: AddInput): AddPlan {
 				createdAt: new Date(base + i).toISOString()
 			};
 			if (item.entryKind === 'character') card.entryKind = 'character';
+			if (item.reading) card.reading = item.reading;
 			writes.push(card);
 			created += 1;
 			return;

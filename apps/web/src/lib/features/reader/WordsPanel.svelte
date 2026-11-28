@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatPercent } from '$lib/i18n/format';
 	import { Button, Select, Stat } from '$lib/ui';
-	import type { Deck } from '$lib/study/types';
+	import type { Deck } from '$lib/studycore/types';
 	import type { Coverage, UnknownItem } from './coverage';
 	import { allNew, type AddWordsResult } from './wordActions';
 	import {
@@ -156,6 +157,8 @@
 			result = t('reader.words.undone');
 		});
 	}
+	// Hidden romanisation (#284).
+	const roman = useRomanisation();
 </script>
 
 <!-- A coverage figure (design §9): a large light number with its sentence
@@ -229,7 +232,7 @@
 							onchange={(e) => toggle(w.entryId, e.currentTarget.checked)}
 						/><span lang={lang} class={w.state === 'new' ? 'w-new w-end' : 'w-learning w-end'}>{w.lemma}</span></label
 					>
-					{#if w.reading}<span class="reading" {lang}>{w.reading}</span>{/if}
+					{#if roman.text(w.reading, lang)}<span class="reading" {lang}>{w.reading}</span>{/if}
 					<span class="count">×{w.count}</span>
 					<span class="state">{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span>
 				</li>

@@ -4,22 +4,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ fetchSchemeCharacters: vi.fn(), getSchemes: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyData: vi.fn()
 }));
-vi.mock('$lib/study/entriesCache', () => ({
+vi.mock('$lib/studycore/entriesCache', () => ({
 	fillMissingWrittenProgressively: vi.fn(async (cards: unknown[]) => ({ cards, unresolvedCards: 0 }))
 }));
-vi.mock('$lib/study/mastery', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/mastery')>()),
+vi.mock('$lib/studycore/mastery', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/mastery')>()),
 	masteryForChars: vi.fn()
 }));
 
 import { fetchCharacters } from '$lib/api/characters';
 import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
-import { masteryForChars, type CharMastery } from '$lib/study/mastery';
-import { loadStudyData } from '$lib/study/data';
+import { masteryForChars, type CharMastery } from '$lib/studycore/mastery';
+import { loadStudyData } from '$lib/studycore/data';
 import CharactersPage from './+page.svelte';
 import charGrid from '$lib/stats/map/CharGrid.svelte?raw';
 import cellTip from '$lib/stats/map/CellTip.svelte?raw';
@@ -64,7 +64,7 @@ beforeEach(() => {
 	vi.mocked(getSchemes).mockResolvedValue([
 		{ id: 7, name: 'HSK 3.0', unit: 'level', language: 'zh', levels: [] }
 	]);
-	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(masteryForChars).mockReturnValue(mastery());
 });
 afterEach(() => {
@@ -79,6 +79,55 @@ async function ready(): Promise<HTMLElement> {
 	await waitFor(() => expect(container.querySelectorAll('.cell').length).toBeGreaterThan(0));
 	return container;
 }
+
+const HSK_SCHEMES = [
+	{
+		id: 7,
+		name: 'HSK 3.0 (characters)',
+		unit: 'character',
+		language: 'zh',
+		packId: 'hsk-chars',
+		levels: [
+			{ id: 70, name: 'HSK 1', ord: 0 },
+			{ id: 71, name: 'HSK 2', ord: 1 }
+		]
+	},
+	{ id: 8, name: 'HSK 3.0 (words)', unit: 'word', language: 'zh', packId: 'hsk-words', levels: [{ id: 80, name: 'HSK 1 words', ord: 0 }] }
+];
+const HSK_MEMBERS = [
+	{ levelId: 70, name: 'HSK 1', chars: new Set(['一', '二']) },
+	{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
+];
+
+/** A Chinese workspace with the HSK packs installed and these settings. */
+function hsk(settings: Record<string, unknown> = {}, schemes = true): void {
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'w1', settings } as never });
+	if (schemes) vi.mocked(getSchemes).mockResolvedValue(HSK_SCHEMES);
+	vi.mocked(fetchSchemeCharacters).mockResolvedValue(HSK_MEMBERS);
+}
+
+function merge(target: unknown, patch: unknown): unknown {
+	if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) return patch;
+	const out: Record<string, unknown> = typeof target === 'object' && target !== null && !Array.isArray(target) ? { ...(target as Record<string, unknown>) } : {};
+	for (const [key, value] of Object.entries(patch)) {
+		if (value === null) delete out[key];
+		else out[key] = merge(out[key], value);
+	}
+	return out;
+}
+
+/** setSettings as the server answers it: the patch merged into the workspace (RFC 7396). */
+function saving() {
+	return vi.spyOn(ctx.session.workspaces, 'setSettings').mockImplementation(async (id, patch) => {
+		const current = ctx.session.workspaces.current!;
+		const next = { ...current, settings: merge(current.settings ?? {}, patch) } as typeof current;
+		ctx.session.workspaces.set({ list: [], current: next });
+		return next;
+	});
+}
+
+const cells = (container: HTMLElement) => [...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim());
+const sectionLabels = (container: HTMLElement) => [...container.querySelectorAll('.block-head .label')].map((l) => l.textContent);
 
 describe('Stats → Characters', () => {
 	it('cells use the st-* mastery class per stage and their accessible name says the stage', async () => {
@@ -111,200 +160,163 @@ describe('Stats → Characters', () => {
 		expect(container.querySelectorAll('.stage-legend .swatch')).toHaveLength(5);
 	});
 
-	it('Group by is a Select labelled "Group by" with the options and keeps the stored choice', async () => {
-		localStorage.setItem('qinqin.map.groupBy.zh', 'strokes');
-		await ready();
-
-		const selectEl = screen.getByLabelText('Group by') as HTMLSelectElement;
-		expect(selectEl.tagName).toBe('SELECT');
-		expect(selectEl.value).toBe('strokes');
-		const options = [...selectEl.options].map((option) => option.value);
-		expect(options).toContain('common');
-		expect(options).toContain('strokes');
-		expect(options).toContain('scheme:7');
+	it('goes by HSK in a Chinese workspace with nothing outside: map, counts and Grading (#163)', async () => {
+		hsk();
+		const container = await ready();
+		const grading = screen.getByLabelText('Grading') as HTMLSelectElement;
+		expect(grading.tagName).toBe('SELECT');
+		expect(grading.value).toBe('pack:hsk-chars');
+		expect([...grading.options].map((o) => o.value)).toEqual(['common', 'hkgrade', 'strokes', 'pack:hsk-chars', 'pack:hsk-words']);
+		await waitFor(() => expect(cells(container)).toEqual(['一', '二', '三']));
+		expect(container.querySelector('.total strong')?.textContent).toBe('0 of 3 learned (0 %)');
+		const outside = screen.getByRole('checkbox', { name: 'Include characters outside HSK 3.0 (characters)' }) as HTMLInputElement;
+		expect(outside.checked).toBe(false);
+		expect(sectionLabels(container)).toEqual(['HSK 1', 'HSK 2']);
 	});
 
-	it('the Level select filters the map to one level and its own learned count', async () => {
-		vi.mocked(getSchemes).mockResolvedValue([
-			{
-				id: 7,
-				name: 'HSK 3.0 (characters)',
-				unit: 'character',
-				language: 'zh',
-				packId: 'hsk-chars',
-				levels: [
-					{ id: 70, name: 'HSK 1', ord: 0 },
-					{ id: 71, name: 'HSK 2', ord: 1 }
-				]
-			},
-			{
-				id: 8,
-				name: 'HSK 3.0 (words)',
-				unit: 'word',
-				language: 'zh',
-				packId: 'hsk-words',
-				levels: [{ id: 80, name: 'HSK 1 words', ord: 0 }]
-			}
-		]);
-		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
-			{ levelId: 70, name: 'HSK 1', chars: new Set(['一', '二']) },
-			{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
-		]);
+	it('Include characters outside adds an Outside group and is saved in the workspace settings', async () => {
+		hsk();
+		const save = saving();
+		const container = await ready();
+		await waitFor(() => expect(cells(container)).toHaveLength(3));
+		await fireEvent.click(screen.getByRole('checkbox', { name: /Include characters outside/ }));
+		expect(save).toHaveBeenCalledWith(1, { masteryMap: { includeOutside: true } });
+		await waitFor(() => expect(cells(container)).toEqual(['一', '二', '三', '四', '五']));
+		expect(sectionLabels(container)).toEqual(['HSK 1', 'HSK 2', 'Outside HSK 3.0 (characters)']);
+		expect(container.querySelector('.total strong')?.textContent).toBe('1 of 5 learned (20 %)');
+	});
+
+	it('the study levels limit the map; the last one cannot be switched off', async () => {
+		hsk();
+		const save = saving();
+		const container = await ready();
+		const levels = screen.getByRole('group', { name: 'Study levels' });
+		const one = within(levels).getByRole('checkbox', { name: 'HSK 1' }) as HTMLInputElement;
+		const two = within(levels).getByRole('checkbox', { name: 'HSK 2' }) as HTMLInputElement;
+		expect([one.checked, two.checked]).toEqual([true, true]);
+		await fireEvent.click(one);
+		expect(save).toHaveBeenCalledWith(1, { masteryMap: { levels: { 'hsk-chars': [1] } } });
+		await waitFor(() => expect(cells(container)).toEqual(['三']));
+		expect(two.disabled).toBe(true);
+		await fireEvent.click(one);
+		expect(save).toHaveBeenLastCalledWith(1, { masteryMap: { levels: { 'hsk-chars': null } } });
+		await waitFor(() => expect(cells(container)).toEqual(['一', '二', '三']));
+	});
+
+	it('the Level select narrows within the study set and is remembered on this device', async () => {
+		hsk({ masteryMap: { levels: { 'hsk-chars': [1] }, includeOutside: true } });
 		const container = await ready();
 		const level = screen.getByLabelText('Level') as HTMLSelectElement;
-		expect(level.value).toBe('all');
-		const group = level.querySelector('optgroup[label="HSK 3.0 (characters)"]')!;
-		expect([...group.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['HSK 1', 'HSK 2']);
-
-		const groupBy = screen.getByLabelText('Group by') as HTMLSelectElement;
-		await fireEvent.change(level, { target: { value: '7:70' } });
-		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
-		expect(container.querySelector('.total strong')?.textContent).toBe('0 of 2 learned (0 %)');
-		expect(localStorage.getItem('qinqin.map.level.1')).toBe('7:70');
-		expect(groupBy.value).toBe('scheme:7');
-		expect([...groupBy.options].map((option) => option.value)).not.toContain('scheme:8');
-
-		await fireEvent.change(level, { target: { value: 'all' } });
-		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(5));
-		expect(container.querySelector('.total strong')?.textContent).toBe('1 of 5 learned (20 %)');
-		expect(groupBy.value).toBe('scheme:7');
+		await waitFor(() => expect([...level.options].map((o) => o.textContent)).toEqual(['All study levels', 'HSK 2', 'Outside HSK 3.0 (characters)']));
+		expect(cells(container)).toEqual(['三', '四', '五']);
+		await fireEvent.change(level, { target: { value: 'outside' } });
+		await waitFor(() => expect(cells(container)).toEqual(['四', '五']));
+		expect(localStorage.getItem('qinqin.map.level.1')).toBe('outside');
+		await fireEvent.change(level, { target: { value: '7:71' } });
+		await waitFor(() => expect(cells(container)).toEqual(['三']));
+		expect(container.querySelector('.total strong')?.textContent).toBe('0 of 1 learned (0 %)');
 	});
 
-	it('a Jōyō level opens the built-in Grade grouping, not a blank Group by', async () => {
+	it('reads a remembered level and falls back to all study levels when it left the set', async () => {
+		hsk({ masteryMap: { levels: { 'hsk-chars': [1] } } });
+		localStorage.setItem('qinqin.map.level.1', '7:70');
+		const container = await ready();
+		await waitFor(() => expect(cells(container)).toEqual(['三']));
+		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('all');
+		cleanup();
+		localStorage.setItem('qinqin.map.level.1', '7:71');
+		hsk();
+		const again = await ready();
+		await waitFor(() => expect(cells(again)).toEqual(['三']));
+		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('7:71');
+	});
+
+	it('a built-in grading shows every character, without study levels, outside switch or Level', async () => {
+		hsk({ masteryMap: { grading: 'strokes', includeOutside: false } });
+		const container = await ready();
+		await waitFor(() => expect(cells(container)).toHaveLength(5));
+		expect((screen.getByLabelText('Grading') as HTMLSelectElement).value).toBe('strokes');
+		expect(screen.queryByRole('group', { name: 'Study levels' })).toBeNull();
+		expect(screen.queryByRole('checkbox', { name: /Include characters outside/ })).toBeNull();
+		expect(screen.queryByLabelText('Level')).toBeNull();
+	});
+
+	it('choosing a grading saves it; an uninstalled one falls back to HSK, no HSK to Common', async () => {
+		hsk({ masteryMap: { grading: 'pack:gone' } });
+		const save = saving();
+		const container = await ready();
+		const grading = screen.getByLabelText('Grading') as HTMLSelectElement;
+		expect(grading.value).toBe('pack:hsk-chars');
+		await fireEvent.change(grading, { target: { value: 'common' } });
+		expect(save).toHaveBeenCalledWith(1, { masteryMap: { grading: 'common' } });
+		await waitFor(() => expect(cells(container)).toHaveLength(5));
+		cleanup();
+		vi.mocked(getSchemes).mockResolvedValue([]);
+		hsk({ masteryMap: { grading: 'pack:hsk-chars' } }, false);
+		await ready();
+		expect((screen.getByLabelText('Grading') as HTMLSelectElement).value).toBe('common');
+	});
+
+	it('a Japanese workspace goes by JLPT', async () => {
 		select(1, 'ja');
 		vi.mocked(getSchemes).mockResolvedValue([
-			{
-				id: 9,
-				name: 'Jōyō kanji by school grade',
-				unit: 'character',
-				language: 'ja',
-				packId: 'joyo-grades',
-				levels: [{ id: 90, name: 'Grade 1', ord: 0 }]
-			}
+			{ id: 9, name: 'Jōyō kanji by school grade', unit: 'character', language: 'ja', packId: 'joyo-grades', levels: [{ id: 90, name: 'Grade 1', ord: 0 }] },
+			{ id: 10, name: 'JLPT kanji (approximate)', unit: 'character', language: 'ja', packId: 'jlpt-kanji', levels: [{ id: 100, name: 'N5', ord: 0 }] }
 		]);
-		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
-			{ levelId: 90, name: 'Grade 1', chars: new Set(['一', '二']) }
-		]);
-		await ready();
-		const level = screen.getByLabelText('Level') as HTMLSelectElement;
-		expect([...level.options].map((option) => option.textContent)).toContain('Grade 1');
-		await fireEvent.change(level, { target: { value: '9:90' } });
-		await waitFor(() => {
-			const groupBy = screen.getByLabelText('Group by') as HTMLSelectElement;
-			expect(groupBy.value).toBe('grade');
-			expect(groupBy.selectedIndex).toBeGreaterThanOrEqual(0);
-		});
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([{ levelId: 100, name: 'N5', chars: new Set(['一']) }]);
+		const container = await ready();
+		const grading = screen.getByLabelText('Grading') as HTMLSelectElement;
+		expect(grading.value).toBe('pack:jlpt-kanji');
+		expect([...grading.options].map((o) => o.value)).not.toContain('pack:joyo-grades');
+		expect(cells(container)).toEqual(['一']);
 	});
 
-	it('a late level answer never replaces a newer choice', async () => {
-		const schemes = [
-			{
-				id: 7,
-				name: 'HSK 3.0 (characters)',
-				unit: 'character',
-				language: 'zh',
-				packId: 'hsk-chars',
-				levels: [{ id: 70, name: 'HSK 1', ord: 0 }]
-			},
-			{
-				id: 8,
-				name: 'HSK 3.0 (words)',
-				unit: 'word',
-				language: 'zh',
-				packId: 'hsk-words',
-				levels: [{ id: 80, name: 'HSK 1 words', ord: 0 }]
-			}
-		];
-		const seven = [
-			{ levelId: 70, name: 'HSK 1', chars: new Set(['一', '二']) },
-			{ levelId: 81, name: 'HSK 2', chars: new Set(['三']) }
-		];
-		const eight = [
-			{ levelId: 80, name: 'HSK 1 words', chars: new Set(['四', '五']) }
-		];
+	it('a failed save says so and puts the choice back', async () => {
+		hsk();
+		vi.spyOn(ctx.session.workspaces, 'setSettings').mockRejectedValue(new Error('offline'));
+		const container = await ready();
+		await waitFor(() => expect(cells(container)).toHaveLength(3));
+		const outside = screen.getByRole('checkbox', { name: /Include characters outside/ }) as HTMLInputElement;
+		await fireEvent.click(outside);
+		expect((await screen.findByRole('alert')).textContent).toContain('Could not save the map settings.');
+		await waitFor(() => expect(outside.checked).toBe(false));
+		expect(cells(container)).toHaveLength(3);
+	});
+
+	it('a late level answer never replaces a newer grading', async () => {
+		hsk();
+		const seven = HSK_MEMBERS;
+		const eight = [{ levelId: 80, name: 'HSK 1 words', chars: new Set(['四', '五']) }];
 		let releaseSeven!: (levels: typeof seven) => void;
 		const firstSeven = new Promise<typeof seven>((resolve) => (releaseSeven = resolve));
 		let calls = 0;
-		vi.mocked(getSchemes).mockResolvedValue(schemes);
-		vi.mocked(fetchSchemeCharacters).mockImplementation((_study, id) => {
+		vi.mocked(fetchSchemeCharacters).mockImplementation((_cache, id) => {
 			if (id === 8) return Promise.resolve(eight);
 			calls += 1;
 			return calls === 1 ? firstSeven : Promise.resolve(seven);
 		});
-
-		const container = await ready();
-		const level = screen.getByLabelText('Level') as HTMLSelectElement;
-		await fireEvent.change(level, { target: { value: '7:70' } });
-		expect(level.value).toBe('7:70');
-		expect(container.textContent).not.toContain('No characters match.');
-
-		await fireEvent.change(level, { target: { value: '8:80' } });
-		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
-		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['四', '五']);
-
-		await fireEvent.change(level, { target: { value: '7:70' } });
-		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
-		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['一', '二']);
-		const live = container.querySelector('p.sr[role="status"]');
-		await waitFor(() => expect(live?.textContent).toContain('2 of 2 characters match.'), { timeout: 2000 });
-
+		saving();
+		const { container } = render(CharactersPage, { context: ctx.context });
+		const grading = (await screen.findByLabelText('Grading')) as HTMLSelectElement;
+		await fireEvent.change(grading, { target: { value: 'pack:hsk-words' } });
+		await waitFor(() => expect(cells(container)).toEqual(['四', '五']));
 		releaseSeven(seven);
 		await new Promise((resolve) => setTimeout(resolve, 0));
-		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['一', '二']);
+		expect(cells(container)).toEqual(['四', '五']);
 	});
 
 	it('an empty level says so instead of “No characters match”', async () => {
-		vi.mocked(getSchemes).mockResolvedValue([
-			{
-				id: 7,
-				name: 'HSK 3.0 (characters)',
-				unit: 'character',
-				language: 'zh',
-				packId: 'hsk-chars',
-				levels: [{ id: 72, name: 'HSK 7–9', ord: 0 }]
-			}
+		hsk();
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
+			...HSK_MEMBERS,
+			{ levelId: 72, name: 'HSK 7–9', chars: new Set() }
 		]);
-		vi.mocked(fetchSchemeCharacters).mockResolvedValue([{ levelId: 72, name: 'HSK 7–9', chars: new Set() }]);
-		await ready();
+		vi.mocked(getSchemes).mockResolvedValue([{ ...HSK_SCHEMES[0], levels: [...HSK_SCHEMES[0].levels, { id: 72, name: 'HSK 7–9', ord: 2 }] }]);
+		const container = await ready();
+		await waitFor(() => expect(cells(container)).toHaveLength(3));
 		await fireEvent.change(screen.getByLabelText('Level'), { target: { value: '7:72' } });
 		expect(await screen.findByText('This level has no characters yet.')).toBeTruthy();
 		expect(screen.queryByText('No characters match.')).toBeNull();
-	});
-
-	it('reads a remembered level and falls back to all levels for a stale one', async () => {
-		vi.mocked(getSchemes).mockResolvedValue([
-			{
-				id: 7,
-				name: 'HSK 3.0 (characters)',
-				unit: 'character',
-				language: 'zh',
-				packId: 'hsk-chars',
-				levels: [{ id: 71, name: 'HSK 2', ord: 0 }]
-			},
-			{
-				id: 8,
-				name: 'HSK 3.0 (words)',
-				unit: 'word',
-				language: 'zh',
-				packId: 'hsk-words',
-				levels: [{ id: 81, name: 'HSK 2', ord: 0 }]
-			}
-		]);
-		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
-			{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
-		]);
-		localStorage.setItem('qinqin.map.level.1', '7:71');
-		localStorage.setItem('qinqin.map.groupBy.zh', 'scheme:8');
-		const container = await ready();
-		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('7:71');
-		expect((screen.getByLabelText('Group by') as HTMLSelectElement).value).toBe('scheme:7');
-		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(1));
-
-		localStorage.setItem('qinqin.map.level.1', '7:999');
-		cleanup();
-		const fresh = await ready();
-		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('all');
-		expect(fresh.querySelectorAll('.cell')).toHaveLength(5);
 	});
 
 	it('the stage filter is a group of text toggles with aria-pressed, the counts in text', async () => {

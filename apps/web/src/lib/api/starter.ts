@@ -13,12 +13,14 @@ export interface StarterSetInfo {
 	license: string;
 	attribution: string;
 	wordCount: number;
-	/** False for a seed that only its author checked: the UI says so. */
+	/** False until a person has read the set; the UI then says it was reviewed by agents (#275). */
 	humanReviewed: boolean;
 }
 
-/** One word of a set: the entry's base fields, its first gloss and the picture the set expects. */
+/** One word of a set: the entry's base fields, its pinned reading, its gloss and the picture the set expects. */
 export interface StarterSetEntry extends EntryBase {
+	/** The reading the set pins the word to ('' or absent: none). */
+	reading?: string;
 	gloss: string;
 	pictureConcept: string;
 }

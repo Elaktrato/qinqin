@@ -90,6 +90,8 @@
 	"settings.navLayout.inBar": "Label of the switch that pins a section to the phone bottom bar.",
 	"settings.navLayout.ruleMore": "One line explaining the five-item rule of the phone bottom bar; More is the label of nav.more.",
 	"settings.tabs.layout": "Settings tab holding the home page widgets and the phone navigation. One short word.",
+	"settings.workspaces.interfaceLanguage.account": "{language} is the language the account setting resolves to, named in that language (\"English\").",
+	"settings.workspaces.interfaceLanguage.hint": "{workspace} is the workspace's name as the switcher shows it (\"Japanese\", \"中文 (Novels)\").",
 	"sources.dictionaries.hint": "<code> wraps a command; keep it untranslated.",
 	"sources.licenseText": "A link to a licence file; {name} is a licence id (MIT, Apache-2.0) or a product name (Leptonica).",
 	"sources.noteOn": "Screen-reader text after the \"Note\" link of a table row; {name} is a pack name.",

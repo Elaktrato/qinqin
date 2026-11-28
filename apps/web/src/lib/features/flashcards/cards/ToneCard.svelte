@@ -6,9 +6,10 @@
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
+	import type { CardAudio } from '$lib/audio/cue';
+	import { type CardResult, type FlowItem } from '../session/cardFlow';
 	import {
+		markedSyllable,
 		suggestToneGrade,
 		toneFromGesture,
 		type GesturePoint,
@@ -17,8 +18,10 @@
 		tonePadLabels,
 		toneCandidates,
 		toneVerdict,
+		TONE_CONTOURS,
 		type ToneVerdict
-	} from '$lib/study/tones';
+	} from '$lib/exercises/tones';
+	import ToneContour from '$lib/components/ToneContour.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
@@ -27,6 +30,8 @@
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	import { readToneSettings } from '$lib/exercises/toneSettings';
 	const session = useSession();
 
 	interface Props {
@@ -51,14 +56,8 @@
 		{ tone: 5, glyph: '·', name: t('flashcards.tone.name5') }
 	];
 
-	// Contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51).
-	const CONTOUR: Record<Tone, string> = {
-		1: 'M12 22 L88 22',
-		2: 'M12 62 L88 18',
-		3: 'M12 42 Q42 98 88 26',
-		4: 'M12 16 L88 86',
-		5: ''
-	};
+	// Contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51); shared with the tone-pair drill.
+	const CONTOUR = TONE_CONTOURS;
 
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 	const candidates = $derived(toneCandidates(entry.readings));
@@ -67,6 +66,14 @@
 	const syllables = $derived(candidates[0] ?? []);
 	const labels = $derived(tonePadLabels(entry.written, syllables.length));
 	const allReadings = $derived(pinyinReadings(entry.readings));
+	// Hidden romanisation (#284, owner decision): with pinyin hidden the card asks for the tones of the characters
+	// and answers with tone numbers and contours; no pinyin letters, not in the accessible names either.
+	const roman = useRomanisation();
+	const showPinyin = $derived(roman.shows('pinyin'));
+	const padText = (index: number, plain: string): string => labels?.[index] ?? (showPinyin ? plain : '');
+	// Tone sandhi (#300): by default the citation or the spoken tone is right; the workspace can grade spoken tones
+	// only, and show or never show the spoken tone beside the citation tone on the answer.
+	const toneSettings = $derived(readToneSettings(session.workspaces.current?.settings));
 
 	let chosen = $state<(Tone | null)[]>([]);
 	let active = $state(0);
@@ -105,7 +112,7 @@
 
 	function check(): void {
 		if (done || !complete) return;
-		const result = toneVerdict(chosen as Tone[], candidates);
+		const result = toneVerdict(chosen as Tone[], candidates, { chars: labels, gradeSpoken: toneSettings.gradeSpoken });
 		verdict = result;
 		announcement = result.correct ? t('flashcards.card.correct') : t('flashcards.tone.wrong', { count: result.wrong });
 		onDone({ suggested: suggestToneGrade(result.wrong), meta: { mistakes: result.wrong } });
@@ -222,6 +229,7 @@
 <FacePrompt>
 	<p class="fp-word written" lang={textLang}>{entry.written}</p>
 	<p class="fp-sub prompt">{t('flashcards.tone.prompt')}</p>
+	{#if toneSettings.gradeSpoken}<p class="fp-sub prompt">{t('flashcards.tone.gradesSpoken')}</p>{/if}
 	<HintShown {entry} />
 </FacePrompt>
 
@@ -238,11 +246,13 @@
 				class:wrong={mark === false}
 				bind:this={pads[index]}
 				role="img"
-				aria-label={t('flashcards.tone.padLabel', {
-					n: index + 1,
-					syllable: labels?.[index] ?? syllable.plain,
-					tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone)
-				})}
+				aria-label={padText(index, syllable.plain) === ''
+					? t('flashcards.tone.padLabelN', { n: index + 1, tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone) })
+					: t('flashcards.tone.padLabel', {
+							n: index + 1,
+							syllable: padText(index, syllable.plain),
+							tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone)
+						})}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
@@ -261,9 +271,9 @@
 					{/if}
 				</svg>
 				{#if mark === true}<span class="mark"><Icon name="check" size="s" /></span>{:else if mark === false}<span class="mark"><Icon name="close" size="s" /></span>{/if}
-				<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{labels?.[index] ?? syllable.plain}</span>
+				{#if padText(index, syllable.plain) !== ''}<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{padText(index, syllable.plain)}</span>{/if}
 			</div>
-			<div class="tone-buttons" role="group" aria-label={labels === null
+			<div class="tone-buttons" role="group" aria-label={labels === null && showPinyin
 					? t('flashcards.tone.toneFor', { syllable: syllable.plain })
 					: t('flashcards.tone.toneForN', { n: index + 1 })}>
 				{#each TONES as option (option.tone)}
@@ -283,8 +293,40 @@
 				{/each}
 			</div>
 			{#if verdict !== null}
-				<p class="answer" class:right={mark === true} class:wrong={mark === false}>
-					{verdict.best?.[index]?.text ?? syllable.text}
+				{@const answer = verdict.best?.[index] ?? syllable}
+				{@const spokenTone = verdict.spoken?.[index] ?? answer.tone}
+				{@const sandhi = toneSettings.showSandhi && spokenTone !== answer.tone}
+				<p
+					class="answer"
+					class:right={mark === true}
+					class:wrong={mark === false}
+					data-answer-tone={answer.tone}
+					data-spoken-tone={spokenTone}
+				>
+					{#if showPinyin}
+						<span class="citation">{answer.text}</span>
+						{#if sandhi}
+							<span class="spoken"
+								><span aria-hidden="true" class="arrow">→</span><span aria-hidden="true" class="shown"
+									>{markedSyllable(answer.plain, spokenTone)}</span
+								><span class="sr-only">{t('flashcards.tone.spokenAs', { tone: markedSyllable(answer.plain, spokenTone) })}</span></span
+							>
+						{/if}
+					{:else}
+						<span class="citation">
+							<span aria-hidden="true">{answer.tone}{TONES[answer.tone - 1].glyph}</span>
+							<ToneContour tone={answer.tone} />
+							<span class="sr-only">{nameOf(answer.tone)}</span>
+						</span>
+						{#if sandhi}
+							<span class="spoken">
+								<span aria-hidden="true" class="arrow">→</span>
+								<span aria-hidden="true" class="shown">{spokenTone}{TONES[spokenTone - 1].glyph}</span>
+								<ToneContour tone={spokenTone} />
+								<span class="sr-only">{t('flashcards.tone.spokenAs', { tone: nameOf(spokenTone) })}</span>
+							</span>
+						{/if}
+					{/if}
 				</p>
 			{/if}
 		</li>
@@ -477,9 +519,30 @@
 	}
 
 	.answer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
 		margin: 0;
 		font-size: var(--font-size-m);
 		font-weight: var(--weight-strong);
+	}
+
+	.citation,
+	.spoken {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	/* Tone sandhi: the spoken tone after the citation tone, lighter. */
+	.spoken {
+		font-weight: var(--weight-regular);
+	}
+
+	.arrow {
+		color: var(--readable-muted);
 	}
 
 	.right {

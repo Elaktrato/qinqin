@@ -25,9 +25,9 @@
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
 	import { formatNumber } from '$lib/i18n/format';
-	import { loadStudyHistory, getStudyData } from '$lib/study/data';
-	import type { ReviewEvent } from '$lib/study/types';
-	import { vacationRuns } from '$lib/study/vacation';
+	import { loadStudyHistory, getStudyData } from '$lib/studycore/data';
+	import type { ReviewEvent } from '$lib/studycore/types';
+	import { vacationRuns } from '$lib/studycore/vacation';
 	import type { HeatmapLayout } from '$lib/widgets/options';
 	import {
 		activityViewFor,
@@ -46,9 +46,10 @@
 		saveActivityView,
 		type StoredActivityView
 	} from '$lib/activity/viewPrefs';
-	import type { VacationPeriod } from '$lib/study/vacation';
+	import type { VacationPeriod } from '$lib/studycore/vacation';
 	import { workspaceDisplay } from '$lib/languages';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
+	import { heldValue, holdValue } from '$lib/widgets/widgetLoad.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useSession } from '$lib/context/context';
 
@@ -73,13 +74,30 @@
 	}
 	let { layout = 'garden' }: Props = $props();
 
-	let response = $state<ActivityResponse | null>(null);
+	// What this heatmap showed last in the session (#290): a revisit shows it at
+	// once and refreshes it behind; the loading line is for a first load only.
+	interface Held {
+		response: ActivityResponse;
+		range: { from: string; to: string };
+		stored: StoredActivityView;
+	}
+	interface HeldDetail {
+		vacations: VacationPeriod[];
+		goals: { workspaceId: number; row: GoalsRow | null; reviews: readonly ReviewEvent[]; vacations: readonly VacationPeriod[] } | null;
+	}
+	const held = heldValue<Held>(session, 'activity-heatmap', untrack(() => layout));
+	const heldWs = session.workspaces.current?.id ?? null;
+	const heldDetail = heldWs === null ? undefined : heldValue<HeldDetail>(session, 'activity-heatmap-workspace', heldWs);
+
+	let response = $state<ActivityResponse | null>(held?.response ?? null);
 	// The window `response` covers (learner days, inclusive).
-	let range = $state({ from: '', to: '' });
+	let range = $state(held?.range ?? { from: '', to: '' });
 	// The month calendar's page (the one requested; `range` says which is on screen).
 	let month = $state(monthOf(session.zone.day().today(Date.now())));
-	let prefs = $state(initialPrefs());
-	let loading = $state(true);
+	let prefs = $state(held === undefined ? initialPrefs() : { stored: held.stored, loaded: true, dirty: false });
+	let loading = $state(held === undefined);
+	/** Whether this mount loaded its window (a held one is refreshed once). */
+	let loadedHere = false;
 	let error = $state('');
 	// A month fetch that failed while other data is on screen (#100 review): said
 	// with Try again; the month it was for is retried.
@@ -88,10 +106,18 @@
 	// The learner's day rule; a zone change re-folds and re-requests the window.
 	let studyDay = $state.raw(session.zone.day());
 	// The user's vacation periods (user-global rows): their dates are hatched.
-	let vacations = $state.raw<VacationPeriod[]>([]);
+	let vacations = $state.raw<VacationPeriod[]>(heldDetail?.vacations ?? []);
 	// The current workspace's goal row and reviews (cached study history), for the
 	// flower stages; null until loaded or when the load failed (tint only then).
-	let goals = $state.raw<{ workspaceId: number; row: GoalsRow | null; reviews: readonly ReviewEvent[]; vacations: readonly VacationPeriod[] } | null>(null);
+	let goals = $state.raw<HeldDetail['goals']>(heldDetail?.goals ?? null);
+
+	/** hold keeps what the heatmap shows for the next visit (#290). */
+	function hold(): void {
+		if (response !== null && range.from !== '') holdValue<Held>(session, 'activity-heatmap', layout, { response, range, stored: prefs.stored });
+	}
+	function holdDetail(id: number): void {
+		holdValue<HeldDetail>(session, 'activity-heatmap-workspace', id, { vacations, goals });
+	}
 
 	// Guards against a slow earlier request overwriting a newer view.
 	const requests = createSequencer();
@@ -249,7 +275,8 @@
 		syncToday();
 		const now = new Date();
 		const next = wanted(now);
-		if (!force && response !== null && next.from === range.from && next.to === range.to) return;
+		// A held window (#290) is refreshed once per mount; a window this mount loaded is kept.
+		if (!force && loadedHere && response !== null && next.from === range.from && next.to === range.to) return;
 		const seq = requests.next();
 		error = '';
 		if (response === null) loading = true;
@@ -258,7 +285,9 @@
 			if (!requests.isCurrent(seq)) return;
 			response = got;
 			range = next;
+			loadedHere = true;
 			monthError = '';
+			untrack(hold);
 			void loadVacations();
 			void loadGoals();
 		} catch (err) {
@@ -285,7 +314,10 @@
 		const id = workspaceId;
 		try {
 			const got = (await getStudyData(session.study, id)).vacations ?? [];
-			if (id === workspaceId) vacations = got;
+			if (id === workspaceId) {
+				vacations = got;
+				untrack(() => holdDetail(id));
+			}
 		} catch {
 			// The marks are decoration: the heatmap works without them.
 		}
@@ -303,6 +335,7 @@
 			if (id !== workspaceId) return;
 			const row = history.goals === undefined || history.goals === 'newer' ? null : history.goals;
 			goals = { workspaceId: id, row, reviews: history.reviews, vacations: history.vacations ?? [] };
+			untrack(() => holdDetail(id));
 		} catch {
 			// The stage is decoration until the drawings exist: tint only.
 			if (id === workspaceId) goals = null;
@@ -311,6 +344,7 @@
 
 	function remember(next: StoredActivityView): void {
 		prefs = prefsChanged(prefs, next);
+		hold();
 		void saves.push(next);
 	}
 
@@ -332,7 +366,10 @@
 	});
 
 	onMount(() => {
-		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
+		void loadActivityView().then((view) => {
+			prefs = prefsLoaded(prefs, view);
+			hold();
+		});
 		const offEvents = session.events.onChange(() => void load());
 		const offZone = session.zone.onChange((next) => {
 			studyDay = next;

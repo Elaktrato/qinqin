@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { SchemeLevelMembers } from '$lib/study/charGroups';
+import type { SchemeLevelMembers } from '$lib/studycore/charGroups';
 import type { EntryBase, Scheme } from './types';
 import type { SchemeCache } from '../context/caches';
 

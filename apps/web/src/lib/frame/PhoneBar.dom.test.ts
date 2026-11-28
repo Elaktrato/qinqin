@@ -5,6 +5,7 @@ import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { PHONE_MEDIA_QUERY } from './breakpoint';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
+import source from './PhoneBar.svelte?raw';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -123,14 +124,42 @@ describe('PhoneBar', () => {
 });
 
 describe('PhoneBar in bottom-bar mode (#188)', () => {
-	it('title, page actions, flag, avatar: no menu button and no drawer', async () => {
+	it('logo, page actions, flag, avatar: no menu button, no drawer and no title (#293)', async () => {
 		const { container } = render(PhoneHarness, { props: { sections, current: 'reader', page: true, mode: 'bar' }, context: ctx.context });
-		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
-			(b) => b.getAttribute('aria-label') ?? b.textContent
-		);
-		expect(order).toEqual(['Add to deck', 'Workspace: Chinese', 'Account menu']);
+		const bar = container.querySelector('.phone-bar') as HTMLElement;
+		const order = [...bar.querySelectorAll('a, button')].map((b) => b.getAttribute('aria-label') ?? b.textContent);
+		expect(order).toEqual(['qinqin, home', 'Add to deck', 'Workspace: Chinese', 'Account menu']);
 		expect(screen.queryByRole('button', { name: 'Open menu' })).toBeNull();
-		expect(container.querySelector('.title')?.textContent).toBe('Reader');
+		expect(bar.querySelector('.title')).toBeNull();
+		expect(bar.textContent).not.toContain('Reader');
+	});
+
+	it('the logo is a link to Home named "qinqin, home", the first focusable item, current only on Home', async () => {
+		const view = render(PhoneHarness, { props: { sections, current: 'reader', mode: 'bar' }, context: ctx.context });
+		const bar = view.container.querySelector('.phone-bar') as HTMLElement;
+		const logo = within(bar).getByRole('link', { name: 'qinqin, home' });
+		expect(logo.getAttribute('href')).toBe('/');
+		expect(logo.querySelector('svg.logo')).toBeTruthy();
+		expect(logo.getAttribute('aria-current')).toBeNull();
+		expect(bar.querySelector('a[href], button, input, select, textarea, [tabindex]')).toBe(logo);
+		await view.rerender({ sections, current: 'home', mode: 'bar' });
+		expect(logo.getAttribute('aria-current')).toBe('page');
+	});
+
+	it('a page with its own title shows only the logo; the title stays the page\'s own heading', async () => {
+		const view = render(PhoneHarness, { props: { sections, current: 'search', page: true, title: true, mode: 'bar' }, context: ctx.context });
+		const bar = view.container.querySelector('.phone-bar') as HTMLElement;
+		await waitFor(() => expect(within(bar).getByRole('button', { name: 'Add to deck' })).toBeTruthy());
+		expect(bar.textContent).not.toContain('学习');
+		expect(bar.textContent).not.toContain('Search');
+		expect(within(bar).getByRole('link', { name: 'qinqin, home' })).toBeTruthy();
+		expect(bar.querySelector('h1, h2, [role="heading"]')).toBeNull();
+	});
+
+	it('the logo link is a 44 px touch target in the 3 rem bar', () => {
+		const css = source.slice(source.indexOf('<style>'));
+		expect(css).toMatch(/\.brand\s*\{[^}]*width:\s*2\.75rem;[^}]*height:\s*2\.75rem/);
+		expect(css).toMatch(/\.phone-bar\s*\{[^}]*min-height:\s*3rem/);
 	});
 
 	it('the avatar opens the account menu (Settings within reach without the drawer)', async () => {
@@ -139,12 +168,15 @@ describe('PhoneBar in bottom-bar mode (#188)', () => {
 		expect(screen.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 	});
 
-	it('side-menu mode is unchanged: menu button first, no avatar in the bar', () => {
-		const { container } = render(PhoneHarness, { props: { sections, current: 'reader', mode: 'drawer' }, context: ctx.context });
-		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
-			(b) => b.getAttribute('aria-label') ?? b.textContent
-		);
+	it('side-menu mode is unchanged: menu button first, the title, no logo and no avatar in the bar', async () => {
+		const { container, rerender } = render(PhoneHarness, { props: { sections, current: 'reader', mode: 'drawer' }, context: ctx.context });
+		const bar = container.querySelector('.phone-bar') as HTMLElement;
+		const order = [...bar.querySelectorAll('a, button')].map((b) => b.getAttribute('aria-label') ?? b.textContent);
 		expect(order).toEqual(['Open menu', 'Workspace: Chinese']);
+		expect(bar.querySelector('.title')?.textContent).toBe('Reader');
+		expect(within(bar).queryByRole('link', { name: 'qinqin, home' })).toBeNull();
+		await rerender({ sections, current: 'search', page: true, title: true, mode: 'drawer' });
+		await waitFor(() => expect(bar.querySelector('.title')?.textContent).toBe('学习'));
 	});
 
 	it('switching to bottom-bar mode closes an open drawer', async () => {

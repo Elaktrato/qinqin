@@ -63,7 +63,14 @@
 	const study = $derived(
 		studyWorkspaceId === null
 			? undefined
-			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold, stateLine }
+			: {
+					workspaceId: studyWorkspaceId,
+					paragraph: isRoot ? info.paragraph || null : null,
+					// Where that paragraph is in a book: a saved sentence keeps it (#280).
+					place: isRoot ? (info.source ?? null) : null,
+					hold,
+					stateLine
+				}
 	);
 	const position = $derived(
 		placePopup(

@@ -107,3 +107,34 @@ func TestSendReminderOverHTTPPublicURLOmitsListUnsubscribeButKeepsBodyLink(t *te
 }
 
 func t0() time.Time { return time.Date(2026, 11, 25, 10, 0, 0, 0, time.UTC) }
+
+// A reminder mail follows the workspaces it counts when they agree (#297,
+// docs/contracts/settings/interface-language.json "reminder"); otherwise, or
+// with none named, the account's setting.
+func TestSendReminderFollowsTheWorkspacesLanguage(t *testing.T) {
+	withCatalogue(t, "de", map[string]string{"mail.reminder.subject": "Zeit zum Lernen"})
+	fake, _ := mailtest.New(mailtest.Options{})
+	defer fake.Close()
+	svc := svcFor(t, fake, &logSink{})
+	if _, err := svc.Store.DB.Exec(`INSERT INTO users (id, username, hash, updated_at, interface_language) VALUES (1, 'a', 'h', 't', 'en')`); err != nil {
+		t.Fatal(err)
+	}
+	for i, c := range []struct {
+		workspaces []string
+		german     bool
+	}{
+		{nil, false},                 // no workspace named: the account's en
+		{[]string{"de"}, true},       // one workspace in German
+		{[]string{"de", "de"}, true}, // two that agree
+		{[]string{"de", ""}, false},  // one follows the account: they differ
+	} {
+		d := ReminderData{Items: []ReminderItem{{Kind: "due", Count: 3}}, Workspaces: c.workspaces}
+		if err := svc.SendReminder(context.Background(), 1, "ann@example.org", d); err != nil {
+			t.Fatal(err)
+		}
+		got := fake.Messages()[i].Data
+		if german := strings.Contains(got, "Zeit zum Lernen"); german != c.german {
+			t.Errorf("workspaces %q: german %v, want %v", c.workspaces, german, c.german)
+		}
+	}
+}

@@ -127,10 +127,16 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 		map[string]any{"guidance": "short", "explanationLanguage": "de"}); r.StatusCode != 200 {
 		t.Fatalf("journal settings = %d", r.StatusCode)
 	}
-	if r := doJSON(t, "POST", e.ts.URL, "/api/grammar/progress?workspace="+itoa(w.wsZh), w.alice,
-		map[string]any{"packId": "zh-grammar", "lessonId": "le-change", "score": 2, "total": 3}); r.StatusCode != 200 {
-		t.Fatalf("grammar progress = %d", r.StatusCode)
-	}
+	// a grammar lesson run (#277: an event like the others)
+	doJSON(t, "POST", e.ts.URL, "/api/events/batch", w.alice, map[string]any{"events": []map[string]any{
+		{"id": "01JD0000000000000000000005", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T11:00:00Z", "type": "grammar",
+			"payload": map[string]any{"point": "zh-grammar:le-change", "mode": "lesson", "score": 2, "total": 3}}}})
+	// course progress (#221: events like the others; words are dictionary keys, never entry ids, so nothing is remapped)
+	doJSON(t, "POST", e.ts.URL, "/api/events/batch", w.alice, map[string]any{"events": []map[string]any{
+		{"id": "01JD0000000000000000000006", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T11:05:00Z", "type": "course",
+			"payload": map[string]any{"kind": "lesson-finished", "course": "zh-course", "unit": "hello", "lesson": "words-1", "score": 5, "total": 6, "words": []string{"你好", "谢谢"}}},
+		{"id": "01JD0000000000000000000007", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T11:06:00Z", "type": "course",
+			"payload": map[string]any{"kind": "unit-test", "course": "zh-course", "unit": "hello", "score": 18, "total": 20, "passed": true, "early": false}}}})
 	// bob has data of his own
 	wsB := createWorkspace(t, e.ts.URL, w.bob, "zh", "")
 	pushTyped(t, e, w.bob, map[string]any{"cards": []any{map[string]any{"workspaceId": wsB, "id": "bobs", "kind": "vocab", "entryId": 1,
@@ -190,8 +196,6 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		}
 		b, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/journal/settings"+q, w.alice))
 		out = append(out, fmt.Sprintf("JS ws=%s %s", n, b))
-		gp, _ := json.Marshal(getJSON(t, e.ts.URL, "/api/grammar/progress"+q, w.alice))
-		out = append(out, fmt.Sprintf("GP ws=%s %s", n, gp))
 	}
 	for _, r := range typedRows(t, e, w.alice) {
 		ws := name[r.row["workspaceId"].(float64)]
@@ -323,6 +327,9 @@ func TestRoundTripOnTheSameServer(t *testing.T) {
 	}
 	before := w.snapshot(t, label)
 	bobBefore := getJSON(t, w.ts.URL, "/api/workspaces", w.bob)
+	if !strings.Contains(before, `"kind":"unit-test"`) || !strings.Contains(before, `"words":["你好","谢谢"]`) {
+		t.Fatal("the snapshot holds no course event")
+	}
 	archive := w.export(t, w.alice)
 	// change everything afterwards
 	pushTyped(t, w.backupEnv, w.alice, map[string]any{"cards": []any{map[string]any{"workspaceId": w.wsZh, "id": fmt.Sprintf("c-vocab-%d", w.e1),

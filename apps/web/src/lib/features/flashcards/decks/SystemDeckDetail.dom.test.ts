@@ -5,32 +5,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn(),
 	loadRawStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/write', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
+vi.mock('$lib/studycore/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { defaultSetup } from '$lib/study/setup';
+import { SESSION_CONFIG_KEY } from '../session/session';
+import { defaultSetup } from '../setup/setup';
 import { PartialPushError } from '$lib/sync/push';
-import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
+import { loadRawStudyData, loadStudyHistory } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
 import { toLegacy } from '$lib/testing/legacyCodec';
-import { type StudyWrite } from '$lib/study/plan';
+import { type StudyWrite } from '$lib/studycore/plan';
 
 /** The typed writes as the legacy rows they stand for (test codec). */
 function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; knownAt?: string }[] {
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
-import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
+import type { Deck, ReviewEvent, StudyCard } from '$lib/studycore/types';
 
 import { primaryActions } from '$lib/ui/testing/primary';
 import SystemDeckDetail from './SystemDeckDetail.svelte';
@@ -92,7 +92,7 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		reviews,
-		merged: 0
+		merged: 0, grammarRuns: [], courseEvents: []
 	}));
 	vi.mocked(loadRawStudyData).mockImplementation(async () => ({
 		decks: structuredClone(decks),

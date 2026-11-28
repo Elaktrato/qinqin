@@ -11,8 +11,6 @@ import (
 func TestExportAndRestoreRowsWithUnreadableStamps(t *testing.T) {
 	w := newWorld(t)
 	uid, ws := w.AliceUID, w.Alice.WS1
-	exec(t, w.DB, `INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at)
-		VALUES (?, ?, 'p', 'empty', '', 1, 2, '2026-11-20T10:00:00Z'), (?, ?, 'p', 'bad', 'yesterday', 1, 2, '2026-11-20T10:00:00Z')`, uid, ws, uid, ws)
 	exec(t, w.DB, `INSERT INTO journal_entries (user_id, workspace_id, id, date, title, text, source, created_at, updated_at)
 		VALUES (?, ?, 'e1', '2026-11-19', '', 't', 'typed', '2026-11-19T08:00:00Z', '2026-11-20T10:00:00Z')`, uid, ws)
 	exec(t, w.DB, `INSERT INTO journal_reviews (user_id, workspace_id, entry_id, text_hash, annotations, overall, model, dropped, created_at)
@@ -26,7 +24,6 @@ func TestExportAndRestoreRowsWithUnreadableStamps(t *testing.T) {
 		t.Fatalf("Restore: %v (%+v)", err, rep)
 	}
 	for q, want := range map[string]int{
-		`SELECT COUNT(*) FROM grammar_progress WHERE user_id = ?`:    2,
 		`SELECT COUNT(*) FROM journal_reviews WHERE user_id = ?`:     1,
 		`SELECT COUNT(*) FROM journal_suggestions WHERE user_id = ?`: 1,
 	} {
@@ -35,15 +32,11 @@ func TestExportAndRestoreRowsWithUnreadableStamps(t *testing.T) {
 			t.Errorf("%s = %d (%v), want %d", q, n, err, want)
 		}
 	}
-	var completed string
-	w.DB.QueryRow(`SELECT completed_at FROM grammar_progress WHERE user_id = ? AND lesson_id = 'empty'`, uid).Scan(&completed)
-	if completed != "2026-11-20T10:00:00Z" {
-		t.Errorf("restored completedAt %q, want the row's write time", completed)
-	}
 }
 
 // Fix wave (#199): the dry run drops exactly what the restore drops; a
-// journal or grammar row without a workspace is not restored.
+// journal or grammar row without a workspace is not restored, nor an old
+// grammar progress row that does not convert to an event (#277).
 func TestPlanDropsWhatTheRestoreDrops(t *testing.T) {
 	ws := int64(3)
 	for _, c := range []struct {
@@ -53,7 +46,8 @@ func TestPlanDropsWhatTheRestoreDrops(t *testing.T) {
 		{Row{Key: "journal:settings", WorkspaceID: nil}, true},
 		{Row{Key: "journal:settings", WorkspaceID: &ws}, false},
 		{Row{Key: "grammar:progress:p:l", WorkspaceID: nil}, true},
-		{Row{Key: "grammar:progress:p:l", WorkspaceID: &ws}, false},
+		{Row{Key: "grammar:progress:p:l", WorkspaceID: &ws, Data: []byte(`{"completedAt":"2026-11-19T08:00:00Z","best":1,"total":2}`)}, false},
+		{Row{Key: "grammar:progress:p:l", WorkspaceID: &ws, Data: []byte(`{"completedAt":"2026-11-19T08:00:00Z","best":3,"total":2}`)}, true},
 		{Row{Key: "appearance", WorkspaceID: nil}, false},
 		{Row{Key: "no-such-family", WorkspaceID: nil}, true},
 	} {

@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"qinqin/internal/avatar"
-	"qinqin/internal/grammar"
 	"qinqin/internal/journal"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -288,12 +287,24 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	}
 	// own sentences (pack sentences are content, not user data)
 	if counts["sentences"], err = writeParts(ctx, tx, a, NameSentences,
-		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
+		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level,
+			source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end
+			FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var s OwnSentence
 			var aiProvider, aiModel, aiLevel string
-			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt, &aiProvider, &aiModel, &aiLevel); err != nil {
+			var src SentenceSource
+			var srcBook sql.NullInt64
+			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt, &aiProvider, &aiModel, &aiLevel,
+				&src.Kind, &srcBook, &src.Title, &src.Chapter, &src.Paragraph, &src.Start, &src.End); err != nil {
 				return nil, err
+			}
+			if src.Kind != "" { // saved from the reader (#280); a deleted book leaves no id
+				if srcBook.Valid {
+					id := srcBook.Int64
+					src.BookID = &id
+				}
+				s.Source = &src
 			}
 			if aiProvider != "" || aiModel != "" { // a kept AI example (#186)
 				s.AI = &SentenceAI{Provider: aiProvider, Model: aiModel, Level: aiLevel}
@@ -446,6 +457,13 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 				if json.Unmarshal(e.Payload, &p) == nil {
 					refs.noteCardID(p.CardID)
 				}
+			case notebookEvent:
+				var p struct {
+					Item string `json:"item"`
+				}
+				if json.Unmarshal(e.Payload, &p) == nil && strings.HasPrefix(p.Item, notebookCardPrefix) {
+					refs.noteCardID(strings.TrimPrefix(p.Item, notebookCardPrefix))
+				}
 			case "view":
 				var p struct {
 					EntryID int64 `json:"entryId"`
@@ -459,8 +477,8 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 }
 
 // writeRows writes the rows family: the live keyed rows, then every live
-// typed study row in its keyed form (rows.ToLegacy), the journal's documents
-// and the grammar progress in theirs.
+// typed study row in its keyed form (rows.ToLegacy) and the journal's
+// documents in theirs. Grammar lesson runs are events (#277).
 func writeRows(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
 	pw := &partWriter{a: a, fam: NameRows}
 	rs, err := tx.QueryContext(ctx, `SELECT workspace_id, key, data, version, updated_at, modified_at FROM keyed_rows
@@ -517,10 +535,6 @@ func writeRows(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, 
 		ws := d.WorkspaceID
 		return pw.encode(Row{WorkspaceID: &ws, Key: d.Key, Data: d.Data, Version: 1, UpdatedAt: d.UpdatedAt})
 	}); err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
-	}
-	// grammar lesson progress in its keyed form (grammar/progress.go)
-	if err := writeGrammarProgress(ctx, tx, pw, userID); err != nil {
 		return 0, fmt.Errorf("backup: %s: %w", NameRows, err)
 	}
 	return pw.total, pw.close()
@@ -686,12 +700,4 @@ func hiddenDictionaryIDs(settings json.RawMessage) []int64 {
 		}
 	}
 	return out
-}
-
-// writeGrammarProgress writes every lesson's progress of the user as a row
-// of its keyed form, stamped with the row's write time.
-func writeGrammarProgress(ctx context.Context, tx *sql.Tx, pw *partWriter, userID int64) error {
-	return grammar.EachKeyed(ctx, tx, userID, func(ws int64, key string, data json.RawMessage, at string) error {
-		return pw.encode(Row{WorkspaceID: &ws, Key: key, Data: data, Version: 1, UpdatedAt: at})
-	})
 }

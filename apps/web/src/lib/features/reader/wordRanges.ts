@@ -1,10 +1,11 @@
 // Which words the reader marks (#68): new and learning tokens of a
 // paragraph as code-point ranges, from the loaded matches and the shared
-// known predicate (study/known.ts). Known words and matches without a word
-// character produce nothing. Contract: docs/contracts/reader/coverage.json
-// (the token rule) and word-states.json.
+// known predicate (studycore/known.ts). Known words and matches without a word
+// character produce nothing, and neither do function words (particles, the
+// copula: `function`, docs/contracts/segment/). Contract:
+// docs/contracts/reader/coverage.json (the token rule) and word-states.json.
 import type { SegmentMatch } from '$lib/api/types';
-import { familiarity, type KnownIndex } from '$lib/study/known';
+import { familiarity, type KnownIndex } from '$lib/studycore/known';
 
 export type WordState = 'new' | 'learning';
 
@@ -36,7 +37,7 @@ export function wordRanges(
 	const out: WordRange[] = [];
 	for (const m of matches) {
 		const first = m.entries[0];
-		if (first === undefined || !isWordToken(m.surface, lang)) continue;
+		if (first === undefined || m.function || !isWordToken(m.surface, lang)) continue;
 		const state = familiarity(first.id, index, threshold);
 		if (state !== 'known') out.push({ start: m.start, end: m.end, state });
 	}

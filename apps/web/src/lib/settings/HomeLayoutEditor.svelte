@@ -10,7 +10,7 @@
 	import { t } from '$lib/i18n';
 	import { errorText } from '$lib/api/apiErrors';
 	import { languageLabel } from '$lib/languages';
-	import { coreFeatures } from '$lib/features';
+	import { coreFeatures, widgetOffFeature } from '$lib/features';
 	import {
 		displayItems,
 		editableLayout,
@@ -33,6 +33,7 @@
 	import { allWidgets } from '$lib/widgets/registry';
 	import { Button, Chip, Panel, Section } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { rememberHeatmapLayout, rememberLayout } from '$lib/widgets/homeData';
 
 	const session = useSession();
 
@@ -94,6 +95,7 @@
 				const value = heatmapLayout;
 				try {
 					await saveHeatmapLayout(value);
+					rememberHeatmapLayout(session, value);
 					savedLayout = value;
 					failure = null;
 				} catch (err) {
@@ -142,7 +144,10 @@
 			if (shown.has(id)) return [];
 			for (const feature of owners) {
 				const widget = feature.def.widgets?.find((w) => w.id === id);
-				if (widget) return [{ id, title: widget.title, feature: feature.title }];
+				if (!widget) continue;
+				// The feature that keeps it away: its own, or one it requires (word states needs Stats, #295).
+				const off = widgetOffFeature(widget, states) ?? feature.id;
+				return [{ id, title: widget.title, feature: ownerLabel(off) }];
 			}
 			return [];
 		});
@@ -199,6 +204,7 @@
 				pending = false;
 				const value = editableLayout(stored);
 				await saveLayout(value);
+				rememberLayout(session, value);
 				confirmed = value;
 			} while (pending);
 			saveStatus = 'saved';

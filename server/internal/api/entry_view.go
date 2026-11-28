@@ -31,6 +31,10 @@ type entryResponse struct {
 	Badges      []model.Badge     `json:"badges"`
 	Sentences   []model.Sentence  `json:"sentences"`
 	Characters  []entryCharacter  `json:"characters"`
+	// PictureTargets are the strings the entry's picture is looked up by
+	// (pictureTargets, docs/contracts/images/): a client that answers
+	// pictures offline from the images packages asks the same ones (#274).
+	PictureTargets []string `json:"pictureTargets"`
 }
 
 // formView is one written form of an entry: its text, its source flags
@@ -129,10 +133,11 @@ func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry, vi
 		return nil, fmt.Errorf("entry %d: %w", e.ID, err)
 	}
 	resp := &entryResponse{
-		EntryBase:   bases[0],
-		Forms:       make([]formView, 0, len(e.Forms)),
-		Senses:      []model.SenseView{},
-		SenseGroups: make([]senseGroup, 0, len(e.Senses)),
+		EntryBase:      bases[0],
+		Forms:          make([]formView, 0, len(e.Forms)),
+		Senses:         []model.SenseView{},
+		SenseGroups:    make([]senseGroup, 0, len(e.Senses)),
+		PictureTargets: pictureTargets(e),
 	}
 	for _, f := range e.Forms {
 		resp.Forms = append(resp.Forms, formView{Text: f.Text, Flags: f.Flags, Pri: f.Pri})

@@ -25,6 +25,7 @@ var seedSQL = map[string][]string{
 	"sentences":             {`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (1, 'user', ?1, 'h', 'p', 't', 't')`},
 	"example_drafts":        {`INSERT INTO example_drafts (user_id, entry_id, request_id, hanzi, pinyin, translation, level, provider, model, created_at) VALUES (?1, 1, 'r', 'h', '', 't', 'beginner', 'p', 'm', 't')`},
 	"example_generations":   {`INSERT INTO example_generations (user_id, entry_id, request_id, level, dropped, provider, model, created_at) VALUES (?1, 1, 'r', 'beginner', 0, 'p', 'm', 't')`},
+	"picture_reports":       {`INSERT INTO picture_reports (user_id, entry_id, language, pack_id, concept, reason, created_at) VALUES (?1, 1, 'zh', 'p', 'c', 'wrong', 't')`},
 	"example_reports":       {`INSERT INTO example_reports (user_id, entry_id, language, hanzi, pinyin, translation, reason, level, provider, model, created_at) VALUES (?1, 1, 'zh', 'h', '', 't', 'other', 'beginner', 'p', 'm', 't')`},
 	"library_books":         {`INSERT INTO library_books (user_id, workspace_id, language, title, created_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 'zh', 'B', 't')`},
 	"library_bookmarks":     {`INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE user_id = ?1), '0:0', 't')`},
@@ -43,7 +44,6 @@ var seedSQL = map[string][]string{
 	"journal_settings":      {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
 	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, 1, 'c', '', 'beginner', 't', 't')`},
 	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't1', 't')`},
-	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
 	"reminder_facts":        {`INSERT INTO reminder_facts (user_id, workspace_id, as_of, data, updated_at) VALUES (?1, (SELECT id FROM workspaces WHERE user_id = ?1), 't', '{}', 't')`},
 	"push_subscriptions":    {`INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_at) VALUES (?1, 'https://push.example/' || ?1, 'k', 'a', 't')`},
 	"reminder_deliveries":   {`INSERT INTO reminder_deliveries (user_id, channel, kind, day, sent_at, outcome) VALUES (?1, 'email', 'due', '2026-11-25', 't', 'sent')`},
@@ -177,7 +177,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, AccessTokens: 1, Avatar: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, KeyedRows: 1, Cards: 1, Books: 1, JournalEntries: 1, JournalConversations: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, ExampleReports: 1, PictureReports: 1, AccessTokens: 1, Avatar: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
@@ -326,7 +326,7 @@ func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
 		"library_highlights": true, "user_time_zones": true, "study_cards": true, "study_decks": true,
 		"study_deck_settings": true, "study_limits": true, "study_fsrs_sets": true, "study_fsrs_active": true,
 		"journal_entries": true, "journal_reviews": true, "journal_suggestions": true, "journal_settings": true,
-		"journal_conversations": true, "journal_messages": true, "grammar_progress": true, "user_avatars": true}
+		"journal_conversations": true, "journal_messages": true, "user_avatars": true}
 	for _, tb := range auth.UserTables() {
 		if tb.Restore == auth.RestoreUnset {
 			t.Errorf("%s has no restore decision", tb.Name)

@@ -9,7 +9,7 @@ import type { Api, Timers } from '$lib/context/deps';
 import { firstEventsPageUrl, readEventLog } from './eventPages';
 import { pruneSavedEventPages, type PageCachesLike } from '$lib/pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
-import { LOG_CHANGING_TYPES } from '$lib/activity/sources';
+import { changesLog } from '$lib/activity/sources';
 import type { StudyEventBody } from '$lib/api/types';
 import type { StudyDay } from '$lib/time/studyDay';
 import { newUlid } from './ulid';
@@ -22,7 +22,7 @@ function timeoutSignal(ms: number): AbortSignal | undefined {
 	return typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(ms) : undefined;
 }
 
-export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal' | 'script';
+export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal' | 'script' | 'grammar' | 'course';
 
 // StudyEvent is one event as GET /api/events serves it (an item of a page,
 // lib/events/eventPages.ts): the row the
@@ -84,6 +84,8 @@ export interface EventLogDeps {
 	studyDay(): StudyDay;
 	/** Resolves once the learner's zone has loaded. */
 	whenStudyDaySettled(): Promise<void>;
+	/** How a reload of a held log ended (#290: false keeps the held log; the pages' quiet notice). */
+	onRefresh?(workspaceId: number, ok: boolean): void;
 }
 
 /** SessionEndedError: the event log's session ended, so nothing more is sent. */
@@ -113,7 +115,22 @@ export class EventLog {
 			(workspaceId: number): Promise<StudyEvent[]> =>
 				fetchFullLog(workspaceId, () => deps.timers.set(() => this.#log.invalidate(workspaceId), 0)),
 			() => deps.now(),
-			WORKSPACE_EVENTS_TTL_MS
+			WORKSPACE_EVENTS_TTL_MS,
+			{
+				// A held log answers at once after its TTL or a post, and reloads behind (#290).
+				revalidate: {
+					changed: (held, fresh) => held.length !== fresh.length || held.some((event, i) => event.id !== fresh[i]?.id),
+					refreshed: (workspaceId) => {
+						if (!this.#disposed) this.#tell(workspaceId);
+					},
+					failed: (workspaceId) => {
+						if (!this.#disposed) deps.onRefresh?.(workspaceId, false);
+					},
+					stored: (workspaceId) => {
+						if (!this.#disposed) deps.onRefresh?.(workspaceId, true);
+					}
+				}
+			}
 		);
 	}
 
@@ -159,7 +176,9 @@ export class EventLog {
 	/**
 	 * load reads the whole event log of one workspace through the short-lived
 	 * shared cache: the home and Stats widgets each need it, and they share one
-	 * read. `force` skips a cached copy (a widget's "Try again"). The array is
+	 * read. A held log older than the TTL, or marked stale by a post, answers
+	 * at once and reloads behind (#290; onChange tells when it changed).
+	 * `force` skips a cached copy (a widget's "Try again"). The array is
 	 * shared: do not mutate it. Pages that schedule or write study data read
 	 * uncached (fetchFullLog).
 	 */
@@ -173,9 +192,10 @@ export class EventLog {
 	}
 
 	/**
-	 * onChange registers a listener called with the workspace whose cached log
-	 * was dropped because a review or read event was posted, so caches derived
-	 * from the log can drop theirs; returns the unsubscribe.
+	 * onChange registers a listener called with the workspace whose log
+	 * changed: a review or read event was posted (the held log is marked stale),
+	 * or a reload behind a held log brought other events (#290). Returns the
+	 * unsubscribe.
 	 */
 	onChange(listener: (workspaceId: number) => void): () => void {
 		this.#listeners.add(listener);
@@ -222,15 +242,20 @@ export class EventLog {
 	}
 
 	#changed(events: readonly StudyEventBody[]): void {
-		const types = LOG_CHANGING_TYPES;
 		const touched = new Set<number>();
 		for (const event of events) {
-			if (types.has(event.type)) touched.add(event.workspaceId);
+			if (changesLog(event.type)) touched.add(event.workspaceId);
 		}
 		for (const workspaceId of touched) {
-			this.#log.invalidate(workspaceId);
-			for (const listener of [...this.#listeners]) listener(workspaceId);
+			// The held log stays for the next read, which reloads it behind (#290);
+			// the reviews just sent are merged from the outbox's recent list.
+			this.#log.markStale(workspaceId);
+			this.#tell(workspaceId);
 		}
+	}
+
+	#tell(workspaceId: number): void {
+		for (const listener of [...this.#listeners]) listener(workspaceId);
 	}
 }
 

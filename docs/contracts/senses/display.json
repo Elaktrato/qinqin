@@ -1,0 +1,466 @@
+{
+  "version": 1,
+  "rule": "senses/display",
+  "explicitWords": ["fuck", "fucking", "fucked", "fucker", "cunt", "dick", "penis", "vagina", "testicles", "prostitute", "prostitutes", "prostitution", "whore", "whores", "slut", "sluts", "porn", "porno", "pornographic", "pornography", "lewd", "obscene", "masturbate", "masturbation"],
+  "vulgarCharacters": ["肏", "屄", "屌"],
+  "minorPrefixes": ["surname ", "japanese surname", "abbr. for", "abbr. of", "short for", "short name for", "variant of", "old variant of", "(old) variant of", "archaic variant of", "(archaic) variant of", "(old) contracted variant of", "euphemistic variant of", "erhua variant of", "see ", "also written", "used in", "(archaic)", "(old)", "(classical)", "old name for"],
+  "minorTags": ["arch", "obs", "rare", "dated", "surname"],
+  "cases": [
+    {
+      "name": "鸡: the slang gloss of the everyday line folds, the variant line comes before it",
+      "note": "CC-CEDICT 雞 鸡 [ji1] and 鷄 鸡 [ji1]: one sense per line; the marked gloss leaves its line as a unit of its own, last and folded. \"(slang)\" marks it sl, the explicit word \"prostitute\" vulg; the strongest wins.",
+      "senses": [
+        {"tags": [], "glosses": ["fowl", "chicken", "CL:隻|只[zhi1]", "(slang) prostitute"]},
+        {"tags": [], "glosses": ["variant of 雞|鸡[ji1]"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["fowl", "chicken", "CL:隻|只[zhi1]"]},
+        {"sense": 1, "class": "minor", "mark": null, "folded": false, "glosses": ["variant of 雞|鸡[ji1]"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["(slang) prostitute"]}
+      ],
+      "gloss": "fowl"
+    },
+    {
+      "name": "鸭子: (slang) male prostitute folds",
+      "senses": [
+        {"tags": [], "glosses": ["duck (CL:隻|只[zhi1])", "(slang) male prostitute"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["duck (CL:隻|只[zhi1])"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["(slang) male prostitute"]}
+      ],
+      "gloss": "duck (CL:隻|只[zhi1])"
+    },
+    {
+      "name": "黄色: an unmarked line with an explicit word folds as vulgar",
+      "note": "CC-CEDICT leaves \"vulgar; lewd; pornographic\" without a parenthesised marker: the explicit words catch it.",
+      "senses": [
+        {"tags": [], "glosses": ["yellow", "vulgar; lewd; pornographic"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["yellow"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["vulgar; lewd; pornographic"]}
+      ],
+      "gloss": "yellow"
+    },
+    {
+      "name": "草: the cào line points at a vulgar character and folds",
+      "note": "CC-CEDICT 艸 草 [cao3], 草 草 [cao3], 草 草 [cao4] in file order: the variant line is minor, the cào line sensitive.",
+      "senses": [
+        {"tags": [], "glosses": ["variant of 草[cao3]"]},
+        {"tags": [], "glosses": ["grass", "straw", "manuscript", "draft (of a document)", "careless", "rough", "CL:棵[ke1],撮[zuo3],株[zhu1],根[gen1]"]},
+        {"tags": [], "glosses": ["variant of 肏[cao4]"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["grass", "straw", "manuscript", "draft (of a document)", "careless", "rough", "CL:棵[ke1],撮[zuo3],株[zhu1],根[gen1]"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["variant of 草[cao3]"]},
+        {"sense": 2, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["variant of 肏[cao4]"]}
+      ],
+      "gloss": "grass"
+    },
+    {
+      "name": "干 gàn: the marked glosses leave together, the strongest mark wins, the unmarked rest keeps its order",
+      "senses": [
+        {"tags": [], "glosses": ["tree trunk", "main part of sth", "to manage", "to work", "to do", "capable", "cadre", "to kill (slang)", "to fuck (vulgar)", "(coll.) pissed off", "annoyed"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["tree trunk", "main part of sth", "to manage", "to work", "to do", "capable", "cadre", "(coll.) pissed off", "annoyed"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["to kill (slang)", "to fuck (vulgar)"]}
+      ],
+      "gloss": "tree trunk"
+    },
+    {
+      "name": "鸟: the diǎo line (variant of 屌, penis) folds after the bird line",
+      "senses": [
+        {"tags": [], "glosses": ["variant of 屌[diao3]", "penis"]},
+        {"tags": [], "glosses": ["bird", "CL:隻|只[zhi1],群[qun2]", "\"bird\" radical in Chinese characters (Kangxi radical 196)", "(dialect) to pay attention to", "(intensifier) damned", "goddamn"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["bird", "CL:隻|只[zhi1],群[qun2]", "\"bird\" radical in Chinese characters (Kangxi radical 196)", "(dialect) to pay attention to", "(intensifier) damned", "goddamn"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["variant of 屌[diao3]", "penis"]}
+      ],
+      "gloss": "bird"
+    },
+    {
+      "name": "沙发: Internet slang is slang",
+      "senses": [
+        {"tags": [], "glosses": ["(loanword) sofa (CL:條|条[tiao2],張|张[zhang1])", "(Internet slang) first reply to a forum post"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["(loanword) sofa (CL:條|条[tiao2],張|张[zhang1])"]},
+        {"sense": 0, "class": "sensitive", "mark": "sl", "folded": true, "glosses": ["(Internet slang) first reply to a forum post"]}
+      ],
+      "gloss": "(loanword) sofa (CL:條|条[tiao2],張|张[zhang1])"
+    },
+    {
+      "name": "前台: a derog. note inside a longer note counts",
+      "senses": [
+        {"tags": [], "glosses": ["stage", "proscenium", "foreground in politics etc (sometimes derog.)", "front desk", "reception desk", "(computing) front-end", "foreground"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["stage", "proscenium", "front desk", "reception desk", "(computing) front-end", "foreground"]},
+        {"sense": 0, "class": "sensitive", "mark": "derog", "folded": true, "glosses": ["foreground in politics etc (sometimes derog.)"]}
+      ],
+      "gloss": "stage"
+    },
+    {
+      "name": "鸡巴: every unit sensitive, nothing folds and the stored order stays",
+      "note": "A word whose only meaning is vulgar shows it, marked: the learner looked it up or chose it.",
+      "senses": [
+        {"tags": [], "glosses": ["dick", "penis (vulgar)"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": false, "glosses": ["dick", "penis (vulgar)"]}
+      ],
+      "gloss": "dick"
+    },
+    {
+      "name": "牛屄: (slang) (vulgar) is vulgar",
+      "senses": [
+        {"tags": [], "glosses": ["(slang) (vulgar) awesome; badass", "(slang) (vulgar) cocky; arrogant"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": false, "glosses": ["(slang) (vulgar) awesome; badass", "(slang) (vulgar) cocky; arrogant"]}
+      ],
+      "gloss": "(slang) (vulgar) awesome; badass"
+    },
+    {
+      "name": "狄更斯: an explicit word inside another word does not count",
+      "senses": [
+        {"tags": [], "glosses": ["Dickens (name)", "Charles Dickens (1812-1870), great English novelist"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["Dickens (name)", "Charles Dickens (1812-1870), great English novelist"]}
+      ],
+      "gloss": "Dickens (name)"
+    },
+    {
+      "name": "去世: euphemism and colloquial notes are not marks",
+      "senses": [
+        {"tags": [], "glosses": ["(euphemism) to pass away", "to die"]},
+        {"tags": ["col"], "glosses": ["(coll.) lacking in substance; shoddy"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["(euphemism) to pass away", "to die"]},
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["(coll.) lacking in substance; shoddy"]}
+      ],
+      "gloss": "(euphemism) to pass away"
+    },
+    {
+      "name": "犬: JMdict derog senses fold as whole senses, the n-pref sense moves up",
+      "note": "JMdict 1258330; the uk on the derog sense says nothing about the display order.",
+      "senses": [
+        {"tags": [], "glosses": ["dog (Canis (lupus) familiaris)", "canine"]},
+        {"tags": ["derog", "uk"], "glosses": ["squealer", "rat", "snitch", "informer", "informant", "spy"]},
+        {"tags": ["derog"], "glosses": ["loser", "asshole"]},
+        {"tags": [], "glosses": ["counterfeit", "inferior", "useless", "wasteful"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["dog (Canis (lupus) familiaris)", "canine"]},
+        {"sense": 3, "class": "everyday", "mark": null, "folded": false, "glosses": ["counterfeit", "inferior", "useless", "wasteful"]},
+        {"sense": 1, "class": "sensitive", "mark": "derog", "folded": true, "glosses": ["squealer", "rat", "snitch", "informer", "informant", "spy"]},
+        {"sense": 2, "class": "sensitive", "mark": "derog", "folded": true, "glosses": ["loser", "asshole"]}
+      ],
+      "gloss": "dog (Canis (lupus) familiaris)"
+    },
+    {
+      "name": "猫: a JMdict sl sense folds",
+      "senses": [
+        {"tags": [], "glosses": ["cat (esp. the domestic cat, Felis catus)", "feline"]},
+        {"tags": [], "glosses": ["shamisen"]},
+        {"tags": ["uk", "sl"], "glosses": ["bottom (submissive partner of a homosexual relationship)"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["cat (esp. the domestic cat, Felis catus)", "feline"]},
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["shamisen"]},
+        {"sense": 2, "class": "sensitive", "mark": "sl", "folded": true, "glosses": ["bottom (submissive partner of a homosexual relationship)"]}
+      ],
+      "gloss": "cat (esp. the domestic cat, Felis catus)"
+    },
+    {
+      "name": "JMdict vulg, net-sl and m-sl tags; vulg is stronger than sl",
+      "senses": [
+        {"tags": ["net-sl"], "glosses": ["lol"]},
+        {"tags": [], "glosses": ["laughter"]},
+        {"tags": ["m-sl", "vulg"], "glosses": ["crude joke"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["laughter"]},
+        {"sense": 0, "class": "sensitive", "mark": "sl", "folded": true, "glosses": ["lol"]},
+        {"sense": 2, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["crude joke"]}
+      ],
+      "gloss": "laughter"
+    },
+    {
+      "name": "外人: sens (a term some find impolite) is not a mark; the arch sense is minor",
+      "note": "JMdict 1203850: folding sens would hide the main meaning behind an archaic one.",
+      "senses": [
+        {"tags": ["sens"], "glosses": ["foreigner (esp. a Westerner)", "gaijin"]},
+        {"tags": ["arch"], "glosses": ["outsider"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["foreigner (esp. a Westerner)", "gaijin"]},
+        {"sense": 1, "class": "minor", "mark": null, "folded": false, "glosses": ["outsider"]}
+      ],
+      "gloss": "foreigner (esp. a Westerner)"
+    },
+    {
+      "name": "marks are found whatever the case",
+      "senses": [
+        {"tags": [], "glosses": ["Yellow", "PORNOGRAPHIC film", "(Slang) idiot"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["Yellow"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["PORNOGRAPHIC film", "(Slang) idiot"]}
+      ],
+      "gloss": "Yellow"
+    },
+    {
+      "name": "书: the abbr. line goes after the everyday line",
+      "note": "CC-CEDICT 書 书 [Shu1] then [shu1], each line tagged with its reading.",
+      "senses": [
+        {"tags": ["reading:Shū"], "glosses": ["abbr. for 書經|书经[Shu1 jing1]"]},
+        {"tags": ["reading:shū"], "glosses": ["book", "letter", "document", "CL:本[ben3],冊|册[ce4],部[bu4]", "to write"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["book", "letter", "document", "CL:本[ben3],冊|册[ce4],部[bu4]", "to write"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["abbr. for 書經|书经[Shu1 jing1]"]}
+      ],
+      "gloss": "book"
+    },
+    {
+      "name": "水: a surname line is minor as a whole, its later glosses too",
+      "senses": [
+        {"tags": ["reading:Shuǐ"], "glosses": ["surname Shui", "Shui ethnic group"]},
+        {"tags": ["reading:shuǐ"], "glosses": ["water", "(after a name) ... River", "(coll.) lacking in substance; shoddy"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["water", "(after a name) ... River", "(coll.) lacking in substance; shoddy"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["surname Shui", "Shui ethnic group"]}
+      ],
+      "gloss": "water"
+    },
+    {
+      "name": "三, 马: surname lines last",
+      "senses": [
+        {"tags": ["reading:Sān"], "glosses": ["surname San"]},
+        {"tags": ["reading:sān"], "glosses": ["three", "3"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["three", "3"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["surname San"]}
+      ],
+      "gloss": "three"
+    },
+    {
+      "name": "云: classical, surname and short-name lines after cloud",
+      "senses": [
+        {"tags": ["reading:yún"], "glosses": ["(classical) to say"]},
+        {"tags": ["reading:Yún"], "glosses": ["surname Yun", "short name for Yunnan 雲南|云南[Yun2 nan2]"]},
+        {"tags": ["reading:yún"], "glosses": ["cloud", "CL:朵[duo3]"]}
+      ],
+      "units": [
+        {"sense": 2, "class": "everyday", "mark": null, "folded": false, "glosses": ["cloud", "CL:朵[duo3]"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["(classical) to say"]},
+        {"sense": 1, "class": "minor", "mark": null, "folded": false, "glosses": ["surname Yun", "short name for Yunnan 雲南|云南[Yun2 nan2]"]}
+      ],
+      "gloss": "cloud"
+    },
+    {
+      "name": "a minor gloss after the first one leaves its line everyday",
+      "note": "喝 hē: \"variant of 嗬\" is the line's second gloss.",
+      "senses": [
+        {"tags": ["reading:hē"], "glosses": ["to drink", "variant of 嗬[he1]"]},
+        {"tags": ["reading:hè"], "glosses": ["to shout"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["to drink", "variant of 嗬[he1]"]},
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["to shout"]}
+      ],
+      "gloss": "to drink"
+    },
+    {
+      "name": "喝 pinned to hē: only its line",
+      "pinned": "hē",
+      "senses": [
+        {"tags": ["reading:hē"], "glosses": ["to drink", "variant of 嗬[he1]"]},
+        {"tags": ["reading:hè"], "glosses": ["to shout"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["to drink", "variant of 嗬[he1]"]}
+      ],
+      "gloss": "to drink"
+    },
+    {
+      "name": "猫 pinned to māo: the máo line is dropped",
+      "pinned": "māo",
+      "senses": [
+        {"tags": ["reading:māo"], "glosses": ["cat (CL:隻|只[zhi1])", "(dialect) to hide oneself", "(loanword) (coll.) modem"]},
+        {"tags": ["reading:máo"], "glosses": ["used in 貓腰|猫腰[mao2 yao1]"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["cat (CL:隻|只[zhi1])", "(dialect) to hide oneself", "(loanword) (coll.) modem"]}
+      ],
+      "gloss": "cat (CL:隻|只[zhi1])"
+    },
+    {
+      "name": "草 pinned to cǎo: the cào line is gone, not just folded",
+      "pinned": "cǎo",
+      "senses": [
+        {"tags": ["reading:cǎo"], "glosses": ["variant of 草[cao3]"]},
+        {"tags": ["reading:cǎo"], "glosses": ["grass", "straw"]},
+        {"tags": ["reading:cào"], "glosses": ["variant of 肏[cao4]"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["grass", "straw"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["variant of 草[cao3]"]}
+      ],
+      "gloss": "grass"
+    },
+    {
+      "name": "水 pinned to shuǐ: the pin ignores case, so the surname line stays, minor",
+      "pinned": "shuǐ",
+      "senses": [
+        {"tags": ["reading:Shuǐ"], "glosses": ["surname Shui", "Shui ethnic group"]},
+        {"tags": ["reading:shuǐ"], "glosses": ["water"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["water"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["surname Shui", "Shui ethnic group"]}
+      ],
+      "gloss": "water"
+    },
+    {
+      "name": "a pin ignores spaces and apostrophes",
+      "note": "CC-CEDICT spaces syllables (huáng sè); a list writes huángsè.",
+      "pinned": "huángsè",
+      "senses": [
+        {"tags": ["reading:huáng sè"], "glosses": ["yellow"]},
+        {"tags": ["reading:xī'ān"], "glosses": ["other"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["yellow"]}
+      ],
+      "gloss": "yellow"
+    },
+    {
+      "name": "a pin no sense has is ignored",
+      "pinned": "xíng",
+      "senses": [
+        {"tags": ["reading:hē"], "glosses": ["to drink"]},
+        {"tags": ["reading:hè"], "glosses": ["to shout"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["to drink"]},
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["to shout"]}
+      ],
+      "gloss": "to drink"
+    },
+    {
+      "name": "今日 pinned to きょう: a sense without reading tags applies to every reading; a JMdict stagr sense only to its own",
+      "note": "JMdict 1579110: the second sense has <stagr>こんにち</stagr>.",
+      "pinned": "きょう",
+      "senses": [
+        {"tags": [], "glosses": ["today", "this day"]},
+        {"tags": ["reading:こんにち"], "glosses": ["these days", "recently", "nowadays"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["today", "this day"]}
+      ],
+      "gloss": "today"
+    },
+    {
+      "name": "no pin: every sense, untagged senses too",
+      "senses": [
+        {"tags": [], "glosses": ["today", "this day"]},
+        {"tags": ["reading:こんにち"], "glosses": ["these days", "recently", "nowadays"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "everyday", "mark": null, "folded": false, "glosses": ["today", "this day"]},
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["these days", "recently", "nowadays"]}
+      ],
+      "gloss": "today"
+    },
+    {
+      "name": "JMdict arch, obs, rare, dated and surname senses are minor; abbr is not",
+      "note": "電話 1443840: sense 2 is abbr (telephone (device)) and stays where JMdict puts it.",
+      "senses": [
+        {"tags": ["arch"], "glosses": ["old sense"]},
+        {"tags": [], "glosses": ["telephone call", "phone call"]},
+        {"tags": ["abbr"], "glosses": ["telephone (device)", "phone"]},
+        {"tags": ["obs"], "glosses": ["obsolete sense"]},
+        {"tags": ["rare", "uk"], "glosses": ["rare sense"]},
+        {"tags": ["dated"], "glosses": ["dated sense"]},
+        {"tags": ["surname"], "glosses": ["Denwa"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["telephone call", "phone call"]},
+        {"sense": 2, "class": "everyday", "mark": null, "folded": false, "glosses": ["telephone (device)", "phone"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["old sense"]},
+        {"sense": 3, "class": "minor", "mark": null, "folded": false, "glosses": ["obsolete sense"]},
+        {"sense": 4, "class": "minor", "mark": null, "folded": false, "glosses": ["rare sense"]},
+        {"sense": 5, "class": "minor", "mark": null, "folded": false, "glosses": ["dated sense"]},
+        {"sense": 6, "class": "minor", "mark": null, "folded": false, "glosses": ["Denwa"]}
+      ],
+      "gloss": "telephone call"
+    },
+    {
+      "name": "minor prefixes ignore case and need the start of the gloss",
+      "note": "\"Surname\" as written in some lines; \"the surname of\" is a meaning.",
+      "senses": [
+        {"tags": [], "glosses": ["Surname Shi"]},
+        {"tags": [], "glosses": ["the surname of a family"]},
+        {"tags": [], "glosses": ["See also 丁丁"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["the surname of a family"]},
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["Surname Shi"]},
+        {"sense": 2, "class": "minor", "mark": null, "folded": false, "glosses": ["See also 丁丁"]}
+      ],
+      "gloss": "the surname of a family"
+    },
+    {
+      "name": "only minor and sensitive lines: the minor ones show, the sensitive ones fold",
+      "senses": [
+        {"tags": [], "glosses": ["variant of 屌[diao3]"]},
+        {"tags": [], "glosses": ["old variant of 鳥|鸟[niao3]"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "minor", "mark": null, "folded": false, "glosses": ["old variant of 鳥|鸟[niao3]"]},
+        {"sense": 0, "class": "sensitive", "mark": "vulg", "folded": true, "glosses": ["variant of 屌[diao3]"]}
+      ],
+      "gloss": "old variant of 鳥|鸟[niao3]"
+    },
+    {
+      "name": "only minor lines: the stored order",
+      "senses": [
+        {"tags": [], "glosses": ["erhua variant of 一點|一点[yi1 dian3]"]},
+        {"tags": [], "glosses": ["see 一点[yi1 dian3]"]}
+      ],
+      "units": [
+        {"sense": 0, "class": "minor", "mark": null, "folded": false, "glosses": ["erhua variant of 一點|一点[yi1 dian3]"]},
+        {"sense": 1, "class": "minor", "mark": null, "folded": false, "glosses": ["see 一点[yi1 dian3]"]}
+      ],
+      "gloss": "erhua variant of 一點|一点[yi1 dian3]"
+    },
+    {
+      "name": "a sense without glosses gives no unit; no senses give none",
+      "senses": [
+        {"tags": ["sl"], "glosses": []},
+        {"tags": [], "glosses": ["water"]}
+      ],
+      "units": [
+        {"sense": 1, "class": "everyday", "mark": null, "folded": false, "glosses": ["water"]}
+      ],
+      "gloss": "water"
+    },
+    {
+      "name": "no senses",
+      "senses": [
+      ],
+      "units": [
+      ],
+      "gloss": ""
+    }
+  ]
+}

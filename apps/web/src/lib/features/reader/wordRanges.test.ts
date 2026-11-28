@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SegmentMatch } from '$lib/api/types';
-import type { KnownIndex } from '$lib/study/known';
+import type { KnownIndex } from '$lib/studycore/known';
 import { isWordToken, wordRanges } from './wordRanges';
 
 const m = (start: number, end: number, surface: string, ...entries: number[]): SegmentMatch => ({

@@ -7,19 +7,32 @@
 	import { t } from '$lib/i18n';
 	import type { Entry } from '$lib/api/types';
 	import { useCardHints } from './cardHints.svelte';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	let { entry }: { entry: Pick<Entry, 'readings' | 'language'> & Partial<Pick<Entry, 'id'>> } = $props();
 	const hints = useCardHints();
+	// Hidden romanisation (#284): the reading hint is the readings the learner sees; the hidden ones are the
+	// romanisation hint, the last step, shown only when asked for.
+	const roman = useRomanisation();
+	const shown = $derived(roman.shown(entry.readings));
+	const hidden = $derived(roman.hidden(entry.readings));
 </script>
 
 {#each hints.visible as kind (kind)}
 	{#if kind === 'picture' && entry.id !== undefined}
 		<span data-hint="picture"><EntryPicture entryId={entry.id} size={7} /></span>
 	{/if}
-	{#if kind === 'reading' && entry.readings.length > 0}
+	{#if kind === 'reading' && shown.length > 0}
 		<ul class="hint-readings" data-hint="reading" aria-label={t('flashcards.card.readings')}>
-			{#each entry.readings as reading, i (`${reading.type}:${i}`)}
+			{#each shown as reading, i (`${reading.type}:${i}`)}
 				<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
+			{/each}
+		</ul>
+	{/if}
+	{#if kind === 'romanisation' && hidden.length > 0}
+		<ul class="hint-readings" data-hint="romanisation" aria-label={t('flashcards.card.romanisation')}>
+			{#each hidden as reading, i (`${reading.type}:${i}`)}
+				<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} reveal /></li>
 			{/each}
 		</ul>
 	{/if}

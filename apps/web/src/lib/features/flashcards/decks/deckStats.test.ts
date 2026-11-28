@@ -1,15 +1,15 @@
-import { UTC_CONTEXT } from '$lib/study/studyContext';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { UTC_CONTEXT } from '$lib/studycore/studyContext';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../../../docs/contracts/decks/deck-stats.json';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import { scheduleFor, type Schedule } from '$lib/study/scheduler';
-import type { Deck, OptInKind, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import { scheduleFor, type Schedule } from '$lib/studycore/scheduler';
+import type { Deck, OptInKind, ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
 import { wordStateCounts } from '$lib/stats/wordStates';
 import { addDays } from '$lib/time/studyDay';
-import { dueCounts } from '$lib/study/dueCounts';
+import { dueCounts } from '../session/dueCounts';
 import {
 	RETENTION_MIN_REVIEWS,
 	deckNumbers,

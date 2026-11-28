@@ -1,0 +1,2691 @@
+{
+	"version": 1,
+	"license": "CC-BY-4.0",
+	"attribution": "Look-alike character sets: the sets, the readings, meanings, example words and notes of their characters and the strokes the answer highlights, written for this project and reviewed by agents acting as teachers, not yet by a person (REVIEW.md). Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin).",
+	"humanReviewed": false,
+	"language": "ja",
+	"characters": {
+		"未": {
+			"readings": [
+				"ミ"
+			],
+			"meaning": "not yet",
+			"strokes": 5,
+			"example": {
+				"word": "未来",
+				"reading": "みらい",
+				"meaning": "future"
+			}
+		},
+		"末": {
+			"readings": [
+				"マツ",
+				"バツ",
+				"すえ"
+			],
+			"meaning": "end",
+			"strokes": 5,
+			"example": {
+				"word": "週末",
+				"reading": "しゅうまつ",
+				"meaning": "weekend"
+			}
+		},
+		"人": {
+			"readings": [
+				"ジン",
+				"ニン",
+				"ひと"
+			],
+			"meaning": "person",
+			"strokes": 2,
+			"example": {
+				"word": "日本人",
+				"reading": "にほんじん",
+				"meaning": "Japanese person"
+			}
+		},
+		"入": {
+			"readings": [
+				"ニュウ",
+				"い(る)",
+				"い(れる)",
+				"はい(る)"
+			],
+			"meaning": "to enter",
+			"strokes": 2,
+			"example": {
+				"word": "入学",
+				"reading": "にゅうがく",
+				"meaning": "entering school"
+			}
+		},
+		"八": {
+			"readings": [
+				"ハチ",
+				"や(っつ)"
+			],
+			"meaning": "eight",
+			"strokes": 2,
+			"example": {
+				"word": "八月",
+				"reading": "はちがつ",
+				"meaning": "August"
+			}
+		},
+		"土": {
+			"readings": [
+				"ド",
+				"ト",
+				"つち"
+			],
+			"meaning": "earth; soil",
+			"strokes": 3,
+			"example": {
+				"word": "土曜日",
+				"reading": "どようび",
+				"meaning": "Saturday"
+			}
+		},
+		"士": {
+			"readings": [
+				"シ"
+			],
+			"meaning": "samurai; professional (as in 弁護士)",
+			"strokes": 3,
+			"example": {
+				"word": "武士",
+				"reading": "ぶし",
+				"meaning": "samurai"
+			}
+		},
+		"天": {
+			"readings": [
+				"テン",
+				"あめ",
+				"あま"
+			],
+			"meaning": "sky; heaven",
+			"strokes": 4,
+			"example": {
+				"word": "天気",
+				"reading": "てんき",
+				"meaning": "weather"
+			}
+		},
+		"夫": {
+			"readings": [
+				"フ",
+				"フウ",
+				"おっと"
+			],
+			"meaning": "husband",
+			"strokes": 4,
+			"example": {
+				"word": "大丈夫",
+				"reading": "だいじょうぶ",
+				"meaning": "all right"
+			}
+		},
+		"大": {
+			"readings": [
+				"ダイ",
+				"タイ",
+				"おお(きい)"
+			],
+			"meaning": "big",
+			"strokes": 3,
+			"example": {
+				"word": "大学",
+				"reading": "だいがく",
+				"meaning": "university"
+			}
+		},
+		"太": {
+			"readings": [
+				"タイ",
+				"タ",
+				"ふと(い)"
+			],
+			"meaning": "fat; thick",
+			"strokes": 4,
+			"example": {
+				"word": "太陽",
+				"reading": "たいよう",
+				"meaning": "sun"
+			}
+		},
+		"犬": {
+			"readings": [
+				"ケン",
+				"いぬ"
+			],
+			"meaning": "dog",
+			"strokes": 4,
+			"example": {
+				"word": "子犬",
+				"reading": "こいぬ",
+				"meaning": "puppy"
+			}
+		},
+		"王": {
+			"readings": [
+				"オウ"
+			],
+			"meaning": "king",
+			"strokes": 4,
+			"example": {
+				"word": "王様",
+				"reading": "おうさま",
+				"meaning": "king"
+			}
+		},
+		"玉": {
+			"readings": [
+				"ギョク",
+				"たま"
+			],
+			"meaning": "ball; jewel",
+			"strokes": 5,
+			"example": {
+				"word": "十円玉",
+				"reading": "じゅうえんだま",
+				"meaning": "ten-yen coin"
+			}
+		},
+		"主": {
+			"readings": [
+				"シュ",
+				"ぬし",
+				"おも"
+			],
+			"meaning": "master; main",
+			"strokes": 5,
+			"example": {
+				"word": "主人",
+				"reading": "しゅじん",
+				"meaning": "husband; master"
+			}
+		},
+		"刀": {
+			"readings": [
+				"トウ",
+				"かたな"
+			],
+			"meaning": "sword",
+			"strokes": 2,
+			"example": {
+				"word": "日本刀",
+				"reading": "にほんとう",
+				"meaning": "Japanese sword"
+			}
+		},
+		"力": {
+			"readings": [
+				"リョク",
+				"リキ",
+				"ちから"
+			],
+			"meaning": "power",
+			"strokes": 2,
+			"example": {
+				"word": "協力",
+				"reading": "きょうりょく",
+				"meaning": "cooperation"
+			}
+		},
+		"刃": {
+			"readings": [
+				"ジン",
+				"は"
+			],
+			"meaning": "blade",
+			"strokes": 3,
+			"example": {
+				"word": "刃物",
+				"reading": "はもの",
+				"meaning": "knives; edged tools"
+			}
+		},
+		"午": {
+			"readings": [
+				"ゴ"
+			],
+			"meaning": "noon",
+			"strokes": 4,
+			"example": {
+				"word": "午後",
+				"reading": "ごご",
+				"meaning": "afternoon"
+			}
+		},
+		"牛": {
+			"readings": [
+				"ギュウ",
+				"うし"
+			],
+			"meaning": "cow",
+			"strokes": 4,
+			"example": {
+				"word": "牛乳",
+				"reading": "ぎゅうにゅう",
+				"meaning": "milk"
+			}
+		},
+		"千": {
+			"readings": [
+				"セン",
+				"ち"
+			],
+			"meaning": "thousand",
+			"strokes": 3,
+			"example": {
+				"word": "千円",
+				"reading": "せんえん",
+				"meaning": "1,000 yen"
+			}
+		},
+		"干": {
+			"readings": [
+				"カン",
+				"ほ(す)",
+				"ひ(る)"
+			],
+			"meaning": "to dry",
+			"strokes": 3,
+			"example": {
+				"word": "干物",
+				"reading": "ひもの",
+				"meaning": "dried fish"
+			}
+		},
+		"目": {
+			"readings": [
+				"モク",
+				"め"
+			],
+			"meaning": "eye",
+			"strokes": 5,
+			"example": {
+				"word": "目的",
+				"reading": "もくてき",
+				"meaning": "purpose"
+			}
+		},
+		"自": {
+			"readings": [
+				"ジ",
+				"シ",
+				"みずか(ら)"
+			],
+			"meaning": "self",
+			"strokes": 6,
+			"example": {
+				"word": "自分",
+				"reading": "じぶん",
+				"meaning": "oneself"
+			}
+		},
+		"白": {
+			"readings": [
+				"ハク",
+				"しろ"
+			],
+			"meaning": "white",
+			"strokes": 5,
+			"example": {
+				"word": "面白い",
+				"reading": "おもしろい",
+				"meaning": "interesting"
+			}
+		},
+		"百": {
+			"readings": [
+				"ヒャク"
+			],
+			"meaning": "hundred",
+			"strokes": 6,
+			"example": {
+				"word": "百円",
+				"reading": "ひゃくえん",
+				"meaning": "100 yen"
+			}
+		},
+		"貝": {
+			"readings": [
+				"かい"
+			],
+			"meaning": "shellfish",
+			"strokes": 7,
+			"example": {
+				"word": "貝殻",
+				"reading": "かいがら",
+				"meaning": "seashell"
+			}
+		},
+		"見": {
+			"readings": [
+				"ケン",
+				"み(る)"
+			],
+			"meaning": "to see",
+			"strokes": 7,
+			"example": {
+				"word": "意見",
+				"reading": "いけん",
+				"meaning": "opinion"
+			}
+		},
+		"問": {
+			"readings": [
+				"モン",
+				"と(う)"
+			],
+			"meaning": "to ask; question",
+			"strokes": 11,
+			"example": {
+				"word": "問題",
+				"reading": "もんだい",
+				"meaning": "problem; question"
+			}
+		},
+		"間": {
+			"readings": [
+				"カン",
+				"ケン",
+				"あいだ",
+				"ま"
+			],
+			"meaning": "interval; between",
+			"strokes": 12,
+			"example": {
+				"word": "時間",
+				"reading": "じかん",
+				"meaning": "time"
+			}
+		},
+		"休": {
+			"readings": [
+				"キュウ",
+				"やす(む)"
+			],
+			"meaning": "to rest",
+			"strokes": 6,
+			"example": {
+				"word": "休日",
+				"reading": "きゅうじつ",
+				"meaning": "holiday"
+			}
+		},
+		"体": {
+			"readings": [
+				"タイ",
+				"からだ"
+			],
+			"meaning": "body",
+			"strokes": 7,
+			"example": {
+				"word": "体育",
+				"reading": "たいいく",
+				"meaning": "physical education"
+			}
+		},
+		"今": {
+			"readings": [
+				"コン",
+				"いま"
+			],
+			"meaning": "now",
+			"strokes": 4,
+			"example": {
+				"word": "今度",
+				"reading": "こんど",
+				"meaning": "this time; next time"
+			}
+		},
+		"令": {
+			"readings": [
+				"レイ"
+			],
+			"meaning": "order; command",
+			"strokes": 5,
+			"example": {
+				"word": "命令",
+				"reading": "めいれい",
+				"meaning": "order"
+			}
+		},
+		"読": {
+			"readings": [
+				"ドク",
+				"よ(む)"
+			],
+			"meaning": "to read",
+			"strokes": 14,
+			"example": {
+				"word": "読書",
+				"reading": "どくしょ",
+				"meaning": "reading (books)"
+			}
+		},
+		"続": {
+			"readings": [
+				"ゾク",
+				"つづ(く)"
+			],
+			"meaning": "to continue",
+			"strokes": 13,
+			"example": {
+				"word": "連続",
+				"reading": "れんぞく",
+				"meaning": "in a row; series"
+			}
+		},
+		"待": {
+			"readings": [
+				"タイ",
+				"ま(つ)"
+			],
+			"meaning": "to wait",
+			"strokes": 9,
+			"example": {
+				"word": "招待",
+				"reading": "しょうたい",
+				"meaning": "invitation"
+			}
+		},
+		"持": {
+			"readings": [
+				"ジ",
+				"も(つ)"
+			],
+			"meaning": "to hold",
+			"strokes": 9,
+			"example": {
+				"word": "気持ち",
+				"reading": "きもち",
+				"meaning": "feeling"
+			}
+		},
+		"特": {
+			"readings": [
+				"トク"
+			],
+			"meaning": "special",
+			"strokes": 10,
+			"example": {
+				"word": "特別",
+				"reading": "とくべつ",
+				"meaning": "special"
+			}
+		},
+		"晴": {
+			"readings": [
+				"セイ",
+				"は(れる)"
+			],
+			"meaning": "to clear up (weather)",
+			"strokes": 12,
+			"example": {
+				"word": "晴天",
+				"reading": "せいてん",
+				"meaning": "fine weather"
+			}
+		},
+		"清": {
+			"readings": [
+				"セイ",
+				"きよ(い)"
+			],
+			"meaning": "pure; clean",
+			"strokes": 11,
+			"example": {
+				"word": "清潔",
+				"reading": "せいけつ",
+				"meaning": "clean; hygienic"
+			}
+		},
+		"情": {
+			"readings": [
+				"ジョウ",
+				"なさ(け)"
+			],
+			"meaning": "feeling",
+			"strokes": 11,
+			"example": {
+				"word": "情報",
+				"reading": "じょうほう",
+				"meaning": "information"
+			}
+		},
+		"精": {
+			"readings": [
+				"セイ"
+			],
+			"meaning": "spirit; refined",
+			"strokes": 14,
+			"example": {
+				"word": "精神",
+				"reading": "せいしん",
+				"meaning": "mind; spirit"
+			}
+		},
+		"住": {
+			"readings": [
+				"ジュウ",
+				"す(む)"
+			],
+			"meaning": "to live (somewhere)",
+			"strokes": 7,
+			"example": {
+				"word": "住所",
+				"reading": "じゅうしょ",
+				"meaning": "address"
+			}
+		},
+		"往": {
+			"readings": [
+				"オウ"
+			],
+			"meaning": "to go",
+			"strokes": 8,
+			"example": {
+				"word": "往復",
+				"reading": "おうふく",
+				"meaning": "round trip"
+			}
+		},
+		"注": {
+			"readings": [
+				"チュウ",
+				"そそ(ぐ)"
+			],
+			"meaning": "to pour; to note",
+			"strokes": 8,
+			"example": {
+				"word": "注意",
+				"reading": "ちゅうい",
+				"meaning": "caution"
+			}
+		},
+		"木": {
+			"readings": [
+				"モク",
+				"ボク",
+				"き"
+			],
+			"meaning": "tree; wood",
+			"strokes": 4,
+			"example": {
+				"word": "木曜日",
+				"reading": "もくようび",
+				"meaning": "Thursday"
+			}
+		},
+		"本": {
+			"readings": [
+				"ホン",
+				"もと"
+			],
+			"meaning": "book; origin",
+			"strokes": 5,
+			"example": {
+				"word": "日本",
+				"reading": "にほん",
+				"meaning": "Japan"
+			}
+		},
+		"第": {
+			"readings": [
+				"ダイ"
+			],
+			"meaning": "ordinal prefix (first, second …)",
+			"strokes": 11,
+			"example": {
+				"word": "第一",
+				"reading": "だいいち",
+				"meaning": "first"
+			}
+		},
+		"弟": {
+			"readings": [
+				"テイ",
+				"ダイ",
+				"おとうと"
+			],
+			"meaning": "younger brother",
+			"strokes": 7,
+			"example": {
+				"word": "兄弟",
+				"reading": "きょうだい",
+				"meaning": "siblings"
+			}
+		},
+		"象": {
+			"readings": [
+				"ショウ",
+				"ゾウ"
+			],
+			"meaning": "elephant; phenomenon",
+			"strokes": 12,
+			"example": {
+				"word": "印象",
+				"reading": "いんしょう",
+				"meaning": "impression"
+			}
+		},
+		"像": {
+			"readings": [
+				"ゾウ"
+			],
+			"meaning": "statue; image",
+			"strokes": 14,
+			"example": {
+				"word": "想像",
+				"reading": "そうぞう",
+				"meaning": "imagination"
+			}
+		},
+		"小": {
+			"readings": [
+				"ショウ",
+				"ちい(さい)",
+				"こ"
+			],
+			"meaning": "small",
+			"strokes": 3,
+			"example": {
+				"word": "小学校",
+				"reading": "しょうがっこう",
+				"meaning": "elementary school"
+			}
+		},
+		"少": {
+			"readings": [
+				"ショウ",
+				"すく(ない)",
+				"すこ(し)"
+			],
+			"meaning": "few; a little",
+			"strokes": 4,
+			"example": {
+				"word": "少年",
+				"reading": "しょうねん",
+				"meaning": "boy"
+			}
+		},
+		"考": {
+			"readings": [
+				"コウ",
+				"かんが(える)"
+			],
+			"meaning": "to think",
+			"strokes": 6,
+			"example": {
+				"word": "参考",
+				"reading": "さんこう",
+				"meaning": "reference"
+			}
+		},
+		"老": {
+			"readings": [
+				"ロウ",
+				"お(いる)"
+			],
+			"meaning": "old",
+			"strokes": 6,
+			"example": {
+				"word": "老人",
+				"reading": "ろうじん",
+				"meaning": "old person"
+			}
+		},
+		"田": {
+			"readings": [
+				"デン",
+				"た"
+			],
+			"meaning": "rice field",
+			"strokes": 5,
+			"example": {
+				"word": "田んぼ",
+				"reading": "たんぼ",
+				"meaning": "rice paddy"
+			}
+		},
+		"由": {
+			"readings": [
+				"ユ",
+				"ユウ",
+				"よし"
+			],
+			"meaning": "reason; from",
+			"strokes": 5,
+			"example": {
+				"word": "自由",
+				"reading": "じゆう",
+				"meaning": "freedom"
+			}
+		},
+		"甲": {
+			"readings": [
+				"コウ",
+				"カン"
+			],
+			"meaning": "shell; the first",
+			"strokes": 5,
+			"example": {
+				"word": "甲羅",
+				"reading": "こうら",
+				"meaning": "shell (of a turtle)"
+			}
+		},
+		"申": {
+			"readings": [
+				"シン",
+				"もう(す)"
+			],
+			"meaning": "to say (humble)",
+			"strokes": 5,
+			"example": {
+				"word": "申請",
+				"reading": "しんせい",
+				"meaning": "application"
+			}
+		},
+		"失": {
+			"readings": [
+				"シツ",
+				"うしな(う)"
+			],
+			"meaning": "to lose",
+			"strokes": 5,
+			"example": {
+				"word": "失敗",
+				"reading": "しっぱい",
+				"meaning": "failure"
+			}
+		},
+		"矢": {
+			"readings": [
+				"シ",
+				"や"
+			],
+			"meaning": "arrow",
+			"strokes": 5,
+			"example": {
+				"word": "矢印",
+				"reading": "やじるし",
+				"meaning": "arrow (sign)"
+			}
+		},
+		"鳥": {
+			"readings": [
+				"チョウ",
+				"とり"
+			],
+			"meaning": "bird",
+			"strokes": 11,
+			"example": {
+				"word": "焼き鳥",
+				"reading": "やきとり",
+				"meaning": "yakitori (grilled chicken)"
+			}
+		},
+		"島": {
+			"readings": [
+				"トウ",
+				"しま"
+			],
+			"meaning": "island",
+			"strokes": 10,
+			"example": {
+				"word": "半島",
+				"reading": "はんとう",
+				"meaning": "peninsula"
+			}
+		},
+		"険": {
+			"readings": [
+				"ケン",
+				"けわ(しい)"
+			],
+			"meaning": "steep; dangerous",
+			"strokes": 11,
+			"example": {
+				"word": "危険",
+				"reading": "きけん",
+				"meaning": "danger"
+			}
+		},
+		"検": {
+			"readings": [
+				"ケン"
+			],
+			"meaning": "to examine",
+			"strokes": 12,
+			"example": {
+				"word": "検査",
+				"reading": "けんさ",
+				"meaning": "inspection"
+			}
+		},
+		"験": {
+			"readings": [
+				"ケン"
+			],
+			"meaning": "to test",
+			"strokes": 18,
+			"example": {
+				"word": "試験",
+				"reading": "しけん",
+				"meaning": "exam"
+			}
+		},
+		"責": {
+			"readings": [
+				"セキ",
+				"せ(める)"
+			],
+			"meaning": "to blame; duty",
+			"strokes": 11,
+			"example": {
+				"word": "責任",
+				"reading": "せきにん",
+				"meaning": "responsibility"
+			}
+		},
+		"積": {
+			"readings": [
+				"セキ",
+				"つ(む)"
+			],
+			"meaning": "to pile up",
+			"strokes": 16,
+			"example": {
+				"word": "面積",
+				"reading": "めんせき",
+				"meaning": "area"
+			}
+		},
+		"績": {
+			"readings": [
+				"セキ"
+			],
+			"meaning": "achievement",
+			"strokes": 17,
+			"example": {
+				"word": "成績",
+				"reading": "せいせき",
+				"meaning": "grades; results"
+			}
+		},
+		"輸": {
+			"readings": [
+				"ユ"
+			],
+			"meaning": "to transport",
+			"strokes": 16,
+			"example": {
+				"word": "輸入",
+				"reading": "ゆにゅう",
+				"meaning": "import"
+			}
+		},
+		"輪": {
+			"readings": [
+				"リン",
+				"わ"
+			],
+			"meaning": "ring; wheel",
+			"strokes": 15,
+			"example": {
+				"word": "指輪",
+				"reading": "ゆびわ",
+				"meaning": "ring (jewellery)"
+			}
+		},
+		"緑": {
+			"readings": [
+				"リョク",
+				"みどり"
+			],
+			"meaning": "green",
+			"strokes": 14,
+			"example": {
+				"word": "緑茶",
+				"reading": "りょくちゃ",
+				"meaning": "green tea"
+			}
+		},
+		"縁": {
+			"readings": [
+				"エン",
+				"ふち"
+			],
+			"meaning": "edge; bond",
+			"strokes": 15,
+			"example": {
+				"word": "縁側",
+				"reading": "えんがわ",
+				"meaning": "veranda"
+			}
+		},
+		"復": {
+			"readings": [
+				"フク"
+			],
+			"meaning": "to return; again",
+			"strokes": 12,
+			"example": {
+				"word": "復習",
+				"reading": "ふくしゅう",
+				"meaning": "review"
+			}
+		},
+		"複": {
+			"readings": [
+				"フク"
+			],
+			"meaning": "double; multiple",
+			"strokes": 14,
+			"example": {
+				"word": "複数",
+				"reading": "ふくすう",
+				"meaning": "plural; several"
+			}
+		},
+		"組": {
+			"readings": [
+				"ソ",
+				"く(む)"
+			],
+			"meaning": "to put together; group",
+			"strokes": 11,
+			"example": {
+				"word": "番組",
+				"reading": "ばんぐみ",
+				"meaning": "TV programme"
+			}
+		},
+		"祖": {
+			"readings": [
+				"ソ"
+			],
+			"meaning": "ancestor",
+			"strokes": 9,
+			"example": {
+				"word": "祖母",
+				"reading": "そぼ",
+				"meaning": "grandmother"
+			}
+		},
+		"粗": {
+			"readings": [
+				"ソ",
+				"あら(い)"
+			],
+			"meaning": "coarse",
+			"strokes": 11,
+			"example": {
+				"word": "粗大ごみ",
+				"reading": "そだいごみ",
+				"meaning": "bulky rubbish"
+			}
+		},
+		"析": {
+			"readings": [
+				"セキ"
+			],
+			"meaning": "to analyse",
+			"strokes": 8,
+			"example": {
+				"word": "分析",
+				"reading": "ぶんせき",
+				"meaning": "analysis"
+			}
+		},
+		"折": {
+			"readings": [
+				"セツ",
+				"お(る)"
+			],
+			"meaning": "to fold; to break",
+			"strokes": 7,
+			"example": {
+				"word": "骨折",
+				"reading": "こっせつ",
+				"meaning": "bone fracture"
+			}
+		},
+		"手": {
+			"readings": [
+				"シュ",
+				"て"
+			],
+			"meaning": "hand",
+			"strokes": 4,
+			"example": {
+				"word": "手紙",
+				"reading": "てがみ",
+				"meaning": "letter"
+			}
+		},
+		"毛": {
+			"readings": [
+				"モウ",
+				"け"
+			],
+			"meaning": "hair; fur",
+			"strokes": 4,
+			"example": {
+				"word": "毛布",
+				"reading": "もうふ",
+				"meaning": "blanket"
+			}
+		},
+		"才": {
+			"readings": [
+				"サイ"
+			],
+			"meaning": "talent; years of age",
+			"strokes": 3,
+			"example": {
+				"word": "天才",
+				"reading": "てんさい",
+				"meaning": "genius"
+			}
+		},
+		"聞": {
+			"readings": [
+				"ブン",
+				"モン",
+				"き(く)"
+			],
+			"meaning": "to hear; to listen",
+			"strokes": 14,
+			"example": {
+				"word": "新聞",
+				"reading": "しんぶん",
+				"meaning": "newspaper"
+			}
+		},
+		"時": {
+			"readings": [
+				"ジ",
+				"とき"
+			],
+			"meaning": "time",
+			"strokes": 10,
+			"example": {
+				"word": "時間",
+				"reading": "じかん",
+				"meaning": "time"
+			}
+		},
+		"東": {
+			"readings": [
+				"トウ",
+				"ひがし"
+			],
+			"meaning": "east",
+			"strokes": 8,
+			"example": {
+				"word": "東京",
+				"reading": "とうきょう",
+				"meaning": "Tokyo"
+			}
+		},
+		"束": {
+			"readings": [
+				"ソク",
+				"たば"
+			],
+			"meaning": "bundle",
+			"strokes": 7,
+			"example": {
+				"word": "約束",
+				"reading": "やくそく",
+				"meaning": "promise"
+			}
+		},
+		"族": {
+			"readings": [
+				"ゾク"
+			],
+			"meaning": "family; tribe",
+			"strokes": 11,
+			"example": {
+				"word": "家族",
+				"reading": "かぞく",
+				"meaning": "family"
+			}
+		},
+		"旅": {
+			"readings": [
+				"リョ",
+				"たび"
+			],
+			"meaning": "journey",
+			"strokes": 10,
+			"example": {
+				"word": "旅行",
+				"reading": "りょこう",
+				"meaning": "travel"
+			}
+		},
+		"新": {
+			"readings": [
+				"シン",
+				"あたら(しい)"
+			],
+			"meaning": "new",
+			"strokes": 13,
+			"example": {
+				"word": "新年",
+				"reading": "しんねん",
+				"meaning": "New Year"
+			}
+		},
+		"親": {
+			"readings": [
+				"シン",
+				"おや"
+			],
+			"meaning": "parent",
+			"strokes": 16,
+			"example": {
+				"word": "両親",
+				"reading": "りょうしん",
+				"meaning": "parents"
+			}
+		},
+		"シ": {
+			"script": "katakana",
+			"romaji": "shi",
+			"pair": "し",
+			"example": {
+				"word": "タクシー",
+				"romaji": "takushī",
+				"meaning": "taxi"
+			}
+		},
+		"ツ": {
+			"script": "katakana",
+			"romaji": "tsu",
+			"pair": "つ",
+			"example": {
+				"word": "スーツ",
+				"romaji": "sūtsu",
+				"meaning": "suit"
+			}
+		},
+		"ソ": {
+			"script": "katakana",
+			"romaji": "so",
+			"pair": "そ",
+			"example": {
+				"word": "ソファー",
+				"romaji": "sofā",
+				"meaning": "sofa"
+			}
+		},
+		"ン": {
+			"script": "katakana",
+			"romaji": "n",
+			"pair": "ん",
+			"example": {
+				"word": "パン",
+				"romaji": "pan",
+				"meaning": "bread"
+			}
+		},
+		"ク": {
+			"script": "katakana",
+			"romaji": "ku",
+			"pair": "く",
+			"example": {
+				"word": "クラス",
+				"romaji": "kurasu",
+				"meaning": "class"
+			}
+		},
+		"ケ": {
+			"script": "katakana",
+			"romaji": "ke",
+			"pair": "け",
+			"example": {
+				"word": "ケーキ",
+				"romaji": "kēki",
+				"meaning": "cake"
+			}
+		},
+		"タ": {
+			"script": "katakana",
+			"romaji": "ta",
+			"pair": "た",
+			"example": {
+				"word": "タオル",
+				"romaji": "taoru",
+				"meaning": "towel"
+			}
+		},
+		"ワ": {
+			"script": "katakana",
+			"romaji": "wa",
+			"pair": "わ",
+			"example": {
+				"word": "ワイン",
+				"romaji": "wain",
+				"meaning": "wine"
+			}
+		},
+		"ウ": {
+			"script": "katakana",
+			"romaji": "u",
+			"pair": "う",
+			"example": {
+				"word": "ウイスキー",
+				"romaji": "uisukī",
+				"meaning": "whisky"
+			}
+		},
+		"フ": {
+			"script": "katakana",
+			"romaji": "fu",
+			"pair": "ふ",
+			"example": {
+				"word": "フランス",
+				"romaji": "Furansu",
+				"meaning": "France"
+			}
+		},
+		"コ": {
+			"script": "katakana",
+			"romaji": "ko",
+			"pair": "こ",
+			"example": {
+				"word": "コーヒー",
+				"romaji": "kōhī",
+				"meaning": "coffee"
+			}
+		},
+		"ユ": {
+			"script": "katakana",
+			"romaji": "yu",
+			"pair": "ゆ",
+			"example": {
+				"word": "ユーロ",
+				"romaji": "yūro",
+				"meaning": "euro"
+			}
+		},
+		"チ": {
+			"script": "katakana",
+			"romaji": "chi",
+			"pair": "ち",
+			"example": {
+				"word": "チーズ",
+				"romaji": "chīzu",
+				"meaning": "cheese"
+			}
+		},
+		"テ": {
+			"script": "katakana",
+			"romaji": "te",
+			"pair": "て",
+			"example": {
+				"word": "テレビ",
+				"romaji": "terebi",
+				"meaning": "television"
+			}
+		},
+		"ナ": {
+			"script": "katakana",
+			"romaji": "na",
+			"pair": "な",
+			"example": {
+				"word": "ナイフ",
+				"romaji": "naifu",
+				"meaning": "knife"
+			}
+		},
+		"メ": {
+			"script": "katakana",
+			"romaji": "me",
+			"pair": "め",
+			"example": {
+				"word": "メール",
+				"romaji": "mēru",
+				"meaning": "email"
+			}
+		},
+		"ア": {
+			"script": "katakana",
+			"romaji": "a",
+			"pair": "あ",
+			"example": {
+				"word": "アメリカ",
+				"romaji": "Amerika",
+				"meaning": "America"
+			}
+		},
+		"マ": {
+			"script": "katakana",
+			"romaji": "ma",
+			"pair": "ま",
+			"example": {
+				"word": "マスク",
+				"romaji": "masuku",
+				"meaning": "mask"
+			}
+		},
+		"ヌ": {
+			"script": "katakana",
+			"romaji": "nu",
+			"pair": "ぬ",
+			"example": {
+				"word": "カヌー",
+				"romaji": "kanū",
+				"meaning": "canoe"
+			}
+		},
+		"ス": {
+			"script": "katakana",
+			"romaji": "su",
+			"pair": "す",
+			"example": {
+				"word": "スープ",
+				"romaji": "sūpu",
+				"meaning": "soup"
+			}
+		},
+		"ル": {
+			"script": "katakana",
+			"romaji": "ru",
+			"pair": "る",
+			"example": {
+				"word": "ホテル",
+				"romaji": "hoteru",
+				"meaning": "hotel"
+			}
+		},
+		"レ": {
+			"script": "katakana",
+			"romaji": "re",
+			"pair": "れ",
+			"example": {
+				"word": "レモン",
+				"romaji": "remon",
+				"meaning": "lemon"
+			}
+		},
+		"オ": {
+			"script": "katakana",
+			"romaji": "o",
+			"pair": "お",
+			"example": {
+				"word": "オレンジ",
+				"romaji": "orenji",
+				"meaning": "orange"
+			}
+		},
+		"ぬ": {
+			"script": "hiragana",
+			"romaji": "nu",
+			"pair": "ヌ",
+			"example": {
+				"word": "いぬ",
+				"romaji": "inu",
+				"meaning": "dog"
+			}
+		},
+		"め": {
+			"script": "hiragana",
+			"romaji": "me",
+			"pair": "メ",
+			"example": {
+				"word": "あめ",
+				"romaji": "ame",
+				"meaning": "rain"
+			}
+		},
+		"ね": {
+			"script": "hiragana",
+			"romaji": "ne",
+			"pair": "ネ",
+			"example": {
+				"word": "ねこ",
+				"romaji": "neko",
+				"meaning": "cat"
+			}
+		},
+		"れ": {
+			"script": "hiragana",
+			"romaji": "re",
+			"pair": "レ",
+			"example": {
+				"word": "これ",
+				"romaji": "kore",
+				"meaning": "this"
+			}
+		},
+		"わ": {
+			"script": "hiragana",
+			"romaji": "wa",
+			"pair": "ワ",
+			"example": {
+				"word": "わたし",
+				"romaji": "watashi",
+				"meaning": "I"
+			}
+		},
+		"は": {
+			"script": "hiragana",
+			"romaji": "ha",
+			"pair": "ハ",
+			"example": {
+				"word": "はやい",
+				"romaji": "hayai",
+				"meaning": "fast; early"
+			}
+		},
+		"ほ": {
+			"script": "hiragana",
+			"romaji": "ho",
+			"pair": "ホ",
+			"example": {
+				"word": "ほそい",
+				"romaji": "hosoi",
+				"meaning": "thin"
+			}
+		},
+		"ま": {
+			"script": "hiragana",
+			"romaji": "ma",
+			"pair": "マ",
+			"example": {
+				"word": "まくら",
+				"romaji": "makura",
+				"meaning": "pillow"
+			}
+		},
+		"る": {
+			"script": "hiragana",
+			"romaji": "ru",
+			"pair": "ル",
+			"example": {
+				"word": "よる",
+				"romaji": "yoru",
+				"meaning": "night"
+			}
+		},
+		"ろ": {
+			"script": "hiragana",
+			"romaji": "ro",
+			"pair": "ロ",
+			"example": {
+				"word": "ろく",
+				"romaji": "roku",
+				"meaning": "six"
+			}
+		},
+		"さ": {
+			"script": "hiragana",
+			"romaji": "sa",
+			"pair": "サ",
+			"example": {
+				"word": "さかな",
+				"romaji": "sakana",
+				"meaning": "fish"
+			}
+		},
+		"ち": {
+			"script": "hiragana",
+			"romaji": "chi",
+			"pair": "チ",
+			"example": {
+				"word": "ちず",
+				"romaji": "chizu",
+				"meaning": "map"
+			}
+		},
+		"き": {
+			"script": "hiragana",
+			"romaji": "ki",
+			"pair": "キ",
+			"example": {
+				"word": "きもの",
+				"romaji": "kimono",
+				"meaning": "kimono"
+			}
+		},
+		"い": {
+			"script": "hiragana",
+			"romaji": "i",
+			"pair": "イ",
+			"example": {
+				"word": "いえ",
+				"romaji": "ie",
+				"meaning": "house"
+			}
+		},
+		"り": {
+			"script": "hiragana",
+			"romaji": "ri",
+			"pair": "リ",
+			"example": {
+				"word": "りんご",
+				"romaji": "ringo",
+				"meaning": "apple"
+			}
+		},
+		"あ": {
+			"script": "hiragana",
+			"romaji": "a",
+			"pair": "ア",
+			"example": {
+				"word": "あさ",
+				"romaji": "asa",
+				"meaning": "morning"
+			}
+		},
+		"お": {
+			"script": "hiragana",
+			"romaji": "o",
+			"pair": "オ",
+			"example": {
+				"word": "おちゃ",
+				"romaji": "ocha",
+				"meaning": "tea"
+			}
+		}
+	},
+	"sets": [
+		{
+			"members": [
+				"シ",
+				"ツ",
+				"ソ",
+				"ン"
+			],
+			"notes": {
+				"シ": "Two dots stacked on the left; the long stroke rises from the bottom left.",
+				"ツ": "Two dots side by side on top; the long stroke falls from the top right.",
+				"ソ": "One dot on top; the long stroke falls from the top right.",
+				"ン": "One dot on the left; the long stroke rises from the bottom left."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ク",
+				"ケ",
+				"タ"
+			],
+			"notes": {
+				"ク": "Two strokes; nothing inside.",
+				"ケ": "The second stroke is a straight horizontal; the third falls from its middle.",
+				"タ": "Like ク with a short stroke inside."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ワ",
+				"ウ",
+				"フ"
+			],
+			"notes": {
+				"ワ": "A short vertical on the left; nothing on top.",
+				"ウ": "A short stroke on top.",
+				"フ": "One stroke only: no vertical on the left."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"コ",
+				"ユ"
+			],
+			"notes": {
+				"コ": "Top and bottom lines the same length, joined on the right.",
+				"ユ": "Short top line; the long bottom line sticks out past the vertical."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"チ",
+				"テ"
+			],
+			"notes": {
+				"チ": "Starts with a short slanting stroke; the long stroke crosses the horizontal and curves left.",
+				"テ": "Two horizontals; the last stroke falls from the lower one."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ナ",
+				"メ"
+			],
+			"notes": {
+				"ナ": "A horizontal crossed by a falling stroke.",
+				"メ": "Two slanting strokes cross; no horizontal."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ア",
+				"マ"
+			],
+			"notes": {
+				"ア": "The second stroke falls from inside the fold to the lower left.",
+				"マ": "The second stroke is a short stroke to the lower right."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ヌ",
+				"ス"
+			],
+			"notes": {
+				"ヌ": "The short stroke crosses the fold.",
+				"ス": "The short stroke touches the long sweep and points down to the right; it does not cross it."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ル",
+				"レ"
+			],
+			"notes": {
+				"ル": "Two strokes.",
+				"レ": "One stroke."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ぬ",
+				"め"
+			],
+			"notes": {
+				"ぬ": "Ends in a small loop.",
+				"め": "No loop: the end swings open."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"ね",
+				"れ",
+				"わ"
+			],
+			"notes": {
+				"ね": "Ends in a small loop.",
+				"れ": "Ends in a stroke out to the right.",
+				"わ": "Ends in a curve back to the left."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"は",
+				"ほ",
+				"ま"
+			],
+			"notes": {
+				"は": "One horizontal, crossed.",
+				"ほ": "A flat horizontal on top that the vertical does not cross.",
+				"ま": "Two horizontals and no stroke on the left."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"る",
+				"ろ"
+			],
+			"notes": {
+				"る": "Ends in a small loop.",
+				"ろ": "Open at the end: no loop."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"さ",
+				"ち"
+			],
+			"notes": {
+				"さ": "The bottom curve opens to the right.",
+				"ち": "The bottom curve opens to the left."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"き",
+				"さ"
+			],
+			"notes": {
+				"き": "Two horizontals.",
+				"さ": "One horizontal."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"い",
+				"り"
+			],
+			"notes": {
+				"い": "The left stroke is the longer one.",
+				"り": "The right stroke is the longer one and sweeps down."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"あ",
+				"お"
+			],
+			"notes": {
+				"あ": "No dot; a separate round stroke crosses the vertical.",
+				"お": "The vertical itself loops; a dot at the top right."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"オ",
+				"才"
+			],
+			"notes": {
+				"オ": "Katakana: the third stroke starts at the crossing and falls left.",
+				"才": "Kanji: the third stroke starts right of the vertical and cuts through it."
+			},
+			"marks": {
+				"才": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"チ",
+				"千"
+			],
+			"notes": {
+				"チ": "Katakana: the last stroke curves to the left.",
+				"千": "Kanji: the vertical is straight."
+			},
+			"marks": {
+				"千": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"未",
+				"末"
+			],
+			"notes": {
+				"未": "The upper horizontal is the shorter one.",
+				"末": "The upper horizontal is the longer one."
+			},
+			"marks": {
+				"未": [
+					0,
+					1
+				],
+				"末": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"人",
+				"入",
+				"八"
+			],
+			"notes": {
+				"人": "The left stroke is the long one; the right stroke leans on it.",
+				"入": "The right stroke is the long one and starts at the top; the left stroke leans on it.",
+				"八": "The two strokes do not touch."
+			},
+			"marks": {
+				"人": [
+					0
+				],
+				"入": [
+					1
+				],
+				"八": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"土",
+				"士"
+			],
+			"notes": {
+				"土": "The lower horizontal is the longer one.",
+				"士": "The upper horizontal is the longer one."
+			},
+			"marks": {
+				"土": [
+					0,
+					2
+				],
+				"士": [
+					0,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"天",
+				"夫",
+				"失",
+				"矢"
+			],
+			"notes": {
+				"天": "No top-left stroke; the long left-falling stroke starts under the top line.",
+				"夫": "No top-left stroke; the long left-falling stroke pokes above the top line.",
+				"失": "A short top-left stroke; the long left-falling stroke pokes above.",
+				"矢": "A short top-left stroke; the long left-falling stroke starts under the top."
+			},
+			"marks": {
+				"天": [
+					2
+				],
+				"夫": [
+					2
+				],
+				"失": [
+					0,
+					3
+				],
+				"矢": [
+					0,
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"大",
+				"太",
+				"犬"
+			],
+			"notes": {
+				"大": "No dot.",
+				"太": "A dot between the legs.",
+				"犬": "A dot at the top right."
+			},
+			"marks": {
+				"大": [],
+				"太": [
+					3
+				],
+				"犬": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"王",
+				"玉",
+				"主"
+			],
+			"notes": {
+				"王": "No dot.",
+				"玉": "A dot at the lower right.",
+				"主": "A dot on top."
+			},
+			"marks": {
+				"王": [],
+				"玉": [
+					4
+				],
+				"主": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"刀",
+				"力",
+				"刃"
+			],
+			"notes": {
+				"刀": "The left-falling stroke stays under the top.",
+				"力": "The left-falling stroke pokes out above the top.",
+				"刃": "A dot on the blade."
+			},
+			"marks": {
+				"刀": [
+					1
+				],
+				"力": [
+					1
+				],
+				"刃": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"午",
+				"牛"
+			],
+			"notes": {
+				"午": "The vertical stops at the upper horizontal.",
+				"牛": "The vertical pokes out above the top."
+			},
+			"marks": {
+				"午": [
+					3
+				],
+				"牛": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"千",
+				"干"
+			],
+			"notes": {
+				"千": "Starts with a left-falling stroke.",
+				"干": "Starts with a flat horizontal."
+			},
+			"marks": {
+				"千": [
+					0
+				],
+				"干": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"目",
+				"自"
+			],
+			"notes": {
+				"目": "Nothing on top.",
+				"自": "A short left-falling stroke on top."
+			},
+			"marks": {
+				"目": [],
+				"自": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"白",
+				"百"
+			],
+			"notes": {
+				"白": "Nothing above the short left-falling stroke.",
+				"百": "A horizontal on top of 白."
+			},
+			"marks": {
+				"白": [],
+				"百": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"貝",
+				"見"
+			],
+			"notes": {
+				"貝": "Ends in a short dot.",
+				"見": "Ends in a long stroke that bends right and hooks up."
+			},
+			"marks": {
+				"貝": [
+					6
+				],
+				"見": [
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"問",
+				"間",
+				"聞"
+			],
+			"notes": {
+				"問": "A mouth (口) in the gate: you ask with your mouth.",
+				"間": "The sun (日) in the gate.",
+				"聞": "An ear (耳) in the gate: you hear with your ears."
+			},
+			"marks": {
+				"問": [
+					8,
+					9,
+					10
+				],
+				"間": [
+					8,
+					9,
+					10,
+					11
+				],
+				"聞": [
+					8,
+					9,
+					10,
+					11,
+					12,
+					13
+				]
+			}
+		},
+		{
+			"members": [
+				"休",
+				"体"
+			],
+			"notes": {
+				"休": "No horizontal at the bottom (木): a person resting by a tree.",
+				"体": "A short horizontal near the bottom (本)."
+			},
+			"marks": {
+				"休": [],
+				"体": [
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"今",
+				"令"
+			],
+			"notes": {
+				"今": "Nothing under the fold.",
+				"令": "Ends in a fold and a short stroke under it (like マ)."
+			},
+			"marks": {
+				"今": [],
+				"令": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"読",
+				"続"
+			],
+			"notes": {
+				"読": "Speech (言): reading.",
+				"続": "Thread (糸): a thread goes on."
+			},
+			"marks": {
+				"読": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"続": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"待",
+				"持",
+				"特",
+				"時"
+			],
+			"notes": {
+				"待": "Step (彳): waiting for someone to come.",
+				"持": "Hand (扌): holding.",
+				"特": "Cow (牜).",
+				"時": "Sun (日): time."
+			},
+			"marks": {
+				"待": [
+					0,
+					1,
+					2
+				],
+				"持": [
+					0,
+					1,
+					2
+				],
+				"特": [
+					0,
+					1,
+					2,
+					3
+				],
+				"時": [
+					0,
+					1,
+					2,
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"晴",
+				"清",
+				"情",
+				"精"
+			],
+			"notes": {
+				"晴": "Sun (日): the weather.",
+				"清": "Water (氵): clear water.",
+				"情": "Heart (忄): a feeling.",
+				"精": "Rice (米): refined."
+			},
+			"marks": {
+				"晴": [
+					0,
+					1,
+					2,
+					3
+				],
+				"清": [
+					0,
+					1,
+					2
+				],
+				"情": [
+					0,
+					1,
+					2
+				],
+				"精": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"住",
+				"往",
+				"注"
+			],
+			"notes": {
+				"住": "Person (亻): where a person lives.",
+				"往": "Step (彳): going somewhere.",
+				"注": "Water (氵): pouring."
+			},
+			"marks": {
+				"住": [
+					0,
+					1
+				],
+				"往": [
+					0,
+					1,
+					2
+				],
+				"注": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"木",
+				"本"
+			],
+			"notes": {
+				"木": "Nothing added.",
+				"本": "A short horizontal near the bottom: the root."
+			},
+			"marks": {
+				"木": [],
+				"本": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"第",
+				"弟"
+			],
+			"notes": {
+				"第": "Bamboo (⺮) on top.",
+				"弟": "Two dots on top."
+			},
+			"marks": {
+				"第": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"弟": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"象",
+				"像"
+			],
+			"notes": {
+				"象": "No person.",
+				"像": "A person (亻) on the left."
+			},
+			"marks": {
+				"象": [],
+				"像": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"小",
+				"少"
+			],
+			"notes": {
+				"小": "Three strokes.",
+				"少": "A fourth stroke falls to the lower left."
+			},
+			"marks": {
+				"小": [],
+				"少": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"考",
+				"老"
+			],
+			"notes": {
+				"考": "The bottom is a horizontal and a fold with a hook.",
+				"老": "The bottom is 匕: a stroke and a curve to the right."
+			},
+			"marks": {
+				"考": [
+					4,
+					5
+				],
+				"老": [
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"田",
+				"由",
+				"甲",
+				"申"
+			],
+			"notes": {
+				"田": "The vertical stays inside.",
+				"由": "The vertical comes out at the top.",
+				"甲": "The vertical comes out at the bottom.",
+				"申": "The vertical comes out at both ends."
+			},
+			"marks": {
+				"田": [],
+				"由": [],
+				"甲": [
+					4
+				],
+				"申": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"鳥",
+				"島"
+			],
+			"notes": {
+				"鳥": "Four dots at the bottom.",
+				"島": "A mountain (山) instead of the four dots."
+			},
+			"marks": {
+				"鳥": [
+					7,
+					8,
+					9,
+					10
+				],
+				"島": [
+					7,
+					8,
+					9
+				]
+			}
+		},
+		{
+			"members": [
+				"険",
+				"検",
+				"験"
+			],
+			"notes": {
+				"険": "Hill (阝): steep.",
+				"検": "Wood (木): examining.",
+				"験": "Horse (馬): testing."
+			},
+			"marks": {
+				"険": [
+					0,
+					1,
+					2
+				],
+				"検": [
+					0,
+					1,
+					2,
+					3
+				],
+				"験": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9
+				]
+			}
+		},
+		{
+			"members": [
+				"責",
+				"積",
+				"績"
+			],
+			"notes": {
+				"責": "Nothing on the left.",
+				"積": "Grain (禾): piling up.",
+				"績": "Thread (糸): achievement."
+			},
+			"marks": {
+				"責": [],
+				"積": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"績": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"輸",
+				"輪"
+			],
+			"notes": {
+				"輸": "On the right, 月 and a knife (刂).",
+				"輪": "On the right, 冊 under the roof."
+			},
+			"marks": {
+				"輸": [
+					10,
+					11,
+					12,
+					13,
+					14,
+					15
+				],
+				"輪": [
+					10,
+					11,
+					12,
+					13,
+					14
+				]
+			}
+		},
+		{
+			"members": [
+				"緑",
+				"縁"
+			],
+			"notes": {
+				"緑": "On the right, 录: water drops at the bottom.",
+				"縁": "On the right, 彖: a pig at the bottom."
+			},
+			"marks": {
+				"緑": [
+					9,
+					10,
+					11,
+					12,
+					13
+				],
+				"縁": [
+					9,
+					10,
+					11,
+					12,
+					13,
+					14
+				]
+			}
+		},
+		{
+			"members": [
+				"復",
+				"複"
+			],
+			"notes": {
+				"復": "Step (彳): going back.",
+				"複": "Clothing (衤): layered."
+			},
+			"marks": {
+				"復": [
+					0,
+					1,
+					2
+				],
+				"複": [
+					0,
+					1,
+					2,
+					3,
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"組",
+				"祖",
+				"粗"
+			],
+			"notes": {
+				"組": "Thread (糸): putting together.",
+				"祖": "Altar (礻): ancestors.",
+				"粗": "Rice (米): coarse."
+			},
+			"marks": {
+				"組": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"祖": [
+					0,
+					1,
+					2,
+					3
+				],
+				"粗": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"析",
+				"折"
+			],
+			"notes": {
+				"析": "Wood (木): splitting wood.",
+				"折": "Hand (扌): folding."
+			},
+			"marks": {
+				"析": [
+					0,
+					1,
+					2,
+					3
+				],
+				"折": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"手",
+				"毛"
+			],
+			"notes": {
+				"手": "The vertical hooks to the left.",
+				"毛": "The last stroke bends to the right."
+			},
+			"marks": {
+				"手": [
+					3
+				],
+				"毛": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"東",
+				"束"
+			],
+			"notes": {
+				"東": "The sun (日) in the middle.",
+				"束": "A mouth (口) in the middle."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"族",
+				"旅"
+			],
+			"notes": {
+				"族": "An arrow (矢) at the bottom right.",
+				"旅": "No arrow: the bottom right ends in a sweep."
+			},
+			"marks": {}
+		},
+		{
+			"members": [
+				"新",
+				"親"
+			],
+			"notes": {
+				"新": "An axe (斤) on the right.",
+				"親": "See (見) on the right."
+			},
+			"marks": {
+				"新": [
+					9,
+					10,
+					11,
+					12
+				],
+				"親": [
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15
+				]
+			}
+		}
+	]
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { StarterSetEntry } from '$lib/api/starter';
-import { starterSetDeckId } from '$lib/study/starter';
+import { starterSetDeckId } from '$lib/starter/starter';
 import { planAddToDeck } from './addToDeck';
 import { starterSetItems, starterSetTarget } from './starterSet';
 
@@ -32,6 +32,17 @@ describe('the Starter set deck', () => {
 			{ entryId: 1, written: '犬' },
 			{ entryId: 2, written: '水', entryKind: 'character' }
 		]);
+	});
+
+	it("passes the set's pinned reading on, and a new card keeps it (#346)", () => {
+		const items = starterSetItems([{ ...entry(1, '猫'), reading: 'māo' }, { ...entry(2, '鸡'), reading: '' }]);
+		expect(items).toEqual([
+			{ entryId: 1, written: '猫', reading: 'māo' },
+			{ entryId: 2, written: '鸡' }
+		]);
+		const target = starterSetTarget({ language: 'zh', name: 'Starter' });
+		const plan = planAddToDeck({ items, target, existingDeck: null, rawCards: [], now: new Date('2026-03-01T09:00:00Z') });
+		expect(plan.writes.map((c) => c.reading)).toEqual(['māo', undefined]);
 	});
 
 	it('adds in set order and a second run adds nothing', () => {

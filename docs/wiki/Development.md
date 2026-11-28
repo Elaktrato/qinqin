@@ -85,16 +85,39 @@ npm run e2e -- --headed --debug    # watch and step through
 - A failure's trace holds the learner's session token and, in the sign-in tests, the password typed: they
   belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere.
 
+### Phone width
+
+Every screen fits a 360 px phone without scrolling sideways (#296). The guard is
+`expectNoSidewaysScroll(page, where)` in `apps/web/e2e/support/layout.ts` (`PHONE` is the 360 × 740 viewport;
+`sidewaysOverflow(page)` returns the measurements): it fails when the page widened the phone's viewport, when
+`document.documentElement.scrollWidth` (or the body's) is wider than the screen, or when any rendered element or
+text reaches past the screen's left or right edge. Content inside a box that scrolls or clips sideways is
+bounded by that box (an absolutely positioned element only by its containing block), so a wide table in its own
+scroller is fine; the page root's `overflow-x: hidden` does not hide anything. `tests/phone-width.spec.ts` runs
+it over every main page, every Settings tab and Admin section, the sign-in pages and Settings → Data with a
+pack whose id, attribution and package line are 120 characters without a space, and shows that a planted
+overflow fails it.
+
+- **A new screen adds its path** to `tests/phone-width.spec.ts` (with the data that makes it long or wide), or
+  calls `expectNoSidewaysScroll` in its own spec at `test.use({ viewport: PHONE, hasTouch: true, isMobile: true })`.
+- Long ids, URLs and other strings without spaces get `overflow-wrap: anywhere`; a flex or grid child that holds
+  one gets `min-width: 0`.
+- A table sits directly in `<div class="ui-table-scroll" tabindex="0" role="region" aria-label=…>` (`app.css`):
+  it scrolls sideways inside it and the box is positioned, so a visually hidden label cannot escape it.
+  `src/lib/ui/lint/tableScroll.test.ts` fails on a `.ui-table` without one.
+
 Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
 study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
 Back (#131), with the reviews the server stores; the reader popup on hover (desktop; the longest match first,
-no stale lookup) and from a selection (phone sheet); offline study after the service worker cached the app and
+no stale lookup) and from a selection (phone sheet), and on a phone a long entry in a sheet capped at 60 % of the screen that scrolls
+inside, with the word above it; offline study after the service worker cached the app and
 today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
 grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
-long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a
+long page scrolls), the top bar's logo link to Home on every page in bottom-bar mode with the page's one h1, More, and the side menu option of Settings → Layout, kept for the account, and back; a
 journal conversation with the fake AI partner (its opening, the lookup popup on a reply, corrections in the
 margin, saving it as an entry); AI example sentences on an entry with the fake provider (generating them, the
-one without the word left out, keeping one, reporting one, the AI-written mark after a reload).
+one without the word left out, keeping one, reporting one, the AI-written mark after a reload); no sideways
+scroll at 360 px on every main page, Settings tab and Admin section (above).
 
 Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
 prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke
@@ -130,8 +153,9 @@ the record before changing the structure it covers; an issue that changes a rule
 ## When you add a feature or a language
 
 There are no plugins ([record 0006](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0006-core-features-instead-of-code-plugins.md)).
-A feature is core code with a switch: its id in `server/internal/features/features.go`, the check constraint of
-`feature_switches` (a migration), `docs/contracts/features/switches.json` and `apps/web/src/lib/features/index.ts`;
+A feature is core code with a switch: its id in `server/internal/features/features.go` (the only list the server
+checks; `feature_switches` has no list of ids since migration 055), `docs/contracts/features/switches.json` and
+`apps/web/src/lib/features/index.ts`;
 its data gets typed storage in its own package with a contract. Content is a data pack
 ([Data pack format](Data-pack-format)).
 
@@ -140,11 +164,62 @@ Web code goes in the folder of its owner ([record 0004](https://github.com/Elakt
 blocks in `apps/web/src/lib/ui/`, a widget in `apps/web/src/lib/components/` only once a second feature uses
 it, no component in a logic folder and nothing loose at the top of `lib/`. A new route folder names its
 feature in `ROUTE_FEATURES` (`apps/web/tests/repo/folderRules.ts`); `folderRules.test.ts` checks the rest.
+What every feature reads of studying (the study cache and read model, the event log, the derived FSRS schedules,
+mastery and known words, the learner's day, EXP, vacations, levels) is the study core in
+`apps/web/src/lib/studycore/`; the exercise rules flashcards share with grammar and the drills (cloze, word salad,
+tones, writing) are in `apps/web/src/lib/exercises/`. Flashcard-only code (sessions, queues, grading, hints, the
+setup, the optimizer, the card and deck commands) is in `apps/web/src/lib/features/flashcards/`. The core never
+imports flashcards (`studyCoreImportFindings`); a new feature such as a drill reads the core and adds its own folder.
+
+Pages show held data first and refresh it behind (#290). The study cache (`lib/studycore/cache.ts`) answers a
+loaded workspace at once and reads a delta round in the background; only a first load, `force`, `full`, a slot
+marked stale and a `current` read (`planningView`, `loadRawStudyData`, `loadStudyData`: a write and a page that
+schedules plan against the newest rows) wait. The event log (`EventLog.load`) does the same after its 8 s or a
+post. A change that the refresh brings reaches the page through `onStudyChange` and `session.events.onChange`, so a
+widget that reads either listens to both. A widget loads through `WidgetLoad`
+(`lib/widgets/widgetLoad.svelte.ts`): its last value per workspace is held in the session (`SessionCaches.held`),
+the loading line is only for a first load, and a failed refresh keeps the value with the quiet `stale` line of
+`WidgetCard`. A failed background refresh is in the session's `RefreshReport` (`session.study.refresh`). Home's
+layout and widget options are held by `lib/widgets/homeData.ts`, with a device copy per user id that the sign-out
+removes. The rule clients follow is "Serving held rows" in `docs/contracts/sync/README.md`.
+
+### Drills
+
+A drill (the conjugation trainer, counters, tone pairs, look-alikes) plugs into the Practice feature
+(`apps/web/src/lib/features/practice/`): its definition (`DrillDef` in `types.ts`: title, description, the languages
+it applies to, its candidate items, a label per item, its question component, optionally an overview on the Practice
+list) goes into `DRILLS` in `drills.ts`; its
+id into `DRILL_IDS` (`apps/web/src/lib/studycore/drills.ts`), Go `drills.IDs` (`server/internal/drills/drills.go`) and
+the contract's `registry` (`docs/contracts/drills/drills.json`), and its activity words into `DRILL_WORDS` in
+`apps/web/src/lib/activity/sources.ts` (checklist: `docs/contracts/drills/README.md`, "Adding a drill"). The framework
+does the rest: the list, the rounds and the weakest round, the `drill.<id>` events through the outbox, the FSRS
+schedule of each item, EXP, the streak and the activity rule. A question component is not remounted between items (a
+typed answer keeps focus and the phone keyboard), calls `onAnswer({mode, grade})` once per item, and shows readings only
+through the romanisation helpers. The tone-pair drill (`practice/tonePairs/`, #180) is the first registered one;
+the measure-word and counter drills (`practice/counters/`, #179) are three drills over one question component and
+two routes, with their rules in `docs/contracts/counters/`; the look-alike drill (`practice/lookAlikes/`, #228) bundles its
+sets as web data (a lazy chunk) and adds its own payload members after the grade (`onAnswer({mode, grade, extra})`);
+the sample drill (`practice/sample/`) is the test harness: set
+`localStorage["qinqin.dev.drills"] = "sample"` in a browser to see Practice with it (`e2e/tests/practice.spec.ts`);
+its events count nowhere on the server. `schedule.json` and `pick.json` are written by
+`node scripts/contracts/gen-drills-fixtures.mjs` (`--check` in the web tests).
 
 A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
 `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`, then its data packs, and reading
 code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").
 Availability checks ask the profile (`docs/contracts/languages/README.md` says which member decides what), not `language === 'zh'`; what remains language code is reading code (pinyin, kana, fonts, audio, the online-library sources) and the Chinese-only data notes.
+
+**Readings and hidden romanisation (#284).** A learner may hide romaji, pinyin or bopomofo per workspace
+(`settings/README.md`, key `romanisation`; one rule, `isReadingShown`, in `apps/web/src/lib/languages/romanisation.ts`).
+Every screen that shows a reading follows it, new screens included (drills, course lessons, sentence cards, the
+browser add-on): render a typed reading through `ReadingText` (or the flashcards' `ReadingTable`), which hide a
+hidden type, and ask `useRomanisation()` (`apps/web/src/lib/languages/useRomanisation.ts`) for anything else:
+`roman.shown(readings)` for a list, `roman.shows(type)` for one, `roman.text(value, language)` for a plain reading
+string (typed by its script). A hidden reading the learner asks for is a hint (on a card, the `romanisation` hint
+kind). The guard `apps/web/src/lib/languages/romanisation.lint.test.ts` scans the markup of every component for the
+known reading fields: a new component that prints one must use the helper and be added to its `RENDERERS` list, and a
+new reading field goes into `READING_FIELDS` (`romanisationGuard.ts`). Tone colours and furigana keep their own
+switches.
 
 ## CI
 

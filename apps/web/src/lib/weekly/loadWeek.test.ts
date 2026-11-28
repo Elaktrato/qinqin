@@ -6,8 +6,8 @@ const SHARED_DAY = studyDayOf([]);
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('../study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('../api/stats', () => ({ fetchActivity: vi.fn() }));
@@ -15,10 +15,10 @@ vi.mock('../stats/characterMap', () => ({ loadCharacterMapData: vi.fn(), withLeg
 
 import { fetchActivity, type ActivityResponse } from '../api/stats';
 import { loadCharacterMapData, withLegacyWritten } from '../stats/characterMap';
-import { DEFAULT_W } from '../study/fsrs/params';
-import { loadStudyHistory } from '../study/data';
-import { IDENTITY_CLOCK } from '../study/studyClock';
-import type { ReviewEvent, StudyCard, StudyHistory } from '../study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
+import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/studycore/types';
 import { loadWeek, loadWeekCharacters } from './loadWeek';
 import * as build from '$lib/testing/study';
 

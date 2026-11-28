@@ -8,18 +8,21 @@
 import { PictureCache } from '../aids/pictures';
 import type { AudioResolution } from '../api/audio';
 import type { CharacterList, Pending } from '../api/characters';
+import type { Course, CourseInfo } from '../api/courses';
 import type { ComponentIndex } from '../api/components';
 import type { StarterEntry } from '../api/frequency';
 import type { EntryBase } from '../api/types';
 import type { Slot } from '../audio/source';
 import type { JournalEntries } from '../features/journal/journalEntries.svelte';
-import type { SchemeLevelMembers } from '../study/charGroups';
-import type { LanguageRanks } from '../study/frequencyRanks';
-import type { StrokeResult } from '../study/strokeData';
+import type { SchemeLevelMembers } from '$lib/studycore/charGroups';
+import type { LanguageRanks } from '$lib/features/flashcards/session/frequencyRanks';
+import type { StrokeResult } from '$lib/writing/strokeData';
 import type { SeenMilestone } from '../milestones/seen';
 import type { Reached } from '../milestones/reached';
 import type { Timelines } from '../weekly/replay';
 import type { WeekPasses } from '../weekly/summary';
+import type { WidgetOptions } from '../widgets/options';
+import type { PairWords } from '../features/practice/tonePairs/words';
 
 /** AudioCache: a per-session cache (record 0009). */
 export class AudioCache {
@@ -33,6 +36,18 @@ export class AudioCache {
 	}
 }
 
+
+/** CourseCache: the installed courses by language and the filled courses by id (features/courses/courseData.ts). */
+export class CourseCache {
+	readonly lists = new Map<string, CourseInfo[]>();
+	readonly courses = new Map<string, Course>();
+
+	/** clear forgets everything (the session end). */
+	clear(): void {
+		this.lists.clear();
+		this.courses.clear();
+	}
+}
 
 /** CharacterCache: a per-session cache (record 0009). */
 export class CharacterCache {
@@ -203,6 +218,27 @@ export class MilestoneFlushes {
 	}
 }
 
+/** HomeCache: Home's own setup, held for the session (widgets/homeData.ts, #290). */
+export class HomeCache {
+	/** The stored layout (ids, or null for the default), once read. */
+	layout: { ids: string[] | null } | null = null;
+	options: WidgetOptions | null = null;
+
+	clear(): void {
+		this.layout = null;
+		this.options = null;
+	}
+}
+
+/** HeldValues: the last value each widget showed, by widget and workspace (widgets/widgetLoad.svelte.ts, #290). */
+export class HeldValues {
+	readonly values = new Map<string, unknown>();
+
+	clear(): void {
+		this.values.clear();
+	}
+}
+
 export class SessionCaches {
 	/** Weekly replay timelines by log content (weekly/replay.ts timelinesFor). */
 	readonly timelines = new Map<string, Timelines>();
@@ -216,6 +252,8 @@ export class SessionCaches {
 	readonly milestones = new MilestoneFlushes();
 	/** Goal loads in flight, by workspace, day and force (goals/loadGoal.ts). */
 	readonly goals = new Map<string, Promise<unknown>>();
+	/** The tone-pair drill's level-list words by language (features/practice/tonePairs/words.ts levelWords). */
+	readonly tonePairWords = new Map<string, Promise<PairWords>>();
 	readonly audio = new AudioCache();
 	readonly characters = new CharacterCache();
 	readonly components = new ComponentsCache();
@@ -233,10 +271,17 @@ export class SessionCaches {
 	readonly strokes = new StrokeCache();
 	/** The pictures of entries for the visual aids (aids/pictures.ts). */
 	readonly pictures = new PictureCache();
+	/** Home's layout and widget options (widgets/homeData.ts). */
+	readonly home = new HomeCache();
+	/** The widgets' last values (widgets/widgetLoad.svelte.ts). */
+	readonly held = new HeldValues();
+	/** The installed and filled courses (features/courses/courseData.ts, #222). */
+	readonly courses = new CourseCache();
 
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
 		this.goals.clear();
+		this.tonePairWords.clear();
 		this.journalSent.clear();
 		this.timelines.clear();
 		this.weekPasses.clear();
@@ -257,7 +302,10 @@ export class SessionCaches {
 			this.written,
 			this.ranks,
 			this.strokes,
-			this.pictures
+			this.pictures,
+			this.home,
+			this.held,
+			this.courses
 		]) {
 			cache.clear();
 		}

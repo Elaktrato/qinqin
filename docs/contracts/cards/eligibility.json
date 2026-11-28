@@ -1,0 +1,775 @@
+{
+  "version": 1,
+  "rule": "cards/eligibility",
+  "cases": [
+    {
+      "name": "a Japanese word without sentences: writing and reverse",
+      "entry": {
+        "id": 1,
+        "language": "ja",
+        "kind": "word",
+        "written": "私",
+        "forms": [
+          {
+            "text": "私"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "わたし"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "私"
+      ]
+    },
+    {
+      "name": "an inflected form counts: 食べた in the sentence blanks 食べる",
+      "entry": {
+        "id": 6,
+        "language": "ja",
+        "kind": "word",
+        "written": "食べる",
+        "forms": [
+          {
+            "text": "食べる"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "たべる"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 61,
+          "hanzi": "昨日ケーキを食べた。"
+        }
+      ],
+      "matchesBySentence": {
+        "61": [
+          {
+            "start": 0,
+            "end": 2,
+            "entries": [
+              {
+                "id": 90
+              }
+            ]
+          },
+          {
+            "start": 6,
+            "end": 9,
+            "entries": [
+              {
+                "id": 6
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse",
+        "cloze"
+      ],
+      "strokes": [
+        "食"
+      ]
+    },
+    {
+      "name": "a sentence without the word: a word salad, no cloze",
+      "entry": {
+        "id": 2,
+        "language": "ja",
+        "kind": "word",
+        "written": "学校",
+        "forms": [
+          {
+            "text": "学校"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "がっこう"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 21,
+          "hanzi": "本を読む。"
+        }
+      ],
+      "matchesBySentence": {
+        "21": [
+          {
+            "start": 0,
+            "end": 1,
+            "entries": [
+              {
+                "id": 7
+              }
+            ]
+          },
+          {
+            "start": 2,
+            "end": 4,
+            "entries": [
+              {
+                "id": 8
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "学"
+      ]
+    },
+    {
+      "name": "blank sentences do not count",
+      "entry": {
+        "id": 3,
+        "language": "ja",
+        "kind": "word",
+        "written": "水",
+        "forms": [
+          {
+            "text": "水"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "みず"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 31,
+          "hanzi": "  "
+        },
+        {
+          "id": 32,
+          "hanzi": "　"
+        },
+        {
+          "id": 33,
+          "hanzi": ""
+        }
+      ],
+      "matchesBySentence": {},
+      "kinds": [
+        "reverse"
+      ],
+      "strokes": []
+    },
+    {
+      "name": "the literal written form when the segmenter has no match for the entry",
+      "entry": {
+        "id": 4,
+        "language": "ja",
+        "kind": "word",
+        "written": "学生",
+        "forms": [
+          {
+            "text": "学生"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "がくせい"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 41,
+          "hanzi": "学生です。"
+        }
+      ],
+      "matchesBySentence": {
+        "41": []
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse",
+        "cloze"
+      ],
+      "strokes": [
+        "学",
+        "生"
+      ]
+    },
+    {
+      "name": "only the first 8 non-blank sentences are cloze candidates",
+      "entry": {
+        "id": 5,
+        "language": "ja",
+        "kind": "word",
+        "written": "本",
+        "forms": [
+          {
+            "text": "本"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "ほん"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 501,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 502,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 503,
+          "hanzi": " "
+        },
+        {
+          "id": 504,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 505,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 506,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 507,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 508,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 509,
+          "hanzi": "水を飲む。"
+        },
+        {
+          "id": 510,
+          "hanzi": "本を読む。"
+        }
+      ],
+      "matchesBySentence": {},
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "本"
+      ]
+    },
+    {
+      "name": "a kana-only surface of a Han word that ranks it second is a homophone",
+      "entry": {
+        "id": 40,
+        "language": "ja",
+        "kind": "word",
+        "written": "橋",
+        "forms": [
+          {
+            "text": "橋"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "はし"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 401,
+          "hanzi": "はしを使う。"
+        }
+      ],
+      "matchesBySentence": {
+        "401": [
+          {
+            "start": 0,
+            "end": 2,
+            "entries": [
+              {
+                "id": 41
+              },
+              {
+                "id": 40
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "橋"
+      ]
+    },
+    {
+      "name": "a kana-only surface counts when the entry is its first candidate",
+      "entry": {
+        "id": 40,
+        "language": "ja",
+        "kind": "word",
+        "written": "橋",
+        "forms": [
+          {
+            "text": "橋"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "はし"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 402,
+          "hanzi": "はしを渡る。"
+        }
+      ],
+      "matchesBySentence": {
+        "402": [
+          {
+            "start": 0,
+            "end": 2,
+            "entries": [
+              {
+                "id": 40
+              },
+              {
+                "id": 41
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "reverse",
+        "cloze"
+      ],
+      "strokes": [
+        "橋"
+      ]
+    },
+    {
+      "name": "an occurrence inside a longer word is not the word; clean pinyin gives tone",
+      "entry": {
+        "id": 70,
+        "language": "zh",
+        "kind": "word",
+        "written": "中国",
+        "forms": [
+          {
+            "text": "中国"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "zhōng guó"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 701,
+          "hanzi": "中国人很多。"
+        }
+      ],
+      "matchesBySentence": {
+        "701": [
+          {
+            "start": 0,
+            "end": 3,
+            "entries": [
+              {
+                "id": 99
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "tone",
+        "reverse"
+      ],
+      "strokes": [
+        "中",
+        "国"
+      ]
+    },
+    {
+      "name": "tone numbers are not clean pinyin",
+      "entry": {
+        "id": 71,
+        "language": "zh",
+        "kind": "word",
+        "written": "学习",
+        "forms": [
+          {
+            "text": "学习"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "xue2 xi2"
+          }
+        ],
+        "glosses": 2
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "学",
+        "习"
+      ]
+    },
+    {
+      "name": "one clean reading of several is enough for tone",
+      "entry": {
+        "id": 72,
+        "language": "zh",
+        "kind": "word",
+        "written": "学习",
+        "forms": [
+          {
+            "text": "学习"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "xué,"
+          },
+          {
+            "type": "pinyin",
+            "value": "XUÉ'XÍ"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "tone",
+        "reverse"
+      ],
+      "strokes": [
+        "学",
+        "习"
+      ]
+    },
+    {
+      "name": "erhua folds into the syllable before it",
+      "entry": {
+        "id": 73,
+        "language": "zh",
+        "kind": "word",
+        "written": "花儿",
+        "forms": [
+          {
+            "text": "花儿"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "huā r"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "tone",
+        "reverse"
+      ],
+      "strokes": [
+        "花",
+        "儿"
+      ]
+    },
+    {
+      "name": "pinyin outside a tonal language gives no tone",
+      "entry": {
+        "id": 74,
+        "language": "ja",
+        "kind": "word",
+        "written": "中国",
+        "forms": [
+          {
+            "text": "中国"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "zhōng guó"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "reverse"
+      ],
+      "strokes": [
+        "中",
+        "国"
+      ]
+    },
+    {
+      "name": "a character entry gets no reverse",
+      "entry": {
+        "id": 75,
+        "language": "zh",
+        "kind": "character",
+        "written": "学",
+        "forms": [
+          {
+            "text": "学"
+          }
+        ],
+        "readings": [
+          {
+            "type": "pinyin",
+            "value": "xué"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "kinds": [
+        "writing",
+        "tone"
+      ],
+      "strokes": [
+        "学"
+      ]
+    },
+    {
+      "name": "a word without a gloss gets no reverse",
+      "entry": {
+        "id": 76,
+        "language": "ja",
+        "kind": "word",
+        "written": "飲む",
+        "forms": [
+          {
+            "text": "飲む"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "のむ"
+          }
+        ],
+        "glosses": 0
+      },
+      "segmentable": true,
+      "sentences": [
+        {
+          "id": 761,
+          "hanzi": "水を飲む。"
+        }
+      ],
+      "matchesBySentence": {
+        "761": [
+          {
+            "start": 0,
+            "end": 1,
+            "entries": [
+              {
+                "id": 3
+              }
+            ]
+          },
+          {
+            "start": 2,
+            "end": 4,
+            "entries": [
+              {
+                "id": 76
+              }
+            ]
+          }
+        ]
+      },
+      "kinds": [
+        "sentence",
+        "writing",
+        "cloze"
+      ],
+      "strokes": [
+        "飲"
+      ]
+    },
+    {
+      "name": "a language the server cannot segment gets no cloze",
+      "entry": {
+        "id": 80,
+        "language": "es",
+        "kind": "word",
+        "written": "comer",
+        "forms": [
+          {
+            "text": "comer"
+          }
+        ],
+        "readings": [],
+        "glosses": 1
+      },
+      "segmentable": false,
+      "sentences": [
+        {
+          "id": 801,
+          "hanzi": "Quiero comer."
+        }
+      ],
+      "matchesBySentence": {},
+      "kinds": [
+        "sentence",
+        "reverse"
+      ],
+      "strokes": []
+    },
+    {
+      "name": "a character without glosses gets no writing",
+      "entry": {
+        "id": 77,
+        "language": "ja",
+        "kind": "character",
+        "written": "学",
+        "forms": [
+          {
+            "text": "学"
+          }
+        ],
+        "readings": [
+          {
+            "type": "on",
+            "value": "ガク"
+          }
+        ],
+        "glosses": 0
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "strokes": [
+        "学"
+      ],
+      "kinds": []
+    },
+    {
+      "name": "a kana word has nothing to write",
+      "entry": {
+        "id": 78,
+        "language": "ja",
+        "kind": "word",
+        "written": "ケーキ",
+        "forms": [
+          {
+            "text": "ケーキ"
+          }
+        ],
+        "readings": [
+          {
+            "type": "kana",
+            "value": "ケーキ"
+          }
+        ],
+        "glosses": 1
+      },
+      "segmentable": true,
+      "sentences": [],
+      "matchesBySentence": {},
+      "strokes": [
+        "ケ"
+      ],
+      "kinds": [
+        "reverse"
+      ]
+    }
+  ]
+}

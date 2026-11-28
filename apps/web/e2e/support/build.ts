@@ -15,6 +15,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const webRoot = resolve(here, '..', '..');
 export const repoRoot = resolve(webRoot, '..', '..');
 export const fixturePacks = resolve(here, '..', 'fixtures', 'packs');
+/** A small images pack only the offline pictures spec installs (#274). */
+export const fixtureImages = resolve(here, '..', 'fixtures', 'images');
+/** A small JMdict-format pack of verbs and adjectives only the conjugation spec installs (#178). */
+export const fixtureConjugation = resolve(here, '..', 'fixtures', 'conjugation');
+/** Small CC-CEDICT and JMdict packs of nouns only the measure-word and counter spec installs (#179). */
+export const fixtureCounters = resolve(here, '..', 'fixtures', 'counters');
+/** A one-word Korean pack: a language no drill applies to (the practice spec without a drill). */
+export const fixtureNoDrill = resolve(here, '..', 'fixtures', 'no-drill');
 
 /** The admin of every e2e instance; the password exists only in the throw-away data directory. */
 export const ADMIN = { username: 'e2e-admin', password: 'e2e-admin-Passw0rd!' } as const;

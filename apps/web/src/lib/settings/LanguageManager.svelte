@@ -115,8 +115,9 @@
 		<p class="error" role="alert">{loadError}</p>
 		<Button onclick={load}>{t('common.action.retry')}</Button>
 	{:else}
-		<div class="scroll">
-			<table class="ui-table">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrolling region is keyboard reachable, WCAG 2.1.1) -->
+		<div class="ui-table-scroll" tabindex="0" role="region" aria-labelledby="languages-heading">
+			<table class="ui-table" aria-labelledby="languages-heading">
 				<thead>
 					<tr>
 						<th>{t('settings.languages.colLanguage')}</th>
@@ -216,10 +217,6 @@
 	h4 {
 		font-size: var(--font-size-label);
 		font-weight: var(--weight-strong);
-	}
-
-	.scroll {
-		overflow-x: auto;
 	}
 
 	.flag {

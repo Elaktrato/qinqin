@@ -10,11 +10,11 @@ export const LAYOUT_KEY = 'home-layout';
 const LAYOUT_VERSION = 1;
 
 /**
- * Home without a stored layout: the activity heatmap, the flashcards summary,
- * the daily goal, then this week. A stored layout is never changed by a new
- * default.
+ * Home without a stored layout: "Continue course" (#225: it shows only when the
+ * language has a course), the activity heatmap, the flashcards summary, the
+ * daily goal, then this week. A stored layout is never changed by a new default.
  */
-export const DEFAULT_LAYOUT: readonly string[] = ['activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary'];
+export const DEFAULT_LAYOUT: readonly string[] = ['course-continue', 'activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary'];
 
 export interface StoredLayout {
 	version: typeof LAYOUT_VERSION;

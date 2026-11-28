@@ -2,16 +2,18 @@
 	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { segmentBatch } from '$lib/api/segment';
-	import { loadTokens } from '$lib/study/wordSalad';
+	import { loadTokens } from '$lib/exercises/wordSalad';
 	import WordSaladBoard from '$lib/features/flashcards/cards/WordSaladBoard.svelte';
 	import ClozeChoice from '$lib/features/grammar/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
-	import { recordRun } from './progress';
+	import { loadProgress, progressKey, recordRun } from './progress';
+	import { isLearned } from '$lib/studycore/grammarReview';
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	const session = useSession();
 	// (attempt 0 keeps the plain lesson seed; a retry shuffles anew)
 
@@ -39,6 +41,8 @@
 	});
 
 	const language = $derived(data?.view.pack.language ?? '');
+	// Hidden romanisation (#284): an example's reading line follows the workspace's switches.
+	const roman = useRomanisation();
 	const textLang = $derived(data?.textLang ?? '');
 	let attempt = $state(0);
 	const exercises = $derived<Exercise[]>(
@@ -99,10 +103,17 @@
 		saveError = '';
 		const ws = session.workspaces.current;
 		if (ws === null || data === null) return;
+		// The progress before this run, replayed from the workspace's events (#277);
+		// unreadable now (offline, no saved copy): this run starts it.
+		const before = await loadProgress(session, ws.id).then(
+			(map) => map.get(progressKey(pack, lessonId)),
+			() => undefined
+		);
 		try {
-			saved = await recordRun(ws.id, pack, lessonId, score, exercises.length);
+			// A run that cannot be sent now waits in the outbox and is sent later.
+			saved = await recordRun(session, ws.id, pack, lessonId, score, exercises.length, before);
 		} catch {
-			// The run was not stored (the server keeps the best score when it is).
+			// Its workspace was deleted: the run is lost.
 			saveError = t('grammar.practice.saveFailed');
 		}
 	}
@@ -139,9 +150,11 @@
 			{#if saved}
 				<p>{t('grammar.practice.best', { best: saved.best, total: saved.total })}</p>
 			{/if}
+			{#if isLearned(score, exercises.length)}
+				<p class="learned">{t('grammar.practice.learned')}</p>
+			{/if}
 			{#if saveError}
 				<p class="error" role="alert">{saveError}</p>
-				<Button onclick={() => void saveResult()}>{t('grammar.practice.saveAgain')}</Button>
 			{/if}
 			<div class="actions">
 				<Button variant="primary" onclick={retry}>{t('grammar.practice.retry')}</Button>
@@ -193,7 +206,7 @@
 		{#if answered}
 			<section class="reveal" aria-label={t('grammar.practice.sentence')}>
 				<p class="sentence" lang={textLang}>{current.example.text}</p>
-				{#if current.example.reading}<p class="reading">{current.example.reading}</p>{/if}
+				{#if roman.text(current.example.reading, language)}<p class="reading">{current.example.reading}</p>{/if}
 			</section>
 			<Button variant="primary" bind:element={nextButton} onclick={() => void advance()}>
 				{index + 1 >= exercises.length ? t('grammar.practice.finish') : t('grammar.practice.next')}

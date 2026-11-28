@@ -8,8 +8,8 @@ import { activityAmounts, amountsOf, flashcardAmounts, type DayAmounts } from '.
 import type { GoalMetric, GoalsRow } from '../goals/goals';
 import { goalDays, type GoalStatus, type UnitOf } from '../goals/progress';
 import { flowerStage, type FlowerStage } from '../goals/stage';
-import type { ReviewEvent } from '../study/types';
-import type { Run } from '../study/vacation';
+import type { ReviewEvent } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
 
 export interface DayStage {
 	stage: FlowerStage;

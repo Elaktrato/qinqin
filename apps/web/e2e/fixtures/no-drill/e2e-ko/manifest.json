@@ -1,0 +1,10 @@
+{
+  "id": "e2e-ko",
+  "name": "Korean end-to-end test dictionary (a language without drills)",
+  "version": "1",
+  "type": "dictionary",
+  "language": "ko",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written test data",
+  "format": "json"
+}

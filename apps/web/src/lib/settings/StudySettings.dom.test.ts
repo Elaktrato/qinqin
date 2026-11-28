@@ -9,17 +9,17 @@ import { testContext, type TestContext, updateWorkspaces } from '$lib/testing/co
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/keyed')>()),
 	saveVacation: vi.fn(() => Promise.resolve()),
 	deleteVacation: vi.fn(() => Promise.resolve())
 }));
-vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
+vi.mock('$lib/features/flashcards/commands/settings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/settings')>()),
 	saveWorkspaceLimits: vi.fn(() => Promise.resolve())
 }));
 vi.mock('$lib/api/stats', () => ({
@@ -32,10 +32,10 @@ vi.mock('$lib/notes/store', () => ({
 }));
 
 import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
-import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
-import { saveWorkspaceLimits } from '$lib/study/commands/settings';
-import { getStudyData } from '$lib/study/data';
-import type { VacationPeriod } from '$lib/study/vacation';
+import { deleteVacation, saveVacation } from '$lib/studycore/commands/keyed';
+import { saveWorkspaceLimits } from '$lib/features/flashcards/commands/settings';
+import { getStudyData } from '$lib/studycore/data';
+import type { VacationPeriod } from '$lib/studycore/vacation';
 import { studyDay } from '$lib/time/studyDay';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StudySettings from './StudySettings.svelte';

@@ -45,7 +45,40 @@ Issue #204 asked for CC0 for the charts and an earlier version of this file made
 `"license": "CC-BY-4.0"`; a `NOTICE` next to each (the copies in the web build and in the server binary) names the
 licence and points at the legal code in `plugins/data/ja-lemma/LICENSE`, as the lemma table does.
 The Starter lists copy no third-party text; the dictionary entries and pictures they point at keep their own
-licences. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
+licences. They were reviewed by agents acting as native-speaker teachers (#275, `server/internal/starter/sets/REVIEW.md`),
+not yet by a person. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
+
+### The counters table and the measure-word corrections: CC BY 4.0
+
+The Japanese counters table of the counter drills (`server/internal/counters/table/counters-ja.json`, #179: counters,
+what they count, the readings of number + counter, example nouns) and the corrections to the Chinese measure words
+(`measures-zh.json`: nouns left out, lists reordered or extended, question glosses) are written by the project and are
+under CC BY 4.0, with a `NOTICE` beside them and the credit in each file (rule i). They copy no third-party list. The
+Chinese measure words themselves are read at run time from the installed CC-CEDICT's `CL:` notes and keep CC-CEDICT's
+licence (CC BY-SA 4.0); nothing derived from CC-CEDICT is bundled. Reviewed by agents acting as teachers, not yet by a
+person (`server/internal/counters/table/REVIEW.md`).
+
+### The look-alike character sets: CC BY 4.0
+
+The sets of the look-alike drill (`apps/web/src/lib/features/practice/lookAlikes/data/look-alikes-zh.json` and
+`look-alikes-ja.json`, #228: the sets, the readings, meanings, example words and notes of their characters, and the
+strokes the answer highlights) are written by the project and are under CC BY 4.0, with a `NOTICE` beside them and the
+credit in each file (rule i). They copy no third-party list and are not derived from KanjiVG (whose component index is
+CC BY-SA 3.0 and stays its own pack), Unihan or a dictionary. The stroke data the answer draws them with is served from
+the installed strokes packs and keeps its own licence. Reviewed by agents acting as teachers, not yet by a person
+(`REVIEW.md` beside them).
+
+### The topic labels: CC BY-SA 4.0
+
+The topic labels of words (`server/internal/topics/labels/zh.json` and `ja.json`, #220) are written for the project
+(the topics were suggested by an agent and reviewed by agents acting as native-language teachers, or taken from the
+group of the word's OpenMoji picture through the project's own group → topic table) and are shared under
+**CC BY-SA 4.0**, not the project's CC BY 4.0 (orchestrator ruling, 2026-11-28, under the owner's "licensing first"
+rule): they are adapted in part from OpenMoji's emoji groups and are keyed to CC-CEDICT and JMdict words whose senses
+the agents read, all CC BY-SA 4.0. Each file's `attribution` credits qinqin contributors, CC-CEDICT or JMdict and
+OpenMoji; the group table `scripts/topics/openmoji-groups.tsv`, the group → topic table and the review batches in
+`scripts/topics/` are under the same licence (`scripts/topics/NOTICE.md`). The owner may loosen this later. The topic
+list itself (`docs/contracts/topics/topics.json`, ids and scopes) is the project's and stays CC BY 4.0.
 
 ## Third-party data keeps its own licence
 
@@ -55,6 +88,18 @@ Kanji alive, OpenMoji and more) stay under their own licences, which differ from
 CC BY-SA, which asks for share-alike). They are listed, with links and pinned versions, in
 [`docs/sources.md`](docs/sources.md) and on the app's Sources page, and each pack carries its licence text
 and an `ATTRIBUTION.md` in `plugins/data/<pack>/`.
+
+### The estimated JLPT word levels (`jlpt-words`): CC BY-SA 4.0
+
+`plugins/data/jlpt-words` is computed by `scripts/prepare-jlpt-words.mjs` from four bundled packs: the Jiten
+frequency ranks (CC BY-SA 4.0), JMdict (CC BY-SA 4.0, EDRDG), the JLPT kanji levels (`jlpt-kanji`: kanjiapi.dev, MIT,
+and KANJIDIC2, CC BY-SA 4.0) and the jōyō kanji (`joyo-grades`, KANJIDIC2), and from three short lists the project
+writes, `scripts/jlpt-words/core.tsv`, `grammar.tsv` and `anchors.tsv` (CC BY 4.0, credit "qinqin contributors, CC BY
+4.0"; `scripts/jlpt-words/NOTICE`). It copies no published JLPT vocabulary list. Being an adaptation of the Jiten
+ranks and JMdict, it is shared under **CC BY-SA 4.0**, not under the project's CC BY 4.0 (CC BY 4.0 content may be
+adapted into a CC BY-SA 4.0 work), and keeps the credits of its inputs and kanjiapi.dev's MIT notice
+(`LICENSE-kanjiapi.dev`). It is a levels pack served on its own, so no CC BY pack embeds it (a course pack refers to
+it by pack id). See `docs/sources.md`, "JLPT words (approximate)".
 
 ### Pictures (OpenMoji and Mulberry Symbols)
 
@@ -77,6 +122,9 @@ Both packs are adaptations of KanjiVG and stay under CC BY-SA 3.0 (the stroke pa
 centre lines were widened into outlines in the stroke-data format). Like every BY-SA pack (OpenMoji, Mulberry,
 KanjiVG) each stays its own data pack, served by the running server: never compiled into the Go binary
 (`go:embed`), never in the web build and never in the Android APK. See `docs/sources.md`, "Stroke-order data".
+Two small test fixtures are KanjiVG data under the same CC BY-SA 3.0, each with a README: six SVG files in
+`scripts/testdata/kanjivg/` and the stroke medians of 18 characters in `apps/web/src/lib/writing/fixtures/joins.json`
+(an adaptation, made by `apps/web/scripts/make-join-fixtures.mjs`, #292). Tests read them; no app code imports them.
 
 ### The HSK lists
 

@@ -8,11 +8,13 @@ import {
 	LOGIC_FOLDERS,
 	LOOSE_ALLOWED,
 	STRUCTURE_FOLDERS,
+	STUDY_CORE_FOLDERS,
 	duplicateNameFindings,
 	isTestOnly,
 	logicFolderFindings,
 	looseFileFindings,
 	sharedComponentFindings,
+	studyCoreImportFindings,
 	uiImportFindings,
 	unclassifiedFolderFindings,
 	unmappedRouteFindings,
@@ -69,6 +71,14 @@ describe('the web folder rules hold on apps/web/src', () => {
 
 	it('every import of a shipped file resolves', () => {
 		expect(unresolvedImportFindings(tree)).toEqual([]);
+	});
+
+	it('the study core, the exercises and the courses feature never import the flashcards feature', () => {
+		expect(studyCoreImportFindings(tree)).toEqual([]);
+	});
+
+	it('the study core folders are logic folders', () => {
+		for (const d of STUDY_CORE_FOLDERS) expect(LOGIC_FOLDERS, d).toContain(d);
 	});
 
 	it('every top folder of lib is classified', () => {
@@ -128,7 +138,7 @@ describe('each check fails on a planted violation', () => {
 			file('lib/components/Lonely.svelte'),
 			file('lib/entry/Use.svelte', imp('$lib/components/Lonely.svelte')),
 			file('lib/features/journal/Note.svelte', "<script>// import L from '$lib/components/Lonely.svelte'\n</script>"),
-			file('lib/study/reexport.ts', "export { default as L } from '$lib/components/Lonely.svelte';"),
+			file('lib/studycore/reexport.ts', "export { default as L } from '$lib/components/Lonely.svelte';"),
 			file('lib/ui/Chip.svelte', imp('$lib/components/Lonely.svelte')),
 			file('lib/features/index.ts', "import '$lib/components/Lonely.svelte';"),
 			file('lib/features/FeaturePage.svelte', imp('$lib/components/Lonely.svelte')),
@@ -164,6 +174,36 @@ describe('each check fails on a planted violation', () => {
 		]);
 	});
 
+	it('the study core or the exercises importing the flashcards feature (a test may; the other way is fine)', () => {
+		const planted = [
+			file('lib/features/flashcards/session/cardFlow.ts', "import { scheduleFor } from '$lib/studycore/scheduler';"),
+			file('lib/features/flashcards/face/hints.ts'),
+			file('lib/features/flashcards/mascot.ts'),
+			file('lib/features/flashcards/commands/cards.ts'),
+			file('lib/goals/goals.ts'),
+			file('routes/study/session/+page.svelte'),
+			file('lib/studycore/scheduler.ts'),
+			file('lib/studycore/known.ts', "import { cardFlow } from '$lib/features/flashcards/session/cardFlow';"),
+			file('lib/exercises/cloze.ts', "export { HINT_KINDS } from '../features/flashcards/face/hints.js';"),
+			file('lib/studycore/data.test.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('lib/studycore/mastery.ts', 'const m = import(`$lib/features/flashcards/mascot`);'),
+			file('lib/studycore/page.ts', "import P from '../../routes/study/session/+page.svelte';"),
+			file('lib/studycore/types.ts', "import type { ParsedGoals } from '../goals/goals';"),
+			file('lib/studycore/exp.ts', "// import { x } from '$lib/features/flashcards/mascot';"),
+			file('lib/features/courses/cards.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('lib/features/courses/cards.test.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('routes/courses/[...rest]/+page.svelte', "import { cardFlow } from '$lib/features/flashcards/session/cardFlow';")
+		];
+		expect(studyCoreImportFindings(planted)).toEqual([
+			'lib/studycore/known.ts imports lib/features/flashcards/session/cardFlow.ts',
+			'lib/exercises/cloze.ts imports lib/features/flashcards/face/hints.ts',
+			'lib/studycore/mastery.ts imports lib/features/flashcards/mascot.ts',
+			'lib/studycore/page.ts imports routes/study/session/+page.svelte',
+			'lib/features/courses/cards.ts imports lib/features/flashcards/commands/cards.ts',
+			'routes/courses/[...rest]/+page.svelte imports lib/features/flashcards/session/cardFlow.ts'
+		]);
+	});
+
 	it('a top folder of lib that is in no class', () => {
 		expect(unclassifiedFolderFindings([file('lib/quiz/quiz.ts'), file('lib/entry/EntryView.svelte')])).toEqual([
 			'lib/quiz is not classified (logic, feature or structure folder)'
@@ -176,17 +216,17 @@ describe('each check fails on a planted violation', () => {
 		expect(isTestOnly('lib/entry/EntryView.dom.test.ts')).toBe(true);
 		expect(isTestOnly('lib/i18n/PseudoStub.test.svelte')).toBe(true);
 		expect(isTestOnly('lib/entry/testing/SaveEditor.svelte')).toBe(false);
-		expect(isTestOnly('lib/study/testing.ts')).toBe(false);
+		expect(isTestOnly('lib/studycore/testing.ts')).toBe(false);
 	});
 
 	it('a component in a logic-only folder (a test stub is fine)', () => {
 		const planted = [
-			file('lib/study/DeckCardTypes.svelte'),
+			file('lib/studycore/DeckCardTypes.svelte'),
 			file('lib/i18n/PseudoStub.test.svelte'),
 			file('lib/entry/EntryView.svelte')
 		];
 		expect(logicFolderFindings(planted)).toEqual([
-			'lib/study/DeckCardTypes.svelte is a component in the logic folder lib/study'
+			'lib/studycore/DeckCardTypes.svelte is a component in the logic folder lib/studycore'
 		]);
 	});
 

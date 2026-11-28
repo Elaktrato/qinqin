@@ -9,28 +9,29 @@ with it, and what each type's payload means. Design: `docs/superpowers/specs/202
 Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
 `page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/studycore/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
 - `envelope.json` — batches posted to `POST /api/events/batch`, the answer, and what `GET /api/events` and
   the pull v2 `events` collection return afterwards. Decoded by `server/internal/api/contract_events_test.go`
-  (every step and the stored list), `apps/web/src/lib/study/scheduler.test.ts` (the order case) and
+  (every step and the stored list), `apps/web/src/lib/studycore/scheduler.test.ts` (the order case) and
   `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pull case). `$ws` is a workspace of the caller,
   `$bobWs` one of another user.
-- `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
+- `payloads.json` — the payload of each written type (`build`; the `grammar` run's parse and replay rules are
+  `grammar/runs.json`), when the web emits `read` and `journal`
   events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
   `apps/web/src/lib/events/eventPayloads.test.ts` (the builders of `lib/events/eventPayloads.ts`, member order included),
   `features/reader/readingTimer.test.ts`, `features/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 - `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
-  Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
-  `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+  Decoded by `apps/web/src/lib/studycore/reviewParse.test.ts`, `studycore/scheduler.test.ts` (`isValidReview`,
+  `sortedReviews`) and `studycore/exp.test.ts` (XP counts exactly the valid ones).
 - `review-replace.json` — replaced reviews (#131): which reviews of a set count when some name the review they
   replace (`live`, in replay order) and which are replaced; hand-written `cases` plus a `generated` block of 300
   seeded random families (`scripts/contracts/gen-review-replace.mjs`, seed 131, expected ids from an oracle written
-  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
+  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/studycore/replaced.test.ts`
   (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
   cases (query → status and JSON code). Decoded by
@@ -153,6 +154,11 @@ alter every stored log and the pull's string comparison — cost: none.
 | `review` | flashcards | count (`flashcards`) |
 | `read` | the reader | measure `seconds` (min 30, max 7200, 300 per point) (`reader`) |
 | `journal` | the journal | distinct `entryId` (`journal`) |
+| `script` | the scripts trainer | count (`scripts`) |
+| `grammar` | grammar (a finished lesson run, #277) | distinct `point` (`grammar`) |
+| `course` | courses (lesson, unit test, section exam, placement, #221) | distinct item `course` (`courses`): one point per course step per day (`courses/counting.json`, #225) |
+| `drill.<id>` | practice (one answer in a registered drill, `drills/`) | count (`practice`); a drill the server has not registered scores nothing |
+| `notebook` | the mistake notebook (a removal by hand or a clear, #227, `notebook/`) | none |
 
 The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
 there are no plugin manifests (#199). The server stores any type; a client writes only these.
@@ -166,6 +172,11 @@ there are no plugin manifests (#199). The server stores any type; a client write
 | `lookup` | (legacy `{query: string}`) | **never** (#72: the history is the `lookups` row) | ignore it; never ship or cache it |
 | `read` | `{bookId: int > 0, seconds: int ≥ 30}` | one event per flush of the reading timer when it holds ≥ 30 whole seconds (time accrues between activity pings while visible; a gap over 120 s counts 120 s; flushed every 5 minutes of accrued time, on page hide, `pagehide` and leaving the book; under 30 s is kept for the next flush of the same book and workspace and dropped on a book or workspace switch), in the **book's** workspace | count `readSeconds(payload)`: 0 unless `seconds` is a finite number ≥ 30, else `min(seconds, 7200)`; points `min(ceil(seconds/300), 24)`; `bookId` may be **absent** (restore of an unknown book) — the time still counts, book unknown |
 | `journal` | `{entryId: string}` (the journal entry's ULID) | when a save changed the text, at most once per entry per learner day | count distinct `entryId` **strings** per learner day; a non-string `entryId` never counts |
+| `script` | `{system, item, mode, ok}` | one per answer of the writing-system trainer | see `payloads.json` |
+| `drill.<id>` | `{item: string, mode: string, grade: 1..4}` (more members may follow) | once per answered drill question, in the item's workspace, through the outbox | read an answer only as `drills/drills.json` `parse` says; schedules, rounds, EXP and the streak per `drills/README.md` |
+| `notebook` | `{action: "remove", item: string}` or `{action: "clear"}` | when the learner removes an item from the mistake notebook or clears it, in the workspace, through the outbox | read a mark only as `notebook/notebook.json` `parse` says; the notebook per `notebook/README.md` |
+| `grammar` | `{point: "<packId>:<lessonId>", mode: "lesson", score: int, total: int}` | once per finished lesson run, in the lesson's workspace, through the outbox (#277) | read a run only as `grammar/runs.json` `parse` says; count distinct `point` **strings** per learner day for activity; progress, EXP and the streak per `grammar/README.md` |
+| `course` | `{kind, course, …}` by kind (`courses/README.md`, Progress events) | when a lesson starts or finishes, a unit test or section exam ends, or a placement is chosen, in the course's workspace, through the outbox | read an event only as `courses/README.md` Parsing says; derive the path state as its Derivation says |
 
 Member order is part of the shape (`{bookId, seconds}`, not `{seconds, bookId}`): the server stores the JSON text
 as sent, so two clients writing the same event write the same bytes. The reading timer
@@ -195,7 +206,7 @@ clamping and a `read` without `bookId` still counts; "distinct `entryId` of `jou
 ## Reviews
 
 The `review` payload is `{cardId: string, mode: <card kind>, grade: 1|2|3|4, meta?: {tier?, mistakes?, hints?,
-durationMs?}}` (written by `study/events.ts`; the overview's row keeps the shape). A client reads a stored
+durationMs?}}` (written by `studycore/events.ts`; the overview's row keeps the shape). A client reads a stored
 event as a review in two steps, both pinned by `review-parse.json`:
 
 1. **Parse** (`parseReview`): only `type: "review"`; the payload is an object with a non-empty string `cardId`
@@ -261,8 +272,13 @@ members; `rules` in the fixture lists the built-in ones). A client that scores o
   (integer or real), else the event is ignored; values below `min` are ignored; each event counts
   `r = min(value, max)`; points = the sum over events of `ceil(r / pointsPer)` (per event, not from the day's
   total), raw = the sum of `r`. A `read` without `bookId` counts.
-- **distinct** (`journal`: `distinctBy` `entryId`): points = raw = the number of distinct JSON **string** values
-  of the field that day; a number never counts.
+- **distinct** (`journal`: `distinctBy` `entryId`; `grammar`: `distinctBy` `point`, one point per lesson finished,
+  once per lesson per day): points = raw = the number of distinct JSON **string** values of the field that day; a
+  number never counts. The server does not check that a `point` is valid; clients write only valid ones.
+- **distinct by item** (`course`: `item` `course`, #225): points = raw = the number of distinct **steps** that day; a
+  step is a `lesson-finished` whose `lesson` does not start with `grammar-` (identity: course, unit, lesson), a
+  `unit-test` (course, unit) or a `section-exam` (course, section), with those members JSON **strings**; every other
+  kind (`lesson-started`, `placement`) and anything else counts nothing. Cases: `courses/counting.json` `activity`.
 - `raw` is what goals and the weekly summary read (seconds for `read`).
 
 The web's per-event clamp (`stats/readingTime.ts` `readingPoints`, `readSeconds`) equals the server's for every

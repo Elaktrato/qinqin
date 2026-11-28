@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
+import { STUDY_PULL_COLLECTIONS } from '$lib/studycore/sync/pull';
 import { parsePullPage, pullAll, firstPageUrl } from '../sync/pager';
-import { cardRow } from '../study/rows';
+import { cardRow } from '$lib/studycore/rows';
 import { StudyServer } from './studyServer';
 import * as build from './study';
 

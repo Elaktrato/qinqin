@@ -5,11 +5,11 @@
 	import type { StarterEntry } from '$lib/api/frequency';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
-	import { knownEntries } from '$lib/study/known';
+	import { knownEntries } from '$lib/studycore/known';
 	import { PartialPushError } from '$lib/sync/push';
-	import { loadRawStudyData } from '$lib/study/data';
-	import { pushStudy } from '$lib/study/commands/write';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { loadRawStudyData } from '$lib/studycore/data';
+	import { pushStudy } from '$lib/studycore/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -28,6 +28,8 @@
 	import { Button } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	const roman = useRomanisation();
 
 	// A starter deck (#75): the pack's top words as the server resolves them,
 	// with the learner's state; known words are skipped and never added. It
@@ -200,7 +202,7 @@
 			{#each view.shown as item (item.id)}
 				<li>
 					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
-					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{roman.text(readingBeside(item.written, item.readings), workspace?.language ?? '')}</span>
 					{#if glosses.has(item.id)}
 						<span class="gloss" lang={glossLang(undefined)}>{glosses.get(item.id)}</span>
 					{/if}

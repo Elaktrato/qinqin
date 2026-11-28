@@ -3,19 +3,21 @@
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import { onMount } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
-	import type { CardAudio } from '$lib/study/audioCue';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
-	import { buildVocabFaces } from '$lib/study/cardView';
+	import type { CardAudio } from '$lib/audio/cue';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
+	import { buildVocabFaces } from './cardView';
+	import CardGlosses from './CardGlosses.svelte';
 	import {
 		acceptedReverseAnswers,
 		buildReverseFront,
 		suggestReverseGrade
-	} from '$lib/study/reverse';
-	import type { ReviewMeta } from '$lib/study/types';
+	} from './reverse';
+	import type { ReviewMeta } from '$lib/studycore/types';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import AnswerAids from '../face/AnswerAids.svelte';
@@ -37,10 +39,12 @@
 		audio?: CardAudio;
 	}
 
-	let { entry, revealed, language, onDone, audio }: Props = $props();
+	let { item, entry, revealed, language, onDone, audio }: Props = $props();
+	const roman = useRomanisation();
 
-	const front = $derived(buildReverseFront(entry));
-	const faces = $derived(buildVocabFaces(entry, null, language).back);
+	// A card pinned to a reading (#346) shows only that reading's meanings.
+	const front = $derived(buildReverseFront(entry, item.card?.reading));
+	const faces = $derived(buildVocabFaces(entry, null, language, item.card?.reading).back);
 	const accepted = $derived(acceptedReverseAnswers(entry));
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
@@ -55,7 +59,7 @@
 	/** Finishes the card with what was typed; the runner's Space/Enter calls it too. */
 	export function finish(): void {
 		if (revealed) return;
-		// A hint asked for with the Hint control is added by the session (lib/study/hints.ts).
+		// A hint asked for with the Hint control is added by the session (lib/features/flashcards/face/hints.ts).
 		const suggested = suggestReverseGrade({ typed, accepted });
 		const meta: ReviewMeta = {};
 		if (suggested === 1) meta.mistakes = 1;
@@ -129,9 +133,9 @@
 		{/if}
 		<p class="fa-word" lang={studyLang(language)}>{faces.written}</p>
 		<AnswerAids {entry} />
-		{#if faces.readings.length > 0 || audio}
+		{#if roman.shown(faces.readings).length > 0 || audio}
 			<div class="fa-readings">
-				{#if faces.readings.length > 0}
+				{#if roman.shown(faces.readings).length > 0}
 					<ReadingTable readings={faces.readings} language={entry.language} label={t('flashcards.card.readings')} />
 				{/if}
 				{#if audio}
@@ -147,16 +151,7 @@
 				{/if}
 			</div>
 		{/if}
-		{#each faces.glosses as group (group.dictionaryName)}
-			<article class="dictionary">
-				<ol class="fa-glosses">
-					{#each group.glosses as gloss, i (i)}
-						<li>{gloss}</li>
-					{/each}
-				</ol>
-				<p class="fa-source">{group.dictionaryName}</p>
-			</article>
-		{/each}
+		{#key entry.id}<CardGlosses glosses={faces.glosses} folded={faces.folded} />{/key}
 		{#if credit}
 			<p class="credit fa-source">{credit}</p>
 		{/if}
@@ -197,9 +192,5 @@
 	}
 	.feedback.bad {
 		color: var(--readable-bad);
-	}
-	.dictionary {
-		display: grid;
-		gap: var(--space-1);
 	}
 </style>

@@ -4,391 +4,154 @@
  "language": "zh",
  "name": "Starter words (Chinese)",
  "license": "CC-BY-4.0",
- "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is by qinqin contributors, CC BY 4.0; the dictionaries and pictures it points at keep their own licences).",
+ "attribution": "Starter words: common, picturable words for beginners, chosen for this project and reviewed by agents acting as native-speaker teachers, not yet by a person. Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin). The dictionaries and pictures they point at keep their own licences.",
  "humanReviewed": false,
  "words": [
-  {
-   "form": "狗",
-   "gloss": "dog",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F415"
-   }
-  },
-  {
-   "form": "猫",
-   "gloss": "cat",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F408"
-   }
-  },
-  {
-   "form": "鱼",
-   "gloss": "fish",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F41F"
-   }
-  },
-  {
-   "form": "牛",
-   "gloss": "cow",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F404"
-   }
-  },
-  {
-   "form": "马",
-   "gloss": "horse",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F40E"
-   }
-  },
-  {
-   "form": "熊猫",
-   "gloss": "panda",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F43C"
-   }
-  },
-  {
-   "form": "香蕉",
-   "gloss": "banana",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F34C"
-   }
-  },
-  {
-   "form": "西瓜",
-   "gloss": "watermelon",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F349"
-   }
-  },
-  {
-   "form": "鸡蛋",
-   "gloss": "egg",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F95A"
-   }
-  },
-  {
-   "form": "米饭",
-   "gloss": "cooked rice",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F35A"
-   }
-  },
-  {
-   "form": "面条",
-   "gloss": "noodles",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F35C"
-   }
-  },
-  {
-   "form": "牛奶",
-   "gloss": "milk",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F95B"
-   }
-  },
-  {
-   "form": "茶",
-   "gloss": "tea",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F375"
-   }
-  },
-  {
-   "form": "咖啡",
-   "gloss": "coffee",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2615"
-   }
-  },
-  {
-   "form": "水",
-   "reading": "shuǐ",
-   "gloss": "water",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4A7"
-   }
-  },
-  {
-   "form": "手",
-   "gloss": "hand",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "270B"
-   }
-  },
-  {
-   "form": "眼睛",
-   "gloss": "eye",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F440"
-   }
-  },
-  {
-   "form": "耳朵",
-   "gloss": "ear",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F442"
-   }
-  },
-  {
-   "form": "火",
-   "reading": "huǒ",
-   "gloss": "fire",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F525"
-   }
-  },
-  {
-   "form": "雨",
-   "reading": "yǔ",
-   "gloss": "rain",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F327"
-   }
-  },
-  {
-   "form": "雪",
-   "reading": "xuě",
-   "gloss": "snow",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2744"
-   }
-  },
-  {
-   "form": "花",
-   "reading": "huā",
-   "gloss": "flower",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F33C"
-   }
-  },
-  {
-   "form": "树",
-   "gloss": "tree",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F333"
-   }
-  },
-  {
-   "form": "太阳",
-   "gloss": "sun",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2600"
-   }
-  },
-  {
-   "form": "月亮",
-   "gloss": "moon",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F319"
-   }
-  },
-  {
-   "form": "房子",
-   "gloss": "house",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3E0"
-   }
-  },
-  {
-   "form": "门",
-   "gloss": "door",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F6AA"
-   }
-  },
-  {
-   "form": "椅子",
-   "gloss": "chair",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1FA91"
-   }
-  },
-  {
-   "form": "床",
-   "gloss": "bed",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F6CF"
-   }
-  },
-  {
-   "form": "灯",
-   "gloss": "lamp",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4A1"
-   }
-  },
-  {
-   "form": "钥匙",
-   "gloss": "key",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F511"
-   }
-  },
-  {
-   "form": "书",
-   "reading": "shū",
-   "gloss": "book",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4D6"
-   }
-  },
-  {
-   "form": "书包",
-   "gloss": "schoolbag",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F392"
-   }
-  },
-  {
-   "form": "帽子",
-   "gloss": "hat",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F9E2"
-   }
-  },
-  {
-   "form": "鞋",
-   "gloss": "shoe",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F45F"
-   }
-  },
-  {
-   "form": "礼物",
-   "gloss": "gift",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F381"
-   }
-  },
-  {
-   "form": "钱",
-   "reading": "qián",
-   "gloss": "money",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4B0"
-   }
-  },
-  {
-   "form": "电话",
-   "gloss": "telephone",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "260E"
-   }
-  },
-  {
-   "form": "手机",
-   "gloss": "mobile phone",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4F1"
-   }
-  },
-  {
-   "form": "电脑",
-   "gloss": "computer",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4BB"
-   }
-  },
-  {
-   "form": "汽车",
-   "gloss": "car",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F697"
-   }
-  },
-  {
-   "form": "火车",
-   "gloss": "train",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F682"
-   }
-  },
-  {
-   "form": "自行车",
-   "gloss": "bicycle",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F6B2"
-   }
-  },
-  {
-   "form": "飞机",
-   "gloss": "airplane",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2708"
-   }
-  },
-  {
-   "form": "学校",
-   "gloss": "school",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3EB"
-   }
-  },
-  {
-   "form": "医院",
-   "gloss": "hospital",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3E5"
-   }
-  },
-  {
-   "form": "音乐",
-   "gloss": "music",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3B5"
-   }
-  }
+  {"form": "男人", "gloss": "man", "picture": {"pack": "images-openmoji", "concept": "1F468"}},
+  {"form": "女人", "gloss": "woman", "picture": {"pack": "images-openmoji", "concept": "1F469"}},
+  {"form": "警察", "gloss": "police officer", "picture": {"pack": "images-openmoji", "concept": "1F46E"}},
+  {"form": "厨师", "gloss": "cook", "picture": {"pack": "images-openmoji", "concept": "1F9D1-200D-1F373"}},
+  {"form": "老师", "gloss": "teacher", "picture": {"pack": "images-openmoji", "concept": "1F9D1-200D-1F3EB"}},
+  {"form": "学生", "gloss": "student", "picture": {"pack": "images-openmoji", "concept": "1F9D1-200D-1F393"}},
+  {"form": "零", "gloss": "zero", "picture": {"pack": "images-mulberry", "concept": "Zero"}},
+  {"form": "一", "gloss": "one", "picture": {"pack": "images-mulberry", "concept": "one"}},
+  {"form": "二", "gloss": "two", "picture": {"pack": "images-mulberry", "concept": "two"}},
+  {"form": "三", "gloss": "three", "picture": {"pack": "images-mulberry", "concept": "three"}},
+  {"form": "四", "gloss": "four", "picture": {"pack": "images-mulberry", "concept": "four"}},
+  {"form": "五", "gloss": "five", "picture": {"pack": "images-mulberry", "concept": "five"}},
+  {"form": "六", "reading": "liù", "gloss": "six", "picture": {"pack": "images-mulberry", "concept": "six"}},
+  {"form": "七", "gloss": "seven", "picture": {"pack": "images-mulberry", "concept": "seven"}},
+  {"form": "八", "gloss": "eight", "picture": {"pack": "images-mulberry", "concept": "eight"}},
+  {"form": "九", "gloss": "nine", "picture": {"pack": "images-mulberry", "concept": "nine"}},
+  {"form": "十", "gloss": "ten", "picture": {"pack": "images-mulberry", "concept": "ten"}},
+  {"form": "学校", "gloss": "school", "picture": {"pack": "images-openmoji", "concept": "1F3EB"}},
+  {"form": "书", "reading": "shū", "gloss": "book", "picture": {"pack": "images-openmoji", "concept": "1F4D6"}},
+  {"form": "书包", "gloss": "schoolbag", "picture": {"pack": "images-openmoji", "concept": "1F392"}},
+  {"form": "笔", "gloss": "pen", "picture": {"pack": "images-openmoji", "concept": "1F58A"}},
+  {"form": "写字", "gloss": "to write", "picture": {"pack": "images-openmoji", "concept": "270D"}},
+  {"form": "男孩", "gloss": "boy", "picture": {"pack": "images-openmoji", "concept": "1F466"}},
+  {"form": "女孩", "gloss": "girl", "picture": {"pack": "images-openmoji", "concept": "1F467"}},
+  {"form": "手", "gloss": "hand", "picture": {"pack": "images-openmoji", "concept": "270B"}},
+  {"form": "眼睛", "gloss": "eye", "picture": {"pack": "images-openmoji", "concept": "1F440"}},
+  {"form": "耳朵", "gloss": "ear", "picture": {"pack": "images-openmoji", "concept": "1F442"}},
+  {"form": "嘴", "gloss": "mouth", "picture": {"pack": "images-openmoji", "concept": "1F444"}},
+  {"form": "鼻子", "gloss": "nose", "picture": {"pack": "images-openmoji", "concept": "1F443"}},
+  {"form": "牙", "gloss": "tooth", "picture": {"pack": "images-openmoji", "concept": "1F9B7"}},
+  {"form": "头", "reading": "tóu", "gloss": "head", "picture": {"pack": "images-mulberry", "concept": "head"}},
+  {"form": "脚", "reading": "jiǎo", "gloss": "foot", "picture": {"pack": "images-openmoji", "concept": "1F9B6"}},
+  {"form": "腿", "gloss": "leg", "picture": {"pack": "images-openmoji", "concept": "1F9B5"}},
+  {"form": "心", "gloss": "heart", "picture": {"pack": "images-openmoji", "concept": "2764"}},
+  {"form": "狗", "gloss": "dog", "picture": {"pack": "images-openmoji", "concept": "1F415"}},
+  {"form": "猫", "reading": "māo", "gloss": "cat", "picture": {"pack": "images-openmoji", "concept": "1F408"}},
+  {"form": "鱼", "gloss": "fish", "picture": {"pack": "images-openmoji", "concept": "1F41F"}},
+  {"form": "牛", "gloss": "cow", "picture": {"pack": "images-openmoji", "concept": "1F404"}},
+  {"form": "马", "gloss": "horse", "picture": {"pack": "images-openmoji", "concept": "1F40E"}},
+  {"form": "猪", "gloss": "pig", "picture": {"pack": "images-openmoji", "concept": "1F416"}},
+  {"form": "鸡", "gloss": "chicken", "picture": {"pack": "images-openmoji", "concept": "1F414"}},
+  {"form": "鸭子", "gloss": "duck", "picture": {"pack": "images-openmoji", "concept": "1F986"}},
+  {"form": "兔子", "gloss": "rabbit", "picture": {"pack": "images-openmoji", "concept": "1F407"}},
+  {"form": "猴子", "gloss": "monkey", "picture": {"pack": "images-openmoji", "concept": "1F412"}},
+  {"form": "老虎", "gloss": "tiger", "picture": {"pack": "images-openmoji", "concept": "1F405"}},
+  {"form": "熊猫", "gloss": "panda", "picture": {"pack": "images-openmoji", "concept": "1F43C"}},
+  {"form": "大象", "gloss": "elephant", "picture": {"pack": "images-openmoji", "concept": "1F418"}},
+  {"form": "老鼠", "gloss": "mouse", "picture": {"pack": "images-openmoji", "concept": "1F401"}},
+  {"form": "蝴蝶", "gloss": "butterfly", "picture": {"pack": "images-openmoji", "concept": "1F98B"}},
+  {"form": "蛇", "reading": "shé", "gloss": "snake", "picture": {"pack": "images-openmoji", "concept": "1F40D"}},
+  {"form": "苹果", "gloss": "apple", "picture": {"pack": "images-openmoji", "concept": "1F34E"}},
+  {"form": "香蕉", "gloss": "banana", "picture": {"pack": "images-openmoji", "concept": "1F34C"}},
+  {"form": "鸡蛋", "gloss": "egg", "picture": {"pack": "images-openmoji", "concept": "1F95A"}},
+  {"form": "面包", "gloss": "bread", "picture": {"pack": "images-openmoji", "concept": "1F35E"}},
+  {"form": "饺子", "gloss": "dumplings", "picture": {"pack": "images-openmoji", "concept": "1F95F"}},
+  {"form": "米饭", "gloss": "cooked rice", "picture": {"pack": "images-openmoji", "concept": "1F35A"}},
+  {"form": "蛋糕", "gloss": "cake", "picture": {"pack": "images-openmoji", "concept": "E0C7"}},
+  {"form": "冰淇淋", "gloss": "ice cream", "picture": {"pack": "images-openmoji", "concept": "1F368"}},
+  {"form": "糖", "gloss": "sweets", "picture": {"pack": "images-openmoji", "concept": "1F36C"}},
+  {"form": "肉", "gloss": "meat", "picture": {"pack": "images-mulberry", "concept": "meat"}},
+  {"form": "巧克力", "gloss": "chocolate", "picture": {"pack": "images-openmoji", "concept": "1F36B"}},
+  {"form": "饼干", "gloss": "biscuit", "picture": {"pack": "images-openmoji", "concept": "1F36A"}},
+  {"form": "汉堡包", "gloss": "hamburger", "picture": {"pack": "images-openmoji", "concept": "1F354"}},
+  {"form": "面条", "gloss": "noodles", "picture": {"pack": "images-openmoji", "concept": "1F35C"}},
+  {"form": "水", "reading": "shuǐ", "gloss": "water", "picture": {"pack": "images-openmoji", "concept": "1F4A7"}},
+  {"form": "茶", "gloss": "tea", "picture": {"pack": "images-openmoji", "concept": "1F375"}},
+  {"form": "牛奶", "gloss": "milk", "picture": {"pack": "images-openmoji", "concept": "1F95B"}},
+  {"form": "咖啡", "gloss": "coffee", "picture": {"pack": "images-openmoji", "concept": "2615"}},
+  {"form": "喝", "reading": "hē", "gloss": "to drink", "picture": {"pack": "images-mulberry", "concept": "drink_to"}},
+  {"form": "筷子", "gloss": "chopsticks", "picture": {"pack": "images-openmoji", "concept": "1F962"}},
+  {"form": "碗", "gloss": "bowl", "picture": {"pack": "images-mulberry", "concept": "bowl"}},
+  {"form": "叉子", "gloss": "fork", "picture": {"pack": "images-mulberry", "concept": "fork"}},
+  {"form": "西瓜", "gloss": "watermelon", "picture": {"pack": "images-openmoji", "concept": "1F349"}},
+  {"form": "葡萄", "gloss": "grapes", "picture": {"pack": "images-openmoji", "concept": "1F347"}},
+  {"form": "草莓", "gloss": "strawberry", "picture": {"pack": "images-openmoji", "concept": "1F353"}},
+  {"form": "橙子", "gloss": "orange", "picture": {"pack": "images-mulberry", "concept": "orange"}},
+  {"form": "桃子", "gloss": "peach", "picture": {"pack": "images-openmoji", "concept": "1F351"}},
+  {"form": "梨", "gloss": "pear", "picture": {"pack": "images-openmoji", "concept": "1F350"}},
+  {"form": "西红柿", "gloss": "tomato", "picture": {"pack": "images-openmoji", "concept": "1F345"}},
+  {"form": "土豆", "gloss": "potato", "picture": {"pack": "images-openmoji", "concept": "1F954"}},
+  {"form": "胡萝卜", "gloss": "carrot", "picture": {"pack": "images-openmoji", "concept": "1F955"}},
+  {"form": "玉米", "gloss": "corn", "picture": {"pack": "images-openmoji", "concept": "1F33D"}},
+  {"form": "蘑菇", "gloss": "mushroom", "picture": {"pack": "images-openmoji", "concept": "1F344"}},
+  {"form": "红色", "gloss": "red", "picture": {"pack": "images-mulberry", "concept": "red"}},
+  {"form": "黄色", "gloss": "yellow", "picture": {"pack": "images-mulberry", "concept": "yellow"}},
+  {"form": "绿色", "gloss": "green", "picture": {"pack": "images-mulberry", "concept": "green"}},
+  {"form": "白色", "gloss": "white", "picture": {"pack": "images-mulberry", "concept": "white"}},
+  {"form": "黑色", "gloss": "black", "picture": {"pack": "images-mulberry", "concept": "black"}},
+  {"form": "太阳", "gloss": "sun", "picture": {"pack": "images-openmoji", "concept": "2600"}},
+  {"form": "月亮", "gloss": "moon", "picture": {"pack": "images-openmoji", "concept": "1F319"}},
+  {"form": "星星", "gloss": "star", "picture": {"pack": "images-openmoji", "concept": "2B50"}},
+  {"form": "云彩", "gloss": "cloud", "picture": {"pack": "images-openmoji", "concept": "2601"}},
+  {"form": "树", "gloss": "tree", "picture": {"pack": "images-openmoji", "concept": "1F333"}},
+  {"form": "雨", "reading": "yǔ", "gloss": "rain", "picture": {"pack": "images-openmoji", "concept": "1F327"}},
+  {"form": "雪", "reading": "xuě", "gloss": "snow", "picture": {"pack": "images-openmoji", "concept": "2744"}},
+  {"form": "花", "reading": "huā", "gloss": "flower", "picture": {"pack": "images-openmoji", "concept": "1F33C"}},
+  {"form": "火", "reading": "huǒ", "gloss": "fire", "picture": {"pack": "images-openmoji", "concept": "1F525"}},
+  {"form": "彩虹", "gloss": "rainbow", "picture": {"pack": "images-openmoji", "concept": "1F308"}},
+  {"form": "叶子", "gloss": "leaf", "picture": {"pack": "images-mulberry", "concept": "leaf"}},
+  {"form": "石头", "gloss": "stone", "picture": {"pack": "images-mulberry", "concept": "stone"}},
+  {"form": "房子", "gloss": "house", "picture": {"pack": "images-openmoji", "concept": "1F3E0"}},
+  {"form": "门", "gloss": "door", "picture": {"pack": "images-openmoji", "concept": "1F6AA"}},
+  {"form": "窗户", "gloss": "window", "picture": {"pack": "images-openmoji", "concept": "1FA9F"}},
+  {"form": "椅子", "gloss": "chair", "picture": {"pack": "images-openmoji", "concept": "1FA91"}},
+  {"form": "桌子", "gloss": "table", "picture": {"pack": "images-mulberry", "concept": "table"}},
+  {"form": "床", "gloss": "bed", "picture": {"pack": "images-openmoji", "concept": "1F6CF"}},
+  {"form": "灯", "gloss": "lamp", "picture": {"pack": "images-openmoji", "concept": "1F4A1"}},
+  {"form": "钥匙", "gloss": "key", "picture": {"pack": "images-openmoji", "concept": "1F511"}},
+  {"form": "闹钟", "gloss": "alarm clock", "picture": {"pack": "images-openmoji", "concept": "23F0"}},
+  {"form": "电视机", "gloss": "television", "picture": {"pack": "images-openmoji", "concept": "1F4FA"}},
+  {"form": "电脑", "gloss": "computer", "picture": {"pack": "images-openmoji", "concept": "1F4BB"}},
+  {"form": "电话", "gloss": "telephone", "picture": {"pack": "images-openmoji", "concept": "260E"}},
+  {"form": "手机", "gloss": "mobile phone", "picture": {"pack": "images-openmoji", "concept": "1F4F1"}},
+  {"form": "伞", "gloss": "umbrella", "picture": {"pack": "images-openmoji", "concept": "2602"}},
+  {"form": "眼镜", "gloss": "glasses", "picture": {"pack": "images-openmoji", "concept": "1F453"}},
+  {"form": "礼物", "gloss": "gift", "picture": {"pack": "images-openmoji", "concept": "1F381"}},
+  {"form": "气球", "gloss": "balloon", "picture": {"pack": "images-openmoji", "concept": "1F388"}},
+  {"form": "牙刷", "gloss": "toothbrush", "picture": {"pack": "images-openmoji", "concept": "1FAA5"}},
+  {"form": "洗澡", "gloss": "to bathe", "picture": {"pack": "images-mulberry", "concept": "bathe_to"}},
+  {"form": "帽子", "gloss": "hat", "picture": {"pack": "images-openmoji", "concept": "1F9E2"}},
+  {"form": "衬衫", "gloss": "shirt", "picture": {"pack": "images-mulberry", "concept": "shirt"}},
+  {"form": "鞋", "gloss": "shoe", "picture": {"pack": "images-openmoji", "concept": "1F45F"}},
+  {"form": "袜子", "gloss": "socks", "picture": {"pack": "images-openmoji", "concept": "1F9E6"}},
+  {"form": "外套", "gloss": "coat", "picture": {"pack": "images-openmoji", "concept": "1F9E5"}},
+  {"form": "裙子", "gloss": "skirt", "picture": {"pack": "images-mulberry", "concept": "skirt"}},
+  {"form": "手套", "gloss": "gloves", "picture": {"pack": "images-openmoji", "concept": "1F9E4"}},
+  {"form": "手表", "gloss": "watch", "picture": {"pack": "images-openmoji", "concept": "231A"}},
+  {"form": "汽车", "gloss": "car", "picture": {"pack": "images-openmoji", "concept": "1F697"}},
+  {"form": "公交车", "gloss": "bus", "picture": {"pack": "images-openmoji", "concept": "1F68C"}},
+  {"form": "出租车", "gloss": "taxi", "picture": {"pack": "images-openmoji", "concept": "1F695"}},
+  {"form": "火车", "gloss": "train", "picture": {"pack": "images-openmoji", "concept": "1F682"}},
+  {"form": "飞机", "gloss": "airplane", "picture": {"pack": "images-openmoji", "concept": "2708"}},
+  {"form": "地铁", "gloss": "subway, metro", "picture": {"pack": "images-openmoji", "concept": "1F687"}},
+  {"form": "自行车", "gloss": "bicycle", "picture": {"pack": "images-openmoji", "concept": "1F6B2"}},
+  {"form": "船", "gloss": "ship", "picture": {"pack": "images-openmoji", "concept": "1F6A2"}},
+  {"form": "医院", "gloss": "hospital", "picture": {"pack": "images-openmoji", "concept": "1F3E5"}},
+  {"form": "银行", "gloss": "bank", "picture": {"pack": "images-openmoji", "concept": "1F3E6"}},
+  {"form": "钱", "reading": "qián", "gloss": "money", "picture": {"pack": "images-openmoji", "concept": "1F4B0"}},
+  {"form": "酒店", "gloss": "hotel", "picture": {"pack": "images-openmoji", "concept": "1F3E8"}},
+  {"form": "洗手间", "gloss": "toilet, restroom", "picture": {"pack": "images-openmoji", "concept": "1F6BD"}},
+  {"form": "足球", "gloss": "football", "picture": {"pack": "images-openmoji", "concept": "26BD"}},
+  {"form": "篮球", "gloss": "basketball", "picture": {"pack": "images-openmoji", "concept": "1F3C0"}},
+  {"form": "音乐", "gloss": "music", "picture": {"pack": "images-openmoji", "concept": "1F3B5"}},
+  {"form": "跑步", "gloss": "to run", "picture": {"pack": "images-mulberry", "concept": "run_to"}},
+  {"form": "游泳", "gloss": "to swim", "picture": {"pack": "images-openmoji", "concept": "1F3CA"}},
+  {"form": "哭", "gloss": "to cry", "picture": {"pack": "images-openmoji", "concept": "1F622"}}
  ]
 }

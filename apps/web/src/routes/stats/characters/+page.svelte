@@ -9,7 +9,7 @@
 	import Msg from '$lib/ui/Msg.svelte';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
-	import { levelAttributionLine } from '$lib/study/levelAttribution';
+	import { levelAttributionLine } from '$lib/studycore/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
 	import CellTip from '$lib/stats/map/CellTip.svelte';
 	import CharGrid from '$lib/stats/map/CharGrid.svelte';
@@ -17,7 +17,6 @@
 	import {
 		cellStates,
 		filterCells,
-		groupOptions,
 		masteryGlyphs,
 		sectionStats,
 		variantFormCount,
@@ -26,16 +25,20 @@
 		type SchemeLevelMembers,
 		type Stage,
 		type StageFilter
-	} from '$lib/study/charGroups';
+	} from '$lib/studycore/charGroups';
+	import { LEVEL_ALL } from '$lib/studycore/charLevels';
 	import {
-		LEVEL_ALL,
-		filterByLevel,
-		levelGroupsFor,
-		parseLevelValue,
-		readLevelChoice,
-		writeLevelChoice
-	} from '$lib/study/charLevels';
-	import { fillMissingWrittenProgressively } from '$lib/study/entriesCache';
+		gradingOptions,
+		gradingPatch,
+		includeOutsidePatch,
+		packOf,
+		readMasteryMap,
+		resolveGrading,
+		studyLevelsPatch,
+		type MasteryMapSettings
+	} from '$lib/stats/mapGrading';
+	import { focusOptions, mapChars, readFocus, studyLevels, withOutsideLabel, writeFocus } from '$lib/stats/mapView';
+	import { fillMissingWrittenProgressively } from '$lib/studycore/entriesCache';
 	import {
 		STAGE_INFO,
 		defaultOpenSections,
@@ -44,18 +47,16 @@
 		jumpGlyph,
 		learnedSummary,
 		locateGlyph,
-		readGroupBy,
 		sectionsFor,
-		writeGroupBy,
 		type TipRequest
-	} from '$lib/study/mapGrid';
-	import { contextForData, currentContext } from '$lib/study/currentContext';
-	import type { StudyContext } from '$lib/study/studyContext';
-	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { loadStudyData } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
-	import type { ReviewEvent, StudyCard } from '$lib/study/types';
+	} from '$lib/studycore/mapGrid';
+	import { contextForData, currentContext } from '$lib/studycore/currentContext';
+	import type { StudyContext } from '$lib/studycore/studyContext';
+	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/studycore/mastery';
+	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+	import { loadStudyData } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
+	import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -89,12 +90,14 @@
 	// visit. Reported so the map never silently under-reports.
 	let unresolvedCards = $state(0);
 
-	let groupKey = $state<GroupKey | null>(null);
-	let levelValue = $state<string>(LEVEL_ALL);
-	let levelMembers = $state.raw<{ schemeId: number; levels: SchemeLevelMembers[] } | null>(null);
-	let levelLoading = $state(false);
-	let levelError = $state('');
-	let levelSeq = 0;
+	// The grading (#163): the workspace's `masteryMap` setting (synced), shown at once while a save is in flight
+	// (`optimistic`); a failed save puts the stored one back and says so.
+	let optimistic = $state.raw<MasteryMapSettings | null>(null);
+	let mapError = $state('');
+	let saveSeq = 0;
+	// The Level focus within the study set (this device only), read once the set is known.
+	let focusChoice = $state<string>(LEVEL_ALL);
+	let focusRead = false;
 	let stageFilter = $state<StageFilter>('all');
 	let queryInput = $state('');
 	let query = $state('');
@@ -167,15 +170,14 @@
 		cards = [];
 		reviews = [];
 		unresolvedCards = 0;
-		groupKey = null;
 		members = null;
 		membersLoading = false;
 		membersError = '';
-		levelValue = LEVEL_ALL;
-		levelMembers = null;
-		levelLoading = false;
-		levelError = '';
-		levelSeq += 1;
+		optimistic = null;
+		mapError = '';
+		saveSeq += 1;
+		focusChoice = LEVEL_ALL;
+		focusRead = false;
 		active = {};
 		tip = null;
 		workspaceId = id;
@@ -201,20 +203,6 @@
 			reviews = data.reviews;
 			weights = activeWeights(data);
 			ctx = contextForData(session.zone, data, id);
-			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
-			levelValue = readLevelChoice(storage(), id, levelGroupsFor(lang, schemeList));
-			// A stored level from another scheme must not be grouped by that
-			// scheme's levels: the level wins, as it does when it is chosen.
-			const storedLevel = parseLevelValue(levelValue);
-			if (storedLevel !== null && groupKey !== null && groupKey.startsWith('scheme:')) {
-				const own = `scheme:${storedLevel.schemeId}`;
-				const offered = groupOptions(lang, schemeList).some((option) => option.key === own);
-				const target = (offered ? own : lang.trim().toLowerCase().startsWith('ja') ? 'grade' : 'common') as GroupKey;
-				if (groupKey !== target) {
-					groupKey = target;
-					writeGroupBy(storage(), lang, groupKey);
-				}
-			}
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
@@ -234,51 +222,55 @@
 		session.workspaces.current !== null && !hasCharacterMap(session.workspaces.current.language)
 	);
 
+	// A workspace or language change loads the map again; a settings write (a new grading) does not.
+	const workspaceKey = $derived(session.workspaces.current?.id ?? null);
+	const workspaceLanguage = $derived(session.workspaces.current?.language ?? '');
 	$effect(() => {
-		const workspace = session.workspaces.current;
-		if (workspace && !hasCharacterMap(workspace.language)) {
+		const id = workspaceKey;
+		const lang = workspaceLanguage;
+		if (id !== null && !hasCharacterMap(lang)) {
 			// Drop any in-flight load for a previous workspace.
 			requestSeq++;
 			loading = false;
 			return;
 		}
-		void untrack(() => load(workspace?.id ?? null, workspace?.language ?? ''));
+		void untrack(() => load(id, lang));
 	});
 
-	const options = $derived(groupOptions(language, schemes));
-	const levelChoice = $derived(parseLevelValue(levelValue));
-	// A chosen level limits Group by to the built-in groupings and the
-	// level's own scheme: regrouping the level by another scheme would cut
-	// its characters by the wrong headings.
-	const groupItems = $derived.by(() => {
-		const items = options.map((option) => ({ value: option.key, label: option.label }));
-		if (levelChoice === null) return items;
-		const own = `scheme:${levelChoice.schemeId}`;
-		return items.filter((item) => !item.value.startsWith('scheme:') || item.value === own);
-	});
-	const levelGroups = $derived(levelGroupsFor(language, schemes));
 	const chars = $derived(universe?.chars ?? []);
-
-	/**
-	 * levelGroupTarget is the Group by value a level opens on: its own scheme
-	 * when Group by offers it, else the language's built-in equivalent (Grade
-	 * for the Jōyō pack, which Group by deliberately hides).
-	 */
-	function levelGroupTarget(choice: { schemeId: number }): GroupKey {
-		const own = `scheme:${choice.schemeId}`;
-		if (options.some((option) => option.key === own)) return own as GroupKey;
-		return (language.trim().toLowerCase().startsWith('ja') ? 'grade' : 'common') as GroupKey;
-	}
-	const selectedLevel = $derived.by(() => {
-		const choice = levelChoice;
-		if (choice === null || levelMembers?.schemeId !== choice.schemeId) return null;
-		return levelMembers.levels.find((level) => level.levelId === choice.levelId) ?? null;
-	});
-	// While the chosen level loads, the map is empty rather than every
-	// character: a flash of 10k cells would be the problem this filter solves.
-	const filteredChars = $derived(
-		levelChoice === null ? chars : levelMembers === null || selectedLevel === null ? [] : filterByLevel(chars, levelMembers.levels, selectedLevel.levelId)
+	const mapSettings = $derived(optimistic ?? readMasteryMap(session.workspaces.current?.settings));
+	const gradings = $derived(gradingOptions(language, schemes));
+	// The grading the map goes by: the stored one, else HSK / JLPT, else today's grouping (mapGrading.ts).
+	const grading = $derived(universe === null ? null : resolveGrading(language, schemes, mapSettings));
+	const gradingOption = $derived(gradings.find((option) => option.value === grading) ?? null);
+	const groupKey = $derived<GroupKey | null>(gradingOption?.groupKey ?? null);
+	const scheme = $derived(gradingOption?.scheme ?? null);
+	const schemeId = $derived(scheme?.id ?? null);
+	const schemeMembers = $derived(schemeId !== null && members?.schemeId === schemeId ? members.levels : null);
+	// The pack's levels and its study set, once its characters are loaded.
+	const levels = $derived(scheme !== null && schemeMembers !== null ? studyLevels(scheme, schemeMembers, mapSettings) : null);
+	const setLevelIds = $derived(new Set(levels?.set.map((level) => level.levelId) ?? []));
+	const focusItems = $derived(
+		scheme !== null && levels !== null ? focusOptions(scheme.id, levels.set, mapSettings.includeOutside, gradingOption?.label ?? '') : []
 	);
+	// A focus that left the study set (or the Outside group) is "all study levels"; the choice itself stays.
+	const focus = $derived(focusItems.some((item) => item.value === focusChoice) ? focusChoice : LEVEL_ALL);
+
+	$effect(() => {
+		const items = focusItems;
+		if (focusRead || items.length === 0 || workspaceId === null) return;
+		focusRead = true;
+		focusChoice = untrack(() => readFocus(storage(), workspaceId!, items));
+	});
+
+	// The study set first, then the focus; a built-in grouping shows every character. While the pack's characters
+	// load, the map is empty rather than every character.
+	const filteredChars = $derived.by(() => {
+		if (groupKey === null) return [];
+		if (scheme === null) return chars;
+		if (schemeMembers === null) return [];
+		return mapChars(chars, schemeMembers, setLevelIds, mapSettings.includeOutside, focus);
+	});
 
 	// One mastery pass over every glyph and variant; a cell takes the best
 	// of its forms (a card written 愛 lights 爱).
@@ -291,17 +283,8 @@
 
 	const totals = $derived(sectionStats([...cellByRow.values()]));
 
-	const schemeId = $derived(
-		groupKey !== null && groupKey.startsWith('scheme:') ? Number(groupKey.slice(7)) : null
-	);
-
 	// The credit line of the level scheme the map shows, if any.
-	const attributionSchemeId = $derived(levelChoice?.schemeId ?? schemeId);
-	const attributionLine = $derived(
-		levelAttributionLine(
-			attributionSchemeId === null ? null : schemes.find((s) => s.id === attributionSchemeId)
-		)
-	);
+	const attributionLine = $derived(levelAttributionLine(scheme));
 
 	async function loadMembers(id: number): Promise<void> {
 		const seq = ++membersSeq;
@@ -321,22 +304,6 @@
 		}
 	}
 
-	async function loadLevelMembers(id: number): Promise<void> {
-		const seq = ++levelSeq;
-		levelLoading = true;
-		levelError = '';
-		try {
-			const levels = await fetchSchemeCharacters(session.caches.schemes, id);
-			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
-			levelMembers = { schemeId: id, levels };
-		} catch (err) {
-			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
-			levelError = errorText(err, t('stats.map.membersFailed'));
-		} finally {
-			if (seq === levelSeq) levelLoading = false;
-		}
-	}
-
 	$effect(() => {
 		const id = schemeId;
 		if (id === null) return;
@@ -346,30 +313,18 @@
 		});
 	});
 
-	// The level filter has its own scheme data: on a stored choice Group by
-	// may be a built-in grouping, and selecting a level changes Group by to
-	// the level's scheme, so the two loads usually share the module cache.
-	$effect(() => {
-		const choice = levelChoice;
-		if (choice === null) return;
-		untrack(() => {
-			if (levelMembers?.schemeId === choice.schemeId) return;
-			void loadLevelMembers(choice.schemeId);
-		});
-	});
-
-	// Null while a chosen level or a scheme grouping's levels are loading.
+	// Null while a pack grading's levels are loading.
 	const grouping = $derived.by(() => {
-		if (levelChoice !== null && selectedLevel === null) return null;
 		if (groupKey === null) return null;
-		if (schemeId !== null) {
-			if (members?.schemeId !== schemeId) return null;
-			return sectionsFor(filteredChars, groupKey, members.levels);
+		if (schemeMembers !== null) {
+			const built = sectionsFor(filteredChars, groupKey, schemeMembers);
+			return { ...built, sections: withOutsideLabel(built.sections, gradingOption?.label ?? '') };
 		}
+		if (schemeId !== null) return null;
 		return sectionsFor(filteredChars, groupKey);
 	});
 
-	const filtering = $derived(stageFilter !== 'all' || query.trim() !== '' || levelChoice !== null);
+	const filtering = $derived(stageFilter !== 'all' || query.trim() !== '' || focus !== LEVEL_ALL);
 
 	const views = $derived.by(() => {
 		if (grouping === null) return [];
@@ -451,12 +406,12 @@
 	$effect(() => {
 		void stageFilter;
 		void query;
-		void levelValue;
-		void selectedLevel;
+		void focus;
+		void grouping;
 		clearTimeout(announceTimer);
-		// Do not announce "No characters match." while the level is still
-		// loading; the effect runs again when selectedLevel arrives.
-		if (untrack(() => levelChoice !== null && selectedLevel === null)) return;
+		// Do not announce "No characters match." while the levels are still
+		// loading; the effect runs again when they arrive.
+		if (untrack(() => grouping === null)) return;
 		const text = untrack(() => filterAnnouncement(shownTotal, totals.total, filtering));
 		// Nothing to say on the first paint, before any filter was used.
 		if (untrack(() => universe === null || (!filtering && announcement === ''))) return;
@@ -475,36 +430,51 @@
 		query = '';
 	}
 
-	function chooseGroup(key: GroupKey) {
-		groupKey = key;
-		writeGroupBy(storage(), language, key);
+	/** saveMap shows a change at once and saves it as one merge patch; a failed save puts the stored map back. */
+	async function saveMap(next: MasteryMapSettings, patch: Record<string, unknown>): Promise<void> {
+		if (workspaceId === null) return;
+		const seq = ++saveSeq;
+		optimistic = next;
+		mapError = '';
+		try {
+			await session.workspaces.setSettings(workspaceId, patch);
+		} catch (err) {
+			if (seq === saveSeq) mapError = errorText(err, t('stats.map.saveFailed'));
+		} finally {
+			if (seq === saveSeq) optimistic = null;
+		}
+	}
+
+	function chooseGrading(value: string): void {
 		// A failed scheme load belongs to that scheme only; a late answer
-		// for it must not land on the new grouping either.
+		// for it must not land on the new grading either.
 		membersSeq += 1;
 		membersError = '';
 		membersLoading = false;
+		void saveMap({ ...mapSettings, grading: value }, gradingPatch(value));
 	}
 
-	/**
-	 * chooseLevel sets the map's level filter. A level opens on its own
-	 * scheme (otherwise the first view is empty sections of another scheme);
-	 * the person can regroup the same level afterwards. "All levels" keeps
-	 * the current grouping.
-	 */
-	function chooseLevel(value: string): void {
-		// A new selection invalidates any level fetch still in flight, even
-		// when it returns to a scheme whose data is already held.
-		levelSeq += 1;
-		levelLoading = false;
-		levelError = '';
-		levelValue = value;
-		const choice = parseLevelValue(value);
-		if (choice !== null) {
-			const target = levelGroupTarget(choice);
-			if (groupKey !== target) chooseGroup(target);
-			if (levelMembers?.schemeId !== choice.schemeId) void loadLevelMembers(choice.schemeId);
-		}
-		if (workspaceId !== null) writeLevelChoice(storage(), workspaceId, value);
+	function chooseOutside(on: boolean): void {
+		void saveMap({ ...mapSettings, includeOutside: on }, includeOutsidePatch(on));
+	}
+
+	/** toggleLevel switches one level of the study set; the last one stays (its box is disabled). */
+	function toggleLevel(ord: number, on: boolean): void {
+		const pack = packOf(grading);
+		if (pack === null || levels === null) return;
+		const all = levels.all.map((level) => level.ord);
+		const kept = levels.set.map((level) => level.ord).filter((other) => other !== ord);
+		const next = on ? [...kept, ord] : kept;
+		if (next.length === 0) return;
+		const nextLevels = { ...mapSettings.levels };
+		if (all.every((other) => next.includes(other))) delete nextLevels[pack];
+		else nextLevels[pack] = all.filter((other) => next.includes(other));
+		void saveMap({ ...mapSettings, levels: nextLevels }, studyLevelsPatch(pack, next, all));
+	}
+
+	function chooseFocus(value: string): void {
+		focusChoice = value;
+		if (workspaceId !== null) writeFocus(storage(), workspaceId, value);
 	}
 
 	// A collapsed section forgets its active cell: re-expanding starts at
@@ -639,7 +609,7 @@
 			<Msg key="stats.map.noneInstalled">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	{:else}
-		{#if levelChoice === null || selectedLevel !== null}
+		{#if grouping !== null}
 		<section class="summary" aria-label={t('stats.map.summary')}>
 			<p class="total">
 				<strong>{learnedSummary(totals.learned, totals.total)}</strong>
@@ -683,26 +653,26 @@
 		{/if}
 
 		<section class="controls" aria-label={t('stats.map.controls')}>
-			{#if levelGroups.length > 0}
+			<div class="control">
+				<Select
+					label={t('stats.map.grading')}
+					value={grading ?? ''}
+					options={gradings.map((option) => ({ value: option.value, label: option.label }))}
+					hint={t('stats.map.grading.hint')}
+					onchange={(event) => chooseGrading(event.currentTarget.value)}
+				/>
+			</div>
+			{#if focusItems.length > 0}
 				<div class="control level">
 					<Select
 						label={t('stats.map.level')}
-						value={levelValue}
-						options={[{ value: LEVEL_ALL, label: t('stats.map.level.all') }]}
-						groups={levelGroups}
+						value={focus}
+						options={focusItems}
 						hint={t('stats.map.level.hint')}
-						onchange={(event) => chooseLevel(event.currentTarget.value)}
+						onchange={(event) => chooseFocus(event.currentTarget.value)}
 					/>
 				</div>
 			{/if}
-			<div class="control">
-				<Select
-					label={t('stats.map.groupBy')}
-					value={groupKey ?? ''}
-					options={groupItems}
-					onchange={(event) => chooseGroup(event.currentTarget.value as GroupKey)}
-				/>
-			</div>
 			<div class="control grow">
 				<Field
 					label={t('stats.map.search')}
@@ -725,6 +695,36 @@
 				<Button variant="secondary" type="submit">{t('stats.map.go')}</Button>
 			</form>
 		</section>
+		{#if scheme !== null && levels !== null}
+			<div class="study-set">
+				<fieldset class="study-levels">
+					<legend>{t('stats.map.studyLevels')}</legend>
+					{#each levels.all as level (level.levelId)}
+						{@const on = setLevelIds.has(level.levelId)}
+						<label class="inline">
+							<input
+								type="checkbox"
+								checked={on}
+								disabled={on && levels.set.length === 1}
+								onchange={(event) => toggleLevel(level.ord, event.currentTarget.checked)}
+							/>
+							{level.name}
+						</label>
+					{/each}
+				</fieldset>
+				<label class="inline outside">
+					<input
+						type="checkbox"
+						checked={mapSettings.includeOutside}
+						onchange={(event) => chooseOutside(event.currentTarget.checked)}
+					/>
+					{t('stats.map.includeOutside', { grading: gradingOption?.label ?? '' })}
+				</label>
+			</div>
+		{/if}
+		{#if mapError}
+			<p class="error" role="alert">{mapError}</p>
+		{/if}
 		{#if attributionLine}
 			<p class="hint small attribution">
 				{attributionLine} · <a href="/sources">{t('stats.map.sources')}</a>
@@ -736,17 +736,7 @@
 
 		<p class="sr" role="status" aria-live="polite">{announcement}</p>
 
-		{#if levelError && levelChoice !== null}
-			<div class="error-box" role="alert">
-				<p class="error">{levelError}</p>
-				<Button
-					variant="secondary"
-					type="button"
-					onclick={() => levelChoice !== null && loadLevelMembers(levelChoice.schemeId)}
-					>{t('stats.map.retry')}</Button
-				>
-			</div>
-		{:else if membersError && schemeId !== null}
+		{#if membersError && schemeId !== null}
 			<div class="error-box" role="alert">
 				<p class="error">{membersError}</p>
 				<Button
@@ -756,7 +746,7 @@
 				>
 			</div>
 		{:else if grouping === null}
-			<p class="hint" role="status">{membersLoading || levelLoading ? t('stats.map.loadingLevels') : ''}</p>
+			<p class="hint" role="status">{membersLoading ? t('stats.map.loadingLevels') : ''}</p>
 		{:else}
 			<div class="bar-row">
 				<p class="hint small">
@@ -773,7 +763,7 @@
 				{/if}
 			</div>
 
-			{#if levelChoice !== null && selectedLevel !== null && filteredChars.length === 0}
+			{#if focus !== LEVEL_ALL && filteredChars.length === 0}
 				<p class="hint">{t('stats.map.level.empty')}</p>
 			{:else if filtering && shownTotal === 0}
 				<p class="hint">{t('stats.map.noMatch')}</p>
@@ -960,6 +950,30 @@
 
 	.control {
 		min-width: 0;
+	}
+
+	/* The study set: the pack's levels as a wrapping row of checkboxes, then the outside switch. */
+	.study-set {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
+	}
+
+	.study-levels {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-4);
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
+	.study-levels legend {
+		width: 100%;
+		margin-bottom: var(--space-1);
+		padding: 0;
+		font-weight: var(--weight-strong);
 	}
 
 	.control.grow {

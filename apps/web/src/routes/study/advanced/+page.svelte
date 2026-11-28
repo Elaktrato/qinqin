@@ -10,11 +10,12 @@
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { fetchSchemeCharacters } from '$lib/api/schemes';
 	import type { CharRow, FrequencyPack, Level } from '$lib/api/types';
-	import { useSession } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { createSetupData } from '$lib/features/flashcards/setup/setupData.svelte';
-	import { noteText } from '$lib/features/flashcards/setup/studyModalView';
+	import { hiddenTypesText, noteText } from '$lib/features/flashcards/setup/studyModalView';
 	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
 	import { t } from '$lib/i18n';
 	import { usesHan } from '$lib/languages';
@@ -22,24 +23,23 @@
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { safeFrom } from '$lib/routing/here';
 	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
-	import type { SchemeLevelMembers } from '$lib/study/charGroups';
-	import { saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-	import { onContextStale } from '$lib/study/currentContext';
-	import { onStudyChange, touches } from '$lib/study/data';
-	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-	import { loadIneligible } from '$lib/study/ineligible';
-	import { levelMastery } from '$lib/study/levelMastery';
-	import { startTodayText } from '$lib/study/limitsText';
-	import { resolveSessionOrder } from '$lib/study/newOrder';
-	import { decodeOrder, encodeOrder, mixedNote, sessionOrderChoices } from '$lib/study/newOrderView';
-	import { cardsInDecks } from '$lib/study/readModel';
-	import { CARD_TYPES, type StudySessionMode } from '$lib/study/session';
-	import { repairSetup, setupDeckIds, setupKinds } from '$lib/study/setup';
-	import { planSetup } from '$lib/study/setupPlan';
-	import type { SetupPatch } from '$lib/study/setupStore.svelte';
-	import { deckOrdersOf } from '$lib/study/sessionOrder';
-	import { parseTypeOrder, typeOrderChoices } from '$lib/study/typeOrderView';
-	import { CARD_KINDS, GENERAL_DECK_ID, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
+	import type { SchemeLevelMembers } from '$lib/studycore/charGroups';
+	import { saveDeckCardTypesForDecks } from '$lib/features/flashcards/commands/decks';
+	import { onContextStale } from '$lib/studycore/currentContext';
+	import { onStudyChange, touches } from '$lib/studycore/data';
+	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/studycore/deckSettings';
+	import { levelMastery } from '$lib/studycore/levelMastery';
+	import { startTodayText } from '$lib/features/flashcards/session/limitsText';
+	import { resolveSessionOrder } from '$lib/studycore/newOrder';
+	import { decodeOrder, encodeOrder, mixedNote, sessionOrderChoices } from '$lib/features/flashcards/session/newOrderView';
+	import { cardsInDecks } from '$lib/studycore/readModel';
+	import { CARD_TYPES, type StudySessionMode } from '$lib/features/flashcards/session/session';
+	import { repairSetup, setupDeckIds, setupKinds } from '$lib/features/flashcards/setup/setup';
+	import { planSetup } from '$lib/features/flashcards/setup/setupPlan';
+	import type { SetupPatch } from '$lib/features/flashcards/setup/setupStore.svelte';
+	import { deckOrdersOf } from '$lib/features/flashcards/session/sessionOrder';
+	import { parseTypeOrder, typeOrderChoices } from '$lib/features/flashcards/session/typeOrderView';
+	import { CARD_KINDS, GENERAL_DECK_ID, OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/studycore/types';
 	import { Button, Field, Section, Select } from '$lib/ui';
 
 	const session = useSession();
@@ -172,7 +172,10 @@
 						weights: data.weights,
 						ctx: data.ctx,
 						language,
-						skip: workspaceId === null ? undefined : loadIneligible(workspaceId),
+						// The words the server says cannot make a card of a kind (#288).
+						skip: session.eligibility.skip(),
+						// The Reverse and Cloze switches here turn a kind on for every deck.
+						optIns: 'any',
 						level: {
 							scheme,
 							levelName: setup.levelName,
@@ -202,14 +205,25 @@
 			: vacationBanner(vacationStatus(data.vacations, workspaceId, data.ctx.day.today()), data.ctx.day.today())
 	);
 
-	// The card types: the language's, opt-in ones only for deck sessions.
+	// The card types: the language's, opt-in ones only for deck sessions; once the
+	// counts are known only those with something to study (#289).
+	const available = $derived(plan !== null && ready ? plan.available : null);
 	const visibleTypes = $derived(
-		CARD_TYPES.filter((type) => profileOf(language).cardKinds.includes(type.id) && (setup?.mode !== 'levels' || !isOptIn(type.id)))
+		CARD_TYPES.filter(
+			(type) =>
+				profileOf(language).cardKinds.includes(type.id) &&
+				(setup?.mode !== 'levels' || !isOptIn(type.id)) &&
+				(available === null || available.includes(type.id))
+		)
 	);
 	function isOptIn(kind: string): kind is OptInKind {
 		return (OPT_IN_KINDS as readonly string[]).includes(kind);
 	}
-	const shownKinds = $derived(kinds.filter((kind) => setup?.mode !== 'levels' || !isOptIn(kind)));
+	const shownKinds = $derived(
+		kinds.filter((kind) => (setup?.mode !== 'levels' || !isOptIn(kind)) && visibleTypes.some((type) => type.id === kind))
+	);
+	const app = useApp();
+	const hiddenLines = $derived(plan !== null && ready ? hiddenTypesText(plan.hidden, { admin: app.auth.user?.admin === true }) : []);
 
 	const orderView = $derived(
 		sessionOrderChoices({
@@ -348,7 +362,7 @@
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
 	<UnreadableRowsNotice {workspaceId} />
-	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
+	{#if session.workspaces.current && usesHan(session.workspaces.current.language) && !featureKnownOff(STATS_ID, session.features)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 	{#if note !== null}<p class="hint" role="status">{note}</p>{/if}
@@ -542,6 +556,7 @@
 					</li>
 				{/each}
 			</ul>
+			{#each hiddenLines as line (line)}<p class="hint">{line}</p>{/each}
 			{#if typeError}
 				<p class="error" role="alert">{typeError}</p>
 			{/if}

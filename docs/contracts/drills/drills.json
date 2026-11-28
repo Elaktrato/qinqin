@@ -1,0 +1,606 @@
+{
+ "version": 1,
+ "rule": "drills/drills",
+ "note": "Drills (v0.9.0 drills framework): ids, item keys, the event of one answer and how a client reads it, and the drills a server and a client count as activity. Schedules: schedule.json; rounds: pick.json; EXP, streak and activity: counting.json.",
+ "constants": {
+  "eventPrefix": "drill.",
+  "feature": "practice",
+  "maxIdLength": 32,
+  "maxItemLength": 200,
+  "reservedIds": [
+   "weakest"
+  ],
+  "grades": [
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "registry": ["tone-pairs", "conjugation", "measure-words", "counters", "counter-readings", "look-alikes"],
+ "ids": [
+  {
+   "name": "a one-word id",
+   "id": "conjugation",
+   "valid": true
+  },
+  {
+   "name": "words joined by hyphens",
+   "id": "tone-pairs",
+   "valid": true
+  },
+  {
+   "name": "a digit after the first letter",
+   "id": "a1",
+   "valid": true
+  },
+  {
+   "name": "32 characters",
+   "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "valid": true
+  },
+  {
+   "name": "33 characters",
+   "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "valid": false
+  },
+  {
+   "name": "empty",
+   "id": "",
+   "valid": false
+  },
+  {
+   "name": "a capital",
+   "id": "Tone",
+   "valid": false
+  },
+  {
+   "name": "an underscore",
+   "id": "tone_pairs",
+   "valid": false
+  },
+  {
+   "name": "a leading hyphen",
+   "id": "-tone",
+   "valid": false
+  },
+  {
+   "name": "a trailing hyphen",
+   "id": "tone-",
+   "valid": false
+  },
+  {
+   "name": "two hyphens",
+   "id": "tone--pairs",
+   "valid": false
+  },
+  {
+   "name": "a leading digit",
+   "id": "1tone",
+   "valid": false
+  },
+  {
+   "name": "a dot",
+   "id": "drill.tone",
+   "valid": false
+  },
+  {
+   "name": "the weakest round's name is reserved",
+   "id": "weakest",
+   "valid": false
+  },
+  {
+   "name": "not a string",
+   "id": 7,
+   "valid": false
+  }
+ ],
+ "items": [
+  {
+   "name": "an entry and a form family",
+   "item": "1234:te-form",
+   "valid": true
+  },
+  {
+   "name": "a tone pair",
+   "item": "3-4",
+   "valid": true
+  },
+  {
+   "name": "a look-alike set",
+   "item": "未末",
+   "valid": true
+  },
+  {
+   "name": "one character",
+   "item": "紙",
+   "valid": true
+  },
+  {
+   "name": "200 code points outside the BMP (400 UTF-16 units)",
+   "item": "𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀",
+   "valid": true
+  },
+  {
+   "name": "201 code points",
+   "item": "𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀𠀀a",
+   "valid": false
+  },
+  {
+   "name": "a byte order mark is no white space",
+   "item": "x\ufeff",
+   "valid": true
+  },
+  {
+   "name": "empty",
+   "item": "",
+   "valid": false
+  },
+  {
+   "name": "a space",
+   "item": "a b",
+   "valid": false
+  },
+  {
+   "name": "a tab",
+   "item": "a\tb",
+   "valid": false
+  },
+  {
+   "name": "an ideographic space",
+   "item": "未\u3000末",
+   "valid": false
+  },
+  {
+   "name": "a no-break space",
+   "item": "\u00a0x",
+   "valid": false
+  },
+  {
+   "name": "a line separator",
+   "item": "x\u2028",
+   "valid": false
+  },
+  {
+   "name": "a control character",
+   "item": "x\u0007",
+   "valid": false
+  },
+  {
+   "name": "a C1 control character",
+   "item": "x\u0085",
+   "valid": false
+  },
+  {
+   "name": "DEL",
+   "item": "x\u007f",
+   "valid": false
+  },
+  {
+   "name": "not a string",
+   "item": 12,
+   "valid": false
+  }
+ ],
+ "build": [
+  {
+   "name": "an answer names the item, the mode and the grade, in this member order",
+   "drill": "tone-pairs",
+   "item": "3-4",
+   "mode": "produce",
+   "grade": 3,
+   "expect": {
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   }
+  },
+  {
+   "name": "a word and form family, recognised, Again",
+   "drill": "conjugation",
+   "item": "1234:past-negative-polite",
+   "mode": "recognise",
+   "grade": 1,
+   "expect": {
+    "type": "drill.conjugation",
+    "payload": {
+     "item": "1234:past-negative-polite",
+     "mode": "recognise",
+     "grade": 1
+    }
+   }
+  },
+  {
+   "name": "a drill's own members come after the grade, in its order (#228: the character asked and the one given)",
+   "drill": "look-alikes",
+   "item": "未末",
+   "mode": "choose",
+   "grade": 1,
+   "extra": {
+    "asked": "未",
+    "given": "末"
+   },
+   "expect": {
+    "type": "drill.look-alikes",
+    "payload": {
+     "item": "未末",
+     "mode": "choose",
+     "grade": 1,
+     "asked": "未",
+     "given": "末"
+    }
+   }
+  }
+ ],
+ "parse": [
+  {
+   "name": "an answer",
+   "event": {
+    "id": "01KB00000000000000000D0001",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": {
+    "drill": "tone-pairs",
+    "item": "3-4",
+    "mode": "produce",
+    "grade": 3
+   }
+  },
+  {
+   "name": "members a drill adds after these are ignored",
+   "event": {
+    "id": "01KB00000000000000000D0002",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.look-alikes",
+    "payload": {
+     "item": "未末",
+     "mode": "choose",
+     "grade": 1,
+     "given": "末"
+    }
+   },
+   "expect": {
+    "drill": "look-alikes",
+    "item": "未末",
+    "mode": "choose",
+    "grade": 1
+   }
+  },
+  {
+   "name": "a drill this client has not registered is still an answer",
+   "event": {
+    "id": "01KB00000000000000000D0003",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.future-drill",
+    "payload": {
+     "item": "x",
+     "mode": "produce",
+     "grade": 4
+    }
+   },
+   "expect": {
+    "drill": "future-drill",
+    "item": "x",
+    "mode": "produce",
+    "grade": 4
+   }
+  },
+  {
+   "name": "every grade from 1 to 4",
+   "event": {
+    "id": "01KB00000000000000000D0004",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.counters",
+    "payload": {
+     "item": "5678",
+     "mode": "produce",
+     "grade": 2
+    }
+   },
+   "expect": {
+    "drill": "counters",
+    "item": "5678",
+    "mode": "produce",
+    "grade": 2
+   }
+  },
+  {
+   "name": "no drill id",
+   "event": {
+    "id": "01KB00000000000000000D0005",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a bad drill id",
+   "event": {
+    "id": "01KB00000000000000000D0006",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.Tone",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "the reserved id",
+   "event": {
+    "id": "01KB00000000000000000D0007",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.weakest",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "another type",
+   "event": {
+    "id": "01KB00000000000000000D0008",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "review",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a type that only starts like a drill",
+   "event": {
+    "id": "01KB00000000000000000D0009",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drills.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "grade 0",
+   "event": {
+    "id": "01KB00000000000000000D0010",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 0
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "grade 5",
+   "event": {
+    "id": "01KB00000000000000000D0011",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 5
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a fractional grade",
+   "event": {
+    "id": "01KB00000000000000000D0012",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 2.5
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a grade as text",
+   "event": {
+    "id": "01KB00000000000000000D0013",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": "3"
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "no grade",
+   "event": {
+    "id": "01KB00000000000000000D0014",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce"
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "an empty item",
+   "event": {
+    "id": "01KB00000000000000000D0015",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "an item with a space",
+   "event": {
+    "id": "01KB00000000000000000D0016",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3 4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "no item",
+   "event": {
+    "id": "01KB00000000000000000D0017",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a bad mode",
+   "event": {
+    "id": "01KB00000000000000000D0018",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "Produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "no mode",
+   "event": {
+    "id": "01KB00000000000000000D0019",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "grade": 3
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a payload that is no object",
+   "event": {
+    "id": "01KB00000000000000000D0020",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": [
+     "3-4",
+     "produce",
+     3
+    ]
+   },
+   "expect": null
+  },
+  {
+   "name": "no payload",
+   "event": {
+    "id": "01KB00000000000000000D0021",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-28T08:00:00Z",
+    "type": "drill.tone-pairs",
+    "payload": null
+   },
+   "expect": null
+  },
+  {
+   "name": "a time that does not parse",
+   "event": {
+    "id": "01KB00000000000000000D0022",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "not a time",
+    "type": "drill.tone-pairs",
+    "payload": {
+     "item": "3-4",
+     "mode": "produce",
+     "grade": 3
+    }
+   },
+   "expect": null
+  }
+ ]
+}

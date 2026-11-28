@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../docs/contracts/reader/smart-readings.json';
-import { cardScore, MASTERY_THRESHOLD } from '$lib/study/mastery';
-import type { Schedule } from '$lib/study/scheduler';
-import type { StudyCard } from '$lib/study/types';
+import { cardScore, MASTERY_THRESHOLD } from '$lib/studycore/mastery';
+import type { Schedule } from '$lib/studycore/scheduler';
+import type { StudyCard } from '$lib/studycore/types';
 import type { SegmentMatch } from '$lib/api/types';
-import { knownIndex, type KnownIndex } from '$lib/study/known';
+import { knownIndex, type KnownIndex } from '$lib/studycore/known';
 import { annotateParagraph, isKnown } from './smartReadings';
 
 describe('the score the rule uses', () => {
@@ -53,7 +53,7 @@ describe('annotateParagraph (contract)', () => {
 				c.runs,
 				c.matches.map(toMatch),
 				index,
-				{ bookRuby: c.bookRuby, readings: c.readings as 'never', smartThreshold: c.smartThreshold, rubyScale: 0.55, font: 'default', highlightWords: false },
+				{ bookRuby: c.bookRuby, readings: c.readings as 'never', smartThreshold: c.smartThreshold, rubyScale: 0.55, font: 'default', highlightWords: false, saveSentences: false },
 				c.lang
 			);
 			expect(got).toEqual(c.expect);

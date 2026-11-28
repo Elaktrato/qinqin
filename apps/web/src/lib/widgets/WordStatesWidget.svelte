@@ -8,11 +8,12 @@
 		wordStateSummary,
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
-	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
+	import { loadStudyHistory, onStudyChange, touches } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import { flashcardsHref } from '$lib/features/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
@@ -23,13 +24,10 @@
 
 	let { compact = false }: { compact?: boolean } = $props();
 
-	let result = $state.raw<WordStatesResult | null>(null);
-	let loading = $state(true);
-	let error = $state('');
 	let noWorkspace = $state(false);
-
-	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
+	// The last counts of this workspace show at once on a revisit (#290).
+	const shown = new WidgetLoad<WordStatesResult>(session, 'word-states', session.workspaces.current?.id ?? null);
+	const result = $derived(shown.value);
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const headingId = $derived(compact ? 'word-states-home-heading' : 'word-states-heading');
@@ -39,9 +37,9 @@
 	const status = $derived<WidgetStatus>(
 		noWorkspace
 			? 'no-workspace'
-			: loading
+			: shown.loading
 				? 'loading'
-				: error
+				: shown.error
 					? 'error'
 					: (overall?.total ?? 0) === 0
 						? 'empty'
@@ -49,37 +47,38 @@
 	);
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-
+		noWorkspace = workspace === null;
 		if (workspace === null) {
-			result = null;
-			noWorkspace = true;
-			loading = false;
+			shown.clear();
 			return;
 		}
-
-		try {
-			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (study/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(session.study, workspace, { force });
-			if (seq !== requestSeq) return;
-			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(session.zone, data, workspace).clock);
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			result = null;
-			error = errorText(err, t('widgets.words.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await shown.run(
+			workspace,
+			async () => {
+				const data = await loadStudyHistory(session.study, workspace, { force });
+				return wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(session.zone, data, workspace).clock);
+			},
+			(err) => errorText(err, t('widgets.words.loadFailed'))
+		);
 	}
 
 	$effect(() => {
 		void load(workspaceId);
 	});
 	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
+	// A write, a refresh behind the held rows (#290) or a posted review changes the counts.
+	$effect(() => {
+		const id = workspaceId;
+		const again = (touched: number): void => {
+			if (touches(touched, id)) void load(id);
+		};
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
+		return () => {
+			offLog();
+			offWrite();
+		};
+	});
 
 	// The per-deck table scrolls sideways on narrow screens: a visible hint
 	// says so while columns are hidden to the right. Screen readers get the
@@ -111,7 +110,8 @@
 	{status}
 	noWorkspaceText={t('widgets.words.noWorkspace')}
 	loadingText={t('widgets.words.loading')}
-	{error}
+	error={shown.error}
+	stale={shown.stale}
 	onretry={() => void load(workspaceId, true)}
 	emptyText={t('widgets.words.empty')}
 >

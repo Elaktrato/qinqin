@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import type { CharOutcome } from '$lib/study/writing';
+	import type { CharOutcome } from '$lib/exercises/writing';
 	import { joinPaths } from '$lib/writing/geometry';
 	import { appendInk, createPalmGate, morphPath, toPadUnit } from '$lib/writing/ink';
 	import { matchStroke } from '$lib/writing/matcher';
@@ -9,8 +9,6 @@
 
 	interface Props {
 		strokes: CharStrokes;
-		/** Largest side in CSS px; the pad shrinks to fit narrower containers. */
-		size: number;
 		onComplete: (outcome: CharOutcome, hints: number) => void;
 		/** Incrementing triggers a reveal of the whole character. */
 		revealSignal: number;
@@ -22,7 +20,7 @@
 		onChange?: (progress: { mistakes: number; remaining: number }) => void;
 	}
 
-	let { strokes, size, onComplete, revealSignal, hintSignal, label, onChange }: Props = $props();
+	let { strokes, onComplete, revealSignal, hintSignal, label, onChange }: Props = $props();
 
 	const SNAP_MS = 140;
 	const MISS_MS = 250;
@@ -36,7 +34,8 @@
 	let finished = $state(false);
 
 	let filled = $state<number[]>([]);
-	let scaffold = $state(false);
+	// The stroke traced after three misses on it (#287): dimmed, with its start, until it is drawn.
+	let trace = $state<number | null>(null);
 	let glow = $state<{ stroke: number; token: number } | null>(null);
 	let glowToken = 0;
 
@@ -44,8 +43,9 @@
 	let ctx: CanvasRenderingContext2D | null = null;
 	let raf = 0;
 	let dpr = 1;
-	// Current side of the pad in CSS px, measured; the canvas backing store follows it.
-	let side = untrack(() => size);
+	// Current side of the pad in CSS px, measured; the canvas backing store follows it. The pad takes its
+	// container's width (lib/writing/padSize.ts sizes the container, #285).
+	let side = 200;
 
 	interface Fade {
 		ink: Pt[];
@@ -94,7 +94,8 @@
 		if (ctx === null || canvas === null) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, side, side);
-		ctx.lineWidth = 6;
+		// The ink follows the pad: 6 px at 200 px, as before #285.
+		ctx.lineWidth = Math.max(4, side * 0.03);
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 		// Canvas cannot use var(): the ink reads the theme's tokens (#101).
@@ -173,6 +174,7 @@
 		const result = matchStroke(ink, strokes.medians, quiz.next);
 		const { state, effect } = applyResult(quiz, result);
 		quiz = state;
+		trace = quiz.trace;
 		if (!('none' in effect)) {
 			onChange?.({ mistakes: quiz.mistakes, remaining: quiz.total - quiz.next });
 		}
@@ -193,7 +195,6 @@
 		} else if ('miss' in effect) {
 			// Reduced motion keeps a static red cue instead of a fade.
 			fades.push({ ink, target: null, start: now, duration: MISS_MS, color: null, hold: instant });
-			if (quiz.outline) scaffold = true;
 			if (effect.glow !== undefined) showGlow(effect.glow);
 		}
 	}
@@ -294,7 +295,6 @@
 	class="pad"
 	class:done={finished}
 	data-card-input
-	style:max-width={`${size}px`}
 	role="img"
 	aria-label={label}
 >
@@ -309,15 +309,20 @@
 					d={outline}
 					class="outline"
 					class:filled={filled.includes(index)}
-					class:scaffold={scaffold && !filled.includes(index)}
 				/>
 			{/each}
+			{#if trace !== null && !filled.includes(trace)}
+				<path d={strokes.outlines[trace]} class="trace" />
+			{/if}
 			{#if glow !== null}
 				{#key glow.token}
 					<path d={strokes.outlines[glow.stroke]} class="glow" />
 				{/key}
 			{/if}
 		</g>
+		{#if trace !== null && !filled.includes(trace)}
+			<circle cx={startPoint(trace).x * 1024} cy={startPoint(trace).y * 1024} r="26" class="trace-start" />
+		{/if}
 		{#if glow !== null}
 			{#key glow.token}
 				<circle
@@ -388,7 +393,9 @@
 		transition: opacity 140ms ease-out;
 	}
 
-	.outline.scaffold {
+	/* The stroke traced after three misses: only that stroke, faint, until it is drawn. */
+	.trace,
+	.trace-start {
 		fill: currentColor;
 		opacity: 0.18;
 	}

@@ -6,13 +6,13 @@ import * as build from '$lib/testing/study';
 import type { GoalView } from '$lib/goals/loadGoal';
 import { MAX_BUCKETS, MAX_VACATION_DATES, buildFacts, dueBucketsOf, factsOf, vacationDatesOf } from './facts';
 
-vi.mock('../study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('../study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('../goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
-import { loadStudyHistory } from '../study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { loadGoalStatus } from '../goals/loadGoal';
 import { publishFacts } from './facts';
 

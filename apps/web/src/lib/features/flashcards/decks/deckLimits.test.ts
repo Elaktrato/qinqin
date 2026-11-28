@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { UTC_CONTEXT, type StudyContext } from '$lib/studycore/studyContext';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { deckLeftToday, type LeftInput } from './deckLimits';
 import * as build from '$lib/testing/study';
 

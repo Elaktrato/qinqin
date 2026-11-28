@@ -63,6 +63,20 @@ export const MATCH = {
 	/** Cost added per stroke beyond the first in a join, so one stroke is not credited as two. */
 	joinCost: 0.03,
 
+	// Joins: one motion may cover up to maxJoin strokes in a row, where the pen flows from one stroke into the next.
+	/** A stroke that ends within this distance of the next one's start flows on (the gap rule). */
 	maxGap: 0.2,
+	/**
+	 * A stroke that ends pointing at the next one's start also flows on (#292: the flow rule; き 3+4, さ 2+3, こ,
+	 * た 3+4): the next start is at most flowGap away and within ±60° (cosine flowCos) of the direction the stroke ends
+	 * in. Such a join covers two strokes only.
+	 */
+	flowGap: 0.5,
+	flowCos: 0.5,
+	/** ...and the next stroke keeps at least this share of the gap away from where the stroke ended (no retrace). */
+	flowClear: 0.4,
+	/** The direction a stroke ends in: the chord over this share of its length (at least flowTailMin). */
+	flowTail: 0.15,
+	flowTailMin: 0.03,
 	maxJoin: 3
 } as const;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { scheduleFor } from '$lib/study/scheduler';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { scheduleFor } from '$lib/studycore/scheduler';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { card, eventId, history, review, strongReviews } from './study';
 
 describe('card', () => {
@@ -64,9 +64,9 @@ describe('review', () => {
 
 describe('history', () => {
 	it('is empty by default and takes overrides', () => {
-		expect(history()).toStrictEqual({ decks: [], cards: [], reviews: [], merged: 0 });
+		expect(history()).toStrictEqual({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 		const cards = [card()];
-		expect(history({ cards, merged: 2 })).toStrictEqual({ decks: [], cards, reviews: [], merged: 2 });
+		expect(history({ cards, merged: 2 })).toStrictEqual({ decks: [], cards, reviews: [], merged: 2, grammarRuns: [], courseEvents: [] });
 	});
 });
 

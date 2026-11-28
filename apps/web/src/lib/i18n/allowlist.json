@@ -71,6 +71,11 @@
 	},
 	{
 		"file": "lib/sources/coreCredits.ts",
+		"text": "CC BY-SA 4.0",
+		"reason": "A licence name (data), not prose: the topic labels' licence (#220)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
 		"text": "Aozora Bunko",
 		"reason": "A credited source's proper name (data)."
 	},
@@ -90,12 +95,12 @@
 		"reason": "Catalogue machinery: a developer report of a message that does not parse (test and dev-script output); never shown in the app."
 	},
 	{
-		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"file": "lib/features/flashcards/fsrs/optimizer.worker.ts",
 		"text": "e.message",
 		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
 	},
 	{
-		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"file": "lib/features/flashcards/fsrs/optimizer.worker.ts",
 		"text": "String(e)",
 		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
 	},
@@ -111,6 +116,11 @@
 	},
 	{
 		"file": "lib/features/scripts/manifest.ts",
+		"text": "CC BY 4.0",
+		"reason": "An SPDX-style licence name on the Sources page, shown verbatim (data)."
+	},
+	{
+		"file": "lib/features/practice/manifest.ts",
 		"text": "CC BY 4.0",
 		"reason": "An SPDX-style licence name on the Sources page, shown verbatim (data)."
 	},

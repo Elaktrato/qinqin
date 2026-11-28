@@ -107,6 +107,15 @@
    "registry": "image_packs",
    "languages": "many",
    "uploadable": true,
+   "package": "images",
+   "requiresLexicon": false,
+   "optionalPackage": false
+  },
+  {
+   "type": "course",
+   "registry": "course_packs",
+   "languages": "one",
+   "uploadable": true,
    "package": null,
    "requiresLexicon": false,
    "optionalPackage": false

@@ -110,7 +110,8 @@ says "last week", not "compared").
 
 ### Streak
 
-`dailyStreak(reviews, end, day, vacation).current` (`scheduler/`), `end = now` for the current week, else
+`dailyStreak(reviews, end, day, vacation, grammarRuns).current` (`scheduler/`: reviews and grammar lesson runs of
+the workspace, #277), `end = now` for the current week, else
 `dayStart(d₇ + 1) − 1 ms`. No comparison.
 
 ### Daily goal
@@ -167,6 +168,6 @@ checked.
 
 - Week of a learner date by civil date (`java.time.LocalDate.getDayOfWeek`), the window from `dayStart`.
 - One `GET /api/stats/activity?from=<d₁ − 7>&to=<min(d₇, today)>&workspace=<w>` per shown week (14 dates).
-- New cards, study time, the streak and local active days from the local review log.
+- New cards, study time and local active days from the local review log; the streak from it and the grammar runs.
 - Mature and character crossings from its own FSRS replay: one timeline per reviewed card, sampled at the two
   cutoffs (the fixtures give schedules, so FSRS parameters do not matter).

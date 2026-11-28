@@ -1,0 +1,7 @@
+zh.json and ja.json (the graded readers of the reader, #231: short stories, dialogues and informational texts for
+≈ HSK 1–4 and ≈ N5–N3) are written for qinqin by the project and released under the Creative Commons Attribution 4.0
+International licence (CC BY 4.0): credit "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin". The
+full legal code is plugins/data/ja-lemma/LICENSE. The rest of the code is under the MIT licence (the repository's
+LICENSE and LICENSING.md). The texts copy no third-party text; the word level lists they are checked against
+(hsk-words, jlpt-words) and the dictionaries keep their own licences (docs/sources.md) and are not part of these files.
+They were reviewed by agents acting as Chinese and Japanese teachers, not yet by a person (REVIEW.md).

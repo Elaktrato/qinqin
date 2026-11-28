@@ -6,8 +6,10 @@
 	import type { Variant } from './variants';
 	import type { HanziFont } from '$lib/theme/appearance';
 	import Select from '$lib/ui/Select.svelte';
-	import { useApp } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 	const app = useApp();
+	const session = useSession();
 
 	// `default` follows the app-wide hanzi font (#97); its label names the current one.
 	const APP_FONT_LABELS: Record<HanziFont, MessageKey> = {
@@ -146,7 +148,8 @@
 						{t('reader.display.hideReadings', { score: display.smartThreshold })}
 					{/if}
 					{t('reader.display.markedKnown')}
-					<a href="/stats/characters">{t('reader.display.whatScore')}</a>
+					<!-- The character map is a Stats page: no link while Stats is switched off (#295). -->
+					{#if !featureKnownOff(STATS_ID, session.features)}<a href="/stats/characters">{t('reader.display.whatScore')}</a>{/if}
 				</p>
 			</div>
 		{/if}
@@ -185,6 +188,20 @@
 				</label>
 			{/each}
 		</fieldset>
+
+		<!-- Saved sentences (#279): off by default; the popup's Save this sentence works either way. -->
+		<div class="save-sentences">
+			<label class="row">
+				<input
+					type="checkbox"
+					checked={display.saveSentences}
+					aria-describedby="{id}-save-hint"
+					onchange={(e) => onchange({ saveSentences: e.currentTarget.checked })}
+				/>
+				{t('reader.display.saveSentences')}
+			</label>
+			<p id="{id}-save-hint" class="hint">{t('reader.display.saveSentencesHint')}</p>
+		</div>
 	</div>
 </div>
 
@@ -205,7 +222,8 @@
 	}
 
 	.panel > :global(* + fieldset),
-	.panel > :global(* + .threshold) {
+	.panel > :global(* + .threshold),
+	.panel > :global(* + .save-sentences) {
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--hair);
 	}
@@ -229,7 +247,8 @@
 		overflow-wrap: anywhere;
 	}
 
-	.threshold {
+	.threshold,
+	.save-sentences {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);

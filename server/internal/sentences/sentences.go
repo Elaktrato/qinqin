@@ -129,7 +129,8 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error
 // sentenceColumns is the column list every sentence read selects, in the
 // order scanSentence expects.
 const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model,
-	credit_id, credit_owner, credit_tr_id, credit_tr_owner`
+	credit_id, credit_owner, credit_tr_id, credit_tr_owner,
+	source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end`
 
 // tatoebaPage is the page of a sentence on Tatoeba; a credited pack
 // sentence's id is its Tatoeba id.
@@ -157,13 +158,23 @@ func scanSentence(row interface{ Scan(...any) error }) (model.Sentence, error) {
 		aiProvider, aiModel string
 		creditID, trID      int64
 		owner, trOwner      string
+		src                 model.SentenceSource
+		srcBook             sql.NullInt64
 	)
 	if err := row.Scan(&s.ID, &s.EntryID, &s.SourcePack, &userID,
 		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt, &aiProvider, &aiModel,
-		&creditID, &owner, &trID, &trOwner); err != nil {
+		&creditID, &owner, &trID, &trOwner,
+		&src.Kind, &srcBook, &src.Title, &src.Chapter, &src.Paragraph, &src.Start, &src.End); err != nil {
 		return s, err
 	}
 	s.Credit = creditOf(creditID, owner, trID, trOwner)
+	if src.Kind != "" {
+		if srcBook.Valid {
+			id := srcBook.Int64
+			src.BookID = &id
+		}
+		s.Source = &src
+	}
 	s.AI = AIMark(aiProvider, aiModel)
 	updated, err := time.Parse(time.RFC3339, updatedAt)
 	if err != nil {
@@ -208,6 +219,47 @@ func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]mo
 	return list, nil
 }
 
+// TextsForEntries returns the texts of the active sentences viewerID may see
+// for each of the entries, in ForEntry's order (pack sentences first, then
+// the viewer's own, each by id); entries without any are absent. One query
+// per 500 ids.
+func TextsForEntries(ctx context.Context, sqlDB *sql.DB, entryIDs []int64, viewerID int64) (map[int64][]string, error) {
+	out := map[int64][]string{}
+	const chunk = 500
+	for start := 0; start < len(entryIDs); start += chunk {
+		part := entryIDs[start:min(start+chunk, len(entryIDs))]
+		args := make([]any, 0, len(part)+1)
+		args = append(args, viewerID)
+		marks := make([]string, len(part))
+		for i, id := range part {
+			marks[i] = "?"
+			args = append(args, id)
+		}
+		rows, err := sqlDB.QueryContext(ctx, `
+			SELECT entry_id, hanzi FROM sentences
+			WHERE deleted_at IS NULL AND (user_id IS NULL OR user_id = ?) AND entry_id IN (`+strings.Join(marks, ",")+`)
+			ORDER BY entry_id, user_id IS NOT NULL, id`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("sentence texts: %w", err)
+		}
+		for rows.Next() {
+			var id int64
+			var text string
+			if err := rows.Scan(&id, &text); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("sentence texts: %w", err)
+			}
+			out[id] = append(out[id], text)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, fmt.Errorf("sentence texts: %w", err)
+		}
+	}
+	return out, nil
+}
+
 // Get returns the active sentence id when viewerID may see it (a pack
 // sentence, or the viewer's own); anything else is ErrSentenceNotFound.
 func Get(ctx context.Context, sqlDB *sql.DB, id, viewerID int64) (model.Sentence, error) {
@@ -225,15 +277,19 @@ func Get(ctx context.Context, sqlDB *sql.DB, id, viewerID int64) (model.Sentence
 }
 
 // AddUser stores s as user userID's sentence on entry entryID and
-// returns its id. The entry may be of any kind: only pack sentences are
+// returns its id. s.Source, when set, is stored with it (#280; the caller
+// checked it with CheckSource). The entry may be of any kind: only pack sentences are
 // bound to word entries, while a user also saves sentences on characters
 // and phrases (the reader saves book sentences on whatever was looked up). The row carries its owner and no source pack, so
 // pack imports and uninstalls never touch it.
 func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.Sentence) (int64, error) {
+	src, book := sourceColumns(s.Source)
 	res, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-		VALUES (?, '', ?, ?, ?, ?, ?)`,
-		entryID, userID, s.Hanzi, s.Pinyin, s.Translation, pack.Now())
+		INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at,
+			source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end)
+		VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		entryID, userID, s.Hanzi, s.Pinyin, s.Translation, pack.Now(),
+		src.Kind, book, src.Title, src.Chapter, src.Paragraph, src.Start, src.End)
 	if err != nil {
 		return 0, fmt.Errorf("add sentence of user %d on entry %d: %w", userID, entryID, err)
 	}

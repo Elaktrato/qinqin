@@ -3,13 +3,12 @@
 // app context follows it: a session exists while a token does and ends when it
 // goes, or when another user signs in under this tab.
 
-import { catalogueLanguage, getLanguage } from '$lib/i18n';
 import { UserError } from '$lib/api/userError';
-import { followServerLanguage } from '$lib/i18n/interfaceLanguage';
-import { reloadPage } from '$lib/i18n/reloadPage';
+import { resolveInterfaceLanguage, writeMirror } from '$lib/i18n/interfaceLanguage';
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from '$lib/account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from '$lib/api/mfa';
 import { cleanupPartitions, ownPartition } from '$lib/pwa/partitions';
+import { clearPackages } from '$lib/packages/store';
 import { clearReceipts } from '$lib/pwa/prepareOffline';
 import { browserPushEnv, forgetThisDevice } from '$lib/pwa/push';
 import { TOKEN_KEY, clearToken, getToken, setToken } from '$lib/api/client';
@@ -269,9 +268,10 @@ export class Auth {
 		return { kind: 'session', user: await this.signInWithToken(response.token), step };
 	}
 
-	/** Offline copies of the API (all partitions) and the "prepared" receipts. Best effort. */
+	/** Offline copies of the API (all partitions), the kept packages (#274) and the "prepared" receipts. Best effort. */
 	#forgetOfflineCopies(): void {
 		void cleanupPartitions(undefined, null);
+		void clearPackages();
 		try {
 			clearReceipts(this.#deps.local());
 		} catch {
@@ -279,16 +279,12 @@ export class Auth {
 		}
 	}
 
-	/** The account's interface language: mirrored for the next start; a different one than running reloads once. */
+	/**
+	 * The account's interface language, mirrored for the next start outside a workspace. Whether the page reloads into
+	 * another language is decided once the workspace is known too (routes/+layout.svelte, followInterfaceLanguage).
+	 */
 	#followAccountLanguage(me: User): void {
 		const browser = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
-		followServerLanguage(me, {
-			running: getLanguage(),
-			storage: this.#deps.local(),
-			session: this.#deps.session(),
-			browser,
-			catalogue: catalogueLanguage,
-			reload: reloadPage
-		});
+		writeMirror(this.#deps.local(), resolveInterfaceLanguage(me.interfaceLanguage ?? '', browser));
 	}
 }

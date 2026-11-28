@@ -34,6 +34,8 @@ Non-goals
 Anti-goals (would make this a failure even if it works)
 - A heavy, blocky look: filled boxes everywhere, pills with borders, bold everything. The owner explicitly asked
   for less visual weight (round 4 of the mockups).
+  Owner decision (2026-11-26, #286): **tags** — a level, a deck, a status — are small outline pills (a 1px outline,
+  no fill, rounded ends); the anti-goal still holds for navigation and buttons, which are never pills (§5).
 - A generic "web app template" look (stock Material icons, navbar with text links in pills).
 - A theme that makes text unreadable, or colour carrying meaning without a text or shape cue.
 - Any font, palette or icon whose licence is unclear (owner's licence-first rule).
@@ -75,6 +77,10 @@ These come from mockup round 4 and apply to every page, including ones not mocke
 - **A box needs a reason.** Group with space and small labels. Fill, border, radius and shadow mark one element as a
   separate object (the content panel, a menu, the selected row) — not every block.
 - **Hairlines, not blocks.** Separators and outlines use `--hair` (the line colour at about half strength), 1px.
+- **Tags are outline pills** (owner decision, #286): the card header's level, deck and status (and later the entry
+  page's level and frequency) use the shared `Tag` (`lib/ui/Tag.svelte`): 1px outline and text in one readable
+  colour (`--readable-muted`; the level in `--reading-accent`), transparent background, rounded ends, label size.
+  Only tags: navigation and buttons are never pills.
 - **Colour only where it means something:** the accent (current place, primary action, readings), grades,
   semantic states, data (heatmap, mastery, charts). Neutral everywhere else.
 - **One primary action per view** in a soft accent tint (accent at ~14% behind accent-coloured text). Secondary
@@ -224,7 +230,11 @@ The avatar opens the account menu: name, Settings, Theme (quick switch), **Admin
 **Frame — phone.** Top bar: menu button, page title, flag. The menu is a drawer from the left: workspaces as a row
 of flags at the top (tap to switch, + to add) with the current one named under it; sections with icon + label
 (including Home, since there is no logo to tap); the account at the bottom (avatar, name, Settings/Admin). Same
-frame for the installable web app now and Android later.
+frame for the installable web app now and Android later. In bottom-bar mode (#188) the top bar is the **logo**
+(the desktop brand's mark and accent colour, a link to Home named "qinqin, home", `aria-current="page"` on Home, a
+44 px target, the bar's first focusable item), the page's actions, the flag and the avatar: no section name and
+no page title, on every page (#293, owner 2026-11-26); a page's own title is its h1. Side-menu mode keeps the menu
+button and the title.
 
 **Home.** Widgets keep the existing layout system (Settings → Home). Cards lose their boxes (§5). The activity
 heatmap gets **three layouts the person chooses per widget** in Settings → Home: **Garden grid** (13 weeks, today's
@@ -247,7 +257,10 @@ write). Not inside `home-layout`, because today's `home-layout` writer rewrites 
 **Flashcards — "open page".** No card box. Every kind (Recognise, Recall, Fill the gap, Build the sentence, Write,
 Tones) has the same four parts in the same places: kind label (with deck and level on the right), prompt, the answer
 area (nothing / underline field / choices / word tiles / writing pad / tone pads, all hairline), and the answer below
-a hairline (reading + play, meaning + source, the learner's note). Session top: close, a thin progress line, count.
+a hairline (reading + play, meaning + source, the learner's note). The writing pad is not a fixed 200 px any more
+(#285): square, as wide as the content on a phone where the height allows, never pushing the feedback line under the
+docked actions, at least 10rem, at most 22.5rem on touch screens and 17.5rem with a mouse (the rule is in the
+writing-feel design, "Writing pad"). Session top: close, a thin progress line, count.
 Actions docked at the bottom: before the answer one soft-accent button (Show answer / Check / Show strokes); after,
 four grade buttons as coloured text with a thin underline in their grade colour, **each showing its next interval**
 (<1m, 6m, 1d, 4d — computed by the same scheduler); the suggested grade gets a faint wash. Kinds are not
@@ -258,7 +271,9 @@ column of icons at the right edge (Contents, Bookmarks, Highlights, Words, Displ
 text. Word marks: new = thin accent underline with pinyin/furigana above, learning = dotted `warn` underline, known =
 none; highlight = soft `warn` wash; selected word = accent wash. The lookup popup appears **below the word**, as a
 stack of entries (term, reading, level and frequency chips, glosses, source, "Add to deck" / "I know this"). Phone:
-rail moves into one top-bar button; the lookup is a **bottom sheet**.
+rail moves into one top-bar button; the lookup is a **bottom sheet** that takes at most 55 % of the screen
+(`55dvh`, #282; the other sheets stop at 85 %), so the text being read stays in view: a long entry scrolls inside
+the sheet, and the looked-up word is kept above its top edge.
 
 **Journal.** Three columns: entries (date, title, a small `good` dot when reviewed, "New entry", "Ideas for today"),
 the page (date, title, text), and the **margin** (topic ideas while writing; corrections after a review, like

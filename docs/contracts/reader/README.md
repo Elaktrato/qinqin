@@ -10,13 +10,14 @@ updates are fine):
 
 ```json
 { "reader": { "version": 1, "bookRuby": true, "readings": "never", "smartThreshold": 80,
-              "rubyScale": 0.55, "font": "default", "highlightWords": false } }
+              "rubyScale": 0.55, "font": "default", "highlightWords": false, "saveSentences": false } }
 ```
 
 Parsing is per field; an invalid or missing field takes its default: `bookRuby` boolean (default: the
 client's old local furigana pref, else true), `readings` `never|always|smart` (default `never`),
 `smartThreshold` a number rounded and clamped to 10..100 (default 80), `rubyScale` snapped to the nearest
-of 0.45, 0.55, 0.65, 0.75 (default 0.55), `font` `default|sans|serif|kai` (default `default`), `highlightWords` boolean (default `false`). A client
+of 0.45, 0.55, 0.65, 0.75 (default 0.55), `font` `default|sans|serif|kai` (default `default`), `highlightWords` boolean (default `false`), `saveSentences` boolean (default `false`, the automatic mode of
+"Saved sentences" below). A client
 writing the object keeps every key it does not know. `default` means the app-wide hanzi font (the `appearance` row's
 `hanziFont`, docs/contracts/themes/README.md); `sans`, `serif` and `kai` override it in the reader. Each face is an
 installed font pack's (docs/contracts/fonts/README.md, "Choosing a face") or else the platform's system fonts.
@@ -59,14 +60,15 @@ is the display form (`nǐ hǎo`, `たべる`). This `reading` object is unrelate
 
 `Familiarity = new | learning | known` per entry; a match takes the state of its **first candidate** (the
 entry whose reading is shown), never of a homograph further down. The shared predicate lives in
-`apps/web/src/lib/study/known.ts` (`frequency/` uses it for starter decks):
+`apps/web/src/lib/studycore/known.ts` (`frequency/` uses it for starter decks):
 
 1. **known**: the entry has a live manual mark, or its best reviewed live vocab card has
    `cardScore(stability) >= threshold`;
 2. **learning**: otherwise, the entry has a live vocab card (reviewed or not);
 3. **new**: otherwise.
 
-Only vocab cards enter the scores and the carded set (a writing or reverse card alone leaves a word new).
+A **function word** (a match with `function: true`, `segment/README.md`: a particle, the copula) has no state: it is
+never new or learning, whatever its entry's cards. Only vocab cards enter the scores and the carded set (a writing or reverse card alone leaves a word new).
 The reader passes its `smartThreshold` (a word is coloured known exactly when smart mode hides its reading);
 every other caller passes 80. The mark wins over every card and threshold. Level lists never make a word
 known or learning.
@@ -96,6 +98,8 @@ highlight no state is drawn. The text and its offsets are unchanged.
 - **Token**: a match whose surface holds at least one word character: Han, `々`, `〆` (zh); also hiragana
   and katakana, but not the lone `ー` (ja). Punctuation, digits (ASCII or full width), Latin and symbols
   never form tokens; Han numerals do.
+- A **function word** (`function: true`, `segment/README.md`) is not a token, and its characters are covered, so
+  not unmatched either.
 - **Type**: the first candidate's entry id (inflected forms share their lemma's entry).
 - **Unmatched**: maximal runs of word characters outside every match, counted ("3 passages are not in the
   dictionary") but never in the percentage.
@@ -105,6 +109,39 @@ highlight no state is drawn. The text and its offsets are unchanged.
   paragraph, start).
 
 Offsets are code points of the displayed paragraph text, as for readings.
+
+## Saved sentences (`saved-sentences.json`, #279)
+
+The book sentence a **studied** word is met in becomes an own sentence of the entry and a `sentence` (Word Salad)
+card of the word. A word is studied when the workspace has a live `vocab` card of the entry. No limit per word.
+
+- **The sentence** is `bookSentence(paragraph, start, end)` of the popup's result (the sentence rule the add-to-deck
+  path uses; empty when nothing but the word is there). Character results never save one.
+- **Normalised text** (`normalize`, `whitespace`): every run of the listed whitespace characters becomes one space and
+  the ends are trimmed; nothing else is folded (punctuation, width, case). Clients post the normalised text.
+- **The same sentence** (`same`): the first sentence of the entry the learner sees (`GET /api/entries/{id}`:
+  pack sentences, then their own, AI examples included) whose normalised text is equal. The server applies the same
+  rule: `POST /api/entries/{id}/sentences` answers **200 with the existing sentence** when there is one, else stores
+  the text (201).
+- **The plan** (`plan`), from the entry's sentences and the workspace's cards: `none` (a character, no sentence, or
+  the word has no vocab card); `already` + `sentenceId` (that sentence has a live `sentence` card of the word, or the
+  word skips `sentence` cards and the sentence is on the entry); `card` + `sentenceId` (on the entry, no card yet);
+  `save` + `text` (post it, then add the card). `card` names what the card takes from the word's **canonical vocab
+  card** (the oldest `createdAt`, then the smaller id): its `deckIds` and, when it has one, its `written` snapshot;
+  `card: null` means the word's vocab row lists `sentence` in `skipKinds`: the sentence is saved, no card is added.
+- **What is stored:** the own sentence row (text only; `sentences.jsonl` in a backup) and a card row
+  `{kind: "sentence", entryId, sentenceId, written?, deckIds}` (`cards/`, `cardKey` `sentence:<entryId>:<sentenceId>`,
+  so one card per word and sentence). It is an ordinary unreviewed card: it counts as a new card under the deck's
+  daily new-card limit.
+- **The automatic mode** (`auto`): on when `reader.saveSentences` is `true` (anything else is off); it runs the plan
+  for a result only when it is the root popup's first result (the look-up the history records) with its paragraph
+  known, not a character, and the word had a vocab card when the popup opened. A word added in the same popup is not
+  saved twice.
+- **Removal** (`remove`): `DELETE /api/entries/{id}/sentences/{sentenceId}` deletes any own sentence (a tombstone);
+  `?reason=` is for AI examples only (400 on another own sentence); pack sentences and other users' are 404. A
+  client then tombstones the `sentence` cards of that sentence (every row with that `cardKey`) in each workspace of
+  the entry's language; their reviews stay in the log. A removed sentence is not remembered: meeting it again saves it
+  again.
 
 ## Real-app check (#68, 2026-11-16, API only)
 
@@ -132,3 +169,28 @@ rule of `frequency/display-form.json` over the result's `forms`, `readings` (wit
 (`tags`), without a list form — の for 1469800 (not the search-only 乃), こと for the usually-kana 事, and the
 entry's display form, not the text's spelling, for a form match (解る in a text snapshots 分かる). The popup's
 headword is the server's `term`: the matched written form unless it is search-only, else the display form.
+
+## Sentence sources (`sentence-sources.json`, #280)
+
+An own sentence saved from the reader (the add-to-deck path and Save this sentence, #279) keeps where it was read.
+Grammar lessons and conversations save no source.
+
+- **The source:** `{kind: "book", bookId, title, chapter, paragraph, start, end}`: the library book (`null` once it is
+  deleted), the book's title when saved (the server copies it), the chapter and paragraph (zero-based) and the word's
+  code-point range `[start, end)` of the paragraph's displayed text, as highlights and lookup offsets address it.
+  Own sentences only; pack sentences never carry one. It is private like the sentence.
+- **The request** (`check`): `POST /api/entries/{id}/sentences` with `source: {bookId, chapter, paragraph, start,
+  end}`. Valid when the book is one of the caller's, of the entry's language, `0 ≤ chapter < chapterCount`,
+  `0 ≤ paragraph ≤ 100000` and `0 ≤ start < end ≤ 100000` (`limits`); anything else is 422 and stores nothing
+  (another user's book is the same 422 as a missing one).
+- **The same text** (`merge`): the 200 answer of #279. An own sentence without a source takes the request's; one with
+  a source keeps it; a pack sentence gets none. A change moves `updatedAt` (the pull ships it). Clients that find the
+  same own sentence without a source on the entry post again with the source, so the server adopts it.
+- **A deleted book** (`detach`): a book delete or a workspace delete sets `bookId` to `null` in the same transaction
+  and moves `updatedAt`; kind, title and place stay. Other users' sentences are never touched.
+- **The link** (`link`): `/reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}`; none without a book or for
+  another kind. **`at`** (`at`): `^\d+:\d+-\d+$` with `start < end ≤ 100000` and `paragraph ≤ 100000`, else ignored.
+  The reader scrolls to the paragraph instead of the saved position, marks the word and saves the position from
+  there.
+- **The label** (`label`): "From *title*, chapter n" with n one-based; an empty (blank) title reads as an untitled
+  book; without a book the text has no link.

@@ -14,6 +14,9 @@
 - [Reader](Reader)
 - [Grammar lessons](Grammar-lessons)
 - [Scripts trainer](Scripts-trainer)
+- [Practice and drills](Practice-and-drills)
+- [Mistake notebook](Mistake-notebook)
+- [Courses](Courses)
 - [Journal and AI](Journal-and-AI)
 - [Stats and heatmap](Stats-and-heatmap)
 - [Weekly summary](Weekly-summary)
@@ -52,6 +55,7 @@
 
 - [Data and licences](Data-and-licences)
 - [Dictionary data model](Dictionary-data-model)
+- [Courses data model](Courses-data-model)
 - [Troubleshooting](Troubleshooting)
 - [FAQ](FAQ)
 

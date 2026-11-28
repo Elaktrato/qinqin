@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testContext, type TestContext } from '$lib/testing/context';
 
 vi.mock('$lib/api/starter', () => ({ starterSets: vi.fn(), starterSet: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
 vi.mock('$lib/features/flashcards/decks/starterSet', () => ({
@@ -14,7 +14,7 @@ vi.mock('$lib/features/flashcards/decks/starterSet', () => ({
 
 import { starterSets } from '$lib/api/starter';
 import { addStarterSet } from '$lib/features/flashcards/decks/starterSet';
-import { getStudyData } from '$lib/study/data';
+import { getStudyData } from '$lib/studycore/data';
 import StarterOffer from './StarterOffer.svelte';
 
 let ctx: TestContext;
@@ -46,6 +46,22 @@ describe('StarterOffer', () => {
 		const offer = await screen.findByTestId('starter-offer');
 		expect(offer.textContent).toContain('New to this language?');
 		expect(screen.getByRole('button', { name: 'Start with Starter mode' })).toBeTruthy();
+	});
+
+	it('says how many words the set has and who reviewed it (#275)', async () => {
+		render(StarterOffer, { context: ctx.context });
+		const note = await screen.findByTestId('starter-set-note');
+		expect(note.textContent).toBe(
+			'55 everyday words with pictures. Reviewed by agents acting as native-speaker teachers, not yet by a person.'
+		);
+	});
+
+	it('leaves out the review note for a set a person has read', async () => {
+		vi.mocked(starterSets).mockResolvedValue([
+			{ id: 'starter-ja', language: 'ja', name: 'Starter words (Japanese)', license: 'CC-BY-4.0', attribution: 'x', wordCount: 1, humanReviewed: true }
+		]);
+		render(StarterOffer, { context: ctx.context });
+		expect((await screen.findByTestId('starter-set-note')).textContent).toBe('1 everyday word with pictures.');
 	});
 
 	it('is quiet when the workspace already has a card', async () => {

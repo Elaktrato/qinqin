@@ -1,0 +1,1604 @@
+{
+ "version": 1,
+ "rule": "segment/cases",
+ "language": "ja",
+ "rules": "ja.json",
+ "_doc": "A JMdict-shaped lexicon (forms, readings, pos, pri tags on the first form, uk) and texts with the tokens /api/segment must produce over it with the rules of ja.json: surface, lemma, head (the first entry's first written form, else its first reading), function (true only for a function word; absent otherwise). greedy, when present, is what the greedy longest match produced (the bug), for the record. Go: server/internal/segment/contract_test.go; web: readingText, wordRanges and coverage tests read the tokens' function flags.",
+ "lexicon": [
+  {
+   "forms": [],
+   "readings": [
+    "は"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "が"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "を"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "に"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "の"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "で"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "と"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "も"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "な"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "か"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "です"
+   ],
+   "pos": [
+    "cop",
+    "aux-v"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "野"
+   ],
+   "readings": [
+    "の"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "news1",
+    "nf04"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "出"
+   ],
+   "readings": [
+    "で"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "news1",
+    "nf10"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "歯"
+   ],
+   "readings": [
+    "は"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "蚊"
+   ],
+   "readings": [
+    "か"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "名前"
+   ],
+   "readings": [
+    "なまえ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "名"
+   ],
+   "readings": [
+    "な"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "前"
+   ],
+   "readings": [
+    "まえ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "はあ"
+   ],
+   "pos": [
+    "int"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "仕事"
+   ],
+   "readings": [
+    "しごと"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "八"
+   ],
+   "readings": [
+    "はち"
+   ],
+   "pos": [
+    "num"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "一寸"
+   ],
+   "readings": [
+    "ちょっと"
+   ],
+   "pos": [
+    "adv"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "忙しい"
+   ],
+   "readings": [
+    "いそがしい"
+   ],
+   "pos": [
+    "adj-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "妹"
+   ],
+   "readings": [
+    "いもうと"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "害"
+   ],
+   "readings": [
+    "がい"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "news1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "居る"
+   ],
+   "readings": [
+    "いる"
+   ],
+   "pos": [
+    "v1"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "鱒"
+   ],
+   "readings": [
+    "ます"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "花"
+   ],
+   "readings": [
+    "はな"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "綺麗"
+   ],
+   "readings": [
+    "きれい"
+   ],
+   "pos": [
+    "adj-na"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "餓鬼"
+   ],
+   "readings": [
+    "がき"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [
+    "例"
+   ],
+   "readings": [
+    "れい"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "私"
+   ],
+   "readings": [
+    "わたし"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "本"
+   ],
+   "readings": [
+    "ほん"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "読む"
+   ],
+   "readings": [
+    "よむ"
+   ],
+   "pos": [
+    "v5m"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "昨日"
+   ],
+   "readings": [
+    "きのう"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "食べる"
+   ],
+   "readings": [
+    "たべる"
+   ],
+   "pos": [
+    "v1"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "行く"
+   ],
+   "readings": [
+    "いく"
+   ],
+   "pos": [
+    "v5k-s"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "公園"
+   ],
+   "readings": [
+    "こうえん"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "遊ぶ"
+   ],
+   "readings": [
+    "あそぶ"
+   ],
+   "pos": [
+    "v5b"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "友達"
+   ],
+   "readings": [
+    "ともだち"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "来る"
+   ],
+   "readings": [
+    "くる"
+   ],
+   "pos": [
+    "vk"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "今日"
+   ],
+   "readings": [
+    "きょう"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "今日は"
+   ],
+   "readings": [
+    "こんにちは"
+   ],
+   "pos": [
+    "int"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "寒い"
+   ],
+   "readings": [
+    "さむい"
+   ],
+   "pos": [
+    "adj-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "高い"
+   ],
+   "readings": [
+    "たかい"
+   ],
+   "pos": [
+    "adj-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "静か"
+   ],
+   "readings": [
+    "しずか"
+   ],
+   "pos": [
+    "adj-na"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "町"
+   ],
+   "readings": [
+    "まち"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "山"
+   ],
+   "readings": [
+    "やま"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "此れ"
+   ],
+   "readings": [
+    "これ"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "迚も"
+   ],
+   "readings": [
+    "とても"
+   ],
+   "pos": [
+    "adv"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "美味しい"
+   ],
+   "readings": [
+    "おいしい"
+   ],
+   "pos": [
+    "adj-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "とても"
+   ],
+   "pos": [
+    "adv"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "子"
+   ],
+   "readings": [
+    "こ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "凍る"
+   ],
+   "readings": [
+    "こおる"
+   ],
+   "pos": [
+    "v5r"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "コーヒー"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "gai1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "飲む"
+   ],
+   "readings": [
+    "のむ"
+   ],
+   "pos": [
+    "v5m"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "テレビ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "gai1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "見る"
+   ],
+   "readings": [
+    "みる"
+   ],
+   "pos": [
+    "v1"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "御"
+   ],
+   "readings": [
+    "お"
+   ],
+   "pos": [
+    "pref"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "手"
+   ],
+   "readings": [
+    "て"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "林檎"
+   ],
+   "readings": [
+    "りんご"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "三つ"
+   ],
+   "readings": [
+    "みっつ"
+   ],
+   "pos": [
+    "num"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "三"
+   ],
+   "readings": [
+    "さん"
+   ],
+   "pos": [
+    "num"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "買う"
+   ],
+   "readings": [
+    "かう"
+   ],
+   "pos": [
+    "v5u"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "猫"
+   ],
+   "readings": [
+    "ねこ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "匹"
+   ],
+   "readings": [
+    "ひき"
+   ],
+   "pos": [
+    "ctr"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "二人"
+   ],
+   "readings": [
+    "ふたり"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "事"
+   ],
+   "readings": [
+    "こと"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "仕"
+   ],
+   "readings": [
+    "し"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "事がある"
+   ],
+   "readings": [
+    "ことがある"
+   ],
+   "pos": [
+    "exp",
+    "v5r-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "有る"
+   ],
+   "readings": [
+    "ある"
+   ],
+   "pos": [
+    "v5r-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "物"
+   ],
+   "readings": [
+    "もの"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "のに"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "成る"
+   ],
+   "readings": [
+    "なる"
+   ],
+   "pos": [
+    "v5r"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "人"
+   ],
+   "readings": [
+    "ひと"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "時"
+   ],
+   "readings": [
+    "じ"
+   ],
+   "pos": [
+    "ctr"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  }
+ ],
+ "cases": [
+  {
+   "name": "issue: 名前｜は｜アンナ (not はア, a mixed-script reading of はあ; nor ナ, a one-rune katakana reading of 名)",
+   "text": "名前はアンナです。",
+   "greedy": [
+    "名前",
+    "はア",
+    "です"
+   ],
+   "tokens": [
+    {
+     "surface": "名前",
+     "lemma": "名前",
+     "head": "名前"
+    },
+    {
+     "surface": "は",
+     "lemma": "は",
+     "head": "は",
+     "function": true
+    },
+    {
+     "surface": "です",
+     "lemma": "です",
+     "head": "です",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "issue: 仕事｜は｜ちょっと (not はち)",
+   "text": "仕事はちょっと忙しいです。",
+   "greedy": [
+    "仕事",
+    "はち",
+    "と",
+    "忙しい",
+    "です"
+   ],
+   "tokens": [
+    {
+     "surface": "仕事",
+     "lemma": "仕事",
+     "head": "仕事"
+    },
+    {
+     "surface": "は",
+     "lemma": "は",
+     "head": "は",
+     "function": true
+    },
+    {
+     "surface": "ちょっと",
+     "lemma": "ちょっと",
+     "head": "一寸"
+    },
+    {
+     "surface": "忙しい",
+     "lemma": "忙しい",
+     "head": "忙しい"
+    },
+    {
+     "surface": "です",
+     "lemma": "です",
+     "head": "です",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "issue: 妹｜が｜います (not がい｜ます)",
+   "text": "妹がいます。",
+   "greedy": [
+    "妹",
+    "がい",
+    "ます"
+   ],
+   "tokens": [
+    {
+     "surface": "妹",
+     "lemma": "妹",
+     "head": "妹"
+    },
+    {
+     "surface": "が",
+     "lemma": "が",
+     "head": "が",
+     "function": true
+    },
+    {
+     "surface": "います",
+     "lemma": "いる",
+     "head": "居る"
+    }
+   ]
+  },
+  {
+   "name": "issue: 花｜が｜きれい (not がき｜れい)",
+   "text": "花がきれいです。",
+   "greedy": [
+    "花",
+    "がき",
+    "れい",
+    "です"
+   ],
+   "tokens": [
+    {
+     "surface": "花",
+     "lemma": "花",
+     "head": "花"
+    },
+    {
+     "surface": "が",
+     "lemma": "が",
+     "head": "が",
+     "function": true
+    },
+    {
+     "surface": "きれい",
+     "lemma": "きれい",
+     "head": "綺麗"
+    },
+    {
+     "surface": "です",
+     "lemma": "です",
+     "head": "です",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "a particle's head is the particle, not a noun with its kana (の, not 野)",
+   "text": "私の本です。",
+   "tokens": [
+    {
+     "surface": "私",
+     "lemma": "私",
+     "head": "私"
+    },
+    {
+     "surface": "の",
+     "lemma": "の",
+     "head": "の",
+     "function": true
+    },
+    {
+     "surface": "本",
+     "lemma": "本",
+     "head": "本"
+    },
+    {
+     "surface": "です",
+     "lemma": "です",
+     "head": "です",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "a particle's head is the particle (で, not 出)",
+   "text": "公園で遊ぶ。",
+   "tokens": [
+    {
+     "surface": "公園",
+     "lemma": "公園",
+     "head": "公園"
+    },
+    {
+     "surface": "で",
+     "lemma": "で",
+     "head": "で",
+     "function": true
+    },
+    {
+     "surface": "遊ぶ",
+     "lemma": "遊ぶ",
+     "head": "遊ぶ"
+    }
+   ]
+  },
+  {
+   "name": "verbs: polite past",
+   "text": "昨日、本を読みました。",
+   "tokens": [
+    {
+     "surface": "昨日",
+     "lemma": "昨日",
+     "head": "昨日"
+    },
+    {
+     "surface": "本",
+     "lemma": "本",
+     "head": "本"
+    },
+    {
+     "surface": "を",
+     "lemma": "を",
+     "head": "を",
+     "function": true
+    },
+    {
+     "surface": "読みました",
+     "lemma": "読む",
+     "head": "読む"
+    }
+   ]
+  },
+  {
+   "name": "verbs: negative want",
+   "text": "行きたくない。",
+   "tokens": [
+    {
+     "surface": "行きたくない",
+     "lemma": "行く",
+     "head": "行く"
+    }
+   ]
+  },
+  {
+   "name": "verbs: an irregular verb in kana after a particle",
+   "text": "友達がきた。",
+   "tokens": [
+    {
+     "surface": "友達",
+     "lemma": "友達",
+     "head": "友達"
+    },
+    {
+     "surface": "が",
+     "lemma": "が",
+     "head": "が",
+     "function": true
+    },
+    {
+     "surface": "きた",
+     "lemma": "くる",
+     "head": "来る"
+    }
+   ]
+  },
+  {
+   "name": "い adjectives: negative and past (and 今日は is 今日｜は, not the greeting)",
+   "text": "今日は寒くない。山は高かった。",
+   "tokens": [
+    {
+     "surface": "今日",
+     "lemma": "今日",
+     "head": "今日"
+    },
+    {
+     "surface": "は",
+     "lemma": "は",
+     "head": "は",
+     "function": true
+    },
+    {
+     "surface": "寒くない",
+     "lemma": "寒い",
+     "head": "寒い"
+    },
+    {
+     "surface": "山",
+     "lemma": "山",
+     "head": "山"
+    },
+    {
+     "surface": "は",
+     "lemma": "は",
+     "head": "は",
+     "function": true
+    },
+    {
+     "surface": "高かった",
+     "lemma": "高い",
+     "head": "高い"
+    }
+   ]
+  },
+  {
+   "name": "な adjectives: the な is a function word",
+   "text": "静かな町です。",
+   "tokens": [
+    {
+     "surface": "静か",
+     "lemma": "静か",
+     "head": "静か"
+    },
+    {
+     "surface": "な",
+     "lemma": "な",
+     "head": "な",
+     "function": true
+    },
+    {
+     "surface": "町",
+     "lemma": "町",
+     "head": "町"
+    },
+    {
+     "surface": "です",
+     "lemma": "です",
+     "head": "です",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "kana-only words",
+   "text": "これはとてもおいしい。",
+   "tokens": [
+    {
+     "surface": "これ",
+     "lemma": "これ",
+     "head": "此れ"
+    },
+    {
+     "surface": "は",
+     "lemma": "は",
+     "head": "は",
+     "function": true
+    },
+    {
+     "surface": "とても",
+     "lemma": "とても",
+     "head": "迚も"
+    },
+    {
+     "surface": "おいしい",
+     "lemma": "おいしい",
+     "head": "美味しい"
+    }
+   ]
+  },
+  {
+   "name": "katakana loans",
+   "text": "コーヒーを飲みます。テレビを見た。",
+   "tokens": [
+    {
+     "surface": "コーヒー",
+     "lemma": "コーヒー",
+     "head": "コーヒー"
+    },
+    {
+     "surface": "を",
+     "lemma": "を",
+     "head": "を",
+     "function": true
+    },
+    {
+     "surface": "飲みます",
+     "lemma": "飲む",
+     "head": "飲む"
+    },
+    {
+     "surface": "テレビ",
+     "lemma": "テレビ",
+     "head": "テレビ"
+    },
+    {
+     "surface": "を",
+     "lemma": "を",
+     "head": "を",
+     "function": true
+    },
+    {
+     "surface": "見た",
+     "lemma": "見る",
+     "head": "見る"
+    }
+   ]
+  },
+  {
+   "name": "numbers and counters",
+   "text": "りんごを三つ買った。",
+   "tokens": [
+    {
+     "surface": "りんご",
+     "lemma": "りんご",
+     "head": "林檎"
+    },
+    {
+     "surface": "を",
+     "lemma": "を",
+     "head": "を",
+     "function": true
+    },
+    {
+     "surface": "三つ",
+     "lemma": "三つ",
+     "head": "三つ"
+    },
+    {
+     "surface": "買った",
+     "lemma": "買う",
+     "head": "買う"
+    }
+   ]
+  },
+  {
+   "name": "digits are not words; the counter after them is",
+   "text": "猫が3匹いる。",
+   "tokens": [
+    {
+     "surface": "猫",
+     "lemma": "猫",
+     "head": "猫"
+    },
+    {
+     "surface": "が",
+     "lemma": "が",
+     "head": "が",
+     "function": true
+    },
+    {
+     "surface": "匹",
+     "lemma": "匹",
+     "head": "匹"
+    },
+    {
+     "surface": "いる",
+     "lemma": "いる",
+     "head": "居る"
+    }
+   ]
+  },
+  {
+   "name": "a token rarely starts between two kanji (仕事｜が｜ある, not 仕｜事がある)",
+   "text": "仕事がある。",
+   "tokens": [
+    {
+     "surface": "仕事",
+     "lemma": "仕事",
+     "head": "仕事"
+    },
+    {
+     "surface": "が",
+     "lemma": "が",
+     "head": "が",
+     "function": true
+    },
+    {
+     "surface": "ある",
+     "lemma": "ある",
+     "head": "有る"
+    }
+   ]
+  },
+  {
+   "name": "a content word before a particle beats two function words (もの｜に, not も｜のに)",
+   "text": "ものになる。",
+   "tokens": [
+    {
+     "surface": "もの",
+     "lemma": "もの",
+     "head": "物"
+    },
+    {
+     "surface": "に",
+     "lemma": "に",
+     "head": "に",
+     "function": true
+    },
+    {
+     "surface": "なる",
+     "lemma": "なる",
+     "head": "成る"
+    }
+   ]
+  },
+  {
+   "name": "a counter word stays whole",
+   "text": "二人で行く。",
+   "tokens": [
+    {
+     "surface": "二人",
+     "lemma": "二人",
+     "head": "二人"
+    },
+    {
+     "surface": "で",
+     "lemma": "で",
+     "head": "で",
+     "function": true
+    },
+    {
+     "surface": "行く",
+     "lemma": "行く",
+     "head": "行く"
+    }
+   ]
+  }
+ ]
+}

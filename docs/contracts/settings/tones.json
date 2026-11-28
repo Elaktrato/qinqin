@@ -1,0 +1,28 @@
+{
+ "version": 1,
+ "rule": "settings/tones",
+ "note": "Tone sandhi settings (#300, #180). The workspace-settings key `tones`: {showSandhi, gradeSpoken}. The rules they steer: docs/contracts/tones/. Web: apps/web/src/lib/exercises/toneSettings.ts, decoded by toneSettings.test.ts; Go: server/internal/lang/tone_settings_test.go (the languages against the profiles).",
+ "key": "tones",
+ "members": ["showSandhi", "gradeSpoken"],
+ "defaults": { "showSandhi": true, "gradeSpoken": false },
+ "parse": [
+  { "name": "no member: sandhi shown, citation tones graded", "settings": {}, "expect": { "showSandhi": true, "gradeSpoken": false } },
+  { "name": "null settings", "settings": null, "expect": { "showSandhi": true, "gradeSpoken": false } },
+  { "name": "both changed", "settings": { "tones": { "showSandhi": false, "gradeSpoken": true } }, "expect": { "showSandhi": false, "gradeSpoken": true } },
+  { "name": "each member alone", "settings": { "tones": { "gradeSpoken": true } }, "expect": { "showSandhi": true, "gradeSpoken": true } },
+  { "name": "anything but a boolean is the default", "settings": { "tones": { "showSandhi": "false", "gradeSpoken": 1 } }, "expect": { "showSandhi": true, "gradeSpoken": false } },
+  { "name": "unknown members are ignored", "settings": { "tones": { "pairs": [1, 2], "showSandhi": false } }, "expect": { "showSandhi": false, "gradeSpoken": false } },
+  { "name": "a key that is not an object is the default", "settings": { "tones": true }, "expect": { "showSandhi": true, "gradeSpoken": false } }
+ ],
+ "languages": [
+  { "language": "zh", "switches": true },
+  { "language": "zh-Hant", "switches": true },
+  { "language": "ja", "switches": false },
+  { "language": "ko", "switches": false },
+  { "language": "es", "switches": false }
+ ],
+ "patch": [
+  { "member": "gradeSpoken", "value": true, "expect": { "tones": { "gradeSpoken": true } } },
+  { "member": "showSandhi", "value": false, "expect": { "tones": { "showSandhi": false } } }
+ ]
+}

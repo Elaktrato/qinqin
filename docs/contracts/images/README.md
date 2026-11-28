@@ -7,13 +7,17 @@ draw it. Design and rulings: `docs/superpowers/plans/2026-11-26-images-pack.md`.
 
 Fixtures:
 
-- `resolve.json` — which mapping the server picks for an entry (Go: `server/internal/images/contract_test.go`).
+- `resolve.json` — which mapping the server picks for an entry, and the reported pictures it passes over (Go:
+  `server/internal/images/contract_test.go`; web: `lib/packages/pictures.contract.test.ts`, the offline lookup).
 - `svg.json` — the picture vocabulary the server accepts, what a client must refuse, and `themeSvg` (Go: the same
   test; web: `lib/api/images.dom.test.ts`).
+- `package.qqpkg` and `package.json` — an images package the server's builder wrote, and its rows (Go:
+  `server/internal/datapkg/images_fixture_test.go`; web: `lib/packages/imagesPackage.contract.test.ts`).
 
 Owner code: `server/internal/images` (import, validation, resolution), `server/internal/api/handlers_images.go`
 (routes). Web: `apps/web/src/lib/api/images.ts` (`entryPicture`, `imagePacks`, `safeSvg`, `themeSvg`,
-`pictureCreditLine`).
+`pictureCreditLine`), `apps/web/src/lib/aids/pictures.ts` (`onlineOrKept`, `reportPicture`) and
+`apps/web/src/lib/packages/` (the kept images packages).
 
 ## The pack (type `images`, format `images-svg`)
 
@@ -41,8 +45,38 @@ glosses, hand-made `manual.tsv` overrides; scores: name 90, first-gloss label 80
 manual 100; ambiguous or weak matches are left out) and committed as `scripts/images/<pack>/map.tsv`. The pack
 builder `scripts/prepare-images-pack.mjs` adds the pictures from the pinned upstream release.
 
-There is **no data package** for images packs (`pack-types.json`: `package: null`): pictures are fetched from the
-server per entry. An offline client keeps what it fetched (a later change may add a package type).
+## Offline: the images package (#274)
+
+Every live images pack builds a data package `images.<packId>` (`../packages/README.md`; format 1, the pack's
+`languages`, no `requires`, not optional). Its `data.sqlite` holds
+
+- `map (language, target, sense, concept, score, basis)`: the pack's map rows exactly as the server stores them, keyed
+  by the word targets (not entry ids, so a dictionary change does not touch the package);
+- `pictures (concept, label, credit, svg)`: only the pictures a map row uses, each in the stored canonical form.
+
+A client that holds the packages finds an entry's picture with the rule of "Resolution" over every package it holds
+(a package's pack id is its `packId` in the answer; `license` and `attribution` come from the package's `qq_sources`
+row). The targets are the entry answer's `pictureTargets` (below). Measured on the bundled packs (OpenMoji 17.0.0, 962
+pictures; Mulberry 3.6.1, 711 pictures): `images.images-openmoji` 510,702 bytes, `images.images-mulberry` 1,569,231
+bytes.
+
+The web app keeps these packages (`apps/web/src/lib/packages/`): offline preparation, while the workspace's Pictures aid
+is on, reads the catalogue, decides each `images` row of the workspace language by the client rule
+(`packageAction`), downloads it, checks it by the four verification steps and reads its `data.sqlite` once before
+keeping it (Cache Storage `qinqin-packages-v1`; deleted on sign-out and by "Clear offline data"). A picture is asked
+of the server first; only when the server cannot be reached (a network error, 502, 503, 504) does the kept package
+answer, for an entry whose answer the device saved. A package is never used partially.
+
+## Reports
+
+A learner reports a wrong picture of an entry: `POST /api/images/reports {entryId, packId, concept, reason}`, `reason`
+one of `wrong`, `unclear`, `offensive`, `other`; 204, 400 `bad_request` for a bad body or reason, 404 `not_found` for
+an unknown entry or a picture no live pack has. Signed-in users, not access tokens. Stored per user (at most 500, the
+oldest goes), removed with the account and counted in its deletion preview (`pictureReports`), not in a backup (a
+restore keeps them), not shown to administrators. A reported picture of that entry is no longer answered to its
+reporter: the route passes it over (`resolve.json` `skip`) and the next mapping may show. `GET /api/images/reports`
+lists the caller's reported pictures, `{"reports": [{entryId, packId, concept}]}` (by entry, pack, concept), and is
+kept offline by the worker, so a kept package passes them over too.
 
 ## Pictures are drawings
 
@@ -86,7 +120,8 @@ the usual answer; not a 404). A picture:
 ```
 
 `sense` (1–999; otherwise 400 `bad_request`) asks for the picture of that sense. An unknown entry is 404
-`not_found`.
+`not_found`. The entry answer (`GET /api/entries/{id}`) carries `pictureTargets`, the strings this route looks the entry
+up by (below), so an offline client asks the same.
 
 ### Resolution (`resolve.json`)
 

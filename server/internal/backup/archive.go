@@ -367,6 +367,9 @@ func (a *Archive) validate() error {
 		if _, dup := seenSent[s.ID]; dup {
 			return invalid("%s names a sentence twice", NameSentences)
 		}
+		if src := s.Source; src != nil && src.BookID != nil && !bookIDs[*src.BookID] {
+			return invalid("%s holds a source of a book the archive does not have", NameSentences)
+		}
 		seenSent[s.ID] = struct{}{}
 		if s.AI != nil {
 			if aiPerEntry[s.EntryID]++; aiPerEntry[s.EntryID] > sentences.MaxKeptPerEntry {
@@ -760,6 +763,11 @@ func ownSentenceLineOK(b []byte) bool {
 	if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
 		len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
 		return false
+	}
+	if src := s.Source; src != nil && (src.Kind != sentences.SourceKindBook || len(src.Title) > 4096 ||
+		src.Chapter < 0 || src.Paragraph < 0 || src.Paragraph > sentences.MaxSourceParagraph ||
+		src.Start < 0 || src.Start >= src.End || src.End > sentences.MaxSourceOffset) {
+		return false // the live rule of a source (#280, reader/sentence-sources.json)
 	}
 	if s.AI == nil {
 		return true

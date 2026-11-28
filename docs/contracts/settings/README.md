@@ -21,6 +21,21 @@ Fixtures:
   (visible section ids + `bar` → the bottom bar's items, the More rows and the current item; `bar: null` is the
   default pins) (web: `lib/frame/navLayout.test.ts`, `lib/frame/barItems.test.ts`; Go:
   `cmd/qinqin/core_rows_test.go`, `internal/backup/nav_layout_test.go`).
+- `romanisation.json` — the workspace-settings key `romanisation` (#284, below): `parse`, `shown` (the rule
+  `isReadingShown`), `textType` (a plain reading string typed by its script), `languages` (the switches of a
+  language, its profile's `romanisations`) and `patch` (web: `lib/languages/romanisation.test.ts`; Go:
+  `internal/lang/romanisation_test.go`, the types against the profiles).
+- `interface-language.json` — the workspace-settings key `interfaceLanguage` (#297, below): `parse` (settings → the
+  workspace's own setting), `resolve` (workspace, account, browser and catalogues → the interface language) and
+  `reminder` (the setting of a mail about several workspaces) (web: `lib/i18n/workspaceLanguage.test.ts`; Go:
+  `internal/i18n/workspace_test.go`).
+- `mastery-map.json` — the workspace-settings key `masteryMap` (#163, below): `parse`, `resolve` (the grading a
+  language and its installed packs give a stored setting), `studySet` (the levels of a pack the map shows) and
+  `patch` (web: `lib/stats/mapGrading.test.ts`; Go: `internal/levels/mastery_map_test.go`, the default packs against
+  the bundled level packs).
+- `tones.json` — the workspace-settings key `tones` (#300, below): `parse`, `languages` (where Settings shows the
+  switches: the profiles with tones) and `patch` (web: `lib/exercises/toneSettings.test.ts`; Go:
+  `internal/lang/tone_settings_test.go`, the languages against the profiles).
 
 ## Workspace settings
 
@@ -34,9 +49,14 @@ collection). Keys in use:
 | `audioAutoplay` | boolean | `false` (anything but a boolean) | `audio/settings.ts` | audio settings |
 | `audioDeviceVoice` | boolean | `true` (anything but a boolean) | `audio/settings.ts` | audio settings |
 | `gradeHaptics` | boolean | `true` (anything but a boolean) | `native/haptics.ts` | Settings > Study > Feedback |
-| `hints` | object: hint kind → card kind → `always` \| `hint` \| `never` | per cell the default of `cards/hints.json` (absent, unknown or invalid cells included) | `study/hints.ts` | Settings > Study > Hints (a cell at a time, by merge patch) |
-| `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `study/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
+| `hints` | object: hint kind → card kind → `always` \| `hint` \| `never` | per cell the default of `cards/hints.json` (absent, unknown or invalid cells included) | `features/flashcards/face/hints.ts` | Settings > Study > Hints (a cell at a time, by merge patch) |
+| `starter` | object `{enabled: boolean, scope: "base" \| "all"}` | `enabled` false and `scope` `base`, member by member (anything but a boolean, or a scope that is neither, is the default) | `starter/starter.ts` | Settings > Study > Starter mode; Home's Starter offer |
 | `visualAids` | object: aid (`pictures`, `toneColors`, `toneContour`, `anatomy`) → boolean | each switch alone: `true` (absent, not a boolean, unknown members ignored; `toneContour` is `false` when only `toneColors: false` is stored); see `aids/visual-aids.json` | `aids/visualAids.ts` | Settings > Study > Visual aids (a switch at a time, by merge patch) |
+| `romanisation` | object: romanisation type (`pinyin`, `bopomofo`, `romaji`) → `always` \| `never` | each type alone: `always` (absent, unknown or invalid members ignored); see `romanisation.json` | `languages/romanisation.ts` | Settings > Study > Romanisation (a type at a time, by merge patch) |
+| `interfaceLanguage` | string: a language tag (`i18n/language-tags.json`, not empty) | absent: the account's interface language (`""`, `null`, a malformed tag or any other value reads the same); see `interface-language.json` | `i18n/workspaceLanguage.ts` | Settings > Workspaces > Interface language (`null` clears it) |
+| `masteryMap` | object `{grading, includeOutside, levels}` | each member alone: the language's default grading, `includeOutside` false, every level; see `mastery-map.json` | `stats/mapGrading.ts` | Stats → Characters (a member at a time, by merge patch) |
+| `tones` | object `{showSandhi: boolean, gradeSpoken: boolean}` | `showSandhi` true, `gradeSpoken` false, member by member (anything but a boolean is the default); see `tones.json` | `exercises/toneSettings.ts` | Settings > Study > Tones (a switch at a time, by merge patch; Chinese workspaces) |
+| `conjugation` | object `{families: {<family>: boolean}}` | each family alone: its default of `conjugation/families.json` (polite, polite-past, negative, past, te-form on; the rest off; not a boolean, unknown members ignored); see `conjugation/settings.json` | `exercises/conjugationSettings.ts` | Settings > Study > Conjugation (a family at a time, by merge patch; Japanese workspaces) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).
@@ -56,6 +76,85 @@ members come out in alphabetical order, numbers pass through a 64-bit float (an 
 precision), and `<`, `>`, `&` are escaped as `\u003c`, `\u003e`, `\u0026` — six bytes each toward the 64 KiB cap.
 Compare stored settings as JSON values, never as text.
 
+## Hidden romanisation (`romanisation`, #284)
+
+A learner may hide each romanisation of the workspace's language: **romaji** (Japanese), **pinyin** and
+**bopomofo** (zhuyin; Chinese), each on its own: `{"romanisation": {"pinyin": "never"}}`. Modes `always` (the
+default) and `never`; each member is read alone and anything else is `always`. The types with a switch are the
+profile's `romanisations` (`languages/profiles.json`); kana, on, kun and pack-defined types are never hidden.
+
+- **One rule** (`isReadingShown(type, prefs)`): a reading is shown unless its (trimmed, lower-cased) type is a
+  romanisation whose mode is `never`. The server keeps deriving and sending every reading (`internal/lang`); only
+  the client hides them. Searching by romaji or pinyin and typing through the IME are unchanged.
+- **Plain reading strings** (a word list's reading, a sentence's reading line, a book's own ruby) are typed by their
+  script (`readingTypeOfText`): Bopomofo letters are `bopomofo`, Latin letters the language's Latin romanisation
+  (`pinyin` in Chinese, `romaji` in Japanese), anything else (kana, hanzi) is not romanisation.
+- **Asking counts as a hint**: on a flashcard a hidden reading is the last hint step (`cards/hints.json`, kind
+  `romanisation`); the kana trainer shows a hidden romaji on tap or behind its hint control.
+- Where it applies (every client): the entry page, search results, the lookup popup and sheet, the reader's
+  readings and ruby, word lists, the stats tooltip, every flashcard kind, Starter mode, grammar examples, the
+  writing-system trainer, and every new screen. Tone colours (`visualAids`) and furigana (`reader.readings`,
+  `reader.bookRuby`) keep their own switches.
+
+Ruling: Android reads `romanisation` with the same rule and fixture, and writes one type at a time by merge patch —
+cost: none.
+
+## Interface language per workspace (`interfaceLanguage`, #297)
+
+A workspace may choose its own interface language: `{"interfaceLanguage": "de"}`. Without one it uses the account's
+(`me.interfaceLanguage`, `i18n/README.md`), which without one follows the browser or device.
+
+- **The setting that applies** (`resolve`): in a workspace, its own setting, else the account's; outside a workspace
+  (signed out: the browser; an account with no workspace yet) the account's. That setting, else the browser's or
+  device's languages, is negotiated by `i18n/negotiate.json` against the catalogues that exist. A tag without a
+  catalogue is English, not the account's language (as for the account setting).
+- **Choices:** a client offers "use my account setting" (the key removed: `null` in the merge patch) and one choice
+  per interface catalogue it has. Readers treat `""` and any value that is not a well-formed tag as "use my account
+  setting"; the server stores the key like any other and validates nothing.
+- **Web:** the catalogue is chosen once per page load, before the app mounts (`i18n/README.md`), from a mirror in
+  localStorage: per workspace the workspace's own setting (`qq.interfaceLanguage.workspace.<id>`, removed when it has
+  none), and the account's resolved language (`qq.interfaceLanguage`). A start in a remembered workspace (offline
+  too) opens in its language. Switching to a workspace with another language, or changing the setting, reloads once,
+  under the guard of the account setting: only when the next start would pick the language, its catalogue differs
+  from the running one, and no language reload happened at this start. Settings → Account and Admin are in the same
+  page load and keep the running language. Android is the web app and follows the same rule.
+- **Server text** (`reminder`): a reminder mail counts every workspace with live facts (`reminders/`). Each one's
+  applying setting is taken; when they all agree that one is used, else (or with none) the account's. Every other
+  mail and page (account mails, the unsubscribe page) uses the account's. The mail catalogue negotiates it as before.
+
+Ruling: one key in the workspace's settings, not a keyed row or a column — it syncs, merges and backs up with the
+other per-workspace preferences — cost: no server-side validation on write.
+## The mastery map's grading (`masteryMap`, #163)
+The character map (Stats → Characters) goes by **one grading** per workspace:
+`{"masteryMap": {"grading": "pack:hsk-chars", "includeOutside": false, "levels": {"hsk-chars": [0, 1, 2]}}}`.
+- **`grading`**: a built-in grouping of the language (`ja`: `grade`, `freq`, `strokes`; `zh`: `common`, `hkgrade`,
+  `strokes`) or an installed level pack of the language as `pack:<packId>` (never `hsk-mini`, `jlpt-mini` or
+  `joyo-grades`, which is the built-in `grade`). Anything else, or a pack that is not installed, is the **default**:
+  the first installed pack of `defaultPacks` (`zh`: `hsk-chars`, `hsk-words`; `ja`: `jlpt-kanji`), else the first
+  installed pack whose id starts with `defaultPackPrefix` (`hsk-`, `jlpt-`), else the language's first built-in
+  (`common`, `grade`).
+- **`includeOutside`** (default `false`): with a pack grading, off shows only the characters of the pack's levels (the
+  map, its "X of Y learned" counts and the stage bars); on, every other character of the language joins as a last
+  section "Outside <grading>". A built-in grouping always shows every character in its own sections.
+- **`levels`**: the study set per pack, the level `ord`s to show; absent means every level. Ords the pack no longer
+  has are ignored, and a set that keeps none is every level. A character belongs to one level by the scheme rule (its
+  own glyph first, then a variant form, lowest level first); a character whose level is not in the set is not shown.
+- Ids are pack ids and level ords, never database ids, so the setting needs no remap on restore.
+- The map's Level select (a browse focus, remembered per device) narrows within the study set: all study levels, one
+  of them, or "Outside" while it is included.
+- It is the map's only: level sessions, the level check, courses and the Home widget "Characters" ignore it.
+Writes are merge patches of one member (`patch`); "every level" deletes the pack's set (`null`).
+Ruling: Android reads `masteryMap` with the same rule and fixture — cost: none.
+## Tone sandhi (`tones`, #300)
+Two switches per workspace for tone exercises (the Tones card, the tone-pair drill #180), steering the rules of
+`tones/` (citation and spoken tones):
+- **`showSandhi`** ("Show tone sandhi", default `true`): an answer shows a sandhi syllable's spoken tone beside its
+  citation tone (`bù → bú`). `false`: sandhi is never shown, only citation tones.
+- **`gradeSpoken`** ("Grade spoken tones", default `false`): grade the spoken tones only. `false`: a syllable is
+  right with its citation tone or its spoken tone.
+Each member is read alone; anything but a boolean is its default. Settings shows them for a language whose profile
+has tones. Clients that do not know the key grade citation tones only, as before.
+
 ## User-global keyed rows
 
 All are keyed rows (`keyed/`) with `workspaceId: null` (one per user, shared by every device,
@@ -65,13 +164,15 @@ last write wins; `sync/`).
 
 - Read (`parseLayout`): an object with an integer `version` ≥ 1 and an array `widgets`; entries that are not
   non-empty strings are dropped; a **newer version is read leniently** (its string ids count). Anything else
-  (or no row) is no layout: the default `defaultLayout` (`activity-heatmap`, `flashcards-summary`,
-  `daily-goal`, `weekly-summary`) applies. An empty list stays empty.
+  (or no row) is no layout: the default `defaultLayout` (`course-continue` (#225), `activity-heatmap`,
+  `flashcards-summary`, `daily-goal`, `weekly-summary`) applies; a widget that has nothing to show (no course for the
+  language) renders nothing. An empty list stays empty.
 - Show (`resolveLayout`): stored ids in order, each once (first position wins), skipping ids that are
   unknown, unavailable (feature off, another language) or not on the surface. Skipped ids **stay stored**.
 - Write (`serializeLayout`): always `version: 1` with the ids as given.
-- Widget ids the web registry knows (`widgets`): `activity-heatmap`, `character-map-summary`, `daily-goal`,
-  `summary-numbers`, `reviews-per-day`, `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`.
+- Widget ids the web registry knows (`widgets`), in registry order (the core widgets, then each feature's in the
+  feature order, #295): `daily-goal`, `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`,
+  `scripts-progress`, Courses' `course-continue` (#225), then Stats' `activity-heatmap`, `character-map-summary`, `summary-numbers`, `reviews-per-day`.
 
 Ruling: Android shares `home-layout` with the web (one per user) and keeps every widget id it does not know
 stored, in place — a per-platform key would be a new row type and the web already keeps unknown ids — cost: a

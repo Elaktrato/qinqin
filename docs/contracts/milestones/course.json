@@ -1,0 +1,2649 @@
+{
+ "version": 1,
+ "rule": "milestones/course",
+ "note": "Course milestones (#225): reached at the first event of the workspace's course (courses/README.md parsing and replay, ts <= now, (instant, id) order) after which they hold. course-started: the first finished lesson. course-unit: the unit becomes done by its own work (its passed unit test, early or not; for a unit without a test, its last lesson); skipped units get none. course-section: every unit of the section done (skips included). course-script: every unit naming the script done. course-characters: the characters of done units. course-words: met words plus the words of skipped units. course-graduated: every unit done. expect lists every reached id by reachedAt, ties in catalogue order (compareIds). course is the part of a filled course the rule reads. Decoded by apps/web/src/lib/milestones/courseReached.test.ts.",
+ "cases": [
+  {
+   "name": "the path studied: the first lesson, units by their own work, sections, the script, characters, words, graduation",
+   "note": "start-kana has no test: done by its last lesson (11-01 09:10), which also completes its section and hiragana. u1 is passed by its own test (11-02). u2's early pass (11-03 10:00) is its own test, so it reaches its unit; section one is done, the characters of done units are 110 (≥ 100), the words are 30 met + 30 of the skipped u2 = 60 (≥ 50). The exam of two (11-04) skips u3 (no unit milestone), completes section two and the course. A failed test (11-03 09:00) and a started lesson reach nothing.",
+   "history": [],
+   "now": "2026-11-10T00:00:00Z",
+   "course": {
+    "id": "mini-course",
+    "title": {
+     "en": "Mini course"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "start-kana",
+        "title": {
+         "en": "Kana"
+        },
+        "test": false,
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "words": [],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "title": {
+       "en": "Level one"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "Hello"
+        },
+        "test": true,
+        "characters": [
+         "一",
+         "丁",
+         "丂",
+         "七",
+         "丄",
+         "丅",
+         "丆",
+         "万",
+         "丈",
+         "三",
+         "上",
+         "下",
+         "丌",
+         "不",
+         "与",
+         "丏",
+         "丐",
+         "丑",
+         "丒",
+         "专",
+         "且",
+         "丕",
+         "世",
+         "丗",
+         "丘",
+         "丙",
+         "业",
+         "丛",
+         "东",
+         "丝",
+         "丞",
+         "丟",
+         "丠",
+         "両",
+         "丢",
+         "丣",
+         "两",
+         "严",
+         "並",
+         "丧",
+         "丨",
+         "丩",
+         "个",
+         "丫",
+         "丬",
+         "中",
+         "丮",
+         "丯",
+         "丰",
+         "丱",
+         "串",
+         "丳",
+         "临",
+         "丵",
+         "丶",
+         "丷",
+         "丸",
+         "丹",
+         "为",
+         "主"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "a00"
+         },
+         {
+          "key": "a01"
+         },
+         {
+          "key": "a02"
+         },
+         {
+          "key": "a03"
+         },
+         {
+          "key": "a04"
+         },
+         {
+          "key": "a05"
+         },
+         {
+          "key": "a06"
+         },
+         {
+          "key": "a07"
+         },
+         {
+          "key": "a08"
+         },
+         {
+          "key": "a09"
+         },
+         {
+          "key": "a10"
+         },
+         {
+          "key": "a11"
+         },
+         {
+          "key": "a12"
+         },
+         {
+          "key": "a13"
+         },
+         {
+          "key": "a14"
+         },
+         {
+          "key": "a15"
+         },
+         {
+          "key": "a16"
+         },
+         {
+          "key": "a17"
+         },
+         {
+          "key": "a18"
+         },
+         {
+          "key": "a19"
+         },
+         {
+          "key": "a20"
+         },
+         {
+          "key": "a21"
+         },
+         {
+          "key": "a22"
+         },
+         {
+          "key": "a23"
+         },
+         {
+          "key": "a24"
+         },
+         {
+          "key": "a25"
+         },
+         {
+          "key": "a26"
+         },
+         {
+          "key": "a27"
+         },
+         {
+          "key": "a28"
+         },
+         {
+          "key": "a29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "words-2"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "Family"
+        },
+        "test": true,
+        "characters": [
+         "丼",
+         "丽",
+         "举",
+         "丿",
+         "乀",
+         "乁",
+         "乂",
+         "乃",
+         "乄",
+         "久",
+         "乆",
+         "乇",
+         "么",
+         "义",
+         "乊",
+         "之",
+         "乌",
+         "乍",
+         "乎",
+         "乏",
+         "乐",
+         "乑",
+         "乒",
+         "乓",
+         "乔",
+         "乕",
+         "乖",
+         "乗",
+         "乘",
+         "乙",
+         "乚",
+         "乛",
+         "乜",
+         "九",
+         "乞",
+         "也",
+         "习",
+         "乡",
+         "乢",
+         "乣",
+         "乤",
+         "乥",
+         "书",
+         "乧",
+         "乨",
+         "乩",
+         "乪",
+         "乫",
+         "乬",
+         "乭"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "b00"
+         },
+         {
+          "key": "b01"
+         },
+         {
+          "key": "b02"
+         },
+         {
+          "key": "b03"
+         },
+         {
+          "key": "b04"
+         },
+         {
+          "key": "b05"
+         },
+         {
+          "key": "b06"
+         },
+         {
+          "key": "b07"
+         },
+         {
+          "key": "b08"
+         },
+         {
+          "key": "b09"
+         },
+         {
+          "key": "b10"
+         },
+         {
+          "key": "b11"
+         },
+         {
+          "key": "b12"
+         },
+         {
+          "key": "b13"
+         },
+         {
+          "key": "b14"
+         },
+         {
+          "key": "b15"
+         },
+         {
+          "key": "b16"
+         },
+         {
+          "key": "b17"
+         },
+         {
+          "key": "b18"
+         },
+         {
+          "key": "b19"
+         },
+         {
+          "key": "b20"
+         },
+         {
+          "key": "b21"
+         },
+         {
+          "key": "b22"
+         },
+         {
+          "key": "b23"
+         },
+         {
+          "key": "b24"
+         },
+         {
+          "key": "b25"
+         },
+         {
+          "key": "b26"
+         },
+         {
+          "key": "b27"
+         },
+         {
+          "key": "b28"
+         },
+         {
+          "key": "b29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "title": {
+       "en": "Level two"
+      },
+      "units": [
+       {
+        "id": "u3",
+        "title": {
+         "en": "Travel"
+        },
+        "test": true,
+        "characters": [],
+        "scripts": [],
+        "words": [
+         {
+          "key": "c00"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01KB00000000000000000M0001",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "script",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0002",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:05:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-started",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "listening"
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0003",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "listening",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0004",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-02T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a00",
+       "a01",
+       "a02",
+       "a03",
+       "a04",
+       "a05",
+       "a06",
+       "a07",
+       "a08",
+       "a09",
+       "a10",
+       "a11",
+       "a12",
+       "a13",
+       "a14",
+       "a15",
+       "a16",
+       "a17",
+       "a18",
+       "a19",
+       "a20",
+       "a21",
+       "a22",
+       "a23",
+       "a24",
+       "a25",
+       "a26",
+       "a27",
+       "a28",
+       "a29"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0005",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u1",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": false
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0006",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-03T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u2",
+      "score": 1,
+      "total": 1,
+      "passed": false,
+      "early": true
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0007",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-03T10:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u2",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": true
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0008",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-04T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "mini-course",
+      "section": "two",
+      "score": 1,
+      "total": 1,
+      "passed": true
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "course-started:mini-course",
+     "reachedAt": "2026-11-01T09:00:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-unit:mini-course:start-kana",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-section:mini-course:start",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-script:mini-course:hiragana",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-unit:mini-course:u1",
+     "reachedAt": "2026-11-02T10:00:00Z",
+     "reachedDay": "2026-11-02"
+    },
+    {
+     "id": "course-unit:mini-course:u2",
+     "reachedAt": "2026-11-03T10:00:00Z",
+     "reachedDay": "2026-11-03"
+    },
+    {
+     "id": "course-section:mini-course:one",
+     "reachedAt": "2026-11-03T10:00:00Z",
+     "reachedDay": "2026-11-03"
+    },
+    {
+     "id": "course-characters:mini-course:100",
+     "reachedAt": "2026-11-03T10:00:00Z",
+     "reachedDay": "2026-11-03"
+    },
+    {
+     "id": "course-words:mini-course:50",
+     "reachedAt": "2026-11-03T10:00:00Z",
+     "reachedDay": "2026-11-03"
+    },
+    {
+     "id": "course-section:mini-course:two",
+     "reachedAt": "2026-11-04T09:00:00Z",
+     "reachedDay": "2026-11-04"
+    },
+    {
+     "id": "course-graduated:mini-course",
+     "reachedAt": "2026-11-04T09:00:00Z",
+     "reachedDay": "2026-11-04"
+    }
+   ]
+  },
+  {
+   "name": "a placement reaches the sections it skips, the script, characters and words, but no unit and no first lesson",
+   "note": "placement into two skips start-kana, u1 and u2: sections start and one (one instant: by id), hiragana, 110 characters, 60 words; nothing was studied, so no unit and no course-started.",
+   "history": [],
+   "now": "2026-11-10T00:00:00Z",
+   "course": {
+    "id": "mini-course",
+    "title": {
+     "en": "Mini course"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "start-kana",
+        "title": {
+         "en": "Kana"
+        },
+        "test": false,
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "words": [],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "title": {
+       "en": "Level one"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "Hello"
+        },
+        "test": true,
+        "characters": [
+         "一",
+         "丁",
+         "丂",
+         "七",
+         "丄",
+         "丅",
+         "丆",
+         "万",
+         "丈",
+         "三",
+         "上",
+         "下",
+         "丌",
+         "不",
+         "与",
+         "丏",
+         "丐",
+         "丑",
+         "丒",
+         "专",
+         "且",
+         "丕",
+         "世",
+         "丗",
+         "丘",
+         "丙",
+         "业",
+         "丛",
+         "东",
+         "丝",
+         "丞",
+         "丟",
+         "丠",
+         "両",
+         "丢",
+         "丣",
+         "两",
+         "严",
+         "並",
+         "丧",
+         "丨",
+         "丩",
+         "个",
+         "丫",
+         "丬",
+         "中",
+         "丮",
+         "丯",
+         "丰",
+         "丱",
+         "串",
+         "丳",
+         "临",
+         "丵",
+         "丶",
+         "丷",
+         "丸",
+         "丹",
+         "为",
+         "主"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "a00"
+         },
+         {
+          "key": "a01"
+         },
+         {
+          "key": "a02"
+         },
+         {
+          "key": "a03"
+         },
+         {
+          "key": "a04"
+         },
+         {
+          "key": "a05"
+         },
+         {
+          "key": "a06"
+         },
+         {
+          "key": "a07"
+         },
+         {
+          "key": "a08"
+         },
+         {
+          "key": "a09"
+         },
+         {
+          "key": "a10"
+         },
+         {
+          "key": "a11"
+         },
+         {
+          "key": "a12"
+         },
+         {
+          "key": "a13"
+         },
+         {
+          "key": "a14"
+         },
+         {
+          "key": "a15"
+         },
+         {
+          "key": "a16"
+         },
+         {
+          "key": "a17"
+         },
+         {
+          "key": "a18"
+         },
+         {
+          "key": "a19"
+         },
+         {
+          "key": "a20"
+         },
+         {
+          "key": "a21"
+         },
+         {
+          "key": "a22"
+         },
+         {
+          "key": "a23"
+         },
+         {
+          "key": "a24"
+         },
+         {
+          "key": "a25"
+         },
+         {
+          "key": "a26"
+         },
+         {
+          "key": "a27"
+         },
+         {
+          "key": "a28"
+         },
+         {
+          "key": "a29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "words-2"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "Family"
+        },
+        "test": true,
+        "characters": [
+         "丼",
+         "丽",
+         "举",
+         "丿",
+         "乀",
+         "乁",
+         "乂",
+         "乃",
+         "乄",
+         "久",
+         "乆",
+         "乇",
+         "么",
+         "义",
+         "乊",
+         "之",
+         "乌",
+         "乍",
+         "乎",
+         "乏",
+         "乐",
+         "乑",
+         "乒",
+         "乓",
+         "乔",
+         "乕",
+         "乖",
+         "乗",
+         "乘",
+         "乙",
+         "乚",
+         "乛",
+         "乜",
+         "九",
+         "乞",
+         "也",
+         "习",
+         "乡",
+         "乢",
+         "乣",
+         "乤",
+         "乥",
+         "书",
+         "乧",
+         "乨",
+         "乩",
+         "乪",
+         "乫",
+         "乬",
+         "乭"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "b00"
+         },
+         {
+          "key": "b01"
+         },
+         {
+          "key": "b02"
+         },
+         {
+          "key": "b03"
+         },
+         {
+          "key": "b04"
+         },
+         {
+          "key": "b05"
+         },
+         {
+          "key": "b06"
+         },
+         {
+          "key": "b07"
+         },
+         {
+          "key": "b08"
+         },
+         {
+          "key": "b09"
+         },
+         {
+          "key": "b10"
+         },
+         {
+          "key": "b11"
+         },
+         {
+          "key": "b12"
+         },
+         {
+          "key": "b13"
+         },
+         {
+          "key": "b14"
+         },
+         {
+          "key": "b15"
+         },
+         {
+          "key": "b16"
+         },
+         {
+          "key": "b17"
+         },
+         {
+          "key": "b18"
+         },
+         {
+          "key": "b19"
+         },
+         {
+          "key": "b20"
+         },
+         {
+          "key": "b21"
+         },
+         {
+          "key": "b22"
+         },
+         {
+          "key": "b23"
+         },
+         {
+          "key": "b24"
+         },
+         {
+          "key": "b25"
+         },
+         {
+          "key": "b26"
+         },
+         {
+          "key": "b27"
+         },
+         {
+          "key": "b28"
+         },
+         {
+          "key": "b29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "title": {
+       "en": "Level two"
+      },
+      "units": [
+       {
+        "id": "u3",
+        "title": {
+         "en": "Travel"
+        },
+        "test": true,
+        "characters": [],
+        "scripts": [],
+        "words": [
+         {
+          "key": "c00"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01KB00000000000000000M0009",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-05T08:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "mini-course",
+      "section": "two"
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "course-section:mini-course:one",
+     "reachedAt": "2026-11-05T08:00:00Z",
+     "reachedDay": "2026-11-05"
+    },
+    {
+     "id": "course-section:mini-course:start",
+     "reachedAt": "2026-11-05T08:00:00Z",
+     "reachedDay": "2026-11-05"
+    },
+    {
+     "id": "course-script:mini-course:hiragana",
+     "reachedAt": "2026-11-05T08:00:00Z",
+     "reachedDay": "2026-11-05"
+    },
+    {
+     "id": "course-characters:mini-course:100",
+     "reachedAt": "2026-11-05T08:00:00Z",
+     "reachedDay": "2026-11-05"
+    },
+    {
+     "id": "course-words:mini-course:50",
+     "reachedAt": "2026-11-05T08:00:00Z",
+     "reachedDay": "2026-11-05"
+    }
+   ]
+  },
+  {
+   "name": "a unit without a test is done by its last lesson, in any order; a unit done before gets nothing from its own test later",
+   "note": "listening then script: start-kana is done at the script (11-01 09:10). A passed exam of one (11-02) skips u1 and u2 (no unit milestones); u1's own test afterwards (11-03) changes nothing.",
+   "history": [],
+   "now": "2026-11-10T00:00:00Z",
+   "course": {
+    "id": "mini-course",
+    "title": {
+     "en": "Mini course"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "start-kana",
+        "title": {
+         "en": "Kana"
+        },
+        "test": false,
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "words": [],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "title": {
+       "en": "Level one"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "Hello"
+        },
+        "test": true,
+        "characters": [
+         "一",
+         "丁",
+         "丂",
+         "七",
+         "丄",
+         "丅",
+         "丆",
+         "万",
+         "丈",
+         "三",
+         "上",
+         "下",
+         "丌",
+         "不",
+         "与",
+         "丏",
+         "丐",
+         "丑",
+         "丒",
+         "专",
+         "且",
+         "丕",
+         "世",
+         "丗",
+         "丘",
+         "丙",
+         "业",
+         "丛",
+         "东",
+         "丝",
+         "丞",
+         "丟",
+         "丠",
+         "両",
+         "丢",
+         "丣",
+         "两",
+         "严",
+         "並",
+         "丧",
+         "丨",
+         "丩",
+         "个",
+         "丫",
+         "丬",
+         "中",
+         "丮",
+         "丯",
+         "丰",
+         "丱",
+         "串",
+         "丳",
+         "临",
+         "丵",
+         "丶",
+         "丷",
+         "丸",
+         "丹",
+         "为",
+         "主"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "a00"
+         },
+         {
+          "key": "a01"
+         },
+         {
+          "key": "a02"
+         },
+         {
+          "key": "a03"
+         },
+         {
+          "key": "a04"
+         },
+         {
+          "key": "a05"
+         },
+         {
+          "key": "a06"
+         },
+         {
+          "key": "a07"
+         },
+         {
+          "key": "a08"
+         },
+         {
+          "key": "a09"
+         },
+         {
+          "key": "a10"
+         },
+         {
+          "key": "a11"
+         },
+         {
+          "key": "a12"
+         },
+         {
+          "key": "a13"
+         },
+         {
+          "key": "a14"
+         },
+         {
+          "key": "a15"
+         },
+         {
+          "key": "a16"
+         },
+         {
+          "key": "a17"
+         },
+         {
+          "key": "a18"
+         },
+         {
+          "key": "a19"
+         },
+         {
+          "key": "a20"
+         },
+         {
+          "key": "a21"
+         },
+         {
+          "key": "a22"
+         },
+         {
+          "key": "a23"
+         },
+         {
+          "key": "a24"
+         },
+         {
+          "key": "a25"
+         },
+         {
+          "key": "a26"
+         },
+         {
+          "key": "a27"
+         },
+         {
+          "key": "a28"
+         },
+         {
+          "key": "a29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "words-2"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "Family"
+        },
+        "test": true,
+        "characters": [
+         "丼",
+         "丽",
+         "举",
+         "丿",
+         "乀",
+         "乁",
+         "乂",
+         "乃",
+         "乄",
+         "久",
+         "乆",
+         "乇",
+         "么",
+         "义",
+         "乊",
+         "之",
+         "乌",
+         "乍",
+         "乎",
+         "乏",
+         "乐",
+         "乑",
+         "乒",
+         "乓",
+         "乔",
+         "乕",
+         "乖",
+         "乗",
+         "乘",
+         "乙",
+         "乚",
+         "乛",
+         "乜",
+         "九",
+         "乞",
+         "也",
+         "习",
+         "乡",
+         "乢",
+         "乣",
+         "乤",
+         "乥",
+         "书",
+         "乧",
+         "乨",
+         "乩",
+         "乪",
+         "乫",
+         "乬",
+         "乭"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "b00"
+         },
+         {
+          "key": "b01"
+         },
+         {
+          "key": "b02"
+         },
+         {
+          "key": "b03"
+         },
+         {
+          "key": "b04"
+         },
+         {
+          "key": "b05"
+         },
+         {
+          "key": "b06"
+         },
+         {
+          "key": "b07"
+         },
+         {
+          "key": "b08"
+         },
+         {
+          "key": "b09"
+         },
+         {
+          "key": "b10"
+         },
+         {
+          "key": "b11"
+         },
+         {
+          "key": "b12"
+         },
+         {
+          "key": "b13"
+         },
+         {
+          "key": "b14"
+         },
+         {
+          "key": "b15"
+         },
+         {
+          "key": "b16"
+         },
+         {
+          "key": "b17"
+         },
+         {
+          "key": "b18"
+         },
+         {
+          "key": "b19"
+         },
+         {
+          "key": "b20"
+         },
+         {
+          "key": "b21"
+         },
+         {
+          "key": "b22"
+         },
+         {
+          "key": "b23"
+         },
+         {
+          "key": "b24"
+         },
+         {
+          "key": "b25"
+         },
+         {
+          "key": "b26"
+         },
+         {
+          "key": "b27"
+         },
+         {
+          "key": "b28"
+         },
+         {
+          "key": "b29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "title": {
+       "en": "Level two"
+      },
+      "units": [
+       {
+        "id": "u3",
+        "title": {
+         "en": "Travel"
+        },
+        "test": true,
+        "characters": [],
+        "scripts": [],
+        "words": [
+         {
+          "key": "c00"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01KB00000000000000000M0010",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "listening",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0011",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "script",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0012",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-02T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "mini-course",
+      "section": "one",
+      "score": 1,
+      "total": 1,
+      "passed": true
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0013",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-03T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u1",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": false
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "course-started:mini-course",
+     "reachedAt": "2026-11-01T09:00:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-unit:mini-course:start-kana",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-section:mini-course:start",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-script:mini-course:hiragana",
+     "reachedAt": "2026-11-01T09:10:00Z",
+     "reachedDay": "2026-11-01"
+    },
+    {
+     "id": "course-section:mini-course:one",
+     "reachedAt": "2026-11-02T09:00:00Z",
+     "reachedDay": "2026-11-02"
+    },
+    {
+     "id": "course-characters:mini-course:100",
+     "reachedAt": "2026-11-02T09:00:00Z",
+     "reachedDay": "2026-11-02"
+    },
+    {
+     "id": "course-words:mini-course:50",
+     "reachedAt": "2026-11-02T09:00:00Z",
+     "reachedDay": "2026-11-02"
+    }
+   ]
+  },
+  {
+   "name": "other courses, failed tests, unknown units and events after now reach nothing",
+   "note": "a lesson of another course; a failed exam; a passed test of a unit the course does not have; a finished lesson after now (a fast clock).",
+   "history": [],
+   "now": "2026-11-10T00:00:00Z",
+   "course": {
+    "id": "mini-course",
+    "title": {
+     "en": "Mini course"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "start-kana",
+        "title": {
+         "en": "Kana"
+        },
+        "test": false,
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "words": [],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "title": {
+       "en": "Level one"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "Hello"
+        },
+        "test": true,
+        "characters": [
+         "一",
+         "丁",
+         "丂",
+         "七",
+         "丄",
+         "丅",
+         "丆",
+         "万",
+         "丈",
+         "三",
+         "上",
+         "下",
+         "丌",
+         "不",
+         "与",
+         "丏",
+         "丐",
+         "丑",
+         "丒",
+         "专",
+         "且",
+         "丕",
+         "世",
+         "丗",
+         "丘",
+         "丙",
+         "业",
+         "丛",
+         "东",
+         "丝",
+         "丞",
+         "丟",
+         "丠",
+         "両",
+         "丢",
+         "丣",
+         "两",
+         "严",
+         "並",
+         "丧",
+         "丨",
+         "丩",
+         "个",
+         "丫",
+         "丬",
+         "中",
+         "丮",
+         "丯",
+         "丰",
+         "丱",
+         "串",
+         "丳",
+         "临",
+         "丵",
+         "丶",
+         "丷",
+         "丸",
+         "丹",
+         "为",
+         "主"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "a00"
+         },
+         {
+          "key": "a01"
+         },
+         {
+          "key": "a02"
+         },
+         {
+          "key": "a03"
+         },
+         {
+          "key": "a04"
+         },
+         {
+          "key": "a05"
+         },
+         {
+          "key": "a06"
+         },
+         {
+          "key": "a07"
+         },
+         {
+          "key": "a08"
+         },
+         {
+          "key": "a09"
+         },
+         {
+          "key": "a10"
+         },
+         {
+          "key": "a11"
+         },
+         {
+          "key": "a12"
+         },
+         {
+          "key": "a13"
+         },
+         {
+          "key": "a14"
+         },
+         {
+          "key": "a15"
+         },
+         {
+          "key": "a16"
+         },
+         {
+          "key": "a17"
+         },
+         {
+          "key": "a18"
+         },
+         {
+          "key": "a19"
+         },
+         {
+          "key": "a20"
+         },
+         {
+          "key": "a21"
+         },
+         {
+          "key": "a22"
+         },
+         {
+          "key": "a23"
+         },
+         {
+          "key": "a24"
+         },
+         {
+          "key": "a25"
+         },
+         {
+          "key": "a26"
+         },
+         {
+          "key": "a27"
+         },
+         {
+          "key": "a28"
+         },
+         {
+          "key": "a29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "words-2"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "Family"
+        },
+        "test": true,
+        "characters": [
+         "丼",
+         "丽",
+         "举",
+         "丿",
+         "乀",
+         "乁",
+         "乂",
+         "乃",
+         "乄",
+         "久",
+         "乆",
+         "乇",
+         "么",
+         "义",
+         "乊",
+         "之",
+         "乌",
+         "乍",
+         "乎",
+         "乏",
+         "乐",
+         "乑",
+         "乒",
+         "乓",
+         "乔",
+         "乕",
+         "乖",
+         "乗",
+         "乘",
+         "乙",
+         "乚",
+         "乛",
+         "乜",
+         "九",
+         "乞",
+         "也",
+         "习",
+         "乡",
+         "乢",
+         "乣",
+         "乤",
+         "乥",
+         "书",
+         "乧",
+         "乨",
+         "乩",
+         "乪",
+         "乫",
+         "乬",
+         "乭"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "b00"
+         },
+         {
+          "key": "b01"
+         },
+         {
+          "key": "b02"
+         },
+         {
+          "key": "b03"
+         },
+         {
+          "key": "b04"
+         },
+         {
+          "key": "b05"
+         },
+         {
+          "key": "b06"
+         },
+         {
+          "key": "b07"
+         },
+         {
+          "key": "b08"
+         },
+         {
+          "key": "b09"
+         },
+         {
+          "key": "b10"
+         },
+         {
+          "key": "b11"
+         },
+         {
+          "key": "b12"
+         },
+         {
+          "key": "b13"
+         },
+         {
+          "key": "b14"
+         },
+         {
+          "key": "b15"
+         },
+         {
+          "key": "b16"
+         },
+         {
+          "key": "b17"
+         },
+         {
+          "key": "b18"
+         },
+         {
+          "key": "b19"
+         },
+         {
+          "key": "b20"
+         },
+         {
+          "key": "b21"
+         },
+         {
+          "key": "b22"
+         },
+         {
+          "key": "b23"
+         },
+         {
+          "key": "b24"
+         },
+         {
+          "key": "b25"
+         },
+         {
+          "key": "b26"
+         },
+         {
+          "key": "b27"
+         },
+         {
+          "key": "b28"
+         },
+         {
+          "key": "b29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "title": {
+       "en": "Level two"
+      },
+      "units": [
+       {
+        "id": "u3",
+        "title": {
+         "en": "Travel"
+        },
+        "test": true,
+        "characters": [],
+        "scripts": [],
+        "words": [
+         {
+          "key": "c00"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01KB00000000000000000M0014",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "other-course",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a00",
+       "a01",
+       "a02",
+       "a03",
+       "a04",
+       "a05",
+       "a06",
+       "a07",
+       "a08",
+       "a09",
+       "a10",
+       "a11",
+       "a12",
+       "a13",
+       "a14",
+       "a15",
+       "a16",
+       "a17",
+       "a18",
+       "a19",
+       "a20",
+       "a21",
+       "a22",
+       "a23",
+       "a24",
+       "a25",
+       "a26",
+       "a27",
+       "a28",
+       "a29"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0015",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "mini-course",
+      "section": "one",
+      "score": 1,
+      "total": 1,
+      "passed": false
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0016",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T11:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "gone",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": false
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0017",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-11T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "start-kana",
+      "lesson": "script",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "met words of any unit count; the learner day of the zone history",
+   "note": "two lessons of u1 teach 30 + 25 words (one repeated word counts once: 54); 50 is crossed by the second lesson at 2026-11-02T15:30Z, which is the 3rd in Tokyo.",
+   "history": [
+    {
+     "from": null,
+     "zone": "Asia/Tokyo"
+    }
+   ],
+   "now": "2026-11-10T00:00:00Z",
+   "course": {
+    "id": "mini-course",
+    "title": {
+     "en": "Mini course"
+    },
+    "sections": [
+     {
+      "id": "start",
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "start-kana",
+        "title": {
+         "en": "Kana"
+        },
+        "test": false,
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "words": [],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "title": {
+       "en": "Level one"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "Hello"
+        },
+        "test": true,
+        "characters": [
+         "一",
+         "丁",
+         "丂",
+         "七",
+         "丄",
+         "丅",
+         "丆",
+         "万",
+         "丈",
+         "三",
+         "上",
+         "下",
+         "丌",
+         "不",
+         "与",
+         "丏",
+         "丐",
+         "丑",
+         "丒",
+         "专",
+         "且",
+         "丕",
+         "世",
+         "丗",
+         "丘",
+         "丙",
+         "业",
+         "丛",
+         "东",
+         "丝",
+         "丞",
+         "丟",
+         "丠",
+         "両",
+         "丢",
+         "丣",
+         "两",
+         "严",
+         "並",
+         "丧",
+         "丨",
+         "丩",
+         "个",
+         "丫",
+         "丬",
+         "中",
+         "丮",
+         "丯",
+         "丰",
+         "丱",
+         "串",
+         "丳",
+         "临",
+         "丵",
+         "丶",
+         "丷",
+         "丸",
+         "丹",
+         "为",
+         "主"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "a00"
+         },
+         {
+          "key": "a01"
+         },
+         {
+          "key": "a02"
+         },
+         {
+          "key": "a03"
+         },
+         {
+          "key": "a04"
+         },
+         {
+          "key": "a05"
+         },
+         {
+          "key": "a06"
+         },
+         {
+          "key": "a07"
+         },
+         {
+          "key": "a08"
+         },
+         {
+          "key": "a09"
+         },
+         {
+          "key": "a10"
+         },
+         {
+          "key": "a11"
+         },
+         {
+          "key": "a12"
+         },
+         {
+          "key": "a13"
+         },
+         {
+          "key": "a14"
+         },
+         {
+          "key": "a15"
+         },
+         {
+          "key": "a16"
+         },
+         {
+          "key": "a17"
+         },
+         {
+          "key": "a18"
+         },
+         {
+          "key": "a19"
+         },
+         {
+          "key": "a20"
+         },
+         {
+          "key": "a21"
+         },
+         {
+          "key": "a22"
+         },
+         {
+          "key": "a23"
+         },
+         {
+          "key": "a24"
+         },
+         {
+          "key": "a25"
+         },
+         {
+          "key": "a26"
+         },
+         {
+          "key": "a27"
+         },
+         {
+          "key": "a28"
+         },
+         {
+          "key": "a29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "words-2"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "Family"
+        },
+        "test": true,
+        "characters": [
+         "丼",
+         "丽",
+         "举",
+         "丿",
+         "乀",
+         "乁",
+         "乂",
+         "乃",
+         "乄",
+         "久",
+         "乆",
+         "乇",
+         "么",
+         "义",
+         "乊",
+         "之",
+         "乌",
+         "乍",
+         "乎",
+         "乏",
+         "乐",
+         "乑",
+         "乒",
+         "乓",
+         "乔",
+         "乕",
+         "乖",
+         "乗",
+         "乘",
+         "乙",
+         "乚",
+         "乛",
+         "乜",
+         "九",
+         "乞",
+         "也",
+         "习",
+         "乡",
+         "乢",
+         "乣",
+         "乤",
+         "乥",
+         "书",
+         "乧",
+         "乨",
+         "乩",
+         "乪",
+         "乫",
+         "乬",
+         "乭"
+        ],
+        "scripts": [],
+        "words": [
+         {
+          "key": "b00"
+         },
+         {
+          "key": "b01"
+         },
+         {
+          "key": "b02"
+         },
+         {
+          "key": "b03"
+         },
+         {
+          "key": "b04"
+         },
+         {
+          "key": "b05"
+         },
+         {
+          "key": "b06"
+         },
+         {
+          "key": "b07"
+         },
+         {
+          "key": "b08"
+         },
+         {
+          "key": "b09"
+         },
+         {
+          "key": "b10"
+         },
+         {
+          "key": "b11"
+         },
+         {
+          "key": "b12"
+         },
+         {
+          "key": "b13"
+         },
+         {
+          "key": "b14"
+         },
+         {
+          "key": "b15"
+         },
+         {
+          "key": "b16"
+         },
+         {
+          "key": "b17"
+         },
+         {
+          "key": "b18"
+         },
+         {
+          "key": "b19"
+         },
+         {
+          "key": "b20"
+         },
+         {
+          "key": "b21"
+         },
+         {
+          "key": "b22"
+         },
+         {
+          "key": "b23"
+         },
+         {
+          "key": "b24"
+         },
+         {
+          "key": "b25"
+         },
+         {
+          "key": "b26"
+         },
+         {
+          "key": "b27"
+         },
+         {
+          "key": "b28"
+         },
+         {
+          "key": "b29"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script"
+         },
+         {
+          "id": "words-1"
+         },
+         {
+          "id": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "title": {
+       "en": "Level two"
+      },
+      "units": [
+       {
+        "id": "u3",
+        "title": {
+         "en": "Travel"
+        },
+        "test": true,
+        "characters": [],
+        "scripts": [],
+        "words": [
+         {
+          "key": "c00"
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "events": [
+    {
+     "id": "01KB00000000000000000M0018",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-02T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a00",
+       "a01",
+       "a02",
+       "a03",
+       "a04",
+       "a05",
+       "a06",
+       "a07",
+       "a08",
+       "a09",
+       "a10",
+       "a11",
+       "a12",
+       "a13",
+       "a14",
+       "a15",
+       "a16",
+       "a17",
+       "a18",
+       "a19",
+       "a20",
+       "a21",
+       "a22",
+       "a23",
+       "a24",
+       "a25",
+       "a26",
+       "a27",
+       "a28",
+       "a29"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000M0019",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-02T15:30:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "words-2",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "z00",
+       "z01",
+       "z02",
+       "z03",
+       "z04",
+       "z05",
+       "z06",
+       "z07",
+       "z08",
+       "z09",
+       "z10",
+       "z11",
+       "z12",
+       "z13",
+       "z14",
+       "z15",
+       "z16",
+       "z17",
+       "z18",
+       "z19",
+       "z20",
+       "z21",
+       "z22",
+       "z23",
+       "a00"
+      ]
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "course-started:mini-course",
+     "reachedAt": "2026-11-02T09:00:00Z",
+     "reachedDay": "2026-11-02"
+    },
+    {
+     "id": "course-words:mini-course:50",
+     "reachedAt": "2026-11-02T15:30:00Z",
+     "reachedDay": "2026-11-03"
+    }
+   ]
+  }
+ ]
+}

@@ -4,6 +4,7 @@
 	import type { Reading } from '$lib/api/types';
 	import type { AudioClip } from '$lib/api/audio';
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 
 	let {
@@ -30,7 +31,13 @@
 
 	// The API orders readings, but ord is the contract: sort a copy so a
 	// badly ordered pack still displays predictably.
-	const ordered = $derived([...readings].sort((a, b) => a.ord - b.ord));
+	const sorted = $derived([...readings].sort((a, b) => a.ord - b.ord));
+	// Hidden romanisation (#284): a hidden type is left out (the headword's own play button keeps the sound);
+	// the index stays the sorted one the audio is aligned with.
+	const roman = useRomanisation();
+	const ordered = $derived(
+		sorted.map((reading, index) => ({ reading, index })).filter(({ reading }) => roman.shows(reading.type))
+	);
 	// The spoken romanisation carries the reading accent; the phonetic
 	// scripts (zhuyin, kana, on/kun) stay muted.
 	const isRomanised = (type: string): boolean =>
@@ -40,7 +47,7 @@
 {#if ordered.length > 0}
 	<!-- No section heading: the readings sit in the entry's header (#104). -->
 	<ul class="readings" aria-label={t('entry.readings.title')}>
-		{#each ordered as reading, index (`${reading.type}:${reading.ord}:${index}`)}
+		{#each ordered as { reading, index } (`${reading.type}:${reading.ord}:${index}`)}
 			<li data-type={reading.type}>
 				<span class:romanised={isRomanised(reading.type)}>
 					<ReadingText type={reading.type} value={reading.value} language={studyLang(language) ?? ''} />

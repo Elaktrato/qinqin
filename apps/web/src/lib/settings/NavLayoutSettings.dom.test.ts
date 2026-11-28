@@ -16,7 +16,7 @@ const state = (id: string, _order: number, enabled = true): FeatureSwitch => ({ 
 // Home, Search, Decks, Reader, Journal, Grammar, Stats: seven sections.
 const seven = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('journal', 0), state('grammar', 1)];
 // Home, Search, Decks, Reader, Stats: five fit.
-const five = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('journal', 0, false), state('grammar', 1, false)];
+const five = [state(FLASHCARDS_ID, 0), state(READER_ID, 0), state('journal', 0, false), state('grammar', 1, false), state('courses', 1, false)];
 
 let saved: NavLayoutChange[];
 
@@ -72,7 +72,7 @@ describe('Settings → Layout: phone navigation', () => {
 describe('Settings → Layout: the bottom bar', () => {
 	it('lists the visible sections: pins first in bar order, then the others in frame order', () => {
 		setup();
-		expect(rowNames()).toEqual(['Home', 'Decks', 'Reader', 'Search', 'Journal', 'Grammar', 'Stats']);
+		expect(rowNames()).toEqual(['Home', 'Decks', 'Reader', 'Search', 'Journal', 'Grammar', 'Courses', 'Stats']);
 		expect((screen.getByRole('switch', { name: 'In the bar Reader' }) as HTMLInputElement).checked).toBe(true);
 		expect((screen.getByRole('switch', { name: 'In the bar Journal' }) as HTMLInputElement).checked).toBe(false);
 	});

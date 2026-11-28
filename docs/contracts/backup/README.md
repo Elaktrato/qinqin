@@ -21,7 +21,7 @@ workspaces.json          [{id, language, name, settings, updatedAt}]
 events/NNNNNN.jsonl      {id, workspaceId, device, ts, type, payload, updatedAt}
 rows/NNNNNN.jsonl        {workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
 overlays/NNNNNN.jsonl    {entryId, written, readings, updatedAt}
-sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt, ai?} own sentences only; ai = {provider, model, level} on a kept AI example (#186, the rules in examples/README.md)
+sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt, ai?} own sentences only; ai = {provider, model, level} on a kept AI example (#186, the rules in examples/README.md); source = {kind: "book", bookId, title, chapter, paragraph, start, end} on a sentence saved from the reader (#280, `reader/sentence-sources.json`; bookId is a book of books.json or null, a restore maps it to the new book)
 library/books.json       [{id, workspaceId, language, title, author, source, sourceId, sourceUrl,
                            attribution, licenseNote, chapterCount, position, createdAt}]
 library/books/<id>.json  the chapter array exactly as stored
@@ -64,13 +64,24 @@ reviews. A restore remaps the workspace and writes each into its table through t
 one that does not decode, that the store refuses, or a review whose entry the archive did not restore first is
 dropped and counted in `droppedRows`.
 
-Grammar lesson progress (`grammar/README.md`) travels the same way: a workspace row of the `rows` family
-per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`; a restore writes it back
-with the archive's `completedAt` (the contract's rules apply; one they refuse is dropped and counted). The
-row's `updatedAt` is the server's write time of the progress. An export never writes a stamp a restore refuses:
-a `completedAt`, a review's or an entry's `createdAt` or the topic ideas' `createdAt` that is not an RFC 3339
-time (left by an older server) is replaced by the row's write time (for the topic ideas, the export's). A journal
-or grammar row without a workspace is dropped by both the dry run and the restore.
+Course progress (`courses/README.md`, #221) is `course` events and travels with the other events, unchanged: its
+words are dictionary keys, never entry ids, so a restore remaps nothing in it (`backup_roundtrip_test.go`). The
+courses themselves are packs, not in an archive.
+
+The mistake notebook (`notebook/README.md`, #227) is derived from the events; its only data are the `notebook` mark
+events (a removal by hand, a clear), which travel with the other events. A mark whose `item` is `card:<cardId>` names a
+card: the export lists the card's entry in `refs/entries.json` and a restore maps the id as a review's `cardId`
+(`remap.json`); other items are kept byte for byte.
+
+Grammar lesson runs (`grammar/README.md`, #277) are `grammar` events and travel with the other events; an export
+writes no grammar rows. An archive written before #277 carries the progress as a workspace row of the `rows` family
+per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`: a restore turns each into the
+one `grammar` event it stands for (`grammar/runs.json` `legacy`: its best score at its `completedAt`, or at the row's
+`updatedAt` when that is no RFC 3339 time; a fresh id of that instant, device `restore`) and counts it under
+`restored.rows`; one the conversion refuses, or without a workspace, is dropped and counted by both the dry run and
+the restore. An export never writes a stamp a restore refuses: a review's or an entry's `createdAt` or the topic
+ideas' `createdAt` that is not an RFC 3339 time (left by an older server) is replaced by the row's write time (for
+the topic ideas, the export's). A journal row without a workspace is dropped by both the dry run and the restore.
 
 ### The keyed-row codec (`study-rows.json`)
 
@@ -158,7 +169,7 @@ together (other members byte for byte), drops a mark whose entry is unresolved, 
 row (key not canonical, `data` not an object with a JSON integer `entryId` equal to the key's number, or
 no workspace: marks are workspace rows) and
 keeps the newest of two marks that would land on one target; every dropped mark counts in `droppedRows`.
-A key no store takes (`keyed/families.json`, a typed family, `journal:`, `grammar:progress:`) is dropped and
+A key no store takes (`keyed/families.json`, a typed family, `journal:`, `grammar:progress:` (converted to an event)) is dropped and
 counted in `droppedRows`.
 
 The lookup history (row `lookups`, one per workspace, `docs/contracts/lookups/`): export lists

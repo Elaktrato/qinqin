@@ -5,6 +5,414 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #280 — sentence sources: a saved book sentence keeps its book and place (contract 43)
+
+- **New fixture `reader/sentence-sources.json`** (rule `reader/sentence-sources`; Go `check`, `merge`, `detach`; web
+  `link`, `at`, `label`): an own sentence saved from the reader carries `source`
+  `{kind: "book", bookId, title, chapter, paragraph, start, end}` (the word's code-point range in the paragraph, as
+  highlights address it). `reader/README.md` "Sentence sources".
+- **`POST /api/entries/{id}/sentences`** takes an optional `source: {bookId, chapter, paragraph, start, end}`: one of
+  the caller's books of the entry's language, a chapter it has, a paragraph 0 … 100000, `0 ≤ start < end ≤ 100000`;
+  anything else (another user's book included) is **422 `invalid_request`**. The title is the server's. On the same
+  text (200), an own sentence without a source takes it; a sourced one keeps its own.
+- **Sentence answers** (`GET /api/entries/{id}`, the POST) carry `source` on own sentences that have one (absent
+  otherwise). Deleting a book or its workspace sets `bookId` to null and keeps the title and place.
+- **`sync/pull-page.json`:** `sentences` rows gain the member `source` (always present, null without one).
+- **Backup:** `sentences.jsonl` lines take `source` (`bookId` a book of `books.json` or null; a restore maps it to the
+  new book). The sample archive's sentence has one; `reject.json` adds two cases (an unlisted book, a malformed
+  place).
+- **The reader** opens at `/reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}`.
+
+## #231 — graded readers: the text format, the level rule and the catalogue (contract 42)
+
+- **New `graded/`:** the graded reader text file (format 1: a language's levels of a word level list, texts with id,
+  level, kind `story`/`dialogue`/`info`, title, paragraphs without ASCII letters or digits, names and glosses;
+  `format.json`), the level rule (function words and names not counted, uncovered letters as unknown words, a text
+  fits a level at 95 % within and at most 6 distinct words above; the computed level is the lowest that fits; a gloss
+  word containing an above-level word glosses it; `level-rule.json`, Go and web) and the catalogue answer
+  (`catalogue.json`).
+- **New route `GET /api/library/graded?language=`** (signed in, no personal access token, not cached offline): the
+  texts with level, kind, length, names and glosses. **`GET /api/library/sources`** lists the source `graded`
+  ("Graded readers", ja and zh) first; `POST /api/library/sources/graded/import` adds a text as a one-chapter book.
+
+## #227 — the mistake notebook (contract 41)
+
+- **New `notebook/`:** the mistake notebook is derived from the study events: which `review`, `drill.<id>`, `grammar`
+  and `course` events are a wrong or right answer about which item (`card:<cardId>`, `drill.<id>:<item>`,
+  `grammar:<point>`, `course:<course>:lesson:<unit>:<lesson>`, `course:<course>:unit:<unit>`,
+  `course:<course>:section:<section>`), the replay (an item enters on a wrong answer and leaves after **3** right
+  answers in a row), the groups and the order. Fixture `notebook.json` (web).
+- **New event type `notebook`:** `{action: "remove", item}` (an item removed by hand) and `{action: "clear"}`, written
+  through the outbox; no activity rule (`events/README.md`, `payloads.json` `build`).
+- **Backup:** a restore remaps the card id in a `notebook` mark's `card:` item as it remaps a review's `cardId`, and the
+  export names its entry in `refs/entries.json` (`backup/remap.json`, two cases).
+
+## #225 — courses count; course milestones; the Home widget (contract 40)
+
+- **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
+  **step** is a finished lesson that is not a grammar lesson, a unit test or a section exam. Activity: one point per
+  step per learner day; EXP 20 per step; a step day keeps the streak and counts as active. `courses/README.md`
+  "Counting".
+- **`events/activity.json`:** a new core rule `course` (`{"feature": "courses", "item": "course"}`, after `grammar`):
+  a distinct rule whose value is the step's identity (`item`, a new rule member). `GET /api/stats/activity` lists the
+  source `course` (feature `courses`, unit `count`).
+- **`milestones/reached.json`:** one case: a course step day keeps the streak (a course grammar lesson and a placement
+  do not).
+- **`milestones/catalogue.json`:** seven families appended after `level-complete`, following the `courses` switch,
+  source `course`: `course-started:<course>`, `course-unit:<course>:<unit>`, `course-section:<course>:<section>`,
+  `course-script:<course>:<script>`, `course-characters:<course>:<n>` (100 … 1000), `course-words:<course>:<n>` (50 …
+  3000) and `course-graduated:<course>`; id, parse, enabled, order and title cases (titles name the course's words).
+- **New fixture `milestones/course.json`** (rule `milestones/course`, web): when each course milestone is reached over
+  a filled course and the workspace's course events. `milestones/README.md` "Course milestones".
+- **New fixture `courses/home.json`** (rule `courses/home`, web): the model of Home's "Continue course" widget.
+- **`settings/core-rows.json`:** the widget id `course-continue` (Courses) and the default Home layout starts with it
+  (`course-continue`, `activity-heatmap`, `flashcards-summary`, `daily-goal`, `weekly-summary`). A stored layout is
+  unchanged.
+
+## #228 — look-alike characters: the `look-alikes` drill, its sets and rules (contract 39)
+
+- **New `lookalikes/`:** the item of the drill `look-alikes` is a set, keyed by its members in order (`未末`, `ソン`; 2–5
+  distinct Han characters or kana letters); the set file format (`look-alikes-zh.json`, `look-alikes-ja.json`, bundled
+  in the web app, CC BY 4.0) and its first problem; which sets a learner practises (a member in a reviewed card's
+  written form; Japanese kana sets always; a Chinese set in the workspace's script); the mode (`recognise`, then
+  `choose`, by the set's number of answers), the word with a gap, and an answer's grade (right 3, wrong 1)
+  (`sets.json`, `check.json`).
+- **`drills/drills.json`:** `registry` adds `look-alikes`; a `build` case pins a drill's own payload members after the
+  grade, in order (`{item, mode, grade, asked, given}`), which Go's `drills.Payload` and the web's `drillPayload` now
+  build. **`events/activity.json`:** the `drill.look-alikes` count rule, feature `practice`; `GET /api/stats/activity`
+  lists eleven sources.
+- No route: the sets are web data; the server stores the answers like any drill's.
+
+## #349 — Chinese reads whole sentences (contract 38)
+
+- **New `segment/zh.json`:** Chinese is read on the #348 lattice. The rules format gains optional keys:
+  `costs.levelStep` and `costs.unlisted` (a token priced by the installed word level lists of the language),
+  `compounds: "parts"` (an unlisted compound that listed words and function words read is no edge: 不是 is 不 | 是),
+  `partFunctionWords`, `functionReadings` (a function word by its reading: 着 zhe) and `readings` (长 cháng);
+  `functionPos` may be empty when every function word has a reading. `ja.json` is unchanged.
+- **New fixture `segment/zh-cases.json`** (CC-CEDICT lines, a word level list, texts with tokens, readings and function
+  flags, with and without the list; Go and web).
+- **`POST /api/segment` (zh):** matches can differ from before (我 | 有 | 时间, not 有时 | 间; 中国 | 人, not 中国人),
+  的, 了, 着, 得, 地, 吗, 呢, 吧, 啊, 呀 and 嘛 carry `function: true`, and with `readings` a match shows the common
+  reading (那 nà, 打 dǎ, 看 kàn), not CC-CEDICT's first line. `/api/segment/at` and `/api/lookup` are unchanged.
+
+## #179 — measure words and counters: three drills, their rules and two routes (contract 37)
+
+- **New `counters/`:** item keys of the drills `measure-words` (Chinese, item `<entryId>`), `counters` (Japanese, item
+  `<entryId>`) and `counter-readings` (Japanese, item `<counterId>:<number>`) (`items.json`); Chinese measure words from
+  CC-CEDICT's CL notes with the project's corrections, the 个 fallback, the pool and the choice rules (`measures.json`);
+  every counter × number of the Japanese counters table with its readings and common mistakes (`readings.json`); the
+  route's answer (`words.json`); how a typed answer is checked (`check.json`).
+- **New routes** (signed in, no access token, not cached): `POST /api/drills/measure-words/words` `{"ids": [...]}`
+  (1 to 500) and `GET /api/drills/counters`.
+- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation", "measure-words", "counters",
+  "counter-readings"]`; **`events/activity.json`:** their count rules, feature `practice`; `GET /api/stats/activity`
+  lists ten sources.
+
+## #348 — Japanese reads whole sentences; function words (contract 36)
+
+- **New `segment/`:** a language's segmentation rules (`ja.json`, embedded by the server) and the lattice: every match
+  at every position is an edge, costs per token (weak kana fit, priority-0 kana, a start between two kanji, an
+  unmatched rune), the cheapest path wins, ties to the longer edge first; the lemma boundary rule drops the longest
+  edge it would split; `splitWords` (今日は is 今日 | は). Fixture `cases.json` (Go and web). Chinese and data-only
+  languages stay greedy.
+- **`POST /api/segment`:** Japanese matches can differ from before (妹 | が | います, not 妹 | がい | ます), a function
+  word's first entry is its function entry (の the particle, not 野), and a match may carry **`function: true`** (sent
+  only when true). `/api/segment/at` and `/api/lookup` are unchanged.
+- **Clients (`reader/`):** a function word has no word state (never new or learning), is never unreached in a course
+  reading lesson (no reading, no gloss), and is not a coverage token.
+- **`lemma/README.md`:** "Segmentation is greedy longest match" now holds for languages without segmentation rules.
+
+## #279 — saved sentences: each new book sentence of a studied word becomes another sentence card (contract 35)
+
+- **New fixture `reader/saved-sentences.json`** (rule `reader/saved-sentences`; Go and web): the whitespace set and
+  `normalize` (whitespace runs to one space, trimmed), `same` (the first sentence with equal normalised text), `plan`
+  (web: `none`, `already`, `card`, `save` from the entry's sentences and the workspace's cards; the card takes the
+  decks and written snapshot of the word's canonical vocab card; `card: null` when the word skips `sentence`), `auto`
+  (web: when the automatic mode runs) and `remove` (Go: who may delete what). `reader/README.md` "Saved sentences".
+- **`reader/display-settings.json`:** the `reader` object gains `saveSentences` (boolean, default `false`); two cases.
+- **`POST /api/entries/{id}/sentences`** answers **200 with the existing sentence** when the caller already sees one
+  with the same normalised text on the entry (pack or own); a new text is 201 as before. A duplicate's `pinyin` and
+  `translation` are dropped.
+- **`DELETE /api/entries/{id}/sentences/{sentenceId}`** deletes any of the caller's own sentences, not only kept AI
+  examples; `?reason=` on an own sentence the AI did not write is 400 `bad_request` (`examples/README.md`).
+
+## #223 — courses: a text's translation may be as long as its text (contract 34)
+
+- **`courses/pack.json`:** a unit text's `translation` is checked like a title (`en` required, known language codes)
+  but each value may be up to 8000 bytes, the limit of the text's body, instead of a title's 200 bytes (two new
+  cases). A server refused every real reading text's translation before. No other format change.
+- **Clients:** none; the web decoder never checked the length.
+
+## #224 — courses: unit tests, section exams and placement (contract 33)
+
+- **New fixture `courses/tests.json`** (rule `courses/tests`, web): how a unit test or section exam is assembled (the
+  budget of word, grammar and text questions, the word sample by the level check's planner, the reading and text
+  question rules), judged (`score · 100 ≥ passPercent · total`), and how placement chains the section exams (the early
+  stop, where a pass or a fail leads). `courses/README.md` "Tests and exams".
+- **Clients:** no route, event or stored-data change: the `unit-test`, `section-exam` and `placement` events of #221
+  now come from these tests. A placement exam's `total` is the questions asked before it stopped.
+
+## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 32)
+
+- **New `conjugation/`:** the engine's classes (JMdict parts of speech), the ten form families (`families.json`:
+  forms, defaults, the families of each class, per-word exclusions), every form with its canonical answer and the
+  accepted alternatives (`forms.json`, checked against the lemmatizer's rule table; `lemmaGaps` lists what it cannot
+  reach yet), the workspace-settings key `conjugation` (`settings.json`) and the route's answer (`words.json`).
+- **New route `POST /api/drills/conjugation/words`** `{"ids": [...]}` (1 to 500; signed in, no access token): the
+  drilled words among the entries with their families and forms (written, kana, romaji).
+- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation"]` (`conjugation`: event type `drill.conjugation`, item `<entryId>:<family>`,
+  modes `produce` and `recognise`); **`events/activity.json`:** its count rule, feature `practice`, after the tone-pair rule;
+  `GET /api/stats/activity` lists seven sources.
+- **`settings/README.md`:** the key `conjugation: {families: {<family>: boolean}}`.
+
+## #181 — spaced review of grammar points (contract 31)
+
+- **New fixture `grammar/review.json`** (rule `grammar/review`, web; generated by
+  `scripts/contracts/gen-grammar-review-fixtures.mjs` from plain ts-fsrs): a point is learned by its first lesson run
+  at 80 % or more; each run becomes a grade (Good at 80 %, Hard at half, else Again); the learned run and every later
+  run replay as one card's reviews with the default weights on the study clock (the drills' schedule rule); the
+  review round (due reviewed points, then at most 5 new points a learner day, at most 20); the three exercises a
+  review asks (a cloze or word order per example, rotating through the lesson's examples).
+- **`grammar/runs.json`:** `mode` is `lesson` or `review`; a review run is read as a run (`parse`: a new case; the
+  unknown-mode case now uses `quiz`) and counts for EXP, the streak and activity like a lesson run; a lesson's
+  progress replays lesson runs only (`progress`: a new case).
+- **`events/activity.json`:** a new case: a review run is a `grammar` run under the `distinct` rule on `point` (a
+  lesson and a review of one point on one day are one point). The server is unchanged.
+- **`study/setup.json`:** the `study-setup` row gains `grammar` (boolean, default `false`; every `expect` carries it,
+  two new `parse` cases): a session started from the setup runs the grammar review round after its cards while the
+  grammar feature is on.
+- **Clients:** a client that does not know `review` ignores those runs (as before, an unknown mode); no route
+  change.
+
+## #222 — courses: the roadmap, the lesson player and progress (contract 30)
+
+- **New core feature `courses`** (`features/switches.json`, `features/README.md`): eight ids, `courses` after `practice` and before
+  `stats`; a client lists it in that place, and `PUT /api/features/courses` switches it.
+- **New catalogue key area `courses`** (`i18n/README.md`).
+
+## #180 — the tone-pair drill (contract 29)
+
+- **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
+  answers (`drill.tone-pairs`) are an activity rule, a `count` of feature `practice`, after the core rules
+  (`events/activity.json` `rules` gains it). `GET /api/stats/activity` lists six sources.
+- **New fixture `tones/pairs.json`** (rule `tones/pairs`, Go and web): the drill's 20 item keys `<t1>-<t2>` (citation
+  tones, 5 neutral) in grid order, which dictionary word practises which pair (two Han characters, the clean
+  two-syllable readings agree, first tone not neutral), how a typed answer reads, and a pair's accuracy over its last
+  10 answers with its band. Grading is `tones/sandhi.json` `grading`; a right pair is grade 3, a wrong one 1; mode
+  `mark`.
+- **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
+  streak) as before.
+
+## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
+
+- **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
+  虹 with and without the reading にじ resolves to the rainbow, not to 二次, which has 虹 only as a search-only (`sK`)
+  form and the higher priority. The rule (`BestWord`, `BestWordReading`, and so level packs, sentence packs,
+  frequency starter decks and the Starter sets): an entry where the form is not search-only first, then the priority
+  order as before.
+
+## #346 — everyday meanings before surname, abbreviation and variant lines; pinned readings (contract 27)
+
+- **`senses/display.json`:** a third class `minor` between everyday and sensitive: a sense with a JMdict tag of
+  `minorTags` (`arch`, `obs`, `rare`, `dated`, `surname`) or whose first gloss starts with one of `minorPrefixes`
+  (surname, abbr. for, variant of, see, used in, (archaic), (classical) …), shown after the everyday units, never
+  folded. New input `pinned`: only the senses of the pinned reading (sense tag `reading:<value>`, compared in lower
+  case without spaces and apostrophes) and those without a reading tag take part; an unmatched pin is ignored.
+- **Sense tags:** the CC-CEDICT importer tags each sense with its line's reading (`reading:<marked pinyin>`), the
+  json-pack importer each line's sense with the line's readings, the JMdict importer each sense with its `<stagr>`
+  readings. Clients show no chip for them. Existing databases get them
+  with `qinqin seed`; without them a pin changes nothing.
+- **Cards:** a card row's `extra` may carry `reading` (a string): the reading the card is pinned to. The Starter add
+  flow writes it from the set entry's new member `reading`.
+- **`GET /api/starter-sets/{id}`:** each entry carries `reading` (the set's pinned reading, `""` without one), and its
+  `gloss` is the first gloss of that reading.
+- **`GET /api/lookup`:** the entry tag `"usually kana"` follows the first sense (as the display form does), not any
+  sense: 目 and 山 no longer carry it.
+
+## #345 — slang, vulgar and derogatory senses last and folded (contract 26)
+
+- **New folder `senses/`:** the sense display rule (`display.json`, rule `senses/display`), decoded by Go and web: a
+  gloss is marked `vulg`, `derog` or `sl` by its sense's JMdict tag (`vulg`, `derog`, `sl`, `net-sl`, `m-sl`), a
+  CC-CEDICT parenthesised note ("(slang)", "(vulgar)", "(derog.)"), an explicit word or a vulgar character; each sense
+  splits into an everyday and a sensitive unit; everyday units first, sensitive ones folded unless nothing else is
+  left. Stored senses are not reordered.
+- **Answers:** the one gloss of `GET /api/starter-sets/{id}` and `GET /api/frequency-packs/{id}/top` entries, the first
+  gloss per dictionary of `GET /api/search` hits and the `gloss` of an entry's `characters` follow the rule (鸡 shows
+  "fowl"; a list never shows a folded gloss). The lookup and entry answers are unchanged: clients apply the rule.
+
+## Drills framework — drill answers as events, the Practice area (contract 25)
+
+- **New folder `drills/`** (README, `drills.json`, `schedule.json`, `pick.json`, `counting.json`): a drill answer is a
+  study event of type `drill.<id>` (one type per drill) with the payload `{item, mode, grade}` (`grade` 1..4 as a
+  review; more members may follow). Drill ids (`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, at most 32, never `weakest`) and item
+  keys (1–200 code points, no white space, no control character); which events are answers (`parse`, Go and web);
+  each item's FSRS schedule replayed from its answers with the default weights on the study clock, and its
+  retrievability (`schedule.json`, web); a drill's round and the practise-weakest round (`pick.json`, web); counting
+  (`counting.json`: activity of registered drills, Go; EXP and streak, web). `schedule.json` and `pick.json` are
+  generated by `scripts/contracts/gen-drills-fixtures.mjs` from plain ts-fsrs.
+- **Registry:** `drills.json` `registry` lists the drills a server counts as activity; it is **empty** in this
+  version. Each registered drill adds one `count` activity rule (type `drill.<id>`, feature `practice`) after the core
+  rules of `events/activity.json`.
+- **EXP and streak:** a drill answer earns 5 XP plus the review grade bonus and counts as a study day for the streak
+  and the milestones' `streak` and `days-active` families (`scheduler/`, `milestones/reached.json` gains a case).
+- **New core feature `practice`** (`features/switches.json`: seven ids, `practice` before `stats`); `PUT
+  /api/features/practice` is accepted.
+- **Events:** `events/payloads.json` gains the `drill.<id>` builder. **i18n:** a new key area `practice`.
+- **Clients:** no route or stored-data changes. A client that does not know drills ignores `drill.<id>` events.
+
+## #221 — courses: the pack, the fill rule and progress (contract 24)
+
+- **New pack type `course`** (format `course-json`, registry `course_packs`, no data package): one course's skeleton
+  in `course.json` (sections with a target level, units with stable ids, topics, grammar points, hanzi/kanji, scripts,
+  a reading text, a focus, a unit test; checkpoint rules). No level-list words. `packages/pack-types.json` has the row;
+  the manifest messages list the type and the format.
+- **New folder `courses/`:** `pack.json` (which files a server accepts, Go), `fill.json` (the unit fill rule, Go and
+  web), `derive.json` (the `course` payload builder and the path-state derivation, Go and web), `changes.json`
+  (content changes, Go and web).
+- **New routes** `GET /api/courses[?language=]` and `GET /api/courses/{id}` (signed-in users, no tokens, ETag and
+  304, not cached by the service worker).
+- **New event type `course`** (`events/README.md`, `events/payloads.json`: builder `coursePayload`): lesson started
+  or finished (with the words it taught), unit test (`passed`, `early`), section exam, placement. No activity rule yet.
+  Backups carry them like every event; nothing is remapped.
+- **Clients:** derive the path state as `courses/README.md` says; skip a lesson kind you do not know; mark the state's
+  `known` words known; write a finished lesson's words.
+
+## #274 — pictures offline, and picture reports (contract 23)
+
+- **New package type `images`** (`packages/`): every live images pack builds `images.<packId>` (format 1, the pack's
+  `languages`, no `requires`, not optional); its `data.sqlite` holds `map` (the pack's map rows as stored) and
+  `pictures` (only the pictures a map row uses, in canonical form). `pack-types.json` row `images` now has
+  `"package": "images"`; `catalogue.json` `types` and `idPattern`, `schemas.json` and `manifest.json` gain it. New
+  fixture `images/package.qqpkg` with `images/package.json` (rule `images/package`): a package the builder wrote and
+  its rows, read by Go and the web.
+- **The web installs images packages:** offline preparation downloads them (Pictures aid on, the workspace language),
+  checks them by the package rules and answers a picture from them when the server cannot be reached
+  (`images/README.md`, "Offline").
+- **Entry answer:** `GET /api/entries/{id}` gains `pictureTargets` (the strings the picture route looks the entry up
+  by).
+- **Picture reports:** new routes `POST /api/images/reports {entryId, packId, concept, reason}` (204; reasons
+  `wrong`, `unclear`, `offensive`, `other`; 400 `bad_request`, 404 `not_found`) and `GET /api/images/reports`
+  (`{"reports": [{entryId, packId, concept}]}`; kept offline by the worker), signed-in users, no access tokens. A
+  reported picture of an entry is no longer answered to its reporter: `resolve.json` cases gain `skip`. The deletion
+  preview gains `pictureReports` (`auth/admin-users.json`).
+
+## #220 — topic labels of words (contract 22)
+
+- **New folder `topics/`:** the fixed topic list shared by every language (`topics.json`, rule `topics/list`: 49 ids
+  with an English scope; names are the messages `topics.name.<id>`), decoded by Go and web; the labels file a server
+  embeds and the lookup of a listed word's topics (`labels.json`, rule `topics/labels`), decoded by Go.
+- **i18n:** a new key area `topics`.
+- **Licence:** a labels file's `license` is `CC-BY-SA-4.0` (the labels draw on OpenMoji's groups and are keyed to
+  CC-CEDICT and JMdict); a server refuses any other value (`labels.json` case "another licence is refused").
+- **Clients:** no route changes. The labels are read by the server (the course fill rule, #221); a client shows a
+  topic by its id's name and ignores an id it does not know.
+
+## #300 — tone sandhi: spoken tones on tone cards (contract 21)
+
+- **New contract `tones/`** (shared with the tone-pair drill #180): citation tones (the dictionary's) and spoken
+  tones (tone sandhi: 不 before a 4th tone is 2; 一 is 2 before a 4th tone and 4 before tones 1–3, and stays 1 alone,
+  at the end, before a neutral tone, after 第/初 and next to a numeral; a 3rd tone before a 3rd tone is 2, right to
+  left, by word boundaries). New fixture `tones/sandhi.json` (rule `tones/sandhi`: the spoken tones of each case and
+  the tone card's verdict), decoded by web and Go.
+- **Grading of a tone answer:** each syllable is right with its citation **or** its spoken tone (before: citation
+  only); with the setting `tones.gradeSpoken` the spoken tone only. The verdict also reports the reading's spoken
+  tones.
+- **New workspace-settings key** `tones` (`settings/README.md`): `{"showSandhi": boolean, "gradeSpoken": boolean}`,
+  defaults `true` and `false`, read member by member, written one member at a time by merge patch. New fixture
+  `settings/tones.json` (rule `settings/tones`). `showSandhi: false` never shows a spoken tone.
+- **Clients:** no route or stored data changes. A client that does not know the key grades citation tones only.
+
+## #163 — the mastery map's grading (contract 20)
+
+- **New workspace-settings key** `masteryMap` (`settings/README.md`): `{grading, includeOutside, levels}`: one
+  grading per workspace (a built-in grouping or `pack:<packId>`), whether characters outside it are shown, and the
+  study set of each pack's levels by `ord`. New fixture `settings/mastery-map.json` (rule `settings/mastery-map`:
+  parse, the grading a language resolves to with its default and fallback, the study set, the patches), decoded by web
+  and Go; a new merge case in `settings/workspace-settings.json`.
+- **Clients:** no route changes. A client that does not know the key shows the map as before.
+
+## #295 — Stats is a core feature (contract 19)
+
+- **Features:** a sixth core feature id `stats` (`features/switches.json`: `features` and the GET order end in
+  `stats`; a new PUT case). `PUT /api/features/stats` stores the switch; no migration (since 055 the table has no list
+  of ids). The README lists what a client hides while Stats is off and what stays.
+- **Widgets:** `activity-heatmap`, `character-map-summary`, `summary-numbers` and `reviews-per-day` are Stats'
+  widgets now (owner `stats`), and `word-states` (flashcards') needs Stats on too. The widget catalogue of
+  `settings/core-rows.json` is in the new registry order (core, then the features'); the ids are unchanged, so a
+  stored `home-layout` keeps working.
+- **Clients:** a client that does not know `stats` ignores its row (the list is read leniently) and keeps showing
+  Stats.
+
+## #297 — the interface language per workspace (contract 18)
+
+- **New workspace-settings key** `interfaceLanguage` (`settings/README.md`): a language tag, absent = "use my account
+  setting" (`null` clears it). New fixture `settings/interface-language.json` (rule `settings/interface-language`),
+  decoded by web and Go: reading the key, the setting that applies (workspace, else account, else the browser's
+  languages) and the setting of a reminder mail about several workspaces (theirs when they agree, else the account's).
+- **Reminder mails** follow that rule; every other mail keeps the account's setting.
+- **Clients:** no route changes. A client that does not know the key uses the account setting everywhere, as before.
+
+## #287 — the writing card's automatic stroke hints are counted (contract 17)
+
+- **Writing, `meta.hints`:** after 3 misses on one stroke the client shows that stroke only (a glow, then the stroke
+  dimmed with its start until it is drawn), no longer the whole character's outline, and again for any later stroke
+  that reaches 3 misses. Each such automatic hint counts as one stroke hint in the review's `meta.hints`, beside the
+  presses of the stroke-hint button and the shown characters (`cards/README.md`, "Recording"). The suggested grade is
+  unchanged (the card's own help does not lower it). Before: at most one automatic hint per character, and it left
+  the outline on screen. No fixture changes.
+
+## #284 — hidden romanisation (contract 16)
+
+- **New workspace-settings key** `romanisation` (`settings/README.md`): `{"pinyin" | "bopomofo" | "romaji": "always" |
+  "never"}`, default `always`, read member by member; written one type at a time by merge patch. New fixture
+  `settings/romanisation.json` (rule `settings/romanisation`), decoded by web and Go: the rule `isReadingShown`, a plain
+  reading string typed by its script, and the switches of each language.
+- **Language profiles:** a new member `romanisations` (`zh`: `pinyin`, `bopomofo`; `ja`: `romaji`; others none).
+- **Hints:** a new last hint kind `romanisation` (`cards/hints.json`): the hidden readings of the entry, offered only
+  when the entry has one, never stored (its mode follows the `reading` kind: `never` stays `never`, else `hint`); the
+  `reading` kind offers only the readings that are shown. An entry is now `{hasReading, hasPicture, hasRomanisation}`.
+- **Clients:** no route or stored data changes. A client that does not know the key shows every reading, as before.
+## #290 — Serving held rows while a round runs (no contract number)
+- **Sync notes:** "Serving held rows" in [`sync/README.md`](sync/README.md#serving-held-rows-290): a client answers
+  display reads at once from the rows it holds and refreshes them with a background delta round; a first load, an
+  explicit refresh, a full round, rows marked stale and a write's planning read wait. A failed background round
+  keeps the held rows with a quiet notice. A client rule only: no route, payload or fixture changes, so the
+  ContractVersion stays.
+
+## #277 — Grammar lesson runs are study events (contract 15)
+
+- **New event type:** `grammar`, one per finished lesson run, `{point: "<packId>:<lessonId>", mode: "lesson",
+  score, total}` (member order pinned), written through `POST /api/events/batch` like a review. New fixture
+  `grammar/runs.json` (rule `grammar/runs`: the payload, which events are runs, the progress replay, the conversion of
+  old progress rows); `events/payloads.json` gains its `build` case. `mode` leaves room for grammar review (#181); a
+  client ignores a mode it does not know.
+- **Removed routes and table:** `GET /api/grammar/progress` and `POST /api/grammar/progress` are gone (404), and so
+  is the table `grammar_progress`; no compatibility layer. A client replays the progress (best score, last run, runs)
+  from the workspace's `grammar` events. Retired fixture: `grammar/progress.json`.
+- **Migration 056:** each `grammar_progress` row becomes one `grammar` event (its best score at its `completedAt`, or
+  its write time; device `migration`); a row the rules refuse is dropped. Then the table is dropped.
+- **Backups:** an export carries the runs as events and writes no `grammar:progress:` rows; a restore of an older
+  archive turns each such row into the same event (device `restore`), counted under `restored.rows` (the dry run
+  agrees, and now also drops a row that does not convert).
+- **Activity:** a new core rule `grammar` (feature `grammar`, `distinctBy: "point"`): 1 point per lesson finished, once
+  per lesson per learner day; the activity route lists it as a source (`events/activity.json`), so a daily goal can be
+  `activity:grammar` and the weekly summary shows it.
+- **EXP and streak:** 20 EXP per lesson run (`scheduler/xp.json` `lessonRunXp`; the daily bonus stays a review bonus);
+  a learner day with a run counts for the streak (`scheduler/streak.json` `lessons`), in Stats, the weekly summary and
+  the milestones' `streak` and `days-active` families (`milestones/reached.json`).
+
+## #288 — companion eligibility decided when a session is planned (contract 14)
+
+- **New route:** `POST /api/study/eligibility {"ids": [...]}` (1 to 500 entry ids) answers, per entry, the companion
+  kinds a study session can make of it for the caller: `sentence`, `writing`, `tone`, `reverse`, `cloze`, in kind order
+  (`{"entries": {"<id>": [...]}}`, an unknown entry `[]`). Signed-in users only, no access tokens, not cached offline.
+- **New fixture** `cards/eligibility.json` (rule `cards/eligibility`), decoded by Go and web: the show-time rules of
+  the cards (a non-blank sentence; a Han character with stroke data in an installed pack; a cloze blank among the
+  first 8 sentences, inflected forms counted through the segmenter; clean toned pinyin in a tonal language; a word
+  with a gloss) moved to planning.
+- **Planning:** a companion is planned only when the index allows it (an unknown entry as before). The web client's per-tab memory of ineligible words (`qinqin.study.ineligible` in sessionStorage) is gone.
+
 ## #62 — Japanese stroke order: the language of a stroke request (contract 13)
 
 - **New query parameter:** `GET /hanzi/U<HEX>.json?lang=<code>` (two or three lower-case letters) asks for the shapes

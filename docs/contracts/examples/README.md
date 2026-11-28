@@ -39,7 +39,7 @@ card kind, the cloze card); a malformed non-null value still marks it (`marks` c
 | `POST /api/entries/{id}/examples` `{level, requestId}` | one AI call with the caller's key, the journal's hourly limit and one call in flight (`in_flight`); 200 `{drafts, dropped, provider, model, requestId}`, where `drafts` are the entry's drafts after the generation (only those with this `requestId` are new). The sentences are checked and stored while the call still holds the user's AI slot. `requestId` (1–64 of `A-Z a-z 0-9 _ -`) makes it idempotent: a stored request id (its marker) is answered without a call, with its `dropped`. 409 `examples_full` at 10 kept examples |
 | `POST /api/entries/{id}/examples/{draftId}/keep` | 201 with the kept sentence; 404 for a draft that is not the caller's on that entry; 409 `examples_full` |
 | `DELETE /api/entries/{id}/examples/{draftId}[?reason=]` | 204; with a reason the draft is also reported |
-| `DELETE /api/entries/{id}/sentences/{sentenceId}[?reason=]` | 204: the caller's kept AI example is deleted (a tombstone the pull ships); with a reason also reported. Any other sentence is 404 |
+| `DELETE /api/entries/{id}/sentences/{sentenceId}[?reason=]` | 204: the caller's own sentence is deleted (a tombstone the pull ships): a kept AI example or any other own sentence (the reader's saved sentences, #279, `reader/saved-sentences.json`); with a reason an AI example is also reported, a reason on another own sentence is 400 `bad_request`. A pack sentence or another user's is 404 |
 
 A reason is one of `reasons`; another value is 400 `bad_request`. The AI errors are the journal's
 (`no_key`, `rate_limited`, `in_flight`, ...; `auth/errors.json`). An unknown entry is 404 `not_found`.

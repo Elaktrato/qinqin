@@ -5,8 +5,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	onStudyChange: vi.fn(() => () => {})
 }));
@@ -14,12 +14,12 @@ vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	reviewsPerDay: vi.fn()
 }));
-vi.mock('$lib/study/currentContext', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
+vi.mock('$lib/studycore/currentContext', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
 
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 import ReviewsPerDayWidget from './ReviewsPerDayWidget.svelte';
 
@@ -67,7 +67,7 @@ function deferred<T>() {
 beforeEach(() => {
 	select(1);
 	flashcards(true);
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-17': 21, '2026-11-18': 7 }));
 });
 afterEach(() => {
@@ -163,9 +163,9 @@ describe('ReviewsPerDayWidget', () => {
 		select(2);
 		await tick();
 		vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-18': 5 }));
-		second.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		second.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		await waitFor(() => expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy());
-		first.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		await tick();
 		await Promise.resolve();
 		expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy();

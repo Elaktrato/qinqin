@@ -311,47 +311,50 @@
 	{/if}
 
 	{#if loaded}
-		<table class="ui-table" aria-label={t('admin.users.title')}>
-			<thead>
-				<tr>
-					<th scope="col">{t('admin.users.col.username')}</th>
-					{#if emailPolicy !== 'off'}<th scope="col">{t('admin.users.col.email')}</th>{/if}
-					<th scope="col">{t('admin.users.col.role')}</th>
-					<th scope="col">{t('admin.users.col.status')}</th>
-					<th scope="col">{t('admin.users.col.lastSeen')}</th>
-					<th scope="col">{t('admin.users.col.actions')}</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.id)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrolling region is keyboard reachable, WCAG 2.1.1) -->
+		<div class="ui-table-scroll" tabindex="0" role="region" aria-label={t('admin.users.title')}>
+			<table class="ui-table" aria-label={t('admin.users.title')}>
+				<thead>
 					<tr>
-						<th scope="row"><span class="who"><Avatar name={row.username} src={row.avatarUrl} />{row.username}</span>{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
-						{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
-						<td>{row.role}</td>
-						<td>{#each row.status as s (s)}<Chip>{s}</Chip>{/each}</td>
-						<td>{row.lastSeen}</td>
-						<td>
-							<details>
-								<summary>{t('admin.users.actionsFor', { name: row.username })}</summary>
-								<ul class="actions">
-									{#each row.actions as action (action.id)}
-										<li>
-											<Button
-												tone={/delete|disable|removeAdmin|resetMfa|removePicture/i.test(action.id) ? 'danger' : 'default'}
-												disabled={busy || action.disabled}
-												aria-describedby={action.reason ? `why-${row.id}-${action.id}` : undefined}
-												onclick={() => run(row, action.id)}>{action.label}</Button
-											>
-											{#if action.reason}<span class="hint" id="why-{row.id}-{action.id}">{action.reason}</span>{/if}
-										</li>
-									{/each}
-								</ul>
-							</details>
-						</td>
+						<th scope="col">{t('admin.users.col.username')}</th>
+						{#if emailPolicy !== 'off'}<th scope="col">{t('admin.users.col.email')}</th>{/if}
+						<th scope="col">{t('admin.users.col.role')}</th>
+						<th scope="col">{t('admin.users.col.status')}</th>
+						<th scope="col">{t('admin.users.col.lastSeen')}</th>
+						<th scope="col">{t('admin.users.col.actions')}</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each rows as row (row.id)}
+						<tr>
+							<th scope="row"><span class="who"><Avatar name={row.username} src={row.avatarUrl} />{row.username}</span>{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
+							{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
+							<td>{row.role}</td>
+							<td>{#each row.status as s (s)}<Chip>{s}</Chip>{/each}</td>
+							<td>{row.lastSeen}</td>
+							<td>
+								<details>
+									<summary>{t('admin.users.actionsFor', { name: row.username })}</summary>
+									<ul class="actions">
+										{#each row.actions as action (action.id)}
+											<li>
+												<Button
+													tone={/delete|disable|removeAdmin|resetMfa|removePicture/i.test(action.id) ? 'danger' : 'default'}
+													disabled={busy || action.disabled}
+													aria-describedby={action.reason ? `why-${row.id}-${action.id}` : undefined}
+													onclick={() => run(row, action.id)}>{action.label}</Button
+												>
+												{#if action.reason}<span class="hint" id="why-{row.id}-{action.id}">{action.reason}</span>{/if}
+											</li>
+										{/each}
+									</ul>
+								</details>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 
 	<Section title={t('admin.users.create.title')} level={3}>

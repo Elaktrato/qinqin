@@ -3,10 +3,10 @@
 // overrides, or extends this module; it does not spell out a row literal of
 // its own, so a change to a study row's shape changes this file only.
 
-import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { scheduleFor } from '$lib/study/scheduler';
-import { IDENTITY_CLOCK } from '$lib/study/studyClock';
-import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind, StudyHistory } from '$lib/study/types';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { scheduleFor } from '$lib/studycore/scheduler';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
+import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind, StudyHistory } from '$lib/studycore/types';
 
 /** The default card creation instant. */
 export const CREATED_AT = '2026-01-01T00:00:00.000Z';
@@ -51,9 +51,9 @@ export function review(spec: ReviewSpec): ReviewEvent {
 	};
 }
 
-/** A study history: no decks, cards or reviews, nothing merged, unless overridden. */
+/** A study history: no decks, cards, reviews or grammar runs, nothing merged, unless overridden. */
 export function history(over: Partial<StudyHistory> = {}): StudyHistory {
-	return { decks: [], cards: [], reviews: [], merged: 0, ...over };
+	return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [], ...over };
 }
 
 /** A ULID-shaped event id (26 characters by default) that sorts by n: prefix, then n zero-padded. */

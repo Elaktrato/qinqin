@@ -2,7 +2,7 @@
 // summary reuses goalDays) and the vacation-neutral goal streak. Pure.
 // Rule and fixtures: docs/contracts/goals/.
 
-import { isVacationDay, type Run } from '../study/vacation';
+import { isVacationDay, type Run } from '$lib/studycore/vacation';
 import { addDays } from '../time/studyDay';
 import type { DayAmounts } from './amounts';
 import { activityType, goalOn, type GoalMetric, type GoalsRow } from './goals';

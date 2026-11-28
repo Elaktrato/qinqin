@@ -109,17 +109,16 @@ var starterSizes = map[string]int{"500": 500, "1000": 1000, "2000": 2000}
 type starterEntryBody struct {
 	model.EntryBase
 	Rank int `json:"rank"`
-	// Gloss is the first gloss of the entry's first sense ("" without one):
+	// Gloss is the entry's one gloss (firstGloss; "" without one):
 	// a list tells two words of one display form apart by it (なる 成る / 生る).
 	Gloss string `json:"gloss"`
 }
 
-// firstGloss is the first gloss of e's first sense, "" without one.
+// firstGloss is the one gloss a list shows for e (the sense display rule,
+// docs/contracts/senses: never a folded slang or vulgar line), "" without
+// one.
 func firstGloss(e lexicon.Entry) string {
-	if len(e.Senses) == 0 || len(e.Senses[0].Glosses) == 0 {
-		return ""
-	}
-	return e.Senses[0].Glosses[0]
+	return lexicon.DisplayGloss(e.Senses, "")
 }
 
 // handleFrequencyTop serves GET /api/frequency-packs/{id}/top?size=: the

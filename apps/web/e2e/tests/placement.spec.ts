@@ -1,5 +1,6 @@
 // "I already know this" and the placement test (#74): a fresh Chinese
-// workspace is offered both on Home, a declared range writes known marks
+// workspace is offered them on Home (inside the course start card, #225: the
+// e2e server has a Chinese course), a declared range writes known marks
 // (one batch) after a confirmation and Undo removes exactly them, and a
 // placement result writes nothing until it is confirmed.
 
@@ -24,9 +25,11 @@ const marks = (learner: Learner) =>
 test('Home offers it on an empty workspace; a range is confirmed, written as one batch and undone', async ({ page, learner }) => {
 	await switchToChinese(page);
 	await page.goto('/');
-	const offer = page.getByTestId('placement-offer');
+	// With a course for the language, the course start card stands in for the placement offer (#225).
+	const offer = page.getByTestId('course-start-offer');
 	await expect(offer).toBeVisible();
-	await offer.getByRole('link', { name: 'Get started' }).click();
+	await expect(page.getByTestId('placement-offer')).toHaveCount(0);
+	await offer.getByRole('link', { name: 'Tell us which levels you know' }).click();
 
 	await expect(page.getByRole('heading', { name: 'What you already know' })).toBeVisible();
 	await expect(page.getByText('3 new entries would be marked as known.')).toBeVisible();
@@ -53,6 +56,7 @@ test('Home offers it on an empty workspace; a range is confirmed, written as one
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 	await expect(page.getByTestId('placement-offer')).toHaveCount(0);
+	await expect(page.getByTestId('course-start-offer')).toHaveCount(0);
 });
 
 test('the placement test proposes a level and writes nothing until it is confirmed', async ({ page, learner }) => {

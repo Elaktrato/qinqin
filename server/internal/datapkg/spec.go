@@ -34,6 +34,7 @@ const (
 	TypeGrammar    Type = "grammar"
 	TypeStrokes    Type = "strokes"
 	TypeLemmaRules Type = "lemma-rules"
+	TypeImages     Type = "images"
 )
 
 // FormatVersion is the data.sqlite schema version of a type that has not
@@ -54,7 +55,7 @@ func FormatVersionOf(t Type) int {
 
 // Types returns every package type in contract order.
 func Types() []Type {
-	return []Type{TypeLexicon, TypeLevels, TypeSentences, TypeFrequency, TypeComponents, TypeAudio, TypeGrammar, TypeStrokes, TypeLemmaRules}
+	return []Type{TypeLexicon, TypeLevels, TypeSentences, TypeFrequency, TypeComponents, TypeAudio, TypeGrammar, TypeStrokes, TypeLemmaRules, TypeImages}
 }
 
 // idPattern is the package id grammar (catalogue.json idPattern): the

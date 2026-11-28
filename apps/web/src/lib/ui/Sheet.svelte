@@ -16,6 +16,8 @@
 	//   returnFocus   where focus goes on close (default: the opener)
 	//   onnext/onprev paging (swipe toward the start = next, mirrored in right-to-left text)
 	//   initialFocus  a selector inside to focus first (else the first focusable)
+	//   maxHeight     a lower height cap for this sheet (a CSS length, e.g. '55dvh'); default 85dvh.
+	//                 The content scrolls inside; dragging up never grows the sheet.
 	import type { Snippet } from 'svelte';
 	import { onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -30,6 +32,7 @@
 		onnext,
 		onprev,
 		initialFocus,
+		maxHeight,
 		children
 	}: {
 		open?: boolean;
@@ -40,6 +43,8 @@
 		onnext?: () => void;
 		onprev?: () => void;
 		initialFocus?: string;
+		/** The sheet's height cap (a CSS length; the lookup sheet's 55dvh, #282), else 85dvh. */
+		maxHeight?: string;
 		children?: Snippet;
 	} = $props();
 
@@ -140,6 +145,7 @@
 		class="sheet"
 		class:dragging
 		style:translate={dragY ? `0 ${dragY}px` : undefined}
+		style:--sheet-max-height={maxHeight}
 		aria-modal="true"
 		aria-label={label}
 		onclose={dismiss}
@@ -179,7 +185,7 @@
 		box-sizing: border-box;
 		width: 100%;
 		max-width: 40rem;
-		max-height: 85dvh;
+		max-height: var(--sheet-max-height, 85dvh);
 		margin: 0 auto;
 		padding: 0;
 		display: flex;

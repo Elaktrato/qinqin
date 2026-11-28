@@ -49,6 +49,8 @@ const API_PATTERNS: RegExp[] = [
 	/^\/api\/rows$/,
 	new RegExp(`^/api/rows/${SEGMENT}$`),
 	/^\/api\/entries\/[0-9]+$/,
+	// The learner's reported pictures (#274): the kept images packages pass them over offline.
+	/^\/api\/images\/reports$/,
 	/^\/api\/themes$/,
 	// The installed font faces (#97): kept so the pack faces stay registered offline.
 	/^\/api\/fonts$/

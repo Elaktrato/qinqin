@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SegmentMatch } from '$lib/api/types';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
 import { ReadingsController } from './readings.svelte';
-import { EMPTY_KNOWN_INDEX, type KnownIndex } from '$lib/study/known';
+import { EMPTY_KNOWN_INDEX, type KnownIndex } from '$lib/studycore/known';
 import type { Run } from './paragraphText';
 
 const zhMatch = (start: number, end: number, entry: number, value: string): SegmentMatch => ({

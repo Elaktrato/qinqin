@@ -3,8 +3,8 @@
 // returns for one workspace. Pure. Rule and fixtures: docs/contracts/goals/.
 
 import type { ActivityCell } from '../api/stats';
-import { isValidReview, sortedReviews } from '../study/scheduler';
-import type { ReviewEvent } from '../study/types';
+import { isValidReview, sortedReviews } from '$lib/studycore/scheduler';
+import type { ReviewEvent } from '$lib/studycore/types';
 
 /** Answer time counted per review at most (an idle tab is not an hour of study). */
 export const MAX_REVIEW_MS = 60_000;

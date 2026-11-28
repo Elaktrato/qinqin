@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import type { Snippet } from 'svelte';
 	import type { Sentence, SentenceAi } from '$lib/api/types';
 	import { aiMark } from '$lib/api/examples';
 	import { markTerm } from '$lib/entry/markTerm';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
+	import { sourceText } from '$lib/entry/sentenceSource';
 	import ShareButton from '$lib/entry/ShareButton.svelte';
 	import { creditText, sentenceShareText } from '$lib/entry/shareText';
 
@@ -15,7 +18,8 @@
 		language = '',
 		term = '',
 		aiLabelOf,
-		actions
+		actions,
+		ownActions
 	}: {
 		sentences: Sentence[];
 		/** The entry's language. */
@@ -26,13 +30,17 @@
 		aiLabelOf?: (mark: SentenceAi) => string;
 		/** Controls after an AI-written sentence (delete, report); `id` is its text's element id. */
 		actions?: Snippet<[Sentence, string]>;
+		/** Controls after the learner's own other sentences (remove, #279); `id` is its text's element id. */
+		ownActions?: Snippet<[Sentence, string]>;
 	} = $props();
 
 	const parts = (hanzi: string) => markTerm(hanzi, term);
 
 	// Pack sentences carry their source pack; user sentences have no
-	// pack, so they are labelled with the user that wrote them.
+	// pack, so they are labelled with the user that wrote them, or with the
+	// book the reader saved them from (#280).
 	function origin(sentence: Sentence): string {
+		if (sentence.source) return sourceText(sentence.source);
 		if (sentence.userId !== null) {
 			return sentence.sourcePack
 				? t('entry.sentences.packUser', { pack: sentence.sourcePack, id: `#${sentence.userId}` })
@@ -40,6 +48,7 @@
 		}
 		return sentence.sourcePack || t('entry.sentences.shared');
 	}
+	const roman = useRomanisation();
 </script>
 
 {#if sentences.length > 0}
@@ -53,7 +62,7 @@
 						>{#each parts(sentence.hanzi) as part, index (index)}{#if part.match}<b class="term">{part.text}</b
 								>{:else}{part.text}{/if}{/each}</p
 					>
-					{#if sentence.pinyin}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
+					{#if sentence.pinyin && roman.showsText(sentence.pinyin, language)}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
 					{#if sentence.translation}<p class="translation" lang={glossLang(undefined)}>{sentence.translation}</p>{/if}
 					{#if mark !== null}
 						<AiTag ai={sentence.ai} label={aiLabelOf?.(mark)} />
@@ -61,7 +70,8 @@
 					{:else if sentence.credit}
 						<SentenceCredit credit={sentence.credit} />
 					{:else}
-						<span class="origin">{origin(sentence)}</span>
+						{#if sentence.source}<SentenceSource source={sentence.source} />{:else}<span class="origin">{origin(sentence)}</span>{/if}
+						{#if sentence.userId !== null}{@render ownActions?.(sentence, `sentence-${sentence.id}`)}{/if}
 					{/if}
 					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? (sentence.credit ? creditText(sentence.credit) : origin(sentence)) : '')} label={t('entry.sentences.shareLabel')} /></span>
 				</li>

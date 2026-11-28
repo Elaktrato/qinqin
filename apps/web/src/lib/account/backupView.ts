@@ -3,7 +3,7 @@
 import { API_ERROR_KEYS, apiErrorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
-import { PENDING_REVIEWS_KEY } from '$lib/study/events';
+import { PENDING_REVIEWS_KEY } from '$lib/studycore/events';
 
 export interface Counts {
 	workspaces: number;

@@ -54,9 +54,10 @@ export function barItems(
 
 /**
  * Pages without the bottom bar (whole path segments): the study session,
- * which has its own docked grade buttons and an exit.
+ * which has its own docked grade buttons and an exit, and the course lesson
+ * player (#222), a full-screen flow like it.
  */
-export const BAR_HIDDEN_PATHS: readonly string[] = ['/study/session'];
+export const BAR_HIDDEN_PATHS: readonly string[] = ['/study/session', '/courses/play'];
 
 /** barHiddenOn: true on a page that hides the bottom bar. */
 export function barHiddenOn(path: string): boolean {

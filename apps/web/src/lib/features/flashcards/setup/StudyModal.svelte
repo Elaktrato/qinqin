@@ -8,22 +8,24 @@
 	// back button closes it. Opened through session.studyModal.
 	import { goto } from '$app/navigation';
 	import { errorText } from '$lib/api/apiErrors';
-	import { useSession } from '$lib/context/context';
+	import { useApp, useSession } from '$lib/context/context';
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import { t } from '$lib/i18n';
 	import { here } from '$lib/routing/here';
 	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
-	import { enabledKinds } from '$lib/study/deckSettings';
-	import { loadIneligible } from '$lib/study/ineligible';
-	import { newSessionSeed, saveConfig } from '$lib/study/session';
-	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from '$lib/study/setup';
-	import { planSetup } from '$lib/study/setupPlan';
-	import type { StudyCardKind } from '$lib/study/types';
+	import { enabledKinds } from '$lib/studycore/deckSettings';
+	import { GRAMMAR_ID, featureEnabled } from '$lib/features';
+	import { loadReview } from '$lib/features/grammar/review/review';
+	import { newSessionSeed, saveConfig } from '../session/session';
+	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from './setup';
+	import { planSetup } from './setupPlan';
+	import type { StudyCardKind } from '$lib/studycore/types';
 	import { Button, Dialog, IconButton, Sheet } from '$lib/ui';
 	import UnreadableRowsNotice from '../UnreadableRowsNotice.svelte';
 	import { createSetupData } from './setupData.svelte';
-	import { chipPatch, noteText, summaryLine, todayLine, visibleChips } from './studyModalView';
+	import { chipPatch, hiddenTypesText, noteText, summaryLine, todayLine, visibleChips } from './studyModalView';
 
+	const app = useApp();
 	const session = useSession();
 	const modal = session.studyModal;
 	const data = createSetupData(session, { fresh: false });
@@ -50,6 +52,25 @@
 		if (ws !== null) void session.setups.refresh(ws);
 	});
 
+	// Grammar review (#181): a setup choice while the grammar feature is on, with the points due now.
+	const grammarOn = $derived(session.features.status === 'ready' && featureEnabled(GRAMMAR_ID, session.features.list));
+	let grammarDue = $state<number | null>(null);
+	$effect(() => {
+		const ws = session.workspaces.current;
+		grammarDue = null;
+		if (!modal.open || !grammarOn || ws === null) return;
+		let cancelled = false;
+		void loadReview(session, ws).then(
+			(d) => {
+				if (!cancelled) grammarDue = d.round.due + d.round.new;
+			},
+			() => undefined
+		);
+		return () => {
+			cancelled = true;
+		};
+	});
+
 	const entry = $derived(workspaceId === null ? null : session.setups.of(workspaceId));
 	const ready = $derived(data.status === 'ready' && data.workspaceId === workspaceId);
 	const repaired = $derived(
@@ -65,7 +86,6 @@
 	const deckIds = $derived(setup === null ? [] : setupDeckIds(setup, data.decks));
 	const enabled = $derived(enabledKinds(data.deckSettings, deckIds));
 	const kinds = $derived<StudyCardKind[]>(setup === null ? [] : setupKinds(setup, enabled, language));
-	const chips = $derived(setup === null ? [] : visibleChips(setup, enabled, language));
 	const scheme = $derived(setup === null ? null : (data.schemes.find((s) => s.id === setup.schemeId) ?? null));
 
 	// A level setup counts the level's entries.
@@ -92,7 +112,8 @@
 						weights: data.weights,
 						ctx: data.ctx,
 						language,
-						skip: workspaceId === null ? undefined : loadIneligible(workspaceId),
+						// The words the server says cannot make a card of a kind (#288).
+						skip: session.eligibility.skip(),
 						level: {
 							scheme,
 							levelName: setup.levelName,
@@ -108,13 +129,22 @@
 				)
 	);
 
+	// Only the types with something to study (#289); every offered one until the counts are known.
+	const available = $derived(plan !== null && ready ? plan.available : null);
+	const chips = $derived(setup === null ? [] : visibleChips(setup, enabled, language, available));
+	const hiddenLines = $derived(plan !== null && ready ? hiddenTypesText(plan.hidden, { admin: app.auth.user?.admin === true }) : []);
+
 	const vacationText = $derived(
 		workspaceId === null || !ready || !data.ctx.vacationToday
 			? null
 			: vacationBanner(vacationStatus(data.vacations, workspaceId, data.ctx.day.today()), data.ctx.day.today())
 	);
 	const note = $derived(repaired === null ? null : noteText(repaired.notes));
-	const canStart = $derived(plan !== null && ready && plan.guidance === '' && vacationText === null);
+	const withGrammar = $derived(grammarOn && setup?.grammar === true);
+	// Cards to study, or due grammar points in a session that includes them.
+	const canStart = $derived(
+		plan !== null && ready && vacationText === null && (plan.guidance === '' || (withGrammar && (grammarDue ?? 0) > 0))
+	);
 	const canStudyAll = $derived(
 		plan !== null && ready && vacationText === null && (plan.guidance === '' || plan.allCounts.due + plan.allCounts.fresh > 0)
 	);
@@ -142,12 +172,18 @@
 		// The workspace whose chips were clicked, captured now (#174).
 		const ws = workspaceId;
 		if (ws === null || setup === null) return;
-		void session.setups.update(ws, chipPatch(setup, id, enabled, language));
+		void session.setups.update(ws, chipPatch(setup, id, enabled, language, available));
+	}
+
+	function toggleGrammar(): void {
+		const ws = workspaceId;
+		if (ws === null || setup === null) return;
+		void session.setups.update(ws, { grammar: !setup.grammar });
 	}
 
 	function start(studyAll = false): void {
 		if (setup === null || workspaceId === null) return;
-		saveConfig(setupSessionConfig(setup, deckIds, kinds, { studyAll, seed: newSessionSeed(), from: here() }));
+		saveConfig(setupSessionConfig(setup, deckIds, kinds, { studyAll, seed: newSessionSeed(), from: here(), grammar: grammarOn }));
 		modal.hide();
 		void goto('/study/session');
 	}
@@ -194,7 +230,14 @@
 						<span>{chip.label}</span>
 					</label>
 				{/each}
+				{#if grammarOn}
+					<label class="chip" class:checked={setup.grammar}>
+						<input type="checkbox" checked={setup.grammar} disabled={!entry?.known} onchange={toggleGrammar} />
+						<span>{grammarDue === null ? t('study.modal.grammar') : t('study.modal.grammarCount', { count: grammarDue })}</span>
+					</label>
+				{/if}
 			</fieldset>
+			{#each hiddenLines as line (line)}<p class="line muted hidden-types">{line}</p>{/each}
 			{#if ready && plan.warnings.length > 0}
 				<ul class="warnings" aria-label={t('study.summary.warnings')}>
 					{#each plan.warnings as warning (warning)}<li>{warning}</li>{/each}
@@ -247,6 +290,9 @@
 	}
 	.summary {
 		font-weight: var(--weight-medium);
+	}
+	.hidden-types {
+		font-size: var(--font-size-label);
 	}
 	.muted {
 		color: var(--readable-muted);

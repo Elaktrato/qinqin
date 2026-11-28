@@ -1,10 +1,10 @@
 // Declaration rules (#74), pure: which entries a "I already know this" range
 // newly marks, and how the marks a declaration wrote are listed and undone.
-// The marks are the reader's `known:<entryId>` rows (lib/study/knownMarks.ts);
+// The marks are the reader's `known:<entryId>` rows (lib/studycore/knownMarks.ts);
 // a declaration adds a batch id to the rows it writes. Design:
 // docs/superpowers/specs/2026-11-26-placement-design.md.
 
-import type { KnownBatch } from '$lib/study/knownMarks';
+import type { KnownBatch } from '$lib/studycore/knownMarks';
 
 /** One level of a scheme: its members (words, or characters for a character scheme). */
 export interface LevelMembers {

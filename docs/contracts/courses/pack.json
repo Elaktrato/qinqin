@@ -1,0 +1,1823 @@
+{
+ "version": 1,
+ "rule": "courses/pack",
+ "note": "The course pack's data file course.json (format course-json, #221): which files a server accepts (`error` null) and, for a refused one, a substring of the message. The pack holds only the project's own content; no level-list words (an unknown member such as `words` is refused). Go: server/internal/courses/pack_contract_test.go.",
+ "cases": [
+  {
+   "name": "a valid course",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": null
+  },
+  {
+   "name": "the smallest course: one section, one unit, no checkpoints, no levels",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "sections": [
+     {
+      "id": "a",
+      "level": null,
+      "title": {
+       "en": "A"
+      },
+      "units": [
+       {
+        "id": "b",
+        "title": {
+         "en": "B"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "error": null
+  },
+  {
+   "name": "version 2 is refused",
+   "course": {
+    "version": 2,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "version 2"
+  },
+  {
+   "name": "no sections is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": []
+   },
+   "error": "no sections"
+  },
+  {
+   "name": "a section without units is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": []
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "section start has no units"
+  },
+  {
+   "name": "a bad unit id is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "Hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "unit id \"Hello\""
+  },
+  {
+   "name": "a unit id twice is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "hello",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "unit id \"hello\" twice"
+  },
+  {
+   "name": "a unit and a section may not share an id",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "one",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "unit id \"one\" twice"
+  },
+  {
+   "name": "an unknown topic is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "beverages"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "unknown topic \"beverages\""
+  },
+  {
+   "name": "a bad grammar point is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "grammar point \"shi-sentences\""
+  },
+  {
+   "name": "a character twice in the course is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ],
+        "characters": [
+         "好"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "character 好 twice"
+  },
+  {
+   "name": "a character must be one Han character",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "character \"你好\""
+  },
+  {
+   "name": "a level is a position from 1",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 0,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "level 0"
+  },
+  {
+   "name": "levels rise from section to section",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "level": 1,
+      "title": {
+       "en": "Again"
+      },
+      "units": [
+       {
+        "id": "again",
+        "title": {
+         "en": "Again"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "error": "level 1 after level 1"
+  },
+  {
+   "name": "an untitled unit is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "de": "Hallo"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "no English title"
+  },
+  {
+   "name": "an unknown focus is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        },
+        "focus": "writing"
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "focus \"writing\""
+  },
+  {
+   "name": "a pass mark below 50 is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 40
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "passPercent 40"
+  },
+  {
+   "name": "the estimate rises",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      6,
+      3
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "estimate"
+  },
+  {
+   "name": "a text without a body is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        }
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "text has no body"
+  },
+  {
+   "name": "a translation may be longer than a title, up to the text limit",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "sections": [
+     {
+      "id": "a",
+      "level": null,
+      "title": {
+       "en": "A"
+      },
+      "units": [
+       {
+        "id": "b",
+        "title": {
+         "en": "B"
+        },
+        "text": {
+         "title": "你好",
+         "body": "你好！",
+         "translation": {
+          "en": "Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello! Hello!"
+         }
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "error": null
+  },
+  {
+   "name": "a translation longer than 8000 bytes is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "sections": [
+     {
+      "id": "a",
+      "level": null,
+      "title": {
+       "en": "A"
+      },
+      "units": [
+       {
+        "id": "b",
+        "title": {
+         "en": "B"
+        },
+        "text": {
+         "title": "你好",
+         "body": "你好！",
+         "translation": {
+          "en": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+         }
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "error": "the text's translation is longer than 8000 bytes"
+  },
+  {
+   "name": "an unknown member is refused",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-mini",
+     "estimate": [
+      3,
+      6
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "Level 1"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:shi-sentences"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！谢谢！",
+         "translation": {
+          "en": "Hello! Thanks!"
+         }
+        },
+        "words": [
+         "你好"
+        ]
+       },
+       {
+        "id": "family",
+        "title": {
+         "en": "Family",
+         "de": "Familie"
+        },
+        "topics": [
+         "family",
+         "people"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "error": "unknown field \"words\""
+  }
+ ]
+}

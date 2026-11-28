@@ -15,7 +15,7 @@ log and the live rows every time Stats → Overview is shown.
 
 | Number | Definition |
 | --- | --- |
-| Streak | `dailyStreak(reviews, now, day, vacation).current` — the same number the flashcards widget shows (`docs/contracts/scheduler/`, streak rules: consecutive learner days with a review, vacation days neutral, the current run counts back from today or from yesterday while today has none) |
+| Streak | `dailyStreak(reviews, now, day, vacation, grammarRuns).current` — the same number the flashcards widget shows (`docs/contracts/scheduler/`, streak rules: consecutive learner days with a review or a grammar lesson run (#277), vacation days neutral, the current run counts back from today or from yesterday while today has none) |
 | Words known | the number of entries `known` by the one known predicate (`docs/contracts/frequency/`, `known.json`): its entry ids are the live manual `known:<entryId>` marks plus the entries whose live **vocab** card has a schedule whose card score is at least 80 (`MASTERY_THRESHOLD`) |
 | Recall, last 30 days | the decks page's **overall** figure (`docs/contracts/decks/`): `deckNumbers({deckId: null})` gives `retention` and `retentionBase`; the share is `null` below `RETENTION_MIN_REVIEWS` (10 eligible reviews), and `retentionBase` says how many reviews it was computed from |
 | Studied this month | the sum of `studySeconds` (`docs/contracts/goals/`, the `flashcards:studyTime` metric) over the learner days from the first day of the **calendar month of `today`** through `today` |

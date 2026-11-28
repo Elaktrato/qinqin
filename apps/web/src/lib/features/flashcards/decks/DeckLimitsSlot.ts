@@ -3,7 +3,7 @@
 
 import type { Component } from 'svelte';
 import DeckLimitsEditor from '$lib/settings/DeckLimitsEditor.svelte';
-import type { StudyCardKind } from '$lib/study/types';
+import type { StudyCardKind } from '$lib/studycore/types';
 import { deckLeftToday, type LeftInput } from './deckLimits';
 
 export interface DeckLimitsEditorProps {

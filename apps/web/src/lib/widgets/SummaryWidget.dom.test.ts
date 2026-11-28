@@ -5,8 +5,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	onStudyChange: vi.fn(() => () => {})
 }));
@@ -14,14 +14,14 @@ vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	summaryNumbers: vi.fn()
 }));
-vi.mock('$lib/study/currentContext', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
+vi.mock('$lib/studycore/currentContext', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
 
 import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
-import { onContextStale } from '$lib/study/currentContext';
-import { onStudyChange, loadStudyHistory } from '$lib/study/data';
+import { onContextStale } from '$lib/studycore/currentContext';
+import { onStudyChange, loadStudyHistory } from '$lib/studycore/data';
 import SummaryWidget from './SummaryWidget.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.
@@ -65,7 +65,7 @@ function flashcards(enabled: boolean): void {
 beforeEach(() => {
 	select(1);
 	flashcards(true);
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(summaryNumbers).mockReturnValue(NUMBERS);
 });
 afterEach(() => {
@@ -170,10 +170,10 @@ describe('SummaryWidget', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0
+			merged: 0, grammarRuns: [], courseEvents: []
 		} as never);
 		await waitFor(() => expect(screen.getByText('30')).toBeTruthy());
-		first.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		await tick();
 		await Promise.resolve();
 		expect(screen.getByText('30')).toBeTruthy();
@@ -184,5 +184,41 @@ describe('SummaryWidget', () => {
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
 		vi.mocked(onContextStale).mock.calls[0][1]();
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
+	});
+
+	it('mounted again, it shows the last numbers at once and refreshes them behind, with no loading line (#290)', async () => {
+		const first = render(SummaryWidget, { context: ctx.context });
+		expect(await screen.findByText('23')).toBeTruthy();
+		first.unmount();
+		const later = deferred<never>();
+		vi.mocked(loadStudyHistory).mockReturnValueOnce(later.promise);
+		render(SummaryWidget, { context: ctx.context });
+		expect(screen.getByText('23')).toBeTruthy();
+		expect(screen.queryByText('Loading…')).toBeNull();
+		vi.mocked(summaryNumbers).mockReturnValue({ ...NUMBERS, streak: 24 });
+		later.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
+		await waitFor(() => expect(screen.getByText('24')).toBeTruthy());
+	});
+
+	it('a failed refresh keeps the numbers with a quiet notice and Try again (#290)', async () => {
+		render(SummaryWidget, { context: ctx.context });
+		await screen.findByText('23');
+		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
+		vi.mocked(onStudyChange).mock.calls.at(-1)![1](1);
+		await waitFor(() => expect(screen.getByText('Could not refresh. Showing what was loaded last.')).toBeTruthy());
+		expect(screen.getByText('23')).toBeTruthy();
+		expect(screen.queryByText('Could not load your summary.')).toBeNull();
+		screen.getByRole('button', { name: 'Try again' }).click();
+		await waitFor(() => expect(screen.queryByText('Could not refresh. Showing what was loaded last.')).toBeNull());
+	});
+
+	it("another workspace's numbers are not shown while its own load", async () => {
+		render(SummaryWidget, { context: ctx.context }).unmount();
+		await Promise.resolve();
+		select(2);
+		vi.mocked(loadStudyHistory).mockReturnValueOnce(deferred<never>().promise);
+		render(SummaryWidget, { context: ctx.context });
+		expect(await screen.findByText('Loading…')).toBeTruthy();
+		expect(screen.queryByText('23')).toBeNull();
 	});
 });

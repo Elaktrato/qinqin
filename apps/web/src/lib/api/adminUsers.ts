@@ -35,6 +35,8 @@ export interface DeletionPreview {
 	sentences: number;
 	/** Reports of AI example sentences (#186). */
 	exampleReports?: number;
+	/** Reports of wrong pictures (#274). */
+	pictureReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
 	/** 1 when the account has a profile picture (#189). */

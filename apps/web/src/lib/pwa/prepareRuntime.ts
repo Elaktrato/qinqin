@@ -1,13 +1,17 @@
 // The real dependencies of offline preparation, and the one call the app
 // shell makes. Kept out of prepareOffline.ts so that module stays pure.
 
-import { api, getToken } from '../api/client';
+import { api, apiBlob, getToken } from '../api/client';
+import { parseCatalogue } from '../api/packages';
+import { readVisualAids } from '$lib/aids/visualAids';
+import { PackageStore, platformCaches } from '$lib/packages/store';
+import { syncImagePackages } from '$lib/packages/syncImages';
 import { getEntry } from '../api/entries';
 import type { AppContext } from '../context/app.svelte';
-import { contextForData } from '../study/currentContext';
-import { studyPullPages, loadStudyHistory } from '../study/data';
-import { activeWeights } from '../study/readModel';
-import { fetchStrokeData } from '../study/strokeData';
+import { contextForData } from '$lib/studycore/currentContext';
+import { studyPullPages, loadStudyHistory } from '$lib/studycore/data';
+import { activeWeights } from '$lib/studycore/readModel';
+import { fetchStrokeData } from '$lib/writing/strokeData';
 import { ownPartition } from './partitions';
 import { normalizeUrl } from './sw/classify';
 import { prepareOffline } from './prepareOffline';
@@ -59,6 +63,18 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		fetchStroke: (ch) => fetchStrokeData(session.caches.strokes, ch, undefined, ws.language),
 		fetchApi: (path) => (session.alive ? api(path) : Promise.reject(new Error('the session ended'))),
 		pullPages: (id) => studyPullPages(session.study, id),
+		// The images packages (#274): kept for offline pictures while the workspace shows pictures.
+		syncPictures: async () => {
+			const caches = platformCaches();
+			if (caches === undefined || !readVisualAids(ws.settings).pictures || !session.alive) return;
+			const result = await syncImagePackages({
+				language: ws.language,
+				catalogue: async () => parseCatalogue(await api<unknown>('/api/packages')),
+				download: async (url) => new Uint8Array(await (await apiBlob(url)).arrayBuffer()),
+				store: new PackageStore(caches, location.origin)
+			});
+			if (result.downloaded.length > 0 || result.removed.length > 0) session.caches.pictures.offline.reset();
+		},
 		storage: typeof localStorage === 'undefined' ? null : localStorage,
 		now: () => Date.now(),
 		canPrepare: () => session.alive && controlled(),

@@ -52,16 +52,18 @@ test('the Study button opens the modal and Start studies', async ({ page, learne
 
 test('a chip is saved for the workspace: kept after a reload and in another browser', async ({ page, learner, browser, baseURL }) => {
 	await addCards(learner, 'ja', WORDS.map((written) => ({ kind: 'vocab' as const, written })));
+	// A sentence, so Word Salad has a card to offer (#289: a type without cards is not offered).
+	await learner.api.post(`/api/entries/${await learner.entryId('ja', '学校')}/sentences`, { hanzi: '学校に行く。' });
 	const modal = await openFromHome(page);
-	const writing = modal.getByRole('checkbox', { name: 'Writing' });
-	await expect(writing).not.toBeChecked();
-	await writing.check();
-	await expect(writing).toBeChecked();
-	await expect.poll(async () => (await savedSetup(learner))?.cardTypes).toEqual(['vocab', 'writing']);
+	const salad = modal.getByRole('checkbox', { name: 'Word Salad' });
+	await expect(salad).not.toBeChecked();
+	await salad.check();
+	await expect(salad).toBeChecked();
+	await expect.poll(async () => (await savedSetup(learner))?.cardTypes).toEqual(['vocab', 'sentence']);
 
 	await page.reload();
 	await page.getByRole('region', { name: 'Flashcards' }).getByRole('link', { name: 'Study' }).click();
-	await expect(page.getByRole('dialog', { name: 'Study' }).getByRole('checkbox', { name: 'Writing' })).toBeChecked();
+	await expect(page.getByRole('dialog', { name: 'Study' }).getByRole('checkbox', { name: 'Word Salad' })).toBeChecked();
 
 	// Another browser (no shared storage): the setup comes from the account.
 	const other = await browser.newContext({ storageState: signedInState(baseURL!, learner) });
@@ -71,7 +73,7 @@ test('a chip is saved for the workspace: kept after a reload and in another brow
 		const there = second.getByRole('dialog', { name: 'Study' });
 		await expect(there).toBeVisible();
 		await expect(second).toHaveURL(/\/$/);
-		await expect(there.getByRole('checkbox', { name: 'Writing' })).toBeChecked();
+		await expect(there.getByRole('checkbox', { name: 'Word Salad' })).toBeChecked();
 		await expect(there.getByRole('checkbox', { name: 'Vocab' })).toBeChecked();
 	} finally {
 		await other.close();

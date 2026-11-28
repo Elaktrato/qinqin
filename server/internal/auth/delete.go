@@ -83,6 +83,11 @@ var userTables = []UserTable{
 	{Name: "example_reports", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_reports WHERE user_id = ?1`},
 		PreviewKey: "exampleReports", Count: `SELECT COUNT(*) FROM example_reports WHERE user_id = ?1`,
 		Export: ExportSkip, ExportReason: "feedback on the AI's sentences, not learning data", Restore: RestoreKeep},
+	// Picture reports (#274, migration 057): the user's feedback on bundled
+	// pictures, like the example reports.
+	{Name: "picture_reports", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM picture_reports WHERE user_id = ?1`},
+		PreviewKey: "pictureReports", Count: `SELECT COUNT(*) FROM picture_reports WHERE user_id = ?1`,
+		Export: ExportSkip, ExportReason: "feedback on the bundled pictures, not learning data", Restore: RestoreKeep},
 	{Name: "library_books", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM library_books WHERE user_id = ?1`},
 		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
@@ -112,8 +117,6 @@ var userTables = []UserTable{
 	{Name: "journal_conversations", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_conversations WHERE user_id = ?1`},
 		PreviewKey: "journalConversations", Count: `SELECT COUNT(*) FROM journal_conversations WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_messages", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_messages WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
-	// Grammar lesson progress (migration 045): exported in its keyed form, replaced on restore.
-	{Name: "grammar_progress", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM grammar_progress WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	// The profile picture (#189, migration 050): its row here, its files in
 	// <data>/avatars/<id> (UserDirs). A personal export carries the picture as
 	// account/avatar.jpg; a restore replaces it.
@@ -200,6 +203,7 @@ type Preview struct {
 	Overlays             int `json:"overlays"`
 	Sentences            int `json:"sentences"`
 	ExampleReports       int `json:"exampleReports"`
+	PictureReports       int `json:"pictureReports"`
 	AccessTokens         int `json:"accessTokens"`
 	Avatar               int `json:"avatar"` // 1 when the user has a profile picture
 }
@@ -216,7 +220,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 	var p Preview
 	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "keyedRows": &p.KeyedRows, "cards": &p.Cards,
 		"books": &p.Books, "journalEntries": &p.JournalEntries, "journalConversations": &p.JournalConversations, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
-		"overlays": &p.Overlays, "sentences": &p.Sentences, "exampleReports": &p.ExampleReports, "accessTokens": &p.AccessTokens, "avatar": &p.Avatar}
+		"overlays": &p.Overlays, "sentences": &p.Sentences, "exampleReports": &p.ExampleReports, "pictureReports": &p.PictureReports, "accessTokens": &p.AccessTokens, "avatar": &p.Avatar}
 	for _, t := range userTables {
 		if t.PreviewKey == "" {
 			continue

@@ -591,6 +591,170 @@
    "note": ""
   },
   {
+   "name": "notebook mark of a card item: the card id follows the card map (#227)",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2,
+     "2": 1
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [
+     {
+      "key": "card:c-vocab-1",
+      "data": {
+       "id": "c-vocab-1",
+       "kind": "vocab",
+       "entryId": 1
+      }
+     }
+    ],
+    "events": [
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": "card:c-vocab-1"
+      }
+     },
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": "card:c-tone-2"
+      }
+     },
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": "card:c-vocab-9"
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": "card:c-vocab-2"
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": "card:c-tone-1"
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": "card:orphan:c-vocab-9"
+      }
+     }
+    ]
+   },
+   "note": "the same map as a review's cardId: a card row's new id, a deleted derived card through its entry, else orphan:"
+  },
+  {
+   "name": "notebook marks of other items and a clear are kept byte for byte (#227)",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1234": 5
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": "drill.conjugation:1234:te-form"
+      }
+     },
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": "grammar:hsk1:shi"
+      }
+     },
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "clear"
+      }
+     },
+     {
+      "type": "notebook",
+      "workspaceId": 7,
+      "payload": {
+       "action": "remove",
+       "item": 7
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": "drill.conjugation:1234:te-form"
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": "grammar:hsk1:shi"
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "clear"
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "action": "remove",
+       "item": 7
+      }
+     }
+    ]
+   },
+   "note": "drill items that name entry ids are not remapped (as the drill answers themselves)"
+  },
+  {
    "name": "vacation: workspace ids remapped, user-global row stays global",
    "op": "row",
    "maps": {

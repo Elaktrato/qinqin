@@ -20,8 +20,8 @@ vi.mock('$lib/api/account', async (importOriginal) => ({
 	getAuthOptions: vi.fn(() => Promise.reject(new Error('offline')))
 }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	onStudyChange: vi.fn(() => () => {})
 }));
 
@@ -29,7 +29,7 @@ import { goto } from '$app/navigation';
 import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { studyDay } from '$lib/time/studyDay';
-import { onStudyChange } from '$lib/study/data';
+import { onStudyChange } from '$lib/studycore/data';
 import Page from './+page.svelte';
 
 // The session's StudyDays (record 0009): its methods, faked on the class.
@@ -221,5 +221,19 @@ describe('home with a feature switched off', () => {
 		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();
 		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });
 		expect(link.getAttribute('href')).toBe('/settings?tab=layout');
+	});
+
+	it('shows no Stats widget while Stats is switched off; the other features stay (#295)', async () => {
+		const actual = await vi.importActual<typeof import('$lib/widgets/registry')>('$lib/widgets/registry');
+		vi.mocked(allWidgets).mockImplementation((states, language) => actual.allWidgets(states, language, []));
+		const on = [{ id: 'flashcards', enabled: true }];
+		ctx.session.features.set({ list: [...on, { id: 'stats', enabled: true }], status: 'ready' });
+		const { unmount } = render(Page, { context: ctx.context });
+		await waitFor(() => expect(document.querySelector('[data-widget="activity-heatmap"]')).not.toBeNull());
+		unmount();
+		ctx.session.features.set({ list: [...on, { id: 'stats', enabled: false }], status: 'ready' });
+		render(Page, { context: ctx.context });
+		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
+		expect(document.querySelector('[data-widget="activity-heatmap"]')).toBeNull();
 	});
 });

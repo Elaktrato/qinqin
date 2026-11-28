@@ -11,7 +11,7 @@ Fixtures:
 
 - `stages.json` — the stage of a word (rule `starter/stages`): the points rule and its constants, the thresholds per
   language profile, what the front shows at each stage (and the hint modes the stage forces), and review histories
-  with the stage they give. Web: `apps/web/src/lib/study/starter.ts`, decoded by `starter.contract.test.ts`.
+  with the stage they give. Web: `apps/web/src/lib/starter/starter.ts`, decoded by `starter.contract.test.ts`.
 - `set.json` — which Starter set files a server accepts (rule `starter/set`). Go: `server/internal/starter/contract_test.go`.
 
 ## The stage of a word (`stages.json`)
@@ -78,17 +78,21 @@ server resolves it with the starter-deck rule (a kana row takes the kana-only wo
 installed dictionary has and an entry an earlier word already took. `picture` is the picture the word is expected to
 have in an images pack (`target` is the mapping's target when it is not the form, a Japanese `j:<ent_seq>` key); a Go
 test checks every promise against the committed mapping in `scripts/images/<pack>/map.tsv`. `humanReviewed: false`
-marks a seed that only its author checked. The word choice is released under CC BY 4.0 (credit "qinqin contributors, CC BY 4.0").
+says no person has read the set yet; a shipped set with `false` names its review in `attribution` (the shipped ones:
+"reviewed by agents acting as native-speaker teachers, not yet by a person", #275, checked by `TestShippedSets`), and the
+client shows the word count and that review state next to "Add the Starter words". The word choice is released under CC BY 4.0 (credit "qinqin contributors, CC BY 4.0").
 
 - `GET /api/starter-sets` (public, not access tokens): `[{id, language, name, license, attribution, wordCount,
   humanReviewed}]`.
 - `GET /api/starter-sets/{id}` (signed-in users, not access tokens): `{id, language, name, license, attribution,
-  humanReviewed, entries: [...]}`, each entry the base fields of `GET /api/schemes/{id}/entries` plus `gloss` (the first
-  gloss of the first sense) and `pictureConcept`, in the set's order, `written` as the set lists it (a kana row stays
+  humanReviewed, entries: [...]}`, each entry the base fields of `GET /api/schemes/{id}/entries` plus `reading` (the
+  word's pinned reading as the set lists it, `""` without one), `gloss` (the entry's one gloss for that reading, the
+  sense display rule of `senses/`) and `pictureConcept`, in the set's order, `written` as the set lists it (a kana row stays
   kana). 404 `not_found` for an unknown set.
 
 A client copies the entries into the deck `d-starter-<profile>` with the ordinary add-to-deck rule
-(`decks/add-to-deck.json`): a plain deck (no `source`), new cards created in the set's order, a word that already has a
+(`decks/add-to-deck.json`; a new card of an entry with a `reading` stores it as the card row's `extra.reading`, so its
+back shows only that reading's meanings, `senses/README.md`): a plain deck (no `source`), new cards created in the set's order, a word that already has a
 card joins the deck with its history, words marked known are left out, a second run adds nothing. A character entry is
 added with `entryKind: "character"`. The pictures are fetched per entry (`GET /api/images/entries/{id}`, #216); where
 no images pack is installed the cards are Starter cards without pictures.

@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #278 (paths only), #290, #222 (the course device copy). A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -32,10 +32,12 @@ the registry #173 added (onSessionEnd, with sessionEpoch checks against late ans
   created by the app context when a token appears, disposed when the session ends (`signOut`; `expired`, a 401
   that ends it; `switched`, another user signed in under this tab). It owns every per-user cache and state
   object: the notices, the workspaces, the review outbox, the study state (the study cache and what derives from
-  it), plugin and feature states, the event log, the study day, the lookup recorder, the saved study setups and the study
-  modal's opener (`lib/study/setupStore.svelte.ts`, `lib/study/studyModal.svelte.ts`), the audio player and the
+  it, in the study core `lib/studycore`), plugin and feature states, the event log, the study day, the lookup
+  recorder, the saved study setups and the study modal's opener (`lib/features/flashcards/setup/setupStore.svelte.ts`,
+  `lib/features/flashcards/setup/studyModal.svelte.ts`), the audio player and the
   caches of server answers (`SessionCaches`, `apps/web/src/lib/context/caches.ts`: entry bases, audio,
-  characters, schemes, clips, starter decks, goal and weekly memos, reached milestones, ...). Disposing it stops
+  characters, schemes, clips, starter decks, goal and weekly memos, reached milestones, Home's layout and widget
+  options, the last value each widget showed (#290), ...). Disposing it stops
   its timers and listeners; an answer that arrives later lands in the disposed objects, which nothing reads. A
   new session is a new set of objects, so nothing of one account can be reached from the next.
 - **The end of a session is the session's dispose.** The registry of #173 (onSessionEnd, sessionEpoch)
@@ -73,6 +75,10 @@ Allowed:
   context installs and removes it) and its in-memory token where storage is blocked, counters that tell objects
   apart, render queues of mounted components.
 - Component-local `$state`, and runes classes instantiated by a component for its own lifetime.
+- A device copy of a user's non-sensitive setup (Home's layout and widget options, #290) or of server data the app
+  needs offline and the worker does not keep (the installed and filled courses, #222) in Web Storage under a key
+  that names the user id, read only for that user and removed at sign-out; the session's copy is still the one
+  the page reads.
 
 Not allowed:
 

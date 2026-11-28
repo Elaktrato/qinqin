@@ -36,22 +36,29 @@
 	import Chip from '$lib/ui/Chip.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { relatedWords } from './related';
+	import { confusionLanguage, loadConfusions, type Confusion } from '$lib/features/practice/lookAlikes/confused';
 	import { decksContaining } from './decks';
 	import { variantLabel } from './variant';
 	import { characterMeta } from './characterMeta';
 	import { getEntryRanks } from '$lib/api/frequency';
-	import { getStudyData } from '$lib/study/data';
+	import { getStudyData } from '$lib/studycore/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import AiExamples from './examples/AiExamples.svelte';
 	import ExampleActions from './examples/ExampleActions.svelte';
 	import { aiLabel, generateErrorText } from './examples/examples';
 	import { aiMark, deleteAiSentence, type ReportReason } from '$lib/api/examples';
+	import { removeSentence } from '$lib/api/entries';
+	import { deleteCards } from '$lib/features/flashcards/commands/cards';
+	import { Button } from '$lib/ui';
+	import { removeOwnSentence } from './removeSentence';
 	import type { Sentence } from '$lib/api/types';
 	import { loadProviderNames } from '$lib/features/journal/providerNames';
 
 	const session = useSession();
+	const roman = useRomanisation();
 	const app = useApp();
 
 	let {
@@ -120,6 +127,41 @@
 		if (entry && sentence.entryId === entry.id) {
 			entry = { ...entry, sentences: [...entry.sentences, sentence] };
 			refreshOfflineCopy(entry.id);
+			// Its study cards are planned from its sentences (#288): ask again.
+			session.eligibility.forget(entry.id);
+		}
+	}
+
+	// Removing an own sentence (#279) also tombstones its Word Salad cards in
+	// every workspace of the entry's language; `remove` is the delete call.
+	async function dropSentence(sentence: Sentence, remove: (entryId: number, sentenceId: number) => Promise<void>): Promise<void> {
+		if (!entry) return;
+		const language = entry.language;
+		const { cardsLeft } = await removeOwnSentence(
+			{
+				remove,
+				workspaces: session.workspaces.list.filter((w) => w.language === language).map((w) => w.id),
+				cards: async (ws) => (await getStudyData(session.study, ws)).cards,
+				deleteCards: (ws, ids) => deleteCards(session.study, ws, ids)
+			},
+			entry.id,
+			sentence.id
+		);
+		if (cardsLeft) exampleError = t('entry.sentences.cardsLeft');
+	}
+
+	async function removeOwn(sentence: Sentence): Promise<void> {
+		if (!entry) return;
+		exampleError = '';
+		try {
+			await dropSentence(sentence, removeSentence);
+			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
+			refreshOfflineCopy(entry.id);
+			session.eligibility.forget(entry.id);
+			await tick();
+			(document.getElementById('sentences-heading') ?? headingEl)?.focus();
+		} catch (err) {
+			exampleError = errorText(err, t('entry.sentences.removeFailed'));
 		}
 	}
 
@@ -127,11 +169,12 @@
 		if (!entry) return;
 		exampleError = '';
 		try {
-			await deleteAiSentence(entry.id, sentence.id, reason);
+			await dropSentence(sentence, (entryId, sentenceId) => deleteAiSentence(entryId, sentenceId, reason));
 			const aiIds = entry.sentences.filter((s) => aiMark(s.ai) !== null).map((s) => s.id);
 			const index = aiIds.indexOf(sentence.id);
 			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
 			refreshOfflineCopy(entry.id);
+			session.eligibility.forget(entry.id);
 			// The focus stays in the examples: the next AI example's first button,
 			// else the AI examples heading, the examples heading or the word.
 			await tick();
@@ -245,6 +288,21 @@
 	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
 	// The credit of every recording this page can play.
 	const related = $derived(entry ? relatedWords(entry) : []);
+	// Look-alike characters (#228): the bundled sets, in the workspace's script when it reads the entry's language.
+	let confusions = $state<Confusion[]>([]);
+	$effect(() => {
+		const written = entry?.written ?? '';
+		const language = entry === null ? '' : confusionLanguage(entry.language, session.workspaces.current?.language);
+		confusions = [];
+		if (written === '' || language === '') return;
+		let live = true;
+		void loadConfusions(written, language).then((found) => {
+			if (live) confusions = found;
+		});
+		return () => {
+			live = false;
+		};
+	});
 	const strokeChar = $derived(
 		entry?.kind === 'character' ? entry.written : (chosenChar ?? entry?.characters?.[0]?.written ?? null)
 	);
@@ -417,6 +475,9 @@
 					{#snippet actions(sentence: Sentence, id: string)}
 						<ExampleActions describedBy={id} onremove={(reason) => removeAiSentence(sentence, reason)} />
 					{/snippet}
+					{#snippet ownActions(sentence: Sentence, id: string)}
+						<Button variant="plain" aria-describedby={id} onclick={() => void removeOwn(sentence)}>{t('entry.sentences.remove')}</Button>
+					{/snippet}
 				</Sentences>
 				{#if exampleError}<p class="example-error" role="alert">{exampleError}</p>{/if}
 				{#key entry.id}<AiExamples entry={entry} onkept={addSentence} />{/key}
@@ -442,11 +503,27 @@
 									<a class="char" href={`/entry/${c.id}`}>
 										<span class="glyph" lang={studyLang(entry.language)}>{c.written}</span>
 										<span class="char-meta">
-											{#if c.reading}<span class="reading" lang={readingLang(c.reading.type, entry.language)}>{c.reading.value}</span>{/if}
+											{#if c.reading && roman.shows(c.reading.type)}<span class="reading" lang={readingLang(c.reading.type, entry.language)}>{c.reading.value}</span>{/if}
 											{#if c.gloss}<span class="gloss" lang={glossLang(undefined)}>{c.gloss}</span>{/if}
 											{#if characterMeta(c)}<small>{characterMeta(c)}</small>{/if}
 										</span>
 									</a>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+				{#if confusions.length > 0}
+					<section class="section" aria-labelledby="confused-heading">
+						<h2 id="confused-heading">{t('entry.page.confusedWith')}</h2>
+						<ul class="plain-list confused">
+							{#each confusions as c (c.char)}
+								<li>
+									{#if confusions.length > 1 || c.char !== entry.written}<span lang={studyLang(entry.language)}>{c.char}</span><span class="sep" aria-hidden="true">→</span>{/if}
+									{#each c.others as other, i (other)}
+										{#if i > 0}<span class="sep" aria-hidden="true">·</span>{/if}
+										<a href={`/search?q=${encodeURIComponent(other)}`} lang={studyLang(entry.language)}>{other}</a>
+									{/each}
 								</li>
 							{/each}
 						</ul>
@@ -494,8 +571,9 @@
 						{#if lookupLinks.browse}<p class="browse"><a href={lookupLinks.browse}>{t('entry.page.browseStrokes')}</a></p>{/if}
 						<ul class="plain-list">
 							{#each chars as char (char.id)}
+								{@const charReading = roman.shown(char.readings)[0]}
 								<li><a href={`/entry/${char.id}`} lang={studyLang(entry.language)}>{char.written}</a>
-									{#if char.readings.length > 0}<span class="reading"><ReadingText type={char.readings[0].type} value={char.readings[0].value} language={entry.language} /></span>{/if}
+									{#if charReading}<span class="reading"><ReadingText type={charReading.type} value={charReading.value} language={entry.language} /></span>{/if}
 								</li>
 							{/each}
 						</ul>
@@ -666,6 +744,11 @@
 		display: flex;
 		align-items: baseline;
 		gap: var(--space-1);
+	}
+
+	.plain-list.confused li {
+		flex-wrap: wrap;
+		font-size: 1.5rem;
 	}
 
 	.plain-list a,

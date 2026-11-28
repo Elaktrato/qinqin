@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { NOTEBOOK_HREF } from '$lib/notebook/href';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { saveConfig } from '$lib/study/session';
+	import { saveConfig } from '../session/session';
 	import { here } from '$lib/routing/here';
-	import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { knownEntries } from '$lib/study/known';
+	import { createDeck, deleteDeck, renameDeck } from '../commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
+	import { knownEntries } from '$lib/studycore/known';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
@@ -15,12 +16,12 @@
 	import SystemDecks from './SystemDecks.svelte';
 	import StarterDecks from './StarterDecks.svelte';
 	import { deckSessionConfig, loadedSetup, sessionKinds } from './studyStart';
-	import { onContextStale } from '$lib/study/currentContext';
-	import { deckLeftText } from '$lib/study/limitsText';
+	import { onContextStale } from '$lib/studycore/currentContext';
+	import { deckLeftText } from '../session/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
 	import { useSession } from '$lib/context/context';
-	import type { StudyCardKind } from '$lib/study/types';
+	import type { StudyCardKind } from '$lib/studycore/types';
 	const session = useSession();
 
 	const store = createDecksData(session);
@@ -163,6 +164,12 @@
 	<p role="alert">{store.error}</p>
 	<Button onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
 {:else if summary !== null}
+	{#if store.stale}
+		<p class="not-refreshed" role="status">
+			{t('common.notRefreshed')}
+			<Button variant="plain" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
+		</p>
+	{/if}
 	<DeckStatsPanel numbers={summary.overall} />
 
 	<Section title={t('flashcards.list.yourDecks')}>
@@ -175,6 +182,7 @@
 				session.studyModal.show();
 			}}>{t('flashcards.deck.study')}</Button
 		>
+		<Button href={NOTEBOOK_HREF} variant="plain">{t('study.notebook.link')}</Button>
 	</div>
 	{#if summary.decks.length === 0}
 		<p class="hint">{t('flashcards.list.empty')}</p>
@@ -278,6 +286,12 @@
 {/if}
 
 <style>
+	.not-refreshed {
+		margin: 0 0 var(--space-3);
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
 	.decks {
 		list-style: none;
 		margin: 0;
@@ -293,6 +307,10 @@
 	}
 
 	.study-all {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 		margin-bottom: var(--space-3);
 	}
 

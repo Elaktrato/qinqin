@@ -10,13 +10,16 @@ import {
 	type ScheduleIndex
 } from '$lib/features/flashcards/decks/deckStats';
 import { flashcardAmounts } from '$lib/goals/amounts';
-import type { DeckSettings } from '$lib/study/deckSettings';
-import { dailyStreak } from '$lib/study/exp';
-import { knownEntries } from '$lib/study/known';
-import { isValidReview, type Schedule } from '$lib/study/scheduler';
-import { contextFor } from '$lib/study/studyContext';
-import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
-import type { Run } from '$lib/study/vacation';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
+import { dailyStreak } from '$lib/studycore/exp';
+import type { CourseStep } from '$lib/studycore/courseCounting';
+import type { DrillAnswer } from '$lib/studycore/drills';
+import type { GrammarRun } from '$lib/studycore/grammarRuns';
+import { knownEntries } from '$lib/studycore/known';
+import { isValidReview, type Schedule } from '$lib/studycore/scheduler';
+import { contextFor } from '$lib/studycore/studyContext';
+import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
 import { addDays, type StudyDay } from '$lib/time/studyDay';
 
 export { STATS_WINDOW_DAYS };
@@ -30,6 +33,12 @@ export interface SummaryInput {
 	decks: readonly Deck[];
 	/** The local review log (any workspaces; only `workspaceId` counts). */
 	reviews: readonly ReviewEvent[];
+	/** The grammar lesson runs (only `workspaceId`'s count): they keep the streak (#277). */
+	grammarRuns?: readonly GrammarRun[];
+	/** The drill answers (only the workspace's count): they keep the streak too. */
+	drillAnswers?: readonly DrillAnswer[];
+	/** The course steps (#225; only the workspace's count): they keep the streak too. */
+	courseSteps?: readonly CourseStep[];
 	/** The live manual `known:<entryId>` marks. */
 	known?: readonly number[];
 	/** The merged vacation runs of this workspace. */
@@ -44,7 +53,7 @@ export interface SummaryInput {
 }
 
 export interface SummaryNumbers {
-	/** Consecutive learner days with a review (`dailyStreak.current`). */
+	/** Consecutive learner days with a review or a grammar lesson (`dailyStreak.current`). */
 	streak: number;
 	/** Entries known by the one known predicate (known.ts). */
 	wordsKnown: number;
@@ -118,7 +127,15 @@ export function summaryNumbers(input: SummaryInput): SummaryNumbers {
 	});
 
 	return {
-		streak: dailyStreak(reviews, input.now, input.day, vacation).current,
+		streak: dailyStreak(
+			reviews,
+			input.now,
+			input.day,
+			vacation,
+			(input.grammarRuns ?? []).filter((run) => run.workspaceId === input.workspaceId),
+			(input.drillAnswers ?? []).filter((answer) => answer.workspaceId === input.workspaceId),
+			(input.courseSteps ?? []).filter((step) => step.workspaceId === input.workspaceId)
+		).current,
 		wordsKnown: known.size,
 		recall: { share: recall.retention, base: recall.retentionBase },
 		studiedSeconds: monthSeconds(input, reviews, today)

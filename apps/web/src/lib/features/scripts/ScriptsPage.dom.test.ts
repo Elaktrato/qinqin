@@ -183,3 +183,42 @@ describe('a practice round', () => {
 		expect(post.mock.calls[0][0][0]).toMatchObject({ payload: { system: 'cyrillic', mode: 'type', ok: true } });
 	});
 });
+
+describe('the kana trainer with romaji hidden (#284)', () => {
+	function openHidden() {
+		const ws = { id: 7, language: 'ja', name: '', settings: { romanisation: { romaji: 'never' } }, updatedAt: '' } as never;
+		ctx.session.workspaces.set({ list: [ws], current: ws });
+		vi.spyOn(ctx.session.events, 'load').mockResolvedValue([] as never);
+		vi.spyOn(ctx.session.events, 'post').mockResolvedValue(undefined);
+	}
+
+	it('the chart has no romaji labels, a tap shows the romaji, and the romaji-answer modes are gone', async () => {
+		openHidden();
+		const { container } = render(ScriptsPage, { props: { rest: '' }, context: ctx.context });
+		const cell = await screen.findByRole('button', { name: 'あ, Not seen yet' });
+		expect(container.querySelector('.cell .roman')).toBeNull();
+		expect(screen.queryByRole('link', { name: 'Recognise' })).toBeNull();
+		expect(screen.queryByRole('link', { name: 'Read' })).toBeNull();
+		expect(screen.getByRole('link', { name: 'Recall' })).toBeTruthy();
+		expect(screen.getByTestId('romaji-hidden')).toBeTruthy();
+		await fireEvent.click(cell);
+		expect(container.querySelector('.detail .sound')?.textContent).toBe('a');
+	});
+
+	it('a Recall prompt is the sound, with the romaji behind a hint', async () => {
+		openHidden();
+		const { container } = render(ScriptsPage, { props: { rest: 'hiragana/practice/recall' }, context: ctx.context });
+		const show = await screen.findByTestId('show-romaji');
+		expect(container.querySelector('.shown')).toBeNull();
+		await fireEvent.click(show);
+		expect((await shownText(container)).length).toBeGreaterThan(0);
+	});
+
+	it('a Recognise round is not run', async () => {
+		openHidden();
+		const { container } = render(ScriptsPage, { props: { rest: 'hiragana/practice/recognise' }, context: ctx.context });
+		expect(await screen.findByTestId('romaji-hidden')).toBeTruthy();
+		expect(container.querySelector('.run')).not.toBeNull();
+		expect(container.querySelector('.options')).toBeNull();
+	});
+});

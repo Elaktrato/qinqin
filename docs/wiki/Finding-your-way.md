@@ -1,21 +1,25 @@
 # Finding your way
 
-Every signed-in page sits in the same frame. On a screen 720 px wide or more it is a raised page under a top bar; below 720 px (a phone) it is a slim bar with a menu. There is no footer and no tab bar at the bottom.
+Every signed-in page sits in the same frame. On a screen 720 px wide or more it is a raised page under a top bar; below 720 px (a phone) it is a slim bar at the top, with the sections in a bar at the bottom or in a side menu. There is no footer.
 
 ## The top bar (720 px and wider)
 
 - **The logo**, on the left, is the link to the home page (its tooltip says "Home"). There is no separate Home icon.
 - **The sections**, in the middle, as icons. Hover or focus one to see its name. In order:
   1. **Search** (also the place of entries and the [lookup history](Searching-and-entries#lookup-history)),
-  2. **Decks**, **Reader**, **Journal** and **Grammar**, unless you switched them off in Settings → Features,
-  3. **Stats**, always last.
+  2. **Decks**, **Reader**, **Journal**, **Grammar**, **Scripts**, **Practice** and **Courses** (Scripts only in a workspace whose language has a writing system to practise, Practice only once a drill applies to its language), unless you switched them off in Settings → Features,
+  3. **Stats**, last, unless you switched it off too.
 
-  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search and Stats show, so a feature you switched off never flashes in.
+  The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search shows, so a feature you switched off (Stats included) never flashes in.
 - **On the right**: the flag of the current workspace and your avatar.
 
 ## On a phone (under 720 px)
 
-The bar has the **menu button**, the title of the page and the workspace flag. The menu button opens a drawer:
+A phone shows the sections either in a **bottom bar** (the default) or in a **side menu**; you choose in Settings → Layout.
+
+With the **bottom bar**, the sections are at the bottom of the screen and the top bar has **the logo** on the left (a link to the home page, as on the desktop), the page's own buttons, the workspace flag and your avatar (the account menu). The top bar shows no section or page name: the bottom bar marks the section, and the page's heading names the page.
+
+With the **side menu**, the top bar has the **menu button**, the title of the page and the workspace flag. The menu button opens a drawer:
 
 - at the top, your workspaces as a row of flags (tap one to switch) and **+** (**Add workspace**, which opens Settings → Workspaces); the current workspace is named under the row,
 - the sections with their names: **Home** first (there is no logo to tap), then the same sections as on the desktop, Stats last,
@@ -43,6 +47,8 @@ Settings, Sources and the account pages are reached from here; they belong to no
 
 The home page greets you by the time of day on your device ("Good morning"), shows today's date in your study day, and has a search box (**Search entries…**) that opens Search. Below it come a card for new [milestones](Milestones), when there are any, and your widgets ([Settings → Home](Settings-tour#home) chooses them). If none of your widgets fits the current workspace, the page says so and links to Settings.
 
+Coming back to the home page shows what it showed last straight away, and the widgets refresh quietly behind it: there is no loading line on a return visit. After a reload, or in the Android app, the widget layout you chose shows at once too (it is kept on the device for your account and removed when you sign out). When a refresh fails, for example while you are offline, the page keeps what it shows and says "Could not refresh your study data. Showing what was loaded last." The decks page and the Reader's library work the same way.
+
 ## Pages you can open without signing in
 
 The **Sources** page (`/sources`) is open to everyone, so the licence and attribution credits can always be read. Signed out it shows a small bar with the logo and **Sign in**; signed in it has the usual frame. `/login` and `/register` are for signed-out visitors only; every other page asks you to sign in.
@@ -51,7 +57,7 @@ A session that must do one thing first (choose a new password an administrator a
 
 ## Switched-off features
 
-A page of a feature you switched off (Decks, Reader) says "You switched this off for yourself" with a link to Settings → Features. Nothing was deleted.
+A page of a feature you switched off (Decks, Reader, Stats …) says "You switched this off for yourself" with a link to Settings → Features. Nothing was deleted. With Stats off, that is every page under `/stats`, and the links into Stats from elsewhere (the **This week** widget's **See the week**, the milestone card's **See all milestones**, the Reader's **What is the score?**, the mastery-map link in Advanced study settings) are gone.
 
 ## Keyboard and screen readers
 

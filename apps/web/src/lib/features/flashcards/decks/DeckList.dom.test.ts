@@ -5,26 +5,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn()
 }));
-vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
+vi.mock('../commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../commands/decks')>()),
 	createDeck: vi.fn(),
 	renameDeck: vi.fn(),
 	deleteDeck: vi.fn()
 }));
 
-import { loadStudyHistory } from '$lib/study/data';
-import { createDeck, deleteDeck, renameDeck } from '$lib/study/commands/decks';
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { defaultSetup } from '$lib/study/setup';
-import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { createDeck, deleteDeck, renameDeck } from '../commands/decks';
+import { SESSION_CONFIG_KEY } from '../session/session';
+import { defaultSetup } from '../setup/setup';
+import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/studycore/types';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
-import { StudySetups } from '$lib/study/setupStore.svelte';
+import { StudySetups } from '../setup/setupStore.svelte';
 import * as build from '$lib/testing/study';
 
 let ctx: TestContext = testContext();

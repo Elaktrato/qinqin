@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import type { AudioClip, AudioResolution } from '../api/audio';
 import type { Reading } from '../api/types';
 import { hasDeviceVoice, type Player } from './player';
-import type { CardAudio } from '../study/audioCue';
+import type { CardAudio } from './cue';
 
 export interface ButtonInput {
 	clips: AudioClip[];

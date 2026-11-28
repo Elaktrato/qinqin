@@ -31,7 +31,7 @@
 </script>
 
 <script lang="ts">
-	import { mascotState, type MascotMood } from '$lib/study/mascot';
+	import { mascotState, type MascotMood } from './mascot';
 	import { t, type MessageKey } from '$lib/i18n';
 
 	let {

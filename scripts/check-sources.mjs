@@ -33,8 +33,10 @@
 //      exactly CC-BY-4.0 (optionally followed by " (qualifier)"), carry the credit "qinqin contributors, CC BY 4.0" in their
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
 //   i. the project-written data embedded in the code (the script charts under
-//      apps/web/src/lib/features/scripts/data and the Starter lists under
-//      server/internal/starter/sets) state license "CC-BY-4.0" (Starter lists also carry
+//      apps/web/src/lib/features/scripts/data, the Starter lists under
+//      server/internal/starter/sets, the counters table under server/internal/counters/table, the look-alike sets
+//      under apps/web/src/lib/features/practice/lookAlikes/data and the JLPT word lists
+//      under scripts/jlpt-words) state license "CC-BY-4.0" (Starter lists also carry
 //      the credit) and have a NOTICE beside them; there is no CC0 exception (LICENSING.md).
 //   h. the images packs (#216; only when scripts/images/pins.json exists): each has its committed
 //      mapping, and docs/sources.md names the pack, its pinned version and its licence.
@@ -45,12 +47,11 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Packs whose content the qinqin project writes: CC BY 4.0, credited "qinqin contributors, CC BY 4.0". */
-export const PROJECT_PACKS = ['zh-grammar', 'ja-grammar', 'ja-lemma', 'qinqin', 'qinqin-extras'];
+export const PROJECT_PACKS = ['zh-grammar', 'ja-grammar', 'ja-lemma', 'zh-course', 'ja-course', 'qinqin', 'qinqin-extras'];
 export const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
 
 /** Optional packs the docs describe that are never in the repository. */
 export const LOCAL_ONLY_PACKS = [
-	'jlpt-words',
 	'hsk30-chars',
 	'hsk30-words',
 	'commons-audio-zh',
@@ -90,7 +91,13 @@ export const IMAGES_PACKS = { 'images-openmoji': ['openmoji', 'CC BY-SA 4.0'], '
 /** Embedded project-written data: [directory, files carry a credit]. */
 const EMBEDDED_PROJECT_DATA = [
 	['apps/web/src/lib/features/scripts/data', false],
-	['server/internal/starter/sets', true]
+	['server/internal/starter/sets', true],
+	// The counters table and the Chinese measure-word corrections (#179).
+	['server/internal/counters/table', true],
+	// The look-alike character sets (#228), bundled in the web app.
+	['apps/web/src/lib/features/practice/lookAlikes/data', true],
+	// The estimated JLPT word list's project lists (#219): TSV files, so only their NOTICE is checked.
+	['scripts/jlpt-words', false]
 ];
 
 /** embeddedDataProblems checks rule i; a directory that does not exist is skipped. */

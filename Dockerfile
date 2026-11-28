@@ -103,7 +103,8 @@ COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # frequency list, the HSK 3.0 character and word level lists, the
 # approximate JLPT kanji level list, the KanjiVG component index
 # (kanjivg-components, CC BY-SA 3.0, about 190 KB), the Chinese and
-# Japanese grammar packs zh-grammar and ja-grammar, and the demo pack es-demo), so a fresh stack installs them
+# Japanese grammar packs zh-grammar and ja-grammar, the Chinese and Japanese courses zh-course and ja-course,
+# and the demo pack es-demo), so a fresh stack installs them
 # offline: the first `serve` seeds everything but the demo
 # (QINQIN_AUTO_SEED=0 turns that off); the demo, and a refresh after an image update, come from
 #   docker compose exec qinqin qinqin seed

@@ -1,0 +1,22 @@
+{
+ "language": "ja",
+ "batch": 43,
+ "reviewers": {
+  "suggest": "ja-labeller",
+  "a": "ja-teacher-1",
+  "b": "ja-teacher-2",
+  "c": "ja-teacher-3"
+ },
+ "items": [
+  {"i":6240,"key":"j:1000420","form":"彼の","reading":"あの"}
+ ],
+ "suggest": [
+  {"i":6240,"t":["function","position"]}
+ ],
+ "a": [
+  {"i":6240,"v":"change","t":["function"],"n":"あの is a demonstrative determiner taught in the こそあど grammar unit; it points to things but does not express position or direction like あそこ or 右, so 'position' is a loose association."}
+ ],
+ "b": [
+  {"i":6240,"v":"change","t":["function"],"n":"Adnominal demonstrative taught in the こそあど grammar lesson; 'position' is a loose link better kept for ここ/あそこ-type location words."}
+ ]
+}

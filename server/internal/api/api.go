@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
+	"qinqin/internal/courses"
 	"qinqin/internal/datapkg"
 	"qinqin/internal/freq"
 	"qinqin/internal/journal"
@@ -74,6 +75,7 @@ type server struct {
 
 	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
 	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
+	courses       courses.Cache // GET /api/courses/{id}: the filled courses per input fingerprint
 
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
@@ -353,7 +355,14 @@ func (s *server) routes() []route {
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil, tokReadGlobal},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil, tokReadGlobal},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil, tokReadGlobal},
+		// The conjugation trainer (#178): its words and their forms; no tokens.
+		{"POST /api/drills/conjugation/words", s.handleConjugationWords, accUser, nil, noTok},
+		// The measure-word and counter drills (#179): their nouns, and the counters' readings; no tokens.
+		{"POST /api/drills/measure-words/words", s.handleMeasureWordsWords, accUser, nil, noTok},
+		{"GET /api/drills/counters", s.handleCounterReadings, accUser, nil, noTok},
 		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil, noTok},
+		// The companion kinds an entry can make, decided before a session is planned (#288).
+		{"POST /api/study/eligibility", s.handleStudyEligibility, accUser, nil, noTok},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil, tokWriteAny},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil, tokWriteAny},
 		// AI example sentences (#186): the caller's own AI key; no access tokens.
@@ -361,7 +370,7 @@ func (s *server) routes() []route {
 		{"POST /api/entries/{id}/examples", s.handleGenerateExamples, accUser, nil, noTok},
 		{"POST /api/entries/{id}/examples/{draftId}/keep", s.handleKeepExample, accUser, nil, noTok},
 		{"DELETE /api/entries/{id}/examples/{draftId}", s.handleDiscardExample, accUser, nil, noTok},
-		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteAIExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteOwnSentence, accUser, nil, noTok},
 		{"GET /api/search", s.handleSearch, accPublic, nil, tokReadGlobal},
 		{"GET /api/segment/at", s.handleSegmentAt, accPublic, nil, tokReadGlobal},
 		{"POST /api/segment", s.handleSegment, accUser, nil, tokReadGlobal},
@@ -391,17 +400,19 @@ func (s *server) routes() []route {
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},
-		{"GET /api/grammar/progress", s.handleListGrammarProgress, accUser, nil, noTok},
-		{"POST /api/grammar/progress", s.handleRecordGrammarRun, accUser, nil, noTok},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil, tokReadAny},
 		{"POST /api/audio/resolve", s.handleAudioResolve, accUser, nil, noTok},
 		{"GET /api/audio/clips/{file}", s.handleAudioClip, accUser, nil, tokReadAny},
 		{"GET /api/audio-packs", s.handleListAudioPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/audio-packs/{id}/credits", s.handleAudioCredits, accPublic, nil, tokReadGlobal},
 		{"GET /api/images/entries/{id}", s.handleEntryPicture, accUser, nil, noTok},
+		{"GET /api/images/reports", s.handleReportedPictures, accUser, nil, noTok},
+		{"POST /api/images/reports", s.handleReportPicture, accUser, nil, noTok},
 		{"GET /api/image-packs", s.handleListImagePacks, accPublic, nil, noTok},
 		{"GET /api/starter-sets", s.handleListStarterSets, accPublic, nil, noTok},
 		{"GET /api/starter-sets/{id}", s.handleStarterSet, accUser, nil, noTok},
+		{"GET /api/courses", s.handleListCourses, accUser, nil, noTok},
+		{"GET /api/courses/{id}", s.handleCourse, accUser, nil, noTok},
 		{"GET /api/schemes", s.handleListSchemes, accPublic, nil, tokReadGlobal},
 		{"GET /api/schemes/{id}/entries", s.handleSchemeEntries, accPublic, nil, tokReadGlobal},
 		{"GET /api/schemes/{id}/characters", s.handleSchemeCharacters, accPublic, nil, tokReadGlobal},
@@ -478,6 +489,7 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil, noTok},
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
+		{"GET /api/library/graded", s.handleGradedCatalogue, accUser, nil, noTok},
 		{"PUT /api/features/{id}", s.handleSetFeature, accUser, nil, tokWriteAny},
 		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
 		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},

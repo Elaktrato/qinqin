@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import type { DeckSettings } from '$lib/study/deckSettings';
+import { defaultSetup, type StudySetup } from '../setup/setup';
+import type { DeckSettings } from '$lib/studycore/deckSettings';
 import { deckSessionConfig, levelSessionConfig, sessionKinds } from './studyStart';
 
 const SETUP: StudySetup = {

@@ -96,3 +96,76 @@ describe('createWorkspaceCache', () => {
 		expect(await cache.get(3)).toBe('fresh');
 	});
 });
+
+const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+describe('createWorkspaceCache with revalidate (#290)', () => {
+	const TTL = 8_000;
+	let clock = 0;
+	const now = () => clock;
+	beforeEach(() => {
+		clock = 1_000;
+	});
+
+	function setup(load: (id: number) => Promise<string[]>) {
+		const refreshed: number[] = [];
+		const failed: number[] = [];
+		const cache = createWorkspaceCache(load, now, TTL, {
+			revalidate: { changed: (a, b) => a.join() !== b.join(), refreshed: (id) => refreshed.push(id), failed: (id) => failed.push(id) }
+		});
+		return { cache, refreshed, failed };
+	}
+
+	it('serves a held value after the TTL at once and refreshes it in the background', async () => {
+		let n = 0;
+		const later = deferred<string[]>();
+		const load = vi.fn(async () => (++n === 1 ? ['a'] : later.promise));
+		const { cache, refreshed } = setup(load);
+		const first = await cache.get(3);
+		clock += TTL;
+		expect(await cache.get(3)).toBe(first);
+		expect(await cache.get(3)).toBe(first);
+		expect(load).toHaveBeenCalledTimes(2);
+		later.resolve(['a', 'b']);
+		await flush();
+		expect(refreshed).toEqual([3]);
+		expect(await cache.get(3)).toEqual(['a', 'b']);
+		expect(load).toHaveBeenCalledTimes(2);
+	});
+
+	it('markStale keeps the value for the next read and refreshes it behind; an unchanged answer is not announced', async () => {
+		const load = vi.fn(async () => ['a']);
+		const { cache, refreshed } = setup(load);
+		const first = await cache.get(3);
+		cache.markStale(3);
+		expect(await cache.get(3)).toBe(first);
+		await flush();
+		expect(load).toHaveBeenCalledTimes(2);
+		expect(refreshed).toEqual([]);
+	});
+
+	it('a failed background load keeps the value and reports it; force still waits and fails', async () => {
+		let n = 0;
+		const load = vi.fn(async () => {
+			if (++n === 1) return ['a'];
+			throw new TypeError('offline');
+		});
+		const { cache, failed } = setup(load);
+		const first = await cache.get(3);
+		clock += TTL;
+		expect(await cache.get(3)).toBe(first);
+		await flush();
+		expect(failed).toEqual([3]);
+		await expect(cache.get(3, { force: true })).rejects.toThrow('offline');
+	});
+
+	it('invalidate still drops the value: the next read waits', async () => {
+		const load = vi.fn(async () => ['a']);
+		const { cache } = setup(load);
+		await cache.get(3);
+		cache.invalidate(3);
+		const pending = cache.get(3);
+		expect(load).toHaveBeenCalledTimes(2);
+		await pending;
+	});
+});

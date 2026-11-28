@@ -2,18 +2,20 @@
  "version": 1,
  "rule": "settings/core-rows",
  "widgets": [
-  "activity-heatmap",
-  "character-map-summary",
   "daily-goal",
-  "summary-numbers",
-  "reviews-per-day",
   "weekly-summary",
   "flashcards-summary",
   "word-states",
   "reading-time",
-  "scripts-progress"
+  "scripts-progress",
+  "course-continue",
+  "activity-heatmap",
+  "character-map-summary",
+  "summary-numbers",
+  "reviews-per-day"
  ],
  "defaultLayout": [
+  "course-continue",
   "activity-heatmap",
   "flashcards-summary",
   "daily-goal",

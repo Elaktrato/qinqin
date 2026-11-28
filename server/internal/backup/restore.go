@@ -382,12 +382,16 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		return nil, err
 	}
 	// 5. own sentences (new ids), overlays
-	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level) VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, ?)`)
+	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level,
+		source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end) VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return nil, err
 	}
 	defer insSent.Close()
 	ownSet := map[int64]bool{}
+	// Restored sentences whose source names a book (#280): the book gets its
+	// new id in step 6, then the sentence points at it.
+	sourceBooks := map[int64]int64{} // new sentence id -> archive book id
 	for _, s := range a.SentRefs {
 		if s.Own {
 			ownSet[s.ID] = true
@@ -404,11 +408,19 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		if s.AI != nil {
 			aiProvider, aiModel, aiLevel = s.AI.Provider, s.AI.Model, s.AI.Level
 		}
-		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt, aiProvider, aiModel, aiLevel)
+		var src SentenceSource
+		if s.Source != nil {
+			src = *s.Source
+		}
+		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt, aiProvider, aiModel, aiLevel,
+			src.Kind, src.Title, src.Chapter, src.Paragraph, src.Start, src.End)
 		if err != nil {
 			return fmt.Errorf("backup: sentence: %w", err)
 		}
 		id, _ := r.LastInsertId()
+		if src.BookID != nil {
+			sourceBooks[id] = *src.BookID
+		}
 		if ownSet[s.ID] {
 			m.Sentences[s.ID] = id
 		}
@@ -446,6 +458,15 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		id, _ := r.LastInsertId()
 		m.Books[b.ID] = id
 		res.Restored.Books++
+	}
+	for sid, old := range sourceBooks {
+		nb, ok := m.Books[old]
+		if !ok {
+			continue // not restored: the source stays without a book, as after a delete
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE sentences SET source_book_id = ? WHERE id = ?`, nb, sid); err != nil {
+			return nil, fmt.Errorf("backup: sentence source: %w", err)
+		}
 	}
 	if err := a.Bookmarks(func(b Bookmark) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO library_bookmarks (user_id, book_id, position, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -514,9 +535,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 				}
 			}
 		case kindGrammar:
+			// The lesson progress of a backup from before #277 becomes the one
+			// grammar event it stands for (grammar/runs.json, legacy).
 			if ok = nr.WorkspaceID != nil; ok {
 				var err error
-				if ok, err = grammar.RestoreKeyed(ctx, tx, userID, *nr.WorkspaceID, nr.Key, nr.Data); err != nil {
+				if ok, err = restoreLegacyGrammar(ctx, tx, userID, *nr.WorkspaceID, nr, now); err != nil {
 					return fmt.Errorf("backup: grammar progress: %w", err)
 				}
 			}
@@ -598,6 +621,25 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		}
 	}
 	return oldBooks, nil
+}
+
+// restoreLegacyGrammar writes an old backup's lesson progress row as a
+// grammar event of workspace ws with a fresh id of its instant; ok is false
+// for a row the conversion refuses.
+func restoreLegacyGrammar(ctx context.Context, tx *sql.Tx, userID, ws int64, r Row, now string) (bool, error) {
+	at, payload, ok := grammar.LegacyEvent(r.Key, r.Data, r.UpdatedAt)
+	if !ok {
+		return false, nil
+	}
+	id, err := ulid.New(ulid.Timestamp(at), crand.Reader)
+	if err != nil {
+		return false, nil
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at)
+		VALUES (?, ?, ?, 'restore', ?, ?, ?, ?)`, id.String(), userID, ws, at.Format(time.RFC3339), grammar.EventType, string(payload), now); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Chunk sizes of the event inserts (variables so tests can shrink them).

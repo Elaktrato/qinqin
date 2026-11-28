@@ -9,7 +9,7 @@ vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 import { setToken } from '../api/client';
 import { createAppContext, type AppContext } from '../context/app.svelte';
 import { fakeDeps, manualTimers, type ManualTimers } from '../testing/context';
-import { fillMissingWritten } from '../study/entriesCache';
+import { fillMissingWritten } from '$lib/studycore/entriesCache';
 import { loadStarterEntries } from '../features/flashcards/decks/starterDecks';
 import { loadLevelItems } from '../features/flashcards/decks/systemDeckItems';
 import type { LevelDeck } from '../features/flashcards/decks/systemDecks';
@@ -19,8 +19,10 @@ import { fetchSchemeCharacters } from '../api/schemes';
 import { fetchCharacters } from '../api/characters';
 import { loadProviderNames } from '../features/journal/providerNames';
 import { journalEntriesFor } from '../features/journal/journalEntries.svelte';
-import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
-import type { StudyCard } from '../study/types';
+import { studyPullPages, loadStudyHistory, getStudyData } from '$lib/studycore/data';
+import type { StudyCard } from '$lib/studycore/types';
+import { WidgetLoad } from '$lib/widgets/widgetLoad.svelte';
+import { heldLayout, rememberLayout } from '$lib/widgets/homeData';
 
 const WS = 7;
 const USERS = { 'tok-A': { id: 1, tag: 'AAA' }, 'tok-B': { id: 2, tag: 'BBB' } } as const;
@@ -137,7 +139,21 @@ const readers: Record<string, () => Promise<unknown>> = {
 	providerNames: () => loadProviderNames(caches().providerNames).then((m) => [...m.values()]),
 	studyHistory: () => loadStudyHistory(study(), WS),
 	studyData: () => getStudyData(study(), WS),
-	eventLog: () => app.session!.events.load(WS)
+	eventLog: () => app.session!.events.load(WS),
+	// #290: a widget's held value and Home's held layout (memory and device copy).
+	heldWidget: async () => {
+		const shownAtMount = new WidgetLoad<unknown>(app.session!, 'probe', WS).value;
+		const widget = new WidgetLoad<unknown>(app.session!, 'probe', WS);
+		await widget.run(WS, () => app.session!.events.load(WS), String);
+		return { shownAtMount, now: widget.value };
+	},
+	homeLayout: async () => {
+		const session = app.session!;
+		const before = heldLayout(session);
+		const tag = Object.values(USERS).find((u) => u.id === session.user)!.tag;
+		rememberLayout(session, [tag]);
+		return { before, after: heldLayout(session) };
+	}
 };
 
 async function readAll(): Promise<Record<string, string>> {

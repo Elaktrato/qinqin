@@ -1,6 +1,6 @@
 // Pure exercise logic for a lesson: cloze (fill the gap) and word order.
 
-import { shuffleTokens } from '$lib/study/wordSalad';
+import { shuffleTokens } from '$lib/exercises/wordSalad';
 import type { Example, Lesson } from './types';
 
 export type Exercise =
@@ -32,7 +32,8 @@ export function clozeParts(text: string, focus: string): { before: string; after
 	return { before: text.slice(0, at), after: text.slice(at + focus.length) };
 }
 
-function hasCloze(e: Example): boolean {
+/** hasCloze: the example can be a fill-the-gap exercise (a focus found in its text, two distractors). */
+export function hasCloze(e: Example): boolean {
 	return e.focus !== '' && e.distractors.length >= 2 && clozeParts(e.text, e.focus) !== null;
 }
 

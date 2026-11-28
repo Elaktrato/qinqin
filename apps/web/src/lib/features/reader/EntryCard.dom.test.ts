@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 import source from './EntryCard.svelte?raw';
 import EntryCard from './EntryCard.svelte';
+import { testContext, updateWorkspaces } from '$lib/testing/context';
+import type { Workspace } from '$lib/api/types';
 
 function sense(dictionaryId: number, gloss: string) {
 	return { dictionaryId, dictionaryName: `d${dictionaryId}`, pos: [], tags: [], glosses: [gloss], xrefs: [] };
@@ -89,5 +91,49 @@ describe('EntryCard Japanese word (#102)', () => {
 		const style = source.slice(source.indexOf('<style>'));
 		expect(style).toMatch(/rt\s*\{[^}]*color:\s*var\(--reading-accent\)/);
 		expect(style).toMatch(/rt\s*\{[^}]*font-weight:\s*var\(--weight-medium\)/);
+	});
+});
+
+describe('EntryCard and hidden romanisation (#284)', () => {
+	function withWorkspace(language: string, settings: Record<string, unknown>) {
+		const ctx = testContext();
+		const ws: Workspace = { id: 4, language, name: '', settings, updatedAt: 't' };
+		updateWorkspaces(ctx.session.workspaces, () => ({ list: [ws], current: ws }));
+		return ctx.context;
+	}
+
+	it('shows no pinyin in the popup while pinyin is hidden', () => {
+		const { container } = render(EntryCard, {
+			props: { result, lang: 'zh', textLang: 'zh' },
+			context: withWorkspace('zh', { romanisation: { pinyin: 'never' } })
+		});
+		expect(container.querySelector('.reading')).toBeNull();
+		expect(container.textContent).not.toContain('nǐ hǎo');
+		expect(screen.getByText(/hello/)).toBeTruthy();
+	});
+
+	it('shows the pinyin when the switch is Always', () => {
+		const { container } = render(EntryCard, { props: { result, lang: 'zh', textLang: 'zh' }, context: withWorkspace('zh', {}) });
+		expect(container.querySelector('.reading')?.textContent).toBe('nǐ hǎo');
+	});
+});
+
+// #345: 鸡's slang gloss is listed last and only after "Show 1 more sense", marked.
+describe('EntryCard folds slang and vulgar senses', () => {
+	const ji = {
+		...result,
+		term: '鸡',
+		senses: [
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', pos: [], tags: [], glosses: ['fowl', 'chicken', '(slang) prostitute'], xrefs: [] },
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', pos: [], tags: [], glosses: ['variant of 雞|鸡[ji1]'], xrefs: [] }
+		]
+	} as unknown as LookupResult;
+
+	it('shows the everyday senses first and the slang one behind the button', async () => {
+		const { container } = render(EntryCard, { result: ji, lang: 'zh', textLang: 'zh' });
+		const items = () => [...container.querySelectorAll('ol.senses > li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+		expect(items()).toEqual(['fowl; chicken', 'variant of 雞|鸡[ji1]']);
+		await fireEvent.click(screen.getByRole('button', { name: 'Show 1 more sense' }));
+		expect(items()).toEqual(['fowl; chicken', 'variant of 雞|鸡[ji1]', 'vulgar (slang) prostitute']);
 	});
 });

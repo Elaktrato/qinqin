@@ -182,7 +182,7 @@ plan. Native pieces only where the WebView falls short.
   [#223](https://github.com/Elaktrato/qinqin/issues/223) skeletons and reading texts,
   [#224](https://github.com/Elaktrato/qinqin/issues/224) unit tests and exams,
   [#225](https://github.com/Elaktrato/qinqin/issues/225) milestones, widget, onboarding
-- Around it: [#219](https://github.com/Elaktrato/qinqin/issues/219) estimated JLPT word list,
+- Around it: ~~[#219](https://github.com/Elaktrato/qinqin/issues/219) estimated JLPT word list~~ (`feature/v090-219-jlpt-words`: the bundled pack `jlpt-words`, ≈ N5–≈ N1, from the Jiten ranks and the JLPT kanji levels; the Waller base list stays a local follow-up),
   [#220](https://github.com/Elaktrato/qinqin/issues/220) topic labels,
   [#226](https://github.com/Elaktrato/qinqin/issues/226) exam target and study plan,
   [#231](https://github.com/Elaktrato/qinqin/issues/231) graded reading library,

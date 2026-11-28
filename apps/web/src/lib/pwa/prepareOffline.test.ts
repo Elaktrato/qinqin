@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { STUDY_PULL_COLLECTIONS } from '../study/sync/pull';
+import { STUDY_PULL_COLLECTIONS } from '$lib/studycore/sync/pull';
 import classifyFixtureRoutes from './sw/routes.fixture.json';
 import { classify } from './sw/classify';
-import { defaultSetup } from '../study/setup';
-import { DEFAULT_W } from '../study/fsrs/params';
-import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
-import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
-import { STUDY_COLLECTIONS } from '../study/rows';
+import { defaultSetup } from '$lib/features/flashcards/setup/setup';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+import { UTC_CONTEXT, type StudyContext } from '$lib/studycore/studyContext';
+import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/studycore/types';
+import { STUDY_COLLECTIONS } from '$lib/studycore/rows';
 import { firstPageUrl, nextPageUrl } from '../sync/pager';
 import { fullLogPath } from '$lib/events';
 import { entryPath } from '../api/entries';
-import { strokeUrl } from '../study/strokeData';
+import { strokeUrl } from '$lib/writing/strokeData';
 import {
 	OFFLINE_API_PATHS,
 	PREPARE_THROTTLE_MS,
@@ -166,6 +166,15 @@ describe('prepareOffline', () => {
 		for (const path of OFFLINE_API_PATHS) expect(deps.calls).toContain(path);
 		expect(deps.calls.filter((c) => c.startsWith('/api/entries/')).sort()).toEqual([1, 2, 3, 4].map((n) => entryPath(n)).sort());
 		expect(deps.active.max).toBeLessThanOrEqual(2);
+	});
+
+	it('keeps the images packages after the study data; a failed picture round leaves the preparation standing (#274)', async () => {
+		const order: string[] = [];
+		const deps = makeDeps({ syncPictures: async () => void order.push(`pictures after ${deps.calls.length} requests`) });
+		expect((await prepareOffline(7, deps)).status).toBe('prepared');
+		expect(order).toEqual([`pictures after ${deps.calls.length} requests`]);
+		const failing = makeDeps({ syncPictures: async () => Promise.reject(new Error('download_busy')) });
+		expect((await prepareOffline(7, failing)).status).toBe('prepared');
 	});
 
 	it('prepares the opt-in kinds the decks switch on, as the study modal selects them', async () => {

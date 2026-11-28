@@ -1,17 +1,17 @@
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadRawStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/write', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
+vi.mock('$lib/studycore/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
-import { loadRawStudyData } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
+import { loadRawStudyData } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
 import { addDeckFromOverview } from './addDeckFromOverview';
 
 let ctx: TestContext = studyContext();

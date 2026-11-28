@@ -132,13 +132,19 @@ func (s *Service) Enqueue(j Job) bool {
 // queued it does the same work for a known and an unknown account. A failed
 // read counts as no setting.
 func (s *Service) language(ctx context.Context, j Job) string {
+	return Language(s.accountSetting(ctx, j.UserID), j.AcceptLanguage)
+}
+
+// accountSetting is the user's stored interface language ("" for none, for
+// userID 0, and when the read fails).
+func (s *Service) accountSetting(ctx context.Context, userID int64) string {
 	var setting string
-	if j.UserID != 0 && s.Store != nil && s.Store.DB != nil {
-		if err := s.Store.DB.QueryRowContext(ctx, `SELECT interface_language FROM users WHERE id = ?`, j.UserID).Scan(&setting); err != nil {
+	if userID != 0 && s.Store != nil && s.Store.DB != nil {
+		if err := s.Store.DB.QueryRowContext(ctx, `SELECT interface_language FROM users WHERE id = ?`, userID).Scan(&setting); err != nil {
 			setting = ""
 		}
 	}
-	return Language(setting, j.AcceptLanguage)
+	return setting
 }
 
 func anonymousKind(k Kind) bool { return k == KindReset || k == KindLoginCode }

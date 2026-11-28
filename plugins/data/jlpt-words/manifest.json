@@ -1,0 +1,11 @@
+{
+  "id": "jlpt-words",
+  "name": "JLPT words (approximate)",
+  "version": "jiten@2026-11-12+jmdict@2026-11-11+kanjiapi.dev@76aa080+kanjidic2@2026-11-11+lists@bdafddb",
+  "type": "levels",
+  "language": "ja",
+  "license": "CC BY-SA 4.0",
+  "attribution": "An estimate of JLPT N5–N1 vocabulary levels by qinqin (scripts/prepare-jlpt-words.mjs; no official JLPT vocabulary list since 2010), derived from the Jiten frequency list (CC BY-SA 4.0, © Jitensoft, https://jiten.moe), JMdict (CC BY-SA 4.0, © EDRDG, https://www.edrdg.org/), the approximate JLPT kanji levels (kanjiapi.dev, MIT, © 2023 Iridium Szreter; KANJIDIC2, CC BY-SA 4.0, © EDRDG) and a core list of N5/N4 words written for qinqin (qinqin contributors, CC BY 4.0, https://github.com/Elaktrato/qinqin)",
+  "notice": "The JLPT word levels are an estimate, not an official list: no official JLPT vocabulary list has been published since 2010. qinqin computes them from data it already bundles. A word's level comes mainly from how often it is used ([Jiten](https://jiten.moe/frequency-dictionaries) frequency ranks, CC BY-SA 4.0). A word JMdict marks as basic and common goes one or two levels easier, to ≈ N3 at most. Hard kanji (from the approximate JLPT kanji list, itself from [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev), MIT, and KANJIDIC2) make a word one level harder at most, and only when JMdict does not mark it as common. About 540 basic textbook words have their ≈ N5 or ≈ N4 level set directly, from a list written for qinqin (CC BY 4.0) and reviewed by agents; other words are ≈ N4 or harder, except particles and other function words. The words and readings are [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) entries (CC BY-SA 4.0, EDRDG). About 10,000 words in all, as commonly cited for N1; a word can be a level off. The list is CC BY-SA 4.0.",
+  "format": "json"
+}

@@ -48,8 +48,8 @@ first; a response with `dataSkipped` or `dataRefused` > 0 is a failure.
 
 ## Character mastery (`char-mastery.json`)
 
-The character map scores every glyph from the cards that contain it (web: `lib/study/mastery.ts`
-`masteryFromSchedules`, `stageOf`; `lib/study/charGroups.ts` `cellStates`; decoded by `mastery.test.ts` and
+The character map scores every glyph from the cards that contain it (web: `lib/studycore/mastery.ts`
+`masteryFromSchedules`, `stageOf`; `lib/studycore/charGroups.ts` `cellStates`; decoded by `mastery.test.ts` and
 `charGroups.test.ts`). Nothing is stored; no server code.
 
 - A card counts for a glyph when its kind is one of `masteryKinds` (`vocab`, `sentence`, `writing`, `tone`;

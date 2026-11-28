@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
-	import { saveWorkspaceLimits } from '$lib/study/commands/settings';
+	import { deleteVacation, saveVacation } from '$lib/studycore/commands/keyed';
+	import { saveWorkspaceLimits } from '$lib/features/flashcards/commands/settings';
 	import GoalSettings from './GoalSettings.svelte';
 	import LimitField from './LimitField.svelte';
 	import NoteSettings from './NoteSettings.svelte';
 	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
-	import { getStudyData } from '$lib/study/data';
+	import { getStudyData } from '$lib/studycore/data';
 	import { newUlid } from '$lib/events/ulid';
 	import {
 		parseVacation,
@@ -17,8 +17,8 @@
 		type Draft,
 		type VacationPeriod,
 		type VacationWrite
-	} from '$lib/study/vacation';
-	import { onContextStale } from '$lib/study/currentContext';
+	} from '$lib/studycore/vacation';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import { workspaceDisplay } from '$lib/languages';
 	import {
 		describePeriod,
@@ -34,7 +34,7 @@
 	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
-	// user-global rows; the pure rules live in lib/study/vacation.ts.
+	// user-global rows; the pure rules live in lib/studycore/vacation.ts.
 
 	let day = $state.raw(session.zone.day());
 	// A new learner day (or a zone change) moves "today": min dates and plan rules follow.

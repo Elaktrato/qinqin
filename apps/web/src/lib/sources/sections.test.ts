@@ -235,15 +235,26 @@ describe('featureCredits', () => {
 		expect(house.notice).toMatch(/Day and qinqin Night/);
 	});
 
+	it('credits the Starter words (CC BY 4.0) and says who reviewed them (#275)', () => {
+		const starter = coreCredits.find((credit) => credit.name === 'qinqin Starter words')!;
+		expect(starter).toBeDefined();
+		expect(starter.url).toBe('https://github.com/Elaktrato/qinqin');
+		expect(starter.license).toBe('CC BY 4.0');
+		expect(starter.attribution).toBe('qinqin contributors, CC BY 4.0');
+		expect(starter.notice).toMatch(/reviewed by agents acting as native-speaker teachers/);
+	});
+
 	it('credits the feature sources from the real features', () => {
 		const result = featureCredits(coreFeatures, coreCredits);
-		expect(result.map((feature) => feature.id)).toEqual(['journal', 'scripts']);
+		expect(result.map((feature) => feature.id)).toEqual(['journal', 'scripts', 'practice']);
 		expect(result[0].credits.map((credit) => credit.name)).toEqual([
 			'Tesseract OCR',
 			'Leptonica',
 			'Anthropic Go SDK'
 		]);
 		expect(result[1].credits.map((credit) => credit.name)).toEqual(['qinqin script charts']);
+		// The counters table and the measure-word corrections of the Practice drills (#179), the look-alike sets (#228).
+		expect(result[2].credits.map((credit) => credit.name)).toEqual(['qinqin counters and measure words', 'qinqin look-alike sets']);
 	});
 });
 

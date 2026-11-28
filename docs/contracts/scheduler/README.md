@@ -54,7 +54,7 @@ passed, every other option is the library default. `parameters` in the file is t
 
 Grades map 1 Again, 2 Hard, 3 Good, 4 Easy. States: 0 New, 1 Learning, 2 Review, 3 Relearning.
 
-- **Weights** (`weights` cases; web `study/fsrs/params.ts` `checkWeights`, `validWeights`): a weight list is
+- **Weights** (`weights` cases; web `studycore/fsrsParams.ts` `checkWeights`, `validWeights`): a weight list is
   17, 19 or 21 JSON numbers, all finite (ts-fsrs `checkParameters`), each raw value inside
   `clampRanges[i]` (`CLAMP_PARAMETERS(2, true)`, by position, ends included). A value outside is **rejected**,
   never clipped. A valid list is migrated to 21 by ts-fsrs `migrateParameters` (19: append `0, 0.5`; 17: convert
@@ -111,13 +111,18 @@ at the frozen instant (`optimizer-steps.inside` cases).
 
 ## XP and levels (`xp.json`)
 
-Derived from the review log, never stored (web: `lib/study/exp.ts`, decoded by `exp.test.ts`; no server code).
+Derived from the review log, the grammar lesson runs and the drill answers (`drills/`), never stored (web: `lib/studycore/exp.ts`, decoded by
+`exp.test.ts`; no server code).
 Only reviews that count (`events/review-parse.json`: parsable `ts`, non-empty `cardId`, grade 1–4) earn XP.
 
 - Per review: `baseXp[mode]` (vocab 10, sentence 15, writing 20, tone 8, reverse 10, cloze 15; a missing or
   unknown mode is vocab) + grade bonus (Again 0, Hard 0, Good 5, Easy 10). `byKind` sums these per kind.
 - Plus `dailyBonus` 10 per distinct **learner day** (zone history, `study-day/`) with at least one counted
   review; vacation days are not excluded. The total never depends on event order.
+- Plus `lessonRunXp` 20 per grammar lesson run (#277; a run as `grammar/runs.json` `parse` reads it, whatever its
+  score). Runs belong to no card kind (`byKind` leaves them out) and a day with runs only has no daily bonus.
+- Plus 5 and the grade bonus per drill answer (`drills/counting.json` `xp`; an answer as `drills/drills.json` `parse`
+  reads it); answers belong to no card kind and a day with answers only has no daily bonus.
 - Level: start at level 1; going from level L to L+1 costs `100 · L` XP. `levelProgress(xp)` floors `xp`,
   treats a negative or non-finite value as 0 and returns `{level, xpInto, xpForNext}` (`levels` cases:
   boundaries 99/100, 299/300, 599/600, a million, negative, fractional, NaN, Infinity).
@@ -127,7 +132,9 @@ Only reviews that count (`events/review-parse.json`: parsable `ts`, non-empty `c
 On a vacation day (the learner's `today` is a date of a run of the workspace) nothing is due and no new card
 is offered. Otherwise a card is due when `due <= now`: instant, not Anki's whole-day rule. Streaks skip
 vacation dates: they neither extend nor break a run, a review on one does not count, `todayDone` is true on a
-vacation day, and "consecutive" means the next non-vacation date.
+vacation day, and "consecutive" means the next non-vacation date. A streak day is a learner day with a valid
+review **or a grammar lesson run** (#277, or a drill answer, `drills/counting.json` `streak`; `grammar/runs.json`; the `lessons` of a `streak.json` case); a run on a
+vacation day does not count either.
 
 ## Limits (`limits-rows.json`, `daily-limits.json`)
 

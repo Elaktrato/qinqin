@@ -4,7 +4,7 @@
 // derives identically (docs/contracts/decks/system-deck-ids.json).
 
 import type { EntryBase, Scheme } from '$lib/api/types';
-import type { DeckSource } from '$lib/study/types';
+import type { DeckSource } from '$lib/studycore/types';
 
 export interface LevelDeck {
 	kind: 'level';

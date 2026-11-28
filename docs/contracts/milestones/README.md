@@ -15,7 +15,7 @@ and `journal` payloads (`events/payloads.json`), vacation runs and the streak ru
 the level deck ids (`decks/system-deck-ids.json`), the weekly summary's replay timelines (`weekly/`).
 
 Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, `replayReached.ts`, `seen.ts`,
-`plan.ts`, `milestoneText.ts`, `loadMilestones.ts`), `apps/web/src/lib/study/readModel.ts` and `apps/web/src/lib/study/commands/keyed.ts` (row parse,
+`plan.ts`, `milestoneText.ts`, `loadMilestones.ts`), `apps/web/src/lib/studycore/readModel.ts` and `apps/web/src/lib/studycore/commands/keyed.ts` (row parse,
 `saveSeenMilestones`). No server code: the rows are ordinary keyed rows (`keyed/`).
 
 ## Fixtures
@@ -33,6 +33,9 @@ Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, 
   `expect` lists **every** reached id of the enabled families with `reachedAt` (RFC 3339 UTC) and `reachedDay`,
   by `reachedAt`, ties in catalogue order; a missing or an extra id is a failure. Decoded by `reached.test.ts` (log families) and `replayReached.test.ts`
   (replay families).
+- `course.json` — the course families (#225): cases `{name, note, history, now, course, events, expect}`: the part of
+  a filled course the rule reads, the workspace's `course` events, and **every** reached course id with `reachedAt` and
+  `reachedDay`, ties in catalogue order. Decoded by `courseReached.test.ts`.
 - `seen-rows.json` — pulled rows and what is seen (`seen`: id → `{seenAt, reachedDay}`) and listed. Decoded by
   `seen.test.ts`.
 - `seen-merge.json` — two devices (`union`), the write plan of a dismiss (`writePlan`), seen = live ∪ pending
@@ -53,11 +56,18 @@ Families in this fixed order (the order breaks ties in lists):
 | `words-studied` | `words-studied:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000 | distinct entries of live vocab cards in an existing deck with at least one valid review |
 | `words-mature` | `words-mature:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000 | live vocab cards in an existing deck whose replayed schedule is mature (`classifySchedule`) |
 | `characters-learned` | `characters-learned:<n>` | 10, 50, 100, 250, 500, 1000, 2000, 3000, 5000 | Han languages only: universe cells learned (`cellStates`, score ≥ `MASTERY_THRESHOLD`) |
-| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily review streak (`dailyStreak` rule), any run |
-| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`) or a counted `journal` event (string `entryId`) |
+| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily streak of reviews, grammar lessons and drill answers (`dailyStreak` rule), any run |
+| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`), a counted `journal` event (string `entryId`), a grammar lesson run or a drill answer (`drills/`) |
 | `reading-hours` | `reading-hours:<n>` | 1, 5, 10, 25, 50, 100, 250, 500, 1000 | `readSeconds` of `read` events summed (the heatmap's clamping: < 30 s is 0, at most 2 h per event); `bookId` is not read |
 | `journal-entries` | `journal-entries:<n>` | 1, 10, 25, 50, 100, 250, 365, 500 | distinct **string** `entryId` of `journal` events |
 | `level-complete` | `level-complete:<levelDeckId>` | one per level of each installed scheme of the workspace language | every member learned at one instant (below) |
+| `course-started` | `course-started:<course>` | one per course | the first finished lesson of the course (#225, below) |
+| `course-unit` | `course-unit:<course>:<unit>` | one per unit | the unit done by its own work |
+| `course-section` | `course-section:<course>:<section>` | one per section | every unit of the section done |
+| `course-script` | `course-script:<course>:<script>` | one per script a unit names | every unit naming the script done |
+| `course-characters` | `course-characters:<course>:<n>` | 100, 250, 500, 1000 | the `characters` of done units |
+| `course-words` | `course-words:<course>:<n>` | 50, 100, 250, 500, 1000, 1500, 2000, 3000 | met words plus the words of skipped units |
+| `course-graduated` | `course-graduated:<course>` | one per course | every unit of the course done |
 
 `<n>` is decimal without sign or leading zeros and must be one of the family's thresholds; `<levelDeckId>` is the
 decks contract's `ownedLevelDeckId(packId, level)` (`d-lvl-<slug(packId)>-<fnv1a32(packId NUL level)>`), pinned by
@@ -88,6 +98,9 @@ decks contract's `ownedLevelDeckId(packId, level)` (`d-lvl-<slug(packId)>-<fnv1a
   'ready'`); before that no card is shown and the history lists only seen rows — a missing state row reads as
   "on", so computing early would flash a card of a switched-off feature — cost: no card while the states are
   unavailable (offline start without a cached answer).
+- Ruling (#225): the course families follow the `courses` switch, and name the course in the id (a language may have
+  several courses); `<course>` is a pack id, `<unit>`, `<section>` and `<script>` are course ids (`courses/README.md`),
+  none of which contains `:` — cost: none.
 - Ruling: other activity types never form or feed families, also not `days-active` — a client cannot
   compute arbitrary rules from the log, and the activity route (366-day cap) cannot give all-time totals —
   cost: grammar practice does not move "days active" here although it does in the week's "Days active" line.
@@ -105,12 +118,12 @@ At the first event at which its quantity, applied in event order, reaches the th
   `t` equals a snapshot of every card's last point with `ts ≤ t`. The milestone is reached at the first such
   instant at which the value reaches the threshold.
 - `reachedAt` = that event's instant; `reachedDay` = `dayOf(reachedAt)` (the learner's zone history).
-- `streak:<n>`: the review dates (learner days with a valid review, vacation dates left out) form runs; a run
-  continues from date `d` to the next review date `e` when the nearest non-vacation date before `e` is `d`
-  (`dailyStreak`). The reached day is the date on which a run first reached `n` days; `reachedAt` is the first
-  valid review of that date.
+- `streak:<n>`: the study dates (learner days with a valid review or a grammar lesson run, #277
+  `grammar/runs.json`; vacation dates left out) form runs; a run continues from date `d` to the next study date
+  `e` when the nearest non-vacation date before `e` is `d` (`dailyStreak`). The reached day is the date on which a
+  run first reached `n` days; `reachedAt` is the first valid review or lesson run of that date.
 - `days-active`: a date counts once, when it is not a vacation date and has a valid review, a `read` event with
-  `readSeconds > 0` or a `journal` event with a non-empty string `entryId`.
+  `readSeconds > 0`, a `journal` event with a non-empty string `entryId` or a grammar lesson run.
 - `reading-hours:<n>`: reached when the running sum of `readSeconds` is at least `n × 3600`.
 - Mature: `classifySchedule` = review state (2) and stability ≥ 21 days. Scope: live vocab cards with at least one
   existing deck (a card in no existing deck, a reverse card, a deleted card never count).
@@ -147,6 +160,30 @@ Every member, at the same instant.
   a level known in one click — cost: a learner who knew the words before qinqin does not get the level.
 - Ruling: the level members are today's (installed pack, current members); a pack update that adds members can
   make an unseen completion disappear — cost: as the weekly "today's cards" ruling; a seen one stays in history.
+
+## Course milestones (#225, `course.json`)
+
+Derived from the workspace's `course` events of its course (the one the roadmap shows: the device's pick, else the
+first installed course of the language by id) over the filled course, with the derivation's replay
+(`courses/README.md`, "Derivation"): events of the course in `(instant, id)` order, `ts ≤ now`; after each event the
+families are checked and a milestone is reached at the first event after which it holds.
+
+- `course-started`: the first `lesson-finished` (any lesson, a unit the course no longer has too).
+- `course-unit`: the unit becomes done by its **own** work: its own passed `unit-test` (early or not), or, for a unit
+  without a test, a `lesson-finished` of it that finishes its lessons. A unit done by a skip (a later early unit test,
+  a section exam, a placement) reaches none.
+- `course-section`, `course-script`, `course-graduated`: every unit of the section, every unit that names the script
+  in `scripts`, every unit of the course is done (skips included), whatever the event.
+- `course-characters`: the sum of `characters` over done units. `course-words`: the met words (`lesson-finished`
+  `words`) plus the words of skipped units, distinct keys (what the roadmap shows as reached, design §7).
+- Home and Stats → Week compute them while `courses` is on and the workspace has course events; a client that holds
+  no copy of the course (it could not read it) computes none. Titles name the course's own words (the course title,
+  the unit or section title, the script's interface name); an id whose course or part this client cannot name is left
+  out of the history.
+
+- Ruling: a unit needs its own work, the others count skips — a placement into a later section is not twenty units
+  learnt, but its sections, characters and words are reached (the design counts skipped words as known for word
+  counts) — cost: a placement shows one summary card with several course milestones.
 
 ## The seen rows
 

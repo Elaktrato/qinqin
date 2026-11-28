@@ -598,3 +598,37 @@ func TestSentencesPackageKeepsAnEmptyReading(t *testing.T) {
 		t.Errorf("packages README does not say that a pack sentence's pinyin may be empty (%v)", err)
 	}
 }
+
+// TestBuildImagesCarriesMappedPictures (#274): an images package holds the
+// pack's map rows as stored and only the pictures a map row uses, each in
+// the stored canonical form (never the pack's bytes); it requires no
+// lexicon (the map is keyed by word targets) and is not optional.
+func TestBuildImagesCarriesMappedPictures(t *testing.T) {
+	s := seedAll(t)
+	specs, err := datapkg.Plan(context.Background(), s.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := specByID(t, specs, "images.pics")
+	if spec.Type != datapkg.TypeImages || !slices.Equal(spec.Languages, []string{"ja", "zh"}) || len(spec.Requires) != 0 || spec.Optional {
+		t.Fatalf("spec = %+v", spec)
+	}
+	p := openPackage(t, build(t, s, "images.pics", 1).Path)
+	if got := p.strings(t, `SELECT concept || '|' || label || '|' || credit FROM pictures ORDER BY concept`); !slices.Equal(got, []string{"1F4A7|droplet|OpenMoji, A", "1F600|grinning face|OpenMoji, B"}) {
+		t.Errorf("pictures = %v (only the mapped ones)", got)
+	}
+	var stored, packaged string
+	if err := s.db.QueryRow(`SELECT svg FROM image_pictures WHERE pack_id = 'pics' AND concept = '1F4A7'`).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.db.QueryRow(`SELECT svg FROM pictures WHERE concept = '1F4A7'`).Scan(&packaged); err != nil {
+		t.Fatal(err)
+	}
+	if packaged != stored || strings.Contains(packaged, "style=") || strings.Contains(packaged, "<?xml") {
+		t.Errorf("packaged svg %q, stored %q", packaged, stored)
+	}
+	want := []string{"ja|水|1|1F4A7|80|gloss", "zh|好|2|1F600|75|gloss", "zh|水|0|1F4A7|90|name"}
+	if got := p.strings(t, `SELECT language || '|' || target || '|' || sense || '|' || concept || '|' || score || '|' || basis FROM map ORDER BY language, target, sense, concept`); !slices.Equal(got, want) {
+		t.Errorf("map = %v, want %v", got, want)
+	}
+}

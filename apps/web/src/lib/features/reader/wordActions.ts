@@ -3,8 +3,8 @@
 // an undo that tombstones exactly what it wrote). Pure apart from the
 // injected reads and writes; always the book's workspace.
 import type { EntryBase } from '$lib/api/types';
-import { type StudySnapshot, type StudyWrite } from '$lib/study/plan';
-import type { Deck, StudyCard } from '$lib/study/types';
+import { type StudySnapshot, type StudyWrite } from '$lib/studycore/plan';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { addPlanRows, planAddToDeck } from '../flashcards/decks/addToDeck';
 
 export interface AddWordsResult {

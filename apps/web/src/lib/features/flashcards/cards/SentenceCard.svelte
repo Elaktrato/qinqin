@@ -1,24 +1,26 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import HintControl from '../face/HintControl.svelte';
 	import HintShown from '../face/HintShown.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary, type FacePrimary } from '../face/cardFace.svelte';
-	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
+	import type { CardResult, FlowItem } from '../session/cardFlow';
 	import {
 		loadTokens,
 		splitWithin,
 		suggestSaladGrade,
 		type SaladTier
-	} from '$lib/study/wordSalad';
+	} from '$lib/exercises/wordSalad';
 
 	interface Props {
 		item: FlowItem;
@@ -33,6 +35,7 @@
 	}
 
 	let { item, entry, sentence, tier, seed, language, done, onDone }: Props = $props();
+	const roman = useRomanisation();
 
 	// The order the learner must rebuild; the board owns tiles and checking.
 	let solution = $state<string[] | null>(null);
@@ -113,13 +116,14 @@
 	<FaceAnswer>
 		<section class="reveal" aria-label={t('flashcards.card.theSentence')}>
 			<p class="sentence" lang={language}>{sentence.hanzi}</p>
-			{#if sentence.pinyin}
+			{#if roman.text(sentence.pinyin, entry.language)}
 				<p class="fa-reading">{sentence.pinyin}</p>
 			{/if}
 			{#if sentence.translation}
 				<p class="translation">{sentence.translation}</p>
 			{/if}
 			{#if sentence.credit}<SentenceCredit credit={sentence.credit} />{/if}
+			{#if sentence.source}<SentenceSource source={sentence.source} linked={false} />{/if}
 		</section>
 	</FaceAnswer>
 {/if}

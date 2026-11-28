@@ -19,7 +19,7 @@ const pack: PackInfo = {
 		{ id: 'b', level: 'l2', title: 'B', summary: '', examples: 4 }
 	]
 };
-const done: Progress = { completedAt: '2026-01-01T00:00:00Z', best: 3, total: 8 };
+const done: Progress = { completedAt: '2026-01-01T00:00:00Z', best: 3, total: 8, runs: 1 };
 
 describe('browseSections', () => {
 	// Ruling (#198): every installed pack shows; the pack's old plugin state is not read.
@@ -88,5 +88,14 @@ describe('browseSections', () => {
 		expect(section.levels.flatMap((l) => l.lessons)).toHaveLength(350);
 		expect(section.levels[0].badges).toEqual(['≈ HSK 1']);
 		expect(section.levels[6].badges).toEqual(['≈ HSK 7–9']);
+	});
+
+	it('gives each learned lesson its review status at now (#181)', () => {
+		const state = { point: 'p:a', learnedAt: '2026-01-01T00:00:00Z', reviews: 1, lastReviewed: '2026-01-02T00:00:00Z', firstReviewAt: 0, due: '2026-01-03T00:00:00Z', stability: 1, difficulty: 5, state: 2 };
+		const sections = browseSections([pack], [], new Map(), new Map([['p:a', state]]), Date.parse('2026-01-04T00:00:00Z'));
+		const [a, b] = sections[0].levels.flatMap((l) => l.lessons);
+		expect(a.review).toEqual({ due: true, dueAt: '2026-01-03T00:00:00Z', lastReviewed: '2026-01-02T00:00:00Z', learnedAt: '2026-01-01T00:00:00Z' });
+		expect(b.review).toBeNull();
+		expect(browseSections([pack], [], new Map())[0].levels[0].lessons[0].review).toBeNull();
 	});
 });

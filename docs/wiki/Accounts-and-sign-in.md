@@ -58,7 +58,7 @@ If the server's email policy is `optional` or `required`, set or change your add
 
 ## Mails in your language
 
-The mails qinqin sends (password reset, sign-in codes, email confirmation, address changes) use your interface language from Settings → Account; with "Browser default" a mail you trigger uses your browser's language, and English when the server has no mail text in it.
+The mails qinqin sends (password reset, sign-in codes, email confirmation, address changes) use your interface language from Settings → Account (a reminder mail uses the language of the workspaces it is about when they share one, Settings → Workspaces); with "Browser default" a mail you trigger uses your browser's language, and English when the server has no mail text in it.
 
 ## Forgot your password
 

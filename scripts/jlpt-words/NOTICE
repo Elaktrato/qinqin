@@ -1,0 +1,7 @@
+core.tsv, anchors.tsv and grammar.tsv are word lists written for qinqin by the project (the core N5/N4 textbook
+words, the anchor words of the regression check and the grammar pieces left out of the estimated JLPT word list,
+#219), released under the Creative Commons Attribution 4.0 International licence (CC BY 4.0): credit "qinqin
+contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin". The full legal code is plugins/data/ja-lemma/LICENSE.
+They copy no published JLPT list. scripts/prepare-jlpt-words.mjs reads them to build plugins/data/jlpt-words, which
+is CC BY-SA 4.0 (an adaptation of the Jiten ranks and JMdict; CC BY 4.0 content may be adapted into it).
+Review state: pending (agent review by Japanese teachers requested, 2026-11-27).

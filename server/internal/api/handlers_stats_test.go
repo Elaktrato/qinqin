@@ -10,6 +10,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/dbtest"
+	"qinqin/internal/drills"
 )
 
 type activityBody struct {
@@ -103,14 +104,20 @@ func TestStatsActivityDefaults(t *testing.T) {
 	if body.Cells == nil || len(body.Cells) != 0 {
 		t.Errorf("cells = %#v, want empty non-nil", body.Cells)
 	}
-	if len(body.Sources) != 4 {
-		t.Fatalf("sources = %d, want 4", len(body.Sources))
-	}
 	want := []struct{ typ, feature, unit string }{
 		{"review", "flashcards", "count"},
 		{"read", "reader", "seconds"},
 		{"journal", "journal", "count"},
 		{"script", "scripts", "count"},
+		{"grammar", "grammar", "count"},
+		{"course", "courses", "count"},
+	}
+	// Then one count source per registered drill (docs/contracts/drills/).
+	for _, id := range drills.IDs {
+		want = append(want, struct{ typ, feature, unit string }{drills.EventType(id), drills.Feature, "count"})
+	}
+	if len(body.Sources) != len(want) {
+		t.Fatalf("sources = %d, want %d", len(body.Sources), len(want))
 	}
 	for i, w := range want {
 		s := body.Sources[i]

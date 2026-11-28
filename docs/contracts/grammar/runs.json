@@ -1,0 +1,853 @@
+{
+ "version": 1,
+ "rule": "grammar/runs",
+ "note": "A finished grammar lesson run is a `grammar` study event (#277). Progress is replayed from the events; old progress rows (migration 056) and old backup rows become one event each. Since #181 a run may also be a review (`mode: review`, grammar/review.json): it is read as a run (EXP, streak, activity) but the lesson's progress replays lesson runs only.",
+ "constants": {
+  "maxExercises": 1000,
+  "lessonRunXp": 20
+ },
+ "build": [
+  {
+   "name": "a run names the point, the mode, the score and the total, in this member order",
+   "args": [
+    "zh-grammar",
+    "le-change",
+    3,
+    4
+   ],
+   "expect": {
+    "point": "zh-grammar:le-change",
+    "mode": "lesson",
+    "score": 3,
+    "total": 4
+   }
+  }
+ ],
+ "parse": [
+  {
+   "name": "a lesson run",
+   "event": {
+    "id": "01KA00000000000000000000G1",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "zh-grammar:le-change",
+     "mode": "lesson",
+     "score": 3,
+     "total": 4
+    }
+   },
+   "expect": {
+    "packId": "zh-grammar",
+    "lessonId": "le-change",
+    "point": "zh-grammar:le-change",
+    "mode": "lesson",
+    "score": 3,
+    "total": 4
+   }
+  },
+  {
+   "name": "a review run (#181)",
+   "event": {
+    "id": "01KA00000000000000000000R1",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "zh-grammar:le-change",
+     "mode": "review",
+     "score": 2,
+     "total": 3
+    }
+   },
+   "expect": {
+    "packId": "zh-grammar",
+    "lessonId": "le-change",
+    "point": "zh-grammar:le-change",
+    "mode": "review",
+    "score": 2,
+    "total": 3
+   }
+  },
+  {
+   "name": "a pack id with dots and capitals",
+   "event": {
+    "id": "01KA00000000000000000000G2",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "My.Pack_2:ba",
+     "mode": "lesson",
+     "score": 0,
+     "total": 0
+    }
+   },
+   "expect": {
+    "packId": "My.Pack_2",
+    "lessonId": "ba",
+    "point": "My.Pack_2:ba",
+    "mode": "lesson",
+    "score": 0,
+    "total": 0
+   }
+  },
+  {
+   "name": "another type is no run",
+   "event": {
+    "id": "01KA00000000000000000000G3",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "review",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "an unknown mode is ignored",
+   "event": {
+    "id": "01KA00000000000000000000G4",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "quiz",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "no mode is no run",
+   "event": {
+    "id": "01KA00000000000000000000G5",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a score above the total",
+   "event": {
+    "id": "01KA00000000000000000000G6",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 5,
+     "total": 4
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a negative score",
+   "event": {
+    "id": "01KA00000000000000000000G7",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": -1,
+     "total": 4
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a fractional score",
+   "event": {
+    "id": "01KA00000000000000000000G8",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1.5,
+     "total": 4
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a score given as text",
+   "event": {
+    "id": "01KA00000000000000000000G9",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": "1",
+     "total": 4
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "more than 1000 exercises",
+   "event": {
+    "id": "01KA0000000000000000000G10",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1001
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a point without a lesson",
+   "event": {
+    "id": "01KA0000000000000000000G11",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "zh-grammar",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a point with two colons",
+   "event": {
+    "id": "01KA0000000000000000000G12",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "a:b:c",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a lesson id that is no lesson id",
+   "event": {
+    "id": "01KA0000000000000000000G13",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:Le Change",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "an empty pack id",
+   "event": {
+    "id": "01KA0000000000000000000G14",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": ":le",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a pack id of 129 characters",
+   "event": {
+    "id": "01KA0000000000000000000G15",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp:le",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a ts that is no time",
+   "event": {
+    "id": "01KA0000000000000000000G16",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "yesterday",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "no payload",
+   "event": {
+    "id": "01KA0000000000000000000G17",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-19T08:00:00Z",
+    "type": "grammar",
+    "payload": null
+   },
+   "expect": null
+  }
+ ],
+ "progress": [
+  {
+   "name": "no runs, no progress",
+   "events": [],
+   "expect": {}
+  },
+  {
+   "name": "a lower score keeps the best, the last run is the last time",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 3,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 3,
+     "total": 4,
+     "completedAt": "2026-11-20T08:00:00Z",
+     "runs": 2
+    }
+   }
+  },
+  {
+   "name": "a higher score is the new best",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 3,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 4,
+     "total": 4,
+     "completedAt": "2026-11-20T08:00:00Z",
+     "runs": 2
+    }
+   }
+  },
+  {
+   "name": "another number of exercises starts over",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 5
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 1,
+     "total": 5,
+     "completedAt": "2026-11-20T08:00:00Z",
+     "runs": 2
+    }
+   }
+  },
+  {
+   "name": "replayed by time, not by the log's order",
+   "note": "the later run comes first in the list; the replay sorts by (instant, id)",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 5
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 1,
+     "total": 5,
+     "completedAt": "2026-11-20T08:00:00Z",
+     "runs": 2
+    }
+   }
+  },
+  {
+   "name": "the same second replays in id order",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 2,
+      "total": 2
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 2,
+     "total": 2,
+     "completedAt": "2026-11-19T08:00:00Z",
+     "runs": 2
+    }
+   }
+  },
+  {
+   "name": "lessons of two packs are two points",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 2
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "q:a",
+      "mode": "lesson",
+      "score": 2,
+      "total": 2
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 1,
+     "total": 2,
+     "completedAt": "2026-11-19T08:00:00Z",
+     "runs": 1
+    },
+    "q:a": {
+     "best": 2,
+     "total": 2,
+     "completedAt": "2026-11-19T09:00:00Z",
+     "runs": 1
+    }
+   }
+  },
+  {
+   "name": "events that are no runs change nothing",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 2
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 9,
+      "total": 2
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G3",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "review",
+      "score": 2,
+      "total": 2
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 1,
+     "total": 2,
+     "completedAt": "2026-11-19T08:00:00Z",
+     "runs": 1
+    }
+   }
+  },
+  {
+   "name": "another workspace's runs are not this workspace's progress",
+   "events": [
+    {
+     "id": "01KA00000000000000000000G1",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 1,
+      "total": 2
+     }
+    },
+    {
+     "id": "01KA00000000000000000000G2",
+     "workspaceId": 8,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:a",
+      "mode": "lesson",
+      "score": 2,
+      "total": 2
+     }
+    }
+   ],
+   "expect": {
+    "p:a": {
+     "best": 1,
+     "total": 2,
+     "completedAt": "2026-11-19T08:00:00Z",
+     "runs": 1
+    }
+   }
+  },
+  {
+   "name": "review runs (#181) leave a lesson's progress alone",
+   "events": [
+    {
+     "id": "01KA00000000000000000000RA",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-19T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 4,
+      "total": 5
+     }
+    },
+    {
+     "id": "01KA00000000000000000000RB",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 1,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KA00000000000000000000RC",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "zh-grammar:le-change": {
+     "best": 4,
+     "total": 5,
+     "completedAt": "2026-11-19T08:00:00Z",
+     "runs": 1
+    }
+   }
+  }
+ ],
+ "legacy": [
+  {
+   "name": "a progress row is one run of its best score at its completedAt",
+   "key": "grammar:progress:zh-grammar:le-change",
+   "data": {
+    "completedAt": "2026-11-19T08:00:00Z",
+    "best": 3,
+    "total": 4
+   },
+   "updatedAt": "2026-11-19T08:00:01Z",
+   "expect": {
+    "ts": "2026-11-19T08:00:00Z",
+    "payload": {
+     "point": "zh-grammar:le-change",
+     "mode": "lesson",
+     "score": 3,
+     "total": 4
+    }
+   }
+  },
+  {
+   "name": "the time becomes whole UTC seconds",
+   "key": "grammar:progress:p:l",
+   "data": {
+    "completedAt": "2026-11-19T09:00:00.700+01:00",
+    "best": 0,
+    "total": 0
+   },
+   "updatedAt": "2026-11-19T08:00:01Z",
+   "expect": {
+    "ts": "2026-11-19T08:00:00Z",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 0,
+     "total": 0
+    }
+   }
+  },
+  {
+   "name": "a completedAt that is no time takes the write time",
+   "key": "grammar:progress:p:l",
+   "data": {
+    "completedAt": "last tuesday",
+    "best": 1,
+    "total": 2
+   },
+   "updatedAt": "2026-11-20T10:00:00Z",
+   "expect": {
+    "ts": "2026-11-20T10:00:00Z",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1,
+     "total": 2
+    }
+   }
+  },
+  {
+   "name": "no usable time at all is dropped",
+   "key": "grammar:progress:p:l",
+   "data": {
+    "completedAt": "x",
+    "best": 1,
+    "total": 2
+   },
+   "updatedAt": "y",
+   "expect": null
+  },
+  {
+   "name": "a best above the total is dropped",
+   "key": "grammar:progress:p:l",
+   "data": {
+    "completedAt": "2026-11-19T08:00:00Z",
+    "best": 3,
+    "total": 2
+   },
+   "updatedAt": "2026-11-19T08:00:00Z",
+   "expect": null
+  },
+  {
+   "name": "a lesson id that is no lesson id is dropped",
+   "key": "grammar:progress:p:Le Change",
+   "data": {
+    "completedAt": "2026-11-19T08:00:00Z",
+    "best": 1,
+    "total": 2
+   },
+   "updatedAt": "2026-11-19T08:00:00Z",
+   "expect": null
+  },
+  {
+   "name": "a key without a lesson is dropped",
+   "key": "grammar:progress:p",
+   "data": {
+    "completedAt": "2026-11-19T08:00:00Z",
+    "best": 1,
+    "total": 2
+   },
+   "updatedAt": "2026-11-19T08:00:00Z",
+   "expect": null
+  },
+  {
+   "name": "a missing best is dropped",
+   "key": "grammar:progress:p:l",
+   "data": {
+    "completedAt": "2026-11-19T08:00:00Z",
+    "total": 2
+   },
+   "updatedAt": "2026-11-19T08:00:00Z",
+   "expect": null
+  }
+ ]
+}

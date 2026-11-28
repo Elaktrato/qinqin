@@ -10,7 +10,7 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`, `images`) |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`, `images`, `course`) |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
@@ -45,7 +45,7 @@ directory. A reverse proxy in front of qinqin may cap request bodies lower
 import; the import itself keeps running on the server, and the list shows
 the pack once it is done.
 
-Committed (hand-written; the demo is a CC0 sample, the grammar and lemma packs are project-written content under CC BY 4.0, credited "qinqin contributors, CC BY 4.0"):
+Committed (hand-written; the demo is a CC0 sample, the grammar, lemma and course packs are project-written content under CC BY 4.0, credited "qinqin contributors, CC BY 4.0"):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
@@ -53,6 +53,8 @@ Committed (hand-written; the demo is a CC0 sample, the grammar and lemma packs a
 | `zh-grammar` | grammar | zh | HSK-aligned grammar lessons (≈ HSK 1 to 7–9), 4–8 examples per syllabus point, written for qinqin, CC BY 4.0; topic coverage follows the HSK 3.0 grammar outline (CLEC/CTI, 2025-11/2026-07) as a topic index only, no syllabus text reproduced, no reuse licence granted; not reviewed by a native speaker |
 | `ja-grammar` | grammar | ja | Japanese grammar lessons (≈ JLPT N5 to N1), 4–8 examples per grammar point with kana readings, written for qinqin, CC BY 4.0; qinqin's own selection and order of points (the JLPT publishes no grammar list); not reviewed by a native speaker |
 | `ja-lemma` | lemma-rules | ja | the Japanese lemmatizer rule table (`rules.json`, format `rules-json`, `docs/contracts/lemma/`), byte-identical to the table built into the server; written for qinqin, CC BY 4.0; a fresh server installs it and `qinqin serve` refreshes it from an upgraded image |
+| `zh-course` | course | zh | the Chinese course (≈ HSK 1–4): a start section and four level sections, 65 units with themes, grammar lessons, the hanzi each introduces and, in ≈ HSK 1–2, a reading text with a translation (`course.json`, format `course-json`, `docs/contracts/courses/`); no words: the server fills the units from `hsk-words`; written for qinqin, CC BY 4.0, reviewed by agents (`REVIEW.md`) |
+| `ja-course` | course | ja | the Japanese course (≈ JLPT N5–N3): a start section (sounds, hiragana, katakana) and three level sections, 73 units, the kanji each introduces and, in ≈ N5–N4, a reading text with a translation; filled from `jlpt-words`; written for qinqin, CC BY 4.0, reviewed by agents (`REVIEW.md`) |
 
 Components pack format (`format: components-tsv`): `components.tsv` holds one
 character per line, the character, a tab and its parts separated by spaces
@@ -90,7 +92,7 @@ form, so next to CC-CEDICT and JMdict they would add a second,
 part-of-speech-less card for the same words, ranked first. The LEVEL packs
 `hsk-mini` (word levels with derived character levels) and `jlpt-mini` (an N5
 sample) would add a second, duplicate badge next to the bundled HSK 3.0 and
-JLPT kanji lists (and a locally installed JLPT vocabulary); the map hides them even when seeded. Seed them explicitly
+JLPT kanji and word lists; the map hides them even when seeded. Seed them explicitly
 (for a small demo database, or alongside the full bundle) with
 `qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
 The seed tests use them as small fixtures.
@@ -119,6 +121,7 @@ KANJIDIC2 licence as `LICENSE-KANJIDIC2`):
 | `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
 | `joyo-grades` | levels | ja | Jōyō kanji by school grade | the 2,136 jōyō kanji by KANJIDIC2 grade, unit `character`: Grade 1 80, Grade 2 160, Grade 3 200, Grade 4 202, Grade 5 193, Grade 6 191, Secondary 1,110; jinmeiyō excluded; derived by `scripts/prepare-standard-levels.mjs` (the map's Group-by hides it, the built-in Grade covers it) | CC BY-SA 4.0, EDRDG (derived) |
 | `tgh-chars` | levels | zh | 通用规范汉字表 (2013) levels | the 8,105 characters of the State Council table by `kTGH` serial, unit `character`: Level 1 3,500, Level 2 3,000, Level 3 1,605; derived by `scripts/prepare-standard-levels.mjs` | Unicode License v3 (derived from Unihan) |
+| `jlpt-words` | levels | ja | JLPT words (approximate) | an **estimate** of the JLPT vocabulary levels (no official list since 2010), unit `word`, levels ≈ N5 509, ≈ N4 1,475, ≈ N3 3,778, ≈ N2 2,599, ≈ N1 1,638 (9,999 JMdict words as `{"form", "reading"}`, kana-only words as their kana). Frequency (the Jiten rank) is the primary signal; a reviewed core of 538 N5/N4 textbook words (`scripts/jlpt-words/core.tsv`, CC BY 4.0) sets its own level; JMdict's priority tags lift basic words, harder kanji raise a word by one level at most; grammar pieces, counted amounts, particles and noise are left out; Jiten ranks no JMdict entry matches are listed in `UNMATCHED.tsv`. Built by `scripts/prepare-jlpt-words.mjs` from `jiten-frequency`, `jmdict`, `jlpt-kanji`, `joyo-grades` and `scripts/jlpt-words`; see `docs/sources.md` | CC BY-SA 4.0 (adaptation of the Jiten ranks and JMdict; the core list CC BY 4.0); kanjiapi.dev's MIT notice as `LICENSE-kanjiapi.dev` |
 | `jlpt-kanji` | levels | ja | JLPT kanji (approximate) | kanji by approximate JLPT level, unit `character`: N5 80, N4 166, N3 377, N2 369, N1 1,395. Base: kanjiapi.dev `jlpt.tsv` (2,211 kanji, levels kept; provenance not stated upstream; unofficial, as every N5–N1 list is; its N1 holds 247 jinmeiyō name kanji). Gap fill: 176 kanji it omits (分 可 無 的 …) placed from KANJIDIC2's old JLPT level (19) or school grade (157), see `docs/sources.md` | MIT, © 2023 Iridium Szreter; derived levels CC BY-SA 4.0, EDRDG |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
@@ -127,46 +130,20 @@ written form (`"外"`) or `{"form": "風", "reading": "かぜ"}`; the optional
 reading makes a word-unit import prefer the word that has both the form and
 the reading (風 かぜ rather than the usually-kana 振り ふり, also written 風)
 and falls back to the form alone when no word has both. Plain-string packs
-are unchanged. The optional local `jlpt-words` pack carries the readings of its source.
+are unchanged. The `jlpt-words` pack gives a reading with every kanji word.
 
-JLPT vocabulary is NOT bundled. Its upstream licence chain could not be verified,
-so it is an optional, local-only pack that you generate yourself (see the steps
-below); the repository holds no JLPT vocabulary data. The reason: open-anki-jlpt-decks
-labels itself MIT (© 2020 Jamie Sinclair), but its README says "Original deck
-data was taken from https://github.com/chyyran/jlpt-anki-decks, which were
-based on decks from tanos.co.uk"; the tanos.co.uk lists (Jonathan Waller) are
-described as Creative Commons Attribution, which was not verified here (the
-site was unreachable). Expressions are cleaned (variants split on ";", notes
-in parentheses and affix tildes removed, patterns dropped, a する verb with a
-stem of two or more characters reduced to its noun: 勉強する → 勉強, 関する
-stays) and each form with its reading kept at its easiest level; kana
-spellings of words JMdict writes with kanji (けんか, よい) do not resolve and
-are skipped at seed time (168 of 8,008 entries against the bundled JMdict).
-
-Generating JLPT vocabulary locally (one level pack, `jlpt-words` "JLPT
-(vocabulary)": N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries), from the
-repository root:
-
-```bash
-mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
-base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
-for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
-curl -fsSLo LICENSE $base/LICENSE
-cd -
-node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
-qinqin seed --packs plugins/data,plugins/data-local
-```
-
-The converter fails with a clear message if one of the six files is missing.
-Under Docker, put the output on a host directory, mount it (for example
-`./plugins/data-local:/opt/qinqin/local:ro`) and run
-`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`
-(see the wiki page `docs/wiki/Admin-deploying.md`, "What `qinqin seed` does"). Once seeded, the
-map's "Group by" and the Sources page pick it up like any installed scheme. The
-generated `ATTRIBUTION.md` quotes the README chain, names the pinned upstream
-commit, records the SHA-256 of the input files and says "not bundled, local use
-only"; do not commit or redistribute the output (`plugins/data-local/` is
-gitignored).
+`node scripts/prepare-jlpt-words.mjs` rebuilds `jlpt-words` from the bundled
+`jiten-frequency`, `jmdict`, `jlpt-kanji` and `joyo-grades` and the project
+lists in `scripts/jlpt-words/` (byte for byte the same on a re-run;
+`--calibrate` prints the threshold fit, the anchors and the other checks).
+It can also read an optional base list (`--base <dir>`: n5.csv … n1.csv with
+`expression` and `reading` columns and its `LICENSE`), whose words keep their
+level while the estimate fills the rest; that is not done here, because the
+licence of the only candidate (Jonathan Waller's lists, tanos.co.uk) is not
+confirmed. The former local-only JLPT vocabulary pack
+(`prepare-level-packs.mjs --jlpt-vocab`, the same id `jlpt-words`) is gone:
+delete `plugins/data-local/jlpt-words` if you generated it: both have the id
+`jlpt-words`, and a seed keeps whichever it imports last (path order).
 
 HSK 3.0 words (`hsk-words`) and characters (`hsk-chars`) come from the official syllabus 《HSK 考试大纲》 /
 Syllabus for the Chinese Proficiency Test, published 2025-11 and effective

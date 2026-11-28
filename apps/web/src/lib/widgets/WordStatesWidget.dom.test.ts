@@ -2,12 +2,12 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import WordStatesWidget from './WordStatesWidget.svelte';
 
 let ctx: TestContext = testContext();
@@ -27,7 +27,7 @@ beforeEach(() => {
 			{ id: 'c-vocab-2', kind: 'vocab', entryId: 2, deckIds: ['d1'], createdAt: '2026-01-01T00:00:00.000Z' }
 		],
 		reviews: [],
-		merged: 0
+		merged: 0, grammarRuns: [], courseEvents: []
 	});
 });
 afterEach(() => {

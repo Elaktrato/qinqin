@@ -16,12 +16,14 @@
 	import { promptItems } from '$lib/lookups/lookups';
 	import { addEntries, loadPage, type PageData } from '$lib/lookups/pageData';
 	import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { Button, Section, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	const session = useSession();
+	const roman = useRomanisation();
 
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
@@ -268,7 +270,7 @@
 								onchange={(e) => toggle(row.entryId, e.currentTarget.checked)}
 							/>
 							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(ws?.language)}>{row.written}</a>
-							{#if row.reading}<span class="reading" lang={wordReadingLang(ws?.language)}>{row.reading}</span>{/if}
+							{#if roman.text(row.reading, ws?.language ?? '')}<span class="reading" lang={wordReadingLang(ws?.language)}>{row.reading}</span>{/if}
 						{/if}
 						<span class="count">×{row.count}</span>
 						<span class="when">{t('lookups.last', { day: dayLabel(row.lastDay, today) })}</span>

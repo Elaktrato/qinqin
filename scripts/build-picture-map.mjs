@@ -7,8 +7,10 @@
 // metadata (scripts/images/pins.json: OpenMoji openmoji.json, the CLDR emoji
 // annotations of zh and ja, Mulberry symbol-info.csv), the committed
 // dictionaries (plugins/data/cedict, plugins/data/jmdict) and the hand-made
-// scripts/images/<pack>/manual.tsv, runs the matcher (scripts/picture-match.mjs)
-// and writes scripts/images/<pack>/map.tsv, which is committed. The pack
+// scripts/images/<pack>/manual.tsv, runs the matcher (scripts/picture-match.mjs),
+// drops the rows the picture review removed (scripts/images/<pack>/removed.tsv,
+// #274; scripts/picture-review.mjs) and writes scripts/images/<pack>/map.tsv,
+// which is committed. The pack
 // builder (prepare-images-pack.mjs) turns a map into a pack at image build time.
 //
 // --report writes review-<pack>-<lang>.tsv: the words the matcher did not
@@ -28,6 +30,7 @@ import {
 	MANUAL_HEADER,
 	MAP_HEADER,
 	applyManual,
+	applyRemovals,
 	formatTsv,
 	mulberryConcepts,
 	openmojiConcepts,
@@ -57,6 +60,10 @@ function args() {
 
 const readManual = (pack) => {
 	const f = join(root, 'scripts/images', pack, 'manual.tsv');
+	return existsSync(f) ? parseTsv(readFileSync(f, 'utf8'), MANUAL_HEADER) : [];
+};
+const readRemoved = (pack) => {
+	const f = join(root, 'scripts/images', pack, 'removed.tsv');
 	return existsSync(f) ? parseTsv(readFileSync(f, 'utf8'), MANUAL_HEADER) : [];
 };
 
@@ -126,7 +133,7 @@ async function main() {
 		const manual = readManual(pack);
 		const missing = manual.filter((m) => !words[m.language]?.has(m.target));
 		if (missing.length) die(`manual.tsv of ${pack}: not in the dictionary: ${missing.map((m) => m.language + ':' + m.target).join(', ')}`);
-		const rows = sortRows(applyManual(out[pack], manual, new Set(concepts.map((c) => c.id))));
+		const rows = sortRows(applyManual(applyRemovals(out[pack], readRemoved(pack)), manual, new Set(concepts.map((c) => c.id))));
 		writeFileSync(join(root, 'scripts/images', pack, 'map.tsv'), formatTsv(MAP_HEADER, rows));
 		const perLang = Object.fromEntries(LANGS.map((l) => [l, rows.filter((r) => r.language === l).length]));
 		console.log(`${pack}: ${rows.length} map rows`, perLang, `${new Set(rows.map((r) => r.concept)).size} pictures`);

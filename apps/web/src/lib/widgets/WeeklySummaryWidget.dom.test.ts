@@ -4,9 +4,9 @@ import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
-vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
+vi.mock('$lib/studycore/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
 
-import { onContextStale } from '$lib/study/currentContext';
+import { onContextStale } from '$lib/studycore/currentContext';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
 import { weekOf } from '$lib/weekly/week';
@@ -89,6 +89,14 @@ describe('WeeklySummaryWidget', () => {
 		expect(screen.getByRole('link', { name: 'See the week' }).getAttribute('href')).toBe('/stats/week');
 		expect(container.querySelectorAll('ol > li')).toHaveLength(7);
 		expect(loadWeekCharacters).not.toHaveBeenCalled();
+	});
+
+	it('has no link to the Week tab while Stats is switched off; the week still shows (#295)', async () => {
+		ctx.session.features.set({ list: [{ id: 'stats', enabled: false }], status: 'ready' });
+		render(WeeklySummaryWidget, { context: ctx.context });
+		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		expect(screen.queryByRole('link', { name: 'See the week' })).toBeNull();
+		ctx.session.features.set({ list: [], status: 'idle' });
 	});
 
 	it('asks for a workspace without one', async () => {

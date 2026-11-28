@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import routes from './routes.fixture.json';
 import { CACHEABLE_PULL_COLLECTIONS, classify, normalizeUrl, type ReqLike } from './classify';
-import { STUDY_COLLECTIONS } from '../../study/rows';
+import { STUDY_COLLECTIONS } from '$lib/studycore/rows';
 
 const ORIGIN = 'https://qinqin.example';
 const ctx = { origin: ORIGIN, shellUrls: new Set(['/_app/immutable/entry/start.abc.js', '/_app/version.json']) };
@@ -259,6 +259,7 @@ describe('classify: the server route table', () => {
 		'GET /api/rows/{key}',
 		'GET /api/events',
 		'GET /api/entries/{id}',
+		'GET /api/images/reports',
 		'GET /api/themes',
 		'GET /api/fonts'
 	]);

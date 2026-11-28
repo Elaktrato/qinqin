@@ -41,7 +41,7 @@ const ids = (list: WidgetDef[]) => list.map((w) => w.id);
 
 describe('DEFAULT_LAYOUT', () => {
 	it('is today’s home: the heatmap, the flashcards summary, the daily goal, then this week', () => {
-		expect(DEFAULT_LAYOUT).toEqual(['activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary']);
+		expect(DEFAULT_LAYOUT).toEqual(['course-continue', 'activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary']);
 	});
 
 	it('a stored layout without this week stays without it', () => {

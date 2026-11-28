@@ -1,5 +1,5 @@
 // The one I/O of daily goals: a workspace's study history (goal row,
-// reviews, vacations, limits; cached and shared, study/data.ts loadStudyHistory) plus one
+// reviews, vacations, limits; cached and shared, studycore/data.ts loadStudyHistory) plus one
 // activity window of that workspace. Both rings (home widget, flashcards
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
@@ -8,9 +8,9 @@ import type { Session } from '$lib/context/session.svelte';
 import { errorText } from '$lib/api/apiErrors';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
-import { loadStudyHistory } from '../study/data';
-import { effectiveLimits } from '../study/limits';
-import { vacationRuns } from '../study/vacation';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { effectiveLimits } from '$lib/studycore/limits';
+import { vacationRuns } from '$lib/studycore/vacation';
 import { addDays } from '../time/studyDay';
 import { NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
 import { activityType, goalOn, metricsBetween, type GoalsRow } from './goals';

@@ -13,7 +13,7 @@
 	import { t } from '$lib/i18n';
 	import { formatPercent } from '$lib/i18n/format';
 	import { here } from '$lib/routing/here';
-	import { saveConfig } from '$lib/study/session';
+	import { saveConfig } from '$lib/features/flashcards/session/session';
 	import { Button, Chip, Section, Select } from '$lib/ui';
 	import { nonEmptyLevels } from './declare';
 	import { loadKnownIndex } from './knownIndexLoad';

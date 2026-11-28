@@ -4,10 +4,11 @@
 	// write or a posted event of the workspace; a slower answer for another
 	// workspace is dropped.
 	import { untrack } from 'svelte';
-	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
+	import { ALL_WORKSPACES, onStudyChange } from '$lib/studycore/data';
 	import MilestoneCard from './MilestoneCard.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from './loadMilestones';
 	import { useSession } from '$lib/context/context';
+	import { STATS_ID, featureKnownOff } from '$lib/features';
 
 
 	const session = useSession();
@@ -63,4 +64,4 @@
 </script>
 
 <!-- Always rendered: the status region must exist before the card's text arrives. -->
-<MilestoneCard {view} ondismiss={dismiss} />
+<MilestoneCard {view} ondismiss={dismiss} historyLink={!featureKnownOff(STATS_ID, session.features)} />

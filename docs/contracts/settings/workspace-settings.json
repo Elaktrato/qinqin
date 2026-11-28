@@ -38,19 +38,43 @@
    "key": "hints",
    "shape": "object: hint kind -> card kind -> \"always\" | \"hint\" | \"never\"",
    "default": "see cards/hints.json (its own parse rules; not repeated here)",
-   "owner": "apps/web/src/lib/study/hints.ts"
+   "owner": "apps/web/src/lib/features/flashcards/face/hints.ts"
   },
   {
    "key": "starter",
    "shape": "object: {enabled: boolean, scope: \"base\" | \"all\"}",
    "default": "enabled false, scope base, member by member (see starter/README.md)",
-   "owner": "apps/web/src/lib/study/starter.ts"
+   "owner": "apps/web/src/lib/starter/starter.ts"
   },
   {
    "key": "visualAids",
    "shape": "object: aid (pictures, toneColors, toneContour, anatomy) -> boolean",
    "default": "each switch true; see aids/visual-aids.json",
    "owner": "apps/web/src/lib/aids/visualAids.ts"
+  },
+  {
+   "key": "romanisation",
+   "shape": "object: romanisation type (pinyin, bopomofo, romaji) -> \"always\" | \"never\"",
+   "default": "each type always; see settings/romanisation.json",
+   "owner": "apps/web/src/lib/languages/romanisation.ts"
+  },
+  {
+   "key": "interfaceLanguage",
+   "shape": "string: a language tag (i18n/language-tags.json, not empty)",
+   "default": "absent: use the account's interface language; see settings/interface-language.json",
+   "owner": "apps/web/src/lib/i18n/workspaceLanguage.ts"
+  },
+  {
+   "key": "masteryMap",
+   "shape": "object {grading: built-in key | \"pack:<packId>\", includeOutside: boolean, levels: {packId: [level ord]}}",
+   "default": "the language's default grading, outside off, every level; see settings/mastery-map.json",
+   "owner": "apps/web/src/lib/stats/mapGrading.ts"
+  },
+  {
+   "key": "tones",
+   "shape": "object: {showSandhi: boolean, gradeSpoken: boolean}",
+   "default": "showSandhi true, gradeSpoken false, member by member; see settings/tones.json",
+   "owner": "apps/web/src/lib/exercises/toneSettings.ts"
   }
  ],
  "parse": [
@@ -364,6 +388,120 @@
     "status": 200,
     "settings": {
      "small": "x"
+    }
+   }
+  },
+  {
+   "name": "one romanisation switch at a time",
+   "note": "hiding pinyin keeps a stored bopomofo mode and every other key (#284)",
+   "stored": {
+    "romanisation": {
+     "bopomofo": "never"
+    },
+    "hints": {
+     "reading": {
+      "vocab": "hint"
+     }
+    }
+   },
+   "patch": {
+    "romanisation": {
+     "pinyin": "never"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "romanisation": {
+      "bopomofo": "never",
+      "pinyin": "never"
+     },
+     "hints": {
+      "reading": {
+       "vocab": "hint"
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "a workspace's interface language",
+   "note": "set beside the other keys (#297)",
+   "stored": {
+    "romanisation": {
+     "pinyin": "never"
+    }
+   },
+   "patch": {
+    "interfaceLanguage": "de"
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "romanisation": {
+      "pinyin": "never"
+     },
+     "interfaceLanguage": "de"
+    }
+   }
+  },
+  {
+   "name": "back to the account's interface language",
+   "note": "null removes the key: \"use my account setting\" (#297)",
+   "stored": {
+    "interfaceLanguage": "de",
+    "audioAutoplay": true
+   },
+   "patch": {
+    "interfaceLanguage": null
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "audioAutoplay": true
+    }
+   }
+  },
+  {
+   "name": "the mastery map, one member at a time",
+   "note": "a study set of one pack is replaced as a whole, another pack's set is kept; null deletes a set (#163)",
+   "stored": {
+    "masteryMap": {
+     "grading": "pack:hsk-chars",
+     "levels": {
+      "hsk-chars": [
+       0,
+       1
+      ],
+      "hsk-words": [
+       2
+      ]
+     }
+    }
+   },
+   "patch": {
+    "masteryMap": {
+     "includeOutside": true,
+     "levels": {
+      "hsk-chars": [
+       0
+      ],
+      "hsk-words": null
+     }
+    }
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "masteryMap": {
+      "grading": "pack:hsk-chars",
+      "includeOutside": true,
+      "levels": {
+       "hsk-chars": [
+        0
+       ]
+      }
+     }
     }
    }
   }

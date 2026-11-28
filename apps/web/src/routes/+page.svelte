@@ -10,15 +10,20 @@
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import PlacementOffer from '$lib/placement/PlacementOffer.svelte';
 	import StarterOffer from '$lib/starter/StarterOffer.svelte';
+	import StartOffer from '$lib/starter/StartOffer.svelte';
 	import LevelCheckOffer from '$lib/placement/LevelCheckOffer.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
-	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { homeEmptyReason, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { heldLayout, refreshLayout } from '$lib/widgets/homeData';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { useSession } from '$lib/context/context';
 
 
 	const session = useSession();
 	let query = $state('');
+	// Where the workspace's language has a course, its start card stands in for the Starter and placement offers
+	// (#225); they wait until it has settled, so they never flash in first. null: not settled yet.
+	let courseStart = $state<boolean | null>(null);
 
 	// The greeting follows the device's hour; the date line is the learner's
 	// today (their study-day zone), which can differ near midnight.
@@ -30,9 +35,12 @@
 
 	// The user's home layout (null = none stored, so the default). Nothing
 	// renders until it is known, so a custom order never flashes as the
-	// default first; a failed load falls back to the default quietly.
-	let stored = $state<string[] | null>(null);
-	let layoutReady = $state(false);
+	// default first; a failed load falls back to the default quietly. A layout
+	// this session (or this user's device copy) holds shows at once and is
+	// refreshed behind it (#290).
+	const held = heldLayout(session);
+	let stored = $state<string[] | null>(held?.ids ?? null);
+	let layoutReady = $state(held !== null);
 
 	// Feature widgets join once the shared feature switches are loaded; until
 	// then, or when they failed, only the core widgets can be shown.
@@ -42,12 +50,16 @@
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
 	const switchesSettled = $derived(session.features.status === 'ready' || session.features.status === 'error');
+	// A refresh behind the held study rows or log failed (#290): the widgets keep
+	// what they show, and one quiet line says it may be out of date.
+	const notRefreshed = $derived(session.workspaces.current !== null && session.study.refresh.failed(session.workspaces.current.id));
 
 	onMount(async () => {
 		try {
-			stored = await loadLayout();
+			stored = await refreshLayout(session);
 		} catch {
-			stored = null;
+			// The held layout stays; with none, the default.
+			if (!layoutReady) stored = null;
 		} finally {
 			layoutReady = true;
 		}
@@ -70,8 +82,11 @@
 	</header>
 
 	<EmailBanner />
-	<PlacementOffer />
-	<StarterOffer />
+	<StartOffer onsettle={(applies) => (courseStart = applies)} />
+	{#if courseStart === false}
+		<PlacementOffer />
+		<StarterOffer />
+	{/if}
 	<LevelCheckOffer />
 
 	<form class="search" role="search" onsubmit={search}>
@@ -91,6 +106,10 @@
 
 	<!-- Not a widget: a stored layout must never hide it (milestones contract). -->
 	<HomeMilestones />
+
+	{#if notRefreshed}
+		<p class="not-refreshed" role="status">{t('app.home.notRefreshed')}</p>
+	{/if}
 
 	{#if layoutReady}
 		{#if placed.length > 0}
@@ -167,6 +186,17 @@
 
 	.widget {
 		min-width: 0;
+	}
+
+	/* A widget with nothing to show renders nothing (Continue course without a course, #225): no empty grid cell. */
+	.widget:empty {
+		display: none;
+	}
+
+	.not-refreshed {
+		margin: var(--space-4) 0 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
 	}
 
 	.empty {

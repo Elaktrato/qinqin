@@ -5,20 +5,20 @@
 	import { t } from '$lib/i18n';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
-	import { onContextStale } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/studycore/currentContext';
 	import { errorText } from '$lib/api/apiErrors';
+	import { onStudyChange, touches } from '$lib/studycore/data';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
 	const SETTINGS = '/settings?tab=study';
 
-	let goal = $state.raw<GoalView | null>(null);
-	let loading = $state(true);
-	let error = $state('');
-	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
+	// The last goal of this workspace shows at once on a revisit (#290).
+	const shown = new WidgetLoad<GoalView>(session, 'daily-goal', session.workspaces.current?.id ?? null);
+	const goal = $derived(shown.value);
 
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Offline with an activity goal today: the error line, not "no longer counted".
@@ -26,41 +26,40 @@
 	const status = $derived<WidgetStatus>(
 		workspaceId === null
 			? 'no-workspace'
-			: loading
+			: shown.loading
 				? 'loading'
-				: error || activityFailed
+				: shown.error || activityFailed
 					? 'error'
 					: 'ready'
 	);
-	const shownError = $derived(error || (activityFailed ? (goal?.activityError ?? '') : ''));
+	const shownError = $derived(shown.error || (activityFailed ? (goal?.activityError ?? '') : ''));
 	const hasGoal = $derived(goal !== null && (goal.today.status !== 'none' || goal.today.unavailable));
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		error = '';
 		if (workspace === null) {
-			goal = null;
-			loading = false;
+			shown.clear();
 			return;
 		}
-		loading = true;
-		try {
-			const next = await loadGoalStatus(session, workspace, { force });
-			if (seq !== requestSeq) return;
-			goal = next;
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			goal = null;
-			error = errorText(err, t('widgets.goal.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await shown.run(workspace, () => loadGoalStatus(session, workspace, { force }), (err) => errorText(err, t('widgets.goal.loadFailed')));
 	}
 
 	$effect(() => {
 		void load(workspaceId);
 	});
 	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
+	// A write, a refresh behind the held rows (#290) or a posted review moves the goal.
+	$effect(() => {
+		const id = workspaceId;
+		const again = (touched: number): void => {
+			if (touches(touched, id)) void load(id);
+		};
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
+		return () => {
+			offLog();
+			offWrite();
+		};
+	});
 </script>
 
 <WidgetCard
@@ -70,6 +69,7 @@
 	noWorkspaceText={t('widgets.goal.noWorkspace')}
 	loadingText={t('widgets.goal.loading')}
 	error={shownError}
+	stale={shown.stale}
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}

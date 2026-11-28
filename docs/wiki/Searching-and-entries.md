@@ -25,6 +25,18 @@ Results are grouped by total stroke count, at most 300 at first (**Show all** sh
 
 An entry is one dictionary headword, either a **word** or a **character** (kanji or hanzi).
 
+- **Everyday meanings first.** Slang, vulgar and derogatory meanings (CC-CEDICT's "(slang)", "(vulgar)" and
+  "(derog.)" lines, JMdict's `vulg`, `sl` and `derog` senses, and a short list of explicit words the dictionaries
+  leave unmarked, such as 黄色 "pornographic") are shown last, marked "slang", "vulgar" or "derogatory". On cards they
+  are folded behind **Show n more meanings**, in the Reader's lookup they come after **Show more senses**, and lists
+  that show one meaning (search results, Starter words, a word's characters) never pick them; the word page shows
+  them all. A word whose only meaning is vulgar shows it, marked (docs/contracts/senses).
+- **Surname, abbreviation and variant lines after the everyday meaning.** A CC-CEDICT line that starts "surname",
+  "abbr. for", "variant of", "see", "used in", "(archaic)" or "(classical)", and a JMdict sense marked archaic,
+  obsolete, rare, dated or a surname, comes after the everyday meanings everywhere: 书 is "book" before "abbr. for
+  書經", 水 "water" before "surname Shui", 云 "cloud" before "(classical) to say". JMdict's own order is kept otherwise.
+- **A card keeps its word's reading.** The Starter words that are learned in one reading (猫 māo, 喝 hē, 书 shū …)
+  remember it once added: their card shows only that reading's meanings (喝: "to drink", not "to shout").
 - **Meanings keep their source.** Each sense is tagged with the dictionary it comes from, with its licence and attribution, so several dictionaries can describe the same entry. A licence the app recognises exactly (CC BY and BY-SA 3.0/4.0, CC0 1.0 and the Unicode License v3, by name or SPDX id) links to its text; any other licence name is shown as written. Hidden dictionaries ([Workspaces and languages](Workspaces-and-languages)) are filtered out.
 - **Chinese**: one entry per simplified written form; traditional forms are forms of the same entry, so searching 學習 finds 学习. A written form with several readings (行 xíng, háng) is one entry with all readings.
 - **Japanese**: one entry per JMdict word, with all forms and readings and part-of-speech tags per sense. Homographs are separate entries.
@@ -36,7 +48,7 @@ An entry is one dictionary headword, either a **word** or a **character** (kanji
 - **The header** shows the word large, a Chinese variant beside it labelled traditional or simplified, the readings with a play button, and chips for the levels, the frequency rank, the kind and the decks containing the entry. **Add to deck** is the main action; **Choose a deck** picks another deck. On a phone the same add button sits in the top bar.
 - **Characters** in a word name each character's own entry; each row shows the reading, gloss, radical, stroke count and level when they are known. **Stroke order** plays stroke by stroke with a progress line (勤 · 3 of 13), pauses, and loops.
 - **Frequency**: a rank chip appears where a frequency pack covers the word. Frequency also orders lookup results when a pack exists.
-- **Example sentences** come from installed sentence packs plus your own. Sentences you save are private to you.
+- **Example sentences** come from installed sentence packs plus your own. Sentences you save are private to you; one saved from a book says which book and chapter, and opens it there. Each of your own sentences (saved from the [reader](Reader#saving-more-sentences-of-a-word)) has **Remove**, which also removes the Build the sentence cards made from it.
 - **AI examples**: when a word has fewer than three example sentences, the entry offers [**Generate examples**](#ai-examples) written by your own AI provider.
 - **Audio**: where an audio pack covers a word, a play button appears. Clips are credited on the Sources page.
 

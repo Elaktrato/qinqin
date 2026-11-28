@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loadStrokeData } from '$lib/study/strokeData';
+	import { loadStrokeData } from '$lib/writing/strokeData';
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/routing/pageTitle';
@@ -12,9 +12,9 @@
 	import { getEntry } from '$lib/api/entries';
 	import { segmentBatch } from '$lib/api/segment';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
-	import { withShownWritten } from '$lib/study/cardView';
+	import { withShownWritten } from '$lib/features/flashcards/cards/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
-	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
+	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/audio/cue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
 	import ClozeCard from '$lib/features/flashcards/cards/ClozeCard.svelte';
@@ -39,7 +39,7 @@
 		tierForCard,
 		type CardResult,
 		type FlowItem
-	} from '$lib/study/cardFlow';
+	} from '$lib/features/flashcards/session/cardFlow';
 	import {
 		backFrom,
 		pushStep,
@@ -47,8 +47,8 @@
 		regradeQueue,
 		replaceSessionReview,
 		type GradedStep
-	} from '$lib/study/regrade';
-	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
+	} from '$lib/features/flashcards/session/regrade';
+	import { companionEntryIds } from '$lib/features/flashcards/session/eligibility.svelte';
 	import {
 		acceptedClozeAnswers,
 		clozeCandidates,
@@ -57,29 +57,34 @@
 		resolveClozeShowing,
 		type ClozeMode,
 		type ClozePrompt
-	} from '$lib/study/cloze';
-	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
-import { contextForData } from '$lib/study/currentContext';
-import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
-import type { Run } from '$lib/study/vacation';
-	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	} from '$lib/exercises/cloze';
+	import { buriedLevelEntries, buriedNow } from '$lib/features/flashcards/session/siblings';
+import { contextForData } from '$lib/studycore/currentContext';
+import { IDENTITY_CLOCK, type StudyClock } from '$lib/studycore/studyClock';
+import type { Run } from '$lib/studycore/vacation';
+	import { LESSON_RUN_XP, dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/studycore/exp';
+	import type { GrammarRun } from '$lib/studycore/grammarRuns';
+	import ReviewRound from '$lib/features/grammar/review/ReviewRound.svelte';
+	import { GRAMMAR_ID, featureEnabled } from '$lib/features';
+	import type { CourseStep } from '$lib/studycore/courseCounting';
+	import type { DrillAnswer } from '$lib/studycore/drills';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
-	import { gradeItem } from '$lib/study/grade';
-	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
-	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
-	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { gradeItem } from '$lib/features/flashcards/session/grade';
+	import { DEFAULT_W } from '$lib/studycore/fsrsParams';
+	import { buildLevelPlan, type LevelUnit } from '$lib/features/flashcards/session/levelQueue';
+	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/features/flashcards/session/requeue';
+	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/features/flashcards/session/session';
 	import { safeFrom } from '$lib/routing/here';
-	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
-	import { addCard } from '$lib/study/commands/cards';
-	import { loadStudyData, withStudy } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { companionNote, sessionStartError, showCompanionNote } from '$lib/features/flashcards/session/sessionStart';
+	import { addCard } from '$lib/features/flashcards/commands/cards';
+	import { loadStudyData, withStudy } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import { getFrequencyPacks } from '$lib/api/frequency';
-	import { loadRanks } from '$lib/study/frequencyRanks';
-	import { loadLevelKeys } from '$lib/study/levelKeys';
-	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/study/session';
-	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
-	import { mixFlowQueue } from '$lib/study/sessionMix';
+	import { loadRanks } from '$lib/features/flashcards/session/frequencyRanks';
+	import { loadLevelKeys } from '$lib/features/flashcards/session/levelKeys';
+	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/features/flashcards/session/session';
+	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/features/flashcards/session/sessionOrder';
+	import { mixFlowQueue } from '$lib/features/flashcards/session/sessionMix';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -87,10 +92,10 @@ import type { Run } from '$lib/study/vacation';
 		type ReviewMeta,
 		type StudyCard,
 		type StudyCardKind
-	} from '$lib/study/types';
-	import { shuffleTokens, type SaladTier } from '$lib/study/wordSalad';
-	import { usableChars } from '$lib/study/writing';
-	import { hasStrokeData } from '$lib/study/strokeIndex';
+	} from '$lib/studycore/types';
+	import { shuffleTokens, type SaladTier } from '$lib/exercises/wordSalad';
+	import { usableChars } from '$lib/exercises/writing';
+	import { hasStrokeData } from '$lib/writing/strokeIndex';
 	import { newUlid } from '$lib/events/ulid';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
@@ -101,7 +106,8 @@ import type { Run } from '$lib/study/vacation';
 	import HintScope from '$lib/features/flashcards/face/HintScope.svelte';
 	import { pictureFor } from '$lib/aids/pictures';
 	import { readVisualAids } from '$lib/aids/visualAids';
-	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/study/hints';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	import { applyHints, hintsForEntry, readHintSettings, resolveHints, type HintKind, type HintMode } from '$lib/features/flashcards/face/hints';
 	import {
 		readStarterSettings,
 		replayStarter,
@@ -113,13 +119,13 @@ import type { Run } from '$lib/study/vacation';
 		usuallyKanaOf,
 		type StarterFront,
 		type StarterReview
-	} from '$lib/study/starter';
+	} from '$lib/starter/starter';
 	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
-	import { nextIntervals } from '$lib/study/scheduler';
-	import { longInterval } from '$lib/study/intervalText';
+	import { nextIntervals } from '$lib/studycore/scheduler';
+	import { longInterval } from '$lib/features/flashcards/session/intervalText';
 	import { formatNumber } from '$lib/i18n/format';
 	import Button from '$lib/ui/Button.svelte';
-	import Chip from '$lib/ui/Chip.svelte';
+	import Tag from '$lib/ui/Tag.svelte';
 	import Section from '$lib/ui/Section.svelte';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { useApp } from '$lib/context/context';
@@ -180,10 +186,10 @@ import type { Run } from '$lib/study/vacation';
 		if (!starterAppliesTo(starterSettings, current.entry.language, deckIds)) return null;
 		const word = { usuallyKana: profile === 'ja' && usuallyKanaOf(current.entry) };
 		const progress = replayStarter(profile, word, starterReviews.get(current.item.cardId) ?? []);
-		const front = starterFront(profile, progress.stage, word, current.entry);
+		const front = starterFront(profile, progress.stage, word, current.entry, { shows: romanisation.shows });
 		const kana = current.entry.readings.find((r) => r.type === 'kana')?.value ?? '';
 		const note = progress.justAdvanced
-			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana) })
+			? stageNote(profile, progress.stage, word, { katakana: /^[\u30a0-\u30ff]+$/.test(kana), shows: romanisation.shows })
 			: null;
 		return {
 			front,
@@ -193,6 +199,8 @@ import type { Run } from '$lib/study/vacation';
 	}
 	// The Picture hint (#212) is offered once the entry's picture is known and the Pictures visual aid is on.
 	const visualAids = $derived(readVisualAids(session.workspaces.current?.settings));
+	// Hidden romanisation (#284): the hidden readings are the last hint step.
+	const romanisation = useRomanisation();
 	let pictureTick = $state(0);
 	const hasPicture = (id: number): boolean => {
 		void pictureTick;
@@ -202,7 +210,7 @@ import type { Run } from '$lib/study/vacation';
 		resolveHints({
 			cardKind: current.item.kind,
 			settings: hintSettings,
-			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id) }),
+			entry: hintsForEntry(current.entry, { hasPicture: hasPicture(current.entry.id), romanisation: romanisation.prefs }),
 			forced: starterOf(current)?.forced
 		});
 	$effect(() => {
@@ -372,6 +380,12 @@ import type { Run } from '$lib/study/vacation';
 	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
 	let sessionVacation = $state.raw<readonly Run[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
+	// The workspace's grammar lesson runs: EXP and the streak count them (#277).
+	let grammarRuns = $state.raw<readonly GrammarRun[]>([]);
+	// And its drill answers (docs/contracts/drills/).
+	let drillAnswers = $state.raw<readonly DrillAnswer[]>([]);
+	// And its course steps (#225).
+	let courseSteps = $state.raw<readonly CourseStep[]>([]);
 	// Back (#131): the graded showings of this session (newest last) and the
 	// one shown again, if any (an index into `steps`; null: the current card).
 	let steps = $state.raw<GradedStep<Resolved>[]>([]);
@@ -484,17 +498,32 @@ import type { Run } from '$lib/study/vacation';
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
-	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
+	// Grammar review (#181): a session whose setup includes it runs the round after its cards (also when no card
+	// is due), while the grammar feature is on; its runs count in this session's EXP and the streak.
+	let grammarDone = $state(false);
+	let sessionGrammarRuns = $state.raw<readonly GrammarRun[]>([]);
+	const grammarOn = $derived(session.features.status === 'ready' && featureEnabled(GRAMMAR_ID, session.features.list));
+	const grammarPending = $derived(config.grammar === true && grammarOn && !grammarDone);
+	const sessionReady = $derived(!missingConfig && !workspaceMismatch && !loadError && !noWorkspace && !loading);
+	const showGrammar = $derived(sessionReady && grammarPending && (queue.length === 0 || (complete && viewing === null)));
+	const allGrammarRuns = $derived([...grammarRuns, ...sessionGrammarRuns]);
+
+	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns, drillAnswers, courseSteps));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf, allGrammarRuns, drillAnswers, courseSteps));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation));
-	// Per-kind XP of this session; whatever the kinds do not explain is
-	// the daily bonus.
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation, allGrammarRuns, drillAnswers, courseSteps));
+	// Per-kind XP of this session and the grammar runs' EXP; whatever they do not explain is the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
+	const grammarXp = $derived(sessionGrammarRuns.length * LESSON_RUN_XP);
 	const dailyBonusXp = $derived(
-		sessionXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
+		sessionXp - grammarXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
 	);
+
+	function grammarFinished(runs: GrammarRun[]): void {
+		sessionGrammarRuns = runs;
+		grammarDone = true;
+	}
 
 	async function loadEntry(entryId: number): Promise<void> {
 		if (entries[entryId] !== undefined || pendingEntryId === entryId) return;
@@ -538,6 +567,9 @@ import type { Run } from '$lib/study/vacation';
 		backfillLeft = 0;
 		reviews = [];
 		sessionReviews = [];
+		grammarRuns = [];
+		drillAnswers = [];
+		courseSteps = [];
 		steps = [];
 		backAt = null;
 		index = 0;
@@ -584,8 +616,17 @@ import type { Run } from '$lib/study/vacation';
 
 			// Offline (or answered from the saved copy): real cards only, see planCompanions.
 			offlineSession = !app.offline.online || app.offline.servedFromCacheAt !== null;
+			// Online, the server says which words can make which companion (#288):
+			// none is planned that would be dropped when shown.
+			if (!offlineSession) {
+				await session.eligibility.ensure(companionEntryIds(data.cards));
+				if (seq !== requestSeq) return;
+			}
 			const history = data.reviews;
 			reviews = history;
+			grammarRuns = data.grammarRuns;
+			drillAnswers = data.drillAnswers ?? [];
+			courseSteps = data.courseSteps ?? [];
 			weights = activeWeights(data);
 			const loaded = contextForData(session.zone, data, workspaceId);
 			sessionClock = loaded.clock;
@@ -641,7 +682,7 @@ import type { Run } from '$lib/study/vacation';
 					kinds,
 					ctx,
 					hasStrokes: hasStrokeData,
-					skip: loadIneligible(workspaceId),
+					skip: session.eligibility.skip(),
 					excludeEntries: buriedLevelEntries(buried, data.cards),
 					newKey: keyOf ?? undefined,
 					studyAll: config.studyAll === true
@@ -664,10 +705,12 @@ import type { Run } from '$lib/study/vacation';
 					deckSettings: data.deckSettings,
 					offline: offlineSession,
 					language: language ?? '',
-					// Words this tab already found unsuitable are not fetched again.
-					skip: loadIneligible(workspaceId),
+					// Words the server (or this session, when shown) found unsuitable.
+					skip: session.eligibility.skip(),
 					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
-					studyAll: config.studyAll === true
+					studyAll: config.studyAll === true,
+					// The mistake notebook's cards (#227): only these, when due.
+					onlyCards: config.cardIds === undefined ? undefined : new Set(config.cardIds)
 				});
 				queue = mixFlowQueue(plan.queue, history, mixOptions);
 				reserve = plan.reserve;
@@ -833,19 +876,14 @@ import type { Run } from '$lib/study/vacation';
 	 * dropIneligible removes an ineligible item (nothing is written); a
 	 * dropped companion is replaced by the next reserve companion while the
 	 * session's backfill bound lasts. A non-null `entry` that definitively
-	 * lacks what the kind needs (see `rememberDrop`) is remembered: this tab skips
-	 * the word for that kind in later sessions. Failures that may be
-	 * transient (a rejected resolution, missing stroke data) are not
-	 * remembered.
+	 * lacks what the kind needs (see `rememberDrop`) is ruled out in the
+	 * session's eligibility index: later plans and counts skip the word for
+	 * that kind. Failures that may be transient (a rejected resolution,
+	 * missing stroke data) are not.
 	 */
 	function dropIneligible(item: FlowItem, entry: Entry | null): void {
-		const workspaceId = sessionWorkspaceId;
-		if (
-			entry !== null &&
-			workspaceId !== null &&
-			rememberDrop(item, item.written ?? entry.written, entry)
-		) {
-			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
+		if (entry !== null && rememberDrop(item, item.written ?? entry.written, entry)) {
+			session.eligibility.ruleOut(item.kind, item.entryId);
 		}
 		if (item.reshow !== undefined) {
 			// A re-show that cannot be shown again is just skipped.
@@ -1060,8 +1098,8 @@ import type { Run } from '$lib/study/vacation';
 		}
 	}
 
-	/** deckLevelText: the card's first deck (General for general) and the level, "General · JLPT kanji N5". */
-	function deckLevelText(item: FlowItem): string | null {
+	/** The card's first deck (General for general) and its level ("JLPT kanji N5"), each a tag on the face (#286). */
+	function deckAndLevel(item: FlowItem): { deck: string | null; level: string | null } {
 		const deckId = (item.card?.deckIds ?? item.deckIds ?? [])[0];
 		const deck =
 			deckId === undefined ? '' : deckId === 'general' ? t('flashcards.deck.general') : (deckNames.get(deckId) ?? '');
@@ -1070,8 +1108,7 @@ import type { Run } from '$lib/study/vacation';
 		const level =
 			sessionLevel ||
 			(badge === undefined ? '' : t('study.session.levelName', { scheme: badge.schemeName, level: badge.levelName }));
-		if (deck && level) return t('study.session.deckLevel', { deck, level });
-		return deck || level || null;
+		return { deck: deck || null, level: level || null };
 	}
 
 	/** onCardDone unlocks grading and preselects the card's suggestion. */
@@ -1357,7 +1394,7 @@ import type { Run } from '$lib/study/vacation';
 <svelte:window onkeydown={onKeydown} />
 
 <div class="page-body session" class:open={viewing !== null || (currentItem !== undefined && !complete)}>
-	{#if missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0}
+	{#if (missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0) && !showGrammar}
 		<!-- The face and the summary carry their own h1; every state between them keeps the page outline. -->
 		<h1 class="visually-hidden">{t('study.session.title')}</h1>
 	{/if}
@@ -1383,16 +1420,21 @@ import type { Run } from '$lib/study/vacation';
 		</Section>
 	{:else if loading}
 		<p class="hint" role="status">{t('study.session.loading')}</p>
-	{:else if queue.length === 0}
+	{:else if showGrammar}
+		<ReviewRound embedded onDone={grammarFinished} />
+	{:else if queue.length === 0 && sessionGrammarRuns.length === 0}
 		<Section title={t('study.session.empty')} level={2}>
 			<p class="hint">{t('study.session.emptyText')}</p>
 			<div class="actions"><Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button></div>
 		</Section>
-	{:else if complete && viewing === null}
+	{:else if (complete || queue.length === 0) && viewing === null}
 		<h1 class="summary-title">{t('study.session.complete')}</h1>
 		<Section>
 			<div class="stats">
 				<Stat value={formatNumber(sessionReviews.length)} label={t('study.session.reviews', { count: sessionReviews.length })} />
+				{#if sessionGrammarRuns.length > 0}
+					<Stat value={formatNumber(sessionGrammarRuns.length)} label={t('study.session.grammar', { count: sessionGrammarRuns.length })} />
+				{/if}
 				{#if reshown > 0}
 					<Stat value={formatNumber(reshown)} label={t('study.session.reshows', { count: reshown })} />
 				{/if}
@@ -1405,6 +1447,9 @@ import type { Run } from '$lib/study/vacation';
 						<li>{KIND_LABELS[kind]} <strong>+{kindXp[kind]}</strong></li>
 					{/if}
 				{/each}
+				{#if grammarXp > 0}
+					<li>{t('study.session.grammarXp')} <strong>+{grammarXp}</strong></li>
+				{/if}
 				{#if dailyBonusXp > 0}
 					<li>{t('study.session.dailyBonus')} <strong>+{dailyBonusXp}</strong></li>
 				{/if}
@@ -1442,7 +1487,7 @@ import type { Run } from '$lib/study/vacation';
 		<StudyFace
 			{kindLabel}
 			onend={() => backToStudy(null, true)}
-			deckLevel={deckLevelText(item)}
+			{...deckAndLevel(item)}
 			cardLabel={t('study.session.cardLabel', { kind: kindLabel })}
 			headingLabel={t('study.session.cardHeading', {
 				kind: kindLabel,
@@ -1469,16 +1514,16 @@ import type { Run } from '$lib/study/vacation';
 		>
 			{#snippet chips()}
 				{#if viewing !== null}
-					<Chip>{t('study.session.regrade.chip', { grade: GRADE_NAMES[viewing.grade] })}</Chip>
+					<Tag>{t('study.session.regrade.chip', { grade: GRADE_NAMES[viewing.grade] })}</Tag>
 				{/if}
 				{#if item.kind === 'sentence' && shownCard !== null}
-					<Chip>{TIER_LABELS[shownCard.tier]}</Chip>
+					<Tag>{TIER_LABELS[shownCard.tier]}</Tag>
 				{/if}
 				{#if item.reshow !== undefined}
-					<Chip>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Chip>
+					<Tag>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Tag>
 				{/if}
 				{#if item.virtual && item.kind !== 'vocab'}
-					<Chip>{t('study.session.new')}</Chip>
+					<Tag>{t('study.session.new')}</Tag>
 				{/if}
 			{/snippet}
 			{#snippet note()}

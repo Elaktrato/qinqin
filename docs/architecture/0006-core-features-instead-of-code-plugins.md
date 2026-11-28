@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199, #185, #186, #204. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #185, #186, #204, #277, #222 (courses). A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -21,8 +21,8 @@ on 2026-11-23 to retire the code-plugin system (#199).
   plugin states as a separate concept and the generic plugin-data routes (once nothing uses them) are removed.
 - **Core features with feature switches.** Each feature is part of the core and has a per-user feature switch
   (synced, backed up). Grammar and the journal become core features like flashcards and the reader:
-  - grammar lesson progress moves from plugin data to typed rows with a contract; its content still comes from
-    `grammar` data packs;
+  - grammar lesson progress moves from plugin data to typed rows with a contract (since #277: study events); its
+    content still comes from `grammar` data packs;
   - journal entries, AI reviews and annotations, photos and settings move from plugin data to typed storage with
     a contract; the AI provider service stays core and is shared with #185 and #186.
 - **Data packs stay** the one content extension mechanism, unchanged.
@@ -42,12 +42,14 @@ on 2026-11-23 to retire the code-plugin system (#199).
 
 | Part | Server | Web | Contract |
 | --- | --- | --- | --- |
-| Feature switches | `server/internal/features/` (table `feature_switches`, migration 047), `GET /api/features`, `PUT /api/features/{id}` | `apps/web/src/lib/features/` (`index.ts`: the four core features; `switches.svelte.ts`: the session's switches), Settings → Features | `docs/contracts/features/` |
+| Feature switches | `server/internal/features/` (table `feature_switches`, migration 047; since 055 without a list of feature ids, `features.IDs` is the only one), `GET /api/features`, `PUT /api/features/{id}` | `apps/web/src/lib/features/` (`index.ts`: the seven core features; `FeatureGate.svelte`: the switched-off notice; `switches.svelte.ts`: the session's switches), Settings → Features | `docs/contracts/features/` |
 | Journal | `server/internal/journal/` (tables `journal_entries`, `journal_reviews`, `journal_suggestions`, `journal_settings`, migration 044; the conversation partner of #185: `journal_conversations`, `journal_messages`, migration 048, `conversation.go`), `/api/journal/*` | `apps/web/src/lib/features/journal/` (the partner in `conversation/`), route `/journal` (`/journal/talk`) | `docs/contracts/journal/` (`conversations.json`) |
 | AI examples (#186, a core capability on the shared AI service, no switch) | `server/internal/sentences/examples.go` (kept ones are own `sentences` rows with `ai_provider`/`ai_model`; `example_drafts`, `example_reports`, migration 049), the `examples` task in `server/internal/ai/examples.go`, `/api/entries/{id}/examples*` | `apps/web/src/lib/entry/examples/`, `apps/web/src/lib/api/examples.ts`, the entry page | `docs/contracts/examples/` |
-| Grammar progress | `server/internal/grammar/progress.go` (table `grammar_progress`, migration 045), `/api/grammar/progress` | `apps/web/src/lib/features/grammar/`, route `/grammar` | `docs/contracts/grammar/` |
+| Grammar progress (#277: events since v0.9.0) | no table of its own: a finished lesson run is a `grammar` study event (`server/internal/grammar/events.go`: the type, the payload and the conversion of old backup rows; the activity rule in `server/internal/stats/rules.go`); migration 056 turned the rows of `grammar_progress` (045) into events and dropped it | `apps/web/src/lib/studycore/grammarRuns.ts` (parse and progress replay, read by EXP, the streak and the grammar pages), `apps/web/src/lib/features/grammar/`, route `/grammar` | `docs/contracts/grammar/` (`runs.json`), `events/payloads.json` (`grammar`), `events/activity.json` |
 | Writing-system trainer (#204, kana #63; a fifth core feature `scripts`, appears only where the profile's `writingSystems` is not empty) | server: the feature id (`features.IDs`), the activity rule of the event type `script` (`server/internal/stats/rules.go`); no table of its own: the progress is derived from `script` events | `apps/web/src/lib/features/scripts/` (pure logic, the CC BY 4.0 script data in `data/`, the views), route `/scripts` | `docs/contracts/events/payloads.json` (`script`), `events/activity.json`, `features/switches.json`, `languages/profiles.json` (`writingSystems`) |
 | Keyed rows (the core's small settings documents: notes, lookups, known marks, milestones, goals, the study setup, vacations, layouts, appearance) | `server/internal/keyed/` (table `keyed_rows`, migration 046; `plugin_data` dropped), `/api/rows`, pull/push `rows` | `apps/web/src/lib/sync/keyed.ts` | `docs/contracts/keyed/` |
+| Stats (#295; a sixth core feature `stats`) | server: the feature id (`features.IDs`) only; the statistics routes and events are unchanged | `apps/web/src/lib/stats/` (`manifest.ts`: its widgets, owner `stats`; `word-states` requires it), routes `/stats`, `/stats/week`, `/stats/characters` behind `FeatureGate` in `routes/stats/+layout.svelte` | `docs/contracts/features/` (switches and what Stats off hides), `settings/core-rows.json` (the widget catalogue) |
+| Practice and the drills (drills framework, v0.9.0; a seventh core feature `practice`, in the navigation only while a drill applies to the language) | `server/internal/drills/` (ids, item keys, the answer payload, the registry `drills.IDs`); one activity rule per registered drill (`stats.DrillRules`); no table: a drill answer is a `drill.<id>` study event and each item's schedule is derived by the client | `apps/web/src/lib/studycore/drills.ts` (parse, FSRS schedule per item, the rounds, read by EXP and the streak), `apps/web/src/lib/features/practice/` (the drill definitions, the list, the rounds), route `/practice` | `docs/contracts/drills/`, `features/switches.json`, `events/payloads.json` (`drill.<id>`) |
 | Activity sources | `server/internal/stats/rules.go` | `apps/web/src/lib/activity/sources.ts` | `docs/contracts/events/activity.json` |
 | Language profiles | `server/internal/lang/profile.go` (`ProfileOf`) | `apps/web/src/lib/languages/profiles.ts` (`profileOf`) | `docs/contracts/languages/` |
 | Old plugin URLs | — | `apps/web/src/lib/routing/legacyRoutes.ts`, `apps/web/src/routes/p/[plugin]/[...rest]/+page.ts` (the four features redirect, any other id is 404) | — |

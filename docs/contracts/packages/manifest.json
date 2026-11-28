@@ -476,6 +476,58 @@
    }
   },
   {
+   "name": "images.images-openmoji",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "images.images-openmoji",
+    "type": "images",
+    "languages": [
+     "ja",
+     "zh"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "images",
+      "packId": "images-openmoji",
+      "name": "OpenMoji pictures",
+      "version": "17.0.0",
+      "license": "CC BY-SA 4.0",
+      "attribution": "All emojis designed by OpenMoji - the open-source emoji and icon project. License: CC BY-SA 4.0",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 2523136,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/images-openmoji/LICENSE",
+      "bytes": 8954,
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+     },
+     {
+      "name": "LICENSES/images-openmoji/ATTRIBUTION.md",
+      "bytes": 512,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
    "name": "lemma-rules.ja-lemma",
    "valid": true,
    "manifest": {

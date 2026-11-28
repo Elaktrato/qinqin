@@ -7,20 +7,20 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn()
 }));
-vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/commands/keyed')>()),
 	saveGoals: vi.fn(() => Promise.resolve())
 }));
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
 
 import { fetchActivity, type ActivitySource } from '$lib/api/stats';
-import { saveGoals } from '$lib/study/commands/keyed';
-import { getStudyData } from '$lib/study/data';
-import type { StudyData } from '$lib/study/types';
+import { saveGoals } from '$lib/studycore/commands/keyed';
+import { getStudyData } from '$lib/studycore/data';
+import type { StudyData } from '$lib/studycore/types';
 import { studyDay } from '$lib/time/studyDay';
 import { primaryActions } from '$lib/ui/testing/primary';
 import GoalSettings from './GoalSettings.svelte';
@@ -218,9 +218,18 @@ describe('GoalSettings', () => {
 			'Flashcard reviews',
 			'New cards',
 			'Flashcard study time',
+			'Conjugation drill',
+			'Counter readings',
+			'Counters',
+			'Course lessons',
+			'Grammar lessons',
 			'Journal entries',
+			'Look-alike characters',
+			'Measure words',
 			'Reading',
-			'Script practice'
+			'Script practice',
+			// The registered drills (#180).
+			'Tone pairs'
 		]);
 		expect(screen.getByText(/Could not load the activity list/)).toBeTruthy();
 		vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: SOURCES, cells: [] });

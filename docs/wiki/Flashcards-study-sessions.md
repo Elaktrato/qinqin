@@ -7,8 +7,9 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 **Study** on the home page's flashcards widget and above your decks on the Decks page opens the **study modal** (a bottom sheet on a phone; Escape, the close button or the Android back button closes it). It holds:
 
 - one line with what is waiting: "12 due · 8 new · 4 decks", or for a level "HSK 2 · 12 due · 8 new";
-- **This session: 20 cards**, about how many cards **Start studying** will plan under your limits (an estimate: a Word Salad, writing or tone card is made only when its word comes up, and words without a sentence or stroke data are skipped then); or why nothing can start, such as "Nothing is due and no new cards are left in the selected decks", with Start disabled; on a vacation day the vacation line and a link to change it instead;
-- the **card types** as chips: only the types your workspace language has (Spanish has no Writing or Tone), and Reverse and Cloze only when one of your decks switches them on. At least one stays selected. A change is saved at once (only what you changed, so a change made on another device meanwhile stays); right after signing in on a new device the chips wait until your saved setup has arrived;
+- **This session: 20 cards**, exactly the cards **Start studying** will plan under your limits, and the session's count starts there: before it counts, the server tells the app which of your words can make a Word Salad or Cloze card (an example sentence), a Writing card (a character with stroke order), a Tone card (a clean pinyin reading) or a Reverse card (a gloss), so no card is promised that the session would then drop; or why nothing can start, such as "Nothing is due and no new cards are left in the selected decks", with Start disabled; on a vacation day the vacation line and a link to change it instead;
+- the **card types** as chips: only the types your workspace language has (Spanish has no Writing or Tone), Reverse and Cloze only when one of your decks switches them on, and only the types that have something to study now in the chosen decks or level, due or new. A type without cards is left out, with one short line saying why ("Word Salad and Cloze: no example sentences for these words yet."; an administrator is also told that example sentences are installed with `qinqin seed`); your choice of it is kept and the chip comes back once it has cards. At least one visible chip stays selected. A change is saved at once (only what you changed, so a change made on another device meanwhile stays); right after signing in on a new device the chips wait until your saved setup has arrived;
+- **Grammar review** (while Grammar is switched on in Settings → Features), a chip with the number of grammar points to review now: on, a session runs the [grammar review](Grammar-lessons#review) after its cards, and Start is possible with only grammar points due. It is saved with the setup like the card types;
 - **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; it is enabled when that session would hold something;
 - **Advanced settings →**, the full setup.
 
@@ -20,7 +21,7 @@ The setup is saved for the workspace on your account, so it is the same on every
 
 **Advanced settings** (`/study/advanced`) has every control; each change is saved at once, and **Back to study** returns to the page you came from with the modal open. A direct visit to `/study` opens the modal over the home page.
 
-- **This session**: what a session would hold ("Today: 18 reviews and 5 new") and the type warnings.
+- **This session**: what a session would hold ("Today: 18 reviews and 5 new") and the type warnings. The **card types** follow the modal's rule: a type with nothing to study is left out with the reason; Reverse and Cloze show when your decks would have such cards once switched on (the switches on a deck's settings stay available, so a deck can be prepared before it has cards).
 - **Limits**: new cards and reviews (a session stops after these counts, reviews first; saved when you leave the field), the **Order of new cards**, the **Order of card types**, and **Scheduling: …**, which opens the [scheduling page](Scheduling-and-FSRS).
 - **Session source**: **My decks** or **By level** (see below).
 - **Decks**: tick the decks to draw from; **All decks** keeps every deck, including the ones you create later. Creating, renaming and deleting decks is on the [Decks page](Flashcards-decks-limits-vacation).
@@ -50,21 +51,25 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, 通用�
 | Type | What you do | Needs |
 |---|---|---|
 | Vocab | See the word; press **Show answer** for its reading (with play), meanings and the example sentence with the word blanked | any word |
-| Word Salad | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, then **Check** (or **Show answer**) | an example sentence |
+| Word Salad | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, then **Check** (or **Show answer**). Or drag: a tile from the pool to any place in your sentence, a placed tile to a new place, a placed tile back to the pool (with a mouse, a finger or a pen) | an example sentence |
 | Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character; kana stay visible | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |
 | Reverse | See the meaning, recall the word; typing, then **Show answer**; the reading is a [hint](#hints) | a word (not a character) with a meaning |
 | Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
 
+- **Word Salad** tiles can be dragged (#291): while you drag, the other tiles make room and a marker shows where the tile lands; under a finger the tile rides above it, and the page does not scroll. Released away from both rows, a tile goes back where it was; Escape cancels a drag. A quick tap stays a tap. With the keyboard, **Alt+←** and **Alt+→** move a focused placed tile one place, and a screen reader hears "学校 moved to position 2 of 3". Moving tiles before **Check** is not a mistake and not a hint.
 - **Word Salad** gets harder as a card settles: new or short-memory cards (stability under 4 days) show word tiles with the translation; middle cards (under 21 days) hide the translation behind **Show translation**, which counts as a hint; long-memory cards (21 days or more) split every word into single characters. The tier is named on the card. If the sentence cannot be cut into words, each character becomes a tile.
-- **Writing** shows the character's outline as a hint after 3 misses on one stroke; each new character starts again without it.
+- **Writing** helps after 3 misses on one stroke: that stroke lights up with its start marked and then stays faintly on the pad until you draw it. Only that stroke is shown, never the rest of the character, and the same happens for any later stroke you miss 3 times. Each of these counts as a hint in the review, like a press of **Next stroke hint**.
+- **Joined strokes**: you may draw strokes that flow into each other in one motion, as many people do: き's third and fourth strokes, さ's last two, こ, い, the dots of 心. A join is accepted where a stroke ends near the next one's start or ends pointing at it (its hook or flick leads there); drawing the strokes one by one works as before, and the order still counts.
+- **The writing pad** grows with the screen: on a phone it takes the full width where the height allows, and shrinks just enough to keep the feedback line above the buttons at the bottom; on a computer it is a little larger than before. Turning the phone resizes it, also in the middle of a character. The scripts trainer's Write mode uses the same pad.
 - **Tone** swipes: up = 1; up-right or right = 2; down then back up = 3; down-right, down, down-left or left = 4; a tap = neutral (5). A character with several readings accepts any of them (行 can be háng or xíng).
+- **Tone sandhi** (#300): words are checked against the dictionary's tones, and the tone a syllable is spoken with is right too. In 不客气 the dictionary says bù kè qi, but 不 before a fourth tone is spoken bú, so both 4-4-neutral and 2-4-neutral are right; the same for 一 (一个 yí gè, 一起 yì qǐ; it stays yī alone, at the end, in 第一 and in numbers like 十一) and for third tones in a row (你好 ní hǎo, 展览馆 zhán lán guǎn). The answer shows both where they differ: **bù → bú** (with pinyin hidden, the tone numbers and contours). Settings → Study → **Tones** has two switches per workspace: **Show tone sandhi** (on; off shows only the dictionary's tones) and **Grade spoken tones** (off; on, only the spoken tones are right, and the card says so).
 
 ### Companion cards
 
 An example sentence an AI wrote for you ([AI examples](Searching-and-entries#ai-examples), the ones you kept) is marked **AI-written** on every card that shows it: Word Salad, cloze and the vocab answer. Kept AI examples come after the dictionary's own examples, so a word with enough curated examples uses those first.
 
-Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session); the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
+Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is never planned: the server says which words qualify before the session is planned (asked again after ten minutes). Should a card still turn out unusable when it comes up (a sentence pack removed meanwhile), it is skipped and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session), and the word is not planned for that type again in this sign-in. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
 
 ### Reverse and cloze cards
 
@@ -72,7 +77,7 @@ They appear once in the setup's **Card types** list. Checking one enables it on 
 
 ## The session screen
 
-A session is an open page, not a card in a box. At the top: a close button (**End session**: back to the page the session was started from, with the study modal open), a thin progress line and the count ("4 / 20", with "3 to repeat" when cards come back). Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
+A session is an open page, not a card in a box. At the top: a close button (**End session**: back to the page the session was started from, with the study modal open), a thin progress line and the count ("4 / 20", with "3 to repeat" when cards come back). Every card type then has the same four parts in the same places: the **task name** in the accent colour, then small outlined tags: the Word Salad tier, "Again, look 2 of 3" on a re-show or "new", and at the end of the line the deck and the level (the level in the accent colour); on a phone they wrap onto a second line, the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
 
 The session names each exercise by what you do; settings, decks and the XP breakdown keep the card type names:
 
@@ -106,6 +111,8 @@ Every card can offer a small **Hint** button (and the H key) that shows one more
 
 What a card offers is set in Settings → Study → **Hints**, for each kind of hint and each card type: **Always shown** (part of the front), **As a hint** (hidden until you ask) or **Never**. By default the reading is a hint on Recognise, Build the sentence, Recall and Fill the gap cards, always shown on Write cards (as before) and not offered on Tones (it would be the answer).
 
+With a romanisation hidden (Settings → Study → **Romanisation**), the reading hint shows only the readings you see (kana; zhuyin when only pinyin is hidden), and the hidden romanisation is the **last** hint step: it counts as a hint like the others, and it is never shown on the front or the back unasked. Tones cards with pinyin hidden name each pad by its character and show the answer as the tone number and its contour. In Starter mode a Japanese word starts at the kana (no romaji under it), and a Chinese word is introduced by its picture, sound and characters (zhuyin stands in for pinyin when it is shown).
+
 Asking for a hint costs a little: the suggested grade goes down one step (Easy to Good, Good to Hard; a card you grade yourself is suggested Hard, and Hard and Again stay as they are). One hint or three, the suggestion drops once. You can still press any grade. Hints that are always shown do not count, and neither does the extra help a card has always had (the stroke hint on Write cards, the translation on Build the sentence). The number of hints you used is stored with the review.
 
 ## Starter mode
@@ -125,7 +132,7 @@ Loanwords show katakana where hiragana is used above. Words that are normally wr
 
 A word moves up when you answer it **Good or Easy on a different day** (at least twelve hours after the last answer that counted): one step for the first answer, then at 2, 3, 5 and 7 such answers for Japanese (1, 2, 4 and 6 for Chinese). **Hard** keeps the word where it is, and **Again** drops it one stage. The first time a word reaches a new stage its card says what changed ("New: now with hiragana").
 
-Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are a seed list that has not yet been read through by a person.
+Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are about 150 everyday words per language with pictures (people, numbers, school, the body, food and drink, home, clothes, transport, places, colours, nature, animals and a few actions), in an order meant for the first weeks; the offer and Settings say how many there are. They were reviewed by agents acting as native-speaker teachers, not yet by a person.
 
 ## Your notes on the answer side
 
@@ -153,7 +160,7 @@ Back belongs to the open session: after a reload, a workspace switch or a new se
 
 ## The end of a session
 
-**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the XP this session by card type and the daily bonus, the progress to your next level and your streak. **Done** returns to the page the session was started from. A session with nothing to study, or one that could not load, has **Back to study** instead, which returns there with the study modal open.
+**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the grammar points reviewed when the session included grammar review, the XP this session by card type (and Grammar) and the daily bonus, the progress to your next level and your streak. **Done** returns to the page the session was started from. A session with nothing to study, or one that could not load, has **Back to study** instead, which returns there with the study modal open.
 
 ## Scheduling, XP and streaks
 
@@ -163,9 +170,10 @@ XP, level and streak are derived from the history per workspace:
 
 - base XP per review: Vocab 10, Word Salad 15, Writing 20, Tone 8 (Reverse and Cloze count too);
 - a grade bonus: Good +5, Easy +10, Again and Hard nothing;
-- a daily bonus of +10 for each learner day with at least one review.
+- a daily bonus of +10 for each learner day with at least one review;
+- 20 XP for each finished [grammar lesson](Grammar-lessons) run or grammar review.
 
-Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
+Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review or a finished grammar lesson (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
 
 A study-buddy mascot appears in the flashcards widget and the session summary: it grows at levels 5, 10 and 20, and its mood (sleepy, happy, cheering, proud) follows your streak. Its drawings are placeholders for now.
 

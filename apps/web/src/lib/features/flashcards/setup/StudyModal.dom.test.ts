@@ -4,17 +4,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(async () => []) }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 
+const { loadReview } = vi.hoisted(() => ({ loadReview: vi.fn() }));
+vi.mock('$lib/features/grammar/review/review', () => ({ loadReview }));
+
 import { getSchemes } from '$lib/api/schemes';
 import type { Scheme } from '$lib/api/types';
-import { loadStudyHistory } from '$lib/study/data';
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import { StudySetups } from '$lib/study/setupStore.svelte';
+import { loadStudyHistory } from '$lib/studycore/data';
+import { SESSION_CONFIG_KEY } from '../session/session';
+import { defaultSetup, type StudySetup } from './setup';
+import { StudySetups } from './setupStore.svelte';
 import { ApiError } from '$lib/api/client';
 import { t } from '$lib/i18n';
 import { testContext, type TestContext } from '$lib/testing/context';
@@ -26,8 +29,10 @@ let ctx: TestContext;
 let saved: StudySetup;
 let update: ReturnType<typeof vi.spyOn>;
 
+const WRITTEN = ['', '学校', '水', '本', '私'];
+
 function vocab(n: number, deckIds = ['general']) {
-	return build.card({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written: `w${n}`, deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` });
+	return build.card({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written: WRITTEN[n], deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` });
 }
 
 const DECK = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00Z' };
@@ -46,11 +51,14 @@ async function open(): Promise<HTMLElement> {
 // PUT stores the body or throws `putError`.
 let rowsGate: Promise<void> | null;
 let putError: unknown;
+// POST /api/study/eligibility: the companion kinds of each asked entry (default: every kind).
+let eligible: (id: number) => string[];
 
 beforeEach(() => {
 	saved = defaultSetup();
 	rowsGate = null;
 	putError = null;
+	eligible = () => ['sentence', 'writing', 'tone', 'reverse', 'cloze'];
 	const row = () => ({ key: 'study-setup', userId: 1, workspaceId: 1, data: saved, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null });
 	ctx = testContext({
 		routes: {
@@ -58,6 +66,9 @@ beforeEach(() => {
 				if (rowsGate !== null) await rowsGate;
 				return [row()];
 			},
+			'POST /api/study/eligibility': (body: unknown) => ({
+				entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), eligible(id)]))
+			}),
 			'PUT /api/rows/study-setup': (body: unknown) => {
 				if (putError !== null) throw putError;
 				saved = body as StudySetup;
@@ -113,7 +124,7 @@ describe('the study modal', () => {
 		expect(within(dialog).queryByRole('checkbox', { name: 'Reverse' })).toBeNull();
 		cleanup();
 		vi.mocked(loadStudyHistory).mockResolvedValue(
-			build.history({ decks: [DECK], cards: [vocab(1)], deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
+			build.history({ decks: [DECK], cards: [vocab(1, ['d1'])], deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
 		);
 		const again = await open();
 		expect(((await within(again).findByRole('checkbox', { name: 'Reverse' })) as HTMLInputElement).checked).toBe(true);
@@ -177,6 +188,7 @@ describe('the study modal', () => {
 	});
 
 	it('with nothing to study it says so and Start is disabled', async () => {
+		eligible = () => [];
 		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
 		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
 		const dialog = await open();
@@ -227,9 +239,94 @@ describe('the study modal', () => {
 		expect((within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement).disabled).toBe(true);
 	});
 
+	it('hides a card type with nothing to study and says why; it comes back with its cards (#289)', async () => {
+		saved = { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] };
+		eligible = (id) => (id === 1 ? ['writing'] : ['writing', 'reverse']);
+		const dialog = await open();
+		await waitFor(() => expect(dialog.textContent).toContain('Word Salad: no example sentences for these words yet.'));
+		expect(within(dialog).queryByRole('checkbox', { name: 'Word Salad' })).toBeNull();
+		expect(within(dialog).getByRole('checkbox', { name: 'Writing' })).toBeTruthy();
+		// Vocab is the last visible selected chip: locked, and the hidden choice is kept.
+		expect((within(dialog).getByRole('checkbox', { name: 'Vocab' }) as HTMLInputElement).disabled).toBe(true);
+		expect(dialog.textContent).toContain('This session: 2 cards');
+		expect(update).not.toHaveBeenCalled();
+
+		// A sentence arrives for 学校: the type is offered again, still checked.
+		cleanup();
+		ctx.session.studyModal.hide();
+		eligible = (id) => (id === 1 ? ['sentence', 'writing'] : ['writing']);
+		ctx.session.eligibility.forget(1);
+		const again = await open();
+		const salad = (await within(again).findByRole('checkbox', { name: 'Word Salad' })) as HTMLInputElement;
+		expect(salad.checked).toBe(true);
+		await waitFor(() => expect(again.textContent).toContain('This session: 3 cards'));
+		expect(again.textContent).not.toContain('no example sentences');
+	});
+
+	it('a deck selection with nothing at all to study shows no chips and the empty state', async () => {
+		eligible = () => [];
+		const reviewed = [1, 2].map((n) => build.review({ cardId: `c-vocab-${n}`, ts: new Date().toISOString(), grade: 4 }));
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [DECK], cards: [vocab(1), vocab(2, ['d1'])], reviews: reviewed }));
+		const dialog = await open();
+		await waitFor(() => expect(dialog.textContent).toContain('Nothing is due and no new cards are left in the selected decks.'));
+		expect(within(dialog).queryAllByRole('checkbox')).toEqual([]);
+	});
+
 	it('Escape closes it', async () => {
 		const dialog = await open();
 		await fireEvent.keyDown(dialog, { key: 'Escape' });
 		expect(ctx.session.studyModal.open).toBe(false);
+	});
+});
+
+describe('grammar review in the study modal (#181)', () => {
+	const grammarOn = () => ctx.session.features.set({ list: [{ id: 'grammar', enabled: true }], status: 'ready' });
+	beforeEach(() => {
+		loadReview.mockResolvedValue({ round: { items: [], due: 2, new: 1, newToday: 0 } });
+	});
+
+	it('is no choice while the grammar feature is off or unknown', async () => {
+		const dialog = await open();
+		await within(dialog).findByRole('checkbox', { name: 'Writing' });
+		expect(within(dialog).queryByRole('checkbox', { name: /Grammar review/ })).toBeNull();
+		ctx.session.features.set({ list: [{ id: 'grammar', enabled: false }], status: 'ready' });
+		await Promise.resolve();
+		expect(within(dialog).queryByRole('checkbox', { name: /Grammar review/ })).toBeNull();
+	});
+
+	it('is a chip with the points due that saves the setup at once', async () => {
+		grammarOn();
+		const dialog = await open();
+		const chip = (await within(dialog).findByRole('checkbox', { name: 'Grammar review · 3' })) as HTMLInputElement;
+		expect(chip.checked).toBe(false);
+		await waitFor(() => expect(chip.disabled).toBe(false));
+		await fireEvent.click(chip);
+		expect(update).toHaveBeenCalledWith(1, { grammar: true });
+		await waitFor(() => expect(saved.grammar).toBe(true));
+	});
+
+	it('Start includes it in the session, and starts with only grammar points due', async () => {
+		grammarOn();
+		saved = { ...defaultSetup(), grammar: true };
+		eligible = () => [];
+		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
+		const dialog = await open();
+		const start = within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement;
+		await waitFor(() => expect(start.disabled).toBe(false));
+		await fireEvent.click(start);
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).grammar).toBe(true);
+	});
+
+	it('with no grammar point due and no card, Start stays disabled', async () => {
+		grammarOn();
+		loadReview.mockResolvedValue({ round: { items: [], due: 0, new: 0, newToday: 0 } });
+		saved = { ...defaultSetup(), grammar: true };
+		eligible = () => [];
+		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
+		const dialog = await open();
+		await within(dialog).findByRole('checkbox', { name: 'Grammar review · 0' });
+		expect((within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement).disabled).toBe(true);
 	});
 });

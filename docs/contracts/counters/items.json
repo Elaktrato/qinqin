@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "rule": "counters/items",
+ "doc": "Item keys of the three drills of #179 (README, \"Items\"). measure-words and counters: the noun's entry id, a positive decimal integer without a leading zero. counter-readings: <counter id>:<number>, the counter id in the drill-id pattern (at most 32 characters), the number 1..99 without a leading zero or nan (何). Go: server/internal/counters/contract_test.go; web: apps/web/src/lib/features/practice/counters/items.test.ts.",
+ "drills": {
+  "measure-words": "entry",
+  "counters": "entry",
+  "counter-readings": "reading"
+ },
+ "cases": [
+  { "name": "an entry id", "drill": "measure-words", "item": "5678", "valid": true, "entryId": 5678 },
+  { "name": "an entry id (counters)", "drill": "counters", "item": "1", "valid": true, "entryId": 1 },
+  { "name": "a leading zero", "drill": "measure-words", "item": "0123", "valid": false },
+  { "name": "zero", "drill": "counters", "item": "0", "valid": false },
+  { "name": "a negative id", "drill": "counters", "item": "-4", "valid": false },
+  { "name": "not a number", "drill": "measure-words", "item": "书", "valid": false },
+  { "name": "an entry id beyond 2^53 - 1", "drill": "measure-words", "item": "9007199254740993", "valid": false },
+  { "name": "a reading item", "drill": "counter-readings", "item": "hon:3", "valid": true, "counter": "hon", "number": "3" },
+  { "name": "何", "drill": "counter-readings", "item": "hon:nan", "valid": true, "counter": "hon", "number": "nan" },
+  { "name": "a two-digit number", "drill": "counter-readings", "item": "nichi:20", "valid": true, "counter": "nichi", "number": "20" },
+  { "name": "a hyphenated counter id", "drill": "counter-readings", "item": "kai-floor:3", "valid": true, "counter": "kai-floor", "number": "3" },
+  { "name": "number 0", "drill": "counter-readings", "item": "hon:0", "valid": false },
+  { "name": "number 100", "drill": "counter-readings", "item": "hon:100", "valid": false },
+  { "name": "a leading zero in the number", "drill": "counter-readings", "item": "hon:03", "valid": false },
+  { "name": "no number", "drill": "counter-readings", "item": "hon", "valid": false },
+  { "name": "a kanji counter id", "drill": "counter-readings", "item": "本:3", "valid": false },
+  { "name": "a capital in the counter id", "drill": "counter-readings", "item": "Hon:3", "valid": false },
+  { "name": "an entry id in the readings drill", "drill": "counter-readings", "item": "5678", "valid": false },
+  { "name": "a reading item in a noun drill", "drill": "counters", "item": "hon:3", "valid": false }
+ ]
+}

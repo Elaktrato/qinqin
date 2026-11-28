@@ -1,0 +1,21 @@
+{
+ "doc": "Who labelled and reviewed the topic labels (#220). Every reviewer here is an agent (a subagent prompted to act as the role given), not a person; the owner reviews the labels later. The ids are what a label's `by` names. scripts/topic-agents.mjs prompts each with its role; scripts/build-topic-labels.mjs copies this into the labels file.",
+ "zh": {
+  "attribution": "Topic labels for Chinese words, by qinqin contributors (https://github.com/Elaktrato/qinqin), CC BY-SA 4.0: topics suggested by an agent and reviewed by agents acting as teachers of Chinese, not yet by a person. Adapted from: CC-CEDICT (MDBG and the CC-CEDICT community, https://cc-cedict.org, CC BY-SA 4.0), whose words key the labels and whose senses the agents read; OpenMoji 17.0.0 (OpenMoji – the open-source emoji and icon project, https://openmoji.org, CC BY-SA 4.0), whose emoji groups give the picture-based labels. Licence: https://creativecommons.org/licenses/by-sa/4.0/",
+  "reviewers": [
+   { "id": "zh-labeller", "kind": "agent", "stage": "suggest", "role": "An experienced lexicographer and teacher of Chinese who labels each word with topics from the list, using its CC-CEDICT senses and the topic of its OpenMoji picture as a hint." },
+   { "id": "zh-teacher-1", "kind": "agent", "stage": "review", "role": "A native Mandarin speaker from Beijing who has taught Chinese to adult learners for fifteen years and prepares students for the HSK." },
+   { "id": "zh-teacher-2", "kind": "agent", "stage": "review", "role": "A native Mandarin speaker from Shanghai who teaches Chinese at a university language centre and writes theme-based course units for beginners and intermediate learners." },
+   { "id": "zh-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Mandarin speaker who heads a Chinese-as-a-foreign-language department and designs curricula; decides where the two teachers disagree and checks every sense entry the decision kept." }
+  ]
+ },
+ "ja": {
+  "attribution": "Topic labels for Japanese words, by qinqin contributors (https://github.com/Elaktrato/qinqin), CC BY-SA 4.0: topics suggested by an agent and reviewed by agents acting as teachers of Japanese, not yet by a person. Adapted from: JMdict (Electronic Dictionary Research and Development Group, https://www.edrdg.org/, CC BY-SA 4.0), whose entries key the labels and whose senses the agents read; OpenMoji 17.0.0 (OpenMoji – the open-source emoji and icon project, https://openmoji.org, CC BY-SA 4.0), whose emoji groups give the picture-based labels. Licence: https://creativecommons.org/licenses/by-sa/4.0/",
+  "reviewers": [
+   { "id": "ja-labeller", "kind": "agent", "stage": "suggest", "role": "An experienced lexicographer and teacher of Japanese who labels each word with topics from the list, using its JMdict senses and the topic of its OpenMoji picture as a hint." },
+   { "id": "ja-teacher-1", "kind": "agent", "stage": "review", "role": "A native Japanese speaker from Tokyo who has taught Japanese to adult learners for fifteen years and prepares students for the JLPT N5 to N3." },
+   { "id": "ja-teacher-2", "kind": "agent", "stage": "review", "role": "A native Japanese speaker from Osaka who teaches at a Japanese-language school (日本語学校) and writes theme-based lesson plans for beginners and intermediate learners." },
+   { "id": "ja-teacher-3", "kind": "agent", "stage": "adjudicate", "role": "A native Japanese speaker who leads the curriculum of a Japanese-language school; decides where the two teachers disagree and checks every sense entry the decision kept." }
+  ]
+ }
+}

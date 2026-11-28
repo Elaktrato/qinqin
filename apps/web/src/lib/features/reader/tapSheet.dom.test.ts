@@ -28,8 +28,8 @@ vi.mock('$lib/api/lookup', async (orig) => ({
 	lookupAt: async (_lang: string, text: string): Promise<LookupResult[]> =>
 		text.startsWith('水') ? [entry(7, '水')] : text.startsWith('飲') ? [entry(8, '飲み')] : []
 }));
-vi.mock('$lib/study/data', async (orig) => ({
-	...(await orig<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (orig) => ({
+	...(await orig<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));

@@ -295,7 +295,7 @@
 				...languageChoices.map((choice) => ({ value: choice.code, label: choice.label }))
 			]}
 		/>
-		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
+		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hintDefault')}</p>
 		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
 		{#if languageNotice}<p class="hint" role="status">{languageNotice}</p>{/if}
 		<Button type="submit" variant="primary" disabled={languageBusy}
@@ -348,37 +348,40 @@
 	<p class="hint">{t('settings.account.sessions.intro')}</p>
 	{#if sessionsError}<p class="error" role="alert">{sessionsError}</p>{/if}
 	{#if sessionsLoaded && rows.length > 0}
-		<table class="ui-table" aria-label={t('settings.account.sessions.table')}>
-			<thead>
-				<tr>
-					<th scope="col">{t('settings.account.sessions.colDevice')}</th>
-					<th scope="col">{t('settings.account.sessions.colSignedIn')}</th>
-					<th scope="col">{t('settings.account.sessions.colLastActive')}</th>
-					<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.id)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrolling region is keyboard reachable, WCAG 2.1.1) -->
+		<div class="ui-table-scroll" tabindex="0" role="region" aria-label={t('settings.account.sessions.table')}>
+			<table class="ui-table" aria-label={t('settings.account.sessions.table')}>
+				<thead>
 					<tr>
-						<th scope="row">
-							{row.deviceLabel}
-							{#if row.badge}<span class="badge">{row.badge}</span>{/if}
-						</th>
-						<td>{row.signedIn}</td>
-						<td>{row.lastActive}</td>
-						<td>
-							{#if row.canRevoke}
-								<Button
-									disabled={busy}
-									aria-label={t('settings.account.sessions.revokeNamed', { device: row.deviceLabel })}
-									onclick={() => revokeOne(row.id)}>{t('settings.tokens.revoke')}</Button
-								>
-							{/if}
-						</td>
+						<th scope="col">{t('settings.account.sessions.colDevice')}</th>
+						<th scope="col">{t('settings.account.sessions.colSignedIn')}</th>
+						<th scope="col">{t('settings.account.sessions.colLastActive')}</th>
+						<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each rows as row (row.id)}
+						<tr>
+							<th scope="row">
+								{row.deviceLabel}
+								{#if row.badge}<span class="badge">{row.badge}</span>{/if}
+							</th>
+							<td>{row.signedIn}</td>
+							<td>{row.lastActive}</td>
+							<td>
+								{#if row.canRevoke}
+									<Button
+										disabled={busy}
+										aria-label={t('settings.account.sessions.revokeNamed', { device: row.deviceLabel })}
+										onclick={() => revokeOne(row.id)}>{t('settings.tokens.revoke')}</Button
+									>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 	<div class="actions">
 		<Button disabled={busy || !hasOthers} onclick={revokeOthers}>{t('settings.account.sessions.logoutOthers')}</Button>

@@ -2,10 +2,10 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { t } from '$lib/i18n';
-	import { addCard } from '$lib/study/commands/cards';
-	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { getStudyData, hasCard } from '$lib/study/data';
-	import type { Deck } from '$lib/study/types';
+	import { addCard } from '$lib/features/flashcards/commands/cards';
+	import { GENERAL_DECK_ID } from '$lib/studycore/types';
+	import { getStudyData, hasCard } from '$lib/studycore/data';
+	import type { Deck } from '$lib/studycore/types';
 	import Button from '$lib/ui/Button.svelte';
 	import Chip from '$lib/ui/Chip.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -55,7 +55,7 @@
 	// a flaky pull is reported when the user actually tries to add. Until
 	// the check answers, though, the button is disabled: it must never
 	// offer to add an entry that is already in the deck. The study data
-	// comes from the session's study cache (study/data.ts).
+	// comes from the session's study cache (studycore/data.ts).
 	/** The workspace the "in deck" check ran against: an add goes there (#174). */
 	let checkedWorkspace: number | null = null;
 

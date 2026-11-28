@@ -12,7 +12,11 @@
     {"type": "lookup", "write": false},
     {"type": "read", "write": true, "builder": "readPayload"},
     {"type": "journal", "write": true, "builder": "journalPayload"},
-    {"type": "script", "write": true, "builder": "scriptPayload"}
+    {"type": "script", "write": true, "builder": "scriptPayload"},
+    {"type": "grammar", "write": true, "builder": "grammarPayload"},
+    {"type": "course", "write": true, "builder": "coursePayload"},
+    {"type": "drill.<id>", "write": true, "builder": "drillPayload"},
+    {"type": "notebook", "write": true, "builder": "notebookPayload"}
   ],
   "cases": [
     {
@@ -40,6 +44,36 @@
       "note": "{system, item, mode, ok} in this member order: system is hiragana, katakana, hangul or cyrillic; item is the chart item (\"hiragana:あ\") or example word (\"hiragana:word:ねこ\"); mode is recognise, recall, read, type or write (write: kana drawn on the writing pad, #62; a client that does not know a mode ignores the event); ok is a boolean",
       "args": ["hiragana", "hiragana:あ", "recognise", true],
       "expect": {"system": "hiragana", "item": "hiragana:あ", "mode": "recognise", "ok": true}
+    },
+    {
+      "kind": "build", "type": "grammar", "name": "grammar names the grammar point, the mode, the score and the total",
+      "note": "{point, mode, score, total} in this member order (#277): point is <packId>:<lessonId> (neither id holds a colon); mode is lesson (a finished lesson run) or review (a review run, #181; a client ignores a mode it does not know); score and total are whole numbers with 0 <= score <= total <= 1000. Parse and replay rules: grammar/runs.json",
+      "args": ["zh-grammar", "le-change", 3, 4],
+      "expect": {"point": "zh-grammar:le-change", "mode": "lesson", "score": 3, "total": 4}
+    },
+    {
+      "kind": "build", "type": "grammar", "name": "a grammar review run names the mode review",
+      "note": "the fifth argument is the mode, lesson when it is left out: review is a review run of a learned point (#181), same members in the same order. Review rules: grammar/review.json",
+      "args": ["zh-grammar", "le-change", 2, 3, "review"],
+      "expect": {"point": "zh-grammar:le-change", "mode": "review", "score": 2, "total": 3}
+    },
+    {
+      "kind": "build", "type": "course", "name": "course names the kind, the course and what the learner did",
+      "note": "{kind, course, …} in the contract's member order whatever the input's (#221); kinds lesson-started, lesson-finished (with score, total and the words it taught), unit-test (score, total, passed, early), section-exam (score, total, passed), placement. Every kind, the parse rules and the derivation: courses/derive.json",
+      "args": [{"words": ["好"], "lesson": "words-1", "unit": "hello", "course": "zh-course", "kind": "lesson-finished", "score": 5, "total": 6}],
+      "expect": {"kind": "lesson-finished", "course": "zh-course", "unit": "hello", "lesson": "words-1", "score": 5, "total": 6, "words": ["好"]}
+    },
+    {
+      "kind": "build", "type": "drill.<id>", "name": "a drill answer names the item, the mode and the grade",
+      "note": "{item, mode, grade} in this member order: one answer in a drill, type drill.<id> (one type per drill). Ids, item keys, parsing, schedules and rounds: drills/",
+      "args": ["3-4", "produce", 3],
+      "expect": {"item": "3-4", "mode": "produce", "grade": 3}
+    },
+    {
+      "kind": "build", "type": "notebook", "name": "a notebook mark removes one item by hand",
+      "note": "{action, item} in this member order (#227); {action: \"clear\"} clears the notebook. Item keys, parsing and the replay: notebook/",
+      "args": [{"item": "card:c-vocab-1", "action": "remove"}],
+      "expect": {"action": "remove", "item": "card:c-vocab-1"}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",

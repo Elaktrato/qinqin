@@ -236,6 +236,29 @@
     }
    ],
    "indexes": []
+  },
+  {
+   "type": "images",
+   "tables": [
+    {
+     "name": "pictures",
+     "sql": "CREATE TABLE pictures (concept TEXT PRIMARY KEY, label TEXT NOT NULL, credit TEXT NOT NULL, svg TEXT NOT NULL)",
+     "order": [
+      "concept"
+     ]
+    },
+    {
+     "name": "map",
+     "sql": "CREATE TABLE map (language TEXT NOT NULL, target TEXT NOT NULL, sense INTEGER NOT NULL, concept TEXT NOT NULL, score INTEGER NOT NULL, basis TEXT NOT NULL, PRIMARY KEY (language, target, sense, concept))",
+     "order": [
+      "language",
+      "target",
+      "sense",
+      "concept"
+     ]
+    }
+   ],
+   "indexes": []
   }
  ]
 }

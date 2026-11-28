@@ -58,7 +58,7 @@ write wins. Body (at most 16 KiB):
   "vacation": ["2026-11-27", "2026-11-28"] }
 ```
 
-`dueNow`: cards due now (the study queue's count, `lib/study/dueCounts.ts`, daily limits not applied). `dueBuckets`:
+`dueNow`: cards due now (the study queue's count, `lib/features/flashcards/session/dueCounts.ts`, daily limits not applied). `dueBuckets`:
 cards that come due later, grouped by the **start of the UTC hour** (`at`, whole hours) within the next 14 days, at most
 400 buckets. `goal.status`: the day status of the learner's today (`goals/`: `open`, `met`, `vacation`, `none`;
 `set` is true when a goal is in effect). `streak`: the goal streak (`current`, `todayMet`; 0 / false with no goal).
@@ -151,3 +151,7 @@ At most **one delivery per (account, channel, kind, learner day)**, recorded in 
 delivery needs `enabled`, the channel switch, the kind, a slot whose `at` lies within the last 2 hours and not in the
 future, and (email) SMTP configured and a verified address, (push) at least one subscription. Quiet hours and vacation
 are part of the plan. Kinds that fall due in the same check go out in **one** email.
+
+The email's language (#297, `settings/interface-language.json` `reminder`): the interface-language setting the
+workspaces with live facts share (each one's own, else the account's), else the account's; the test message
+(`POST /api/reminders/test`) uses the account's. Push texts are written by the web app from its running catalogue.

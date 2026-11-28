@@ -10,7 +10,7 @@ Nothing here is legal advice.
 ## qinqin's own licences
 
 - **The code is MIT** (`LICENSE` in the repository root, Copyright (c) 2026 qinqin contributors).
-- **Content the project writes is CC BY 4.0**: the grammar packs, the Japanese lemmatizer rule table and the qinqin colour themes. Credit it as "qinqin contributors, CC BY 4.0" with a link to <https://github.com/Elaktrato/qinqin>.
+- **Content the project writes is CC BY 4.0**: the grammar packs, the course packs, the graded readers, the Japanese lemmatizer rule table and the qinqin colour themes. Credit it as "qinqin contributors, CC BY 4.0" with a link to <https://github.com/Elaktrato/qinqin>.
 - **Third-party data keeps its own licence**, as listed on the Sources page and in each pack's `ATTRIBUTION.md`; the MIT licence of the code does not cover it. The HSK lists carry no reuse licence and are included at the owner's decision (see "The HSK lists" below).
 
 The short overview is [`LICENSING.md`](https://github.com/Elaktrato/qinqin/blob/develop/LICENSING.md). Installing and removing packs: [Data packs on the server](Admin-data-packs).
@@ -31,6 +31,7 @@ The image ships these under `/opt/qinqin/packs` (source: `plugins/data/`):
 | HSK 3.0 words (`hsk-words`) | The official word list, HSK 1–6 and 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07) | No reuse licence granted; see "The HSK lists" |
 | Jōyō grades (`joyo-grades`) | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
 | 通用规范汉字表 (`tgh-chars`) | The 2013 standard characters list in three levels (3,500 / 3,000 / 1,605), derived from Unihan's `kTGH` | Unicode License v3 |
+| JLPT words (`jlpt-words`) | An estimate of the JLPT vocabulary levels ≈ N5 to ≈ N1 (9,999 words), computed by qinqin from the Jiten ranks, JMdict's priority tags, the JLPT kanji levels and a reviewed core list of N5/N4 textbook words | CC BY-SA 4.0 (the core list CC BY 4.0) |
 | JLPT kanji (`jlpt-kanji`) | Approximate N5–N1 kanji levels: kanjiapi.dev's list (of unstated provenance) plus levels derived from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …) | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) |
 | Spanish–English demo dictionary (`es-demo`) | A hand-written sample | CC0 1.0 |
 | Chinese grammar (HSK-aligned) (`zh-grammar`) | Grammar lessons ≈ HSK 1 to 7–9, written for qinqin; the HSK 3.0 syllabus grammar outline is used as a topic index only, no syllabus text is reproduced | CC BY 4.0 (the lessons) |
@@ -52,7 +53,9 @@ The dictionary files are redistributed **unmodified**; the Jiten list is a conve
 - **Kanji alive example-word audio** (`kanjialive-audio`): 10,156 Japanese clips, CC BY 4.0, fetched and checksum-checked at build time ([AI providers and offline OCR](Admin-AI-and-OCR#audio-in-the-image)).
 
 - **Pictures for words** (`images-openmoji`, `images-mulberry`): [OpenMoji](https://openmoji.org) 17.0.0 black-outline emoji ("All emojis designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0") and [Mulberry Symbols](https://mulberrysymbols.org) 3.6.1 by Steve Lee (CC BY-SA 4.0), each its own pack with its own licence and credits; the word mappings use the Unicode CLDR emoji annotations (Unicode License v3) and English glosses. Built by `scripts/prepare-images-pack.mjs` from pinned releases; served by the server, never compiled into the binary or bundled in the web build, because share-alike reaches the pictures and their recoloured copies but not the MIT code (`docs/sources.md`, "Pictures").
-- **Starter words** (`server/internal/starter/sets/`): a short list of common, picturable words per language, chosen for this project; the word choice is released under CC0 1.0 (a list of words: the dictionary data it points at stays under its own licence). Not yet read through by a person (the files say `humanReviewed: false`); LICENSING.md names them as a CC0 exception, pending the owner's confirmation.
+- **Starter words** (`server/internal/starter/sets/`): about 150 common, picturable words per language (146 Chinese, 145 Japanese, #275), chosen for this project and released under CC BY 4.0 (credit "qinqin contributors, CC BY 4.0"; the dictionary data and pictures they point at keep their own licences). Reviewed by agents acting as native-speaker teachers, not yet by a person (the files say `humanReviewed: false`; notes in `REVIEW.md` beside them); credited on the Sources page.
+- **Graded readers** (`server/internal/library/sources/graded/texts/`, #231): 35 short texts (five a level, ≈ HSK 1–4 and ≈ N5–N3) embedded in the server and offered in the Reader's Sources page; written for this project under CC BY 4.0 (credit "qinqin contributors, CC BY 4.0") and reviewed by agents acting as native-speaker teachers, not yet by a person (`REVIEW.md` beside them). Format and level rule: `docs/contracts/graded/README.md`; sources: `docs/sources.md` "Graded readers".
+- **Topic labels** (`server/internal/topics/labels/`, #220): the themes of words (food, family, travel …) that courses fill their units by; written for this project and shared under CC BY-SA 4.0 (adapted in part from OpenMoji's groups, keyed to CC-CEDICT and JMdict words). Suggested by an agent and reviewed by agents acting as native-speaker teachers (not yet by a person), or taken from the group of the word's OpenMoji picture. Format: `docs/contracts/topics/README.md`; sources: `docs/sources.md` "Topic labels".
 
 **Credited on the Sources page as part of the app:** the stroke player `hanzi-writer`, the FSRS library `ts-fsrs`, the Reader's script converter `opencc-js` (MIT code with Apache-2.0 dictionary data; both licence texts ship as `/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`), the interface font Figtree (SIL Open Font License 1.1, shipped unmodified with its licence text `/FIGTREE-OFL.TXT`, never loaded from another host), and the icon set. Every data package a client downloads carries the licence texts of its packs ([Data packs on the server](Admin-data-packs#licence-texts-in-packages)).
 
@@ -66,19 +69,7 @@ The HSK packs include only the word list and the list of characters to recognise
 
 The JLPT has published no official kanji list since 2010, so the kanji levels are approximate and labelled that way.
 
-**JLPT vocabulary is not bundled**: its upstream licence chain could not be verified (open-anki-jlpt-decks is labelled MIT, but says its data came from other decks based on the tanos.co.uk lists, described as CC BY; that page could not be reached). You can generate it for your own server as a local-only pack, from the repository root:
-
-```sh
-mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
-base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
-for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
-curl -fsSLo LICENSE $base/LICENSE
-cd -
-node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
-qinqin seed --packs plugins/data,plugins/data-local
-```
-
-Under Docker mount `plugins/data-local` and name it in `--packs` ([Data packs on the server](Admin-data-packs)). The character map's "Group by" and the Sources page pick it up once installed.
+The JLPT has published no official vocabulary list either. The bundled **JLPT words (approximate)** are qinqin's own estimate, labelled "≈ N5" … "≈ N1". About 540 basic textbook words (days of the week, food, places in town, family, basic verbs and adjectives; written for qinqin under CC BY 4.0 and reviewed by teacher agents) have their ≈ N5 or ≈ N4 level set directly. Every other word gets its level mainly from how often it is used (the Jiten frequency rank), one or two levels easier when JMdict marks it as a basic, common word, and at most one level harder for hard kanji; outside the core list nothing is easier than ≈ N4 except pronouns and conjunctions. Grammar pieces, particles, counted amounts (十人) and noise are left out. The words and readings are JMdict's. No published JLPT word list is copied, so the pack is CC BY-SA 4.0 like its inputs. A word can be a level off. It badges words, offers level sessions and level decks, and groups the character map like any level list. The method and its checks: `docs/sources.md`; the generator `scripts/prepare-jlpt-words.mjs` can also take a base list once one with a confirmed licence exists.
 
 ## Local-only packs
 

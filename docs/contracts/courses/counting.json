@@ -1,0 +1,1073 @@
+{
+ "version": 1,
+ "rule": "courses/counting",
+ "note": "What course work counts for (#225). A step is a finished lesson that is not a grammar lesson (its grammar run counts on its own), a unit test or a section exam; a started lesson and a placement are no step. steps: the step of one event (web, through the #221 parse), its identity [kind, course, unit or section, lesson]. activity: heatmap cells of the course rule (Go, through the activity route's rules; events default to workspace 1). xp and streak: EXP and the daily streak (web; workspace 7).",
+ "constants": {
+  "stepXp": 20
+ },
+ "steps": [
+  {
+   "name": "a finished word lesson",
+   "event": {
+    "id": "01KB0000000000000000CC0001",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "score": 4,
+     "total": 5,
+     "words": []
+    }
+   },
+   "expect": [
+    "lesson",
+    "zh-course",
+    "hsk1-hello",
+    "words-1"
+   ]
+  },
+  {
+   "name": "a finished practice lesson",
+   "event": {
+    "id": "01KB0000000000000000CC0002",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "practice",
+     "score": 4,
+     "total": 5,
+     "words": []
+    }
+   },
+   "expect": [
+    "lesson",
+    "zh-course",
+    "hsk1-hello",
+    "practice"
+   ]
+  },
+  {
+   "name": "a catch-up lesson",
+   "event": {
+    "id": "01KB0000000000000000CC0003",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "catch-up-1",
+     "score": 4,
+     "total": 5,
+     "words": []
+    }
+   },
+   "expect": [
+    "lesson",
+    "zh-course",
+    "hsk1-hello",
+    "catch-up-1"
+   ]
+  },
+  {
+   "name": "a grammar lesson is no step (its grammar run counts)",
+   "event": {
+    "id": "01KB0000000000000000CC0004",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "grammar-shi",
+     "score": 4,
+     "total": 5,
+     "words": []
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a failed unit test",
+   "event": {
+    "id": "01KB0000000000000000CC0005",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "unit-test",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "score": 10,
+     "total": 12,
+     "passed": false,
+     "early": false
+    }
+   },
+   "expect": [
+    "unit-test",
+    "zh-course",
+    "hsk1-hello"
+   ]
+  },
+  {
+   "name": "a passed early unit test",
+   "event": {
+    "id": "01KB0000000000000000CC0006",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "unit-test",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "score": 10,
+     "total": 12,
+     "passed": true,
+     "early": true
+    }
+   },
+   "expect": [
+    "unit-test",
+    "zh-course",
+    "hsk1-hello"
+   ]
+  },
+  {
+   "name": "a section exam",
+   "event": {
+    "id": "01KB0000000000000000CC0007",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "section-exam",
+     "course": "zh-course",
+     "section": "hsk1",
+     "score": 25,
+     "total": 30,
+     "passed": true
+    }
+   },
+   "expect": [
+    "section-exam",
+    "zh-course",
+    "hsk1"
+   ]
+  },
+  {
+   "name": "a started lesson",
+   "event": {
+    "id": "01KB0000000000000000CC0008",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-started",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1"
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "a placement",
+   "event": {
+    "id": "01KB0000000000000000CC0009",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "placement",
+     "course": "zh-course",
+     "section": "hsk2"
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "an unreadable course event (score above total)",
+   "event": {
+    "id": "01KB0000000000000000CC0010",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "course",
+    "payload": {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "score": 6,
+     "total": 5,
+     "words": []
+    }
+   },
+   "expect": null
+  },
+  {
+   "name": "another event type",
+   "event": {
+    "id": "01KB0000000000000000CC0011",
+    "workspaceId": 7,
+    "device": "web",
+    "ts": "2026-11-01T09:00:00Z",
+    "type": "grammar",
+    "payload": {
+     "point": "p:l",
+     "mode": "lesson",
+     "score": 1,
+     "total": 1
+    }
+   },
+   "expect": null
+  }
+ ],
+ "activity": {
+  "rules": [
+   {
+    "type": "course",
+    "rule": {
+     "feature": "courses",
+     "item": "course"
+    }
+   }
+  ],
+  "cases": [
+   {
+    "name": "a finished lesson is a point, once per lesson per learner day",
+    "note": "the same lesson twice the same day is one point; another lesson is another",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T09:30:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T10:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "practice",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     }
+    ],
+    "cells": [
+     {
+      "day": "2026-11-01",
+      "workspace": 1,
+      "type": "course",
+      "points": 2,
+      "raw": 2
+     }
+    ]
+   },
+   {
+    "name": "lesson ids repeat across units and courses: each is its own step; the next day counts again",
+    "note": "words-1 of two units and of another course are three steps",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-03",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T09:10:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-family",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T09:20:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "other-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-02T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     }
+    ],
+    "cells": [
+     {
+      "day": "2026-11-01",
+      "workspace": 1,
+      "type": "course",
+      "points": 3,
+      "raw": 3
+     },
+     {
+      "day": "2026-11-02",
+      "workspace": 1,
+      "type": "course",
+      "points": 1,
+      "raw": 1
+     }
+    ]
+   },
+   {
+    "name": "a grammar lesson of the course is no course step",
+    "note": "its grammar run counts (type grammar); a lesson id starting with grammar- scores nothing here",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "grammar-shi",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T09:05:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-2",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     }
+    ],
+    "cells": [
+     {
+      "day": "2026-11-01",
+      "workspace": 1,
+      "type": "course",
+      "points": 1,
+      "raw": 1
+     }
+    ]
+   },
+   {
+    "name": "a unit test and a section exam are steps, passed or not, once each per day",
+    "note": "a failed and a passed test of one unit the same day are one point; the exam another",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "unit-test",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "score": 10,
+       "total": 12,
+       "passed": false,
+       "early": false
+      }
+     },
+     {
+      "ts": "2026-11-01T09:20:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "unit-test",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "score": 10,
+       "total": 12,
+       "passed": true,
+       "early": false
+      }
+     },
+     {
+      "ts": "2026-11-01T10:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "section-exam",
+       "course": "zh-course",
+       "section": "hsk1",
+       "score": 25,
+       "total": 30,
+       "passed": false
+      }
+     }
+    ],
+    "cells": [
+     {
+      "day": "2026-11-01",
+      "workspace": 1,
+      "type": "course",
+      "points": 2,
+      "raw": 2
+     }
+    ]
+   },
+   {
+    "name": "a started lesson and a placement count nothing",
+    "note": "only finished lessons and tests are steps",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-started",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1"
+      }
+     },
+     {
+      "ts": "2026-11-01T09:10:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "placement",
+       "course": "zh-course",
+       "section": "hsk2"
+      }
+     }
+    ],
+    "cells": []
+   },
+   {
+    "name": "unreadable course events count nothing",
+    "note": "an unknown kind, a missing or non-text course, unit, lesson or section, a payload that is not an object",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-skipped",
+       "course": "zh-course",
+       "unit": "u",
+       "lesson": "l"
+      }
+     },
+     {
+      "ts": "2026-11-01T09:01:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "unit": "u",
+       "lesson": "l"
+      }
+     },
+     {
+      "ts": "2026-11-01T09:02:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": 3,
+       "lesson": "l"
+      }
+     },
+     {
+      "ts": "2026-11-01T09:03:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "unit-test",
+       "course": "zh-course"
+      }
+     },
+     {
+      "ts": "2026-11-01T09:04:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "section-exam",
+       "course": "zh-course",
+       "section": [
+        "hsk1"
+       ]
+      }
+     },
+     {
+      "ts": "2026-11-01T09:05:00Z",
+      "type": "course",
+      "payload": [
+       "lesson-finished"
+      ]
+     },
+     {
+      "ts": "2026-11-01T09:06:00Z",
+      "type": "course",
+      "payload": null
+     }
+    ],
+    "cells": []
+   },
+   {
+    "name": "steps count in their own workspace",
+    "note": "one cell per workspace and day",
+    "history": [],
+    "from": "2026-11-01",
+    "to": "2026-11-02",
+    "events": [
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      }
+     },
+     {
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "course",
+      "payload": {
+       "kind": "lesson-finished",
+       "course": "zh-course",
+       "unit": "hsk1-hello",
+       "lesson": "words-1",
+       "score": 4,
+       "total": 5,
+       "words": []
+      },
+      "workspace": 2
+     }
+    ],
+    "cells": [
+     {
+      "day": "2026-11-01",
+      "workspace": 1,
+      "type": "course",
+      "points": 1,
+      "raw": 1
+     },
+     {
+      "day": "2026-11-01",
+      "workspace": 2,
+      "type": "course",
+      "points": 1,
+      "raw": 1
+     }
+    ]
+   }
+  ]
+ },
+ "xp": [
+  {
+   "name": "a finished lesson: 20, no daily bonus",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    }
+   ],
+   "lessons": [],
+   "expect": 20
+  },
+  {
+   "name": "every step earns, the same lesson twice too",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:30:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    }
+   ],
+   "lessons": [],
+   "expect": 40
+  },
+  {
+   "name": "a test earns whatever its result; a started lesson and a placement earn nothing",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "score": 10,
+      "total": 12,
+      "passed": false,
+      "early": false
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0016",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "zh-course",
+      "section": "hsk1",
+      "score": 25,
+      "total": 30,
+      "passed": true
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:20:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-started",
+      "course": "zh-course",
+      "unit": "hsk1-family",
+      "lesson": "words-1"
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:30:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "zh-course",
+      "section": "hsk2"
+     }
+    }
+   ],
+   "lessons": [],
+   "expect": 40
+  },
+  {
+   "name": "a grammar lesson of the course earns through its grammar run only",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0019",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "grammar-shi",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    }
+   ],
+   "lessons": [
+    "2026-11-01T09:00:00Z"
+   ],
+   "expect": 20
+  },
+  {
+   "name": "a review keeps its daily bonus; the lesson adds its own 20",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    }
+   ],
+   "lessons": [],
+   "expect": 45
+  },
+  {
+   "name": "unreadable events and other workspaces earn nothing",
+   "history": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000CC0022",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 6,
+      "total": 5,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB0000000000000000CC0023",
+     "workspaceId": 8,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-course",
+      "unit": "hsk1-hello",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": []
+     }
+    }
+   ],
+   "lessons": [],
+   "expect": 0
+  }
+ ],
+ "streak": [
+  {
+   "name": "three days of course lessons",
+   "now": "2026-01-10T12:00:00Z",
+   "zone": "UTC",
+   "vacation": [],
+   "reviews": [],
+   "lessons": [],
+   "drills": [],
+   "course": [
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-08T10:00:00Z"
+    },
+    {
+     "kind": "unit-test",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "score": 10,
+     "total": 12,
+     "passed": false,
+     "early": false,
+     "ts": "2026-01-09T10:00:00Z"
+    },
+    {
+     "kind": "section-exam",
+     "course": "zh-course",
+     "section": "hsk1",
+     "score": 25,
+     "total": 30,
+     "passed": true,
+     "ts": "2026-01-10T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "current": 3,
+    "best": 3,
+    "todayDone": true
+   }
+  },
+  {
+   "name": "a course day joins review, grammar and drill days",
+   "now": "2026-01-11T12:00:00Z",
+   "zone": "UTC",
+   "vacation": [],
+   "reviews": [
+    "2026-01-07T10:00:00Z"
+   ],
+   "lessons": [
+    "2026-01-09T10:00:00Z"
+   ],
+   "drills": [
+    "2026-01-10T10:00:00Z"
+   ],
+   "course": [
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "practice",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-08T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "current": 4,
+    "best": 4,
+    "todayDone": false
+   }
+  },
+  {
+   "name": "a started lesson, a placement and a course grammar lesson keep no day",
+   "now": "2026-01-10T12:00:00Z",
+   "zone": "UTC",
+   "vacation": [],
+   "reviews": [],
+   "lessons": [],
+   "drills": [],
+   "course": [
+    {
+     "kind": "lesson-started",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "ts": "2026-01-08T10:00:00Z"
+    },
+    {
+     "kind": "placement",
+     "course": "zh-course",
+     "section": "hsk2",
+     "ts": "2026-01-09T10:00:00Z"
+    },
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "grammar-shi",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-10T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "current": 0,
+    "best": 0,
+    "todayDone": false
+   }
+  },
+  {
+   "name": "a step on a vacation day does not count",
+   "now": "2026-01-10T12:00:00Z",
+   "zone": "UTC",
+   "vacation": [
+    {
+     "start": "2026-01-09",
+     "end": "2026-01-09"
+    }
+   ],
+   "reviews": [
+    "2026-01-08T10:00:00Z"
+   ],
+   "lessons": [],
+   "drills": [],
+   "course": [
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-09T10:00:00Z"
+    },
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-2",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-10T10:00:00Z"
+    }
+   ],
+   "expect": {
+    "current": 2,
+    "best": 2,
+    "todayDone": true
+   }
+  },
+  {
+   "name": "the learner day decides: late evening UTC is the next day in Tokyo",
+   "now": "2026-01-10T12:00:00Z",
+   "zone": "Asia/Tokyo",
+   "vacation": [],
+   "reviews": [],
+   "lessons": [],
+   "drills": [],
+   "course": [
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-1",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-08T16:00:00Z"
+    },
+    {
+     "kind": "lesson-finished",
+     "course": "zh-course",
+     "unit": "hsk1-hello",
+     "lesson": "words-2",
+     "score": 4,
+     "total": 5,
+     "words": [],
+     "ts": "2026-01-10T01:00:00Z"
+    }
+   ],
+   "expect": {
+    "current": 2,
+    "best": 2,
+    "todayDone": true
+   }
+  }
+ ]
+}

@@ -7,7 +7,8 @@
 	import { highlightMark } from './highlightUi';
 	import type { Run } from './paragraphText';
 	import { createReveal, type Reveal } from './reveal';
-	import type { Piece } from './smartReadings';
+	import { shownPieces, shownRuns, type Piece } from './smartReadings';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import type { LookupController } from './useLookup.svelte';
 	import type { WordRange } from './wordRanges';
 	import { useApp } from '$lib/context/context';
@@ -71,6 +72,11 @@
 		for (let i = 0; i < r; i++) at += Array.from(runs[i].text).length;
 		return at;
 	}
+
+	// Hidden romanisation (#284): generated readings and the book's own ruby of a hidden type (pinyin or bopomofo
+	// over hanzi, romaji) are not drawn; furigana keeps its own switches (display.readings, display.bookRuby).
+	const roman = useRomanisation();
+	const keepRuby = (rt: string): boolean => roman.showsText(rt, lang);
 
 	const stack = $derived(fontStack(display.font, lang, app.fonts.installed));
 	// A concrete reader font needs its pack face registered (#97); default is the app's.
@@ -144,9 +150,10 @@
 	style:--reader-rt-size="{display.rubyScale}em"
 	style:--reader-font={stack === 'inherit' ? undefined : stack}
 >
-	{#each paragraphs as runs, p (p)}
+	{#each paragraphs as allRuns, p (p)}
 		{@const drawn = highlights.get(p) ?? []}
-		{@const list = pieces.get(p) ?? []}
+		{@const runs = shownRuns(allRuns, keepRuby)}
+		{@const list = shownPieces(pieces.get(p) ?? [], keepRuby)}
 		{@const ranges = words.get(p) ?? []}
 		<!-- One <p> per paragraph whatever its content: the position observers watch these elements. -->
 		<p data-p={p} class:bookmarked={marked.has(p)}>{#if drawn.length > 0 || ranges.length > 0 || list.some((x) => x.source === 'dict')}{#each planOf(runs, drawn, list, ranges) as g (g.run)}{#if g.ruby}<ruby data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}<rt class:concealed={g.bookConcealed}>{g.ruby}</rt></ruby>{:else}<span data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}</span>{/if}{/each}{:else}{#each runs as run, r (r)}{#if run.ruby && display.bookRuby}<ruby data-r={r}>{run.text}<rt class:concealed={list.find((x) => x.source === 'book' && x.start === bookStart(runs, r))?.concealed}>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}{/if}</p>
@@ -267,10 +274,21 @@
 		background-color: var(--selected-wash);
 	}
 
+	/* The word a saved sentence's link opened the reader at (#280): underlined, so it stays apart from a lookup. */
+	:global(::highlight(reader-source)) {
+		background-color: var(--selected-wash);
+		text-decoration: underline 2px var(--reading-accent);
+		text-underline-offset: 0.2em;
+	}
+
 	/* Forced colours: the looked-up word is the system selection, user
 	   highlights the system mark colours (their names stay in the panel). */
 	@media (forced-colors: active) {
 		:global(::highlight(reader-lookup)) {
+			background-color: Highlight;
+			color: HighlightText;
+		}
+		:global(::highlight(reader-source)) {
 			background-color: Highlight;
 			color: HighlightText;
 		}

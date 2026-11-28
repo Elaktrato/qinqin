@@ -11,26 +11,24 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration } from '$lib/stats/readingTime';
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
-	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
-	import { activeWeights } from '$lib/study/readModel';
+	import { contextForData, onContextStale } from '$lib/studycore/currentContext';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/studycore/data';
+	import { activeWeights } from '$lib/studycore/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
 	import WidgetCard from './WidgetCard.svelte';
+	import { WidgetLoad } from './widgetLoad.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
 
 
 	const session = useSession();
 
-	let summary = $state.raw<SummaryNumbers | null>(null);
-	let loading = $state(true);
-	let error = $state('');
 	let noWorkspace = $state(false);
 
-	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
-
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
+	// The last numbers of this workspace show at once on a revisit (#290).
+	const numbers = new WidgetLoad<SummaryNumbers>(session, 'summary-numbers', session.workspaces.current?.id ?? null);
+	const summary = $derived(numbers.value);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
 		session.features.status === 'ready'
@@ -43,61 +41,52 @@
 			? 'no-workspace'
 			: !flashcardsOn
 				? 'ready'
-				: loading
+				: numbers.loading
 					? 'loading'
-					: error
+					: numbers.error
 						? 'error'
 						: 'ready'
 	);
 
 	async function load(workspace: number | null, force = false): Promise<void> {
-		const seq = ++requestSeq;
-		loading = true;
-		error = '';
-		noWorkspace = false;
-
+		noWorkspace = workspace === null;
 		if (workspace === null) {
-			summary = null;
-			noWorkspace = true;
-			loading = false;
+			numbers.clear();
 			return;
 		}
-
-		try {
-			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (study/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(session.study, workspace, { force });
-			if (seq !== requestSeq) return;
-			const ctx = contextForData(session.zone, data, workspace);
-			summary = summaryNumbers({
-				workspaceId: workspace,
-				now: Date.now(),
-				day: ctx.day,
-				cards: data.cards,
-				decks: data.decks,
-				reviews: data.reviews,
-				known: data.known,
-				vacation: ctx.vacation,
-				w: activeWeights(data),
-				kinds: [],
-				deckSettings: data.deckSettings
-			});
-		} catch (err) {
-			if (seq !== requestSeq) return;
-			summary = null;
-			error = errorText(err, t('widgets.summary.loadFailed'));
-		} finally {
-			if (seq === requestSeq) loading = false;
-		}
+		await numbers.run(
+			workspace,
+			async () => {
+				// Duplicate cards arrive merged, their reviews re-pointed; the
+				// history is shared with the other widgets (studycore/data.ts loadStudyHistory).
+				const data = await loadStudyHistory(session.study, workspace, { force });
+				const ctx = contextForData(session.zone, data, workspace);
+				return summaryNumbers({
+					workspaceId: workspace,
+					now: Date.now(),
+					day: ctx.day,
+					cards: data.cards,
+					decks: data.decks,
+					reviews: data.reviews,
+					grammarRuns: data.grammarRuns,
+					drillAnswers: data.drillAnswers,
+					courseSteps: data.courseSteps,
+					known: data.known,
+					vacation: ctx.vacation,
+					w: activeWeights(data),
+					kinds: [],
+					deckSettings: data.deckSettings
+				});
+			},
+			(err) => errorText(err, t('widgets.summary.loadFailed'))
+		);
 	}
 
 	$effect(() => {
 		if (!flashcardsOn) {
 			// Switching the feature off drops the numbers at once and
 			// invalidates a load that is still running.
-			requestSeq += 1;
-			summary = null;
-			loading = false;
+			numbers.clear();
 			noWorkspace = workspaceId === null;
 			return;
 		}
@@ -125,7 +114,8 @@
 	title={t('widgets.summary.title')}
 	headingId="summary-numbers-heading"
 	{status}
-	{error}
+	error={numbers.error}
+	stale={numbers.stale}
 	onretry={() => void load(workspaceId, true)}
 >
 	{#if !flashcardsOn}

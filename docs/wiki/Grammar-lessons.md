@@ -1,6 +1,6 @@
 # Grammar lessons
 
-**Grammar** (`/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a core feature: it is on for everyone until you switch it off in [Settings → Features](Settings-tour#features). Your best score of each lesson is kept on the server.
+**Grammar** (`/grammar`, the grammar icon in the top bar or the phone menu) holds short grammar lessons with examples and a practice run after each. It is a core feature: it is on for everyone until you switch it off in [Settings → Features](Settings-tour#features). Each finished run is saved in your study history, and your best score of each lesson is worked out from it.
 
 ## What there is to learn
 
@@ -34,15 +34,34 @@ Chinese lessons follow the reader's **Script** setting (original, simplified or 
 **Practice** (`…/practice`) runs the lesson's exercises one after another ("Exercise 2 of 7"):
 
 1. **Choose the word that fits the gap**: one per example that has a marked grammar point and wrong choices, in the order of the examples. The translation is shown above the sentence.
-2. **Put the words in order**: one per example, in a shuffled order; tap the word tiles into place, as in a [Word Salad flashcard](Flashcards-study-sessions#card-types). It counts as right only when solved on the first check without giving up.
+2. **Put the words in order**: one per example, in a shuffled order; tap or drag the word tiles into place (Alt+← and Alt+→ move a placed tile), as in a [Word Salad flashcard](Flashcards-study-sessions#card-types). It counts as right only when solved on the first check without giving up.
 
-After each answer the whole sentence and its reading are shown; **Next** goes on, **Finish** ends the run. The result says "Score: 5/7" and "Best so far: 6/7". **Retry** shuffles the exercises anew; **Back to lesson** and **Next lesson** leave.
+After each answer the whole sentence and its reading are shown; **Next** goes on, **Finish** ends the run. The result says "Score: 5/7" and "Best so far: 6/7"; at 80 % or more it also says the point is **learned** and comes back for review (below). **Retry** shuffles the exercises anew; **Back to lesson** and **Next lesson** leave.
+
+## Review
+
+A grammar point is **learned** once you finish its lesson with at least 80 % (4 of 5, 8 of 10). From then on it comes back for **spaced review**, scheduled with FSRS like a flashcard or a [drill](Practice-and-drills) item (the default FSRS parameters, vacation days frozen): the first time a little after the lesson, then at growing intervals while you get it right, sooner again after a weak review.
+
+- **The Grammar page** shows a **Grammar review** section once a point is learned: how many points are due ("3 grammar points to review") with **Review now**, or when the next review is. Each learned lesson's row says "Due for review" or "Review 5 Dec", and when you last reviewed it ("last reviewed 1 Dec"; before the first review: when you learned it).
+- **A review round** (`/grammar/review`) takes the due points one after another ("Point 2 of 5", "first review" for a point never reviewed). Each point asks up to **three exercises from its lesson's own examples**: fill the gap with the lesson's wrong choices, or put the words in order, alternating. The next review of the point starts three examples further on, so you meet other sentences each time. **Skip this point** passes one over without saving anything, **End review** stops.
+- **How a review counts for the schedule:** 80 % or more right on the first try is Good, at least half is Hard, less is Again. Practising the whole lesson again is a review too.
+- **At most 5 new points a day:** a point you have never reviewed starts its reviews only while fewer than 5 points had their first review today, so finishing many lessons in one day does not flood the next days. Points already under review are not limited. A round holds at most 20 points.
+- **In a study session:** the study modal has a **Grammar review** chip with the number due (while Grammar is switched on); with it on, a session runs the grammar review after its cards, also when no card is due, and the summary counts the points and their XP ([Flashcards and study sessions](Flashcards-study-sessions#starting-a-session)).
+
+A review is saved like a lesson run (a `grammar` event of mode `review`) and counts the same way (below); it does not change the lesson's best score.
 
 ## Your progress
 
-Your best score per lesson is saved for the workspace, on the server: it syncs to your devices and is in [your data](Your-data). A run never lowers a best score. If the result cannot be saved, the page says "Could not save your progress, so nothing was changed" and offers **Try saving again**. A lesson whose number of exercises changed (for example after the pack was updated) starts a new best score.
+Each finished run is saved to the workspace's study history, like a flashcard review: it syncs to your devices and is in [your data](Your-data). Your best score per lesson and the time of your last run are worked out from these runs, so a run never lowers a best score, even one made on another device. A run made without a connection waits on this device and is sent when you are back online (it already counts on this device). Only when the workspace was deleted in the meantime does the page say "This run was not saved: its workspace was deleted." A lesson whose number of exercises changed (for example after the pack was updated) starts a new best score.
 
-Grammar practice does not create flashcards and does not count for streaks, the heatmap, daily goals or milestones.
+A finished lesson or review counts:
+
+- on the [heatmap](Stats-and-heatmap) and in the [weekly summary](Weekly-summary) as "Grammar lessons": one point per grammar point worked on, once per point a day (practising or reviewing the same point again that day adds nothing);
+- for a [daily goal](Daily-goals) of grammar lessons (Settings → Study → Daily goal);
+- 20 XP per run, whatever the score, towards your level ([XP and streaks](Flashcards-study-sessions#scheduling-xp-and-streaks));
+- for your streak: a day with a finished lesson keeps it going like a day with a review, and for the streak and days-active [milestones](Milestones).
+
+Grammar practice and review do not create flashcards.
 
 ## Offline
 

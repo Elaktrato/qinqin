@@ -25,7 +25,7 @@ rules. To credit something new, see "Credits and the Sources page" on the wiki
 page `docs/wiki/Data-and-licences.md`.
 
 The repository bundles four upstream dictionaries, one frequency list and
-three level lists (HSK 3.0 characters, HSK 3.0 words, JLPT kanji) under `plugins/data/` so that a fresh clone or Docker image
+four level lists (HSK 3.0 characters, HSK 3.0 words, JLPT kanji, the estimated JLPT words) under `plugins/data/` so that a fresh clone or Docker image
 seeds offline (`qinqin seed`):
 
 **Japanese**
@@ -37,9 +37,10 @@ seeds offline (`qinqin seed`):
 | **Jiten frequency list** (`jiten-frequency`) | Japanese word frequency ranks that order lookup results | CC BY-SA 4.0 (Jitensoft) | https://jiten.moe/frequency-dictionaries |
 | **Jōyō kanji by school grade** (`joyo-grades`), derived from KANJIDIC2 | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary) | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
 | **JLPT kanji (approximate)** (`jlpt-kanji`), from kanjiapi.dev and KANJIDIC2 | Kanji by approximate JLPT level N5–N1 | MIT (© 2023 Iridium Szreter); derived levels CC BY-SA 4.0 (EDRDG) | https://github.com/onlyskin/kanjiapi.dev |
+| **JLPT words (approximate)** (`jlpt-words`), estimated by qinqin from the Jiten ranks, JMdict, `jlpt-kanji` and a reviewed core list | 9,999 words by estimated JLPT level ≈ N5–≈ N1 (no official list since 2010) | CC BY-SA 4.0 (an adaptation of the Jiten ranks and JMdict; kanjiapi.dev's MIT notice kept; the core list CC BY 4.0, qinqin contributors) | this repository, `scripts/prepare-jlpt-words.mjs` |
 | **KanjiVG components** (`kanjivg-components`), derived from KanjiVG r20260714 | The parts each kanji is drawn from (6,312 kanji), for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence | https://kanjivg.tagaini.net |
 
-Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open-anki-jlpt-decks); see "Japanese" under "Level lists". **Chinese components** (`zh-components`) for the radical and part lookup; see "Character components".
+Optional, local only (not bundled): **Chinese components** (`zh-components`) for the radical and part lookup; see "Character components".
 
 **Other**
 
@@ -114,6 +115,18 @@ unverified facts marked unverified) must stay the same in both places.
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
 
+## Courses
+
+- **Chinese course (≈ HSK 1–4)** (`zh-course`, type `course`; bundled) and **Japanese course (≈ JLPT N5–N3)**
+  (`ja-course`, type `course`; bundled): the course skeletons (sections, units, themes, the placement of the
+  grammar lessons, the characters each unit introduces, checkpoints) and the reading texts with their English
+  translations, **written for qinqin by the project and released under CC BY 4.0** (credit: "qinqin contributors,
+  CC BY 4.0", https://github.com/Elaktrato/qinqin; `plugins/data/zh-course` and `plugins/data/ja-course`, each with
+  `LICENSE`, `ATTRIBUTION.md` and `REVIEW.md`). The selection and order are qinqin's own, not taken from a textbook,
+  a course or a syllabus. The packs contain **no level-list words**: each server fills the units from its installed
+  `hsk-words` or `jlpt-words` list, which keep their own licences (above). The content was **reviewed by agents
+  acting as native-speaker teachers, not yet by a person** (`REVIEW.md`); errors are possible.
+
 ## Writing-system trainer data (kana, Hangul, Cyrillic)
 
 The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
@@ -156,10 +169,63 @@ images pack. The **project wrote them**: the choice and order of words, the
 glosses and the picture pairing. They copy no third-party text; the dictionary
 entries and the pictures they point at stay under their own licences (see
 "Pictures"), and each file's `license` is **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0";
-the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They are seeds, not reviewed lists: `humanReviewed` is
-`false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
-for 100 to 300; a person has not yet read every word against the dictionary.
+the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They hold 146 (Chinese) and 145 (Japanese) words (#275; the owner's
+target was about 150), each with the picture the server serves for it. They were
+**reviewed by agents acting as native-speaker teachers, not yet by a person**: two
+teacher agents per language and an adjudicator read every word, its dictionary entry
+and its picture (notes: `server/internal/starter/sets/REVIEW.md`); `humanReviewed` stays
+`false` until the owner has read them, and each file's `attribution` says so.
 Licence confirmed by the owner on 2026-11-26.
+
+## Counters and measure words (Practice, #179)
+
+`server/internal/counters/table/counters-ja.json` (embedded in the server) is the Japanese counters table of the
+counter drills: 32 counters, what each counts, the numbers asked, the readings of number + counter with their sound
+changes (the rule in `docs/contracts/counters/`, the irregular readings in the table) and 161 example nouns.
+`measures-zh.json` corrects the Chinese measure words the measure-word drill reads from the installed CC-CEDICT's
+`CL:` notes (nouns left out, lists reordered or extended, question glosses). The **project wrote both** (CC BY 4.0,
+credit "qinqin contributors, CC BY 4.0"; JMdict lists no counter per noun, so nothing is taken from it, and no
+commercial list was copied). The Chinese measure words are CC-CEDICT's (CC BY-SA 4.0), derived when a drill asks and
+never bundled separately. Both files were **reviewed by agents acting as teachers, not yet by a person** (two Japanese
+teachers and an adjudicator for the table and its readings, two Chinese teachers for a sample of 161 derived nouns;
+notes: `server/internal/counters/table/REVIEW.md`); `humanReviewed` stays `false`. Credited on the Sources page under
+Practice.
+
+## Look-alike character sets (Practice, #228)
+
+`apps/web/src/lib/features/practice/lookAlikes/data/look-alikes-zh.json` and `look-alikes-ja.json` (bundled in the web
+app, loaded when the drill needs them) are the sets of the look-alike drill: 53 Chinese sets (simplified, traditional
+and both) and 56 Japanese sets (kana, kana/kanji and kanji), each character with its readings, a short meaning, an
+example word, and per set a note and the strokes that make the difference. The **project wrote them** (CC BY 4.0,
+credit "qinqin contributors, CC BY 4.0"); no third-party list was copied, and nothing is derived from the KanjiVG
+component index (CC BY-SA 3.0), Unihan or a dictionary. The bopomofo is the server's own conversion of the pinyin; the
+stroke counts and marks were checked against the Hanzi Writer stroke data (Arphic Public License; read in a test, not
+copied). The answer draws the highlights on the installed strokes packs at run time. **Reviewed by agents acting as
+teachers, not yet by a person** (two Chinese and two Japanese teachers and an adjudicator; notes:
+`lookAlikes/data/REVIEW.md`); `humanReviewed` stays `false`. Credited on the Sources page under Practice.
+
+## Topic labels (courses, #220)
+
+`server/internal/topics/labels/zh.json` and `ja.json` (embedded in the server) give words their **topics** (49
+themes such as food, family, travel, `docs/contracts/topics/topics.json`), so a course can fill its units by theme.
+The **project wrote them**, and they are shared under **CC BY-SA 4.0** (not the project's usual CC BY 4.0): they
+are adapted in part from OpenMoji's emoji groups and keyed to CC-CEDICT and JMdict words whose senses the agents read,
+all CC BY-SA 4.0. Credit: "qinqin contributors, CC BY-SA 4.0", with CC-CEDICT (MDBG and the CC-CEDICT community) or
+JMdict (EDRDG) and OpenMoji, as each file's `attribution` gives it:
+
+- Words of HSK 1–4 (the bundled `hsk-words` list, used only to choose which words to label; no levels are copied)
+  and ≈ N5–N3 (the estimated JLPT word list of #219) were labelled by an agent from their CC-CEDICT or JMdict senses
+  and reviewed by two agents acting as native-speaker teachers of the language; a third decided where they disagreed.
+  Each label keeps its confidence, review state, reviewers and their notes. **Reviewed by agents, not yet by a person**
+  (`humanReviewed: false`).
+- Other words with an OpenMoji picture (#216) get the topic of the picture's emoji group and subgroup, through the
+  project's table `scripts/topics/openmoji-topics.tsv` (basis `picture`, not teacher-reviewed). The concept → group
+  table `scripts/topics/openmoji-groups.tsv` comes from OpenMoji 17.0.0 `openmoji.json` (CC BY-SA 4.0); the labels
+  files hold no emoji ids and no dictionary glosses.
+
+They are built by `scripts/build-topic-labels.mjs` from the committed batches (`scripts/topics/`); the agent step is
+`scripts/topic-agents.mjs`, the coverage report `scripts/topic-coverage.mjs`. The Sources page credits them under
+"Built into the app".
 
 ## Example sentences (Tatoeba)
 
@@ -357,9 +423,10 @@ Decompositions **not bundled**:
 
 The character map groups by, and entries carry badges from, installed level
 schemes (the map reads each scheme's per-level characters from
-`GET /api/schemes/{id}/characters`). Five are bundled: two derived from bundled dictionaries (below) and HSK 3.0 characters and
+`GET /api/schemes/{id}/characters`). Six are bundled: two derived from bundled dictionaries (below), HSK 3.0 characters and
 words, generated by `scripts/prepare-hsk-syllabus.mjs` from the official syllabus (see "Chinese:
-HSK 3.0" below), and the approximate JLPT kanji, generated by `scripts/prepare-level-packs.mjs` from
+HSK 3.0" below), the estimated JLPT words, generated by `scripts/prepare-jlpt-words.mjs` from four
+bundled packs and the project's lists (below), and the approximate JLPT kanji, generated by `scripts/prepare-level-packs.mjs` from
 upstream files pinned by commit and the bundled KANJIDIC2 (the download commands are in the script's
 header; each pack's `ATTRIBUTION.md` records the commit and the SHA-256 of the
 inputs). Re-running the script on the same files reproduces the packs byte for
@@ -421,48 +488,73 @@ byte.
     `node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>` prints
     them again.
   - KANJIDIC2's `<jlpt>` field is still not imported as a scheme of its own.
-- **JLPT vocabulary** (`jlpt-words`, unit `word`; optional, local only, NOT
-  bundled): `src/n5.csv` … `src/n1.csv` of
-  [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks),
-  labelled **MIT licence, Copyright (c) 2020 Jamie Sinclair** (the full text is
-  the pack's `LICENSE`). It is not bundled because its upstream licence chain
-  could not be verified. Its README says: "Original deck data was taken from
-  https://github.com/chyyran/jlpt-anki-decks, which were based on decks from
-  tanos.co.uk". The tanos.co.uk lists are Jonathan Waller's unofficial JLPT
-  lists, described as published under Creative Commons Attribution (CC BY);
-  that description was not verified here (the site could not be reached).
-  Like the kanji lists, they are reconstructions, not official JLPT lists.
-  The `expression` column gives the forms: variants split on ";", notes in
-  parentheses and affix tildes removed (～円 → 円), grammar patterns with an
-  inner tilde dropped (4 pieces), a する verb whose stem has two or more
-  characters reduced to its noun (勉強する → 勉強; 関する and 愛する stay
-  whole, as JMdict lists them). Each kanji form carries the `reading` column
-  (`{"form": "風", "reading": "かぜ"}`), so the importer picks the word read
-  so: without it, a form-only lookup put 風 on the usually-kana 振り (ふり)
-  and 外 on 他 (ほか). Each form with its reading is kept once, at its
-  easiest level: N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries.
-  Against the bundled JMdict 168 forms do not resolve and are skipped at
-  seed time (N5 19, N4 16, N3 18, N2 66, N1 49), mostly kana spellings of
-  words JMdict writes with kanji (けんか, よい, にぎやか) and set phrases
-  (いってきます).
-
-  To generate and install it locally (from the repository root):
-
-  ```bash
-  mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
-  base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
-  for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
-  curl -fsSLo LICENSE $base/LICENSE
-  cd -
-  node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
-  qinqin seed --packs plugins/data,plugins/data-local
-  ```
-
-  The converter stops with a clear message if a file is missing and writes only
-  into the gitignored `plugins/data-local/`; the generated `ATTRIBUTION.md`
-  states "not bundled, local use only". Under Docker, mount `plugins/data-local`
-  and seed both roots as described in "Local-only data". The map's "Group by"
-  and the Sources page pick it up like any installed scheme.
+- **JLPT words (approximate)** (`jlpt-words`, unit `word`; bundled, #219): an
+  **estimate** built by qinqin, labelled "≈ N5" … "≈ N1" in the app. No official
+  JLPT vocabulary list has been published since 2010. Levels ≈ N5 509, ≈ N4 1,475,
+  ≈ N3 3,778, ≈ N2 2,599, ≈ N1 1,638 words, 9,999 in all.
+  - Inputs, no published JLPT list copied: the Jiten frequency ranks
+    (`jiten-frequency`, CC BY-SA 4.0, Jitensoft), JMdict (`jmdict`, CC BY-SA 4.0,
+    EDRDG) for the words, readings and priority tags, the JLPT kanji levels
+    (`jlpt-kanji`: kanjiapi.dev, MIT, and KANJIDIC2, CC BY-SA 4.0), the jōyō kanji
+    (`joyo-grades`, KANJIDIC2) and three short lists written for qinqin under
+    CC BY 4.0 (`scripts/jlpt-words/`, credit "qinqin contributors, CC BY 4.0"):
+    `core.tsv` (538 N5/N4 textbook words, reviewed by agents), `grammar.tsv`
+    (grammar pieces left out) and `anchors.tsv` (the regression check). The pack
+    is an adaptation of the Jiten ranks and JMdict, so it is **CC BY-SA 4.0**
+    (`LICENSE` is the legal code); kanjiapi.dev's MIT notice ships beside it as
+    `LICENSE-kanjiapi.dev`.
+  - Method (`scripts/prepare-jlpt-words.mjs`, rules set by the #219 teacher
+    review of 2026-11-27): one Jiten rank is matched to the JMdict entry that has
+    most of its rows as a written form with that reading (unmatched ranks are
+    listed in `UNMATCHED.tsv`, never guessed). The core list sets the level of
+    its words directly. Grammar pieces and expressions, set phrases, numerals
+    with counters (十人, ５分), particles, noise (あああ, っつ) and one-kana
+    fragments are left out. Otherwise **frequency is the primary signal**: Jiten
+    rank ≤ 1,288 ≈ N5, ≤ 2,196 ≈ N4, ≤ 4,927 ≈ N3, ≤ 7,663 ≈ N2, ≤ 10,249 ≈ N1. Harder
+    kanji raise a word by one level at most, and not at all when JMdict gives it a
+    priority tag; kana, usually-kana, ateji and non-jōyō spellings (綺麗) count as
+    kana words. A word on JMdict's basic list (ichi1) among its most frequent
+    newspaper words goes one or two levels easier, to ≈ N3 at most, which counters
+    the media skew of the Jiten ranks (銀行, 郵便局 rank low there); such words are
+    in even beyond the last cut. Outside the core a word is ≈ N4 or harder, except
+    kana pronouns and conjunctions (これ, でも); slang, colloquial words and
+    interjections not on JMdict's basic lists are ≈ N3 or harder.
+  - Why: the first estimate (v0.9.0, the harder of the kanji level and the rank
+    level) put basic words far too hard (嫌い, 暑い, 誕生日 and 大丈夫 at ≈ N1, 銀行
+    and 野菜 at ≈ N2), because the JLPT kanji estimate puts many everyday kanji at
+    N1 (暑, 嫌, 僕, 傘, 誕, 丈: kanjiapi.dev's list follows the pre-2010 four-level
+    scale, where these were level 1; 椅, 鍵, 誰, 箸 are grade-8 jōyō kanji its gap
+    fill puts at N1). That is the kanji estimate's design, not a bug: a kanji
+    *written* is harder than the word *spoken*. The word rules now limit the
+    kanji's effect instead. The teachers' suggested caps (any nf01–nf06 word at
+    most ≈ N4, any news1/ichi1/spec1 word at most ≈ N3) were measured too: they
+    cap about 1,600 and 6,300 of the list's words, against 1,500 and 3,700 words
+    commonly cited up to those levels, and fill them with newspaper terms (首相,
+    民間), so the lift above replaced them.
+  - Evaluation (no ground truth; numbers of 2026-11-28): 81 of 81 anchor words at
+    or under their allowed level; the core words placed by the rules alone (the
+    core switched off) 73.0% within one level; three blind spot checks by two
+    native-Japanese teacher agents each, 184 words in all: on the last, fully
+    out-of-sample one (60 words), 83% and 80% of the words the list puts at ≈ N5 or
+    ≈ N4 are within one level of the teacher's level, and every word a teacher puts
+    at N5 or N4 is within one level in the list (22 of 22). The first estimate got
+    under half of its N5/N4 spot checks within one level. A word can be a level
+    off; treat a level as a rough guide. `node scripts/prepare-jlpt-words.mjs
+    --calibrate` prints the fit and the checks; the numbers are also beside the
+    constants in the script and in the #219 plan.
+  - Optional base list (not used): Jonathan Waller's JLPT lists (tanos.co.uk),
+    which reuse projects describe as CC BY. The site could not be reached and
+    no archived copy could be checked here, so the licence is unconfirmed and
+    the list is not used (owner, 2026-11-26). The generator reads one with
+    `--base <dir>` (n5.csv … n1.csv with `expression` and `reading` columns, the
+    format of open-anki-jlpt-decks, plus its `LICENSE`): base words are matched to
+    JMdict by form and reading (unmatched and ambiguous words reported per level)
+    and keep their level, the estimate fills the rest, and `--calibrate --base`
+    fits the cuts on 80% of the base words and reports the agreement on the 20%
+    held out. That is a maintainer step once the licence is confirmed (the #219
+    plan's local follow-up). The former local-only `jlpt-words` pack ("JLPT
+    (vocabulary)", `prepare-level-packs.mjs --jlpt-vocab`) is gone: the bundled
+    pack has its id.
 
 ### Chinese: 通用规范汉字表 levels
 
@@ -569,7 +661,7 @@ word and character lists;
 `scripts/prepare-level-packs.mjs --hsk` still generates them into the
 gitignored `plugins/data-local/` for local use only.
 
-The JLPT lists are not official releases; the HSK 3.0 word and character
+The JLPT lists are not official releases (the word list is qinqin's estimate); the HSK 3.0 word and character
 lists are the official syllabus's. The project is not affiliated with either test.
 
 The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples/`,
@@ -871,6 +963,18 @@ never a reason to leave a theme out; every built-in theme reaches 4.5:1 for
 text on its panel and for button text on its default accent. An administrator can add more themes by uploading a theme
 pack (Settings → Data), whose review shows the measured contrast.
 
+## Graded readers (Reader, #231)
+
+`server/internal/library/sources/graded/texts/zh.json` and `ja.json` (embedded in the server) are the Reader's graded
+readers: 20 Chinese texts (≈ HSK 1–4) and 15 Japanese texts (≈ N5–N3), five a level, stories, dialogues and
+informational texts, each with its proper names and the glossed words above its level (a reading and a short English
+meaning). The **project wrote them** (CC BY 4.0, credit "qinqin contributors, CC BY 4.0"; `NOTICE`); no third-party
+text was copied. They are checked against the bundled word level lists (`hsk-words`, `jlpt-words`) with the shipped
+dictionaries (CC-CEDICT, JMdict), which are not part of the files. They were **reviewed by agents acting as teachers,
+not yet by a person** (two teachers and an adjudicator per language; notes: `texts/REVIEW.md`); `humanReviewed` stays
+`false`. A text added to a library keeps the credit as the book's attribution and licence note; the Sources page credits
+them under "Built into the app" (`apps/web/src/lib/sources/coreCredits.ts`). Format: `docs/contracts/graded/README.md`. No pack type (record 0008; plan Ruling 2).
+
 ## Reader text sources
 
 The Reader (see `docs/wiki/Reader.md`) imports public-domain works on user request. Nothing
@@ -1006,12 +1110,13 @@ Bundled pictures for words (issue #216): two **images packs**, each its own pack
 credit. They are data packs of type `images` (see the wiki's Data-pack-format page and
 `docs/contracts/images/README.md`), fetched at image build time, never committed, never compiled into the binary and
 never bundled in the web build or the APK's web assets: the web app and the APK get pictures from the server
-(`GET /api/images/entries/{id}`). Licence evidence checked 2026-11-25 against the upstream files.
+(`GET /api/images/entries/{id}`, and for offline use the server-built data package `images.<packId>`, #274, which
+the device keeps under the pack's licence and notice). Licence evidence checked 2026-11-25 against the upstream files.
 
 | Pack | Upstream | Licence | Pictures | Word mappings |
 |---|---|---|---|---|
-| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 962 (1.7 MB of SVG) | 3,172 (zh 1,936, ja 1,236) |
-| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 711 (4.6 MB of SVG, in colour) | 2,570 (zh 541, ja 2,029) |
+| `images-openmoji` | [OpenMoji](https://openmoji.org) 17.0.0, black-outline SVGs (`openmoji-svg-black.zip`, 3,702,558 bytes) | CC BY-SA 4.0 (README and `LICENSE.txt`) | 967 (1.7 MB of SVG) | 3,165 (zh 1,935, ja 1,230) |
+| `images-mulberry` | [Mulberry Symbols](https://mulberrysymbols.org) v3.6.1 by Steve Lee (`mulberry-symbols.zip`, 52,347,398 bytes; 3,435 symbols) | CC BY-SA 4.0 (website and `LICENSE.txt`: "Copyright 2018-2026 Steve Lee ... Creative Commons Attribution-Share Alike License", link to `by-sa/4.0`), not 2.0 UK as an older note said | 707 (4.6 MB of SVG, in colour) | 2,315 (zh 514, ja 1,801) |
 
 - **Credit** (shown on the Sources page and in each pack's `ATTRIBUTION.md`): OpenMoji's own wording, "All emojis
   designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0"; Mulberry's, "Mulberry Symbols
@@ -1033,12 +1138,15 @@ never bundled in the web build or the APK's web assets: the web app and the APK 
   and tags, and Mulberry's English symbol names; it is distributed with the packs under CC BY-SA 4.0 and carries the
   Unicode notice. `scripts/build-picture-map.mjs` makes it (rules in `scripts/picture-match.mjs`, tested); 92 rows are
   hand-checked overrides (`scripts/images/openmoji/manual.tsv`). Only words an unambiguous match covers have a
-  picture; the rest wait on a review list. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
+  picture. The doubtful automatic rows of the Starter words, HSK 1-2 and ≈ N5-N4 (532) were reviewed by teacher
+  agents (#274, `scripts/images/review/`, not yet by a person): 262 removed (`scripts/images/<pack>/removed.tsv`), 14
+  changed to another OpenMoji picture (manual rows; 106 in all now), 256 kept. For Chinese, Mulberry covers only words of the HSK 3.0 word list (a
   selection gate at build time; no list data is copied); for Japanese, only JMdict words with a priority marking.
 - **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
 - **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are
   mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) are
-  described under "Starter sets" (47 and 55 words so far, not yet hand-reviewed; the issue asks for 100-300 per language).
+  described under "Starter sets" (146 and 145 words, reviewed by agents, not yet by a person; every Starter word's
+  picture was looked at, and the doubtful rows it found are listed in `server/internal/starter/sets/REVIEW.md`).
 - **Not bundled:** ARASAAC (CC BY-NC-SA, non-commercial); Wikimedia Commons pictures via Wikidata (per-file
   licences, later); OpenMoji's colour set (a later per-user choice).
 

@@ -6,7 +6,7 @@
 // kana, deinflection) stays language code. The Go table is
 // server/internal/lang/profile.go; both are pinned to the fixture.
 
-import type { StudyCardKind } from '$lib/study/types';
+import type { StudyCardKind } from '$lib/studycore/types';
 
 export type Script = 'han' | 'latin' | 'other';
 export type PracticeMode = 'decks' | 'levels' | 'characterMap';
@@ -17,6 +17,8 @@ export interface LanguageProfile {
 	script: Script;
 	/** The reading systems an entry carries (`pinyin`, `kana`). */
 	readings: readonly string[];
+	/** The reading types that are romanisation (#284: `pinyin`, `bopomofo`, `romaji`), each with its own Show switch. */
+	romanisations: readonly string[];
 	/** `dictionary`: words are found by dictionary lookup (no spaces); `spaces`: by the spaces between them. */
 	segmentation: 'dictionary' | 'spaces';
 	tones: boolean;
@@ -39,6 +41,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: 'zh',
 		script: 'han',
 		readings: ['pinyin'],
+		romanisations: ['pinyin', 'bopomofo'],
 		segmentation: 'dictionary',
 		tones: true,
 		strokes: true,
@@ -52,6 +55,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: 'ja',
 		script: 'han',
 		readings: ['kana'],
+		romanisations: ['romaji'],
 		segmentation: 'dictionary',
 		tones: false,
 		strokes: false,
@@ -65,6 +69,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: 'es',
 		script: 'latin',
 		readings: [],
+		romanisations: [],
 		segmentation: 'spaces',
 		tones: false,
 		strokes: false,
@@ -78,6 +83,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: 'ko',
 		script: 'other',
 		readings: [],
+		romanisations: [],
 		segmentation: 'spaces',
 		tones: false,
 		strokes: false,
@@ -91,6 +97,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: 'ru',
 		script: 'other',
 		readings: [],
+		romanisations: [],
 		segmentation: 'spaces',
 		tones: false,
 		strokes: false,
@@ -104,6 +111,7 @@ export const PROFILES: readonly LanguageProfile[] = [
 		code: '*',
 		script: 'other',
 		readings: [],
+		romanisations: [],
 		segmentation: 'spaces',
 		tones: false,
 		strokes: false,

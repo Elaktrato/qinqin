@@ -10,19 +10,21 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({
 	getEntry: vi.fn(),
 	getCharsUnderRadical: vi.fn(async () => []),
-	getSharedEntry: vi.fn()
+	getSharedEntry: vi.fn(),
+	removeSentence: vi.fn(async () => {})
 }));
 vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
 vi.mock('$lib/api/frequency', () => ({
 	getEntryRanks: vi.fn(async () => ({ pack: null, ranks: [] }))
 }));
 vi.mock('$lib/entry/StrokePlayer.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
-	addCard: vi.fn(async () => ({}))
+vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/flashcards/commands/cards')>()),
+	addCard: vi.fn(async () => ({})),
+	deleteCards: vi.fn(async () => [])
 }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [], known: [] })),
 	hasCard: vi.fn(() => false)
 }));
@@ -44,9 +46,10 @@ vi.mock('$lib/notes/store', async (orig) => ({
 
 import { fireEvent, within } from '@testing-library/svelte';
 import { ApiError } from '$lib/api/client';
-import { getEntry } from '$lib/api/entries';
+import { getEntry, removeSentence } from '$lib/api/entries';
+import { deleteCards } from '$lib/features/flashcards/commands/cards';
 import { getEntryRanks } from '$lib/api/frequency';
-import { getStudyData } from '$lib/study/data';
+import { getStudyData } from '$lib/studycore/data';
 import { setUrl } from '$lib/testing/appState.svelte';
 import EntryView from './EntryView.svelte';
 import { deleteAiSentence } from '$lib/api/examples';
@@ -292,6 +295,22 @@ describe('entry extras and the not-found state (#104)', () => {
 		expect(container.textContent).toContain('In 1 deck');
 	});
 
+	it('names the look-alikes of a character, each a link to its search (#228)', async () => {
+		getEntryMock.mockResolvedValue(entry({ kind: 'character', written: '未', readings: [{ type: 'pinyin', value: 'wèi', plain: 'wei4', ord: 0 }] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		const heading = await screen.findByRole('heading', { name: 'Easily confused with' });
+		const link = within(heading.closest('section')!).getByRole('link', { name: '末' });
+		expect(link.getAttribute('href')).toBe(`/search?q=${encodeURIComponent('末')}`);
+		expect(link.getAttribute('lang')).toBe('zh-Hans');
+	});
+
+	it('names no look-alikes for a word without one (#228)', async () => {
+		getEntryMock.mockResolvedValue(entry());
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		expect(screen.queryByRole('heading', { name: 'Easily confused with' })).toBeNull();
+	});
+
 	it('renders the not-found state at the given heading level and links back to the search URL', async () => {
 		getEntryMock.mockRejectedValue(new ApiError(404, 'not found'));
 		render(EntryView, { props: {
@@ -343,5 +362,80 @@ describe('kept AI examples on the entry', () => {
 		await waitFor(() => expect(document.activeElement?.getAttribute('aria-describedby')).toBe('sentence-2'));
 		await fireEvent.click(document.activeElement as HTMLElement);
 		await waitFor(() => expect(document.activeElement?.id).toBe('ai-examples-heading'));
+	});
+});
+
+describe('hidden romanisation on the entry page (#284)', () => {
+	const hide = (settings: Record<string, unknown>) =>
+		ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh', settings } as never });
+
+	it('shows no pinyin anywhere on the page while pinyin is hidden, and keeps bopomofo', async () => {
+		hide({ romanisation: { pinyin: 'never' } });
+		getEntryMock.mockResolvedValue(
+			entry({
+				readings: [
+					{ type: 'pinyin', value: 'qínfèn', plain: 'qin2fen4', ord: 0 },
+					{ type: 'bopomofo', value: 'ㄑㄧㄣˊ ㄈㄣˋ', plain: 'ㄑㄧㄣˊ ㄈㄣˋ', ord: 1 }
+				],
+				characters: [
+					{ id: 6, written: '勤', reading: { type: 'pinyin', value: 'qín' }, gloss: 'diligent', radical: null, strokes: 13, levels: [] }
+				],
+				sentences: [{ id: 3, hanzi: '他很勤奋。', pinyin: 'tā hěn qínfèn.', translation: 'He is diligent.' } as never]
+			})
+		);
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		await waitFor(() => expect(container.textContent).toContain('ㄑㄧㄣˊ ㄈㄣˋ'));
+		expect(container.textContent).not.toMatch(/qín|qínfèn|tā hěn/);
+		expect(container.querySelector('[data-type="pinyin"]')).toBeNull();
+		expect(container.textContent).toContain('He is diligent.');
+	});
+
+	it('shows the pinyin again once the switch is back to Always', async () => {
+		hide({ romanisation: { pinyin: 'always' } });
+		getEntryMock.mockResolvedValue(entry());
+		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		expect(container.textContent).toContain('qínfèn');
+	});
+});
+
+// #279: the learner's own sentences (saved from the reader) can be removed;
+// their Word Salad cards go too, in each workspace of the entry's language.
+describe('removing a saved sentence', () => {
+	const own = { id: 3, entryId: 5, sourcePack: '', userId: 1, hanzi: '他很勤奋。', pinyin: '', translation: '' };
+	const pack = { id: 2, entryId: 5, sourcePack: 'sample', userId: null, hanzi: '勤奋好。', pinyin: '', translation: '' };
+	beforeEach(() => {
+		const zh = { id: 1, language: 'zh', name: 'zh' };
+		ctx.session.workspaces.set({ list: [zh, { id: 2, language: 'ja', name: 'ja' }] as never, current: zh as never });
+		vi.mocked(getStudyData).mockImplementation((async () => ({
+			decks: [],
+			known: [],
+			cards: [{ id: 's3', kind: 'sentence', entryId: 5, sentenceId: 3, deckIds: ['general'], createdAt: '2026-11-01T00:00:00Z' }]
+		})) as never);
+	});
+
+	it('offers Remove on own sentences only and removes the sentence and its card', async () => {
+		getEntryMock.mockResolvedValue(entry({ sentences: [pack, own] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		const remove = await screen.findAllByRole('button', { name: 'Remove' });
+		expect(remove).toHaveLength(1);
+		expect(remove[0].getAttribute('aria-describedby')).toBe('sentence-3');
+		await fireEvent.click(remove[0]);
+		await waitFor(() => expect(removeSentence).toHaveBeenCalledWith(5, 3));
+		await waitFor(() => expect(deleteCards).toHaveBeenCalledWith(expect.anything(), 1, ['s3']));
+		expect(deleteCards).toHaveBeenCalledOnce();
+		await waitFor(() => expect(document.getElementById('sentence-3')).toBeNull());
+		expect(document.getElementById('sentence-2')?.textContent).toBe('勤奋好。');
+	});
+
+	it('a failed remove keeps the sentence and says so', async () => {
+		vi.mocked(removeSentence).mockRejectedValueOnce(new Error('offline'));
+		getEntryMock.mockResolvedValue(entry({ sentences: [own] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+		await screen.findByText('Could not remove this sentence.');
+		expect(document.getElementById('sentence-3')?.textContent).toBe('他很勤奋。');
+		expect(deleteCards).not.toHaveBeenCalled();
 	});
 });

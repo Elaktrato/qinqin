@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSetup, type StudySetup } from '$lib/study/setup';
-import type { OptInKind } from '$lib/study/types';
-import { chipPatch, noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
+import { defaultSetup, type StudySetup } from './setup';
+import type { OptInKind } from '$lib/studycore/types';
+import { chipPatch, hiddenTypesText, noteText, summaryLine, todayLine, toggleChip, visibleChips } from './studyModalView';
 
 const none = new Set<OptInKind>();
 const reverseOn = new Set<OptInKind>(['reverse']);
@@ -68,5 +68,42 @@ describe('chipPatch', () => {
 		expect(chipPatch(defaultSetup(), 'writing', none, 'ja')).toEqual({ cardTypes: ['vocab', 'writing'] });
 		expect(chipPatch(defaultSetup(), 'reverse', reverseOn, 'ja')).toEqual({ unchecked: ['reverse'] });
 		expect(chipPatch(defaultSetup(), 'vocab', none, 'ja')).toEqual({});
+	});
+});
+
+describe('the card types without cards (#289)', () => {
+	it('visibleChips hides a type the plan has nothing of, and keeps its stored choice', () => {
+		const setup: StudySetup = { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] };
+		const chips = visibleChips(setup, none, 'ja', ['vocab', 'writing']);
+		expect(chips.map((c) => c.id)).toEqual(['vocab', 'writing']);
+		// Vocab is the only visible checked chip: it cannot be unchecked, the hidden Word Salad does not count.
+		expect(chips.find((c) => c.id === 'vocab')?.locked).toBe(true);
+		expect(toggleChip(setup, 'vocab', none, 'ja', ['vocab', 'writing'])).toBe(setup);
+		// The type comes back, still checked, when it has cards again.
+		expect(visibleChips(setup, none, 'ja', ['vocab', 'sentence', 'writing']).find((c) => c.id === 'sentence')?.checked).toBe(true);
+		// Unknown availability (null): every offered type.
+		expect(visibleChips(setup, none, 'ja', null).map((c) => c.id)).toEqual(['vocab', 'sentence', 'writing']);
+	});
+
+	it('chipPatch keeps hidden kinds in the stored list', () => {
+		const setup: StudySetup = { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] };
+		expect(chipPatch(setup, 'writing', none, 'ja', ['vocab', 'writing'])).toEqual({ cardTypes: ['vocab', 'sentence', 'writing'] });
+	});
+
+	it('hiddenTypesText groups the hidden types by reason; the seed hint for an administrator', () => {
+		const hidden = [
+			{ kind: 'sentence' as const, reason: 'noSentences' as const },
+			{ kind: 'cloze' as const, reason: 'noSentences' as const },
+			{ kind: 'writing' as const, reason: 'nothingNow' as const }
+		];
+		expect(hiddenTypesText(hidden, { admin: false })).toEqual([
+			'Word Salad and Cloze: no example sentences for these words yet.',
+			'Writing: nothing to study right now.'
+		]);
+		expect(hiddenTypesText(hidden, { admin: true })).toEqual([
+			'Word Salad and Cloze: no example sentences for these words yet. Example sentences are installed on the server with qinqin seed.',
+			'Writing: nothing to study right now.'
+		]);
+		expect(hiddenTypesText([], { admin: true })).toEqual([]);
 	});
 });

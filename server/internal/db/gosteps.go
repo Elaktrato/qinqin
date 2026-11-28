@@ -28,6 +28,7 @@ var goSteps = map[string]func(*sql.Tx) error{
 	"039_packages":         packagesStep,
 	"044_journal":          journalStep,
 	"045_grammar_progress": grammarProgressStep,
+	"056_grammar_events":   grammarEventsStep,
 }
 
 // packagesStep is the Go half of migration 039: the server's instance id, a

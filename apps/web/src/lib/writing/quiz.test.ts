@@ -12,18 +12,60 @@ describe('quiz', () => {
 		expect(r.state.done).toEqual([0, 1]);
 		expect(r.effect).toEqual({ snap: [0, 1] });
 	});
-	it('three misses glow and outline once', () => {
+	it('three misses glow the next stroke and leave only it traced, never the outline', () => {
 		let s = startQuiz(3);
 		let e;
 		for (let i = 0; i < 2; i++) ({ state: s, effect: e } = applyResult(s, miss));
 		expect(e).toEqual({ miss: true });
+		expect(s.trace).toBeNull();
 		({ state: s, effect: e } = applyResult(s, miss));
 		expect(e).toEqual({ miss: true, glow: 0 });
-		expect(s.outline).toBe(true);
+		expect(s.trace).toBe(0);
+		expect(s).not.toHaveProperty('outline');
+		// A fourth miss on the same stroke adds nothing: the trace is still there.
 		({ state: s, effect: e } = applyResult(s, miss));
 		expect(e).toEqual({ miss: true });
+		expect(s.trace).toBe(0);
 		expect(s.mistakes).toBe(4);
 		expect(hintsOf(s)).toBe(1);
+	});
+	it('the trace goes once the stroke is drawn', () => {
+		let s = startQuiz(3);
+		for (let i = 0; i < 3; i++) s = applyResult(s, miss).state;
+		s = applyResult(s, hit(0)).state;
+		expect(s.trace).toBeNull();
+	});
+	it('a join that covers the traced stroke clears it', () => {
+		let s = applyResult(startQuiz(4), hit(0)).state;
+		for (let i = 0; i < 3; i++) s = applyResult(s, miss).state;
+		expect(s.trace).toBe(1);
+		s = applyResult(s, hit(1, 2)).state;
+		expect(s.trace).toBeNull();
+		expect(s.next).toBe(3);
+	});
+	it('applies again to a later stroke that gets three misses, one hint each', () => {
+		let s = startQuiz(4);
+		for (let i = 0; i < 3; i++) s = applyResult(s, miss).state;
+		s = applyResult(s, hit(0)).state;
+		s = applyResult(s, hit(1)).state;
+		let e;
+		for (let i = 0; i < 2; i++) ({ state: s, effect: e } = applyResult(s, miss));
+		expect(e).toEqual({ miss: true });
+		({ state: s, effect: e } = applyResult(s, miss));
+		expect(e).toEqual({ miss: true, glow: 2 });
+		expect(s.trace).toBe(2);
+		expect(s.autoHints).toBe(2);
+		expect(hintsOf(s)).toBe(2);
+		expect(s.mistakes).toBe(6);
+	});
+	it('misses spread over strokes do not add up to a hint', () => {
+		let s = startQuiz(3);
+		for (let i = 0; i < 2; i++) s = applyResult(s, miss).state;
+		s = applyResult(s, hit(0)).state;
+		const r = applyResult(s, miss);
+		expect(r.effect).toEqual({ miss: true });
+		expect(r.state.trace).toBeNull();
+		expect(hintsOf(r.state)).toBe(0);
 	});
 	it('mistakesOnStroke resets on match', () => {
 		let s = applyResult(startQuiz(3), miss).state;

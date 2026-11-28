@@ -2,7 +2,7 @@
 
 The weekly summary shows what you did in one workspace over one week, Monday to Sunday, compared with the week before. It is in the app only: there is no email and nothing is sent anywhere. The numbers are worked out from what you did each time you open it; nothing is stored.
 
-Open it under **Stats**, tab **Week** (`/stats/week`), or from the **This week** widget on the home page (its link **See the week**).
+Open it under **Stats**, tab **Week** (`/stats/week`), or from the **This week** widget on the home page (its link **See the week**). With Stats switched off the widget stays on the home page without that link.
 
 ## Which week
 
@@ -19,9 +19,9 @@ The **Previous week** and **Next week** arrows step through the weeks; at the ol
 | Flashcard study time | time spent answering cards, at most 60 seconds per card |
 | Reading | minutes read in the Reader |
 | Journal entries | journal entries written |
-| Other activity | each further activity type the server counted this week or last week |
+| Other activity | each further activity type the server counted this week or last week (grammar lessons, drill answers, **Course lessons**: course lessons, unit tests and section exams, each once a day) |
 | Days active | days on which you did anything that counts (vacation days are left out, see below); today joins the count once you have done something today |
-| Streak | your review streak at the end of the week (today for the current week) |
+| Streak | your streak (days with a review, a finished grammar lesson, a drill answer or a course lesson or test) at the end of the week (today for the current week) |
 | Words reaching mature | words whose flashcard became mature that week: in review with a stability of 21 days or more, as on the decks view. A word that became mature and slipped back in the same week does not count |
 | Characters learned | Chinese and Japanese workspaces only: characters whose score reached 80 of 100 that week, as on the character map. This row appears a moment after the others ("Counting characters…") |
 | Daily goal | the days on which you reached your [daily goal](Daily-goals) out of the days it counted; today counts once its goal is reached |

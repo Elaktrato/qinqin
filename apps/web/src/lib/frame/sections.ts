@@ -3,9 +3,10 @@
 // order and the matching are tested without rendering.
 //
 // Order (plan Ruling): Search first (owner request, 2026-11-18), then the
-// core features that are on (Decks, Reader, Journal, Grammar; #199), then
-// Stats last. Before the switches are loaded only Search and Stats show, so a
-// switched-off feature never flashes in.
+// core features that are on in their fixed order (Decks, Reader, Journal,
+// Grammar, Scripts; #199; Practice; Courses, #222), Stats last (a feature since #295). Before the
+// switches are loaded only Search shows, so a switched-off feature never
+// flashes in.
 
 import { t } from '$lib/i18n';
 import { coreFeatures, featureEnabled } from '$lib/features';
@@ -23,7 +24,16 @@ export interface FrameSection {
 	match: string[];
 }
 
-const FEATURE_ICONS: Record<string, string> = { flashcards: 'study', reader: 'reader', journal: 'journal', grammar: 'grammar', scripts: 'words' };
+const FEATURE_ICONS: Record<string, string> = {
+	flashcards: 'study',
+	reader: 'reader',
+	journal: 'journal',
+	grammar: 'grammar',
+	scripts: 'words',
+	practice: 'repeat',
+	courses: 'map',
+	stats: 'stats'
+};
 const FEATURE_MATCH: Record<string, string[]> = { flashcards: ['/flashcards', '/study'], reader: ['/reader'] };
 
 /** iconOf maps an icon name to the icon set; unknown or absent names get the generic `plugin` icon. */
@@ -53,11 +63,7 @@ export function frameSections(state: FeatureSwitchesValue, language: string | nu
 						match: FEATURE_MATCH[f.slug] ?? [f.href]
 					}))
 			: [];
-	return [
-		{ id: 'search', label: t('nav.search'), href: '/search', icon: 'search', match: ['/search', '/entry', '/lookups'] },
-		...features,
-		{ id: 'stats', label: t('nav.stats'), href: '/stats', icon: 'stats', match: ['/stats'] }
-	];
+	return [{ id: 'search', label: t('nav.search'), href: '/search', icon: 'search', match: ['/search', '/entry', '/lookups'] }, ...features];
 }
 
 function under(path: string, prefix: string): boolean {

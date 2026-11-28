@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID } from '$lib/features';
+import { describe, expect, it, vi } from 'vitest';
+import { memoryStorage } from '$lib/testing/context';
+import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID } from '$lib/features';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
+import { DEV_DRILLS_KEY } from '$lib/features/practice/drills';
 import { currentSection, frameSections, homeSection, iconOf } from './sections';
 
 function state(id: string, enabled = true): FeatureSwitch {
@@ -10,31 +12,43 @@ const ready = (list: FeatureSwitch[]) => ({ list, status: 'ready' as const });
 const all = ready([state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID)]);
 
 describe('frameSections', () => {
-	it('shows only Search and Stats before the switches are ready (nothing switched off flashes in)', () => {
+	it('shows only Search before the switches are ready (nothing switched off flashes in, Stats included, #295)', () => {
 		for (const status of ['idle', 'loading', 'error'] as const) {
-			expect(frameSections({ list: [], status }).map((s) => s.id)).toEqual(['search', 'stats']);
+			expect(frameSections({ list: [], status }).map((s) => s.id)).toEqual(['search']);
 		}
+	});
+
+	it('leaves out Stats while it is switched off (#295)', () => {
+		const sections = frameSections(ready([...all.list, state(STATS_ID, false)]));
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'courses']);
+		expect(currentSection('/stats/week', sections)).toBeNull();
+		expect(frameSections(ready([state(STATS_ID)])).find((s) => s.id === 'stats')).toMatchObject({
+			label: 'Stats',
+			href: '/stats',
+			icon: 'stats',
+			match: ['/stats']
+		});
 	});
 
 	it('Search first, then the core features in their fixed order, Stats last', () => {
 		const sections = frameSections(all);
-		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'stats']);
-		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'stats']);
-		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
-		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'courses', 'stats']);
+		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'map', 'stats']);
+		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Courses', 'Stats']);
+		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/courses', '/stats']);
 		// A feature without a switch row is on.
 		expect(frameSections(ready([])).map((s) => s.id)).toEqual(sections.map((s) => s.id));
 	});
 
 	it('leaves out a switched-off feature', () => {
 		const sections = frameSections(ready([state(READER_ID, false), state(JOURNAL_ID, false)]));
-		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'courses', 'stats']);
 	});
 
 	it('shows Scripts only for a language whose profile has a writing system (#204)', () => {
 		const withScripts = ready([...all.list, state('scripts')]);
 		const ids = (language: string | null) => frameSections(withScripts, language).map((s) => s.id);
-		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'stats']);
+		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'practice', 'courses', 'stats']);
 		expect(ids('ko')).toContain('scripts');
 		expect(ids('ru-RU')).toContain('scripts');
 		expect(ids('zh')).not.toContain('scripts');
@@ -42,6 +56,32 @@ describe('frameSections', () => {
 		expect(ids(null)).not.toContain('scripts');
 		expect(frameSections(ready([...all.list, state('scripts', false)]), 'ja').map((s) => s.id)).not.toContain('scripts');
 		expect(frameSections(withScripts, 'ja').find((s) => s.id === 'scripts')).toMatchObject({ label: 'Scripts', href: '/scripts', icon: 'words' });
+	});
+
+	it('lists Courses for every language and leaves it out while switched off (#222)', () => {
+		for (const language of ['zh', 'ja', 'de', null]) expect(frameSections(all, language).map((s) => s.id)).toContain('courses');
+		expect(frameSections(ready([...all.list, state('courses', false)])).map((s) => s.id)).not.toContain('courses');
+		const sections = frameSections(all);
+		expect(currentSection('/courses', sections)).toBe('courses');
+		expect(currentSection('/courses/play/zh-course/hello/words-1', sections)).toBe('courses');
+	});
+
+	it('shows Practice only while a drill applies to the language (tone pairs: Chinese, conjugation: Japanese; the sample drill behind its flag)', () => {
+		const ids = (language: string | null) => frameSections(all, language).map((s) => s.id);
+		expect(ids('ja')).toContain('practice');
+		expect(ids('zh')).toContain('practice');
+		expect(ids('ko')).not.toContain('practice');
+		const store = memoryStorage();
+		store.setItem(DEV_DRILLS_KEY, 'sample');
+		vi.stubGlobal('localStorage', store);
+		try {
+			expect(ids('ko')).toContain('practice');
+			expect(frameSections(all, 'zh').find((s) => s.id === 'practice')).toMatchObject({ label: 'Practice', href: '/practice', icon: 'repeat' });
+			expect(currentSection('/practice/weakest', frameSections(all, 'zh'))).toBe('practice');
+			expect(frameSections(ready([...all.list, state('practice', false)]), 'zh').map((s) => s.id)).not.toContain('practice');
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it('every id is unique', () => {

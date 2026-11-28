@@ -7,10 +7,13 @@ import type { ActivityCell, ActivitySource } from '../api/stats';
 import { activityAmounts, amountsOf, flashcardAmounts, type FlashcardDay } from '../goals/amounts';
 import type { GoalsRow } from '../goals/goals';
 import { goalDays, type UnitOf } from '../goals/progress';
-import { dailyStreak } from '../study/exp';
-import { isValidReview } from '../study/scheduler';
-import type { ReviewEvent } from '../study/types';
-import { isVacationDay, type Run } from '../study/vacation';
+import { dailyStreak } from '$lib/studycore/exp';
+import type { CourseStep } from '$lib/studycore/courseCounting';
+import type { DrillAnswer } from '$lib/studycore/drills';
+import type { GrammarRun } from '$lib/studycore/grammarRuns';
+import { isValidReview } from '$lib/studycore/scheduler';
+import type { ReviewEvent } from '$lib/studycore/types';
+import { isVacationDay, type Run } from '$lib/studycore/vacation';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { reviewsKey } from './replay';
 import { isSkippedDate, isoWeekday, weekDates, weekOf } from './week';
@@ -67,6 +70,12 @@ export interface WeekInputs {
 	day: StudyDay;
 	workspaceId: number;
 	reviews: readonly ReviewEvent[];
+	/** The workspace's grammar lesson runs: they keep the streak (#277). */
+	grammarRuns?: readonly GrammarRun[];
+	/** The workspace's drill answers: they keep the streak too. */
+	drillAnswers?: readonly DrillAnswer[];
+	/** The workspace's course steps (#225): they keep the streak too. */
+	courseSteps?: readonly CourseStep[];
 	vacation: readonly Run[];
 	/** null = the activity request failed (offline). */
 	activity: { cells: readonly ActivityCell[]; sources: readonly ActivitySource[] } | null;
@@ -218,7 +227,15 @@ export function weekSummary(passes: WeekPasses, input: WeekInputs): WeekSummary 
 	);
 
 	const end = inProgress ? input.now : day.dayStart(addDays(sunday, 1)) - 1;
-	const streak = dailyStreak(reviews, end, day, vacation).current;
+	const streak = dailyStreak(
+		reviews,
+		end,
+		day,
+		vacation,
+		(input.grammarRuns ?? []).filter((run) => run.workspaceId === workspaceId),
+		(input.drillAnswers ?? []).filter((answer) => answer.workspaceId === workspaceId),
+		(input.courseSteps ?? []).filter((step) => step.workspaceId === workspaceId)
+	).current;
 
 	const cuts = weekCutoffs(monday, today, day);
 	const pair = (f: ((before: number, after: number) => number) | undefined): Pair | null =>

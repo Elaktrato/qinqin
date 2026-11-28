@@ -8,12 +8,12 @@ import { listBooks } from '$lib/api/library';
 import type { EntryBase } from '$lib/api/types';
 import { scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
 import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions';
-import { contextForData } from '$lib/study/currentContext';
-import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';
-import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
-import { activeWeights } from '$lib/study/readModel';
-import type { Deck } from '$lib/study/types';
+import { contextForData } from '$lib/studycore/currentContext';
+import { type KnownIndex, familiarity, knownIndex } from '$lib/studycore/known';
+import { loadRawStudyData, loadStudyHistory } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
+import { activeWeights } from '$lib/studycore/readModel';
+import type { Deck } from '$lib/studycore/types';
 import type { LookupHistory, LookupState } from './lookups';
 import { loadHistory, loadLookupCfg } from './store';
 

@@ -4,9 +4,9 @@
 // Idempotent: a word that already has a card joins the deck, a second run adds nothing.
 
 import { starterSet, type StarterSetEntry } from '$lib/api/starter';
-import { loadRawStudyData, getStudyData } from '$lib/study/data';
-import { pushStudy } from '$lib/study/commands/write';
-import { starterSetDeckId } from '$lib/study/starter';
+import { loadRawStudyData, getStudyData } from '$lib/studycore/data';
+import { pushStudy } from '$lib/studycore/commands/write';
+import { starterSetDeckId } from '$lib/starter/starter';
 import type { useSession } from '$lib/context/context';
 import { addPlanRows, planAddToDeck, type AddItem, type AddPlan } from './addToDeck';
 
@@ -15,12 +15,16 @@ export function starterSetTarget(set: { language: string; name: string }): { id:
 	return { id: starterSetDeckId(set.language), name: set.name };
 }
 
-/** The add items of a set's words, in the set's order; a character entry gets no sentence or tone companions. */
+/**
+ * The add items of a set's words, in the set's order; a character entry gets no sentence or tone companions, and a
+ * word the set pins to a reading passes it on to its new card (#346).
+ */
 export function starterSetItems(entries: readonly StarterSetEntry[]): AddItem[] {
 	return entries.map((entry) => ({
 		entryId: entry.id,
 		written: entry.written,
-		...(entry.kind === 'character' ? { entryKind: 'character' as const } : {})
+		...(entry.kind === 'character' ? { entryKind: 'character' as const } : {}),
+		...(entry.reading ? { reading: entry.reading } : {})
 	}));
 }
 

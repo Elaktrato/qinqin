@@ -39,6 +39,7 @@ var typeCases = map[string]func(t *testing.T) pack.Pack{
 		return buildPack(t, "lemma-rules", "es-rules", "Spanish rules", "CC0-1.0", "rules-json", map[string]string{"rules.json": xaRules})
 	},
 	pack.TypeImages: imagesPack,
+	pack.TypeCourse: coursePack,
 	pack.TypeTheme:  themePack,
 	pack.TypeFont:   func(t *testing.T) pack.Pack { p, _ := fontPack(t); return p },
 }

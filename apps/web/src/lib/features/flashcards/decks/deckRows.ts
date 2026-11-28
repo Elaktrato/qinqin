@@ -6,10 +6,10 @@
 import { shownWritten } from '$lib/entry/displayForm';
 import { t } from '$lib/i18n';
 import type { EntryBase } from '$lib/api/types';
-import { cleanSkipKinds } from '$lib/study/canonical';
-import { foldSearch } from '$lib/study/charGroups';
-import { cardScore } from '$lib/study/mastery';
-import type { StudyCard, StudyCardKind } from '$lib/study/types';
+import { cleanSkipKinds } from '$lib/studycore/canonical';
+import { foldSearch } from '$lib/studycore/charGroups';
+import { cardScore } from '$lib/studycore/mastery';
+import type { StudyCard, StudyCardKind } from '$lib/studycore/types';
 import { WORD_STATES, classifySchedule, type WordState } from '$lib/stats/wordStates';
 import type { ScheduleIndex } from './deckStats';
 

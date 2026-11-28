@@ -5,7 +5,7 @@
 // mark recomputes them without a request. Contract:
 // docs/contracts/reader/coverage.json.
 import type { SegmentMatch } from '$lib/api/types';
-import type { Familiarity } from '$lib/study/known';
+import type { Familiarity } from '$lib/studycore/known';
 import { isWordChar, isWordToken } from './wordRanges';
 
 export interface Occurrence {
@@ -78,7 +78,8 @@ export function tallyChapter(
 		const list = matches.get(p) ?? [];
 		for (const m of list) {
 			const first = m.entries[0];
-			if (first === undefined || !isWordToken(m.surface, lang)) continue;
+			// A function word is grammar, not vocabulary: no token (docs/contracts/segment/).
+			if (first === undefined || m.function || !isWordToken(m.surface, lang)) continue;
 			tokens++;
 			const t = types.get(first.id);
 			if (t === undefined) {

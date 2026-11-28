@@ -14,6 +14,8 @@ Each writing system has a chart grouped as the system is taught:
 
 Each cell shows the letter and its romanisation; its frame says how well you know it (not seen, learning, known; a ✓ marks known, a dashed frame learning, a darker frame due for review). Tap a cell for its sound (the play button), the keyboard key that types it and notes.
 
+
+**Romaji hidden.** With **Show romaji** on **Never** (Settings → Study → Romanisation), the kana charts show the letters without their romaji: tap a letter to hear it and see its romaji. **Recall**, **Type** and **Write** ask with the sound (the play button) and keep the romaji behind **Show romaji**. **Recognise** and **Read** answer by choosing a romaji, so they are not offered while it is hidden. Hangul and Cyrillic are not affected.
 ## Practice
 
 Five modes (four for Hangul and Cyrillic), ten questions a round, feedback after each:
@@ -22,7 +24,7 @@ Five modes (four for Hangul and Cyrillic), ten questions a round, feedback after
 - **Recall**: see the sound, choose the letter.
 - **Read**: read example words (and for Hangul, syllable blocks built from the jamo you have practised) and choose how they sound.
 - **Type**: see the sound and type the letter with your keyboard (a Japanese input method, the Korean 2-set layout, the Russian ЙЦУКЕН layout). A hint shows the key.
-- **Write** (hiragana and katakana): see the sound and draw the letter stroke by stroke on the writing pad. Wrong strokes are refused as in a flashcard; the **Stroke hint** and **Show the strokes** buttons help, but a round answer counts as right only when the letter is finished with at most one wrong stroke and no help. It needs the Japanese stroke data (KanjiVG) installed on your server, otherwise the mode is not offered and the page says why; digraphs such as きゃ are left to the other modes.
+- **Write** (hiragana and katakana): see the sound and draw the letter stroke by stroke on the writing pad. Wrong strokes are refused as in a flashcard; the **Stroke hint** and **Show the strokes** buttons help, and after 3 misses on a stroke that stroke alone is shown faintly until you draw it; strokes that flow into each other (き's third and fourth, さ's last two, こ, い) may be drawn in one motion, but a round answer counts as right only when the letter is finished with at most one wrong stroke and no help. It needs the Japanese stroke data (KanjiVG) installed on your server, otherwise the mode is not offered and the page says why; digraphs such as きゃ are left to the other modes.
 
 Each round starts with what is due, then up to five new letters in chart order, then the weakest ones. A letter is **known** after three correct answers, the second at least 10 minutes and the third at least a day after the one before (a letter is promoted only when it is due, so repeating it in one sitting does not climb). After that the waits grow: 3 days, 7 days, 21 days. A wrong answer sends the letter back to be asked again within a minute.
 

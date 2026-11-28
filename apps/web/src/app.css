@@ -203,7 +203,8 @@ body {
 	position: absolute;
 	width: 1px;
 	height: 1px;
-	margin: -1px;
+	/* No negative margin: at the left edge it would stick out of a phone's screen (#285, the 360 px guard). */
+	margin: 0;
 	padding: 0;
 	overflow: hidden;
 	clip-path: inset(50%);
@@ -404,6 +405,27 @@ label:has(> input[autocomplete='one-time-code']) {
 	input[autocomplete='one-time-code']:focus {
 		outline: 2px solid Highlight;
 		outline-offset: 2px;
+	}
+}
+
+/* The sideways-scrolling box of a table wider than a phone (#296): the table
+   scrolls inside it instead of widening the page. Positioned, so absolutely
+   positioned content (a visually hidden column label) scrolls with it. Give
+   it tabindex="0", role="region" and a label: a scrolling region is keyboard
+   reachable (WCAG 2.1.1). */
+.ui-table-scroll {
+	position: relative;
+	overflow-x: auto;
+}
+
+.ui-table-scroll:focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-ring-offset);
+}
+
+@media (forced-colors: active) {
+	.ui-table-scroll:focus-visible {
+		outline-color: Highlight;
 	}
 }
 

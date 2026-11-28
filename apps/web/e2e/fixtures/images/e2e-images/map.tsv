@@ -1,0 +1,4 @@
+language	target	sense	concept	score	basis	note
+ja	水	0	DROP	100	manual	
+ja	水	0	BOOK	60	manual	a weaker second picture: shown once the first is reported
+ja	本	0	BOOK	100	manual	

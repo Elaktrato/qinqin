@@ -1,0 +1,616 @@
+{
+ "version": 1,
+ "rule": "conjugation/families",
+ "families": [
+  {
+   "id": "polite",
+   "forms": [
+    "polite",
+    "polite-negative",
+    "polite-volitional"
+   ],
+   "default": true
+  },
+  {
+   "id": "polite-past",
+   "forms": [
+    "polite-past",
+    "polite-past-negative"
+   ],
+   "default": true
+  },
+  {
+   "id": "negative",
+   "forms": [
+    "negative"
+   ],
+   "default": true
+  },
+  {
+   "id": "past",
+   "forms": [
+    "past",
+    "past-negative"
+   ],
+   "default": true
+  },
+  {
+   "id": "te-form",
+   "forms": [
+    "te"
+   ],
+   "default": true
+  },
+  {
+   "id": "potential",
+   "forms": [
+    "potential"
+   ],
+   "default": false
+  },
+  {
+   "id": "volitional",
+   "forms": [
+    "volitional"
+   ],
+   "default": false
+  },
+  {
+   "id": "conditional",
+   "forms": [
+    "conditional-ba",
+    "conditional-tara"
+   ],
+   "default": false
+  },
+  {
+   "id": "passive",
+   "forms": [
+    "passive"
+   ],
+   "default": false
+  },
+  {
+   "id": "causative",
+   "forms": [
+    "causative"
+   ],
+   "default": false
+  }
+ ],
+ "classes": {
+  "v1": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5u": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5u-s": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5k": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5k-s": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5g": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5s": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5t": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5n": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5b": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5m": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "v5r": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "vk": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "vs-i": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "potential",
+   "volitional",
+   "conditional",
+   "passive",
+   "causative"
+  ],
+  "vs-s": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "volitional",
+   "conditional",
+   "passive"
+  ],
+  "v1-s": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ],
+  "v5r-i": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ],
+  "v5aru": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ],
+  "adj-i": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ],
+  "adj-ix": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ],
+  "adj-na": [
+   "polite",
+   "polite-past",
+   "negative",
+   "past",
+   "te-form",
+   "conditional"
+  ]
+ },
+ "exclusions": [
+  {
+   "written": [
+    "分かる",
+    "わかる",
+    "判る",
+    "解る"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "polite-volitional"
+   ],
+   "why": "a verb of ability already; 分かれる is another verb"
+  },
+  {
+   "written": [
+    "出来る",
+    "できる"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative",
+    "polite-volitional"
+   ],
+   "why": "a verb of ability already"
+  },
+  {
+   "written": [
+    "見える",
+    "みえる",
+    "聞こえる",
+    "きこえる"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative",
+    "polite-volitional"
+   ],
+   "why": "not done on purpose; 見せる and 聞かせる are the verbs"
+  },
+  {
+   "written": [
+    "要る"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative",
+    "polite-volitional"
+   ],
+   "why": "a state"
+  },
+  {
+   "written": [
+    "いる"
+   ],
+   "class": "v5r",
+   "forms": [
+    "polite",
+    "polite-negative",
+    "polite-volitional",
+    "polite-past",
+    "polite-past-negative",
+    "negative",
+    "past",
+    "past-negative",
+    "te",
+    "potential",
+    "volitional",
+    "conditional-ba",
+    "conditional-tara",
+    "passive",
+    "causative"
+   ],
+   "why": "要る in kana: いる could be 居る, so the prompt would not say which verb"
+  },
+  {
+   "written": [
+    "知る",
+    "しる"
+   ],
+   "forms": [
+    "potential"
+   ],
+   "why": "知れる means become known"
+  },
+  {
+   "written": [
+    "要する",
+    "有する"
+   ],
+   "forms": [
+    "volitional",
+    "polite-volitional",
+    "passive"
+   ],
+   "why": "states, not done on purpose"
+  },
+  {
+   "written": [
+    "似る",
+    "足りる",
+    "起こる",
+    "晴れる",
+    "曇る",
+    "違う",
+    "始まる"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative",
+    "polite-volitional"
+   ],
+   "why": "not done on purpose (起こす, 始める are the verbs)"
+  },
+  {
+   "written": [
+    "壊れる",
+    "割れる",
+    "折れる",
+    "消える",
+    "閉まる",
+    "決まる",
+    "見つかる",
+    "治る",
+    "生まれる",
+    "済む",
+    "開く",
+    "空く"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative",
+    "polite-volitional"
+   ],
+   "why": "the intransitive half of a pair"
+  },
+  {
+   "written": [
+    "似合う",
+    "疲れる",
+    "咲く"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "polite-volitional"
+   ],
+   "why": "not done on purpose (咲かせる is kept)"
+  },
+  {
+   "written": [
+    "困る"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "polite-volitional"
+   ],
+   "why": "not done on purpose (困らせる is kept)"
+  },
+  {
+   "written": [
+    "降る"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "polite-volitional"
+   ],
+   "why": "weather (雨に降られる and 降らせる are kept)"
+  },
+  {
+   "written": [
+    "関する",
+    "対する",
+    "反する"
+   ],
+   "forms": [
+    "polite",
+    "polite-negative",
+    "polite-volitional",
+    "polite-past",
+    "polite-past-negative",
+    "negative",
+    "past",
+    "past-negative",
+    "te",
+    "potential",
+    "volitional",
+    "conditional-ba",
+    "conditional-tara",
+    "passive",
+    "causative"
+   ],
+   "why": "used only as 〜に関して, 〜に対して, 〜に反して"
+  },
+  {
+   "written": [
+    "存じる",
+    "申す",
+    "致す",
+    "いたす",
+    "参る",
+    "まいる",
+    "おる",
+    "伺う",
+    "申し上げる"
+   ],
+   "forms": [
+    "potential",
+    "passive",
+    "causative",
+    "volitional"
+   ],
+   "why": "humble verbs: 参りましょう yes, 参ろう no"
+  },
+  {
+   "written": [
+    "召し上がる"
+   ],
+   "forms": [
+    "potential",
+    "volitional",
+    "passive",
+    "causative"
+   ],
+   "why": "an honorific verb"
+  },
+  {
+   "written": [
+    "ござる",
+    "御座る"
+   ],
+   "forms": [
+    "negative",
+    "past",
+    "past-negative",
+    "te",
+    "conditional-ba",
+    "conditional-tara"
+   ],
+   "why": "its plain forms are archaic"
+  },
+  {
+   "written": [
+    "死ぬ",
+    "殺す"
+   ],
+   "forms": [
+    "volitional",
+    "polite-volitional"
+   ],
+   "why": "a cheerful drill does not ask for let's die"
+  },
+  {
+   "written": [
+    "ない",
+    "無い"
+   ],
+   "class": "adj-i",
+   "forms": [
+    "negative",
+    "past-negative",
+    "polite-negative",
+    "polite-past-negative"
+   ],
+   "why": "no double negatives"
+  },
+  {
+   "written": [
+    "来る"
+   ],
+   "reading": "きたる",
+   "forms": [
+    "polite",
+    "polite-negative",
+    "polite-volitional",
+    "polite-past",
+    "polite-past-negative",
+    "negative",
+    "past",
+    "past-negative",
+    "te",
+    "potential",
+    "volitional",
+    "conditional-ba",
+    "conditional-tara",
+    "passive",
+    "causative"
+   ],
+   "why": "来る read きたる is literary"
+  }
+ ]
+}

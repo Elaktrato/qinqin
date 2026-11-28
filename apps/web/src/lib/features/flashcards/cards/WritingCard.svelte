@@ -1,12 +1,14 @@
 <script lang="ts">
+	import { entrySenses, shownGlosses, unitsOf } from '$lib/entry/entrySenses';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
-	import { loadStrokeData } from '$lib/study/strokeData';
-	import { suggestWritingGrade, type CharOutcome, maskWritten } from '$lib/study/writing';
+	import { type CardResult, type FlowItem } from '../session/cardFlow';
+	import { loadStrokeData } from '$lib/writing/strokeData';
+	import { suggestWritingGrade, type CharOutcome, maskWritten } from '$lib/exercises/writing';
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
+	import { fitPad } from '$lib/writing/padSize';
 	import WritingPad from './WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import AnswerAids from '../face/AnswerAids.svelte';
@@ -30,8 +32,13 @@
 
 	let { item, entry, chars, done, onDone }: Props = $props();
 
-	// 12.5rem at the default font size (design §9: a 200px pad).
-	const SIZE = 200;
+	// The pad's size follows the screen (#285, lib/writing/padSize.ts): the feedback line must stay above the
+	// docked actions.
+	let feedbackLine = $state<HTMLElement>();
+	const padFit = {
+		end: () => feedbackLine,
+		dock: () => feedbackLine?.closest('.study-face')?.querySelector('[data-action-dock]')
+	};
 
 	let position = $state(0);
 	let outcomes = $state<CharOutcome[]>([]);
@@ -67,7 +74,8 @@
 
 	const written = $derived(item.written ?? entry.written);
 	const masked = $derived(maskWritten(written, chars, done ? chars.length : position));
-	const glosses = $derived(entry.senses.slice(0, 3).map((sense) => sense.gloss));
+	// The prompt's meaning: shown glosses only, never a folded slang or vulgar one (docs/contracts/senses).
+	const glosses = $derived(shownGlosses(unitsOf(entrySenses(entry), item.card?.reading), 3));
 
 	async function loadChar(index: number): Promise<void> {
 		busy = true;
@@ -204,12 +212,11 @@
 		{/if}
 	{/if}
 
-	<div class="pad-wrap" class:hidden={failed !== ''} style:max-width={`${SIZE / 16}rem`}>
+	<div class="pad-wrap" class:hidden={failed !== ''} use:fitPad={padFit}>
 		{#if current !== null}
 			{#key current}
 				<WritingPad
 					strokes={current}
-					size={SIZE}
 					{onComplete}
 					{onChange}
 					{revealSignal}
@@ -232,7 +239,7 @@
 	{/if}
 
 	{#if !done}
-		<p class="feedback" role="status" aria-live="polite">{feedback}</p>
+		<p class="feedback" role="status" aria-live="polite" bind:this={feedbackLine}>{feedback}</p>
 	{/if}
 	<p class="sr-only" aria-live="polite">{strokeNote}</p>
 </FaceWork>
@@ -285,7 +292,9 @@
 	}
 
 	.pad-wrap {
-		width: 100%;
+		/* Until fitPad has measured: today's size. */
+		width: 12.5rem;
+		max-width: 100%;
 	}
 
 	.pad-wrap.hidden {

@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_W } from '$lib/study/fsrs/params';
+import { DEFAULT_W } from '$lib/studycore/fsrsParams';
 import { studyDay, type ZoneChange } from '$lib/time/studyDay';
 import { addDays } from '$lib/time/studyDay';
-import type { ReviewEvent, StudyCard } from '$lib/study/types';
-import type { Run } from '$lib/study/vacation';
-import type { Schedule } from '$lib/study/scheduler';
+import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
+import type { Run } from '$lib/studycore/vacation';
+import type { Schedule } from '$lib/studycore/scheduler';
 import fixture from '../../../../../docs/contracts/stats/summary-numbers.json';
+import { drillPayload, grammarPayload } from '$lib/events/eventPayloads';
+import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
+import { parseDrillAnswer, type DrillAnswer } from '$lib/studycore/drills';
+import { courseStepOf, type CourseStep } from '$lib/studycore/courseCounting';
 
 // The recall figure must be the decks page's own function, called once for
 // the overall scope; the spy proves the reuse (the rest of the module stays
@@ -119,6 +123,49 @@ describe('summaryNumbers, every contract case', () => {
 });
 
 describe('summaryNumbers', () => {
+	it('counts a grammar lesson day in the streak, of this workspace only (#277)', () => {
+		const input = inputOf(cases[0]);
+		const day = input.day;
+		const today = day.today(input.now);
+		const run = (id: string, ws: number, date: string): GrammarRun => {
+			const r = parseGrammarRun({ id, workspaceId: ws, ts: `${date}T12:00:00Z`, type: 'grammar', payload: grammarPayload('p', 'a', 1, 1) });
+			if (r === null) throw new Error('no run');
+			return r;
+		};
+		const base = summaryNumbers({ ...input, reviews: [], vacation: [] }).streak;
+		expect(base).toBe(0);
+		const own = [run('g1', input.workspaceId, addDays(today, -1)), run('g2', input.workspaceId, today)];
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: own }).streak).toBe(2);
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: [run('g3', input.workspaceId + 1, today)] }).streak).toBe(0);
+	});
+
+	it('counts a drill answer day in the streak, of this workspace only', () => {
+		const input = inputOf(cases[0]);
+		const today = input.day.today(input.now);
+		const answer = (id: string, ws: number, date: string): DrillAnswer => {
+			const a = parseDrillAnswer({ id, workspaceId: ws, ts: `${date}T12:00:00Z`, type: 'drill.tone-pairs', payload: drillPayload('3-4', 'produce', 1) });
+			if (a === null) throw new Error('no answer');
+			return a;
+		};
+		const own = [answer('d1', input.workspaceId, addDays(today, -1)), answer('d2', input.workspaceId, today)];
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], drillAnswers: own }).streak).toBe(2);
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], drillAnswers: [answer('d3', input.workspaceId + 1, today)] }).streak).toBe(0);
+	});
+
+	it('counts a course step day in the streak, of this workspace only (#225)', () => {
+		const input = inputOf(cases[0]);
+		const today = input.day.today(input.now);
+		const step = (id: string, ws: number, date: string): CourseStep => {
+			const payload = { kind: 'lesson-finished', course: 'c', unit: 'u', lesson: 'words-1', score: 1, total: 1, words: [] };
+			const s = courseStepOf({ id, workspaceId: ws, ts: `${date}T12:00:00Z`, type: 'course', payload });
+			if (s === null) throw new Error('no step');
+			return s;
+		};
+		const own = [step('k1', input.workspaceId, addDays(today, -1)), step('k2', input.workspaceId, today)];
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], courseSteps: own }).streak).toBe(2);
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], courseSteps: [step('k3', input.workspaceId + 1, today)] }).streak).toBe(0);
+	});
+
 	it('uses the decks page’s 30-day window, one constant for both', () => {
 		expect(STATS_WINDOW_DAYS).toBe(DECK_WINDOW_DAYS);
 	});

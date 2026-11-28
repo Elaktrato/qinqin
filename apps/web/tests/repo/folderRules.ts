@@ -20,6 +20,7 @@ export const LOGIC_FOLDERS = [
 	'auth',
 	'context',
 	'events',
+	'exercises',
 	'fonts',
 	'i18n',
 	'languages',
@@ -28,7 +29,7 @@ export const LOGIC_FOLDERS = [
 	'radicals',
 	'routing',
 	'session',
-	'study',
+	'studycore',
 	'sync',
 	'theme',
 	'time',
@@ -48,6 +49,7 @@ export const FEATURE_FOLDERS = [
 	'goals',
 	'lookups',
 	'milestones',
+	'notebook',
 	'notes',
 	'placement',
 	'pwa',
@@ -68,6 +70,22 @@ export const FEATURE_FOLDERS = [
  */
 export const STRUCTURE_FOLDERS = ['ui', 'frame', 'components', 'features', 'testing', 'assets'];
 
+/**
+ * The shared study core (#278): the study cache and read model, the event log, the derived schedules and mastery,
+ * the learner's day, and the exercises flashcards share with grammar and the drills. Every feature may read them;
+ * they never import the flashcards feature (`FLASHCARDS`), so a feature that reads them does not pull in flashcards.
+ */
+export const STUDY_CORE_FOLDERS = ['studycore', 'exercises'];
+
+/**
+ * The course player and roadmap (#222) build on the study core only: like it, they never import the flashcards
+ * feature, so a course lesson cannot pull in a flashcard face.
+ */
+export const FLASHCARDS_FREE = ['lib/features/courses/', 'routes/courses/'];
+
+/** What the study core must not import: the flashcards feature and the routes that show it. */
+export const FLASHCARDS = ['lib/features/flashcards/', 'routes/study/', 'routes/flashcards/'];
+
 /** Loose files allowed directly in `lib/`, each with its reason. None today. */
 export const LOOSE_ALLOWED: Record<string, string> = {};
 
@@ -81,13 +99,16 @@ export const ROUTE_FEATURES: Record<string, string> = {
 	'+layout.ts': 'frame',
 	'+page.svelte': 'widgets',
 	account: 'account',
+	courses: 'features/courses',
 	entry: 'entry',
 	flashcards: 'features/flashcards',
 	grammar: 'features/grammar',
 	journal: 'features/journal',
 	login: 'account',
 	lookups: 'lookups',
+	notebook: 'notebook',
 	p: 'routing',
+	practice: 'features/practice',
 	reader: 'features/reader',
 	register: 'account',
 	reset: 'account',
@@ -241,6 +262,24 @@ export function uiImportFindings(files: SourceFile[]): string[] {
 		if (!f.path.startsWith('lib/ui/') || f.path.startsWith('lib/ui/testing/')) continue;
 		for (const t of g.imports.get(f.path) ?? []) {
 			if (!UI_MAY_IMPORT.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
+		}
+	}
+	return out;
+}
+
+/**
+ * Nothing shipped in the study core (`STUDY_CORE_FOLDERS`) or the courses feature (`FLASHCARDS_FREE`) imports the
+ * flashcards feature. A test may (record 0004: tests import anything): the core's data tests write their rows
+ * through the flashcards commands.
+ */
+export function studyCoreImportFindings(files: SourceFile[]): string[] {
+	const g = graph(files);
+	const out: string[] = [];
+	for (const f of files) {
+		const bound = STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`)) || FLASHCARDS_FREE.some((p) => f.path.startsWith(p));
+		if (!bound || isTestOnly(f.path)) continue;
+		for (const t of g.imports.get(f.path) ?? []) {
+			if (FLASHCARDS.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
 		}
 	}
 	return out;

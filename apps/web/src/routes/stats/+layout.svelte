@@ -4,6 +4,8 @@
 	import { page } from '$app/state';
 	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/stats/statsTabs';
 	import Tabs from '$lib/ui/Tabs.svelte';
+	import FeatureGate from '$lib/features/FeatureGate.svelte';
+	import { STATS_ID } from '$lib/features';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 	let { children } = $props();
@@ -12,6 +14,8 @@
 	// so Back, Forward and deep links pick the tab. The tabs are links, not
 	// ARIA tabs: the base Tabs route form. Characters exists only for Han
 	// languages; a direct visit in another workspace keeps its own note.
+	// Stats is a feature (#295): switched off, every Stats page shows the
+	// switched-off notice instead (FeatureGate).
 	const tabs = $derived(statsTabs(session.workspaces.language));
 	const active = $derived(activeStatsTab(page.url.pathname));
 	const activeTab = $derived(tabs.find((tab) => tab.id === active) ?? null);
@@ -23,20 +27,22 @@
 	<title>{pageTitle(panelLabel, t('stats.title'))}</title>
 </svelte:head>
 
-<div class="page-body stats">
-	<h1>{t('stats.title')}</h1>
+<FeatureGate id={STATS_ID}>
+	<div class="page-body stats">
+		<h1>{t('stats.title')}</h1>
 
-	<Tabs label={t('stats.tabsLabel')} tabs={tabItems} selected={active ?? ''} />
+		<Tabs label={t('stats.tabsLabel')} tabs={tabItems} selected={active ?? ''} />
 
-	<div
-		id="stats-panel"
-		class="panel"
-		role="region"
-		aria-label={activeTab ? activeTab.label : panelLabel}
-	>
-		{@render children()}
+		<div
+			id="stats-panel"
+			class="panel"
+			role="region"
+			aria-label={activeTab ? activeTab.label : panelLabel}
+		>
+			{@render children()}
+		</div>
 	</div>
-</div>
+</FeatureGate>
 
 <style>
 	.stats {

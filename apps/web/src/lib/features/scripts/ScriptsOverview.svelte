@@ -3,7 +3,7 @@
 	// notes); Hangul also shows how a syllable block is built.
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
-	import { fetchStrokeData } from '$lib/study/strokeData';
+	import { fetchStrokeData } from '$lib/writing/strokeData';
 	import { formatNumber } from '$lib/i18n/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import Button from '$lib/ui/Button.svelte';
@@ -16,6 +16,8 @@
 	import { scriptsHref } from './route';
 	import SyllableBuilder from './SyllableBuilder.svelte';
 	import { canWrite, MODES, type ScriptItem, type ScriptSystem } from './types';
+	import { hidesRomaji, practiceModes } from './romaji';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
 
 	let {
 		system,
@@ -47,7 +49,16 @@
 			cancelled = true;
 		};
 	});
-	const modes = $derived(MODES.filter((m) => m !== 'write' || (canWrite(system.id) && strokesReady === true)));
+	// Hidden romaji (#284, ./romaji.ts): no romaji labels in the chart (a tap opens the cell's detail, which says
+	// it), and no mode that answers by choosing a romaji.
+	const roman = useRomanisation();
+	const noRomaji = $derived(hidesRomaji(system.id, roman.shows));
+	const modes = $derived(
+		practiceModes(
+			MODES.filter((m) => m !== 'write' || (canWrite(system.id) && strokesReady === true)),
+			noRomaji
+		)
+	);
 	const writeMissing = $derived(canWrite(system.id) && strokesReady === false);
 
 	const now = Date.now();
@@ -59,11 +70,13 @@
 	const open = $derived(system.items.find((i) => i.id === openId) ?? null);
 
 	const cellLabel = (c: ChartCell): string =>
-		t(c.due ? 'scripts.cell.labelDue' : 'scripts.cell.label', {
-			glyph: c.item.glyph,
-			roman: c.item.roman,
-			mastery: masteryLabel(c.mastery)
-		});
+		noRomaji
+			? t(c.due ? 'scripts.cell.labelDueNoRomaji' : 'scripts.cell.labelNoRomaji', { glyph: c.item.glyph, mastery: masteryLabel(c.mastery) })
+			: t(c.due ? 'scripts.cell.labelDue' : 'scripts.cell.label', {
+					glyph: c.item.glyph,
+					roman: c.item.roman,
+					mastery: masteryLabel(c.mastery)
+				});
 
 	function toggle(item: ScriptItem): void {
 		openId = openId === item.id ? null : item.id;
@@ -85,13 +98,16 @@
 	<ul class="modes">
 		{#each modes as mode (mode)}
 			<li>
-				<Button variant={mode === 'recognise' ? 'primary' : 'secondary'} href={scriptsHref({ view: 'practice', system: system.id, mode })}>{modeLabel(mode)}</Button>
+				<Button variant={mode === modes[0] ? 'primary' : 'secondary'} href={scriptsHref({ view: 'practice', system: system.id, mode })}>{modeLabel(mode)}</Button>
 				<span class="hint">{modeHint(mode)}</span>
 			</li>
 		{/each}
 	</ul>
 	{#if writeMissing}
 		<p class="hint">{t('scripts.mode.writeMissing')}</p>
+	{/if}
+	{#if noRomaji}
+		<p class="hint" data-testid="romaji-hidden">{t('scripts.mode.romajiHidden')}</p>
 	{/if}
 	<p class="hint">{keyboardNote(system.id)}</p>
 </Section>
@@ -110,7 +126,7 @@
 				<li>
 					<button type="button" class="cell" data-mastery={cell.mastery} data-due={cell.due} aria-pressed={openId === cell.item.id} aria-label={cellLabel(cell)} lang={system.language} onclick={() => toggle(cell.item)}>
 						<span class="glyph" aria-hidden="true">{cell.item.glyph}</span>
-						<span class="roman" aria-hidden="true">{cell.item.roman}</span>
+						{#if !noRomaji}<span class="roman" aria-hidden="true">{cell.item.roman}</span>{/if}
 						<span class="mark" aria-hidden="true">{cell.mastery === 'known' ? '✓' : cell.mastery === 'learning' ? '·' : ''}</span>
 					</button>
 				</li>

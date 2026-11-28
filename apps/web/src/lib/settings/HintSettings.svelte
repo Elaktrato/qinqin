@@ -3,30 +3,30 @@
 	import { t } from '$lib/i18n';
 	import { useSession } from '$lib/context/context';
 	import {
-		HINT_KINDS,
+		STORED_HINT_KINDS,
 		HINT_MODES,
 		hintApplies,
 		hintPatch,
 		readHintSettings,
-		type HintKind,
+		type StoredHintKind,
 		type HintMode
-	} from '$lib/study/hints';
-	import { CARD_KINDS, type StudyCardKind } from '$lib/study/types';
+	} from '$lib/features/flashcards/face/hints';
+	import { CARD_KINDS, type StudyCardKind } from '$lib/studycore/types';
 	import Section from '$lib/ui/Section.svelte';
 	import Select from '$lib/ui/Select.svelte';
 
 	// Settings > Study: which hints a flashcard may offer, per hint kind and card type (#215). Stored in the
-	// workspace's settings (synced and part of a backup); the rules are in lib/study/hints.ts.
+	// workspace's settings (synced and part of a backup); the rules are in lib/features/flashcards/face/hints.ts.
 	const session = useSession();
 	const workspace = $derived(session.workspaces.current);
 	const settings = $derived(readHintSettings(workspace?.settings));
 	let error = $state('');
 
-	const KIND_LABELS: Record<HintKind, string> = {
+	const KIND_LABELS: Record<StoredHintKind, string> = {
 		reading: t('settings.hints.kind.reading'),
 		picture: t('settings.hints.kind.picture')
 	};
-	const KIND_NOTES: Record<HintKind, string> = {
+	const KIND_NOTES: Record<StoredHintKind, string> = {
 		reading: t('settings.hints.kind.readingNote'),
 		picture: t('settings.hints.kind.pictureNote')
 	};
@@ -45,7 +45,7 @@
 	};
 	const MODE_OPTIONS = HINT_MODES.map((mode) => ({ value: mode, label: MODE_LABELS[mode] }));
 
-	async function change(kind: HintKind, card: StudyCardKind, value: string): Promise<void> {
+	async function change(kind: StoredHintKind, card: StudyCardKind, value: string): Promise<void> {
 		if (!workspace) return;
 		const mode = HINT_MODES.find((m) => m === value);
 		if (mode === undefined || mode === settings[kind][card]) return;
@@ -61,7 +61,7 @@
 {#if workspace}
 	<Section title={t('settings.hints.title')} level={4}>
 		<p class="note">{t('settings.hints.intro')}</p>
-		{#each HINT_KINDS as kind (kind)}
+		{#each STORED_HINT_KINDS as kind (kind)}
 			<fieldset data-hint-kind={kind}>
 				<legend>{KIND_LABELS[kind]}</legend>
 				<p class="note">{KIND_NOTES[kind]}</p>

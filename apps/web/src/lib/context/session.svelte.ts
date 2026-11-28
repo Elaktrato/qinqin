@@ -12,13 +12,17 @@ import { FeatureSwitches } from '../features/switches.svelte';
 import { StudyDays } from '../time/studyDays';
 import { Notices } from '$lib/frame/notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
-import { createStudyState, type StudyState } from '../study/data';
-import { ReviewOutbox } from '../study/events';
-import { createOutboxStore } from '../study/outboxStore';
-import { clearRecentSent, rememberSent } from '../study/recentSent';
-import { StudySetups } from '../study/setupStore.svelte';
-import { StudyModalState } from '../study/studyModal.svelte';
-import { STUDY_SETUP_KEY } from '../study/setup';
+import { createStudyState, type StudyState } from '$lib/studycore/data';
+import { ReviewOutbox } from '$lib/studycore/events';
+import { createOutboxStore } from '$lib/studycore/outboxStore';
+import { clearRecentSent, rememberSent } from '$lib/studycore/recentSent';
+import { forgetHomeCopies } from '$lib/widgets/homeData';
+import { forgetCourseCopies } from '$lib/features/courses/courseData';
+import { StudySetups } from '$lib/features/flashcards/setup/setupStore.svelte';
+import { StudyModalState } from '$lib/features/flashcards/setup/studyModal.svelte';
+import { EligibilityIndex } from '$lib/features/flashcards/session/eligibility.svelte';
+import { fetchEligibility } from '$lib/api/eligibility';
+import { STUDY_SETUP_KEY } from '$lib/features/flashcards/setup/setup';
 import { keyedData } from '../sync/keyed';
 import { WorkspaceRecovery } from '$lib/workspace/workspaceGone';
 import { Workspaces } from '$lib/workspace/workspaces.svelte';
@@ -71,6 +75,8 @@ export class Session {
 	readonly setups: StudySetups;
 	/** The study modal's opener. */
 	readonly studyModal = new StudyModalState();
+	/** Which companion cards each entry can make (#288): what planning leaves out. */
+	readonly eligibility: EligibilityIndex;
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
@@ -85,7 +91,10 @@ export class Session {
 			timers: deps.timers,
 			local,
 			studyDay: () => this.zone.day(),
-			whenStudyDaySettled: () => this.zone.settled()
+			whenStudyDaySettled: () => this.zone.settled(),
+			onRefresh: (workspaceId, ok) => {
+				if (this.#alive) this.study.refresh.record('log', workspaceId, ok);
+			}
 		});
 		this.onDispose(() => this.events.dispose());
 		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive, dropReviews: (id) => void this.outbox.dropWorkspace(id) });
@@ -126,15 +135,19 @@ export class Session {
 			// A deleted workspace leaves the list; before the list loads every id counts.
 			exists: (ws) => !this.workspaces.loaded || this.workspaces.list.some((w) => w.id === ws)
 		});
+		this.eligibility = new EligibilityIndex({ fetch: (ids) => fetchEligibility(api, ids), now });
 		if (deps.document !== null) this.onDispose(this.lookups.recorder.attach(deps.document));
 		this.onDispose((reason) => {
 			this.#player?.stop();
 			this.lookups.dispose();
 			this.study.dispose();
 			this.caches.clear();
+			this.eligibility.clear();
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
 			if (reason === 'signOut') {
 				clearRecentSent(local());
+				forgetHomeCopies(local());
+				forgetCourseCopies(local());
 				this.setups.forget();
 			}
 		});

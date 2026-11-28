@@ -1,0 +1,1228 @@
+{
+ "version": 1,
+ "rule": "graded/format",
+ "doc": "The graded reader text file (README, Text file). A case without error parses; a case with error is refused with a message containing it. Go: server/internal/library/sources/graded/contract_test.go.",
+ "cases": [
+  {
+   "name": "a valid file",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "names and glosses may be empty; another level",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     },
+     {
+      "id": "zh-hsk2-park",
+      "level": 1,
+      "kind": "story",
+      "title": "公园",
+      "paragraphs": [
+       "今天天气很好，我们去公园。"
+      ],
+      "names": [],
+      "glosses": []
+     }
+    ]
+   }
+  },
+  {
+   "name": "another version",
+   "file": {
+    "version": 2,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "version"
+  },
+  {
+   "name": "an unknown key",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ],
+    "extra": 1
+   },
+   "error": "unknown field"
+  },
+  {
+   "name": "a missing licence",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "license"
+  },
+  {
+   "name": "another licence",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-SA-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "license"
+  },
+  {
+   "name": "no attribution",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "attribution"
+  },
+  {
+   "name": "no scheme",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "scheme"
+  },
+  {
+   "name": "no levels",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "levels"
+  },
+  {
+   "name": "a repeated level",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 1"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "levels"
+  },
+  {
+   "name": "no texts",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": []
+   },
+   "error": "texts"
+  },
+  {
+   "name": "an id without the language prefix",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "id"
+  },
+  {
+   "name": "an id with capitals",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-HSK1",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "id"
+  },
+  {
+   "name": "a repeated id",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     },
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "id"
+  },
+  {
+   "name": "a level out of range",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 2,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "level"
+  },
+  {
+   "name": "a negative level",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": -1,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "level"
+  },
+  {
+   "name": "an unknown kind",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "poem",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "kind"
+  },
+  {
+   "name": "an empty title",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "title"
+  },
+  {
+   "name": "a title of 41 characters",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "title"
+  },
+  {
+   "name": "no paragraphs",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "paragraphs"
+  },
+  {
+   "name": "an empty paragraph",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       " "
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "paragraph"
+  },
+  {
+   "name": "a paragraph with Latin letters",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "我喝tea。王明"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "Latin letters or digits"
+  },
+  {
+   "name": "a paragraph with digits",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "我喝3杯茶。王明"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "Latin letters or digits"
+  },
+  {
+   "name": "a paragraph with a control character",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "我喝茶。\u0007王明"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "control"
+  },
+  {
+   "name": "a paragraph of 601 characters",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶茶王明"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "paragraph"
+  },
+  {
+   "name": "a name that is not in the text",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "李华"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "name"
+  },
+  {
+   "name": "a gloss without a meaning",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": ""
+       }
+      ]
+     }
+    ]
+   },
+   "error": "gloss"
+  },
+  {
+   "name": "a gloss without a reading",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "gloss"
+  },
+  {
+   "name": "a repeated gloss",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       },
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "gloss"
+  },
+  {
+   "name": "nine glosses",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "一",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "二",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "三",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "四",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "五",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "六",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "七",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "八",
+        "reading": "x",
+        "meaning": "m"
+       },
+       {
+        "word": "九",
+        "reading": "x",
+        "meaning": "m"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "gloss"
+  },
+  {
+   "name": "a language other than the file's",
+   "file": {
+    "version": 1,
+    "language": "Zh",
+    "scheme": "hsk-words",
+    "levels": [
+     "HSK 1",
+     "HSK 2"
+    ],
+    "license": "CC-BY-4.0",
+    "attribution": "Graded readers written for qinqin. Credit: qinqin contributors, CC BY 4.0.",
+    "humanReviewed": false,
+    "texts": [
+     {
+      "id": "zh-hsk1-tea",
+      "level": 0,
+      "kind": "dialogue",
+      "title": "喝茶",
+      "paragraphs": [
+       "“你喝茶吗？”",
+       "“我喝茶。谢谢王明！”"
+      ],
+      "names": [
+       "王明"
+      ],
+      "glosses": [
+       {
+        "word": "茶",
+        "reading": "chá",
+        "meaning": "tea"
+       }
+      ]
+     }
+    ]
+   },
+   "error": "language"
+  }
+ ]
+}

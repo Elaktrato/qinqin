@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn()
 }));
-vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+vi.mock('../commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../commands/cards')>()),
 	deleteCards: vi.fn(),
 	moveCards: vi.fn(),
 	restoreCards: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('$lib/api/entryBases', () => ({ loadEntryBases: vi.fn() }));
 
 import { loadEntryBases } from '$lib/api/entryBases';
 import type { EntryBase } from '$lib/api/types';
-import { loadStudyHistory } from '$lib/study/data';
+import { loadStudyHistory } from '$lib/studycore/data';
 import {
 	deleteCards,
 	dropSiblingCards,
@@ -30,10 +30,10 @@ import {
 	restoreCards,
 	skipKind,
 	unskipKind
-} from '$lib/study/commands/cards';
-import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { defaultSetup } from '$lib/study/setup';
-import type { Deck, StudyCard } from '$lib/study/types';
+} from '../commands/cards';
+import { SESSION_CONFIG_KEY } from '../session/session';
+import { defaultSetup } from '../setup/setup';
+import type { Deck, StudyCard } from '$lib/studycore/types';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckDetail from './DeckDetail.svelte';
 
@@ -84,7 +84,7 @@ function install(): void {
 		decks: [verbs, nouns],
 		cards: structuredClone(cards),
 		reviews: [],
-		merged: 0,
+		merged: 0, grammarRuns: [], courseEvents: [],
 		deckSettings: settings as never
 	}));
 	vi.mocked(loadEntryBases).mockImplementation(async (_study, ids) => new Map(ids.filter((id) => BASES.has(id)).map((id) => [id, BASES.get(id)!])));
@@ -274,7 +274,7 @@ describe('DeckDetail', () => {
 			],
 			cards: structuredClone(cards).map((c) => ({ ...c, deckIds: ['cp'] })),
 			reviews: [],
-			merged: 0,
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never
 		}));
 		render(DeckDetail, { props: { deckId: 'cp' }, context: ctx.context });
@@ -328,7 +328,7 @@ describe('DeckDetail daily limits and vacation', () => {
 			decks: [verbs, nouns],
 			cards: structuredClone(cards),
 			reviews: [],
-			merged: 0,
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never,
 			limits: { workspace: { new: 2 }, decks: {} }
 		}));
@@ -342,7 +342,7 @@ describe('DeckDetail daily limits and vacation', () => {
 			decks: [verbs, nouns],
 			cards: structuredClone(cards),
 			reviews: [],
-			merged: 0,
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never,
 			vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 		}));

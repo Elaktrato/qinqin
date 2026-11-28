@@ -23,6 +23,10 @@ type ReminderData struct {
 	Link        string // where to study
 	Unsubscribe string // the one-click unsubscribe link
 	Items       []ReminderItem
+	// Workspaces holds the own interface-language setting of each workspace
+	// the reminder counts ("" = it uses the account's; #297). The mail is
+	// written in their shared setting, else the account's (i18n.CommonSetting).
+	Workspaces []string
 }
 
 var lineKey = map[string]Kind{"due": "reminder_due", "goal": "reminder_goal", "streak": "reminder_streak", "test": "reminder_test"}
@@ -60,9 +64,10 @@ func RenderReminder(lang string, d ReminderData) (Message, error) {
 var ErrCapped = errors.New("mail: hourly cap reached")
 
 // SendReminder renders and sends one reminder mail to `to` now (the caller is
-// the scheduler, which has its own once-per-day rule), in the language of the
-// user's stored interface setting (userID 0: English). It counts against the
-// hourly cap; the address is never logged.
+// the scheduler, which has its own once-per-day rule), in the interface
+// language its workspaces share (d.Workspaces), else the user's stored account
+// setting (userID 0: English). It counts against the hourly cap; the address
+// is never logged.
 func (s *Service) SendReminder(ctx context.Context, userID int64, to string, d ReminderData) error {
 	if s == nil || s.Store == nil {
 		return ErrNotConfigured
@@ -76,7 +81,8 @@ func (s *Service) SendReminder(ctx context.Context, userID int64, to string, d R
 		return ErrCapped
 	}
 	d.Site = cfg.Site()
-	msg, err := RenderReminder(s.language(ctx, Job{UserID: userID}), d)
+	lang := Language(i18n.CommonSetting(s.accountSetting(ctx, userID), d.Workspaces), "")
+	msg, err := RenderReminder(lang, d)
 	if err != nil {
 		s.logf("mail: failed kind=%s user=%d category=template", KindReminder, userID)
 		return err

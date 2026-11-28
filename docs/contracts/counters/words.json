@@ -1,0 +1,1314 @@
+{
+ "version": 1,
+ "rule": "counters/words",
+ "doc": "The answer of POST /api/drills/measure-words/words for the asked entries (key: language:written; the answer carries the entry id instead), in first-occurrence order, and the pools of the answered languages. Go: server/internal/api/handlers_measurewords_test.go (UPDATE_COUNTERS_FIXTURE=1 writes it); web: apps/web/src/lib/features/practice/counters/words.test.ts.",
+ "asked": [
+  "zh:书",
+  "zh:水",
+  "ja:紙",
+  "(unknown)",
+  "zh:猫",
+  "zh:吃",
+  "ja:食べる",
+  "ja:本",
+  "zh:人",
+  "ja:水",
+  "zh:书"
+ ],
+ "words": [
+  {
+   "key": "zh:书",
+   "language": "zh",
+   "written": "书",
+   "readings": [
+    {
+     "type": "pinyin",
+     "value": "shū"
+    },
+    {
+     "type": "bopomofo",
+     "value": "ㄕㄨ"
+    }
+   ],
+   "gloss": "book",
+   "measures": [
+    {
+     "written": "本",
+     "variants": [],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "běn"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄅㄣˇ"
+      }
+     ]
+    },
+    {
+     "written": "册",
+     "variants": [
+      "冊"
+     ],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "cè"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄘㄜˋ"
+      }
+     ]
+    },
+    {
+     "written": "部",
+     "variants": [],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "bù"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄅㄨˋ"
+      }
+     ]
+    }
+   ],
+   "fallback": null,
+   "traditional": false
+  },
+  {
+   "key": "ja:紙",
+   "language": "ja",
+   "written": "紙",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "かみ"
+    },
+    {
+     "type": "romaji",
+     "value": "kami"
+    }
+   ],
+   "gloss": "paper",
+   "measures": [
+    {
+     "written": "枚",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "まい"
+      },
+      {
+       "type": "romaji",
+       "value": "mai"
+      }
+     ],
+     "counter": "mai",
+     "counts": "flat, thin things: paper, plates, shirts, stamps, tickets, photos"
+    }
+   ],
+   "fallback": null,
+   "traditional": false
+  },
+  {
+   "key": "zh:猫",
+   "language": "zh",
+   "written": "猫",
+   "readings": [
+    {
+     "type": "pinyin",
+     "value": "māo"
+    },
+    {
+     "type": "bopomofo",
+     "value": "ㄇㄠ"
+    }
+   ],
+   "gloss": "cat",
+   "measures": [
+    {
+     "written": "只",
+     "variants": [
+      "隻"
+     ],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "zhī"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄓ"
+      }
+     ]
+    }
+   ],
+   "fallback": {
+    "written": "个",
+    "variants": [
+     "個"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "gè"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄍㄜˋ"
+     },
+     {
+      "type": "pinyin",
+      "value": "ge"
+     }
+    ]
+   },
+   "traditional": false
+  },
+  {
+   "key": "ja:本",
+   "language": "ja",
+   "written": "本",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "ほん"
+    },
+    {
+     "type": "romaji",
+     "value": "hon"
+    }
+   ],
+   "gloss": "book",
+   "measures": [
+    {
+     "written": "冊",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "さつ"
+      },
+      {
+       "type": "romaji",
+       "value": "satsu"
+      }
+     ],
+     "counter": "satsu",
+     "counts": "books and other bound things: books, magazines, notebooks, dictionaries"
+    }
+   ],
+   "fallback": null,
+   "traditional": false
+  },
+  {
+   "key": "zh:人",
+   "language": "zh",
+   "written": "人",
+   "readings": [
+    {
+     "type": "pinyin",
+     "value": "rén"
+    },
+    {
+     "type": "bopomofo",
+     "value": "ㄖㄣˊ"
+    }
+   ],
+   "gloss": "person; people",
+   "measures": [
+    {
+     "written": "个",
+     "variants": [
+      "個"
+     ],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "gè"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄍㄜˋ"
+      },
+      {
+       "type": "pinyin",
+       "value": "ge"
+      }
+     ]
+    },
+    {
+     "written": "位",
+     "variants": [],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "wèi"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄨㄟˋ"
+      }
+     ]
+    },
+    {
+     "written": "名",
+     "variants": [],
+     "readings": [
+      {
+       "type": "pinyin",
+       "value": "míng"
+      },
+      {
+       "type": "bopomofo",
+       "value": "ㄇㄧㄥˊ"
+      }
+     ]
+    }
+   ],
+   "fallback": null,
+   "traditional": false
+  },
+  {
+   "key": "ja:水",
+   "language": "ja",
+   "written": "水",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "みず"
+    },
+    {
+     "type": "romaji",
+     "value": "mizu"
+    }
+   ],
+   "gloss": "water",
+   "measures": [
+    {
+     "written": "杯",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "はい"
+      },
+      {
+       "type": "romaji",
+       "value": "hai"
+      }
+     ],
+     "counter": "hai",
+     "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)"
+    },
+    {
+     "written": "本",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "ほん"
+      },
+      {
+       "type": "romaji",
+       "value": "hon"
+      }
+     ],
+     "counter": "hon",
+     "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas"
+    },
+    {
+     "written": "つ",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "つ"
+      },
+      {
+       "type": "romaji",
+       "value": "tsu"
+      }
+     ],
+     "counter": "tsu",
+     "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)"
+    }
+   ],
+   "fallback": null,
+   "traditional": false
+  }
+ ],
+ "pools": {
+  "ja": [
+   {
+    "written": "つ",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "つ"
+     },
+     {
+      "type": "romaji",
+      "value": "tsu"
+     }
+    ],
+    "counter": "tsu",
+    "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)"
+   },
+   {
+    "written": "個",
+    "variants": [
+     "こ",
+     "コ"
+    ],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "こ"
+     },
+     {
+      "type": "romaji",
+      "value": "ko"
+     }
+    ],
+    "counter": "ko",
+    "counts": "small, compact things: apples, eggs, sweets, erasers"
+   },
+   {
+    "written": "人",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "にん"
+     },
+     {
+      "type": "romaji",
+      "value": "nin"
+     }
+    ],
+    "counter": "nin",
+    "counts": "people"
+   },
+   {
+    "written": "本",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "ほん"
+     },
+     {
+      "type": "romaji",
+      "value": "hon"
+     }
+    ],
+    "counter": "hon",
+    "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas"
+   },
+   {
+    "written": "枚",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "まい"
+     },
+     {
+      "type": "romaji",
+      "value": "mai"
+     }
+    ],
+    "counter": "mai",
+    "counts": "flat, thin things: paper, plates, shirts, stamps, tickets, photos"
+   },
+   {
+    "written": "冊",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "さつ"
+     },
+     {
+      "type": "romaji",
+      "value": "satsu"
+     }
+    ],
+    "counter": "satsu",
+    "counts": "books and other bound things: books, magazines, notebooks, dictionaries"
+   },
+   {
+    "written": "匹",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "ひき"
+     },
+     {
+      "type": "romaji",
+      "value": "hiki"
+     }
+    ],
+    "counter": "hiki",
+    "counts": "most animals: pets, fish, insects (large animals use 頭, birds use 羽)"
+   },
+   {
+    "written": "頭",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "とう"
+     },
+     {
+      "type": "romaji",
+      "value": "tou"
+     }
+    ],
+    "counter": "tou",
+    "counts": "large animals, bigger than a person: horses, cows, elephants, bears"
+   },
+   {
+    "written": "羽",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "わ"
+     },
+     {
+      "type": "romaji",
+      "value": "wa"
+     }
+    ],
+    "counter": "wa",
+    "counts": "birds (and, traditionally, rabbits)"
+   },
+   {
+    "written": "台",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "だい"
+     },
+     {
+      "type": "romaji",
+      "value": "dai"
+     }
+    ],
+    "counter": "dai",
+    "counts": "machines and vehicles: cars, bicycles, computers, televisions"
+   },
+   {
+    "written": "杯",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "はい"
+     },
+     {
+      "type": "romaji",
+      "value": "hai"
+     }
+    ],
+    "counter": "hai",
+    "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)"
+   },
+   {
+    "written": "軒",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "けん"
+     },
+     {
+      "type": "romaji",
+      "value": "ken"
+     }
+    ],
+    "counter": "ken",
+    "counts": "houses and shops"
+   },
+   {
+    "written": "着",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "ちゃく"
+     },
+     {
+      "type": "romaji",
+      "value": "chaku"
+     }
+    ],
+    "counter": "chaku",
+    "counts": "garments: suits, dresses, coats, kimono (in shops also shirts and sweaters)"
+   },
+   {
+    "written": "足",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "そく"
+     },
+     {
+      "type": "romaji",
+      "value": "soku"
+     }
+    ],
+    "counter": "soku",
+    "counts": "pairs of shoes, socks, boots and slippers"
+   },
+   {
+    "written": "通",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "つう"
+     },
+     {
+      "type": "romaji",
+      "value": "tsuu"
+     }
+    ],
+    "counter": "tsuu",
+    "counts": "letters, postcards and e-mails"
+   },
+   {
+    "written": "件",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "けん"
+     },
+     {
+      "type": "romaji",
+      "value": "ken"
+     }
+    ],
+    "counter": "ken-matter",
+    "counts": "cases and items: e-mails, messages, bookings, incidents"
+   },
+   {
+    "written": "曲",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "きょく"
+     },
+     {
+      "type": "romaji",
+      "value": "kyoku"
+     }
+    ],
+    "counter": "kyoku",
+    "counts": "songs and pieces of music"
+   }
+  ],
+  "zh": [
+   {
+    "written": "本",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "běn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄅㄣˇ"
+     }
+    ]
+   },
+   {
+    "written": "张",
+    "variants": [
+     "張"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "zhāng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄓㄤ"
+     }
+    ]
+   },
+   {
+    "written": "只",
+    "variants": [
+     "隻"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "zhī"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄓ"
+     }
+    ]
+   },
+   {
+    "written": "条",
+    "variants": [
+     "條"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "tiáo"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄊㄧㄠˊ"
+     }
+    ]
+   },
+   {
+    "written": "件",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "jiàn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄐㄧㄢˋ"
+     }
+    ]
+   },
+   {
+    "written": "辆",
+    "variants": [
+     "輛"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "liàng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄌㄧㄤˋ"
+     }
+    ]
+   },
+   {
+    "written": "台",
+    "variants": [
+     "臺"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "tái"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄊㄞˊ"
+     }
+    ]
+   },
+   {
+    "written": "把",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "bǎ"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄅㄚˇ"
+     }
+    ]
+   },
+   {
+    "written": "位",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "wèi"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄨㄟˋ"
+     }
+    ]
+   },
+   {
+    "written": "杯",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "bēi"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄅㄟ"
+     }
+    ]
+   },
+   {
+    "written": "瓶",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "píng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄆㄧㄥˊ"
+     }
+    ]
+   },
+   {
+    "written": "双",
+    "variants": [
+     "雙"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "shuāng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄕㄨㄤ"
+     }
+    ]
+   },
+   {
+    "written": "块",
+    "variants": [
+     "塊"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "kuài"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄎㄨㄞˋ"
+     }
+    ]
+   },
+   {
+    "written": "支",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "zhī"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄓ"
+     }
+    ]
+   },
+   {
+    "written": "棵",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "kē"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄎㄜ"
+     }
+    ]
+   },
+   {
+    "written": "座",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "zuò"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄗㄨㄛˋ"
+     }
+    ]
+   },
+   {
+    "written": "家",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "jiā"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄐㄧㄚ"
+     }
+    ]
+   },
+   {
+    "written": "头",
+    "variants": [
+     "頭"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "tóu"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄊㄡˊ"
+     }
+    ]
+   },
+   {
+    "written": "匹",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "pǐ"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄆㄧˇ"
+     },
+     {
+      "type": "pinyin",
+      "value": "pī"
+     }
+    ]
+   },
+   {
+    "written": "封",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fēng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄥ"
+     }
+    ]
+   },
+   {
+    "written": "片",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "piàn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄆㄧㄢˋ"
+     }
+    ]
+   },
+   {
+    "written": "篇",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "piān"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄆㄧㄢ"
+     }
+    ]
+   },
+   {
+    "written": "首",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "shǒu"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄕㄡˇ"
+     }
+    ]
+   },
+   {
+    "written": "部",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "bù"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄅㄨˋ"
+     }
+    ]
+   },
+   {
+    "written": "间",
+    "variants": [
+     "間"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "jiān"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄐㄧㄢ"
+     }
+    ]
+   },
+   {
+    "written": "套",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "tào"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄊㄠˋ"
+     }
+    ]
+   },
+   {
+    "written": "碗",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "wǎn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄨㄢˇ"
+     }
+    ]
+   },
+   {
+    "written": "颗",
+    "variants": [
+     "顆"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "kē"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄎㄜ"
+     }
+    ]
+   },
+   {
+    "written": "朵",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "duǒ"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄉㄨㄛˇ"
+     }
+    ]
+   },
+   {
+    "written": "门",
+    "variants": [
+     "門"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "mén"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄇㄣˊ"
+     }
+    ]
+   },
+   {
+    "written": "份",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fèn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄣˋ"
+     }
+    ]
+   },
+   {
+    "written": "所",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "suǒ"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄙㄨㄛˇ"
+     }
+    ]
+   },
+   {
+    "written": "架",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "jià"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄐㄧㄚˋ"
+     }
+    ]
+   },
+   {
+    "written": "顶",
+    "variants": [
+     "頂"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "dǐng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄉㄧㄥˇ"
+     }
+    ]
+   },
+   {
+    "written": "根",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "gēn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄍㄣ"
+     }
+    ]
+   },
+   {
+    "written": "副",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fù"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄨˋ"
+     }
+    ]
+   },
+   {
+    "written": "节",
+    "variants": [
+     "節"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "jié"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄐㄧㄝˊ"
+     }
+    ]
+   },
+   {
+    "written": "道",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "dào"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄉㄠˋ"
+     }
+    ]
+   },
+   {
+    "written": "场",
+    "variants": [
+     "場"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "chǎng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄔㄤˇ"
+     },
+     {
+      "type": "pinyin",
+      "value": "cháng"
+     }
+    ]
+   },
+   {
+    "written": "层",
+    "variants": [
+     "層"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "céng"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄘㄥˊ"
+     }
+    ]
+   },
+   {
+    "written": "面",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "miàn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄇㄧㄢˋ"
+     }
+    ]
+   },
+   {
+    "written": "扇",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "shàn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄕㄢˋ"
+     }
+    ]
+   },
+   {
+    "written": "盏",
+    "variants": [
+     "盞"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "zhǎn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄓㄢˇ"
+     }
+    ]
+   },
+   {
+    "written": "幅",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fú"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄨˊ"
+     }
+    ]
+   },
+   {
+    "written": "顿",
+    "variants": [
+     "頓"
+    ],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "dùn"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄉㄨㄣˋ"
+     }
+    ]
+   },
+   {
+    "written": "次",
+    "variants": [],
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "cì"
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄘˋ"
+     }
+    ]
+   }
+  ]
+ }
+}

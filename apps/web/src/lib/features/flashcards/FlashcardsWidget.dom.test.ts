@@ -2,19 +2,19 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/data', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/data')>()),
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('$lib/goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
-import { levelProgress, xpFromReviews } from '$lib/study/exp';
-import { loadStudyHistory } from '$lib/study/data';
-import type { ReviewEvent } from '$lib/study/types';
+import { levelProgress, xpFromReviews } from '$lib/studycore/exp';
+import { loadStudyHistory } from '$lib/studycore/data';
+import type { ReviewEvent } from '$lib/studycore/types';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
-import { defaultSetup } from '$lib/study/setup';
+import { defaultSetup } from './setup/setup';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -71,7 +71,7 @@ const text = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim();
 
 beforeEach(() => {
 	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 });
 afterEach(() => {
 	cleanup();
@@ -107,7 +107,7 @@ describe('FlashcardsWidget goal ring', () => {
 			type: 'review',
 			payload: { cardId: `c${i}`, mode: 'vocab', grade: 3 }
 		}));
-		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0 });
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0, grammarRuns: [], courseEvents: [] });
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
 		const total = xpFromReviews(reviews, ctx.session.zone.day().dayOf);
 		const progress = levelProgress(total);
@@ -178,13 +178,36 @@ describe('FlashcardsWidget and the saved study setup', () => {
 	it('counts the kinds of the saved setup: a tone card counts only when the setup studies tone', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
 		const tone = { id: 'c-tone-5', kind: 'tone', entryId: 5, written: '好', entryKind: null, sentenceId: null, skipKinds: [], deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z', extra: {} };
-		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [tone], reviews: [], merged: 0 } as never);
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [tone], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		const container = await ready();
 		await waitFor(() => expect(text(container)).toContain('Nothing due today'));
 		cleanup();
 		ctx.session.setups.update(1, { ...defaultSetup(), cardTypes: ['vocab', 'tone'] }).catch(() => undefined);
 		const again = await ready();
 		await waitFor(() => expect(text(again)).toMatch(/1 new left today/));
+	});
+});
+
+describe('FlashcardsWidget counts what the session plans (#288)', () => {
+	it('a word salad of a studied word counts as new only when the server says the word has a sentence', async () => {
+		ctx = testContext({
+			routes: {
+				// The saved setup studies Vocab and Word Salad.
+				'GET /api/rows': [
+					{ key: 'study-setup', userId: 1, workspaceId: 1, data: { ...defaultSetup(), cardTypes: ['vocab', 'sentence'] }, version: 1, updatedAt: '2026-11-25T00:00:00Z', deletedAt: null }
+				],
+				'POST /api/study/eligibility': (body: unknown) => ({
+					entries: Object.fromEntries((body as { ids: number[] }).ids.map((id) => [String(id), id === 1 ? ['sentence'] : []]))
+				})
+			}
+		});
+		ctx.session.workspaces.set({ list: [{ id: 1, language: 'ja', name: 'ja' } as never], current: { id: 1, language: 'ja', name: 'ja' } as never });
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
+		const card = (n: number, written: string) => ({ id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written, deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z' });
+		const studied = (n: number) => ({ id: `r${n}`, workspaceId: 1, device: 'web', ts: new Date().toISOString(), type: 'review', payload: { cardId: `c-vocab-${n}`, mode: 'vocab', grade: 4 } });
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [card(1, '学校'), card(2, '水')], reviews: [studied(1), studied(2)], merged: 0 } as never);
+		const { container } = render(FlashcardsWidget, { context: ctx.context });
+		await waitFor(() => expect(text(container)).toMatch(/0 reviews · 1 new left today/));
 	});
 });
 

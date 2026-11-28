@@ -4,6 +4,9 @@ import { t } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
 import type { LookupResult } from '$lib/api/types';
 import { formatReading } from '$lib/languages/format';
+import { MARK_TAGS, unitsOf } from '$lib/entry/entrySenses';
+import { TAG_READING, type SenseMark } from '$lib/entry/senseDisplay';
+import { SENSES_VISIBLE } from './showMore';
 
 type Sense = LookupResult['senses'][number];
 type Frequency = LookupResult['frequencies'][number];
@@ -21,15 +24,22 @@ export function rubyReading(r: LookupResult, lang: string): string {
  * pinyin reading of a Chinese entry joined with " · " (Chinese keeps one
  * entry per written form), or the on/kun readings of a Japanese character
  * grouped by type. Empty for a Japanese word, whose reading is ruby.
+ * `shows` is the hidden-romanisation rule (#284, useRomanisation().shows):
+ * a hidden type is left out, and so is the untyped fallback of a Chinese
+ * entry (its pinyin); with pinyin hidden a Chinese entry shows its bopomofo.
  */
-export function readingLine(r: LookupResult, lang: string): string {
+export function readingLine(r: LookupResult, lang: string, shows: (type: string) => boolean = () => true): string {
 	if (lang === 'zh') {
-		const pinyin = [...new Set(r.readings.filter((x) => x.type === 'pinyin').map((x) => x.value))];
-		return pinyin.length > 0 ? pinyin.join(' · ') : r.reading;
+		// With pinyin hidden, bopomofo (when shown) stands in for it.
+		const type = shows('pinyin') ? 'pinyin' : shows('bopomofo') ? 'bopomofo' : null;
+		if (type === null) return '';
+		const values = [...new Set(r.readings.filter((x) => x.type === type).map((x) => x.value))];
+		return values.length > 0 ? values.join(' · ') : type === 'pinyin' ? r.reading : '';
 	}
 	if (r.kind !== 'character') return '';
 	const byType = new Map<string, string[]>();
 	for (const reading of r.readings) {
+		if (!shows(reading.type)) continue;
 		byType.set(reading.type, [...(byType.get(reading.type) ?? []), reading.value]);
 	}
 	return [...byType].map(([type, values]) => formatReading(type, values.join(', '))).join(' · ');
@@ -70,14 +80,44 @@ export function dictionaryNames(r: LookupResult): string[] {
 	return [...new Set(r.senses.map((s) => s.dictionaryName))];
 }
 
-/** shownSenses are the senses with something to show. */
-export function shownSenses(r: LookupResult): Sense[] {
-	return r.senses.filter((s) => s.glosses.length > 0);
+/**
+ * One sense as the popup lists it: a display unit of the sense display rule
+ * (docs/contracts/senses) with its sense's dictionary, part of speech and
+ * tags; xrefs only on the first unit of a sense.
+ */
+export interface PopupSense extends Sense {
+	mark: SenseMark | null;
+	folded: boolean;
 }
 
-/** senseChips are a sense's part-of-speech and other tags; "usually kana" shows per entry. */
+/** shownSenses are the senses with something to show, in display order: slang and vulgar units last. */
+export function shownSenses(r: LookupResult): PopupSense[] {
+	return unitsOf(r.senses).map((u) => ({
+		...u.of,
+		glosses: u.glosses,
+		xrefs: u.firstOfSense ? u.of.xrefs : [],
+		mark: u.mark,
+		folded: u.folded
+	}));
+}
+
+/**
+ * firstVisible is how many senses show before "Show more senses": the first
+ * SENSES_VISIBLE, but never a folded one (unless all of them are folded,
+ * which the rule does not do: then the stored order shows as usual).
+ */
+export function firstVisible(senses: readonly PopupSense[]): number {
+	const unfolded = senses.filter((s) => !s.folded).length;
+	return Math.min(SENSES_VISIBLE, unfolded);
+}
+
+/**
+ * senseChips are a sense's part-of-speech and other tags; "usually kana"
+ * shows per entry, the slang, vulgar and derogatory tags as the unit's
+ * mark chip, and reading tags (`reading:hē`) not at all.
+ */
 export function senseChips(s: Sense): string[] {
-	return [...s.pos, ...s.tags.filter((t) => t !== 'uk')];
+	return [...s.pos, ...s.tags.filter((t) => t !== 'uk' && !MARK_TAGS.includes(t) && !t.startsWith(TAG_READING))];
 }
 
 const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;

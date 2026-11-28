@@ -5,12 +5,12 @@
 // burying, the learner's day), not a copy of its rules.
 
 import { entryPath } from '../api/entries';
-import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
-import { writableChars } from '../study/writing';
-import type { StudyContext } from '../study/studyContext';
-import { type StudyHistory } from '../study/types';
-import { enabledKinds } from '../study/deckSettings';
-import { setupDeckIds, setupKinds, type StudySetup } from '../study/setup';
+import { deckSessionPlan, type DeckSessionOptions } from '$lib/features/flashcards/session/cardFlow';
+import { writableChars } from '$lib/exercises/writing';
+import type { StudyContext } from '$lib/studycore/studyContext';
+import { type StudyHistory } from '$lib/studycore/types';
+import { enabledKinds } from '$lib/studycore/deckSettings';
+import { setupDeckIds, setupKinds, type StudySetup } from '$lib/features/flashcards/setup/setup';
 import type { OfflineState } from './offlineState.svelte';
 
 /** The API reads every page of the app shell needs, besides the study data. */
@@ -19,7 +19,9 @@ export const OFFLINE_API_PATHS: readonly string[] = [
 	'/api/workspaces',
 	'/api/features',
 	'/api/languages',
-	'/api/me/time-zone'
+	'/api/me/time-zone',
+	// The learner's reported pictures (#274): the kept images packages pass them over offline.
+	'/api/images/reports'
 ];
 
 export const PREPARE_THROTTLE_MS = 30 * 60 * 1000;
@@ -116,6 +118,12 @@ export interface PrepareDeps {
 	extraNew?: number;
 	/** Entries prepared for an offline Study all session beyond the others (planOffline). */
 	studyAllExtra?: number;
+	/**
+	 * Keeps the images packages of the workspace language on the device (#274; only while the Pictures aid is on,
+	 * the runtime decides). Best effort: a failure leaves the rest of the preparation standing and is tried again at
+	 * the next preparation.
+	 */
+	syncPictures?: () => Promise<unknown>;
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
@@ -227,6 +235,13 @@ export async function prepareOffline(
 			if (!(await d.isCached(entryPath(id)))) await d.fetchEntry(id);
 		});
 		await pool(plan.chars, (ch) => d.fetchStroke(ch));
+		if (d.syncPictures) {
+			try {
+				await d.syncPictures();
+			} catch {
+				// No new pictures this round; what was kept before still answers.
+			}
+		}
 		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length, pages: d.pullPages(workspaceId), partition };
 		try {
 			d.storage?.setItem(key, JSON.stringify(saved));

@@ -36,6 +36,32 @@ export interface Sentence {
 	ai?: SentenceAi | null;
 	/** Who wrote a pack sentence and its translation (Tatoeba); absent for a sentence without a credit. */
 	credit?: SentenceCredit | null;
+	/** Where the reader saved an own sentence (#280); absent for every other sentence. */
+	source?: SentenceSource | null;
+}
+
+/**
+ * Where the reader saved an own sentence (#280, docs/contracts/reader/sentence-sources.json):
+ * the book (null once it is deleted), its title when saved, and the word's place: chapter,
+ * paragraph and the code-point range [start, end) of the paragraph's text.
+ */
+export interface SentenceSource {
+	kind: string;
+	bookId: number | null;
+	title: string;
+	chapter: number;
+	paragraph: number;
+	start: number;
+	end: number;
+}
+
+/** The source a client sends with a new sentence (POST /api/entries/{id}/sentences). */
+export interface SentenceSourceRequest {
+	bookId: number;
+	chapter: number;
+	paragraph: number;
+	start: number;
+	end: number;
 }
 
 /** The credit of a pack sentence: the source, the sentence's id, owner and page, and the same for its translation. */
@@ -355,6 +381,8 @@ export interface SegmentMatch {
 	entries: SegmentCandidate[];
 	/** Only with `readings: true`: the best candidate's reading, the caller's overlay applied. */
 	reading?: { type: string; value: string };
+	/** A function word (a particle, the copula, an auxiliary: docs/contracts/segment/): never new, learning or unreached. Sent only when true. */
+	function?: boolean;
 }
 
 // SegmentCandidate is one entry a match resolves to; reading is true when
@@ -424,6 +452,29 @@ export interface SourceInfo {
 	id: string;
 	name: string;
 	languages: string[];
+}
+
+/** A glossed word of a graded text: above the text's level (docs/contracts/graded/). */
+export interface GradedGloss {
+	word: string;
+	reading: string;
+	meaning: string;
+}
+
+/** One graded reader of GET /api/library/graded (docs/contracts/graded/README.md, Catalogue). */
+export interface GradedText {
+	id: string;
+	language: string;
+	scheme: string;
+	level: number;
+	levelName: string;
+	levels: number;
+	kind: 'story' | 'dialogue' | 'info';
+	title: string;
+	length: number;
+	names: string[];
+	glosses: GradedGloss[];
+	humanReviewed: boolean;
 }
 
 export interface SourceResult {
