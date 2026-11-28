@@ -920,6 +920,8 @@
 	"entry.study.general": "General",
 	"entry.study.inDeck": "In study deck",
 	"entry.study.noWorkspace": "Choose a workspace in the header first, then add the word.",
+	"features.courses.switchedOff": "Courses are switched off",
+	"features.courses.title": "Courses",
 	"features.flashcards.switchedOff": "Flashcards are switched off",
 	"features.flashcards.title": "Decks",
 	"features.grammar.switchedOff": "Grammar is switched off",

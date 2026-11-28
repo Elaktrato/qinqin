@@ -10,16 +10,17 @@ function state(id: string, enabled = true): FeatureSwitch {
 const ALL_ON = [state(FLASHCARDS_ID), state(READER_ID), state(JOURNAL_ID), state(GRAMMAR_ID), state(STATS_ID)];
 
 describe('core features', () => {
-	it('are the six core features, with fixed ids and routes', () => {
+	it('are the seven core features, with fixed ids and routes', () => {
 		expect(coreFeatures.map((f) => [f.id, f.title])).toEqual([
 			['flashcards', 'Decks'],
 			['reader', 'Reader'],
 			['journal', 'Journal'],
 			['grammar', 'Grammar'],
 			['scripts', 'Scripts'],
+			['courses', 'Courses'],
 			['stats', 'Stats']
 		]);
-		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar', '/scripts', '/stats']);
+		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar', '/scripts', '/courses', '/stats']);
 	});
 
 	it('a feature without a switch row is on; its row switches it', () => {

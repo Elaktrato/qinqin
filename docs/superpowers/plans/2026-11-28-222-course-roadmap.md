@@ -11,7 +11,7 @@ plan `2026-11-28-221-course-pack.md`).
 ## What
 
 - **Courses is a core feature** (`courses`, the #294/#295 pattern): a per-user switch, nav entry with the `map` icon,
-  pages under `/courses`, a pin in the default bottom bar.
+  pages under `/courses`, a section of the bottom bar (pinnable).
 - **The course of a workspace:** the installed courses of the workspace's language (`GET /api/courses?language=`),
   the first by pack id unless the learner picked another on this device.
 - **The filled course offline:** held in the session and in a device copy per user (record 0009, #290 pattern:
@@ -35,8 +35,7 @@ plan `2026-11-28-221-course-pack.md`).
 ## Tasks
 
 1. This plan.
-2. The feature `courses`: `features.IDs` (Go), `docs/contracts/features/` (seven ids), the default bottom bar
-   (`docs/contracts/settings/nav-layout.json`), ContractVersion 25, CHANGELOG; the web registry, a feature page,
+2. The feature `courses`: `features.IDs` (Go), `docs/contracts/features/` (seven ids), ContractVersion 25, CHANGELOG; the web registry, a feature page,
    the route folder, the frame (icon, the player without the bar). Tests first (Go and web contract tests, frame).
 3. Progress data: `StudyHistory.courseEvents`; `lib/features/courses/progress.ts` (load the course state of a
    workspace, the known keys from the known marks), the event builders and their recording. Tests first.
@@ -68,9 +67,11 @@ Format: `Ruling: <what> — <why> — <cost if wrong>`.
    course shows "No course for this language yet" — whether a course exists is server data (installed packs), not
    the language profile — cost if wrong: a Courses entry that leads to an empty page for German or Korean until
    #201/#223 bring courses.
-3. Ruling: **the default bottom bar becomes Home, Courses, Decks, Search** (Reader moves to More) — the issue asks for
-   a bottom-bar entry and the bar holds four pins and More; the dictionary (Search) stays, the Reader is one tap
-   further — cost if wrong: learners who never changed their bar find the Reader in More; a saved bar is untouched.
+3. Ruling: **the default bottom-bar pins stay Home, Decks, Reader, Search; Courses is a section of the bar like every
+   feature** (under More until the learner pins it, Settings → Layout) — a new default pin would push Search or the
+   Reader into More for every learner who never changed the bar and ripple through the nav-layout contract; #225's
+   "Continue course" widget on Home is the one-tap entry the design asks for — cost if wrong: one more tap to the
+   roadmap until a learner pins it (a one-line change of `DEFAULT_BAR` and its fixture later).
 4. Ruling: **routes** `/courses` (the roadmap of the workspace's course), `/courses/<courseId>` (the roadmap of that
    course, used by the course picker), `/courses/play/<courseId>/<unitId>/<lessonId>` (the player; `lessonId` may be
    `test` for the unit test) and `/courses/play/<courseId>/section/<sectionId>/exam` (the section exam); the bar is

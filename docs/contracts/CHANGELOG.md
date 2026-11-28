@@ -5,6 +5,11 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #222 — courses: the roadmap, the lesson player and progress (contract 25)
+
+- **New core feature `courses`** (`features/switches.json`, `features/README.md`): seven ids, `courses` after `scripts` and before
+  `stats`; a client lists it in that place, and `PUT /api/features/courses` switches it.
+
 ## #221 — courses: the pack, the fill rule and progress (contract 24)
 
 - **New pack type `course`** (format `course-json`, registry `course_packs`, no data package): one course's skeleton

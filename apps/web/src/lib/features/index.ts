@@ -1,5 +1,5 @@
-// The core features: flashcards (Decks), the reader, the journal, grammar, the writing-system trainer (scripts, #204)
-// and Stats (#295).
+// The core features: flashcards (Decks), the reader, the journal, grammar, the writing-system trainer (scripts, #204),
+// courses (#222) and Stats (#295).
 // They are the app (record 0006, #199): there are no code plugins. Each user
 // can switch one off for themselves (GET /api/features, PUT
 // /api/features/{id}; docs/contracts/features/). Switching off only hides the
@@ -20,6 +20,8 @@ import GrammarPage from '$lib/features/grammar/GrammarPage.svelte';
 import { grammarDef } from '$lib/features/grammar/manifest';
 import ScriptsPage from '$lib/features/scripts/ScriptsPage.svelte';
 import { scriptsDef } from '$lib/features/scripts/manifest';
+import CoursesPage from '$lib/features/courses/CoursesPage.svelte';
+import { coursesDef } from '$lib/features/courses/manifest';
 import { statsDef } from '$lib/stats/manifest';
 import { writingSystemsOf } from '$lib/languages/profiles';
 import type { FeatureSwitch, FeatureSwitchesValue } from './switches.svelte';
@@ -29,6 +31,7 @@ export const READER_ID = 'reader';
 export const JOURNAL_ID = 'journal';
 export const GRAMMAR_ID = 'grammar';
 export const SCRIPTS_ID = 'scripts';
+export const COURSES_ID = 'courses';
 export const STATS_ID = 'stats';
 
 /** What the web build ships for a feature besides its page: widgets and third-party credits. */
@@ -88,6 +91,7 @@ export const coreFeatures: readonly CoreFeature[] = [
 	feature(JOURNAL_ID, 'features.journal.title', journalDef, JournalPage),
 	feature(GRAMMAR_ID, 'features.grammar.title', grammarDef, GrammarPage),
 	feature(SCRIPTS_ID, 'features.scripts.title', scriptsDef, ScriptsPage),
+	feature(COURSES_ID, 'features.courses.title', coursesDef, CoursesPage),
 	feature(STATS_ID, 'features.stats.title', statsDef)
 ];
 
@@ -101,6 +105,7 @@ const SWITCHED_OFF: Readonly<Record<string, MessageKey>> = {
 	[JOURNAL_ID]: 'features.journal.switchedOff',
 	[GRAMMAR_ID]: 'features.grammar.switchedOff',
 	[SCRIPTS_ID]: 'features.scripts.switchedOff',
+	[COURSES_ID]: 'features.courses.switchedOff',
 	[STATS_ID]: 'features.stats.switchedOff'
 };
 

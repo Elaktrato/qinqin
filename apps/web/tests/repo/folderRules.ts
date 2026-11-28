@@ -92,6 +92,7 @@ export const ROUTE_FEATURES: Record<string, string> = {
 	'+layout.ts': 'frame',
 	'+page.svelte': 'widgets',
 	account: 'account',
+	courses: 'features/courses',
 	entry: 'entry',
 	flashcards: 'features/flashcards',
 	grammar: 'features/grammar',

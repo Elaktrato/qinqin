@@ -18,7 +18,7 @@ describe('frameSections', () => {
 
 	it('leaves out Stats while it is switched off (#295)', () => {
 		const sections = frameSections(ready([...all.list, state(STATS_ID, false)]));
-		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'courses']);
 		expect(currentSection('/stats/week', sections)).toBeNull();
 		expect(frameSections(ready([state(STATS_ID)])).find((s) => s.id === 'stats')).toMatchObject({
 			label: 'Stats',
@@ -30,23 +30,23 @@ describe('frameSections', () => {
 
 	it('Search first, then the core features in their fixed order, Stats last', () => {
 		const sections = frameSections(all);
-		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'stats']);
-		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'stats']);
-		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
-		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'courses', 'stats']);
+		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'map', 'stats']);
+		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Courses', 'Stats']);
+		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/journal', '/grammar', '/courses', '/stats']);
 		// A feature without a switch row is on.
 		expect(frameSections(ready([])).map((s) => s.id)).toEqual(sections.map((s) => s.id));
 	});
 
 	it('leaves out a switched-off feature', () => {
 		const sections = frameSections(ready([state(READER_ID, false), state(JOURNAL_ID, false)]));
-		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'courses', 'stats']);
 	});
 
 	it('shows Scripts only for a language whose profile has a writing system (#204)', () => {
 		const withScripts = ready([...all.list, state('scripts')]);
 		const ids = (language: string | null) => frameSections(withScripts, language).map((s) => s.id);
-		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'stats']);
+		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'courses', 'stats']);
 		expect(ids('ko')).toContain('scripts');
 		expect(ids('ru-RU')).toContain('scripts');
 		expect(ids('zh')).not.toContain('scripts');
@@ -54,6 +54,14 @@ describe('frameSections', () => {
 		expect(ids(null)).not.toContain('scripts');
 		expect(frameSections(ready([...all.list, state('scripts', false)]), 'ja').map((s) => s.id)).not.toContain('scripts');
 		expect(frameSections(withScripts, 'ja').find((s) => s.id === 'scripts')).toMatchObject({ label: 'Scripts', href: '/scripts', icon: 'words' });
+	});
+
+	it('lists Courses for every language and leaves it out while switched off (#222)', () => {
+		for (const language of ['zh', 'ja', 'de', null]) expect(frameSections(all, language).map((s) => s.id)).toContain('courses');
+		expect(frameSections(ready([...all.list, state('courses', false)])).map((s) => s.id)).not.toContain('courses');
+		const sections = frameSections(all);
+		expect(currentSection('/courses', sections)).toBe('courses');
+		expect(currentSection('/courses/play/zh-course/hello/words-1', sections)).toBe('courses');
 	});
 
 	it('every id is unique', () => {
