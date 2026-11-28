@@ -18,8 +18,10 @@
 		tonePadLabels,
 		toneCandidates,
 		toneVerdict,
+		TONE_CONTOURS,
 		type ToneVerdict
 	} from '$lib/exercises/tones';
+	import ToneContour from '$lib/components/ToneContour.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
@@ -54,14 +56,8 @@
 		{ tone: 5, glyph: '·', name: t('flashcards.tone.name5') }
 	];
 
-	// Contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51).
-	const CONTOUR: Record<Tone, string> = {
-		1: 'M12 22 L88 22',
-		2: 'M12 62 L88 18',
-		3: 'M12 42 Q42 98 88 26',
-		4: 'M12 16 L88 86',
-		5: ''
-	};
+	// Contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51); shared with the tone-pair drill.
+	const CONTOUR = TONE_CONTOURS;
 
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 	const candidates = $derived(toneCandidates(entry.readings));
@@ -319,18 +315,14 @@
 					{:else}
 						<span class="citation">
 							<span aria-hidden="true">{answer.tone}{TONES[answer.tone - 1].glyph}</span>
-							<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
-								{#if answer.tone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[answer.tone]} />{/if}
-							</svg>
+							<ToneContour tone={answer.tone} />
 							<span class="sr-only">{nameOf(answer.tone)}</span>
 						</span>
 						{#if sandhi}
 							<span class="spoken">
 								<span aria-hidden="true" class="arrow">→</span>
 								<span aria-hidden="true" class="shown">{spokenTone}{TONES[spokenTone - 1].glyph}</span>
-								<svg viewBox="0 0 100 100" aria-hidden="true" class="answer-contour">
-									{#if spokenTone === 5}<circle cx="50" cy="56" r="9" />{:else}<path d={CONTOUR[spokenTone]} />{/if}
-								</svg>
+								<ToneContour tone={spokenTone} />
 								<span class="sr-only">{t('flashcards.tone.spokenAs', { tone: nameOf(spokenTone) })}</span>
 							</span>
 						{/if}
@@ -551,21 +543,6 @@
 
 	.arrow {
 		color: var(--readable-muted);
-	}
-
-	/* The answer as a tone with pinyin hidden (hidden romanisation): its number and contour, no letters. */
-	.answer-contour {
-		width: 1.25em;
-		height: 1.25em;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 10;
-		stroke-linecap: round;
-	}
-
-	.answer-contour circle {
-		fill: currentColor;
-		stroke: none;
 	}
 
 	.right {

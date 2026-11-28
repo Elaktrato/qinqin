@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+<<<<<<< HEAD
+## #180 — the tone-pair drill (contract 29)
+
+- **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
+  answers (`drill.tone-pairs`) are an activity rule, a `count` of feature `practice`, after the core rules
+  (`events/activity.json` `rules` gains it). `GET /api/stats/activity` lists six sources.
+- **New fixture `tones/pairs.json`** (rule `tones/pairs`, Go and web): the drill's 20 item keys `<t1>-<t2>` (citation
+  tones, 5 neutral) in grid order, which dictionary word practises which pair (two Han characters, the clean
+  two-syllable readings agree, first tone not neutral), how a typed answer reads, and a pair's accuracy over its last
+  10 answers with its band. Grading is `tones/sandhi.json` `grading`; a right pair is grade 3, a wrong one 1; mode
+  `mark`.
+- **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
+  streak) as before.
+=======
 ## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
 
 - **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
@@ -41,6 +55,7 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Answers:** the one gloss of `GET /api/starter-sets/{id}` and `GET /api/frequency-packs/{id}/top` entries, the first
   gloss per dictionary of `GET /api/search` hits and the `gloss` of an entry's `characters` follow the rule (鸡 shows
   "fowl"; a list never shows a folded gloss). The lookup and entry answers are unchanged: clients apply the rule.
+>>>>>>> feature/v0.9.0
 
 ## Drills framework — drill answers as events, the Practice area (contract 25)
 

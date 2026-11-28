@@ -268,3 +268,18 @@ export function tonePadLabels(written: string, syllableCount: number): string[] 
 export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
 	return cleanReadings(pinyinReadings(readings));
 }
+
+/** The tone letters shown beside a tone number (`3ˇ`); the neutral tone is a dot. */
+export const TONE_GLYPHS: Readonly<Record<Tone, string>> = { 1: 'ˉ', 2: 'ˊ', 3: 'ˇ', 4: 'ˋ', 5: '·' };
+
+/**
+ * Tone contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51); the neutral tone has none (a dot is
+ * drawn). The tone card's pads and answers and the tone-pair drill draw them (lib/components/ToneContour.svelte).
+ */
+export const TONE_CONTOURS: Readonly<Record<Tone, string>> = {
+	1: 'M12 22 L88 22',
+	2: 'M12 62 L88 18',
+	3: 'M12 42 Q42 98 88 26',
+	4: 'M12 16 L88 86',
+	5: ''
+};

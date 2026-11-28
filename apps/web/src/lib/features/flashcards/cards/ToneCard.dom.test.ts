@@ -148,7 +148,7 @@ describe('ToneCard with pinyin hidden (#284, owner decision)', () => {
 		await key('Enter');
 		const answers = [...container.querySelectorAll<HTMLElement>('.answer')];
 		expect(answers.map((a) => a.dataset.answerTone)).toEqual(['3', '3']);
-		expect(answers[0].querySelector('svg.answer-contour')).not.toBeNull();
+		expect(answers[0].querySelector('svg.tone-contour')).not.toBeNull();
 		expect(answers[0].textContent).toContain('third tone, dipping');
 		expect(container.textContent).not.toMatch(/nǐ|hǎo|ni|hao/);
 	});
@@ -242,7 +242,7 @@ describe('ToneCard and tone sandhi (#300)', () => {
 		const { container } = setup({ entry: buKeQi });
 		await answer('2', '4', '5');
 		const first = rows(container)[0];
-		expect(first.querySelectorAll('svg.answer-contour')).toHaveLength(2);
+		expect(first.querySelectorAll('svg.tone-contour')).toHaveLength(2);
 		expect(first.textContent?.replace(/\s+/g, ' ')).toContain('4ˋ');
 		expect(first.textContent?.replace(/\s+/g, ' ')).toContain('2ˊ');
 		expect(first.querySelector('.spoken .sr-only')?.textContent).toBe('spoken as second tone, rising');

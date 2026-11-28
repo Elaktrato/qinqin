@@ -103,8 +103,8 @@ func TestStatsActivityDefaults(t *testing.T) {
 	if body.Cells == nil || len(body.Cells) != 0 {
 		t.Errorf("cells = %#v, want empty non-nil", body.Cells)
 	}
-	if len(body.Sources) != 5 {
-		t.Fatalf("sources = %d, want 5", len(body.Sources))
+	if len(body.Sources) != 6 {
+		t.Fatalf("sources = %d, want 6", len(body.Sources))
 	}
 	want := []struct{ typ, feature, unit string }{
 		{"review", "flashcards", "count"},
@@ -112,6 +112,7 @@ func TestStatsActivityDefaults(t *testing.T) {
 		{"journal", "journal", "count"},
 		{"script", "scripts", "count"},
 		{"grammar", "grammar", "count"},
+		{"drill.tone-pairs", "practice", "count"}, // the registered drills (#180)
 	}
 	for i, w := range want {
 		s := body.Sources[i]

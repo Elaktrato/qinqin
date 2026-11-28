@@ -17,7 +17,7 @@
    4
   ]
  },
- "registry": [],
+ "registry": ["tone-pairs"],
  "ids": [
   {
    "name": "a one-word id",

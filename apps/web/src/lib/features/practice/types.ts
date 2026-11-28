@@ -6,6 +6,7 @@ import type { Component } from 'svelte';
 import type { Session } from '$lib/context/session.svelte';
 import type { StudyHistory, ReviewGrade } from '$lib/studycore/types';
 import type { Workspace } from '$lib/api/types';
+import type { DrillAnswer, DrillStates } from '$lib/studycore/drills';
 
 /** One item a drill can ask: its item key and whatever the drill's question needs. */
 export interface DrillItem<Data = unknown> {
@@ -41,6 +42,18 @@ export interface DrillQuestionProps {
 	onNext: () => void;
 }
 
+/**
+ * The props of a drill's overview on the Practice list (the tone-pair grid): its candidate items, its own answers
+ * in replay order, every item's state and the instant the list was worked out at.
+ */
+export interface DrillOverviewProps {
+	drill: DrillDef;
+	items: readonly DrillItem[];
+	answers: readonly DrillAnswer[];
+	states: DrillStates;
+	now: number;
+}
+
 export interface DrillDef {
 	/** The drill id (`lib/studycore/drills.ts`, DRILL_IDS). */
 	id: string;
@@ -53,6 +66,8 @@ export interface DrillDef {
 	/** A short name of an item for the round's summary (no reading unless through the romanisation settings). */
 	label: (item: DrillItem) => string;
 	question: Component<DrillQuestionProps>;
+	/** Optional: what the Practice list shows under the drill (its own overview, such as the tone-pair grid). */
+	overview?: Component<DrillOverviewProps>;
 }
 
 /** One question of a round. */

@@ -19,18 +19,23 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
 	...DRILL_IDS.map((id): ActivitySource => ({ type: drillEventType(id), feature: DRILL_FEATURE, unit: 'count' }))
 ];
 
+/**
+ * The words of each registered drill, as literal catalogue keys (the catalogue check finds every key used; a key
+ * built at run time would be invisible to it): `activity.source.drill.<id in camel case>.label` and `.count`. A
+ * drill's builder adds its pair here; a test checks one pair per id of DRILL_IDS.
+ */
+export const DRILL_WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {
+	'tone-pairs': { label: 'activity.source.drill.tonePairs.label', count: 'activity.source.drill.tonePairs.count' }
+};
+
 const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {
 	review: { label: 'activity.source.review.label', count: 'activity.source.review.count' },
 	read: { label: 'activity.source.read.label', count: 'activity.source.read.count' },
 	journal: { label: 'activity.source.journal.label', count: 'activity.source.journal.count' },
 	script: { label: 'activity.source.script.label', count: 'activity.source.script.count' },
 	grammar: { label: 'activity.source.grammar.label', count: 'activity.source.grammar.count' },
-	// A registered drill's words: `activity.source.drill.<id in camel case>.label` and `.count` (a drill's builder adds them).
 	...Object.fromEntries(
-		DRILL_IDS.map((id) => {
-			const segment = id.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
-			return [drillEventType(id), { label: `activity.source.drill.${segment}.label` as MessageKey, count: `activity.source.drill.${segment}.count` as MessageKey }];
-		})
+		DRILL_IDS.filter((id) => Object.hasOwn(DRILL_WORDS, id)).map((id) => [drillEventType(id), DRILL_WORDS[id]])
 	)
 };
 

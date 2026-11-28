@@ -40,6 +40,12 @@
     "feature": "grammar",
     "distinctBy": "point"
    }
+  },
+  {
+   "type": "drill.tone-pairs",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [

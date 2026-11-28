@@ -30,6 +30,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- **Tone pairs** (Chinese workspaces), the first drill in Practice: the 20 two-syllable tone patterns, each practised with words from your decks, then the HSK word list. Type the two tones (the phone keeps its number keyboard open between words) or tap them; grading and tone sandhi follow the Tones settings (citation tones by default, spoken tones counted too). A grid shows each pair's recent accuracy, and **Practise my weakest pairs** drills the weak ones. Tone-pair answers count on the heatmap, in the weekly summary and as a daily goal (#180).
+
 - **Practice** (`/practice`), the home of the drills: each drill item has its own spaced schedule (FSRS, apart from your flashcards), a round per drill and **Practise weakest** across them; drill answers count for the heatmap, the weekly summary, daily goals, XP and the streak. It is a feature you can switch off in Settings → Features. The drills themselves (conjugation, counters, tone pairs, look-alike characters) come next; until one applies to your language, Practice is not in the navigation.
 
 - Pictures of words work offline (#274): while the Pictures visual aid is on, preparing for offline use keeps the
