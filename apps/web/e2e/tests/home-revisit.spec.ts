@@ -12,9 +12,9 @@ test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
 
 const WORDS = ['私', '学校', '行く', '水'];
 
-/** Every Home widget is there and none shows a loading line. */
+/** Every Home widget is there and none shows a loading line (Continue course shows nothing in Japanese: no course). */
 async function widgetsShown(page: Page): Promise<void> {
-	const widgets = page.locator('[data-widget]');
+	const widgets = page.locator('[data-widget]:visible');
 	await expect(widgets).toHaveCount(4);
 	await expect(widgets.filter({ hasText: /Loading/ })).toHaveCount(0);
 	await expect(page.getByRole('region', { name: 'Flashcards' }).getByRole('link', { name: 'Study' })).toBeVisible();

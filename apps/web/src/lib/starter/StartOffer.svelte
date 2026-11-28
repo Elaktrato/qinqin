@@ -19,7 +19,8 @@
 	import { courseStartApplies, isCourseStartDismissed, setCourseStartDismissed, shouldOfferCourseStart } from './startOffer';
 	import StarterAdd from './StarterAdd.svelte';
 
-	let { onsettle }: { onsettle?: (applies: boolean) => void } = $props();
+	/** onsettle: true when a course applies (the older offers stay away), false when not, null while deciding. */
+	let { onsettle }: { onsettle?: (applies: boolean | null) => void } = $props();
 
 	const session = useSession();
 
@@ -44,11 +45,10 @@
 		const ready = featuresReady;
 		const mine = ++seq;
 		offer = null;
-		if (ws === undefined || ws === null || !ready) {
-			// No answer yet: Home keeps the older offers back until this one has settled.
-			if (ready || ws === null) onsettle?.(false);
-			return;
-		}
+		// Deciding again (another workspace, the switches arrived): Home keeps the older offers back meanwhile, so they
+		// never flash in before this card. Without a workspace they have nothing to offer either.
+		onsettle?.(null);
+		if (ws === undefined || ws === null || !ready) return;
 		if (!on) {
 			onsettle?.(false);
 			return;

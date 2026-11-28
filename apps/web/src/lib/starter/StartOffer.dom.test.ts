@@ -50,6 +50,8 @@ describe('the course start card on Home (#225)', () => {
 		await screen.findByRole('button', { name: 'Also add the Starter words' });
 		expect(screen.getByRole('link', { name: 'Find your place' }).getAttribute('href')).toBe('/courses/play/zh-test/section/level-1/placement');
 		expect(screen.getByRole('link', { name: 'Tell us which levels you know' }).getAttribute('href')).toBe('/settings?tab=study#known');
+		// First "deciding" (the older offers wait), then the answer.
+		expect(settle.mock.calls[0][0]).toBeNull();
 		expect(settle).toHaveBeenLastCalledWith(true);
 		await fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
 		expect(offer.isConnected).toBe(false);
