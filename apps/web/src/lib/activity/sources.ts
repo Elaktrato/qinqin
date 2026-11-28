@@ -25,7 +25,8 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
  * drill's builder adds its pair here; a test checks one pair per id of DRILL_IDS.
  */
 export const DRILL_WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {
-	'tone-pairs': { label: 'activity.source.drill.tonePairs.label', count: 'activity.source.drill.tonePairs.count' }
+	'tone-pairs': { label: 'activity.source.drill.tonePairs.label', count: 'activity.source.drill.tonePairs.count' },
+	conjugation: { label: 'activity.source.drill.conjugation.label', count: 'activity.source.drill.conjugation.count' }
 };
 
 const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {

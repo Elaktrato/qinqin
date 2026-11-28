@@ -45,7 +45,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `tones/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `senses/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `courses/` → `drills/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `courses/` → `drills/` → `conjugation/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 

@@ -33,6 +33,7 @@ const RENDERERS: readonly string[] = [
 	'lib/features/grammar/LessonView.svelte',
 	'lib/features/grammar/PracticeRun.svelte',
 	'lib/features/grammar/review/ReviewExercise.svelte',
+	'lib/features/practice/conjugation/ConjugationQuestion.svelte',
 	'lib/features/reader/ChapterText.svelte',
 	'lib/features/reader/EntryCard.svelte',
 	'lib/features/reader/SourceBrowser.svelte',

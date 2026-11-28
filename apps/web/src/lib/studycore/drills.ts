@@ -23,7 +23,10 @@ export const DRILL_FEATURE = 'practice';
  * The drills a server and a client count as activity (contract `registry`; Go `drills.IDs`). Each drill's builder
  * adds its id here, in Go and in the contract (docs/contracts/drills/README.md, "Adding a drill").
  */
-export const DRILL_IDS: readonly string[] = Object.freeze<string[]>(['tone-pairs']);
+export const DRILL_IDS: readonly string[] = Object.freeze<string[]>([
+	'tone-pairs', // the tone-pair drill (#180)
+	'conjugation' // the conjugation trainer (#178)
+]);
 
 export const MAX_DRILL_ID_LENGTH = 32;
 export const MAX_ITEM_LENGTH = 200;

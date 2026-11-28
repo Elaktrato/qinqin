@@ -17,7 +17,7 @@
    4
   ]
  },
- "registry": ["tone-pairs"],
+ "registry": ["tone-pairs", "conjugation"],
  "ids": [
   {
    "name": "a one-word id",

@@ -56,6 +56,7 @@ collection). Keys in use:
 | `interfaceLanguage` | string: a language tag (`i18n/language-tags.json`, not empty) | absent: the account's interface language (`""`, `null`, a malformed tag or any other value reads the same); see `interface-language.json` | `i18n/workspaceLanguage.ts` | Settings > Workspaces > Interface language (`null` clears it) |
 | `masteryMap` | object `{grading, includeOutside, levels}` | each member alone: the language's default grading, `includeOutside` false, every level; see `mastery-map.json` | `stats/mapGrading.ts` | Stats → Characters (a member at a time, by merge patch) |
 | `tones` | object `{showSandhi: boolean, gradeSpoken: boolean}` | `showSandhi` true, `gradeSpoken` false, member by member (anything but a boolean is the default); see `tones.json` | `exercises/toneSettings.ts` | Settings > Study > Tones (a switch at a time, by merge patch; Chinese workspaces) |
+| `conjugation` | object `{families: {<family>: boolean}}` | each family alone: its default of `conjugation/families.json` (polite, polite-past, negative, past, te-form on; the rest off; not a boolean, unknown members ignored); see `conjugation/settings.json` | `exercises/conjugationSettings.ts` | Settings > Study > Conjugation (a family at a time, by merge patch; Japanese workspaces) |
 
 Readers ignore keys they do not know, and a writer never removes them: clients change settings only by a
 **merge patch**, never by writing the whole object. A restore remaps `hiddenDictionaries` (`backup/`).

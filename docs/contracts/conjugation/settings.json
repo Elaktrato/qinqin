@@ -1,0 +1,18 @@
+{
+ "version": 1,
+ "rule": "conjugation/settings",
+ "note": "the workspace-settings key conjugation: {families: {<family>: boolean}}; each family alone, a boolean, else its default (families.json); unknown members ignored. patch: the merge patch of one switch",
+ "parse": [
+  {"name": "absent: the defaults", "settings": {}, "on": ["polite", "polite-past", "negative", "past", "te-form"]},
+  {"name": "not an object", "settings": {"conjugation": "all"}, "on": ["polite", "polite-past", "negative", "past", "te-form"]},
+  {"name": "families not an object", "settings": {"conjugation": {"families": ["passive"]}}, "on": ["polite", "polite-past", "negative", "past", "te-form"]},
+  {"name": "one switched on, one off", "settings": {"conjugation": {"families": {"passive": true, "polite": false}}}, "on": ["polite-past", "negative", "past", "te-form", "passive"]},
+  {"name": "not a boolean is the default", "settings": {"conjugation": {"families": {"polite": "no", "potential": 1}}}, "on": ["polite", "polite-past", "negative", "past", "te-form"]},
+  {"name": "unknown families ignored", "settings": {"conjugation": {"families": {"imperative": true}, "other": 1}}, "on": ["polite", "polite-past", "negative", "past", "te-form"]},
+  {"name": "every family off", "settings": {"conjugation": {"families": {"polite": false, "polite-past": false, "negative": false, "past": false, "te-form": false}}}, "on": []}
+ ],
+ "patch": [
+  {"family": "passive", "on": true, "patch": {"conjugation": {"families": {"passive": true}}}},
+  {"family": "polite", "on": false, "patch": {"conjugation": {"families": {"polite": false}}}}
+ ]
+}

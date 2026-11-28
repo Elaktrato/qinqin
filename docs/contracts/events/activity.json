@@ -46,6 +46,12 @@
    "rule": {
     "feature": "practice"
    }
+  },
+  {
+   "type": "drill.conjugation",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [
