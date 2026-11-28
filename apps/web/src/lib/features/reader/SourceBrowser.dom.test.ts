@@ -7,7 +7,8 @@ vi.mock('$lib/api/library', () => ({
 	listBooks: vi.fn(),
 	browseSource: vi.fn(),
 	searchSource: vi.fn(),
-	importFromSource: vi.fn()
+	importFromSource: vi.fn(),
+	gradedCatalogue: vi.fn()
 }));
 
 import { browseSource, listBooks, listSources } from '$lib/api/library';

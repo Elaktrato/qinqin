@@ -12,7 +12,10 @@
 		listSources,
 		searchSource
 	} from '$lib/api/library';
-	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
+	import type { Book, GradedText, SourceInfo, SourceResult } from '$lib/api/types';
+	import { goto } from '$app/navigation';
+	import GradedPanel from './graded/GradedPanel.svelte';
+	import { GRADED_SOURCE } from './graded/catalogue';
 	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { browseSeed, shuffleSeed } from './browse';
@@ -63,6 +66,23 @@
 	let importStatus = $state('');
 
 	const activeSource = $derived(sources.find((s) => s.id === active) ?? null);
+	// The graded readers (#231) list their whole catalogue instead of search and suggestions.
+	const graded = $derived(active === GRADED_SOURCE);
+	const gradedBooks = $derived.by(() => {
+		const out: Record<string, Book | null> = {};
+		if (workspaceId === null) return out;
+		const prefix = libraryKey(workspaceId, GRADED_SOURCE, '');
+		for (const [key, book] of Object.entries(inLibrary)) {
+			if (key.startsWith(prefix)) out[key.slice(prefix.length)] = book;
+		}
+		return out;
+	});
+	// The graded text being added: GradedPanel disables Read meanwhile.
+	const gradedBusy = $derived.by(() => {
+		if (importing === null || workspaceId === null) return null;
+		const prefix = libraryKey(workspaceId, GRADED_SOURCE, '');
+		return importing.startsWith(prefix) ? importing.slice(prefix.length) : null;
+	});
 	const servesLanguage = $derived(
 		!!activeSource && !!language && activeSource.languages.includes(language)
 	);
@@ -136,7 +156,7 @@
 		const ticket = ++browseCounter;
 		suggestions = [];
 		browseError = '';
-		if (!source || !ok) {
+		if (!source || !ok || source === GRADED_SOURCE) {
 			browsing = false;
 			return;
 		}
@@ -217,6 +237,34 @@
 			importing = null;
 		}
 	}
+	/**
+	 * readGraded adds a graded text to the workspace's library and opens it; a text that is already there (409) is
+	 * looked up in the library and opened.
+	 */
+	async function readGraded(text: GradedText): Promise<void> {
+		const id = workspaceId;
+		if (importing !== null || id === null) return;
+		const key = libraryKey(id, GRADED_SOURCE, text.id);
+		importing = key;
+		importError = '';
+		importStatus = '';
+		try {
+			let book: Book | null;
+			try {
+				book = await importFromSource(GRADED_SOURCE, text.id, id);
+			} catch (err) {
+				if (!(err instanceof ApiError && err.status === 409)) throw err;
+				book = (await listBooks(id)).find((b) => b.source === GRADED_SOURCE && b.sourceId === text.id) ?? null;
+			}
+			inLibrary[key] = book;
+			if (book) await goto(bookHref(book.id, 0));
+			else importStatus = t('reader.sources.already', { title: text.title });
+		} catch (err) {
+			importError = apiErrorMessage(err, 'import');
+		} finally {
+			importing = null;
+		}
+	}
 	// Hidden romanisation (#284).
 	const roman = useRomanisation();
 </script>
@@ -288,6 +336,18 @@
 		>
 			{#snippet panel()}
 				<div class="panel">
+			<p class="visually-hidden" role="status" aria-live="polite">{importStatus}</p>
+			{#if importError}
+				<p class="error" role="alert">{importError}</p>
+			{/if}
+			{#if graded}
+				<GradedPanel
+					{language}
+					books={gradedBooks}
+					busy={gradedBusy}
+					onread={readGraded}
+				/>
+			{:else}
 			<form onsubmit={search} role="search">
 				<div class="query">
 					<Field
@@ -304,11 +364,6 @@
 					<Button variant="plain" onclick={clearSearch}>{t('reader.sources.backToSuggestions')}</Button>
 				{/if}
 			</form>
-
-			<p class="visually-hidden" role="status" aria-live="polite">{importStatus}</p>
-			{#if importError}
-				<p class="error" role="alert">{importError}</p>
-			{/if}
 
 			{#if showingSearch}
 				<section aria-labelledby="results-heading">
@@ -365,6 +420,7 @@
 						</ul>
 					{/if}
 				</section>
+			{/if}
 			{/if}
 				</div>
 			{/snippet}
