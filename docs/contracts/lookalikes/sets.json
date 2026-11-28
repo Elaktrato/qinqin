@@ -1,0 +1,5374 @@
+{
+ "version": 1,
+ "rule": "lookalikes/sets",
+ "doc": "The look-alike drill (#228): set keys (`keys`), the set file format and its first problem (`files`), and which sets a learner practises (`candidates`). README.md.",
+ "keys": [
+  {
+   "name": "two hanzi",
+   "key": "未末",
+   "valid": true
+  },
+  {
+   "name": "three",
+   "key": "己已巳",
+   "valid": true
+  },
+  {
+   "name": "five",
+   "key": "晴睛情清请",
+   "valid": true
+  },
+  {
+   "name": "kana",
+   "key": "ソン",
+   "valid": true
+  },
+  {
+   "name": "hiragana",
+   "key": "ぬめ",
+   "valid": true
+  },
+  {
+   "name": "kana and a kanji",
+   "key": "カ力",
+   "valid": true
+  },
+  {
+   "name": "one member",
+   "key": "未",
+   "valid": false
+  },
+  {
+   "name": "six members",
+   "key": "晴睛情清请青",
+   "valid": false
+  },
+  {
+   "name": "a repeated member",
+   "key": "未未",
+   "valid": false
+  },
+  {
+   "name": "empty",
+   "key": "",
+   "valid": false
+  },
+  {
+   "name": "a space",
+   "key": "未 末",
+   "valid": false
+  },
+  {
+   "name": "a Latin letter",
+   "key": "未a",
+   "valid": false
+  },
+  {
+   "name": "a digit",
+   "key": "未1",
+   "valid": false
+  },
+  {
+   "name": "the prolonged sound mark (not a kana letter)",
+   "key": "ーー一",
+   "valid": false
+  },
+  {
+   "name": "punctuation",
+   "key": "未、末",
+   "valid": false
+  },
+  {
+   "name": "not a string",
+   "key": 12,
+   "valid": false
+  }
+ ],
+ "files": [
+  {
+   "name": "a Chinese file",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": null
+  },
+  {
+   "name": "a Japanese file",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": null
+  },
+  {
+   "name": "not an object",
+   "file": [],
+   "problem": {
+    "code": "not-an-object",
+    "path": ""
+   }
+  },
+  {
+   "name": "another version",
+   "file": {
+    "version": 2,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-version",
+    "path": "version"
+   }
+  },
+  {
+   "name": "another language",
+   "file": {
+    "version": 1,
+    "language": "ko",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-language",
+    "path": "language"
+   }
+  },
+  {
+   "name": "another licence",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-SA-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-license",
+    "path": "license"
+   }
+  },
+  {
+   "name": "no credit",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "me",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-attribution",
+    "path": "attribution"
+   }
+  },
+  {
+   "name": "characters not an object",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": [],
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "no-characters",
+    "path": "characters"
+   }
+  },
+  {
+   "name": "no sets",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": []
+   },
+   "problem": {
+    "code": "no-sets",
+    "path": "sets"
+   }
+  },
+  {
+   "name": "a character of two code points",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "未末": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-character",
+    "path": "characters.未末"
+   }
+  },
+  {
+   "name": "a Latin letter as a character",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     },
+     "a": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-character",
+    "path": "characters.a"
+   }
+  },
+  {
+   "name": "pinyin and bopomofo of different lengths",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-reading",
+    "path": "characters.未"
+   }
+  },
+  {
+   "name": "no Japanese reading",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-reading",
+    "path": "characters.未"
+   }
+  },
+  {
+   "name": "an empty meaning",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-meaning",
+    "path": "characters.末"
+   }
+  },
+  {
+   "name": "no stroke count",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-strokes",
+    "path": "characters.末"
+   }
+  },
+  {
+   "name": "an example without the character",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "将来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-example",
+    "path": "characters.未"
+   }
+  },
+  {
+   "name": "a traditional example without the character",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週日",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-example",
+    "path": "characters.末"
+   }
+  },
+  {
+   "name": "an example with the character twice",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "末末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-example",
+    "path": "characters.末"
+   }
+  },
+  {
+   "name": "a kana in the wrong script",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "hiragana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-kana",
+    "path": "characters.ソ"
+   }
+  },
+  {
+   "name": "a kana pair in the same script",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ソ",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-kana",
+    "path": "characters.ン"
+   }
+  },
+  {
+   "name": "romaji with a digit",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka1",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-kana",
+    "path": "characters.カ"
+   }
+  },
+  {
+   "name": "a set of one member",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-members",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "a member with no character",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "本"
+      ],
+      "notes": {
+       "未": "a",
+       "本": "b"
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "unknown-character",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "the same members twice, in another order",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     },
+     {
+      "members": [
+       "末",
+       "未"
+      ],
+      "notes": {
+       "未": "a",
+       "末": "b"
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "duplicate-set",
+    "path": "sets.3"
+   }
+  },
+  {
+   "name": "a script on a Japanese set",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      },
+      "script": "Hans"
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-script",
+    "path": "sets.1"
+   }
+  },
+  {
+   "name": "an unknown script",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Latn",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-script",
+    "path": "sets.1"
+   }
+  },
+  {
+   "name": "a member without a note",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-note",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "a note of a character not in the set",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer.",
+       "鸟": "x"
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-note",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "a stroke past the last",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        5
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-marks",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "strokes out of order",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        1,
+        0
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-marks",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "marks on a kana",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {
+       "ソ": [
+        0
+       ]
+      }
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-marks",
+    "path": "sets.0"
+   }
+  },
+  {
+   "name": "marks of a character not in the set",
+   "file": {
+    "version": 1,
+    "language": "ja",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "ソ": {
+      "script": "katakana",
+      "romaji": "so",
+      "pair": "そ",
+      "example": {
+       "word": "ソファー",
+       "romaji": "sofā",
+       "meaning": "sofa"
+      }
+     },
+     "ン": {
+      "script": "katakana",
+      "romaji": "n",
+      "pair": "ん",
+      "example": {
+       "word": "パン",
+       "romaji": "pan",
+       "meaning": "bread"
+      }
+     },
+     "カ": {
+      "script": "katakana",
+      "romaji": "ka",
+      "pair": "か",
+      "example": {
+       "word": "カメラ",
+       "romaji": "kamera",
+       "meaning": "camera"
+      }
+     },
+     "力": {
+      "readings": [
+       "リョク",
+       "ちから"
+      ],
+      "meaning": "power",
+      "strokes": 2,
+      "example": {
+       "word": "協力",
+       "reading": "きょうりょく",
+       "meaning": "cooperation"
+      }
+     },
+     "未": {
+      "readings": [
+       "ミ",
+       "いま(だ)"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "reading": "みらい",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "readings": [
+       "マツ",
+       "すえ"
+      ],
+      "meaning": "end",
+      "strokes": 5,
+      "example": {
+       "word": "週末",
+       "reading": "しゅうまつ",
+       "meaning": "weekend"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "ソ",
+       "ン"
+      ],
+      "notes": {
+       "ソ": "The long stroke falls.",
+       "ン": "The long stroke rises."
+      },
+      "marks": {}
+     },
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ],
+       "力": [
+        0
+       ]
+      }
+     },
+     {
+      "members": [
+       "カ",
+       "力"
+      ],
+      "notes": {
+       "カ": "Katakana.",
+       "力": "Kanji."
+      },
+      "marks": {}
+     }
+    ]
+   },
+   "problem": {
+    "code": "bad-marks",
+    "path": "sets.1"
+   }
+  },
+  {
+   "name": "a character in no set",
+   "file": {
+    "version": 1,
+    "language": "zh",
+    "license": "CC-BY-4.0",
+    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+    "review": "Reviewed by agents.",
+    "characters": {
+     "未": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "未来",
+       "hant": "未來",
+       "pinyin": "wèi lái",
+       "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+       "meaning": "future"
+      }
+     },
+     "末": {
+      "pinyin": [
+       "mò"
+      ],
+      "bopomofo": [
+       "ㄇㄛˋ"
+      ],
+      "meaning": "end; tip",
+      "strokes": 5,
+      "example": {
+       "word": "周末",
+       "hant": "週末",
+       "pinyin": "zhōu mò",
+       "bopomofo": "ㄓㄡ ㄇㄛˋ",
+       "meaning": "weekend"
+      }
+     },
+     "鸟": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 5,
+      "example": {
+       "word": "小鸟",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "乌": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 4,
+      "example": {
+       "word": "乌龟",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "鳥": {
+      "pinyin": [
+       "niǎo"
+      ],
+      "bopomofo": [
+       "ㄋㄧㄠˇ"
+      ],
+      "meaning": "bird",
+      "strokes": 11,
+      "example": {
+       "word": "小鳥",
+       "pinyin": "xiǎo niǎo",
+       "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+       "meaning": "little bird"
+      }
+     },
+     "烏": {
+      "pinyin": [
+       "wū"
+      ],
+      "bopomofo": [
+       "ㄨ"
+      ],
+      "meaning": "crow; black",
+      "strokes": 10,
+      "example": {
+       "word": "烏龜",
+       "pinyin": "wū guī",
+       "bopomofo": "ㄨ ㄍㄨㄟ",
+       "meaning": "tortoise"
+      }
+     },
+     "本": {
+      "pinyin": [
+       "wèi"
+      ],
+      "bopomofo": [
+       "ㄨㄟˋ"
+      ],
+      "meaning": "not yet",
+      "strokes": 5,
+      "example": {
+       "word": "本子",
+       "pinyin": "běn zi",
+       "bopomofo": "ㄅㄣˇ ㄗ",
+       "meaning": "notebook"
+      }
+     }
+    },
+    "sets": [
+     {
+      "members": [
+       "未",
+       "末"
+      ],
+      "notes": {
+       "未": "The upper stroke is shorter.",
+       "末": "The upper stroke is longer."
+      },
+      "marks": {
+       "未": [
+        0,
+        1
+       ],
+       "末": [
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "members": [
+       "鸟",
+       "乌"
+      ],
+      "script": "Hans",
+      "notes": {
+       "鸟": "Has the dot.",
+       "乌": "No dot."
+      },
+      "marks": {
+       "鸟": [
+        2
+       ],
+       "乌": []
+      }
+     },
+     {
+      "members": [
+       "鳥",
+       "烏"
+      ],
+      "script": "Hant",
+      "notes": {
+       "鳥": "Has the eye.",
+       "烏": "No eye."
+      },
+      "marks": {
+       "鳥": [
+        3
+       ]
+      }
+     }
+    ]
+   },
+   "problem": {
+    "code": "unused-character",
+    "path": "characters.本"
+   }
+  }
+ ],
+ "fileOf": {
+  "zh": {
+   "version": 1,
+   "language": "zh",
+   "license": "CC-BY-4.0",
+   "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+   "review": "Reviewed by agents.",
+   "characters": {
+    "未": {
+     "pinyin": [
+      "wèi"
+     ],
+     "bopomofo": [
+      "ㄨㄟˋ"
+     ],
+     "meaning": "not yet",
+     "strokes": 5,
+     "example": {
+      "word": "未来",
+      "hant": "未來",
+      "pinyin": "wèi lái",
+      "bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+      "meaning": "future"
+     }
+    },
+    "末": {
+     "pinyin": [
+      "mò"
+     ],
+     "bopomofo": [
+      "ㄇㄛˋ"
+     ],
+     "meaning": "end; tip",
+     "strokes": 5,
+     "example": {
+      "word": "周末",
+      "hant": "週末",
+      "pinyin": "zhōu mò",
+      "bopomofo": "ㄓㄡ ㄇㄛˋ",
+      "meaning": "weekend"
+     }
+    },
+    "鸟": {
+     "pinyin": [
+      "niǎo"
+     ],
+     "bopomofo": [
+      "ㄋㄧㄠˇ"
+     ],
+     "meaning": "bird",
+     "strokes": 5,
+     "example": {
+      "word": "小鸟",
+      "pinyin": "xiǎo niǎo",
+      "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+      "meaning": "little bird"
+     }
+    },
+    "乌": {
+     "pinyin": [
+      "wū"
+     ],
+     "bopomofo": [
+      "ㄨ"
+     ],
+     "meaning": "crow; black",
+     "strokes": 4,
+     "example": {
+      "word": "乌龟",
+      "pinyin": "wū guī",
+      "bopomofo": "ㄨ ㄍㄨㄟ",
+      "meaning": "tortoise"
+     }
+    },
+    "鳥": {
+     "pinyin": [
+      "niǎo"
+     ],
+     "bopomofo": [
+      "ㄋㄧㄠˇ"
+     ],
+     "meaning": "bird",
+     "strokes": 11,
+     "example": {
+      "word": "小鳥",
+      "pinyin": "xiǎo niǎo",
+      "bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+      "meaning": "little bird"
+     }
+    },
+    "烏": {
+     "pinyin": [
+      "wū"
+     ],
+     "bopomofo": [
+      "ㄨ"
+     ],
+     "meaning": "crow; black",
+     "strokes": 10,
+     "example": {
+      "word": "烏龜",
+      "pinyin": "wū guī",
+      "bopomofo": "ㄨ ㄍㄨㄟ",
+      "meaning": "tortoise"
+     }
+    }
+   },
+   "sets": [
+    {
+     "members": [
+      "未",
+      "末"
+     ],
+     "notes": {
+      "未": "The upper stroke is shorter.",
+      "末": "The upper stroke is longer."
+     },
+     "marks": {
+      "未": [
+       0,
+       1
+      ],
+      "末": [
+       0,
+       1
+      ]
+     }
+    },
+    {
+     "members": [
+      "鸟",
+      "乌"
+     ],
+     "script": "Hans",
+     "notes": {
+      "鸟": "Has the dot.",
+      "乌": "No dot."
+     },
+     "marks": {
+      "鸟": [
+       2
+      ],
+      "乌": []
+     }
+    },
+    {
+     "members": [
+      "鳥",
+      "烏"
+     ],
+     "script": "Hant",
+     "notes": {
+      "鳥": "Has the eye.",
+      "烏": "No eye."
+     },
+     "marks": {
+      "鳥": [
+       3
+      ]
+     }
+    }
+   ]
+  },
+  "ja": {
+   "version": 1,
+   "language": "ja",
+   "license": "CC-BY-4.0",
+   "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
+   "review": "Reviewed by agents.",
+   "characters": {
+    "ソ": {
+     "script": "katakana",
+     "romaji": "so",
+     "pair": "そ",
+     "example": {
+      "word": "ソファー",
+      "romaji": "sofā",
+      "meaning": "sofa"
+     }
+    },
+    "ン": {
+     "script": "katakana",
+     "romaji": "n",
+     "pair": "ん",
+     "example": {
+      "word": "パン",
+      "romaji": "pan",
+      "meaning": "bread"
+     }
+    },
+    "カ": {
+     "script": "katakana",
+     "romaji": "ka",
+     "pair": "か",
+     "example": {
+      "word": "カメラ",
+      "romaji": "kamera",
+      "meaning": "camera"
+     }
+    },
+    "力": {
+     "readings": [
+      "リョク",
+      "ちから"
+     ],
+     "meaning": "power",
+     "strokes": 2,
+     "example": {
+      "word": "協力",
+      "reading": "きょうりょく",
+      "meaning": "cooperation"
+     }
+    },
+    "未": {
+     "readings": [
+      "ミ",
+      "いま(だ)"
+     ],
+     "meaning": "not yet",
+     "strokes": 5,
+     "example": {
+      "word": "未来",
+      "reading": "みらい",
+      "meaning": "future"
+     }
+    },
+    "末": {
+     "readings": [
+      "マツ",
+      "すえ"
+     ],
+     "meaning": "end",
+     "strokes": 5,
+     "example": {
+      "word": "週末",
+      "reading": "しゅうまつ",
+      "meaning": "weekend"
+     }
+    }
+   },
+   "sets": [
+    {
+     "members": [
+      "ソ",
+      "ン"
+     ],
+     "notes": {
+      "ソ": "The long stroke falls.",
+      "ン": "The long stroke rises."
+     },
+     "marks": {}
+    },
+    {
+     "members": [
+      "未",
+      "末"
+     ],
+     "notes": {
+      "未": "The upper stroke is shorter.",
+      "末": "The upper stroke is longer."
+     },
+     "marks": {
+      "未": [
+       0,
+       1
+      ],
+      "末": [
+       0,
+       1
+      ]
+     }
+    },
+    {
+     "members": [
+      "カ",
+      "力"
+     ],
+     "notes": {
+      "カ": "Katakana.",
+      "力": "Kanji."
+     },
+     "marks": {}
+    }
+   ]
+  }
+ },
+ "candidates": [
+  {
+   "name": "nothing studied, Chinese: no set",
+   "file": "zh",
+   "language": "zh",
+   "studied": [],
+   "expect": []
+  },
+  {
+   "name": "a word with a member brings its set",
+   "file": "zh",
+   "language": "zh",
+   "studied": [
+    "未来"
+   ],
+   "expect": [
+    "未末"
+   ]
+  },
+  {
+   "name": "a simplified workspace takes the Hans and unmarked sets",
+   "file": "zh",
+   "language": "zh",
+   "studied": [
+    "小鸟",
+    "周末",
+    "鳥"
+   ],
+   "expect": [
+    "鸟乌",
+    "未末"
+   ]
+  },
+  {
+   "name": "a traditional workspace takes the Hant and unmarked sets",
+   "file": "zh",
+   "language": "zh-Hant",
+   "studied": [
+    "小鳥",
+    "週末",
+    "鸟"
+   ],
+   "expect": [
+    "鳥烏",
+    "未末"
+   ]
+  },
+  {
+   "name": "in the order of the first studied member, each set once",
+   "file": "zh",
+   "language": "zh",
+   "studied": [
+    "乌龟",
+    "末",
+    "未来",
+    "鸟"
+   ],
+   "expect": [
+    "鸟乌",
+    "未末"
+   ]
+  },
+  {
+   "name": "Japanese kana sets always, first, in file order",
+   "file": "ja",
+   "language": "ja",
+   "studied": [],
+   "expect": [
+    "ソン",
+    "カ力"
+   ]
+  },
+  {
+   "name": "then the kanji sets of the studied words",
+   "file": "ja",
+   "language": "ja",
+   "studied": [
+    "週末",
+    "協力"
+   ],
+   "expect": [
+    "ソン",
+    "カ力",
+    "未末"
+   ]
+  },
+  {
+   "name": "a file of another language gives nothing",
+   "file": "ja",
+   "language": "zh",
+   "studied": [
+    "未来"
+   ],
+   "expect": []
+  }
+ ]
+}

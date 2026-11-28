@@ -1,0 +1,8 @@
+look-alikes-zh.json and look-alikes-ja.json (the look-alike character sets of the look-alike drill, #228: the sets,
+the readings, meanings, example words and notes of their characters, and the strokes the answer highlights) are written
+for qinqin by the project and released under the Creative Commons Attribution 4.0 International licence (CC BY 4.0):
+credit "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin". The full legal code is
+plugins/data/ja-lemma/LICENSE. The rest of the code is under the MIT licence (the repository's LICENSE and
+LICENSING.md). The sets copy no third-party list and are not derived from KanjiVG, Unihan or a dictionary; the stroke
+data the highlights are drawn on keeps its own licence (docs/sources.md). They were reviewed by agents acting as
+Chinese and Japanese teachers, not yet by a person (REVIEW.md).
