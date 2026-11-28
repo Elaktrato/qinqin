@@ -4,6 +4,9 @@ import { t } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
 import type { LookupResult } from '$lib/api/types';
 import { formatReading } from '$lib/languages/format';
+import { MARK_TAGS, unitsOf } from '$lib/entry/entrySenses';
+import type { SenseMark } from '$lib/entry/senseDisplay';
+import { SENSES_VISIBLE } from './showMore';
 
 type Sense = LookupResult['senses'][number];
 type Frequency = LookupResult['frequencies'][number];
@@ -77,14 +80,44 @@ export function dictionaryNames(r: LookupResult): string[] {
 	return [...new Set(r.senses.map((s) => s.dictionaryName))];
 }
 
-/** shownSenses are the senses with something to show. */
-export function shownSenses(r: LookupResult): Sense[] {
-	return r.senses.filter((s) => s.glosses.length > 0);
+/**
+ * One sense as the popup lists it: a display unit of the sense display rule
+ * (docs/contracts/senses) with its sense's dictionary, part of speech and
+ * tags; xrefs only on the first unit of a sense.
+ */
+export interface PopupSense extends Sense {
+	mark: SenseMark | null;
+	folded: boolean;
 }
 
-/** senseChips are a sense's part-of-speech and other tags; "usually kana" shows per entry. */
+/** shownSenses are the senses with something to show, in display order: slang and vulgar units last. */
+export function shownSenses(r: LookupResult): PopupSense[] {
+	return unitsOf(r.senses).map((u) => ({
+		...u.of,
+		glosses: u.glosses,
+		xrefs: u.firstOfSense ? u.of.xrefs : [],
+		mark: u.mark,
+		folded: u.folded
+	}));
+}
+
+/**
+ * firstVisible is how many senses show before "Show more senses": the first
+ * SENSES_VISIBLE, but never a folded one (unless all of them are folded,
+ * which the rule does not do: then the stored order shows as usual).
+ */
+export function firstVisible(senses: readonly PopupSense[]): number {
+	const unfolded = senses.filter((s) => !s.folded).length;
+	return Math.min(SENSES_VISIBLE, unfolded);
+}
+
+/**
+ * senseChips are a sense's part-of-speech and other tags; "usually kana"
+ * shows per entry, and the slang, vulgar and derogatory tags as the unit's
+ * mark chip.
+ */
 export function senseChips(s: Sense): string[] {
-	return [...s.pos, ...s.tags.filter((t) => t !== 'uk')];
+	return [...s.pos, ...s.tags.filter((t) => t !== 'uk' && !MARK_TAGS.includes(t))];
 }
 
 const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;

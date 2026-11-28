@@ -117,3 +117,23 @@ describe('EntryCard and hidden romanisation (#284)', () => {
 		expect(container.querySelector('.reading')?.textContent).toBe('nǐ hǎo');
 	});
 });
+
+// #345: 鸡's slang gloss is listed last and only after "Show 1 more sense", marked.
+describe('EntryCard folds slang and vulgar senses', () => {
+	const ji = {
+		...result,
+		term: '鸡',
+		senses: [
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', pos: [], tags: [], glosses: ['fowl', 'chicken', '(slang) prostitute'], xrefs: [] },
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', pos: [], tags: [], glosses: ['variant of 雞|鸡[ji1]'], xrefs: [] }
+		]
+	} as unknown as LookupResult;
+
+	it('shows the everyday senses first and the slang one behind the button', async () => {
+		const { container } = render(EntryCard, { result: ji, lang: 'zh', textLang: 'zh' });
+		const items = () => [...container.querySelectorAll('ol.senses > li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+		expect(items()).toEqual(['fowl; chicken', 'variant of 雞|鸡[ji1]']);
+		await fireEvent.click(screen.getByRole('button', { name: 'Show 1 more sense' }));
+		expect(items()).toEqual(['fowl; chicken', 'variant of 雞|鸡[ji1]', 'vulgar (slang) prostitute']);
+	});
+});
