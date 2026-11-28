@@ -9,7 +9,7 @@
    "variants": [],
    "reading": "つ",
    "romaji": "tsu",
-   "counts": "things in general, when no other counter fits (one, two, three …)",
+   "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)",
    "numbers": [
     {
      "number": "1",
@@ -21,7 +21,12 @@
        "romaji": "hitotsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "いちつ",
+       "romaji": "ichitsu"
+      }
+     ]
     },
     {
      "number": "2",
@@ -33,7 +38,12 @@
        "romaji": "futatsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "につ",
+       "romaji": "nitsu"
+      }
+     ]
     },
     {
      "number": "3",
@@ -45,7 +55,12 @@
        "romaji": "mittsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "さんつ",
+       "romaji": "santsu"
+      }
+     ]
     },
     {
      "number": "4",
@@ -57,7 +72,12 @@
        "romaji": "yottsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "よんつ",
+       "romaji": "yontsu"
+      }
+     ]
     },
     {
      "number": "5",
@@ -69,7 +89,12 @@
        "romaji": "itsutsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "ごつ",
+       "romaji": "gotsu"
+      }
+     ]
     },
     {
      "number": "6",
@@ -81,7 +106,12 @@
        "romaji": "muttsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "ろくつ",
+       "romaji": "rokutsu"
+      }
+     ]
     },
     {
      "number": "7",
@@ -105,7 +135,16 @@
        "romaji": "yattsu"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "はちつ",
+       "romaji": "hachitsu"
+      },
+      {
+       "reading": "はっつ",
+       "romaji": "hattsu"
+      }
+     ]
     },
     {
      "number": "9",
@@ -117,19 +156,20 @@
        "romaji": "kokonotsu"
       }
      ],
-     "mistakes": []
-    },
-    {
-     "number": "10",
-     "prompt": "十",
-     "written": "十",
-     "answers": [
+     "mistakes": [
       {
-       "reading": "とお",
-       "romaji": "too"
+       "reading": "きゅうつ",
+       "romaji": "kyuutsu"
+      },
+      {
+       "reading": "ここつ",
+       "romaji": "kokotsu"
+      },
+      {
+       "reading": "ここのっつ",
+       "romaji": "kokonottsu"
       }
-     ],
-     "mistakes": []
+     ]
     }
    ]
   },
@@ -158,10 +198,6 @@
       {
        "reading": "いちこ",
        "romaji": "ichiko"
-      },
-      {
-       "reading": "いちご",
-       "romaji": "ichigo"
       }
      ]
     },
@@ -175,12 +211,7 @@
        "romaji": "niko"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にご",
-       "romaji": "nigo"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -211,8 +242,8 @@
      ],
      "mistakes": [
       {
-       "reading": "よんご",
-       "romaji": "yongo"
+       "reading": "よこ",
+       "romaji": "yoko"
       }
      ]
     },
@@ -226,12 +257,7 @@
        "romaji": "goko"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごご",
-       "romaji": "gogo"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -247,10 +273,6 @@
       {
        "reading": "ろくこ",
        "romaji": "rokuko"
-      },
-      {
-       "reading": "ろくご",
-       "romaji": "rokugo"
       }
      ]
     },
@@ -264,12 +286,7 @@
        "romaji": "nanako"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ななご",
-       "romaji": "nanago"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -285,12 +302,7 @@
        "romaji": "hachiko"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "はちご",
-       "romaji": "hachigo"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "9",
@@ -304,8 +316,8 @@
      ],
      "mistakes": [
       {
-       "reading": "きゅうご",
-       "romaji": "kyuugo"
+       "reading": "くこ",
+       "romaji": "kuko"
       }
      ]
     },
@@ -327,10 +339,6 @@
       {
        "reading": "じゅうこ",
        "romaji": "juuko"
-      },
-      {
-       "reading": "じゅうご",
-       "romaji": "juugo"
       }
      ]
     },
@@ -375,6 +383,14 @@
       {
        "reading": "いちにん",
        "romaji": "ichinin"
+      },
+      {
+       "reading": "いちり",
+       "romaji": "ichiri"
+      },
+      {
+       "reading": "ひとにん",
+       "romaji": "hitonin"
       }
      ]
     },
@@ -392,6 +408,10 @@
       {
        "reading": "ににん",
        "romaji": "ninin"
+      },
+      {
+       "reading": "ふたにん",
+       "romaji": "futanin"
       }
      ]
     },
@@ -524,7 +544,7 @@
    "variants": [],
    "reading": "ほん",
    "romaji": "hon",
-   "counts": "long, thin things: pens, bottles, umbrellas, trees; also films",
+   "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas",
    "numbers": [
     {
      "number": "1",
@@ -548,10 +568,6 @@
       {
        "reading": "いちぽん",
        "romaji": "ichipon"
-      },
-      {
-       "reading": "いっほん",
-       "romaji": "ihhon"
       }
      ]
     },
@@ -661,10 +677,6 @@
       {
        "reading": "ろくぽん",
        "romaji": "rokupon"
-      },
-      {
-       "reading": "ろっほん",
-       "romaji": "rohhon"
       }
      ]
     },
@@ -697,13 +709,13 @@
       {
        "reading": "はっぽん",
        "romaji": "happon"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちほん",
        "romaji": "hachihon"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちぼん",
        "romaji": "hachibon"
@@ -711,10 +723,6 @@
       {
        "reading": "はちぽん",
        "romaji": "hachipon"
-      },
-      {
-       "reading": "はっほん",
-       "romaji": "hahhon"
       }
      ]
     },
@@ -765,10 +773,6 @@
       {
        "reading": "じゅうぽん",
        "romaji": "juupon"
-      },
-      {
-       "reading": "じゅっほん",
-       "romaji": "juhhon"
       }
      ]
     },
@@ -849,7 +853,16 @@
        "romaji": "yonmai"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "よまい",
+       "romaji": "yomai"
+      },
+      {
+       "reading": "しまい",
+       "romaji": "shimai"
+      }
+     ]
     },
     {
      "number": "5",
@@ -909,7 +922,12 @@
        "romaji": "kyuumai"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "くまい",
+       "romaji": "kumai"
+      }
+     ]
     },
     {
      "number": "10",
@@ -1080,13 +1098,13 @@
       {
        "reading": "はっさつ",
        "romaji": "hassatsu"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちさつ",
        "romaji": "hachisatsu"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちざつ",
        "romaji": "hachizatsu"
@@ -1160,7 +1178,7 @@
    "variants": [],
    "reading": "ひき",
    "romaji": "hiki",
-   "counts": "small animals: dogs, cats, fish, insects",
+   "counts": "most animals: pets, fish, insects (large animals use 頭, birds use 羽)",
    "numbers": [
     {
      "number": "1",
@@ -1184,10 +1202,6 @@
       {
        "reading": "いちぴき",
        "romaji": "ichipiki"
-      },
-      {
-       "reading": "いっひき",
-       "romaji": "ihhiki"
       }
      ]
     },
@@ -1297,10 +1311,6 @@
       {
        "reading": "ろくぴき",
        "romaji": "rokupiki"
-      },
-      {
-       "reading": "ろっひき",
-       "romaji": "rohhiki"
       }
      ]
     },
@@ -1333,13 +1343,13 @@
       {
        "reading": "はっぴき",
        "romaji": "happiki"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちひき",
        "romaji": "hachihiki"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちびき",
        "romaji": "hachibiki"
@@ -1347,10 +1357,6 @@
       {
        "reading": "はちぴき",
        "romaji": "hachipiki"
-      },
-      {
-       "reading": "はっひき",
-       "romaji": "hahhiki"
       }
      ]
     },
@@ -1401,10 +1407,6 @@
       {
        "reading": "じゅうぴき",
        "romaji": "juupiki"
-      },
-      {
-       "reading": "じゅっひき",
-       "romaji": "juhhiki"
       }
      ]
     },
@@ -1437,7 +1439,7 @@
    "variants": [],
    "reading": "とう",
    "romaji": "tou",
-   "counts": "large animals: horses, cows, elephants",
+   "counts": "large animals, bigger than a person: horses, cows, elephants, bears",
    "numbers": [
     {
      "number": "1",
@@ -1574,13 +1576,13 @@
       {
        "reading": "はっとう",
        "romaji": "hattou"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちとう",
        "romaji": "hachitou"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちどう",
        "romaji": "hachidou"
@@ -1694,7 +1696,12 @@
        "romaji": "sanba"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "さんぱ",
+       "romaji": "sanpa"
+      }
+     ]
     },
     {
      "number": "4",
@@ -1706,7 +1713,12 @@
        "romaji": "yonwa"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "よんば",
+       "romaji": "yonba"
+      }
+     ]
     },
     {
      "number": "5",
@@ -1810,7 +1822,12 @@
        "romaji": "nanba"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "なんぱ",
+       "romaji": "nanpa"
+      }
+     ]
     }
    ]
   },
@@ -1868,7 +1885,12 @@
        "romaji": "yondai"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "よだい",
+       "romaji": "yodai"
+      }
+     ]
     },
     {
      "number": "5",
@@ -1928,7 +1950,12 @@
        "romaji": "kyuudai"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "くだい",
+       "romaji": "kudai"
+      }
+     ]
     },
     {
      "number": "10",
@@ -1962,7 +1989,7 @@
    "variants": [],
    "reading": "はい",
    "romaji": "hai",
-   "counts": "cupfuls, glassfuls and bowlfuls: cups of coffee, glasses of water, bowls of rice",
+   "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)",
    "numbers": [
     {
      "number": "1",
@@ -1986,10 +2013,6 @@
       {
        "reading": "いちぱい",
        "romaji": "ichipai"
-      },
-      {
-       "reading": "いっはい",
-       "romaji": "ihhai"
       }
      ]
     },
@@ -2099,10 +2122,6 @@
       {
        "reading": "ろくぱい",
        "romaji": "rokupai"
-      },
-      {
-       "reading": "ろっはい",
-       "romaji": "rohhai"
       }
      ]
     },
@@ -2135,13 +2154,13 @@
       {
        "reading": "はっぱい",
        "romaji": "happai"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちはい",
        "romaji": "hachihai"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちばい",
        "romaji": "hachibai"
@@ -2149,10 +2168,6 @@
       {
        "reading": "はちぱい",
        "romaji": "hachipai"
-      },
-      {
-       "reading": "はっはい",
-       "romaji": "hahhai"
       }
      ]
     },
@@ -2203,10 +2218,6 @@
       {
        "reading": "じゅうぱい",
        "romaji": "juupai"
-      },
-      {
-       "reading": "じゅっはい",
-       "romaji": "juhhai"
       }
      ]
     },
@@ -2255,10 +2266,6 @@
       {
        "reading": "いちけん",
        "romaji": "ichiken"
-      },
-      {
-       "reading": "いちげん",
-       "romaji": "ichigen"
       }
      ]
     },
@@ -2272,12 +2279,7 @@
        "romaji": "niken"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にげん",
-       "romaji": "nigen"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -2287,14 +2289,13 @@
       {
        "reading": "さんげん",
        "romaji": "sangen"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "さんけん",
        "romaji": "sanken"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "4",
@@ -2306,12 +2307,7 @@
        "romaji": "yonken"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "よんげん",
-       "romaji": "yongen"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "5",
@@ -2323,12 +2319,7 @@
        "romaji": "goken"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごげん",
-       "romaji": "gogen"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -2344,10 +2335,6 @@
       {
        "reading": "ろくけん",
        "romaji": "rokuken"
-      },
-      {
-       "reading": "ろくげん",
-       "romaji": "rokugen"
       }
      ]
     },
@@ -2361,12 +2348,7 @@
        "romaji": "nanaken"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ななげん",
-       "romaji": "nanagen"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -2376,18 +2358,13 @@
       {
        "reading": "はっけん",
        "romaji": "hakken"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちけん",
        "romaji": "hachiken"
-      },
-      {
-       "reading": "はちげん",
-       "romaji": "hachigen"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "9",
@@ -2399,12 +2376,7 @@
        "romaji": "kyuuken"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "きゅうげん",
-       "romaji": "kyuugen"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "10",
@@ -2424,10 +2396,6 @@
       {
        "reading": "じゅうけん",
        "romaji": "juuken"
-      },
-      {
-       "reading": "じゅうげん",
-       "romaji": "juugen"
       }
      ]
     },
@@ -2439,14 +2407,13 @@
       {
        "reading": "なんげん",
        "romaji": "nangen"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "なんけん",
        "romaji": "nanken"
       }
-     ]
+     ],
+     "mistakes": []
     }
    ]
   },
@@ -2456,7 +2423,7 @@
    "variants": [],
    "reading": "ちゃく",
    "romaji": "chaku",
-   "counts": "suits, dresses and other sets of clothes",
+   "counts": "garments: suits, dresses, coats, kimono (in shops also shirts and sweaters)",
    "numbers": [
     {
      "number": "1",
@@ -2474,8 +2441,8 @@
        "romaji": "ichichaku"
       },
       {
-       "reading": "いちぢゃく",
-       "romaji": "ichijiyaku"
+       "reading": "いちじゃく",
+       "romaji": "ichijaku"
       }
      ]
     },
@@ -2491,8 +2458,8 @@
      ],
      "mistakes": [
       {
-       "reading": "にぢゃく",
-       "romaji": "nijiyaku"
+       "reading": "にじゃく",
+       "romaji": "nijaku"
       }
      ]
     },
@@ -2508,8 +2475,8 @@
      ],
      "mistakes": [
       {
-       "reading": "さんぢゃく",
-       "romaji": "sanjiyaku"
+       "reading": "さんじゃく",
+       "romaji": "sanjaku"
       }
      ]
     },
@@ -2525,8 +2492,8 @@
      ],
      "mistakes": [
       {
-       "reading": "よんぢゃく",
-       "romaji": "yonjiyaku"
+       "reading": "よんじゃく",
+       "romaji": "yonjaku"
       }
      ]
     },
@@ -2542,8 +2509,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ごぢゃく",
-       "romaji": "gojiyaku"
+       "reading": "ごじゃく",
+       "romaji": "gojaku"
       }
      ]
     },
@@ -2559,8 +2526,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ろくぢゃく",
-       "romaji": "rokujiyaku"
+       "reading": "ろくじゃく",
+       "romaji": "rokujaku"
       },
       {
        "reading": "ろっちゃく",
@@ -2580,8 +2547,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ななぢゃく",
-       "romaji": "nanajiyaku"
+       "reading": "ななじゃく",
+       "romaji": "nanajaku"
       }
      ]
     },
@@ -2593,16 +2560,16 @@
       {
        "reading": "はっちゃく",
        "romaji": "hatchaku"
+      },
+      {
+       "reading": "はちちゃく",
+       "romaji": "hachichaku"
       }
      ],
      "mistakes": [
       {
-       "reading": "はちちゃく",
-       "romaji": "hachichaku"
-      },
-      {
-       "reading": "はちぢゃく",
-       "romaji": "hachijiyaku"
+       "reading": "はちじゃく",
+       "romaji": "hachijaku"
       }
      ]
     },
@@ -2618,8 +2585,8 @@
      ],
      "mistakes": [
       {
-       "reading": "きゅうぢゃく",
-       "romaji": "kyuujiyaku"
+       "reading": "きゅうじゃく",
+       "romaji": "kyuujaku"
       }
      ]
     },
@@ -2643,8 +2610,8 @@
        "romaji": "juuchaku"
       },
       {
-       "reading": "じゅうぢゃく",
-       "romaji": "juujiyaku"
+       "reading": "じゅうじゃく",
+       "romaji": "juujaku"
       }
      ]
     },
@@ -2660,8 +2627,8 @@
      ],
      "mistakes": [
       {
-       "reading": "なんぢゃく",
-       "romaji": "nanjiyaku"
+       "reading": "なんじゃく",
+       "romaji": "nanjaku"
       }
      ]
     }
@@ -2673,7 +2640,7 @@
    "variants": [],
    "reading": "そく",
    "romaji": "soku",
-   "counts": "pairs of shoes and socks",
+   "counts": "pairs of shoes, socks, boots and slippers",
    "numbers": [
     {
      "number": "1",
@@ -2721,14 +2688,13 @@
       {
        "reading": "さんぞく",
        "romaji": "sanzoku"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "さんそく",
        "romaji": "sansoku"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "4",
@@ -2810,13 +2776,13 @@
       {
        "reading": "はっそく",
        "romaji": "hassoku"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちそく",
        "romaji": "hachisoku"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちぞく",
        "romaji": "hachizoku"
@@ -2873,14 +2839,13 @@
       {
        "reading": "なんぞく",
        "romaji": "nanzoku"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "なんそく",
        "romaji": "nansoku"
       }
-     ]
+     ],
+     "mistakes": []
     }
    ]
   },
@@ -2890,7 +2855,7 @@
    "variants": [],
    "reading": "つう",
    "romaji": "tsuu",
-   "counts": "letters and e-mails",
+   "counts": "letters, postcards and e-mails",
    "numbers": [
     {
      "number": "1",
@@ -2906,10 +2871,6 @@
       {
        "reading": "いちつう",
        "romaji": "ichitsuu"
-      },
-      {
-       "reading": "いちづう",
-       "romaji": "ichizuu"
       }
      ]
     },
@@ -2923,12 +2884,7 @@
        "romaji": "nitsuu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にづう",
-       "romaji": "nizuu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -2957,12 +2913,7 @@
        "romaji": "yontsuu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "よんづう",
-       "romaji": "yonzuu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "5",
@@ -2974,12 +2925,7 @@
        "romaji": "gotsuu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごづう",
-       "romaji": "gozuu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -2992,10 +2938,6 @@
       }
      ],
      "mistakes": [
-      {
-       "reading": "ろくづう",
-       "romaji": "rokuzuu"
-      },
       {
        "reading": "ろっつう",
        "romaji": "rottsuu"
@@ -3012,12 +2954,7 @@
        "romaji": "nanatsuu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ななづう",
-       "romaji": "nanazuu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -3027,18 +2964,13 @@
       {
        "reading": "はっつう",
        "romaji": "hattsuu"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちつう",
        "romaji": "hachitsuu"
-      },
-      {
-       "reading": "はちづう",
-       "romaji": "hachizuu"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "9",
@@ -3050,12 +2982,7 @@
        "romaji": "kyuutsuu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "きゅうづう",
-       "romaji": "kyuuzuu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "10",
@@ -3075,10 +3002,6 @@
       {
        "reading": "じゅうつう",
        "romaji": "juutsuu"
-      },
-      {
-       "reading": "じゅうづう",
-       "romaji": "juuzuu"
       }
      ]
     },
@@ -3096,6 +3019,181 @@
       {
        "reading": "なんづう",
        "romaji": "nanzuu"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ken-matter",
+   "written": "件",
+   "variants": [],
+   "reading": "けん",
+   "romaji": "ken",
+   "counts": "cases and items: e-mails, messages, bookings, incidents",
+   "numbers": [
+    {
+     "number": "1",
+     "prompt": "1件",
+     "written": "一件",
+     "answers": [
+      {
+       "reading": "いっけん",
+       "romaji": "ikken"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "いちけん",
+       "romaji": "ichiken"
+      }
+     ]
+    },
+    {
+     "number": "2",
+     "prompt": "2件",
+     "written": "二件",
+     "answers": [
+      {
+       "reading": "にけん",
+       "romaji": "niken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "3",
+     "prompt": "3件",
+     "written": "三件",
+     "answers": [
+      {
+       "reading": "さんけん",
+       "romaji": "sanken"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "さんげん",
+       "romaji": "sangen"
+      }
+     ]
+    },
+    {
+     "number": "4",
+     "prompt": "4件",
+     "written": "四件",
+     "answers": [
+      {
+       "reading": "よんけん",
+       "romaji": "yonken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "5",
+     "prompt": "5件",
+     "written": "五件",
+     "answers": [
+      {
+       "reading": "ごけん",
+       "romaji": "goken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "6",
+     "prompt": "6件",
+     "written": "六件",
+     "answers": [
+      {
+       "reading": "ろっけん",
+       "romaji": "rokken"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ろくけん",
+       "romaji": "rokuken"
+      }
+     ]
+    },
+    {
+     "number": "7",
+     "prompt": "7件",
+     "written": "七件",
+     "answers": [
+      {
+       "reading": "ななけん",
+       "romaji": "nanaken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "8",
+     "prompt": "8件",
+     "written": "八件",
+     "answers": [
+      {
+       "reading": "はっけん",
+       "romaji": "hakken"
+      },
+      {
+       "reading": "はちけん",
+       "romaji": "hachiken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "9",
+     "prompt": "9件",
+     "written": "九件",
+     "answers": [
+      {
+       "reading": "きゅうけん",
+       "romaji": "kyuuken"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "10",
+     "prompt": "10件",
+     "written": "十件",
+     "answers": [
+      {
+       "reading": "じゅっけん",
+       "romaji": "jukken"
+      },
+      {
+       "reading": "じっけん",
+       "romaji": "jikken"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "じゅうけん",
+       "romaji": "juuken"
+      }
+     ]
+    },
+    {
+     "number": "nan",
+     "prompt": "何件",
+     "written": "何件",
+     "answers": [
+      {
+       "reading": "なんけん",
+       "romaji": "nanken"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "なんげん",
+       "romaji": "nangen"
       }
      ]
     }
@@ -3123,10 +3221,6 @@
       {
        "reading": "いちきょく",
        "romaji": "ichikyoku"
-      },
-      {
-       "reading": "いちぎょく",
-       "romaji": "ichigyoku"
       }
      ]
     },
@@ -3140,12 +3234,7 @@
        "romaji": "nikyoku"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にぎょく",
-       "romaji": "nigyoku"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -3174,12 +3263,7 @@
        "romaji": "yonkyoku"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "よんぎょく",
-       "romaji": "yongyoku"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "5",
@@ -3191,12 +3275,7 @@
        "romaji": "gokyoku"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごぎょく",
-       "romaji": "gogyoku"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -3212,10 +3291,6 @@
       {
        "reading": "ろくきょく",
        "romaji": "rokukyoku"
-      },
-      {
-       "reading": "ろくぎょく",
-       "romaji": "rokugyoku"
       }
      ]
     },
@@ -3229,12 +3304,7 @@
        "romaji": "nanakyoku"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ななぎょく",
-       "romaji": "nanagyoku"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -3244,18 +3314,13 @@
       {
        "reading": "はっきょく",
        "romaji": "hakkyoku"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちきょく",
        "romaji": "hachikyoku"
-      },
-      {
-       "reading": "はちぎょく",
-       "romaji": "hachigyoku"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "9",
@@ -3267,12 +3332,7 @@
        "romaji": "kyuukyoku"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "きゅうぎょく",
-       "romaji": "kyuugyoku"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "10",
@@ -3292,10 +3352,6 @@
       {
        "reading": "じゅうきょく",
        "romaji": "juukyoku"
-      },
-      {
-       "reading": "じゅうぎょく",
-       "romaji": "juugyoku"
       }
      ]
     },
@@ -3324,7 +3380,7 @@
    "variants": [],
    "reading": "かい",
    "romaji": "kai",
-   "counts": "times (how often)",
+   "counts": "times (how many times)",
    "numbers": [
     {
      "number": "1",
@@ -3340,10 +3396,6 @@
       {
        "reading": "いちかい",
        "romaji": "ichikai"
-      },
-      {
-       "reading": "いちがい",
-       "romaji": "ichigai"
       }
      ]
     },
@@ -3357,12 +3409,7 @@
        "romaji": "nikai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にがい",
-       "romaji": "nigai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -3391,12 +3438,7 @@
        "romaji": "yonkai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "よんがい",
-       "romaji": "yongai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "5",
@@ -3408,12 +3450,7 @@
        "romaji": "gokai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごがい",
-       "romaji": "gogai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -3429,10 +3466,6 @@
       {
        "reading": "ろくかい",
        "romaji": "rokukai"
-      },
-      {
-       "reading": "ろくがい",
-       "romaji": "rokugai"
       }
      ]
     },
@@ -3446,12 +3479,7 @@
        "romaji": "nanakai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "なながい",
-       "romaji": "nanagai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -3467,12 +3495,7 @@
        "romaji": "hachikai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "はちがい",
-       "romaji": "hachigai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "9",
@@ -3484,12 +3507,7 @@
        "romaji": "kyuukai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "きゅうがい",
-       "romaji": "kyuugai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "10",
@@ -3509,10 +3527,6 @@
       {
        "reading": "じゅうかい",
        "romaji": "juukai"
-      },
-      {
-       "reading": "じゅうがい",
-       "romaji": "juugai"
       }
      ]
     },
@@ -3541,7 +3555,7 @@
    "variants": [],
    "reading": "かい",
    "romaji": "kai",
-   "counts": "floors of a building",
+   "counts": "floors of a building (1階 is the ground floor)",
    "numbers": [
     {
      "number": "1",
@@ -3557,10 +3571,6 @@
       {
        "reading": "いちかい",
        "romaji": "ichikai"
-      },
-      {
-       "reading": "いちがい",
-       "romaji": "ichigai"
       }
      ]
     },
@@ -3574,12 +3584,7 @@
        "romaji": "nikai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "にがい",
-       "romaji": "nigai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "3",
@@ -3607,12 +3612,7 @@
        "romaji": "yonkai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "よんがい",
-       "romaji": "yongai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "5",
@@ -3624,12 +3624,7 @@
        "romaji": "gokai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "ごがい",
-       "romaji": "gogai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "6",
@@ -3645,10 +3640,6 @@
       {
        "reading": "ろくかい",
        "romaji": "rokukai"
-      },
-      {
-       "reading": "ろくがい",
-       "romaji": "rokugai"
       }
      ]
     },
@@ -3662,12 +3653,7 @@
        "romaji": "nanakai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "なながい",
-       "romaji": "nanagai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -3683,12 +3669,7 @@
        "romaji": "hachikai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "はちがい",
-       "romaji": "hachigai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "9",
@@ -3700,12 +3681,7 @@
        "romaji": "kyuukai"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "きゅうがい",
-       "romaji": "kyuugai"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "10",
@@ -3725,10 +3701,6 @@
       {
        "reading": "じゅうかい",
        "romaji": "juukai"
-      },
-      {
-       "reading": "じゅうがい",
-       "romaji": "juugai"
       }
      ]
     },
@@ -3747,6 +3719,376 @@
       }
      ],
      "mistakes": []
+    }
+   ]
+  },
+  {
+   "id": "ban",
+   "written": "番",
+   "variants": [],
+   "reading": "ばん",
+   "romaji": "ban",
+   "counts": "numbers in a sequence: No. 1, No. 2 … (いちばん also means \"the most\")",
+   "numbers": [
+    {
+     "number": "1",
+     "prompt": "1番",
+     "written": "一番",
+     "answers": [
+      {
+       "reading": "いちばん",
+       "romaji": "ichiban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "いっぱん",
+       "romaji": "ippan"
+      },
+      {
+       "reading": "いちはん",
+       "romaji": "ichihan"
+      }
+     ]
+    },
+    {
+     "number": "2",
+     "prompt": "2番",
+     "written": "二番",
+     "answers": [
+      {
+       "reading": "にばん",
+       "romaji": "niban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "にはん",
+       "romaji": "nihan"
+      }
+     ]
+    },
+    {
+     "number": "3",
+     "prompt": "3番",
+     "written": "三番",
+     "answers": [
+      {
+       "reading": "さんばん",
+       "romaji": "sanban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "さんぱん",
+       "romaji": "sanpan"
+      }
+     ]
+    },
+    {
+     "number": "4",
+     "prompt": "4番",
+     "written": "四番",
+     "answers": [
+      {
+       "reading": "よんばん",
+       "romaji": "yonban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "よばん",
+       "romaji": "yoban"
+      }
+     ]
+    },
+    {
+     "number": "5",
+     "prompt": "5番",
+     "written": "五番",
+     "answers": [
+      {
+       "reading": "ごばん",
+       "romaji": "goban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ごはん",
+       "romaji": "gohan"
+      }
+     ]
+    },
+    {
+     "number": "6",
+     "prompt": "6番",
+     "written": "六番",
+     "answers": [
+      {
+       "reading": "ろくばん",
+       "romaji": "rokuban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ろっぱん",
+       "romaji": "roppan"
+      }
+     ]
+    },
+    {
+     "number": "7",
+     "prompt": "7番",
+     "written": "七番",
+     "answers": [
+      {
+       "reading": "ななばん",
+       "romaji": "nanaban"
+      },
+      {
+       "reading": "しちばん",
+       "romaji": "shichiban"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "8",
+     "prompt": "8番",
+     "written": "八番",
+     "answers": [
+      {
+       "reading": "はちばん",
+       "romaji": "hachiban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "はっぱん",
+       "romaji": "happan"
+      }
+     ]
+    },
+    {
+     "number": "9",
+     "prompt": "9番",
+     "written": "九番",
+     "answers": [
+      {
+       "reading": "きゅうばん",
+       "romaji": "kyuuban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "くばん",
+       "romaji": "kuban"
+      }
+     ]
+    },
+    {
+     "number": "10",
+     "prompt": "10番",
+     "written": "十番",
+     "answers": [
+      {
+       "reading": "じゅうばん",
+       "romaji": "juuban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "じゅっぱん",
+       "romaji": "juppan"
+      }
+     ]
+    },
+    {
+     "number": "nan",
+     "prompt": "何番",
+     "written": "何番",
+     "answers": [
+      {
+       "reading": "なんばん",
+       "romaji": "nanban"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "なんぱん",
+       "romaji": "nanpan"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "do",
+   "written": "度",
+   "variants": [],
+   "reading": "ど",
+   "romaji": "do",
+   "counts": "times (like 回) and degrees: temperature, angles",
+   "numbers": [
+    {
+     "number": "1",
+     "prompt": "1度",
+     "written": "一度",
+     "answers": [
+      {
+       "reading": "いちど",
+       "romaji": "ichido"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "いちと",
+       "romaji": "ichito"
+      }
+     ]
+    },
+    {
+     "number": "2",
+     "prompt": "2度",
+     "written": "二度",
+     "answers": [
+      {
+       "reading": "にど",
+       "romaji": "nido"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "3",
+     "prompt": "3度",
+     "written": "三度",
+     "answers": [
+      {
+       "reading": "さんど",
+       "romaji": "sando"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "さんと",
+       "romaji": "santo"
+      }
+     ]
+    },
+    {
+     "number": "4",
+     "prompt": "4度",
+     "written": "四度",
+     "answers": [
+      {
+       "reading": "よんど",
+       "romaji": "yondo"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "よど",
+       "romaji": "yodo"
+      },
+      {
+       "reading": "よんと",
+       "romaji": "yonto"
+      }
+     ]
+    },
+    {
+     "number": "5",
+     "prompt": "5度",
+     "written": "五度",
+     "answers": [
+      {
+       "reading": "ごど",
+       "romaji": "godo"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "6",
+     "prompt": "6度",
+     "written": "六度",
+     "answers": [
+      {
+       "reading": "ろくど",
+       "romaji": "rokudo"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "7",
+     "prompt": "7度",
+     "written": "七度",
+     "answers": [
+      {
+       "reading": "ななど",
+       "romaji": "nanado"
+      },
+      {
+       "reading": "しちど",
+       "romaji": "shichido"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "8",
+     "prompt": "8度",
+     "written": "八度",
+     "answers": [
+      {
+       "reading": "はちど",
+       "romaji": "hachido"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "9",
+     "prompt": "9度",
+     "written": "九度",
+     "answers": [
+      {
+       "reading": "きゅうど",
+       "romaji": "kyuudo"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "10",
+     "prompt": "10度",
+     "written": "十度",
+     "answers": [
+      {
+       "reading": "じゅうど",
+       "romaji": "juudo"
+      }
+     ],
+     "mistakes": []
+    },
+    {
+     "number": "nan",
+     "prompt": "何度",
+     "written": "何度",
+     "answers": [
+      {
+       "reading": "なんど",
+       "romaji": "nando"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "なんと",
+       "romaji": "nanto"
+      }
+     ]
     }
    ]
   },
@@ -3829,6 +4171,10 @@
       {
        "reading": "よんざい",
        "romaji": "yonzai"
+      },
+      {
+       "reading": "よさい",
+       "romaji": "yosai"
       }
      ]
     },
@@ -3895,13 +4241,13 @@
       {
        "reading": "はっさい",
        "romaji": "hassai"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "はちさい",
        "romaji": "hachisai"
-      },
+      }
+     ],
+     "mistakes": [
       {
        "reading": "はちざい",
        "romaji": "hachizai"
@@ -3922,6 +4268,10 @@
       {
        "reading": "きゅうざい",
        "romaji": "kyuuzai"
+      },
+      {
+       "reading": "くさい",
+       "romaji": "kusai"
       }
      ]
     },
@@ -3970,12 +4320,12 @@
      ],
      "mistakes": [
       {
-       "reading": "にじゅうさい",
-       "romaji": "nijuusai"
-      },
-      {
        "reading": "にじゅうざい",
        "romaji": "nijuuzai"
+      },
+      {
+       "reading": "はつか",
+       "romaji": "hatsuka"
       }
      ]
     },
@@ -4208,10 +4558,6 @@
       {
        "reading": "いちぷん",
        "romaji": "ichipun"
-      },
-      {
-       "reading": "いっふん",
-       "romaji": "iffun"
       }
      ]
     },
@@ -4275,6 +4621,10 @@
       {
        "reading": "よんぶん",
        "romaji": "yonbun"
+      },
+      {
+       "reading": "よふん",
+       "romaji": "yofun"
       }
      ]
     },
@@ -4321,10 +4671,6 @@
       {
        "reading": "ろくぷん",
        "romaji": "rokupun"
-      },
-      {
-       "reading": "ろっふん",
-       "romaji": "roffun"
       }
      ]
     },
@@ -4336,6 +4682,10 @@
       {
        "reading": "ななふん",
        "romaji": "nanafun"
+      },
+      {
+       "reading": "しちふん",
+       "romaji": "shichifun"
       }
      ],
      "mistakes": [
@@ -4371,10 +4721,6 @@
       {
        "reading": "はちぷん",
        "romaji": "hachipun"
-      },
-      {
-       "reading": "はっふん",
-       "romaji": "haffun"
       }
      ]
     },
@@ -4396,6 +4742,10 @@
       {
        "reading": "きゅうぷん",
        "romaji": "kyuupun"
+      },
+      {
+       "reading": "くふん",
+       "romaji": "kufun"
       }
      ]
     },
@@ -4425,10 +4775,6 @@
       {
        "reading": "じゅうぷん",
        "romaji": "juupun"
-      },
-      {
-       "reading": "じゅっふん",
-       "romaji": "juffun"
       }
      ]
     },
@@ -4576,14 +4922,13 @@
       {
        "reading": "くじかん",
        "romaji": "kujikan"
-      }
-     ],
-     "mistakes": [
+      },
       {
        "reading": "きゅうじかん",
        "romaji": "kyuujikan"
       }
-     ]
+     ],
+     "mistakes": []
     },
     {
      "number": "10",
@@ -4617,7 +4962,7 @@
    "variants": [],
    "reading": "にち",
    "romaji": "nichi",
-   "counts": "days of the month (dates)",
+   "counts": "dates: the Nth day of the month (the 1st, the 2nd …)",
    "numbers": [
     {
      "number": "1",
@@ -4633,6 +4978,14 @@
       {
        "reading": "いちにち",
        "romaji": "ichinichi"
+      },
+      {
+       "reading": "いっか",
+       "romaji": "ikka"
+      },
+      {
+       "reading": "いちか",
+       "romaji": "ichika"
       }
      ]
     },
@@ -4650,6 +5003,10 @@
       {
        "reading": "ににち",
        "romaji": "ninichi"
+      },
+      {
+       "reading": "ふたか",
+       "romaji": "futaka"
       }
      ]
     },
@@ -4667,6 +5024,10 @@
       {
        "reading": "さんにち",
        "romaji": "sannichi"
+      },
+      {
+       "reading": "みつか",
+       "romaji": "mitsuka"
       }
      ]
     },
@@ -4684,6 +5045,10 @@
       {
        "reading": "よんにち",
        "romaji": "yonnichi"
+      },
+      {
+       "reading": "ようか",
+       "romaji": "youka"
       }
      ]
     },
@@ -4718,6 +5083,10 @@
       {
        "reading": "ろくにち",
        "romaji": "rokunichi"
+      },
+      {
+       "reading": "むっか",
+       "romaji": "mukka"
       }
      ]
     },
@@ -4756,6 +5125,10 @@
       {
        "reading": "はちにち",
        "romaji": "hachinichi"
+      },
+      {
+       "reading": "よっか",
+       "romaji": "yokka"
       }
      ]
     },
@@ -4773,6 +5146,10 @@
       {
        "reading": "きゅうにち",
        "romaji": "kyuunichi"
+      },
+      {
+       "reading": "くにち",
+       "romaji": "kunichi"
       }
      ]
     },
@@ -4790,6 +5167,10 @@
       {
        "reading": "じゅうにち",
        "romaji": "juunichi"
+      },
+      {
+       "reading": "とうか",
+       "romaji": "touka"
       }
      ]
     },
@@ -4824,6 +5205,10 @@
       {
        "reading": "にじゅうにち",
        "romaji": "nijuunichi"
+      },
+      {
+       "reading": "はたち",
+       "romaji": "hatachi"
       }
      ]
     },
@@ -4953,12 +5338,7 @@
        "romaji": "shichigatsu"
       }
      ],
-     "mistakes": [
-      {
-       "reading": "なながつ",
-       "romaji": "nanagatsu"
-      }
-     ]
+     "mistakes": []
     },
     {
      "number": "8",
@@ -5069,8 +5449,8 @@
        "romaji": "ichikagetsu"
       },
       {
-       "reading": "いちがげつ",
-       "romaji": "ichigagetsu"
+       "reading": "いちがつ",
+       "romaji": "ichigatsu"
       }
      ]
     },
@@ -5086,8 +5466,8 @@
      ],
      "mistakes": [
       {
-       "reading": "にがげつ",
-       "romaji": "nigagetsu"
+       "reading": "にがつ",
+       "romaji": "nigatsu"
       }
      ]
     },
@@ -5105,6 +5485,10 @@
       {
        "reading": "さんがげつ",
        "romaji": "sangagetsu"
+      },
+      {
+       "reading": "さんがつ",
+       "romaji": "sangatsu"
       }
      ]
     },
@@ -5120,8 +5504,8 @@
      ],
      "mistakes": [
       {
-       "reading": "よんがげつ",
-       "romaji": "yongagetsu"
+       "reading": "しがつ",
+       "romaji": "shigatsu"
       }
      ]
     },
@@ -5137,8 +5521,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ごがげつ",
-       "romaji": "gogagetsu"
+       "reading": "ごがつ",
+       "romaji": "gogatsu"
       }
      ]
     },
@@ -5150,16 +5534,16 @@
       {
        "reading": "ろっかげつ",
        "romaji": "rokkagetsu"
+      },
+      {
+       "reading": "ろくかげつ",
+       "romaji": "rokukagetsu"
       }
      ],
      "mistakes": [
       {
-       "reading": "ろくかげつ",
-       "romaji": "rokukagetsu"
-      },
-      {
-       "reading": "ろくがげつ",
-       "romaji": "rokugagetsu"
+       "reading": "ろくがつ",
+       "romaji": "rokugatsu"
       }
      ]
     },
@@ -5175,8 +5559,8 @@
      ],
      "mistakes": [
       {
-       "reading": "なながげつ",
-       "romaji": "nanagagetsu"
+       "reading": "しちがつ",
+       "romaji": "shichigatsu"
       }
      ]
     },
@@ -5196,8 +5580,8 @@
      ],
      "mistakes": [
       {
-       "reading": "はちがげつ",
-       "romaji": "hachigagetsu"
+       "reading": "はちがつ",
+       "romaji": "hachigatsu"
       }
      ]
     },
@@ -5213,8 +5597,8 @@
      ],
      "mistakes": [
       {
-       "reading": "きゅうがげつ",
-       "romaji": "kyuugagetsu"
+       "reading": "くがつ",
+       "romaji": "kugatsu"
       }
      ]
     },
@@ -5238,8 +5622,8 @@
        "romaji": "juukagetsu"
       },
       {
-       "reading": "じゅうがげつ",
-       "romaji": "juugagetsu"
+       "reading": "じゅうがつ",
+       "romaji": "juugatsu"
       }
      ]
     },
@@ -5257,6 +5641,10 @@
       {
        "reading": "なんがげつ",
        "romaji": "nangagetsu"
+      },
+      {
+       "reading": "なんがつ",
+       "romaji": "nangatsu"
       }
      ]
     }
@@ -5286,8 +5674,8 @@
        "romaji": "ichishuukan"
       },
       {
-       "reading": "いちじゅうかん",
-       "romaji": "ichijuukan"
+       "reading": "いっしゅかん",
+       "romaji": "isshukan"
       }
      ]
     },
@@ -5303,8 +5691,8 @@
      ],
      "mistakes": [
       {
-       "reading": "にじゅうかん",
-       "romaji": "nijuukan"
+       "reading": "にしゅかん",
+       "romaji": "nishukan"
       }
      ]
     },
@@ -5320,8 +5708,8 @@
      ],
      "mistakes": [
       {
-       "reading": "さんじゅうかん",
-       "romaji": "sanjuukan"
+       "reading": "さんしゅかん",
+       "romaji": "sanshukan"
       }
      ]
     },
@@ -5337,8 +5725,8 @@
      ],
      "mistakes": [
       {
-       "reading": "よんじゅうかん",
-       "romaji": "yonjuukan"
+       "reading": "よんしゅかん",
+       "romaji": "yonshukan"
       }
      ]
     },
@@ -5354,8 +5742,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ごじゅうかん",
-       "romaji": "gojuukan"
+       "reading": "ごしゅかん",
+       "romaji": "goshukan"
       }
      ]
     },
@@ -5371,12 +5759,12 @@
      ],
      "mistakes": [
       {
-       "reading": "ろくじゅうかん",
-       "romaji": "rokujuukan"
-      },
-      {
        "reading": "ろっしゅうかん",
        "romaji": "rosshuukan"
+      },
+      {
+       "reading": "ろくしゅかん",
+       "romaji": "rokushukan"
       }
      ]
     },
@@ -5392,8 +5780,8 @@
      ],
      "mistakes": [
       {
-       "reading": "ななじゅうかん",
-       "romaji": "nanajuukan"
+       "reading": "ななしゅかん",
+       "romaji": "nanashukan"
       }
      ]
     },
@@ -5405,16 +5793,16 @@
       {
        "reading": "はっしゅうかん",
        "romaji": "hasshuukan"
+      },
+      {
+       "reading": "はちしゅうかん",
+       "romaji": "hachishuukan"
       }
      ],
      "mistakes": [
       {
-       "reading": "はちしゅうかん",
-       "romaji": "hachishuukan"
-      },
-      {
-       "reading": "はちじゅうかん",
-       "romaji": "hachijuukan"
+       "reading": "はっしゅかん",
+       "romaji": "hasshukan"
       }
      ]
     },
@@ -5430,8 +5818,8 @@
      ],
      "mistakes": [
       {
-       "reading": "きゅうじゅうかん",
-       "romaji": "kyuujuukan"
+       "reading": "きゅうしゅかん",
+       "romaji": "kyuushukan"
       }
      ]
     },
@@ -5455,8 +5843,8 @@
        "romaji": "juushuukan"
       },
       {
-       "reading": "じゅうじゅうかん",
-       "romaji": "juujuukan"
+       "reading": "じゅっしゅかん",
+       "romaji": "jusshukan"
       }
      ]
     },
@@ -5472,8 +5860,269 @@
      ],
      "mistakes": [
       {
-       "reading": "なんじゅうかん",
-       "romaji": "nanjuukan"
+       "reading": "なんしゅかん",
+       "romaji": "nanshukan"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "haku",
+   "written": "泊",
+   "variants": [],
+   "reading": "はく",
+   "romaji": "haku",
+   "counts": "nights' stay at a hotel or inn",
+   "numbers": [
+    {
+     "number": "1",
+     "prompt": "1泊",
+     "written": "一泊",
+     "answers": [
+      {
+       "reading": "いっぱく",
+       "romaji": "ippaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "いちはく",
+       "romaji": "ichihaku"
+      },
+      {
+       "reading": "いちばく",
+       "romaji": "ichibaku"
+      },
+      {
+       "reading": "いちぱく",
+       "romaji": "ichipaku"
+      }
+     ]
+    },
+    {
+     "number": "2",
+     "prompt": "2泊",
+     "written": "二泊",
+     "answers": [
+      {
+       "reading": "にはく",
+       "romaji": "nihaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "にばく",
+       "romaji": "nibaku"
+      },
+      {
+       "reading": "にぱく",
+       "romaji": "nipaku"
+      }
+     ]
+    },
+    {
+     "number": "3",
+     "prompt": "3泊",
+     "written": "三泊",
+     "answers": [
+      {
+       "reading": "さんぱく",
+       "romaji": "sanpaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "さんはく",
+       "romaji": "sanhaku"
+      },
+      {
+       "reading": "さんばく",
+       "romaji": "sanbaku"
+      }
+     ]
+    },
+    {
+     "number": "4",
+     "prompt": "4泊",
+     "written": "四泊",
+     "answers": [
+      {
+       "reading": "よんぱく",
+       "romaji": "yonpaku"
+      },
+      {
+       "reading": "よんはく",
+       "romaji": "yonhaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "よんばく",
+       "romaji": "yonbaku"
+      }
+     ]
+    },
+    {
+     "number": "5",
+     "prompt": "5泊",
+     "written": "五泊",
+     "answers": [
+      {
+       "reading": "ごはく",
+       "romaji": "gohaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ごばく",
+       "romaji": "gobaku"
+      },
+      {
+       "reading": "ごぱく",
+       "romaji": "gopaku"
+      }
+     ]
+    },
+    {
+     "number": "6",
+     "prompt": "6泊",
+     "written": "六泊",
+     "answers": [
+      {
+       "reading": "ろっぱく",
+       "romaji": "roppaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ろくはく",
+       "romaji": "rokuhaku"
+      },
+      {
+       "reading": "ろくばく",
+       "romaji": "rokubaku"
+      },
+      {
+       "reading": "ろくぱく",
+       "romaji": "rokupaku"
+      }
+     ]
+    },
+    {
+     "number": "7",
+     "prompt": "7泊",
+     "written": "七泊",
+     "answers": [
+      {
+       "reading": "ななはく",
+       "romaji": "nanahaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "ななばく",
+       "romaji": "nanabaku"
+      },
+      {
+       "reading": "ななぱく",
+       "romaji": "nanapaku"
+      }
+     ]
+    },
+    {
+     "number": "8",
+     "prompt": "8泊",
+     "written": "八泊",
+     "answers": [
+      {
+       "reading": "はっぱく",
+       "romaji": "happaku"
+      },
+      {
+       "reading": "はちはく",
+       "romaji": "hachihaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "はちばく",
+       "romaji": "hachibaku"
+      },
+      {
+       "reading": "はちぱく",
+       "romaji": "hachipaku"
+      }
+     ]
+    },
+    {
+     "number": "9",
+     "prompt": "9泊",
+     "written": "九泊",
+     "answers": [
+      {
+       "reading": "きゅうはく",
+       "romaji": "kyuuhaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "きゅうばく",
+       "romaji": "kyuubaku"
+      },
+      {
+       "reading": "きゅうぱく",
+       "romaji": "kyuupaku"
+      }
+     ]
+    },
+    {
+     "number": "10",
+     "prompt": "10泊",
+     "written": "十泊",
+     "answers": [
+      {
+       "reading": "じゅっぱく",
+       "romaji": "juppaku"
+      },
+      {
+       "reading": "じっぱく",
+       "romaji": "jippaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "じゅうはく",
+       "romaji": "juuhaku"
+      },
+      {
+       "reading": "じゅうばく",
+       "romaji": "juubaku"
+      },
+      {
+       "reading": "じゅうぱく",
+       "romaji": "juupaku"
+      }
+     ]
+    },
+    {
+     "number": "nan",
+     "prompt": "何泊",
+     "written": "何泊",
+     "answers": [
+      {
+       "reading": "なんぱく",
+       "romaji": "nanpaku"
+      }
+     ],
+     "mistakes": [
+      {
+       "reading": "なんはく",
+       "romaji": "nanhaku"
+      },
+      {
+       "reading": "なんばく",
+       "romaji": "nanbaku"
       }
      ]
     }
@@ -5485,7 +6134,7 @@
    "variants": [],
    "reading": "ねん",
    "romaji": "nen",
-   "counts": "years",
+   "counts": "years: the year (2026年) and how many years",
    "numbers": [
     {
      "number": "1",
@@ -5753,7 +6402,12 @@
        "romaji": "kyuuen"
       }
      ],
-     "mistakes": []
+     "mistakes": [
+      {
+       "reading": "くえん",
+       "romaji": "kuen"
+      }
+     ]
     },
     {
      "number": "10",

@@ -49,6 +49,14 @@ type Counter struct {
 	Readings map[string][]string `json:"readings,omitempty"`
 	Also     map[string][]string `json:"also,omitempty"`
 	Forms    map[string]string   `json:"forms,omitempty"`
+	// VoicedMistakes: after which numbers a voiced form is a common
+	// mistake: "all", "3" (after 3 and 何 only) or "none"; empty is the
+	// class's default (k: "3", the others "all").
+	VoicedMistakes string `json:"voicedMistakes,omitempty"`
+	// Mistakes adds wrong choices per number; Neither takes readings out of
+	// the mistakes that are not accepted either (non-standard, not absurd).
+	Mistakes map[string][]string `json:"mistakes,omitempty"`
+	Neither  map[string][]string `json:"neither,omitempty"`
 }
 
 // Noun is one noun of the table with its counters, canonical first.
@@ -107,7 +115,7 @@ var geminating = map[string][]string{
 }
 
 var (
-	dakuten    = map[rune]rune{'か': 'が', 'き': 'ぎ', 'く': 'ぐ', 'け': 'げ', 'こ': 'ご', 'さ': 'ざ', 'し': 'じ', 'す': 'ず', 'せ': 'ぜ', 'そ': 'ぞ', 'た': 'だ', 'ち': 'ぢ', 'つ': 'づ', 'て': 'で', 'と': 'ど', 'は': 'ば', 'ひ': 'び', 'ふ': 'ぶ', 'へ': 'べ', 'ほ': 'ぼ'}
+	dakuten    = map[rune]rune{'か': 'が', 'き': 'ぎ', 'く': 'ぐ', 'け': 'げ', 'こ': 'ご', 'さ': 'ざ', 'し': 'じ', 'す': 'ず', 'せ': 'ぜ', 'そ': 'ぞ', 'た': 'だ', 'ち': 'じ', 'つ': 'づ', 'て': 'で', 'と': 'ど', 'は': 'ば', 'ひ': 'び', 'ふ': 'ぶ', 'へ': 'べ', 'ほ': 'ぼ'}
 	handakuten = map[rune]rune{'は': 'ぱ', 'ひ': 'ぴ', 'ふ': 'ぷ', 'へ': 'ぺ', 'ほ': 'ぽ'}
 )
 
@@ -149,14 +157,22 @@ func appendNew(list []string, more ...string) []string {
 	return list
 }
 
-// answersOf: the table's readings for the number, or the rule's; a
-// じゅっ/にじゅっ form also accepted as じっ/にじっ; then the table's also.
+// answersOf: the table's readings for the number, or the rule's, then:
+// a じゅっ/にじゅっ form also as じっ/にじっ; a geminated 8 also as はち and the
+// plain counter (はちほん); a counter voiced after 3 and 何 also unvoiced
+// (さんかい, さんけん); then the table's also.
 func answersOf(c Counter, n string) []string {
 	var out []string
 	if r, ok := c.Readings[n]; ok {
 		out = appendNew(out, r...)
 	} else {
 		out = appendNew(out, ruleReading(c, n))
+		if n == "8" && slices.Contains(geminating[c.Sound], n) {
+			out = appendNew(out, numbers[n].full+c.Reading)
+		}
+		if (n == "3" || n == What) && c.Voiced3 {
+			out = appendNew(out, numbers[n].full+c.Reading)
+		}
 	}
 	for _, a := range slices.Clone(out) {
 		for _, p := range []string{"にじゅっ", "じゅっ"} {
@@ -169,30 +185,45 @@ func answersOf(c Counter, n string) []string {
 	return appendNew(out, c.Also[n]...)
 }
 
-// mistakesOf: the plain join, the voiced and the p-sound forms, each with
-// the number's full and (before k, s, t, h) geminated form, that are not
-// answers. A native counter (つ) has none.
+// mistakesOf: the common mistakes of a number + counter, which are never
+// an answer: the number's full reading with the plain, the voiced (where
+// VoicedMistakes allows) and, for an h counter, the p-sound counter; before
+// a k, s or t counter the geminated number with the plain counter (ろっさつ),
+// before an h counter with the p sound only (っ before h is no word); then
+// the table's own mistakes, less its neither. A native counter (つ) has
+// only the table's.
 func mistakesOf(c Counter, n string, answers []string) []string {
-	if c.Sound == "native" {
-		return []string{}
-	}
-	num := numbers[n]
-	bases := appendNew(nil, c.Reading, withFirst(c.Reading, dakuten), withFirst(c.Reading, handakuten))
 	cands := []string{}
-	for _, b := range bases {
-		cands = append(cands, num.full+b)
-	}
-	first := []rune(c.Reading)[0]
-	_, voiceable := dakuten[first]
-	if num.gem != "" && voiceable {
-		cands = append(cands, num.gem+c.Reading)
-		if h := withFirst(c.Reading, handakuten); h != "" {
-			cands = append(cands, num.gem+h)
+	if c.Sound != "native" {
+		num := numbers[n]
+		voiced := c.VoicedMistakes
+		if voiced == "" {
+			voiced = "all"
+			if c.Sound == "k" {
+				voiced = "3"
+			}
+		}
+		cands = append(cands, num.full+c.Reading)
+		if voiced == "all" || (voiced == "3" && (n == "3" || n == What)) {
+			cands = append(cands, num.full+withFirst(c.Reading, dakuten))
+		}
+		semi := withFirst(c.Reading, handakuten)
+		if c.Sound == "h" {
+			cands = append(cands, num.full+semi)
+		}
+		if _, voiceable := dakuten[[]rune(c.Reading)[0]]; num.gem != "" && voiceable {
+			if c.Sound == "h" {
+				cands = append(cands, num.gem+semi)
+			} else {
+				cands = append(cands, num.gem+c.Reading)
+			}
 		}
 	}
+	cands = append(cands, c.Mistakes[n]...)
 	out := []string{}
 	for _, m := range cands {
-		if !slices.Contains(answers, m) && !slices.Contains(out, m) {
+		if m != "" && !strings.HasSuffix(m, "っ") && m != numbers[n].full && !slices.Contains(answers, m) &&
+			!slices.Contains(c.Neither[n], m) && !slices.Contains(out, m) {
 			out = append(out, m)
 		}
 	}

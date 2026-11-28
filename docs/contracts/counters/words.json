@@ -305,7 +305,39 @@
       }
      ],
      "counter": "hai",
-     "counts": "cupfuls, glassfuls and bowlfuls: cups of coffee, glasses of water, bowls of rice"
+     "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)"
+    },
+    {
+     "written": "本",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "ほん"
+      },
+      {
+       "type": "romaji",
+       "value": "hon"
+      }
+     ],
+     "counter": "hon",
+     "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas"
+    },
+    {
+     "written": "つ",
+     "variants": [],
+     "readings": [
+      {
+       "type": "kana",
+       "value": "つ"
+      },
+      {
+       "type": "romaji",
+       "value": "tsu"
+      }
+     ],
+     "counter": "tsu",
+     "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)"
     }
    ],
    "fallback": null,
@@ -328,7 +360,7 @@
      }
     ],
     "counter": "tsu",
-    "counts": "things in general, when no other counter fits (one, two, three …)"
+    "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)"
    },
    {
     "written": "個",
@@ -379,7 +411,7 @@
      }
     ],
     "counter": "hon",
-    "counts": "long, thin things: pens, bottles, umbrellas, trees; also films"
+    "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas"
    },
    {
     "written": "枚",
@@ -427,7 +459,7 @@
      }
     ],
     "counter": "hiki",
-    "counts": "small animals: dogs, cats, fish, insects"
+    "counts": "most animals: pets, fish, insects (large animals use 頭, birds use 羽)"
    },
    {
     "written": "頭",
@@ -443,7 +475,7 @@
      }
     ],
     "counter": "tou",
-    "counts": "large animals: horses, cows, elephants"
+    "counts": "large animals, bigger than a person: horses, cows, elephants, bears"
    },
    {
     "written": "羽",
@@ -491,7 +523,7 @@
      }
     ],
     "counter": "hai",
-    "counts": "cupfuls, glassfuls and bowlfuls: cups of coffee, glasses of water, bowls of rice"
+    "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)"
    },
    {
     "written": "軒",
@@ -523,7 +555,7 @@
      }
     ],
     "counter": "chaku",
-    "counts": "suits, dresses and other sets of clothes"
+    "counts": "garments: suits, dresses, coats, kimono (in shops also shirts and sweaters)"
    },
    {
     "written": "足",
@@ -539,7 +571,7 @@
      }
     ],
     "counter": "soku",
-    "counts": "pairs of shoes and socks"
+    "counts": "pairs of shoes, socks, boots and slippers"
    },
    {
     "written": "通",
@@ -555,7 +587,23 @@
      }
     ],
     "counter": "tsuu",
-    "counts": "letters and e-mails"
+    "counts": "letters, postcards and e-mails"
+   },
+   {
+    "written": "件",
+    "variants": [],
+    "readings": [
+     {
+      "type": "kana",
+      "value": "けん"
+     },
+     {
+      "type": "romaji",
+      "value": "ken"
+     }
+    ],
+    "counter": "ken-matter",
+    "counts": "cases and items: e-mails, messages, bookings, incidents"
    },
    {
     "written": "曲",

@@ -7,165 +7,1988 @@
  "attribution": "Japanese counters (助数詞): the counters, what they count, the readings of number + counter with their sound changes and example nouns, written for this project and reviewed by agents acting as Japanese teachers, not yet by a person. Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin).",
  "humanReviewed": false,
  "counters": [
-  {"id": "tsu", "written": "つ", "reading": "つ", "counts": "things in general, when no other counter fits (one, two, three …)", "sound": "native",
-   "numbers": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-   "forms": {"10": "十"},
-   "readings": {"1": ["ひとつ"], "2": ["ふたつ"], "3": ["みっつ"], "4": ["よっつ"], "5": ["いつつ"], "6": ["むっつ"], "7": ["ななつ"], "8": ["やっつ"], "9": ["ここのつ"], "10": ["とお"]}},
-  {"id": "ko", "written": "個", "variants": ["こ", "コ"], "reading": "こ", "counts": "small, compact things: apples, eggs, sweets, erasers", "sound": "k",
-   "also": {"8": ["はちこ"]}},
-  {"id": "nin", "written": "人", "reading": "にん", "counts": "people", "sound": "plain",
-   "readings": {"1": ["ひとり"], "2": ["ふたり"], "4": ["よにん"]},
-   "also": {"7": ["しちにん"], "9": ["くにん"]}},
-  {"id": "hon", "written": "本", "reading": "ほん", "counts": "long, thin things: pens, bottles, umbrellas, trees; also films", "sound": "h"},
-  {"id": "mai", "written": "枚", "reading": "まい", "counts": "flat, thin things: paper, plates, shirts, stamps, tickets, photos", "sound": "plain"},
-  {"id": "satsu", "written": "冊", "reading": "さつ", "counts": "books and other bound things: books, magazines, notebooks, dictionaries", "sound": "s"},
-  {"id": "hiki", "written": "匹", "reading": "ひき", "counts": "small animals: dogs, cats, fish, insects", "sound": "h"},
-  {"id": "tou", "written": "頭", "reading": "とう", "counts": "large animals: horses, cows, elephants", "sound": "t"},
-  {"id": "wa", "written": "羽", "reading": "わ", "counts": "birds (and, traditionally, rabbits)", "sound": "plain",
-   "also": {"3": ["さんば"], "6": ["ろっぱ"], "8": ["はっぱ"], "10": ["じゅっぱ", "じっぱ"], "nan": ["なんば"]}},
-  {"id": "dai", "written": "台", "reading": "だい", "counts": "machines and vehicles: cars, bicycles, computers, televisions", "sound": "plain"},
-  {"id": "hai", "written": "杯", "reading": "はい", "counts": "cupfuls, glassfuls and bowlfuls: cups of coffee, glasses of water, bowls of rice", "sound": "h"},
-  {"id": "ken", "written": "軒", "reading": "けん", "counts": "houses and shops", "sound": "k", "voiced3": true},
-  {"id": "chaku", "written": "着", "reading": "ちゃく", "counts": "suits, dresses and other sets of clothes", "sound": "t"},
-  {"id": "soku", "written": "足", "reading": "そく", "counts": "pairs of shoes and socks", "sound": "s", "voiced3": true},
-  {"id": "tsuu", "written": "通", "reading": "つう", "counts": "letters and e-mails", "sound": "t"},
-  {"id": "kyoku", "written": "曲", "reading": "きょく", "counts": "songs and pieces of music", "sound": "k"},
-  {"id": "kai", "written": "回", "reading": "かい", "counts": "times (how often)", "sound": "k",
-   "also": {"8": ["はちかい"]}},
-  {"id": "kai-floor", "written": "階", "reading": "かい", "counts": "floors of a building", "sound": "k", "voiced3": true,
-   "also": {"3": ["さんかい"], "8": ["はちかい"], "nan": ["なんかい"]}},
-  {"id": "sai", "written": "歳", "variants": ["才"], "reading": "さい", "counts": "age in years", "sound": "s",
-   "numbers": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "20", "nan"],
-   "readings": {"20": ["はたち"]},
-   "also": {"20": ["にじゅっさい", "にじっさい"]}},
-  {"id": "ji", "written": "時", "reading": "じ", "counts": "the time: o'clock", "sound": "plain",
-   "numbers": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "nan"],
-   "readings": {"4": ["よじ"], "7": ["しちじ"], "9": ["くじ"]},
-   "also": {"7": ["ななじ"]}},
-  {"id": "fun", "written": "分", "reading": "ふん", "counts": "minutes", "sound": "h",
-   "readings": {"3": ["さんぷん"], "4": ["よんぷん"], "nan": ["なんぷん"]},
-   "also": {"4": ["よんふん"], "8": ["はちふん"]}},
-  {"id": "jikan", "written": "時間", "reading": "じかん", "counts": "hours (how long)", "sound": "plain",
-   "readings": {"4": ["よじかん"], "9": ["くじかん"]},
-   "also": {"7": ["しちじかん"]}},
-  {"id": "nichi", "written": "日", "reading": "にち", "counts": "days of the month (dates)", "sound": "plain",
-   "numbers": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "14", "20", "24", "nan"],
-   "readings": {"1": ["ついたち"], "2": ["ふつか"], "3": ["みっか"], "4": ["よっか"], "5": ["いつか"], "6": ["むいか"], "7": ["なのか"], "8": ["ようか"], "9": ["ここのか"], "10": ["とおか"], "14": ["じゅうよっか"], "20": ["はつか"], "24": ["にじゅうよっか"]},
-   "also": {"7": ["なぬか"]}},
-  {"id": "gatsu", "written": "月", "reading": "がつ", "counts": "the months of the year (January, February …)", "sound": "plain",
-   "numbers": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "nan"],
-   "readings": {"4": ["しがつ"], "7": ["しちがつ"], "9": ["くがつ"]}},
-  {"id": "kagetsu", "written": "か月", "variants": ["ヶ月", "カ月", "ヵ月", "ケ月", "箇月"], "reading": "かげつ", "counts": "months (how long)", "sound": "k",
-   "also": {"8": ["はちかげつ"]}},
-  {"id": "shuukan", "written": "週間", "reading": "しゅうかん", "counts": "weeks (how long)", "sound": "s"},
-  {"id": "nen", "written": "年", "reading": "ねん", "counts": "years", "sound": "plain",
-   "readings": {"4": ["よねん"]},
-   "also": {"7": ["しちねん"], "9": ["くねん"]}},
-  {"id": "en", "written": "円", "reading": "えん", "counts": "yen (money)", "sound": "plain",
-   "readings": {"4": ["よえん"]}}
+  {
+   "id": "tsu",
+   "written": "つ",
+   "reading": "つ",
+   "counts": "things in general, including abstract ones like questions and ideas, when no specific counter fits (one to nine; ask with いくつ)",
+   "sound": "native",
+   "numbers": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "readings": {
+    "1": [
+     "ひとつ"
+    ],
+    "2": [
+     "ふたつ"
+    ],
+    "3": [
+     "みっつ"
+    ],
+    "4": [
+     "よっつ"
+    ],
+    "5": [
+     "いつつ"
+    ],
+    "6": [
+     "むっつ"
+    ],
+    "7": [
+     "ななつ"
+    ],
+    "8": [
+     "やっつ"
+    ],
+    "9": [
+     "ここのつ"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いちつ"
+    ],
+    "2": [
+     "につ"
+    ],
+    "3": [
+     "さんつ"
+    ],
+    "4": [
+     "よんつ"
+    ],
+    "5": [
+     "ごつ"
+    ],
+    "6": [
+     "ろくつ"
+    ],
+    "8": [
+     "はちつ",
+     "はっつ"
+    ],
+    "9": [
+     "きゅうつ",
+     "ここつ",
+     "ここのっつ"
+    ]
+   }
+  },
+  {
+   "id": "ko",
+   "written": "個",
+   "variants": [
+    "こ",
+    "コ"
+   ],
+   "reading": "こ",
+   "counts": "small, compact things: apples, eggs, sweets, erasers",
+   "sound": "k",
+   "mistakes": {
+    "4": [
+     "よこ"
+    ],
+    "9": [
+     "くこ"
+    ]
+   }
+  },
+  {
+   "id": "nin",
+   "written": "人",
+   "reading": "にん",
+   "counts": "people",
+   "sound": "irregular",
+   "readings": {
+    "1": [
+     "ひとり"
+    ],
+    "2": [
+     "ふたり"
+    ],
+    "4": [
+     "よにん"
+    ]
+   },
+   "also": {
+    "7": [
+     "しちにん"
+    ],
+    "9": [
+     "くにん"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いちり",
+     "ひとにん"
+    ],
+    "2": [
+     "ふたにん"
+    ]
+   }
+  },
+  {
+   "id": "hon",
+   "written": "本",
+   "reading": "ほん",
+   "counts": "long, thin things: pens, umbrellas, trees, bottles (also bottled and canned drinks); also films and TV dramas",
+   "sound": "h"
+  },
+  {
+   "id": "mai",
+   "written": "枚",
+   "reading": "まい",
+   "counts": "flat, thin things: paper, plates, shirts, stamps, tickets, photos",
+   "sound": "plain",
+   "mistakes": {
+    "4": [
+     "よまい",
+     "しまい"
+    ],
+    "9": [
+     "くまい"
+    ]
+   }
+  },
+  {
+   "id": "satsu",
+   "written": "冊",
+   "reading": "さつ",
+   "counts": "books and other bound things: books, magazines, notebooks, dictionaries",
+   "sound": "s"
+  },
+  {
+   "id": "hiki",
+   "written": "匹",
+   "reading": "ひき",
+   "counts": "most animals: pets, fish, insects (large animals use 頭, birds use 羽)",
+   "sound": "h"
+  },
+  {
+   "id": "tou",
+   "written": "頭",
+   "reading": "とう",
+   "counts": "large animals, bigger than a person: horses, cows, elephants, bears",
+   "sound": "t"
+  },
+  {
+   "id": "wa",
+   "written": "羽",
+   "reading": "わ",
+   "counts": "birds (and, traditionally, rabbits)",
+   "sound": "plain",
+   "also": {
+    "3": [
+     "さんば"
+    ],
+    "6": [
+     "ろっぱ"
+    ],
+    "8": [
+     "はっぱ"
+    ],
+    "10": [
+     "じゅっぱ",
+     "じっぱ"
+    ],
+    "nan": [
+     "なんば"
+    ]
+   },
+   "mistakes": {
+    "3": [
+     "さんぱ"
+    ],
+    "4": [
+     "よんば"
+    ],
+    "nan": [
+     "なんぱ"
+    ]
+   }
+  },
+  {
+   "id": "dai",
+   "written": "台",
+   "reading": "だい",
+   "counts": "machines and vehicles: cars, bicycles, computers, televisions",
+   "sound": "plain",
+   "mistakes": {
+    "4": [
+     "よだい"
+    ],
+    "9": [
+     "くだい"
+    ]
+   }
+  },
+  {
+   "id": "hai",
+   "written": "杯",
+   "reading": "はい",
+   "counts": "cupfuls, glassfuls and bowlfuls: coffee, water, rice (the contents, not the cup itself, which is 個)",
+   "sound": "h"
+  },
+  {
+   "id": "ken",
+   "written": "軒",
+   "reading": "けん",
+   "counts": "houses and shops",
+   "sound": "k",
+   "voiced3": true
+  },
+  {
+   "id": "chaku",
+   "written": "着",
+   "reading": "ちゃく",
+   "counts": "garments: suits, dresses, coats, kimono (in shops also shirts and sweaters)",
+   "sound": "t"
+  },
+  {
+   "id": "soku",
+   "written": "足",
+   "reading": "そく",
+   "counts": "pairs of shoes, socks, boots and slippers",
+   "sound": "s",
+   "voiced3": true
+  },
+  {
+   "id": "tsuu",
+   "written": "通",
+   "reading": "つう",
+   "counts": "letters, postcards and e-mails",
+   "sound": "t",
+   "voicedMistakes": "3"
+  },
+  {
+   "id": "ken-matter",
+   "written": "件",
+   "reading": "けん",
+   "counts": "cases and items: e-mails, messages, bookings, incidents",
+   "sound": "k"
+  },
+  {
+   "id": "kyoku",
+   "written": "曲",
+   "reading": "きょく",
+   "counts": "songs and pieces of music",
+   "sound": "k"
+  },
+  {
+   "id": "kai",
+   "written": "回",
+   "reading": "かい",
+   "counts": "times (how many times)",
+   "sound": "k"
+  },
+  {
+   "id": "kai-floor",
+   "written": "階",
+   "reading": "かい",
+   "counts": "floors of a building (1階 is the ground floor)",
+   "sound": "k",
+   "voiced3": true
+  },
+  {
+   "id": "ban",
+   "written": "番",
+   "reading": "ばん",
+   "counts": "numbers in a sequence: No. 1, No. 2 … (いちばん also means \"the most\")",
+   "sound": "plain",
+   "also": {
+    "7": [
+     "しちばん"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いっぱん",
+     "いちはん"
+    ],
+    "2": [
+     "にはん"
+    ],
+    "3": [
+     "さんぱん"
+    ],
+    "4": [
+     "よばん"
+    ],
+    "5": [
+     "ごはん"
+    ],
+    "6": [
+     "ろっぱん"
+    ],
+    "8": [
+     "はっぱん"
+    ],
+    "9": [
+     "くばん"
+    ],
+    "10": [
+     "じゅっぱん"
+    ],
+    "nan": [
+     "なんぱん"
+    ]
+   }
+  },
+  {
+   "id": "do",
+   "written": "度",
+   "reading": "ど",
+   "counts": "times (like 回) and degrees: temperature, angles",
+   "sound": "plain",
+   "also": {
+    "7": [
+     "しちど"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いちと"
+    ],
+    "3": [
+     "さんと"
+    ],
+    "4": [
+     "よど",
+     "よんと"
+    ],
+    "nan": [
+     "なんと"
+    ]
+   }
+  },
+  {
+   "id": "sai",
+   "written": "歳",
+   "variants": [
+    "才"
+   ],
+   "reading": "さい",
+   "counts": "age in years",
+   "sound": "s",
+   "numbers": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "20",
+    "nan"
+   ],
+   "readings": {
+    "20": [
+     "はたち"
+    ]
+   },
+   "also": {
+    "20": [
+     "にじゅっさい",
+     "にじっさい"
+    ]
+   },
+   "neither": {
+    "20": [
+     "にじゅうさい"
+    ]
+   },
+   "mistakes": {
+    "4": [
+     "よさい"
+    ],
+    "9": [
+     "くさい"
+    ],
+    "20": [
+     "はつか"
+    ]
+   }
+  },
+  {
+   "id": "ji",
+   "written": "時",
+   "reading": "じ",
+   "counts": "the time: o'clock",
+   "sound": "irregular",
+   "numbers": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "nan"
+   ],
+   "readings": {
+    "4": [
+     "よじ"
+    ],
+    "7": [
+     "しちじ"
+    ],
+    "9": [
+     "くじ"
+    ]
+   },
+   "also": {
+    "7": [
+     "ななじ"
+    ]
+   }
+  },
+  {
+   "id": "fun",
+   "written": "分",
+   "reading": "ふん",
+   "counts": "minutes",
+   "sound": "h",
+   "readings": {
+    "3": [
+     "さんぷん"
+    ],
+    "4": [
+     "よんぷん"
+    ],
+    "nan": [
+     "なんぷん"
+    ]
+   },
+   "also": {
+    "4": [
+     "よんふん"
+    ],
+    "7": [
+     "しちふん"
+    ]
+   },
+   "mistakes": {
+    "4": [
+     "よふん"
+    ],
+    "9": [
+     "くふん"
+    ]
+   }
+  },
+  {
+   "id": "jikan",
+   "written": "時間",
+   "reading": "じかん",
+   "counts": "hours (how long)",
+   "sound": "irregular",
+   "readings": {
+    "4": [
+     "よじかん"
+    ],
+    "9": [
+     "くじかん"
+    ]
+   },
+   "also": {
+    "7": [
+     "しちじかん"
+    ],
+    "9": [
+     "きゅうじかん"
+    ]
+   }
+  },
+  {
+   "id": "nichi",
+   "written": "日",
+   "reading": "にち",
+   "counts": "dates: the Nth day of the month (the 1st, the 2nd …)",
+   "sound": "irregular",
+   "numbers": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "14",
+    "20",
+    "24",
+    "nan"
+   ],
+   "readings": {
+    "1": [
+     "ついたち"
+    ],
+    "2": [
+     "ふつか"
+    ],
+    "3": [
+     "みっか"
+    ],
+    "4": [
+     "よっか"
+    ],
+    "5": [
+     "いつか"
+    ],
+    "6": [
+     "むいか"
+    ],
+    "7": [
+     "なのか"
+    ],
+    "8": [
+     "ようか"
+    ],
+    "9": [
+     "ここのか"
+    ],
+    "10": [
+     "とおか"
+    ],
+    "14": [
+     "じゅうよっか"
+    ],
+    "20": [
+     "はつか"
+    ],
+    "24": [
+     "にじゅうよっか"
+    ]
+   },
+   "also": {
+    "7": [
+     "なぬか"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いっか",
+     "いちか"
+    ],
+    "2": [
+     "ふたか"
+    ],
+    "3": [
+     "みつか"
+    ],
+    "4": [
+     "ようか"
+    ],
+    "6": [
+     "むっか"
+    ],
+    "8": [
+     "よっか"
+    ],
+    "9": [
+     "くにち"
+    ],
+    "10": [
+     "とうか"
+    ],
+    "20": [
+     "はたち"
+    ]
+   }
+  },
+  {
+   "id": "gatsu",
+   "written": "月",
+   "reading": "がつ",
+   "counts": "the months of the year (January, February …)",
+   "sound": "irregular",
+   "numbers": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "nan"
+   ],
+   "readings": {
+    "4": [
+     "しがつ"
+    ],
+    "7": [
+     "しちがつ"
+    ],
+    "9": [
+     "くがつ"
+    ]
+   },
+   "neither": {
+    "7": [
+     "なながつ"
+    ]
+   }
+  },
+  {
+   "id": "kagetsu",
+   "written": "か月",
+   "variants": [
+    "ヶ月",
+    "カ月",
+    "ヵ月",
+    "ケ月",
+    "箇月"
+   ],
+   "reading": "かげつ",
+   "counts": "months (how long)",
+   "sound": "k",
+   "also": {
+    "6": [
+     "ろくかげつ"
+    ]
+   },
+   "mistakes": {
+    "1": [
+     "いちがつ"
+    ],
+    "2": [
+     "にがつ"
+    ],
+    "3": [
+     "さんがつ"
+    ],
+    "4": [
+     "しがつ"
+    ],
+    "5": [
+     "ごがつ"
+    ],
+    "6": [
+     "ろくがつ"
+    ],
+    "7": [
+     "しちがつ"
+    ],
+    "8": [
+     "はちがつ"
+    ],
+    "9": [
+     "くがつ"
+    ],
+    "10": [
+     "じゅうがつ"
+    ],
+    "nan": [
+     "なんがつ"
+    ]
+   }
+  },
+  {
+   "id": "shuukan",
+   "written": "週間",
+   "reading": "しゅうかん",
+   "counts": "weeks (how long)",
+   "sound": "s",
+   "voicedMistakes": "none",
+   "mistakes": {
+    "1": [
+     "いっしゅかん"
+    ],
+    "2": [
+     "にしゅかん"
+    ],
+    "3": [
+     "さんしゅかん"
+    ],
+    "4": [
+     "よんしゅかん"
+    ],
+    "5": [
+     "ごしゅかん"
+    ],
+    "6": [
+     "ろくしゅかん"
+    ],
+    "7": [
+     "ななしゅかん"
+    ],
+    "8": [
+     "はっしゅかん"
+    ],
+    "9": [
+     "きゅうしゅかん"
+    ],
+    "10": [
+     "じゅっしゅかん"
+    ],
+    "nan": [
+     "なんしゅかん"
+    ]
+   }
+  },
+  {
+   "id": "haku",
+   "written": "泊",
+   "reading": "はく",
+   "counts": "nights' stay at a hotel or inn",
+   "sound": "h",
+   "readings": {
+    "3": [
+     "さんぱく"
+    ],
+    "4": [
+     "よんぱく",
+     "よんはく"
+    ],
+    "nan": [
+     "なんぱく"
+    ]
+   }
+  },
+  {
+   "id": "nen",
+   "written": "年",
+   "reading": "ねん",
+   "counts": "years: the year (2026年) and how many years",
+   "sound": "irregular",
+   "readings": {
+    "4": [
+     "よねん"
+    ]
+   },
+   "also": {
+    "7": [
+     "しちねん"
+    ],
+    "9": [
+     "くねん"
+    ]
+   }
+  },
+  {
+   "id": "en",
+   "written": "円",
+   "reading": "えん",
+   "counts": "yen (money)",
+   "sound": "irregular",
+   "readings": {
+    "4": [
+     "よえん"
+    ]
+   },
+   "mistakes": {
+    "9": [
+     "くえん"
+    ]
+   }
+  }
  ],
  "nouns": [
-  {"written": "問題", "reading": "もんだい", "counters": ["tsu"]},
-  {"written": "質問", "reading": "しつもん", "counters": ["tsu"]},
-  {"written": "部屋", "reading": "へや", "counters": ["tsu"]},
-  {"written": "卵", "reading": "たまご", "counters": ["ko", "tsu"]},
-  {"written": "りんご", "reading": "りんご", "counters": ["ko", "tsu"]},
-  {"written": "みかん", "reading": "みかん", "counters": ["ko", "tsu"]},
-  {"written": "消しゴム", "reading": "けしゴム", "counters": ["ko", "tsu"]},
-  {"written": "ケーキ", "reading": "ケーキ", "counters": ["ko", "tsu"]},
-  {"written": "石", "reading": "いし", "counters": ["ko", "tsu"]},
-  {"written": "箱", "reading": "はこ", "counters": ["ko", "tsu"]},
-  {"written": "荷物", "reading": "にもつ", "counters": ["ko", "tsu"]},
-  {"written": "ボール", "reading": "ボール", "counters": ["ko", "tsu"]},
-  {"written": "飴", "reading": "あめ", "counters": ["ko", "tsu"]},
-  {"written": "コップ", "reading": "コップ", "counters": ["ko", "tsu"]},
-  {"written": "かばん", "reading": "かばん", "counters": ["ko", "tsu"]},
-  {"written": "人", "reading": "ひと", "counters": ["nin"]},
-  {"written": "学生", "reading": "がくせい", "counters": ["nin"]},
-  {"written": "先生", "reading": "せんせい", "counters": ["nin"]},
-  {"written": "子供", "reading": "こども", "counters": ["nin"]},
-  {"written": "友達", "reading": "ともだち", "counters": ["nin"]},
-  {"written": "兄弟", "reading": "きょうだい", "counters": ["nin"]},
-  {"written": "客", "reading": "きゃく", "counters": ["nin"]},
-  {"written": "社員", "reading": "しゃいん", "counters": ["nin"]},
-  {"written": "鉛筆", "reading": "えんぴつ", "counters": ["hon"]},
-  {"written": "ペン", "reading": "ペン", "counters": ["hon"]},
-  {"written": "傘", "reading": "かさ", "counters": ["hon"]},
-  {"written": "瓶", "reading": "びん", "counters": ["hon"]},
-  {"written": "木", "reading": "き", "counters": ["hon"]},
-  {"written": "花", "reading": "はな", "counters": ["hon"]},
-  {"written": "映画", "reading": "えいが", "counters": ["hon"]},
-  {"written": "ネクタイ", "reading": "ネクタイ", "counters": ["hon"]},
-  {"written": "道", "reading": "みち", "counters": ["hon"]},
-  {"written": "川", "reading": "かわ", "counters": ["hon"]},
-  {"written": "指", "reading": "ゆび", "counters": ["hon"]},
-  {"written": "歯", "reading": "は", "counters": ["hon"]},
-  {"written": "バナナ", "reading": "バナナ", "counters": ["hon"]},
-  {"written": "大根", "reading": "だいこん", "counters": ["hon"]},
-  {"written": "ビール", "reading": "ビール", "counters": ["hon", "hai"]},
-  {"written": "牛乳", "reading": "ぎゅうにゅう", "counters": ["hon", "hai"]},
-  {"written": "ジュース", "reading": "ジュース", "counters": ["hon", "hai"]},
-  {"written": "ズボン", "reading": "ズボン", "counters": ["hon", "mai"]},
-  {"written": "紙", "reading": "かみ", "counters": ["mai"]},
-  {"written": "皿", "reading": "さら", "counters": ["mai"]},
-  {"written": "シャツ", "reading": "シャツ", "counters": ["mai"]},
-  {"written": "切手", "reading": "きって", "counters": ["mai"]},
-  {"written": "写真", "reading": "しゃしん", "counters": ["mai"]},
-  {"written": "切符", "reading": "きっぷ", "counters": ["mai"]},
-  {"written": "チケット", "reading": "チケット", "counters": ["mai"]},
-  {"written": "葉書", "reading": "はがき", "counters": ["mai"]},
-  {"written": "ハンカチ", "reading": "ハンカチ", "counters": ["mai"]},
-  {"written": "セーター", "reading": "セーター", "counters": ["mai"]},
-  {"written": "タオル", "reading": "タオル", "counters": ["mai"]},
-  {"written": "地図", "reading": "ちず", "counters": ["mai"]},
-  {"written": "名刺", "reading": "めいし", "counters": ["mai"]},
-  {"written": "布団", "reading": "ふとん", "counters": ["mai"]},
-  {"written": "本", "reading": "ほん", "counters": ["satsu"]},
-  {"written": "雑誌", "reading": "ざっし", "counters": ["satsu"]},
-  {"written": "ノート", "reading": "ノート", "counters": ["satsu"]},
-  {"written": "辞書", "reading": "じしょ", "counters": ["satsu"]},
-  {"written": "教科書", "reading": "きょうかしょ", "counters": ["satsu"]},
-  {"written": "漫画", "reading": "まんが", "counters": ["satsu"]},
-  {"written": "絵本", "reading": "えほん", "counters": ["satsu"]},
-  {"written": "小説", "reading": "しょうせつ", "counters": ["satsu"]},
-  {"written": "犬", "reading": "いぬ", "counters": ["hiki"]},
-  {"written": "猫", "reading": "ねこ", "counters": ["hiki"]},
-  {"written": "魚", "reading": "さかな", "counters": ["hiki"]},
-  {"written": "虫", "reading": "むし", "counters": ["hiki"]},
-  {"written": "金魚", "reading": "きんぎょ", "counters": ["hiki"]},
-  {"written": "蛇", "reading": "へび", "counters": ["hiki"]},
-  {"written": "うさぎ", "reading": "うさぎ", "counters": ["hiki", "wa"]},
-  {"written": "馬", "reading": "うま", "counters": ["tou"]},
-  {"written": "牛", "reading": "うし", "counters": ["tou"]},
-  {"written": "象", "reading": "ぞう", "counters": ["tou"]},
-  {"written": "鳥", "reading": "とり", "counters": ["wa"]},
-  {"written": "鶏", "reading": "にわとり", "counters": ["wa"]},
-  {"written": "車", "reading": "くるま", "counters": ["dai"]},
-  {"written": "自転車", "reading": "じてんしゃ", "counters": ["dai"]},
-  {"written": "パソコン", "reading": "パソコン", "counters": ["dai"]},
-  {"written": "テレビ", "reading": "テレビ", "counters": ["dai"]},
-  {"written": "冷蔵庫", "reading": "れいぞうこ", "counters": ["dai"]},
-  {"written": "洗濯機", "reading": "せんたくき", "counters": ["dai"]},
-  {"written": "カメラ", "reading": "カメラ", "counters": ["dai"]},
-  {"written": "タクシー", "reading": "タクシー", "counters": ["dai"]},
-  {"written": "バス", "reading": "バス", "counters": ["dai"]},
-  {"written": "ピアノ", "reading": "ピアノ", "counters": ["dai"]},
-  {"written": "コーヒー", "reading": "コーヒー", "counters": ["hai"]},
-  {"written": "お茶", "reading": "おちゃ", "counters": ["hai"]},
-  {"written": "水", "reading": "みず", "counters": ["hai"]},
-  {"written": "ご飯", "reading": "ごはん", "counters": ["hai"]},
-  {"written": "紅茶", "reading": "こうちゃ", "counters": ["hai"]},
-  {"written": "家", "reading": "いえ", "counters": ["ken"]},
-  {"written": "店", "reading": "みせ", "counters": ["ken"]},
-  {"written": "本屋", "reading": "ほんや", "counters": ["ken"]},
-  {"written": "レストラン", "reading": "レストラン", "counters": ["ken"]},
-  {"written": "スーツ", "reading": "スーツ", "counters": ["chaku"]},
-  {"written": "ドレス", "reading": "ドレス", "counters": ["chaku"]},
-  {"written": "靴", "reading": "くつ", "counters": ["soku"]},
-  {"written": "靴下", "reading": "くつした", "counters": ["soku"]},
-  {"written": "手紙", "reading": "てがみ", "counters": ["tsuu"]},
-  {"written": "メール", "reading": "メール", "counters": ["tsuu"]},
-  {"written": "歌", "reading": "うた", "counters": ["kyoku"]},
-  {"written": "曲", "reading": "きょく", "counters": ["kyoku"]}
+  {
+   "written": "問題",
+   "reading": "もんだい",
+   "counters": [
+    "tsu",
+    "ko"
+   ]
+  },
+  {
+   "written": "質問",
+   "reading": "しつもん",
+   "counters": [
+    "tsu",
+    "ko"
+   ]
+  },
+  {
+   "written": "部屋",
+   "reading": "へや",
+   "counters": [
+    "tsu"
+   ]
+  },
+  {
+   "written": "卵",
+   "reading": "たまご",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "りんご",
+   "reading": "りんご",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "みかん",
+   "reading": "みかん",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "消しゴム",
+   "reading": "けしゴム",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ケーキ",
+   "reading": "ケーキ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "石",
+   "reading": "いし",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "箱",
+   "reading": "はこ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "荷物",
+   "reading": "にもつ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ボール",
+   "reading": "ボール",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "飴",
+   "reading": "あめ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "コップ",
+   "reading": "コップ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "かばん",
+   "reading": "かばん",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "学生",
+   "reading": "がくせい",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "先生",
+   "reading": "せんせい",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "子供",
+   "reading": "こども",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "友達",
+   "reading": "ともだち",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "兄弟",
+   "reading": "きょうだい",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "客",
+   "reading": "きゃく",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "社員",
+   "reading": "しゃいん",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "鉛筆",
+   "reading": "えんぴつ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ペン",
+   "reading": "ペン",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "傘",
+   "reading": "かさ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "瓶",
+   "reading": "びん",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "木",
+   "reading": "き",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "花",
+   "reading": "はな",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "映画",
+   "reading": "えいが",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ネクタイ",
+   "reading": "ネクタイ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "道",
+   "reading": "みち",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "川",
+   "reading": "かわ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "指",
+   "reading": "ゆび",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "歯",
+   "reading": "は",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "バナナ",
+   "reading": "バナナ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "大根",
+   "reading": "だいこん",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ビール",
+   "reading": "ビール",
+   "counters": [
+    "hon",
+    "hai",
+    "tsu"
+   ]
+  },
+  {
+   "written": "牛乳",
+   "reading": "ぎゅうにゅう",
+   "counters": [
+    "hon",
+    "hai",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ジュース",
+   "reading": "ジュース",
+   "counters": [
+    "hon",
+    "hai",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ズボン",
+   "reading": "ズボン",
+   "counters": [
+    "hon",
+    "mai"
+   ]
+  },
+  {
+   "written": "紙",
+   "reading": "かみ",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "皿",
+   "reading": "さら",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "シャツ",
+   "reading": "シャツ",
+   "counters": [
+    "mai",
+    "chaku"
+   ]
+  },
+  {
+   "written": "切手",
+   "reading": "きって",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "写真",
+   "reading": "しゃしん",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "切符",
+   "reading": "きっぷ",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "チケット",
+   "reading": "チケット",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "葉書",
+   "reading": "はがき",
+   "counters": [
+    "mai",
+    "tsuu"
+   ]
+  },
+  {
+   "written": "ハンカチ",
+   "reading": "ハンカチ",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "セーター",
+   "reading": "セーター",
+   "counters": [
+    "mai",
+    "chaku"
+   ]
+  },
+  {
+   "written": "タオル",
+   "reading": "タオル",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "地図",
+   "reading": "ちず",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "名刺",
+   "reading": "めいし",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "布団",
+   "reading": "ふとん",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "本",
+   "reading": "ほん",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "雑誌",
+   "reading": "ざっし",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "ノート",
+   "reading": "ノート",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "辞書",
+   "reading": "じしょ",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "教科書",
+   "reading": "きょうかしょ",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "漫画",
+   "reading": "まんが",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "絵本",
+   "reading": "えほん",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "小説",
+   "reading": "しょうせつ",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "犬",
+   "reading": "いぬ",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "猫",
+   "reading": "ねこ",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "魚",
+   "reading": "さかな",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "虫",
+   "reading": "むし",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "金魚",
+   "reading": "きんぎょ",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "蛇",
+   "reading": "へび",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "うさぎ",
+   "reading": "うさぎ",
+   "counters": [
+    "hiki",
+    "wa"
+   ]
+  },
+  {
+   "written": "馬",
+   "reading": "うま",
+   "counters": [
+    "tou"
+   ]
+  },
+  {
+   "written": "牛",
+   "reading": "うし",
+   "counters": [
+    "tou"
+   ]
+  },
+  {
+   "written": "象",
+   "reading": "ぞう",
+   "counters": [
+    "tou"
+   ]
+  },
+  {
+   "written": "鳥",
+   "reading": "とり",
+   "counters": [
+    "wa"
+   ]
+  },
+  {
+   "written": "鶏",
+   "reading": "にわとり",
+   "counters": [
+    "wa"
+   ]
+  },
+  {
+   "written": "車",
+   "reading": "くるま",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "自転車",
+   "reading": "じてんしゃ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "パソコン",
+   "reading": "パソコン",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "テレビ",
+   "reading": "テレビ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "冷蔵庫",
+   "reading": "れいぞうこ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "洗濯機",
+   "reading": "せんたくき",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "カメラ",
+   "reading": "カメラ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "タクシー",
+   "reading": "タクシー",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "バス",
+   "reading": "バス",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "ピアノ",
+   "reading": "ピアノ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "コーヒー",
+   "reading": "コーヒー",
+   "counters": [
+    "hai",
+    "hon",
+    "tsu"
+   ]
+  },
+  {
+   "written": "お茶",
+   "reading": "おちゃ",
+   "counters": [
+    "hai",
+    "hon",
+    "tsu"
+   ]
+  },
+  {
+   "written": "水",
+   "reading": "みず",
+   "counters": [
+    "hai",
+    "hon",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ご飯",
+   "reading": "ごはん",
+   "counters": [
+    "hai"
+   ]
+  },
+  {
+   "written": "紅茶",
+   "reading": "こうちゃ",
+   "counters": [
+    "hai",
+    "hon",
+    "tsu"
+   ]
+  },
+  {
+   "written": "家",
+   "reading": "いえ",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "店",
+   "reading": "みせ",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "本屋",
+   "reading": "ほんや",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "レストラン",
+   "reading": "レストラン",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "スーツ",
+   "reading": "スーツ",
+   "counters": [
+    "chaku"
+   ]
+  },
+  {
+   "written": "ドレス",
+   "reading": "ドレス",
+   "counters": [
+    "chaku"
+   ]
+  },
+  {
+   "written": "靴",
+   "reading": "くつ",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "靴下",
+   "reading": "くつした",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "手紙",
+   "reading": "てがみ",
+   "counters": [
+    "tsuu"
+   ]
+  },
+  {
+   "written": "メール",
+   "reading": "メール",
+   "counters": [
+    "tsuu",
+    "ken-matter"
+   ]
+  },
+  {
+   "written": "歌",
+   "reading": "うた",
+   "counters": [
+    "kyoku"
+   ]
+  },
+  {
+   "written": "家族",
+   "reading": "かぞく",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "大人",
+   "reading": "おとな",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "女の子",
+   "reading": "おんなのこ",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "男の子",
+   "reading": "おとこのこ",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "留学生",
+   "reading": "りゅうがくせい",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "医者",
+   "reading": "いしゃ",
+   "counters": [
+    "nin"
+   ]
+  },
+  {
+   "written": "きゅうり",
+   "reading": "きゅうり",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "にんじん",
+   "reading": "にんじん",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ネギ",
+   "reading": "ネギ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ろうそく",
+   "reading": "ろうそく",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ベルト",
+   "reading": "ベルト",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "線",
+   "reading": "せん",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "ドラマ",
+   "reading": "ドラマ",
+   "counters": [
+    "hon"
+   ]
+  },
+  {
+   "written": "鍵",
+   "reading": "かぎ",
+   "counters": [
+    "hon",
+    "ko"
+   ]
+  },
+  {
+   "written": "ワイン",
+   "reading": "ワイン",
+   "counters": [
+    "hon",
+    "hai",
+    "tsu"
+   ]
+  },
+  {
+   "written": "お酒",
+   "reading": "おさけ",
+   "counters": [
+    "hai",
+    "hon"
+   ]
+  },
+  {
+   "written": "封筒",
+   "reading": "ふうとう",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "葉",
+   "reading": "は",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "CD",
+   "reading": "シーディー",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "ピザ",
+   "reading": "ピザ",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "お札",
+   "reading": "おさつ",
+   "counters": [
+    "mai"
+   ]
+  },
+  {
+   "written": "スカート",
+   "reading": "スカート",
+   "counters": [
+    "mai",
+    "chaku"
+   ]
+  },
+  {
+   "written": "Tシャツ",
+   "reading": "ティーシャツ",
+   "counters": [
+    "mai",
+    "chaku"
+   ]
+  },
+  {
+   "written": "手帳",
+   "reading": "てちょう",
+   "counters": [
+    "satsu"
+   ]
+  },
+  {
+   "written": "アルバム",
+   "reading": "アルバム",
+   "counters": [
+    "satsu",
+    "mai"
+   ]
+  },
+  {
+   "written": "ねずみ",
+   "reading": "ねずみ",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "蚊",
+   "reading": "か",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "蟻",
+   "reading": "あり",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "カエル",
+   "reading": "カエル",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "猿",
+   "reading": "さる",
+   "counters": [
+    "hiki"
+   ]
+  },
+  {
+   "written": "豚",
+   "reading": "ぶた",
+   "counters": [
+    "tou",
+    "hiki"
+   ]
+  },
+  {
+   "written": "熊",
+   "reading": "くま",
+   "counters": [
+    "tou",
+    "hiki"
+   ]
+  },
+  {
+   "written": "鳩",
+   "reading": "はと",
+   "counters": [
+    "wa"
+   ]
+  },
+  {
+   "written": "ペンギン",
+   "reading": "ペンギン",
+   "counters": [
+    "wa",
+    "hiki"
+   ]
+  },
+  {
+   "written": "スマホ",
+   "reading": "スマホ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "携帯電話",
+   "reading": "けいたいでんわ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "エアコン",
+   "reading": "エアコン",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "ベッド",
+   "reading": "ベッド",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "机",
+   "reading": "つくえ",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "トラック",
+   "reading": "トラック",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "機械",
+   "reading": "きかい",
+   "counters": [
+    "dai"
+   ]
+  },
+  {
+   "written": "味噌汁",
+   "reading": "みそしる",
+   "counters": [
+    "hai"
+   ]
+  },
+  {
+   "written": "スープ",
+   "reading": "スープ",
+   "counters": [
+    "hai"
+   ]
+  },
+  {
+   "written": "コンビニ",
+   "reading": "コンビニ",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "喫茶店",
+   "reading": "きっさてん",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "ホテル",
+   "reading": "ホテル",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "旅館",
+   "reading": "りょかん",
+   "counters": [
+    "ken"
+   ]
+  },
+  {
+   "written": "コート",
+   "reading": "コート",
+   "counters": [
+    "chaku",
+    "mai"
+   ]
+  },
+  {
+   "written": "着物",
+   "reading": "きもの",
+   "counters": [
+    "chaku",
+    "mai"
+   ]
+  },
+  {
+   "written": "スニーカー",
+   "reading": "スニーカー",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "ブーツ",
+   "reading": "ブーツ",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "スリッパ",
+   "reading": "スリッパ",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "サンダル",
+   "reading": "サンダル",
+   "counters": [
+    "soku"
+   ]
+  },
+  {
+   "written": "おにぎり",
+   "reading": "おにぎり",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "トマト",
+   "reading": "トマト",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "桃",
+   "reading": "もも",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "ボタン",
+   "reading": "ボタン",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "指輪",
+   "reading": "ゆびわ",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "帽子",
+   "reading": "ぼうし",
+   "counters": [
+    "ko",
+    "tsu"
+   ]
+  },
+  {
+   "written": "時計",
+   "reading": "とけい",
+   "counters": [
+    "ko",
+    "tsu",
+    "dai"
+   ]
+  },
+  {
+   "written": "予約",
+   "reading": "よやく",
+   "counters": [
+    "ken-matter"
+   ]
+  }
  ]
 }
