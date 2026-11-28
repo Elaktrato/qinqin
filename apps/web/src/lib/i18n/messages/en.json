@@ -840,6 +840,7 @@
 	"courses.roadmap.backToCourse": "Go to your course",
 	"courses.roadmap.cardsAdded": "{count, plural, one {Added # card.} other {Added # cards.}}",
 	"courses.roadmap.continue": "Continue: {lesson}",
+	"courses.roadmap.findPlace": "Already know some? Find your place",
 	"courses.roadmap.finished": "You have finished the course.",
 	"courses.roadmap.lessonCount": "{count, plural, one {# lesson} other {# lessons}}",
 	"courses.roadmap.loadFailed": "Could not load the course. Check your connection and try again.",
