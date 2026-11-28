@@ -1,0 +1,490 @@
+{
+ "version": 1,
+ "rule": "drills/schedule",
+ "generator": "scripts/contracts/gen-drills-fixtures.mjs",
+ "tsFsrs": "5.4.2",
+ "note": "Each drill item's schedule, replayed from its answers in workspace 7 as a card's reviews are (default weights, the study clock), and its retrievability at `now`. `clock` lists frozen runs {a: start instant, days}. Compare `due` exactly and the numbers to 8 decimals. Decoded by the web (FSRS is client-side).",
+ "weights": [
+  0.212,
+  1.2931,
+  2.3065,
+  8.2956,
+  6.4133,
+  0.8334,
+  3.0194,
+  0.001,
+  1.8722,
+  0.1666,
+  0.796,
+  1.4835,
+  0.0614,
+  0.2629,
+  1.6483,
+  0.6014,
+  1.8729,
+  0.5425,
+  0.0912,
+  0.0658,
+  0.1542
+ ],
+ "cases": [
+  {
+   "name": "one Good answer: learning, due after the second learning step",
+   "now": "2026-11-28T08:05:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "produce",
+      "grade": 3
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "tone-pairs",
+     "item": "3-4",
+     "due": "2026-11-28T08:10:00Z",
+     "stability": 2.3065,
+     "difficulty": 2.11810397,
+     "state": 1,
+     "answers": 1,
+     "retrievability": 0.99977262
+    }
+   ]
+  },
+  {
+   "name": "Again, then Good twice: into review",
+   "now": "2026-11-29T08:00:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000002",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000003",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:01:30Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000004",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:12:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "produce",
+      "grade": 3
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "tone-pairs",
+     "item": "3-4",
+     "due": "2026-11-29T08:12:00Z",
+     "stability": 0.28420636,
+     "difficulty": 6.39094132,
+     "state": 2,
+     "answers": 3,
+     "retrievability": 0.79518045
+    }
+   ]
+  },
+  {
+   "name": "answers over weeks, a lapse, and the retrievability a month later",
+   "now": "2027-01-15T09:00:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000005",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000006",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:10:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000007",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-04T08:00:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000008",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000009",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:10:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000000010",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-25T08:00:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 4
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "conjugation",
+     "item": "1234:te-form",
+     "due": "2026-12-05T08:00:00Z",
+     "stability": 10.27699206,
+     "difficulty": 7.65389226,
+     "state": 2,
+     "answers": 6,
+     "retrievability": 0.76118038
+    }
+   ]
+  },
+  {
+   "name": "the log order does not matter: answers replay by time, then id",
+   "now": "2026-11-30T08:00:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "5678",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000011",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "5678",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-27T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "5678",
+      "mode": "produce",
+      "grade": 3
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "counters",
+     "item": "5678",
+     "due": "2026-11-28T08:10:00Z",
+     "stability": 2.27847016,
+     "difficulty": 7.39223814,
+     "state": 3,
+     "answers": 3,
+     "retrievability": 0.9087031
+    }
+   ]
+  },
+  {
+   "name": "the same item key in two drills, and two items of one drill, are separate schedules",
+   "now": "2026-11-29T08:00:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "x",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.look-alikes",
+     "payload": {
+      "item": "x",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000016",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T09:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "y",
+      "mode": "produce",
+      "grade": 4
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "look-alikes",
+     "item": "x",
+     "due": "2026-11-28T08:01:00Z",
+     "stability": 0.212,
+     "difficulty": 6.4133,
+     "state": 1,
+     "answers": 1,
+     "retrievability": 0.76619573
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "x",
+     "due": "2026-11-28T08:10:00Z",
+     "stability": 2.3065,
+     "difficulty": 2.11810397,
+     "state": 1,
+     "answers": 1,
+     "retrievability": 0.9468475
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "y",
+     "due": "2026-12-06T09:00:00Z",
+     "stability": 8.2956,
+     "difficulty": 1,
+     "state": 2,
+     "answers": 1,
+     "retrievability": 0.98359258
+    }
+   ]
+  },
+  {
+   "name": "answers that are not answers, another workspace and other types are left out",
+   "now": "2026-11-29T08:00:00Z",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KB0000000000000000000017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:05:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 7
+     }
+    },
+    {
+     "id": "01KB0000000000000000000019",
+     "workspaceId": 8,
+     "device": "web",
+     "ts": "2026-11-28T08:06:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:07:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1 1",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000000021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:08:00Z",
+     "type": "review",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 1
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "tone-pairs",
+     "item": "1-1",
+     "due": "2026-11-28T08:10:00Z",
+     "stability": 2.3065,
+     "difficulty": 2.11810397,
+     "state": 1,
+     "answers": 1,
+     "retrievability": 0.9468475
+    }
+   ]
+  },
+  {
+   "name": "a frozen vacation run between answers: the days do not count and the due moves past it",
+   "now": "2026-12-20T08:00:00Z",
+   "clock": [
+    {
+     "a": "2026-11-05T00:00:00Z",
+     "days": 4
+    }
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000000022",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "2-3",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:10:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "2-3",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-03T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "2-3",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-12T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "2-3",
+      "mode": "produce",
+      "grade": 3
+     }
+    }
+   ],
+   "items": [
+    {
+     "drill": "tone-pairs",
+     "item": "2-3",
+     "due": "2026-12-12T08:00:00Z",
+     "stability": 30.15482454,
+     "difficulty": 2.09745544,
+     "state": 2,
+     "answers": 4,
+     "retrievability": 0.88334331
+    }
+   ]
+  }
+ ]
+}

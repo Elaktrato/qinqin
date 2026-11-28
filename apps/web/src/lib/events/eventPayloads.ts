@@ -32,3 +32,8 @@ export function scriptPayload(system: string, item: string, mode: string, ok: bo
 export function grammarPayload(packId: string, lessonId: string, score: number, total: number): { point: string; mode: 'lesson'; score: number; total: number } {
 	return { point: `${packId}:${lessonId}`, mode: 'lesson', score, total };
 }
+
+/** `drill.<id>`: one answer in a drill (docs/contracts/drills/): the item, the drill's mode and the FSRS grade (1 Again … 4 Easy). */
+export function drillPayload(item: string, mode: string, grade: 1 | 2 | 3 | 4): { item: string; mode: string; grade: 1 | 2 | 3 | 4 } {
+	return { item, mode, grade };
+}

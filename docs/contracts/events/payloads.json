@@ -13,7 +13,8 @@
     {"type": "read", "write": true, "builder": "readPayload"},
     {"type": "journal", "write": true, "builder": "journalPayload"},
     {"type": "script", "write": true, "builder": "scriptPayload"},
-    {"type": "grammar", "write": true, "builder": "grammarPayload"}
+    {"type": "grammar", "write": true, "builder": "grammarPayload"},
+    {"type": "drill.<id>", "write": true, "builder": "drillPayload"}
   ],
   "cases": [
     {
@@ -47,6 +48,12 @@
       "note": "{point, mode, score, total} in this member order (#277): point is <packId>:<lessonId> (neither id holds a colon); mode is lesson (a finished lesson run; a client ignores a mode it does not know); score and total are whole numbers with 0 <= score <= total <= 1000. Parse and replay rules: grammar/runs.json",
       "args": ["zh-grammar", "le-change", 3, 4],
       "expect": {"point": "zh-grammar:le-change", "mode": "lesson", "score": 3, "total": 4}
+    },
+    {
+      "kind": "build", "type": "drill.<id>", "name": "a drill answer names the item, the mode and the grade",
+      "note": "{item, mode, grade} in this member order: one answer in a drill, type drill.<id> (one type per drill). Ids, item keys, parsing, schedules and rounds: drills/",
+      "args": ["3-4", "produce", 3],
+      "expect": {"item": "3-4", "mode": "produce", "grade": 3}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",

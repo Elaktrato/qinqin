@@ -45,7 +45,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `tones/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `drills/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -192,6 +192,7 @@ fixes the shape.
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/events/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |
 | Grammar lesson runs | workspace; study events (`grammar`, #277), in the event log and the pull like reviews | `{point: "<packId>:<lessonId>", mode: "lesson", score, total}`; progress (best score, last run) is replayed by the client | `studycore/grammarRuns.ts`, `features/grammar/progress.ts`; server `internal/grammar/events.go` | `grammar/runs.json` |
+| Drill answers | workspace; study events (`drill.<id>`, one type per drill), in the event log and the pull like reviews | `{item, mode, grade}`; each item's schedule is replayed by the client (FSRS, default weights) | `studycore/drills.ts`, `features/practice/`; server `internal/drills/`, `stats/rules.go` | `drills/` |
 | Journal entries, reviews, topic ideas, settings | workspace (`journal_*` tables, not rows); not in the pull: `/api/journal/*` | see `journal/README.md` | `features/journal/store.ts`; server `internal/journal/store.go` | `journal/entries.json`, `journal/review-docs.json`, `journal/kind-resolve.json` |
 | AI examples (#186) | user and entry: kept ones are own sentences (`sentences` with `ai_provider`/`ai_model`; pull `sentences` with `ai`; backup `sentences/` line with `ai`); drafts and reports in their own tables, not in the pull or a backup | see `examples/README.md` | `entry/examples/examples.ts`; server `internal/sentences/examples.go` | `examples/examples.json` |
 | Journal conversations (the partner, #185) | workspace (`journal_conversations`, `journal_messages`); not in the pull: `/api/journal/conversations*`; backup key `journal:conversation:<id>` | see `journal/README.md#conversations` | `features/journal/conversation/conversations.ts`; server `internal/journal/conversation.go` | `journal/conversations.json` |
