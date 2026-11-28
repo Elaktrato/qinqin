@@ -48,7 +48,7 @@ describe('frameSections', () => {
 	it('shows Scripts only for a language whose profile has a writing system (#204)', () => {
 		const withScripts = ready([...all.list, state('scripts')]);
 		const ids = (language: string | null) => frameSections(withScripts, language).map((s) => s.id);
-		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'stats']);
+		expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'practice', 'stats']);
 		expect(ids('ko')).toContain('scripts');
 		expect(ids('ru-RU')).toContain('scripts');
 		expect(ids('zh')).not.toContain('scripts');
@@ -58,14 +58,15 @@ describe('frameSections', () => {
 		expect(frameSections(withScripts, 'ja').find((s) => s.id === 'scripts')).toMatchObject({ label: 'Scripts', href: '/scripts', icon: 'words' });
 	});
 
-	it('shows Practice only while a drill applies to the language (none is registered yet; the sample drill behind its flag)', () => {
+	it('shows Practice only while a drill applies to the language (the conjugation drill: Japanese; the sample drill behind its flag)', () => {
 		const ids = (language: string | null) => frameSections(all, language).map((s) => s.id);
-		expect(ids('ja')).not.toContain('practice');
+		expect(ids('ja')).toContain('practice');
+		expect(ids('ko')).not.toContain('practice');
 		const store = memoryStorage();
 		store.setItem(DEV_DRILLS_KEY, 'sample');
 		vi.stubGlobal('localStorage', store);
 		try {
-			expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'practice', 'stats']);
+			expect(ids('ko')).toContain('practice');
 			expect(frameSections(all, 'zh').find((s) => s.id === 'practice')).toMatchObject({ label: 'Practice', href: '/practice', icon: 'repeat' });
 			expect(currentSection('/practice/weakest', frameSections(all, 'zh'))).toBe('practice');
 			expect(frameSections(ready([...all.list, state('practice', false)]), 'zh').map((s) => s.id)).not.toContain('practice');

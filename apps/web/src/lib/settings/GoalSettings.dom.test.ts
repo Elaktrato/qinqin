@@ -218,6 +218,7 @@ describe('GoalSettings', () => {
 			'Flashcard reviews',
 			'New cards',
 			'Flashcard study time',
+			'Conjugation drill',
 			'Grammar lessons',
 			'Journal entries',
 			'Reading',
