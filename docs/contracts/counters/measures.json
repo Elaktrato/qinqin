@@ -1,0 +1,180 @@
+{
+ "version": 1,
+ "rule": "counters/measures",
+ "doc": "Chinese measure words from CC-CEDICT's CL notes (README, \"Chinese measure words\"). Each case is an entry's senses in stored order (tags and glosses as the importer stores them); measures are what the server derives (simplified, traditional, tone-marked pinyin), canonical first; gloss is the one gloss shown (the sense display rule after the CL notes are taken out); fallback says whether 个 is acceptable but not idiomatic. fallbackAfter: the measure words after which 个 is a fallback; fallbackNot: nouns for which it is not even then. pool: the measure words wrong choices are taken from. Go: server/internal/counters/contract_test.go; web: apps/web/src/lib/features/practice/counters/check.test.ts (the pool's shape).",
+ "fallback": { "simplified": "个", "traditional": "個", "pinyin": "gè" },
+ "fallbackAfter": ["只", "条", "张", "件", "辆", "台", "把", "位", "名", "颗", "棵", "座", "家", "所", "间", "头", "匹", "枝", "支", "部", "架", "顶", "门", "首", "道", "根", "块"],
+ "fallbackNot": ["纸"],
+ "pool": [
+  { "simplified": "个", "traditional": "個", "pinyin": "gè" },
+  { "simplified": "本", "traditional": "本", "pinyin": "běn" },
+  { "simplified": "张", "traditional": "張", "pinyin": "zhāng" },
+  { "simplified": "只", "traditional": "隻", "pinyin": "zhī" },
+  { "simplified": "条", "traditional": "條", "pinyin": "tiáo" },
+  { "simplified": "件", "traditional": "件", "pinyin": "jiàn" },
+  { "simplified": "辆", "traditional": "輛", "pinyin": "liàng" },
+  { "simplified": "台", "traditional": "臺", "pinyin": "tái" },
+  { "simplified": "把", "traditional": "把", "pinyin": "bǎ" },
+  { "simplified": "位", "traditional": "位", "pinyin": "wèi" },
+  { "simplified": "杯", "traditional": "杯", "pinyin": "bēi" },
+  { "simplified": "瓶", "traditional": "瓶", "pinyin": "píng" },
+  { "simplified": "双", "traditional": "雙", "pinyin": "shuāng" },
+  { "simplified": "块", "traditional": "塊", "pinyin": "kuài" },
+  { "simplified": "支", "traditional": "支", "pinyin": "zhī" },
+  { "simplified": "棵", "traditional": "棵", "pinyin": "kē" },
+  { "simplified": "座", "traditional": "座", "pinyin": "zuò" },
+  { "simplified": "家", "traditional": "家", "pinyin": "jiā" },
+  { "simplified": "头", "traditional": "頭", "pinyin": "tóu" },
+  { "simplified": "匹", "traditional": "匹", "pinyin": "pǐ" },
+  { "simplified": "封", "traditional": "封", "pinyin": "fēng" },
+  { "simplified": "片", "traditional": "片", "pinyin": "piàn" },
+  { "simplified": "篇", "traditional": "篇", "pinyin": "piān" },
+  { "simplified": "首", "traditional": "首", "pinyin": "shǒu" },
+  { "simplified": "部", "traditional": "部", "pinyin": "bù" },
+  { "simplified": "间", "traditional": "間", "pinyin": "jiān" },
+  { "simplified": "套", "traditional": "套", "pinyin": "tào" },
+  { "simplified": "碗", "traditional": "碗", "pinyin": "wǎn" },
+  { "simplified": "颗", "traditional": "顆", "pinyin": "kē" },
+  { "simplified": "朵", "traditional": "朵", "pinyin": "duǒ" },
+  { "simplified": "门", "traditional": "門", "pinyin": "mén" },
+  { "simplified": "份", "traditional": "份", "pinyin": "fèn" },
+  { "simplified": "所", "traditional": "所", "pinyin": "suǒ" },
+  { "simplified": "架", "traditional": "架", "pinyin": "jià" },
+  { "simplified": "顶", "traditional": "頂", "pinyin": "dǐng" },
+  { "simplified": "根", "traditional": "根", "pinyin": "gēn" },
+  { "simplified": "副", "traditional": "副", "pinyin": "fù" },
+  { "simplified": "节", "traditional": "節", "pinyin": "jié" },
+  { "simplified": "道", "traditional": "道", "pinyin": "dào" },
+  { "simplified": "场", "traditional": "場", "pinyin": "chǎng" },
+  { "simplified": "口", "traditional": "口", "pinyin": "kǒu" },
+  { "simplified": "层", "traditional": "層", "pinyin": "céng" },
+  { "simplified": "面", "traditional": "面", "pinyin": "miàn" },
+  { "simplified": "枝", "traditional": "枝", "pinyin": "zhī" }
+ ],
+ "cases": [
+  {
+   "name": "a CL gloss of its own (人)",
+   "written": "人",
+   "senses": [{ "tags": ["reading:rén"], "glosses": ["person; people", "CL:個|个[ge4],位[wei4],名[ming2]"] }],
+   "measures": [
+    { "simplified": "个", "traditional": "個", "pinyin": "gè" },
+    { "simplified": "位", "traditional": "位", "pinyin": "wèi" },
+    { "simplified": "名", "traditional": "名", "pinyin": "míng" }
+   ],
+   "gloss": "person; people",
+   "fallback": false
+  },
+  {
+   "name": "a minor sense first, the CL note in the middle of a line (书)",
+   "written": "书",
+   "senses": [
+    { "tags": ["reading:Shū"], "glosses": ["abbr. for 書經|书经[Shu1 jing1]"] },
+    { "tags": ["reading:shū"], "glosses": ["book", "letter", "document", "CL:本[ben3],冊|册[ce4],部[bu4]", "to write"] }
+   ],
+   "measures": [
+    { "simplified": "本", "traditional": "本", "pinyin": "běn" },
+    { "simplified": "册", "traditional": "冊", "pinyin": "cè" },
+    { "simplified": "部", "traditional": "部", "pinyin": "bù" }
+   ],
+   "gloss": "book",
+   "fallback": false
+  },
+  {
+   "name": "a CL note inside a gloss (猫); the note is not in the shown gloss",
+   "written": "猫",
+   "senses": [
+    { "tags": ["reading:māo"], "glosses": ["cat (CL:隻|只[zhi1])", "(dialect) to hide oneself", "(loanword) (coll.) modem"] },
+    { "tags": ["reading:máo"], "glosses": ["used in 貓腰|猫腰[mao2 yao1]"] }
+   ],
+   "measures": [{ "simplified": "只", "traditional": "隻", "pinyin": "zhī" }],
+   "gloss": "cat",
+   "fallback": true
+  },
+  {
+   "name": "two measure words in a note; 个 is no fallback for 纸 (fallbackNot)",
+   "written": "纸",
+   "senses": [{ "tags": ["reading:zhǐ"], "glosses": ["paper (CL:張|张[zhang1],沓[da2])", "classifier for documents, letters etc"] }],
+   "measures": [
+    { "simplified": "张", "traditional": "張", "pinyin": "zhāng" },
+    { "simplified": "沓", "traditional": "沓", "pinyin": "dá" }
+   ],
+   "gloss": "paper",
+   "fallback": false
+  },
+  {
+   "name": "a surname sense first (车)",
+   "written": "车",
+   "senses": [
+    { "tags": ["reading:Chē"], "glosses": ["surname Che"] },
+    { "tags": ["reading:chē"], "glosses": ["car", "vehicle", "CL:輛|辆[liang4]", "machine", "to shape with a lathe", "Kangxi radical 159"] },
+    { "tags": ["reading:jū"], "glosses": ["war chariot (archaic)", "rook (in Chinese chess)", "rook (in chess)"] }
+   ],
+   "measures": [{ "simplified": "辆", "traditional": "輛", "pinyin": "liàng" }],
+   "gloss": "car",
+   "fallback": true
+  },
+  {
+   "name": "a container measure word: no fallback (一个水 is wrong)",
+   "written": "啤酒",
+   "senses": [{ "tags": ["reading:pí jiǔ"], "glosses": ["beer (loanword)", "CL:杯[bei1],瓶[ping2],罐[guan4],桶[tong3],缸[gang1]"] }],
+   "measures": [
+    { "simplified": "杯", "traditional": "杯", "pinyin": "bēi" },
+    { "simplified": "瓶", "traditional": "瓶", "pinyin": "píng" },
+    { "simplified": "罐", "traditional": "罐", "pinyin": "guàn" },
+    { "simplified": "桶", "traditional": "桶", "pinyin": "tǒng" },
+    { "simplified": "缸", "traditional": "缸", "pinyin": "gāng" }
+   ],
+   "gloss": "beer (loanword)",
+   "fallback": false
+  },
+  {
+   "name": "the same measure word in two senses counts once",
+   "written": "灯",
+   "senses": [
+    { "tags": ["reading:dēng"], "glosses": ["lamp", "light", "CL:盞|盏[zhan3]"] },
+    { "tags": ["reading:dēng"], "glosses": ["lantern (CL:盞|盏[zhan3],個|个[ge4])"] }
+   ],
+   "measures": [
+    { "simplified": "盏", "traditional": "盞", "pinyin": "zhǎn" },
+    { "simplified": "个", "traditional": "個", "pinyin": "gè" }
+   ],
+   "gloss": "lamp",
+   "fallback": false
+  },
+  {
+   "name": "a CL note in a minor sense only: no measure word",
+   "written": "胡",
+   "senses": [{ "tags": ["reading:Hú"], "glosses": ["surname Hu", "CL:個|个[ge4]"] }, { "tags": ["reading:hú"], "glosses": ["beard"] }],
+   "measures": [],
+   "gloss": "beard",
+   "fallback": false
+  },
+  {
+   "name": "no CL note: no measure word",
+   "written": "水",
+   "senses": [{ "tags": ["reading:shuǐ"], "glosses": ["water", "river", "liquid", "beverage"] }],
+   "measures": [],
+   "gloss": "water",
+   "fallback": false
+  },
+  {
+   "name": "a malformed note is skipped, a good one in the same list kept",
+   "written": "桌子",
+   "senses": [{ "tags": ["reading:zhuō zi"], "glosses": ["table", "desk", "CL:張|张,個|个[ge4],[zhang1]"] }],
+   "measures": [{ "simplified": "个", "traditional": "個", "pinyin": "gè" }],
+   "gloss": "table",
+   "fallback": false
+  },
+  {
+   "name": "a sense whose only gloss is a CL note shows the next gloss",
+   "written": "椅子",
+   "senses": [{ "tags": ["reading:yǐ zi"], "glosses": ["CL:把[ba3],套[tao4]"] }, { "tags": ["reading:yǐ zi"], "glosses": ["chair"] }],
+   "measures": [
+    { "simplified": "把", "traditional": "把", "pinyin": "bǎ" },
+    { "simplified": "套", "traditional": "套", "pinyin": "tào" }
+   ],
+   "gloss": "chair",
+   "fallback": true
+  }
+ ]
+}

@@ -78,6 +78,10 @@ func MinorGloss(g string) bool {
 	return false
 }
 
+// MinorSense reports whether s is a minor sense of the sense display rule
+// (a minor tag, or a first gloss with a minor prefix).
+func MinorSense(s Sense) bool { return minorSense(s) }
+
 // minorSense reports whether s is a minor sense: a minor tag, or a first
 // gloss with a minor prefix.
 func minorSense(s Sense) bool {
