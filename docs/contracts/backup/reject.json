@@ -226,6 +226,18 @@
    }
   },
   {
+   "name": "a sentence's source names a book the archive does not have",
+   "builder": "sentence_source_unlisted_book",
+   "code": "backup_invalid",
+   "note": "#280: a source's bookId is a book of library/books.json or null"
+  },
+  {
+   "name": "a sentence's source has a malformed place",
+   "builder": "sentence_source_malformed",
+   "code": "backup_invalid",
+   "note": "#280: the live rule of reader/sentence-sources.json (kind book, chapter and paragraph >= 0, 0 <= start < end)"
+  },
+  {
    "name": "truncated archive",
    "builder": "truncated_archive",
    "code": "backup_invalid",

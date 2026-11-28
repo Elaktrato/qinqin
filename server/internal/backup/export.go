@@ -287,12 +287,24 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	}
 	// own sentences (pack sentences are content, not user data)
 	if counts["sentences"], err = writeParts(ctx, tx, a, NameSentences,
-		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
+		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level,
+			source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end
+			FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var s OwnSentence
 			var aiProvider, aiModel, aiLevel string
-			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt, &aiProvider, &aiModel, &aiLevel); err != nil {
+			var src SentenceSource
+			var srcBook sql.NullInt64
+			if err := rs.Scan(&s.ID, &s.EntryID, &s.Hanzi, &s.Pinyin, &s.Translation, &s.UpdatedAt, &aiProvider, &aiModel, &aiLevel,
+				&src.Kind, &srcBook, &src.Title, &src.Chapter, &src.Paragraph, &src.Start, &src.End); err != nil {
 				return nil, err
+			}
+			if src.Kind != "" { // saved from the reader (#280); a deleted book leaves no id
+				if srcBook.Valid {
+					id := srcBook.Int64
+					src.BookID = &id
+				}
+				s.Source = &src
 			}
 			if aiProvider != "" || aiModel != "" { // a kept AI example (#186)
 				s.AI = &SentenceAI{Provider: aiProvider, Model: aiModel, Level: aiLevel}

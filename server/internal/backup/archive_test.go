@@ -315,6 +315,16 @@ var builders = map[string]func(t *testing.T) string{
 			return []byte(strings.Replace(string(b), `"bookId":3`, `"bookId":4`, 1))
 		}, zopts{})
 	},
+	"sentence_source_unlisted_book": func(t *testing.T) string {
+		return mut(t, PartName(NameSentences, 1), func(b []byte) []byte {
+			return []byte(strings.Replace(string(b), `"bookId":3`, `"bookId":4`, 1))
+		}, zopts{})
+	},
+	"sentence_source_malformed": func(t *testing.T) string {
+		return mut(t, PartName(NameSentences, 1), func(b []byte) []byte {
+			return []byte(strings.Replace(string(b), `"start":0,"end":2`, `"start":2,"end":2`, 1))
+		}, zopts{})
+	},
 	"unknown_time_zone": func(t *testing.T) string {
 		return mut(t, NameAccount, func(b []byte) []byte {
 			return []byte(strings.Replace(string(b), "Europe/Berlin", "Mars/Olympus", 1))
