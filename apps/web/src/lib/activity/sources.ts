@@ -31,7 +31,9 @@ const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> 
 			const segment = id.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 			return [drillEventType(id), { label: `activity.source.drill.${segment}.label` as MessageKey, count: `activity.source.drill.${segment}.count` as MessageKey }];
 		})
-	)
+	),
+	// The registered drills' words, literal for the catalogue lint.
+	'drill.conjugation': { label: 'activity.source.drill.conjugation.label', count: 'activity.source.drill.conjugation.count' }
 };
 
 /** activityChangesLog: the event types that change what the readers of the full event log show. */

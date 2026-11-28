@@ -40,6 +40,12 @@
     "feature": "grammar",
     "distinctBy": "point"
    }
+  },
+  {
+   "type": "drill.conjugation",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [

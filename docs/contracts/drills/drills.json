@@ -17,7 +17,9 @@
    4
   ]
  },
- "registry": [],
+ "registry": [
+  "conjugation"
+ ],
  "ids": [
   {
    "name": "a one-word id",

@@ -71,8 +71,9 @@ describe('the Practice list', () => {
 		expect(screen.queryByRole('link', { name: 'Practise weakest' })).toBeNull();
 	});
 
-	it('says so when no drill applies (no developer flag, no registered drill)', async () => {
+	it('says so when no drill applies (no developer flag, no registered drill of the language)', async () => {
 		localStorage.removeItem(DEV_DRILLS_KEY);
+		ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'ko', name: 'ko' } as never });
 		show('');
 		expect(await screen.findByText('No drills for this language yet.')).toBeTruthy();
 	});
@@ -145,7 +146,7 @@ describe('a round', () => {
 	});
 
 	it('a drill that does not apply is the list', async () => {
-		show('conjugation');
+		show('tone-pairs');
 		expect(await screen.findByRole('heading', { level: 2, name: 'Sample drill' })).toBeTruthy();
 		expect(screen.getByRole('heading', { level: 1, name: 'Practice' })).toBeTruthy();
 	});

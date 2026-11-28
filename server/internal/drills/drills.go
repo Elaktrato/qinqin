@@ -37,7 +37,9 @@ var ReservedIDs = []string{"weakest"}
 // activity route lists them (the contract's registry). A drill's builder
 // adds its id here, in the contract and in the web's DRILL_IDS
 // (docs/contracts/drills/README.md, "Adding a drill").
-var IDs = []string{}
+var IDs = []string{
+	"conjugation", // the conjugation trainer (#178)
+}
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
