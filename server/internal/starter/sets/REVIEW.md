@@ -198,6 +198,7 @@ Follow-ups the adjudicator raised:
 - Sense order on the card back: show 'meat' first for 肉 (j:1463520), 'telephone' for 電話 (j:1443840), and the general outer-garment 'shirt' sense for シャツ (j:1061520).
 - Override the JMdict 'usually written in kana' flag for the main sense of 目 (j:1604890) and 山 (j:1302680) so the cards reach the kanji. Review 犬 and 猫 the same way (textbooks write them in kanji); 帽子 can be decided later.
 - Picture remaps: the OpenMoji 'teacup without handle' to お茶 (so it no longer looks like the coffee cup), 'bento box' to お弁当, 'train'/'metro' to 電車, and a correct picture for 頭.
+  - Done on merge with #274: お茶 now uses the OpenMoji 'teacup without handle' (1F375) and 手紙 the OpenMoji envelope (2709). The #274 picture review removed both Mulberry pictures.
 - New pictures needed: a plain empty plate for 皿 (without the fork), a person listening with headphones for 聞く, and a T-shirt or outer shirt for シャツ.
 - Confirm the kana forms resolve to the intended entries: くま→j:1246850 (not 隈), ぞう→j:1351830 (not 像), はし→j:1476410 (not 橋/端), かぎ→j:1260490, さる→j:1177390, おまわりさん→お巡りさん, じゃがいも→じゃが芋.
 - Check that j:2796520 is the main ビール entry before the word is used later in the course.
