@@ -1,6 +1,6 @@
 <script lang="ts">
-	// A check question of a lesson or test (#222): the prompt (a word to give the meaning of, a meaning to give the
-	// word of, or a word to hear) and its choices. The run (run.svelte.ts) holds the answer; this shows it.
+	// A check question of a lesson or test (#222, #224): the prompt (a word to give the meaning of, a meaning to give
+	// the word of, a word to hear, a word to give the reading of, or a sentence with a gap to fill) and its choices. The run (run.svelte.ts) holds the answer; this shows it.
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
@@ -29,15 +29,29 @@
 	const lang = $derived(studyLang(language) ?? language);
 	const answered = $derived(chosen !== null);
 	const reading = $derived(answered && word ? roman.text(word.reading, language) : '');
-	const ASK = { meaning: 'courses.question.meaning', form: 'courses.question.form', listen: 'courses.question.listen' } as const;
+	const ASK = {
+		meaning: 'courses.question.meaning',
+		form: 'courses.question.form',
+		listen: 'courses.question.listen',
+		reading: 'courses.question.reading',
+		grammar: 'courses.question.grammar',
+		text: 'courses.question.text'
+	} as const;
+	// The choices are in the study language except a meaning question's glosses.
+	const choiceLang = $derived(question.type === 'meaning' ? undefined : lang);
 </script>
 
 <section class="question" aria-labelledby="question-{question.id}">
 	<p class="ask" id="question-{question.id}">{t(ASK[question.type])}{#if retry}<span class="again">{t('courses.question.again')}</span>{/if}</p>
 	{#if question.type === 'listen'}
 		<PlayButton clips={[]} speakText={question.prompt} lang={language} {deviceVoice} label={t('courses.question.play')} />
+	{:else if question.gap}
+		<p class="prompt gap" {lang}>
+			{question.gap.before}<span class="blank" aria-label={t('courses.question.gap')}>{answered ? question.answer : '＿＿'}</span>{question.gap.after}
+		</p>
+		{#if question.gap.translation}<p class="translation">{question.gap.translation}</p>{/if}
 	{:else}
-		<p class="prompt" lang={question.type === 'meaning' ? lang : undefined}>{question.prompt}</p>
+		<p class="prompt" lang={question.type === 'form' ? undefined : lang}>{question.prompt}</p>
 	{/if}
 	{#if reading}<p class="reading">{word?.form} · {reading}</p>{/if}
 	<ul class="choices">
@@ -50,7 +64,7 @@
 					class="choice"
 					class:right
 					class:wrong
-					lang={question.type === 'meaning' ? undefined : lang}
+					lang={choiceLang}
 					disabled={answered}
 					aria-pressed={choice === chosen}
 					onclick={() => onchoose(choice)}
@@ -75,7 +89,8 @@
 	}
 
 	.ask,
-	.reading {
+	.reading,
+	.translation {
 		color: var(--readable-muted);
 	}
 
@@ -86,6 +101,18 @@
 
 	.prompt {
 		font-size: var(--font-size-xl);
+		text-align: center;
+	}
+
+	.gap {
+		text-align: start;
+		font-size: var(--font-size-l);
+	}
+
+	.blank {
+		display: inline-block;
+		min-inline-size: 2em;
+		border-block-end: 1px solid var(--accent);
 		text-align: center;
 	}
 

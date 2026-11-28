@@ -50,6 +50,8 @@ describe('the course roadmap (#222)', () => {
 		expect(within(hello).getByRole('link', { name: 'Take the unit test' }).getAttribute('href')).toBe('/courses/play/zh-test/hello/test');
 		expect(within(hello).getByText('5 lessons · 2 words')).toBeTruthy();
 		expect(screen.getAllByRole('link', { name: 'Take the section exam' })).toHaveLength(2);
+		// A fresh learner may find their place (#224).
+		expect(screen.getByRole('link', { name: 'Already know some? Find your place' }).getAttribute('href')).toBe('/courses/play/zh-test/section/level-1/placement');
 	});
 
 	it('says so when the language has no course', async () => {

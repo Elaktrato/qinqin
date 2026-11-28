@@ -5,6 +5,15 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #224 — courses: unit tests, section exams and placement (contract 33)
+
+- **New fixture `courses/tests.json`** (rule `courses/tests`, web): how a unit test or section exam is assembled (the
+  budget of word, grammar and text questions, the word sample by the level check's planner, the reading and text
+  question rules), judged (`score · 100 ≥ passPercent · total`), and how placement chains the section exams (the early
+  stop, where a pass or a fail leads). `courses/README.md` "Tests and exams".
+- **Clients:** no route, event or stored-data change: the `unit-test`, `section-exam` and `placement` events of #221
+  now come from these tests. A placement exam's `total` is the questions asked before it stopped.
+
 ## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 32)
 
 - **New `conjugation/`:** the engine's classes (JMdict parts of speech), the ten form families (`families.json`:

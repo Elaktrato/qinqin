@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "rule": "courses/tests",
+  "note": "How a client assembles, scores and judges a course's unit tests and section exams, and how placement chains the exams (#224). Decoded by the web: apps/web/src/lib/features/courses/tests.test.ts. The seeded picks themselves (the placement generator and the token shuffle) are not pinned here; the counts, pools and rules are.",
+  "budget": {
+    "doc": "questions Q split into grammar min(G, ceil(Q/5)), text min(T, ceil(Q/5)), words the rest (at most two questions per askable word); what the words cannot use goes to grammar, then text, up to what they have.",
+    "cases": [
+      { "name": "a full unit", "questions": 10, "words": 8, "grammar": 3, "text": 2, "expect": { "words": 6, "grammar": 2, "text": 2 } },
+      { "name": "few words: the rest goes to grammar", "questions": 10, "words": 2, "grammar": 5, "text": 0, "expect": { "words": 4, "grammar": 5, "text": 0 } },
+      { "name": "words only, two questions per word", "questions": 4, "words": 2, "grammar": 0, "text": 0, "expect": { "words": 4, "grammar": 0, "text": 0 } },
+      { "name": "a big section with one text gap", "questions": 20, "words": 30, "grammar": 0, "text": 1, "expect": { "words": 19, "grammar": 0, "text": 1 } },
+      { "name": "nothing to ask", "questions": 10, "words": 0, "grammar": 0, "text": 0, "expect": { "words": 0, "grammar": 0, "text": 0 } },
+      { "name": "a short test keeps one of each", "questions": 5, "words": 3, "grammar": 1, "text": 1, "expect": { "words": 3, "grammar": 1, "text": 1 } }
+    ]
+  },
+  "sample": {
+    "doc": "The word sample is the level check's planner (lib/placement/levelCheck.ts planCheck): each stratum (a unit test: the unit's word lessons; an exam: the section's units) gets an even share of the words the app does not call known; known ones fill only what is left. perStratum counts the sampled words of each stratum; includes lists entries that must be in the sample.",
+    "cases": [
+      { "name": "known words are left out while others remain", "strata": [[1, 2, 3], [4, 5, 6]], "known": [1, 2], "size": 4, "expect": { "perStratum": [1, 3], "includes": [3, 4, 5, 6] } },
+      { "name": "known words fill what the others cannot", "strata": [[1, 2, 3], [4, 5, 6]], "known": [1, 2], "size": 5, "expect": { "perStratum": [2, 3], "includes": [3, 4, 5, 6] } },
+      { "name": "an even share over the strata", "strata": [[1, 2, 3, 4], [5, 6, 7, 8], [9]], "known": [], "size": 5, "expect": { "perStratum": [2, 2, 1], "includes": [9] } },
+      { "name": "the sample never exceeds the words", "strata": [[1], [2]], "known": [], "size": 6, "expect": { "perStratum": [1, 1], "includes": [1, 2] } }
+    ]
+  },
+  "tones": {
+    "doc": "A Chinese reading question: the variants of a pinyin reading are the same syllables with one syllable's tone changed to another of tones 1-4, syllable by syllable, tone by tone; three of them are the wrong choices. The answer is the syllables joined by one space.",
+    "cases": [
+      { "reading": "nǐ hǎo", "answer": "nǐ hǎo", "variants": ["nī hǎo", "ní hǎo", "nì hǎo", "nǐ hāo", "nǐ háo", "nǐ hào"] },
+      { "reading": "xiè xie", "answer": "xiè xie", "variants": ["xiē xie", "xié xie", "xiě xie", "xiè xiē", "xiè xié", "xiè xiě", "xiè xiè"] },
+      { "reading": "chá", "answer": "chá", "variants": ["chā", "chǎ", "chà"] },
+      { "reading": "", "answer": null, "variants": [] }
+    ]
+  },
+  "sentences": {
+    "doc": "A reading text is cut into sentences after 。！？!? (and runs of them) and at line breaks; each sentence trimmed, empty ones dropped.",
+    "cases": [
+      { "text": "你好！谢谢！", "expect": ["你好！", "谢谢！"] },
+      { "text": "我是学生。你呢？", "expect": ["我是学生。", "你呢？"] },
+      { "text": "今天很好！！\n明天见", "expect": ["今天很好！！", "明天见"] },
+      { "text": "  ", "expect": [] }
+    ]
+  },
+  "gap": {
+    "doc": "A text question: the first literal occurrence of the word's form in the sentence is the gap (blankSpans without segmenter matches); at least two letters must stay outside it; three wrong choices from the candidates (pickDistractors: none that occurs in the sentence, never the answer), else no question.",
+    "cases": [
+      { "name": "a gap with context", "sentence": "我在银行工作。", "form": "银行", "candidates": ["学习", "中国", "你好", "谢谢"], "expect": { "before": "我在", "after": "工作。", "choices": 3 } },
+      { "name": "the sentence is only the word", "sentence": "你好！", "form": "你好", "candidates": ["学习", "中国", "银行", "谢谢"], "expect": null },
+      { "name": "too few wrong choices", "sentence": "我在银行工作。", "form": "银行", "candidates": ["学习", "工作"], "expect": null },
+      { "name": "the word is not in the sentence", "sentence": "我在银行工作。", "form": "学习", "candidates": ["中国", "你好", "谢谢"], "expect": null }
+    ]
+  },
+  "judge": {
+    "doc": "passed = total is 0, or score * 100 >= passPercent * total (score: right first answers).",
+    "cases": [
+      { "score": 8, "total": 10, "passPercent": 80, "passed": true },
+      { "score": 7, "total": 10, "passPercent": 80, "passed": false },
+      { "score": 0, "total": 0, "passPercent": 80, "passed": true },
+      { "score": 15, "total": 20, "passPercent": 75, "passed": true },
+      { "score": 14, "total": 20, "passPercent": 75, "passed": false }
+    ]
+  },
+  "decide": {
+    "doc": "A placement exam stops once decided: pass when score * 100 >= passPercent * total already; fail when even every question left right would not reach it; else open (null). The event then records score of asked.",
+    "cases": [
+      { "score": 3, "asked": 3, "total": 4, "passPercent": 75, "expect": "pass" },
+      { "score": 0, "asked": 2, "total": 4, "passPercent": 75, "expect": "fail" },
+      { "score": 1, "asked": 2, "total": 4, "passPercent": 75, "expect": null },
+      { "score": 8, "asked": 8, "total": 10, "passPercent": 80, "expect": "pass" },
+      { "score": 1, "asked": 4, "total": 10, "passPercent": 80, "expect": "fail" },
+      { "score": 2, "asked": 4, "total": 10, "passPercent": 80, "expect": null }
+    ]
+  },
+  "placement": {
+    "doc": "Placement chains the section exams from the first section with one. After a pass: the next section with an exam (null: the chain ends) and the section 'Start here' places into (the next section). After a fail: the section the learner is placed into: the failed one, or the course's first section when the first exam failed.",
+    "sections": [
+      { "id": "start", "exam": false },
+      { "id": "level-1", "exam": true },
+      { "id": "level-2", "exam": true },
+      { "id": "level-3", "exam": true }
+    ],
+    "first": "level-1",
+    "cases": [
+      { "section": "level-1", "passed": true, "expect": { "next": "level-2", "start": "level-2" } },
+      { "section": "level-1", "passed": false, "expect": { "place": "start" } },
+      { "section": "level-2", "passed": false, "expect": { "place": "level-2" } },
+      { "section": "level-2", "passed": true, "expect": { "next": "level-3", "start": "level-3" } },
+      { "section": "level-3", "passed": true, "expect": { "next": null, "start": null } }
+    ]
+  }
+}

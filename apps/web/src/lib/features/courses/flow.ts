@@ -1,6 +1,6 @@
 // The lesson flows of the course player (#222, Rulings 13–25): what a lesson of each kind shows, step by step, and
-// the questions of its short check; the unit test and section exam (the entry point #224 replaces); how a finished
-// run is scored and graded. Pure and deterministic for a seed: the components only show the steps.
+// the questions of its short check; how a finished run is scored and graded. The unit tests and section exams are
+// tests.ts (#224), built from the same questions. Pure and deterministic for a seed: the components only show the steps.
 
 import type { Course, CourseLesson, CourseUnit } from '$lib/api/courses';
 import { shuffleTokens } from '$lib/exercises/wordSalad';
@@ -14,17 +14,26 @@ export interface WordInfo {
 	gloss: string | null;
 }
 
-export type QuestionType = 'meaning' | 'form' | 'listen';
+export type QuestionType = 'meaning' | 'form' | 'listen' | 'reading' | 'grammar' | 'text';
 
 export interface Question {
 	id: string;
 	type: QuestionType;
 	/** The word's key. */
 	word: string;
-	/** meaning: the form; form: the gloss; listen: the form, spoken (never shown before the answer). */
+	/**
+	 * meaning: the form; form: the gloss; listen: the form, spoken (never shown before the answer); reading: the form;
+	 * grammar and text: the gap's translation, if any (the sentence is `gap`).
+	 */
 	prompt: string;
 	answer: string;
 	choices: string[];
+	/** A fill-the-gap question (grammar, text): the sentence around the gap. */
+	gap?: { before: string; after: string; translation: string | null };
+	/** A grammar question's point (`<packId>:<lessonId>`); `word` holds it too. */
+	point?: string;
+	/** The unit the question is about (tests, #224). */
+	unit?: string;
 }
 
 export type Step =
@@ -43,11 +52,6 @@ export interface LessonFlow {
 	words: string[];
 	/** Finishing adds the words as cards with their first review (Ruling 16). */
 	cards: boolean;
-}
-
-export interface TestFlow {
-	steps: Step[];
-	passPercent: number;
 }
 
 /** A lesson as the player gets it: a lesson of the unit, or one of its catch-up lessons (kind `words`). */
@@ -76,13 +80,13 @@ export function shortGloss(senses: readonly { gloss: string }[]): string | null 
 	return first === '' ? null : first;
 }
 
-function findUnit(course: Course, id: string): { unit: CourseUnit; section: Course['sections'][number] } | null {
+export function findUnit(course: Course, id: string): { unit: CourseUnit; section: Course['sections'][number] } | null {
 	for (const section of course.sections) for (const unit of section.units) if (unit.id === id) return { unit, section };
 	return null;
 }
 
-/** The words other choices come from, nearest first: the unit's, then the section's, then the course's (Ruling 13). */
-function pool(course: Course, unitId: string, info: ReadonlyMap<string, WordInfo>): WordInfo[][] {
+/** choicePool: the words other choices come from, nearest first: the unit's, then the section's, then the course's (Ruling 13). */
+export function choicePool(course: Course, unitId: string, info: ReadonlyMap<string, WordInfo>): WordInfo[][] {
 	const at = findUnit(course, unitId);
 	const tiers: string[][] = [];
 	if (at) {
@@ -103,7 +107,8 @@ function pool(course: Course, unitId: string, info: ReadonlyMap<string, WordInfo
 	});
 }
 
-function question(type: QuestionType, w: WordInfo, others: readonly (readonly WordInfo[])[], seed: string, n: number): Question {
+/** question: a meaning, form or listening question on a word, three other choices from the nearest tiers. */
+export function question(type: 'meaning' | 'form' | 'listen', w: WordInfo, others: readonly (readonly WordInfo[])[], seed: string, n: number): Question {
 	const value = (x: WordInfo) => (type === 'meaning' ? x.gloss : x.form);
 	const answer = value(w)!;
 	// Each tier shuffled for the question, the nearest tier first.
@@ -142,7 +147,7 @@ export function buildLessonFlow(input: FlowInput & { unit: string; lesson: FlowL
 	if (at === null) return null;
 	const { unit } = at;
 	const { lesson, info, seed } = input;
-	const others = pool(input.course, unit.id, info);
+	const others = choicePool(input.course, unit.id, info);
 	const lessonQuestions = input.course.checkpoints.lesson.questions;
 	const unitWords = infos(
 		unit.words.map((w) => w.key),
@@ -172,7 +177,7 @@ export function buildLessonFlow(input: FlowInput & { unit: string; lesson: FlowL
 			const metWords = unitWords.filter((w) => input.met.has(w.key));
 			const ws = asked(metWords.length > 0 ? metWords : unitWords);
 			if (ws.length === 0) return { ...none, steps: [{ kind: 'note', note: 'noWords' }] };
-			const types: QuestionType[] = input.voice ? ['meaning', 'form', 'listen'] : ['meaning', 'form'];
+			const types: ('meaning' | 'form' | 'listen')[] = input.voice ? ['meaning', 'form', 'listen'] : ['meaning', 'form'];
 			const order = shuffleTokens(ws, `${seed}:practice`);
 			const steps: Step[] = [];
 			for (let i = 0; i < 2 * lessonQuestions; i++) {
@@ -194,40 +199,9 @@ export function buildLessonFlow(input: FlowInput & { unit: string; lesson: FlowL
 	}
 }
 
-function testSteps(words: readonly WordInfo[], others: readonly (readonly WordInfo[])[], count: number, seed: string): Step[] {
-	const ws = shuffleTokens(asked(words), `${seed}:test`);
-	const steps: Step[] = [];
-	const total = Math.min(count, 2 * ws.length);
-	for (let i = 0; i < total; i++) {
-		const type: QuestionType = i < ws.length ? 'meaning' : 'form';
-		steps.push({ kind: 'question', question: question(type, ws[i % ws.length], others, seed, i) });
-	}
-	return steps;
-}
-
-/** buildTestFlow: the unit test over the unit's words (Ruling 25); null for an unknown unit. */
-export function buildTestFlow(input: FlowInput & { unit: string }): TestFlow | null {
-	const at = findUnit(input.course, input.unit);
-	if (at === null) return null;
-	const words = infos(
-		at.unit.words.map((w) => w.key),
-		input.info
-	);
-	const { questions, passPercent } = input.course.checkpoints.unit;
-	return { steps: testSteps(words, pool(input.course, at.unit.id, input.info), questions, input.seed), passPercent };
-}
-
-/** buildExamFlow: the section exam over the section's words (Ruling 25); null for an unknown section. */
-export function buildExamFlow(input: FlowInput & { section: string }): TestFlow | null {
-	const section = input.course.sections.find((s) => s.id === input.section);
-	if (section === undefined) return null;
-	const keys = [...new Set(section.units.flatMap((u) => u.words.map((w) => w.key)))];
-	const words = infos(keys, input.info);
-	const { questions, passPercent } = input.course.checkpoints.section;
-	return { steps: testSteps(words, [words, ...pool(input.course, '', input.info)], questions, input.seed), passPercent };
-}
-
 export interface Answer {
+	/** The question's id. */
+	id: string;
 	word: string;
 	right: boolean;
 	/** A wrong question asked once more at the end (Ruling 15); it does not count in the score. */
@@ -244,9 +218,4 @@ export function scoreOf(results: readonly Answer[]): { score: number; total: num
 export function wordGrades(words: readonly string[], results: readonly Answer[]): Map<string, 2 | 3> {
 	const wrong = new Set(results.filter((r) => !r.retry && !r.right).map((r) => r.word));
 	return new Map(words.map((w) => [w, wrong.has(w) ? 2 : 3]));
-}
-
-/** passed: the score reaches the pass mark; a test with nothing to ask passes. */
-export function passed(score: number, total: number, passPercent: number): boolean {
-	return total === 0 || score * 100 >= passPercent * total;
 }

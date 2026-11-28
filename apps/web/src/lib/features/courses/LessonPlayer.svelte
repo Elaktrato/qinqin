@@ -1,8 +1,9 @@
 <script lang="ts">
 	// The lesson player (#222): a full-screen flow like the study session (the frame hides the bottom bar under
 	// /courses/play), a thin progress line, the step, docked actions, and a summary at the end. It hosts every lesson
-	// kind (flow.ts) and the first unit test and section exam (Ruling 25). Steps push no history: Back leaves the lesson
-	// (Ruling 5).
+	// kind (flow.ts), the unit tests, section exams and placement exams (tests.ts, #224), whose summary shows what to
+	// review and offers Try again. Steps push no history: Back leaves the lesson (Ruling 5).
+	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { readAudioSettings } from '$lib/audio/settings';
@@ -11,6 +12,9 @@
 	import { useSession } from '$lib/context/context';
 	import { getLanguage, t } from '$lib/i18n';
 	import { studyLang } from '$lib/i18n/lang';
+	import { useRomanisation } from '$lib/languages/useRomanisation';
+	import { contextForData } from '$lib/studycore/currentContext';
+	import { EMPTY_KNOWN_INDEX } from '$lib/studycore/known';
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { Button } from '$lib/ui';
 	import { systemLabel } from '$lib/features/scripts/labels';
@@ -19,14 +23,16 @@
 	import { addCourseCards, courseDeckId, recordFirstReviews } from './cards';
 	import ChoiceQuestion from './ChoiceQuestion.svelte';
 	import { CourseView } from './courseView.svelte';
-	import { buildExamFlow, buildLessonFlow, buildTestFlow, passed as passedMark, scoreOf, wordGrades, type Step, type WordInfo } from './flow';
+	import { buildLessonFlow, scoreOf, wordGrades, type Step, type WordInfo } from './flow';
 	import GrammarStep from './GrammarStep.svelte';
-	import { loadCharacterInfo, loadWordInfo } from './lessonData';
+	import { courseKnownIndex, loadCharacterInfo, loadGrammarItems, loadWordInfo } from './lessonData';
 	import { courseEvent, recordCourseEvent } from './progress';
 	import ReadingStep from './ReadingStep.svelte';
 	import { lessonLabel, roadmap, titleText } from './roadmap';
 	import { courseHref, type CourseRoute } from './route';
 	import { FlowRun } from './run.svelte';
+	import { buildSectionExam, buildUnitTest, decide, judge, placementNext, reviewOf, wordsToLoad, type GapItem, type PlacementStep, type Review } from './tests';
+	import TestReview from './TestReview.svelte';
 	import WordCard from './WordCard.svelte';
 
 	let { route }: { route: Exclude<CourseRoute, { view: 'roadmap' }> } = $props();
@@ -37,6 +43,7 @@
 	// svelte-ignore state_referenced_locally
 	const view = workspace === null ? null : new CourseView(session, workspace, route.course);
 	const deviceVoice = readAudioSettings(workspace?.settings).deviceVoice;
+	const roman = useRomanisation();
 	const back = courseHref({ view: 'roadmap', course: null });
 
 	type Found = { unit: CourseUnit | null; lesson: CourseLesson | null; title: string; locked: boolean };
@@ -49,7 +56,13 @@
 	let cards = false;
 	let passPercent = $state(0);
 	let grammarScore = $state<{ score: number; total: number } | null>(null);
-	let summary = $state<{ score: number; total: number; passed: boolean | null; added: number; error: string } | null>(null);
+	let summary = $state<{ score: number; total: number; passed: boolean | null; added: number; error: string; skipped: boolean } | null>(null);
+	// A test's questions, its grammar items, what to review, and placement's next step (#224).
+	let testSteps = $state.raw<Step[]>([]);
+	let grammarItems = $state.raw<Map<string, GapItem[]>>(new Map());
+	let review = $state.raw<Review | null>(null);
+	let placement = $state.raw<PlacementStep | null>(null);
+	let attempt = 0;
 	let saving = $state(false);
 	let stepHeading = $state<HTMLElement | null>(null);
 	let continueButton = $state<HTMLElement | undefined>(undefined);
@@ -82,41 +95,50 @@
 		const seed = `${route.course}:${Date.now()}`;
 		const voice = await voiceFor(course.language);
 		let steps: Step[] = [];
-		if (route.view === 'exam') {
-			const section = course.sections.find((s) => s.id === route.section);
-			if (!section) return void (status = 'gone');
-			const pool = section.units.flatMap((u) => u.words);
-			info = await loadWordInfo(pool.slice(0, Math.max(course.checkpoints.section.questions * 2, 20)));
-			const flow = buildExamFlow({ course, info, met, voice, seed, section: section.id })!;
+		attempt += 1;
+		if (route.view !== 'lesson') {
+			const history = view.history;
+			const index = history === null ? EMPTY_KNOWN_INDEX : courseKnownIndex(history, contextForData(session.zone, history, view.workspaceId).clock);
+			const unit = route.view === 'test' ? (units.find((u) => u.id === route.unit) ?? null) : null;
+			const section = route.view === 'test' ? null : (course.sections.find((s) => s.id === route.section) ?? null);
+			if (unit === null && section === null) return void (status = 'gone');
+			const testSeed = `${seed}:${attempt}`;
+			info = await loadWordInfo(wordsToLoad(course, unit ? { unit: unit.id } : { section: section!.id }, index, testSeed));
+			const points = (unit ? [unit] : section!.units).flatMap((u) => u.lessons.flatMap((l) => (l.kind === 'grammar' && l.available ? [l.point] : [])));
+			grammarItems = await loadGrammarItems(points);
+			const input = { course, info, index, voice, readingShown: (r: string) => roman.showsText(r, course.language), grammar: grammarItems, seed: testSeed };
+			const flow = unit ? buildUnitTest({ ...input, unit: unit.id })! : buildSectionExam({ ...input, section: section!.id })!;
 			steps = flow.steps;
+			testSteps = flow.steps;
 			passPercent = flow.passPercent;
-			found = { unit: null, lesson: null, title: t('courses.player.exam', { section: titleText(section.title, getLanguage()) }), locked: false };
+			const title = unit
+				? t('courses.player.test', { unit: titleText(unit.title, getLanguage()) })
+				: t(route.view === 'placement' ? 'courses.player.placement' : 'courses.player.exam', { section: titleText(section!.title, getLanguage()) });
+			found = { unit, lesson: null, title, locked: false };
 		} else {
 			const unit = units.find((u) => u.id === route.unit);
 			if (!unit) return void (status = 'gone');
 			const unitState = state.sections.flatMap((s) => s.units).find((u) => u.id === unit.id)!;
 			info = await loadWordInfo(unit.words);
-			if (route.view === 'test') {
-				const flow = buildTestFlow({ course, info, met, voice, seed, unit: unit.id })!;
-				steps = flow.steps;
-				passPercent = flow.passPercent;
-				found = { unit, lesson: null, title: t('courses.player.test', { unit: titleText(unit.title, getLanguage()) }), locked: false };
-			} else {
-				const lesson = unit.lessons.find((l) => l.id === route.lesson) ?? unitState.catchUp.find((c) => c.id === route.lesson) ?? null;
-				if (lesson === null) return void (status = 'gone');
-				const ls = unitState.lessons.find((l) => l.id === lesson.id);
-				found = { unit, lesson, title: lessonLabel(lesson), locked: ls?.status === 'locked' };
-				if (found.locked) return void (status = 'locked');
-				if (lesson.kind === 'words') info = await loadWordInfo([...unit.words, ...lesson.words.map((k) => units.flatMap((u) => u.words).find((w) => w.key === k)).filter((w) => w !== undefined)]);
-				if (lesson.kind === 'script') characters = await loadCharacterInfo(course.language, lesson.characters);
-				const flow = buildLessonFlow({ course, info, met, voice, seed, characters, unit: unit.id, lesson })!;
-				steps = flow.steps;
-				words = flow.words;
-				cards = flow.cards;
-				void recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'lesson-started', course: course.id, unit: unit.id, lesson: lesson.id })).catch(() => undefined);
-			}
+			const lesson = unit.lessons.find((l) => l.id === route.lesson) ?? unitState.catchUp.find((c) => c.id === route.lesson) ?? null;
+			if (lesson === null) return void (status = 'gone');
+			const ls = unitState.lessons.find((l) => l.id === lesson.id);
+			found = { unit, lesson, title: lessonLabel(lesson), locked: ls?.status === 'locked' };
+			if (found.locked) return void (status = 'locked');
+			if (lesson.kind === 'words') info = await loadWordInfo([...unit.words, ...lesson.words.map((k) => units.flatMap((u) => u.words).find((w) => w.key === k)).filter((w) => w !== undefined)]);
+			if (lesson.kind === 'script') characters = await loadCharacterInfo(course.language, lesson.characters);
+			const flow = buildLessonFlow({ course, info, met, voice, seed, characters, unit: unit.id, lesson })!;
+			steps = flow.steps;
+			words = flow.words;
+			cards = flow.cards;
+			void recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'lesson-started', course: course.id, unit: unit.id, lesson: lesson.id })).catch(() => undefined);
 		}
-		run = new FlowRun(steps, { retry: route.view === 'lesson' });
+		const total = steps.length;
+		run = new FlowRun(steps, {
+			retry: route.view === 'lesson',
+			// A placement exam stops once decided (Ruling 14).
+			stopWhen: route.view === 'placement' ? (r) => decide(scoreOf(r).score, scoreOf(r).total, total, passPercent) !== null : undefined
+		});
 		status = 'ready';
 		if (run.done) await finish();
 		await tick();
@@ -155,6 +177,7 @@
 		let added = 0;
 		let error = '';
 		let passed: boolean | null = null;
+		let skipped = false;
 		try {
 			if (route.view === 'lesson' && found?.unit && found.lesson) {
 				// The lesson counts first (the outbox keeps it offline); its cards need the server.
@@ -176,24 +199,62 @@
 					}
 				}
 			} else if (route.view === 'test' && found?.unit) {
-				passed = passedMark(score, total, passPercent);
+				passed = judge(score, total, passPercent);
+				review = reviewOf(course, testSteps, results);
 				const us = state.sections.flatMap((s) => s.units).find((u) => u.id === found!.unit!.id);
 				const early = us === undefined || us.lessons.some((l) => l.status !== 'done');
+				skipped = passed && early;
 				await recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'unit-test', course: course.id, unit: found.unit.id, score, total, passed, early }));
-			} else if (route.view === 'exam') {
-				passed = passedMark(score, total, passPercent);
+			} else if (route.view === 'exam' || route.view === 'placement') {
+				passed = judge(score, total, passPercent);
+				review = reviewOf(course, testSteps, results);
+				skipped = passed;
 				await recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'section-exam', course: course.id, section: route.section, score, total, passed }));
+				if (route.view === 'placement') {
+					placement = placementNext(course.sections, route.section, passed);
+					if ('place' in placement) await recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'placement', course: course.id, section: placement.place }));
+				}
 			}
 			await view.reread();
 		} catch (err) {
 			error = errorText(err, t('courses.summary.saveFailed'));
 		}
-		summary = { score, total, passed, added, error };
+		summary = { score, total, passed, added, error, skipped };
 		saving = false;
 		await tick();
 		stepHeading?.focus();
 	}
 
+	/** Try again: a new test with a new seed (Ruling 10). */
+	async function retry(): Promise<void> {
+		summary = null;
+		review = null;
+		placement = null;
+		run = null;
+		status = 'loading';
+		await start();
+	}
+
+	/** Start here: placement into the section after the passed exam (Ruling 13). */
+	async function startHere(section: string): Promise<void> {
+		const course = view?.course;
+		if (!view || !course || saving) return;
+		saving = true;
+		try {
+			await recordCourseEvent(session, courseEvent(view.workspaceId, { kind: 'placement', course: course.id, section }));
+			await goto(back);
+		} catch (err) {
+			if (summary) summary = { ...summary, error: errorText(err, t('courses.summary.saveFailed')) };
+		} finally {
+			saving = false;
+		}
+	}
+
+	const sectionTitle = (id: string | null) => {
+		const s = view?.course?.sections.find((x) => x.id === id);
+		return s ? titleText(s.title, getLanguage()) : (id ?? '');
+	};
+	const stoppedEarly = $derived(route.view === 'placement' && summary !== null && summary.total < testSteps.length);
 	const nextStep = $derived(view?.course && view.state && summary ? roadmap(view.course, view.state, getLanguage()).next : null);
 	const step = $derived(run?.step ?? null);
 	const lang = $derived(studyLang(language) ?? language);
@@ -249,8 +310,27 @@
 				{summary.passed === null ? t('courses.summary.done') : summary.passed ? t('courses.summary.passed') : t('courses.summary.notPassed')}
 			</h1>
 			<p class="title">{found?.title}</p>
-			{#if summary.total > 0}<p class="score">{t('courses.summary.score', { score: summary.score, total: summary.total })}</p>{/if}
-			{#if summary.passed === false}<p>{t('courses.summary.passMark', { percent: passPercent })}</p>{/if}
+			{#if summary.total > 0}
+				<p class="score">
+					{summary.passed === null ? t('courses.summary.score', { score: summary.score, total: summary.total }) : t('courses.summary.testScore', { score: summary.score, total: summary.total })}
+				</p>
+			{/if}
+			{#if stoppedEarly}<p>{t('courses.summary.stoppedEarly')}</p>{/if}
+			{#if summary.passed === false}
+				<p>{t('courses.summary.passMark', { percent: passPercent })}</p>
+				<p>{t('courses.summary.kept')}</p>
+			{/if}
+			{#if summary.skipped && !(placement && 'next' in placement && placement.next !== null)}<p>{t('courses.summary.skipped')}</p>{/if}
+			{#if placement}
+				{#if 'place' in placement}
+					<p>{t('courses.placement.placed', { section: sectionTitle(placement.place) })}</p>
+				{:else if placement.next === null}
+					<p>{t('courses.placement.allPassed')}</p>
+				{/if}
+			{/if}
+			{#if review && view?.course && view.state}
+				<TestReview {review} course={view.course} state={view.state} {info} grammar={grammarItems} />
+			{/if}
 			{#if words.length > 0}
 				<p>{t('courses.summary.words', { count: words.length })}</p>
 				<ul class="learnt" {lang}>
@@ -266,6 +346,7 @@
 			{#if summary.error}<p class="error" role="alert">{summary.error}</p>{/if}
 		{:else if run && step}
 			<h1 class="visually-hidden" tabindex="-1" bind:this={stepHeading}>{found?.title}</h1>
+			{#if route.view === 'placement' && run.progress === 0}<p class="intro">{t('courses.placement.intro')}</p>{/if}
 			{#if step.kind === 'intro'}
 				{@const w = info.get(step.word)}
 				{#if w}<WordCard word={w} {language} {deviceVoice} heading={t('courses.player.newWord')} />{:else}<p {lang}>{step.word}</p>{/if}
@@ -304,8 +385,19 @@
 	{#if status === 'ready'}
 		<footer class="dock">
 			{#if summary}
-				{#if nextStep}
+				{#if placement && 'next' in placement && placement.next !== null && view?.course}
+					<Button variant="primary" href={courseHref({ view: 'placement', course: view.course.id, section: placement.next })}>
+						{t('courses.placement.next', { section: sectionTitle(placement.next) })}
+					</Button>
+					{#if placement.start}
+						{@const start = placement.start}
+						<Button busy={saving} disabled={saving} onclick={() => void startHere(start)}>{t('courses.placement.startHere')}</Button>
+					{/if}
+				{:else if nextStep}
 					<Button variant="primary" href={nextStep.href}>{t('courses.roadmap.continue', { lesson: nextStep.label })}</Button>
+				{/if}
+				{#if summary.passed === false && route.view !== 'placement'}
+					<Button onclick={() => void retry()}>{t('courses.summary.tryAgain')}</Button>
 				{/if}
 				<Button href={back}>{t('courses.player.backToCourse')}</Button>
 			{:else if run && step && step.kind !== 'grammar'}
@@ -384,7 +476,8 @@
 		overflow-wrap: anywhere;
 	}
 
-	.title {
+	.title,
+	.intro {
 		color: var(--readable-muted);
 	}
 
