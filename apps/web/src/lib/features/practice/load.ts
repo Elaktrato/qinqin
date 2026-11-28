@@ -5,11 +5,13 @@ import type { Workspace } from '$lib/api/types';
 import type { Session } from '$lib/context/session.svelte';
 import { contextForData } from '$lib/studycore/currentContext';
 import { loadStudyHistory } from '$lib/studycore/data';
-import { drillStates, type DrillStates } from '$lib/studycore/drills';
+import { drillStates, type DrillAnswer, type DrillStates } from '$lib/studycore/drills';
 import type { StudyClock } from '$lib/studycore/studyClock';
 import type { DrillDef, DrillItem } from './types';
 
 export interface PracticeData {
+	/** The workspace's drill answers in replay order. */
+	answers: readonly DrillAnswer[];
 	states: DrillStates;
 	clock: StudyClock;
 	/** Each drill's candidate items, by drill id. */
@@ -21,8 +23,10 @@ export async function loadPractice(session: Session, workspace: Workspace, drill
 	const history = await loadStudyHistory(session.study, workspace.id);
 	const clock = contextForData(session.zone, history, workspace.id).clock;
 	const lists = await Promise.all(drills.map((d) => d.items({ session, workspace, history })));
+	const answers = history.drillAnswers ?? [];
 	return {
-		states: drillStates(history.drillAnswers ?? [], clock),
+		answers,
+		states: drillStates(answers, clock),
 		clock,
 		items: new Map(drills.map((d, i) => [d.id, lists[i]]))
 	};

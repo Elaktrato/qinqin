@@ -21,7 +21,7 @@
 	const workspace = $derived(session.workspaces.current);
 	const drills = $derived(workspace === null ? [] : availableDrills(workspace.language, deviceStorage()));
 	const route = $derived(parsePracticeRoute(rest, drills.map((d) => d.id)));
-	const drill = $derived(route.view === 'drill' ? drills.find((d) => d.id === route.drill) : undefined);
+	const drill = $derived(route.view === 'drill' || route.view === 'drillWeakest' ? drills.find((d) => d.id === route.drill) : undefined);
 
 	let data = $state.raw<PracticeData | null>(null);
 	let error = $state('');
@@ -50,7 +50,22 @@
 
 	const now = $derived(data === null ? 0 : Date.now());
 	const summaries = $derived(
-		data === null ? [] : drills.map((d) => ({ drill: d, summary: drillSummary(d.id, (data!.items.get(d.id) ?? []).map((i) => i.key), data!.states, now) }))
+		data === null
+			? []
+			: drills.map((d) => {
+					const items = data!.items.get(d.id) ?? [];
+					return {
+						drill: d,
+						items,
+						answers: data!.answers.filter((a) => a.drill === d.id),
+						summary: drillSummary(
+							d.id,
+							items.map((i) => i.key),
+							data!.states,
+							now
+						)
+					};
+				})
 	);
 	const weakest = $derived(
 		data === null ? [] : weakestRound(drills.map((d) => ({ drill: d.id, items: data!.items.get(d.id) ?? [] })), data.states, now, data.clock)
@@ -58,10 +73,18 @@
 	const entries = $derived.by((): RoundEntry[] => {
 		if (data === null) return [];
 		if (route.view === 'weakest') return weakest;
+		if (route.view === 'drillWeakest' && drill !== undefined)
+			return weakestRound([{ drill: drill.id, items: data.items.get(drill.id) ?? [] }], data.states, now, data.clock);
 		if (drill !== undefined) return roundOf(drill.id, data.items.get(drill.id) ?? [], data.states, now, data.clock);
 		return [];
 	});
-	const roundTitle = $derived(route.view === 'weakest' ? t('practice.round.weakestTitle') : (drill?.title ?? ''));
+	const roundTitle = $derived(
+		route.view === 'weakest'
+			? t('practice.round.weakestTitle')
+			: route.view === 'drillWeakest' && drill !== undefined
+				? t('practice.round.drillWeakestTitle', { drill: drill.title })
+				: (drill?.title ?? '')
+	);
 
 	setFrameTitle(() => (route.view === 'list' ? t('practice.title') : roundTitle || t('practice.title')));
 
@@ -89,7 +112,7 @@
 		<h1>{route.view === 'list' ? t('practice.title') : roundTitle}</h1>
 		<p role="status">{t('common.loading')}</p>
 	{:else if route.view === 'list'}
-		<PracticeList {summaries} weakestCount={weakest.length} />
+		<PracticeList {summaries} weakestCount={weakest.length} states={data.states} {now} />
 	{:else}
 		{#key `${rest}:${generation}`}
 			<RoundView

@@ -137,6 +137,14 @@ describe('a round', () => {
 		expect(screen.getByText('sample-3')).toBeTruthy();
 	});
 
+	it("a drill's own weakest round asks only its answered items, weakest first", async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(history([answer(1, 'sample-4', 4, 60), answer(2, 'sample-3', 1, 60)]));
+		show('sample/weakest');
+		expect(await screen.findByText('Question 1 of 2')).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 1, name: 'Sample drill: weakest' })).toBeTruthy();
+		expect(screen.getByText('sample-3')).toBeTruthy();
+	});
+
 	it('says when an answer was not saved', async () => {
 		vi.mocked(ctx.session.outbox.recordEvent).mockResolvedValue(null);
 		show('sample');

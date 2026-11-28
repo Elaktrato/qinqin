@@ -1732,6 +1732,7 @@
 	"practice.result.score": "{right} of {total} right",
 	"practice.result.title": "Round done",
 	"practice.round.back": "Back to the drills",
+	"practice.round.drillWeakestTitle": "{drill}: weakest",
 	"practice.round.empty": "Nothing to practise in this round.",
 	"practice.round.finish": "See results",
 	"practice.round.next": "Next",
