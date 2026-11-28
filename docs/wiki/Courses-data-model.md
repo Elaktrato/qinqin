@@ -1,8 +1,8 @@
 # Courses data model
 
 How a course is stored, filled with words and followed (#221). The screens, the roadmap and the lesson player (#222),
-are on the [Courses](Courses) page with the unit tests, section exams and placement (#224); later work brings the
-real Chinese and Japanese courses (#223). The rules are contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
+are on the [Courses](Courses) page with the unit tests, section exams and placement (#224) and the bundled Chinese and
+Japanese courses (#223, `plugins/data/zh-course`, `plugins/data/ja-course`). The rules are contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
 
 ## Three layers
 

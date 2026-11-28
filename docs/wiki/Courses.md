@@ -3,8 +3,23 @@
 **Courses** (`/courses`) is a guided path through a language: sections that follow the levels (≈ HSK 1–4 for
 Chinese, ≈ JLPT N5–N3 for Japanese, plus a start section), units with a theme, and small lessons of a few minutes
 each. The course of your workspace's language is the one the server has installed; a server with more than one
-course for a language lets you pick it at the top of the page (remembered on this device). The real Chinese and
-Japanese courses come with a later update; a server without a course for your language says so.
+course for a language lets you pick it at the top of the page (remembered on this device). A server without a course
+for your language says so.
+
+## The bundled courses
+
+qinqin ships two courses, installed with the other bundled packs (`zh-course`, `ja-course`):
+
+- **Chinese (≈ HSK 1–4):** a start section (sounds and tones, the first fifteen characters), then ≈ HSK 1 (15 units),
+  ≈ HSK 2 (12), ≈ HSK 3 (16) and ≈ HSK 4 (20). The words come from the HSK 3.0 word list on your server.
+- **Japanese (≈ JLPT N5–N3):** a start section (the sounds of Japanese, hiragana, katakana), then ≈ N5 (14 units),
+  ≈ N4 (20) and ≈ N3 (36). The words come from the estimated JLPT word list.
+
+Every unit has a theme, the grammar lessons of its level and the characters it introduces. The units of ≈ HSK 1–2 and
+≈ N5–N4 each end with a short reading text written for the course, with a translation; it uses the words you have met
+in the course so far and at most a few new ones, which the reading shows with their reading and meaning. The higher
+levels have their units, grammar and characters but no texts yet. The courses are written for qinqin (CC BY 4.0) and
+were reviewed by agents acting as native-speaker teachers, not yet by a person.
 
 ## The roadmap
 
