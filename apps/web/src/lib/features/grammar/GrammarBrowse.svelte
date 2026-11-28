@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NOTEBOOK_HREF } from '$lib/notebook/href';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/ui/Msg.svelte';
 	import { getSchemes } from '$lib/api/schemes';
@@ -70,6 +71,7 @@
 			<Msg key="grammar.none">{#snippet link(text: string)}<a href="/sources">{text}</a>{/snippet}</Msg>
 		</p>
 	{:else}
+		<p><a href={NOTEBOOK_HREF}>{t('study.notebook.link')}</a></p>
 		{#if learned}
 			<Section title={t('grammar.review.title')}>
 				{#if toReview > 0}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { NOTEBOOK_HREF } from '$lib/notebook/href';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -181,6 +182,7 @@
 				session.studyModal.show();
 			}}>{t('flashcards.deck.study')}</Button
 		>
+		<Button href={NOTEBOOK_HREF} variant="plain">{t('study.notebook.link')}</Button>
 	</div>
 	{#if summary.decks.length === 0}
 		<p class="hint">{t('flashcards.list.empty')}</p>
@@ -305,6 +307,10 @@
 	}
 
 	.study-all {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 		margin-bottom: var(--space-3);
 	}
 

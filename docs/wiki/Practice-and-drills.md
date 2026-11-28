@@ -18,6 +18,8 @@ with conjugation, counters, counter readings and look-alike characters); until t
   "retrievability"). It shows up once you have answered something.
 - At the end of a round you see how many you got right and the items to practise again. The browser's (or the
   Android app's) back button leaves a round; your answers are already saved.
+- Items you answered wrong are also in the [mistake notebook](Mistake-notebook), until you answer them right three
+  times in a row.
 
 ## Tone pairs (Chinese)
 

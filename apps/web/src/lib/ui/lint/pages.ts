@@ -51,6 +51,7 @@ export const PAGES: PageEntry[] = [
 	{ route: '/stats', files: ['routes/stats/+page.svelte', 'routes/stats/+layout.svelte'], owner: '#105', views: ['overview'] },
 	{ route: '/stats/characters', files: ['routes/stats/characters/+page.svelte'], owner: '#105', views: ['characters'] },
 	{ route: '/stats/week', files: ['routes/stats/week/+page.svelte'], owner: '#105', views: ['week'] },
+	{ route: '/notebook/[...rest]', files: ['routes/notebook/[...rest]/+page.svelte', 'lib/notebook/NotebookPage.svelte'], owner: 'none', views: ['notebook', 'empty notebook', 'practise round'] },
 	{ route: '/lookups', files: ['routes/lookups/+page.svelte'], owner: '#106', views: ['history', 'add to deck'] },
 	{ route: '/sources', files: ['routes/sources/+page.svelte', 'lib/sources/sections.ts'], owner: '#106', views: ['sources'] }
 ];

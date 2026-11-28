@@ -11,6 +11,7 @@ import type { GrammarRun } from './grammarRuns';
 import type { StudyEvent } from '$lib/events';
 import type { KnownBatch } from './knownMarks';
 import type { LimitPair } from './limits';
+import type { NotebookMark } from './notebook';
 import type { SeenMilestone } from '$lib/milestones/seen';
 import type { VacationPeriod } from './vacation';
 
@@ -159,6 +160,11 @@ export interface StudyHistory extends StudyData {
 	courseSteps?: CourseStep[];
 	/** The workspace's `course` events (#222) as logged (queued ones included), for the course derivation. */
 	courseEvents: StudyEvent[];
+	/**
+	 * The workspace's mistake-notebook marks (#227, docs/contracts/notebook/), in replay order. `historyOf` always sets
+	 * it; absent means none (test mocks).
+	 */
+	notebookMarks?: NotebookMark[];
 	/** How many stored duplicate cards were folded away. */
 	merged: number;
 }

@@ -708,7 +708,9 @@ import type { Run } from '$lib/studycore/vacation';
 					// Words the server (or this session, when shown) found unsuitable.
 					skip: session.eligibility.skip(),
 					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
-					studyAll: config.studyAll === true
+					studyAll: config.studyAll === true,
+					// The mistake notebook's cards (#227): only these, when due.
+					onlyCards: config.cardIds === undefined ? undefined : new Set(config.cardIds)
 				});
 				queue = mixFlowQueue(plan.queue, history, mixOptions);
 				reserve = plan.reserve;

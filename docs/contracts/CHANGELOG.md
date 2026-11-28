@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #227 — the mistake notebook (contract 41)
+
+- **New `notebook/`:** the mistake notebook is derived from the study events: which `review`, `drill.<id>`, `grammar`
+  and `course` events are a wrong or right answer about which item (`card:<cardId>`, `drill.<id>:<item>`,
+  `grammar:<point>`, `course:<course>:lesson:<unit>:<lesson>`, `course:<course>:unit:<unit>`,
+  `course:<course>:section:<section>`), the replay (an item enters on a wrong answer and leaves after **3** right
+  answers in a row), the groups and the order. Fixture `notebook.json` (web).
+- **New event type `notebook`:** `{action: "remove", item}` (an item removed by hand) and `{action: "clear"}`, written
+  through the outbox; no activity rule (`events/README.md`, `payloads.json` `build`).
+- **Backup:** a restore remaps the card id in a `notebook` mark's `card:` item as it remaps a review's `cardId`, and the
+  export names its entry in `refs/entries.json` (`backup/remap.json`, two cases).
+
 ## #225 — courses count; course milestones; the Home widget (contract 40)
 
 - **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
