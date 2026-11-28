@@ -15,8 +15,11 @@ type senseDisplayFixture struct {
 	Rule             string   `json:"rule"`
 	ExplicitWords    []string `json:"explicitWords"`
 	VulgarCharacters []string `json:"vulgarCharacters"`
+	MinorPrefixes    []string `json:"minorPrefixes"`
+	MinorTags        []string `json:"minorTags"`
 	Cases            []struct {
 		Name   string `json:"name"`
+		Pinned string `json:"pinned"`
 		Senses []struct {
 			Tags    []string `json:"tags"`
 			Glosses []string `json:"glosses"`
@@ -55,7 +58,7 @@ func TestDisplaySensesFixture(t *testing.T) {
 		for i, s := range c.Senses {
 			senses[i] = lexicon.Sense{Tags: s.Tags, Glosses: s.Glosses}
 		}
-		got := lexicon.DisplaySenses(senses)
+		got := lexicon.DisplaySenses(senses, c.Pinned)
 		want := make([]lexicon.SenseUnit, len(c.Units))
 		for i, u := range c.Units {
 			want[i] = lexicon.SenseUnit{Sense: u.Sense, Class: u.Class, Folded: u.Folded, Glosses: u.Glosses}
@@ -66,7 +69,7 @@ func TestDisplaySensesFixture(t *testing.T) {
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%s:\n got %+v\nwant %+v", c.Name, got, want)
 		}
-		if g := lexicon.DisplayGloss(senses); g != c.Gloss {
+		if g := lexicon.DisplayGloss(senses, c.Pinned); g != c.Gloss {
 			t.Errorf("%s: DisplayGloss = %q, want %q", c.Name, g, c.Gloss)
 		}
 	}
@@ -81,6 +84,12 @@ func TestDisplaySensesLists(t *testing.T) {
 	if !slices.Equal(fx.VulgarCharacters, lexicon.VulgarCharacters) {
 		t.Errorf("vulgar characters: fixture %v, code %v", fx.VulgarCharacters, lexicon.VulgarCharacters)
 	}
+	if !slices.Equal(fx.MinorPrefixes, lexicon.MinorPrefixes) {
+		t.Errorf("minor prefixes: fixture %v, code %v", fx.MinorPrefixes, lexicon.MinorPrefixes)
+	}
+	if !slices.Equal(fx.MinorTags, lexicon.MinorTags) {
+		t.Errorf("minor tags: fixture %v, code %v", fx.MinorTags, lexicon.MinorTags)
+	}
 }
 
 // The sense of a unit indexes the input, so a caller reaches its dictionary.
@@ -89,7 +98,7 @@ func TestDisplaySensesKeepDictionaries(t *testing.T) {
 		{DictionaryID: 1, Glosses: []string{"(slang) prostitute"}},
 		{DictionaryID: 2, Glosses: []string{"chicken"}},
 	}
-	units := lexicon.DisplaySenses(senses)
+	units := lexicon.DisplaySenses(senses, "")
 	if len(units) != 2 || senses[units[0].Sense].DictionaryID != 2 || !units[1].Folded {
 		t.Fatalf("units %+v", units)
 	}

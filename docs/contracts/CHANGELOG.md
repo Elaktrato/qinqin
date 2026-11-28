@@ -5,6 +5,23 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #346 — everyday meanings before surname, abbreviation and variant lines; pinned readings (contract 24)
+
+- **`senses/display.json`:** a third class `minor` between everyday and sensitive: a sense with a JMdict tag of
+  `minorTags` (`arch`, `obs`, `rare`, `dated`, `surname`) or whose first gloss starts with one of `minorPrefixes`
+  (surname, abbr. for, variant of, see, used in, (archaic), (classical) …), shown after the everyday units, never
+  folded. New input `pinned`: only the senses of the pinned reading (sense tag `reading:<value>`, compared in lower
+  case without spaces and apostrophes) and those without a reading tag take part; an unmatched pin is ignored.
+- **Sense tags:** the CC-CEDICT importer tags each sense with its line's reading (`reading:<marked pinyin>`), the
+  JMdict importer each sense with its `<stagr>` readings. Clients show no chip for them. Existing databases get them
+  with `qinqin seed`; without them a pin changes nothing.
+- **Cards:** a card row's `extra` may carry `reading` (a string): the reading the card is pinned to. The Starter add
+  flow writes it from the set entry's new member `reading`.
+- **`GET /api/starter-sets/{id}`:** each entry carries `reading` (the set's pinned reading, `""` without one), and its
+  `gloss` is the first gloss of that reading.
+- **`GET /api/lookup`:** the entry tag `"usually kana"` follows the first sense (as the display form does), not any
+  sense: 目 and 山 no longer carry it.
+
 ## #345 — slang, vulgar and derogatory senses last and folded (contract 23)
 
 - **New folder `senses/`:** the sense display rule (`display.json`, rule `senses/display`), decoded by Go and web: a

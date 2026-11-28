@@ -39,7 +39,7 @@ func TestDisplaySensesOnTheShippedDictionaries(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", c.form, err)
 		}
-		units := lexicon.DisplaySenses(e.Senses)
+		units := lexicon.DisplaySenses(e.Senses, "")
 		if len(units) == 0 || units[0].Folded || units[0].Class != lexicon.ClassEveryday {
 			t.Fatalf("%s: units %+v", c.form, units)
 		}
@@ -64,7 +64,7 @@ func TestDisplaySensesOnTheShippedDictionaries(t *testing.T) {
 				t.Errorf("%s: %q is shown unfolded", c.form, g)
 			}
 		}
-		if g := lexicon.DisplayGloss(e.Senses); g != units[0].Glosses[0] {
+		if g := lexicon.DisplayGloss(e.Senses, ""); g != units[0].Glosses[0] {
 			t.Errorf("%s: DisplayGloss %q", c.form, g)
 		}
 	}
