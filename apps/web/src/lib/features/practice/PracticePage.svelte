@@ -92,7 +92,7 @@
 		const ws = workspace;
 		if (ws === null) return false;
 		// Write-ahead in the outbox: an answer that cannot be sent now is sent later.
-		const kept = await session.outbox.recordEvent(answerEvent(ws.id, entry.drill, entry.item.key, answer.mode, answer.grade));
+		const kept = await session.outbox.recordEvent(answerEvent(ws.id, entry.drill, entry.item.key, answer.mode, answer.grade, Date.now(), answer.extra));
 		return kept !== null;
 	}
 </script>

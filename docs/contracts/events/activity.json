@@ -70,6 +70,12 @@
    "rule": {
     "feature": "practice"
    }
+  },
+  {
+   "type": "drill.look-alikes",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [

@@ -7,15 +7,26 @@ import { drillEventType } from '$lib/studycore/drills';
 import type { ReviewGrade } from '$lib/studycore/types';
 import type { RoundEntry } from './types';
 
-/** answerEvent builds the event of one answer (written through the session's outbox). */
-export function answerEvent(workspaceId: number, drill: string, item: string, mode: string, grade: ReviewGrade, now: number = Date.now()): StudyEventBody {
+/**
+ * answerEvent builds the event of one answer (written through the session's outbox); `extra` are the drill's own
+ * members after the grade (#228).
+ */
+export function answerEvent(
+	workspaceId: number,
+	drill: string,
+	item: string,
+	mode: string,
+	grade: ReviewGrade,
+	now: number = Date.now(),
+	extra?: Readonly<Record<string, string>>
+): StudyEventBody {
 	return {
 		id: newUlid(now),
 		workspaceId,
 		device: 'web',
 		ts: new Date(now).toISOString(),
 		type: drillEventType(drill),
-		payload: drillPayload(item, mode, grade)
+		payload: drillPayload(item, mode, grade, extra)
 	};
 }
 

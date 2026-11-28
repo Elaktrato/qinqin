@@ -69,6 +69,7 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		'/practice/measure-words',
 		'/practice/counters',
 		'/practice/counter-readings',
+		'/practice/look-alikes',
 		'/stats',
 		'/stats/week',
 		'/stats/characters',

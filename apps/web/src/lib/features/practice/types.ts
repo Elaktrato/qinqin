@@ -27,6 +27,8 @@ export interface DrillAnswerInput {
 	/** The drill's mode (direction) of this question: the id pattern. */
 	mode: string;
 	grade: ReviewGrade;
+	/** The drill's own members of the event, after the grade (#228: `asked`, `given`). */
+	extra?: Readonly<Record<string, string>>;
 }
 
 /**

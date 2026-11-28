@@ -17,7 +17,7 @@
    4
   ]
  },
- "registry": ["tone-pairs", "conjugation", "measure-words", "counters", "counter-readings"],
+ "registry": ["tone-pairs", "conjugation", "measure-words", "counters", "counter-readings", "look-alikes"],
  "ids": [
   {
    "name": "a one-word id",
@@ -210,6 +210,27 @@
      "item": "1234:past-negative-polite",
      "mode": "recognise",
      "grade": 1
+    }
+   }
+  },
+  {
+   "name": "a drill's own members come after the grade, in its order (#228: the character asked and the one given)",
+   "drill": "look-alikes",
+   "item": "未末",
+   "mode": "choose",
+   "grade": 1,
+   "extra": {
+    "asked": "未",
+    "given": "末"
+   },
+   "expect": {
+    "type": "drill.look-alikes",
+    "payload": {
+     "item": "未末",
+     "mode": "choose",
+     "grade": 1,
+     "asked": "未",
+     "given": "末"
     }
    }
   }

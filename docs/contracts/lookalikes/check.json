@@ -1,0 +1,160 @@
+{
+ "version": 1,
+ "rule": "lookalikes/check",
+ "doc": "The look-alike drill (#228): the mode of a question (`modes`), the word with a gap of a choose question (`prompts`, the files of sets.json fileOf), and an answer's grade and event payload (`answers`). README.md.",
+ "drill": "look-alikes",
+ "modes": [
+  {
+   "name": "a new set is recognised",
+   "answers": 0,
+   "mode": "recognise"
+  },
+  {
+   "name": "after one answer, choose",
+   "answers": 1,
+   "mode": "choose"
+  },
+  {
+   "name": "then recognise again",
+   "answers": 2,
+   "mode": "recognise"
+  },
+  {
+   "name": "odd counts choose",
+   "answers": 7,
+   "mode": "choose"
+  }
+ ],
+ "prompts": [
+  {
+   "name": "the example word with the member left out",
+   "file": "zh",
+   "language": "zh",
+   "member": "未",
+   "expect": {
+    "gap": "＿来",
+    "meaning": "future"
+   }
+  },
+  {
+   "name": "a traditional workspace takes the traditional example",
+   "file": "zh",
+   "language": "zh-Hant",
+   "member": "末",
+   "expect": {
+    "gap": "週＿",
+    "meaning": "weekend"
+   }
+  },
+  {
+   "name": "an example with no traditional form is the same in both",
+   "file": "zh",
+   "language": "zh-Hant",
+   "member": "鳥",
+   "expect": {
+    "gap": "小＿",
+    "meaning": "little bird"
+   }
+  },
+  {
+   "name": "a kana",
+   "file": "ja",
+   "language": "ja",
+   "member": "ソ",
+   "expect": {
+    "gap": "＿ファー",
+    "meaning": "sofa"
+   }
+  },
+  {
+   "name": "a kanji",
+   "file": "ja",
+   "language": "ja",
+   "member": "力",
+   "expect": {
+    "gap": "協＿",
+    "meaning": "cooperation"
+   }
+  }
+ ],
+ "answers": [
+  {
+   "name": "the member asked is right: Good",
+   "item": "未末",
+   "mode": "recognise",
+   "asked": "未",
+   "given": "未",
+   "expect": {
+    "right": true,
+    "grade": 3,
+    "payload": {
+     "item": "未末",
+     "mode": "recognise",
+     "grade": 3,
+     "asked": "未",
+     "given": "未"
+    }
+   }
+  },
+  {
+   "name": "another member is wrong: Again, with what was given",
+   "item": "己已巳",
+   "mode": "choose",
+   "asked": "已",
+   "given": "己",
+   "expect": {
+    "right": false,
+    "grade": 1,
+    "payload": {
+     "item": "己已巳",
+     "mode": "choose",
+     "grade": 1,
+     "asked": "已",
+     "given": "己"
+    }
+   }
+  },
+  {
+   "name": "a kana set",
+   "item": "ソン",
+   "mode": "choose",
+   "asked": "ン",
+   "given": "ソ",
+   "expect": {
+    "right": false,
+    "grade": 1,
+    "payload": {
+     "item": "ソン",
+     "mode": "choose",
+     "grade": 1,
+     "asked": "ン",
+     "given": "ソ"
+    }
+   }
+  },
+  {
+   "name": "a character outside the set is no answer",
+   "item": "未末",
+   "mode": "choose",
+   "asked": "未",
+   "given": "本",
+   "expect": null
+  },
+  {
+   "name": "an asked character outside the set is no answer",
+   "item": "未末",
+   "mode": "choose",
+   "asked": "本",
+   "given": "本",
+   "expect": null
+  },
+  {
+   "name": "an unknown mode is no answer",
+   "item": "未末",
+   "mode": "produce",
+   "asked": "未",
+   "given": "未",
+   "expect": null
+  }
+ ]
+}

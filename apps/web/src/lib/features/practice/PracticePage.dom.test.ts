@@ -40,11 +40,12 @@ function history(events: StudyEvent[] = []) {
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ['Date'] });
 	vi.setSystemTime(NOW);
-	// The counter drills (#179) apply to Japanese too: no counters, no nouns here.
-	ctx = testContext({ routes: { 'GET /api/drills/counters': { counters: [] }, 'POST /api/drills/measure-words/words': { words: [], pools: {} } } });
+	// A language no registered drill applies to (Japanese has the counter drills of #179 and the look-alike kana sets
+	// of #228): the sample drill alone.
+	ctx = testContext();
 	recorded = [];
 	localStorage.setItem(DEV_DRILLS_KEY, 'sample');
-	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'ja', name: 'ja' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'es', name: 'es' } as never });
 	vi.mocked(loadStudyHistory).mockResolvedValue(history());
 	vi.spyOn(ctx.session.outbox, 'recordEvent').mockImplementation(async (event) => {
 		recorded.push(event);

@@ -295,6 +295,22 @@ describe('entry extras and the not-found state (#104)', () => {
 		expect(container.textContent).toContain('In 1 deck');
 	});
 
+	it('names the look-alikes of a character, each a link to its search (#228)', async () => {
+		getEntryMock.mockResolvedValue(entry({ kind: 'character', written: '未', readings: [{ type: 'pinyin', value: 'wèi', plain: 'wei4', ord: 0 }] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		const heading = await screen.findByRole('heading', { name: 'Easily confused with' });
+		const link = within(heading.closest('section')!).getByRole('link', { name: '末' });
+		expect(link.getAttribute('href')).toBe(`/search?q=${encodeURIComponent('末')}`);
+		expect(link.getAttribute('lang')).toBe('zh-Hans');
+	});
+
+	it('names no look-alikes for a word without one (#228)', async () => {
+		getEntryMock.mockResolvedValue(entry());
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		await screen.findByRole('heading', { name: '勤奋' });
+		expect(screen.queryByRole('heading', { name: 'Easily confused with' })).toBeNull();
+	});
+
 	it('renders the not-found state at the given heading level and links back to the search URL', async () => {
 		getEntryMock.mockRejectedValue(new ApiError(404, 'not found'));
 		render(EntryView, { props: {

@@ -191,6 +191,19 @@ teachers and an adjudicator for the table and its readings, two Chinese teachers
 notes: `server/internal/counters/table/REVIEW.md`); `humanReviewed` stays `false`. Credited on the Sources page under
 Practice.
 
+## Look-alike character sets (Practice, #228)
+
+`apps/web/src/lib/features/practice/lookAlikes/data/look-alikes-zh.json` and `look-alikes-ja.json` (bundled in the web
+app, loaded when the drill needs them) are the sets of the look-alike drill: 53 Chinese sets (simplified, traditional
+and both) and 56 Japanese sets (kana, kana/kanji and kanji), each character with its readings, a short meaning, an
+example word, and per set a note and the strokes that make the difference. The **project wrote them** (CC BY 4.0,
+credit "qinqin contributors, CC BY 4.0"); no third-party list was copied, and nothing is derived from the KanjiVG
+component index (CC BY-SA 3.0), Unihan or a dictionary. The bopomofo is the server's own conversion of the pinyin; the
+stroke counts and marks were checked against the Hanzi Writer stroke data (Arphic Public License; read in a test, not
+copied). The answer draws the highlights on the installed strokes packs at run time. **Reviewed by agents acting as
+teachers, not yet by a person** (two Chinese and two Japanese teachers and an adjudicator; notes:
+`lookAlikes/data/REVIEW.md`); `humanReviewed` stays `false`. Credited on the Sources page under Practice.
+
 ## Topic labels (courses, #220)
 
 `server/internal/topics/labels/zh.json` and `ja.json` (embedded in the server) give words their **topics** (49

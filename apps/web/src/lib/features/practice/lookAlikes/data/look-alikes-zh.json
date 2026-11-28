@@ -1,0 +1,3318 @@
+{
+	"version": 1,
+	"license": "CC-BY-4.0",
+	"attribution": "Look-alike character sets: the sets, the readings, meanings, example words and notes of their characters and the strokes the answer highlights, written for this project and reviewed by agents acting as teachers, not yet by a person (REVIEW.md). Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin).",
+	"humanReviewed": false,
+	"language": "zh",
+	"characters": {
+		"未": {
+			"pinyin": [
+				"wèi"
+			],
+			"bopomofo": [
+				"ㄨㄟˋ"
+			],
+			"meaning": "not yet",
+			"strokes": 5,
+			"example": {
+				"word": "未来",
+				"hant": "未來",
+				"pinyin": "wèi lái",
+				"bopomofo": "ㄨㄟˋ ㄌㄞˊ",
+				"meaning": "future"
+			}
+		},
+		"末": {
+			"pinyin": [
+				"mò"
+			],
+			"bopomofo": [
+				"ㄇㄛˋ"
+			],
+			"meaning": "end; tip",
+			"strokes": 5,
+			"example": {
+				"word": "周末",
+				"hant": "週末",
+				"pinyin": "zhōu mò",
+				"bopomofo": "ㄓㄡ ㄇㄛˋ",
+				"meaning": "weekend"
+			}
+		},
+		"己": {
+			"pinyin": [
+				"jǐ"
+			],
+			"bopomofo": [
+				"ㄐㄧˇ"
+			],
+			"meaning": "oneself",
+			"strokes": 3,
+			"example": {
+				"word": "自己",
+				"pinyin": "zì jǐ",
+				"bopomofo": "ㄗˋ ㄐㄧˇ",
+				"meaning": "oneself"
+			}
+		},
+		"已": {
+			"pinyin": [
+				"yǐ"
+			],
+			"bopomofo": [
+				"ㄧˇ"
+			],
+			"meaning": "already",
+			"strokes": 3,
+			"example": {
+				"word": "已经",
+				"hant": "已經",
+				"pinyin": "yǐ jīng",
+				"bopomofo": "ㄧˇ ㄐㄧㄥ",
+				"meaning": "already"
+			}
+		},
+		"人": {
+			"pinyin": [
+				"rén"
+			],
+			"bopomofo": [
+				"ㄖㄣˊ"
+			],
+			"meaning": "person",
+			"strokes": 2,
+			"example": {
+				"word": "大人",
+				"pinyin": "dà ren",
+				"bopomofo": "ㄉㄚˋ ㄖㄣ",
+				"meaning": "adult"
+			}
+		},
+		"入": {
+			"pinyin": [
+				"rù"
+			],
+			"bopomofo": [
+				"ㄖㄨˋ"
+			],
+			"meaning": "to enter",
+			"strokes": 2,
+			"example": {
+				"word": "收入",
+				"pinyin": "shōu rù",
+				"bopomofo": "ㄕㄡ ㄖㄨˋ",
+				"meaning": "income"
+			}
+		},
+		"八": {
+			"pinyin": [
+				"bā"
+			],
+			"bopomofo": [
+				"ㄅㄚ"
+			],
+			"meaning": "eight",
+			"strokes": 2,
+			"example": {
+				"word": "八月",
+				"pinyin": "bā yuè",
+				"bopomofo": "ㄅㄚ ㄩㄝˋ",
+				"meaning": "August"
+			}
+		},
+		"土": {
+			"pinyin": [
+				"tǔ"
+			],
+			"bopomofo": [
+				"ㄊㄨˇ"
+			],
+			"meaning": "earth; soil",
+			"strokes": 3,
+			"example": {
+				"word": "土地",
+				"pinyin": "tǔ dì",
+				"bopomofo": "ㄊㄨˇ ㄉㄧˋ",
+				"meaning": "land"
+			}
+		},
+		"士": {
+			"pinyin": [
+				"shì"
+			],
+			"bopomofo": [
+				"ㄕˋ"
+			],
+			"meaning": "scholar; soldier",
+			"strokes": 3,
+			"example": {
+				"word": "护士",
+				"hant": "護士",
+				"pinyin": "hù shi",
+				"bopomofo": "ㄏㄨˋ ㄕ",
+				"meaning": "nurse"
+			}
+		},
+		"鸟": {
+			"pinyin": [
+				"niǎo"
+			],
+			"bopomofo": [
+				"ㄋㄧㄠˇ"
+			],
+			"meaning": "bird",
+			"strokes": 5,
+			"example": {
+				"word": "小鸟",
+				"pinyin": "xiǎo niǎo",
+				"bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+				"meaning": "little bird"
+			}
+		},
+		"乌": {
+			"pinyin": [
+				"wū"
+			],
+			"bopomofo": [
+				"ㄨ"
+			],
+			"meaning": "crow; black",
+			"strokes": 4,
+			"example": {
+				"word": "乌龟",
+				"pinyin": "wū guī",
+				"bopomofo": "ㄨ ㄍㄨㄟ",
+				"meaning": "tortoise"
+			}
+		},
+		"鳥": {
+			"pinyin": [
+				"niǎo"
+			],
+			"bopomofo": [
+				"ㄋㄧㄠˇ"
+			],
+			"meaning": "bird",
+			"strokes": 11,
+			"example": {
+				"word": "小鳥",
+				"pinyin": "xiǎo niǎo",
+				"bopomofo": "ㄒㄧㄠˇ ㄋㄧㄠˇ",
+				"meaning": "little bird"
+			}
+		},
+		"烏": {
+			"pinyin": [
+				"wū"
+			],
+			"bopomofo": [
+				"ㄨ"
+			],
+			"meaning": "crow; black",
+			"strokes": 10,
+			"example": {
+				"word": "烏龜",
+				"pinyin": "wū guī",
+				"bopomofo": "ㄨ ㄍㄨㄟ",
+				"meaning": "tortoise"
+			}
+		},
+		"天": {
+			"pinyin": [
+				"tiān"
+			],
+			"bopomofo": [
+				"ㄊㄧㄢ"
+			],
+			"meaning": "sky; day",
+			"strokes": 4,
+			"example": {
+				"word": "天气",
+				"hant": "天氣",
+				"pinyin": "tiān qì",
+				"bopomofo": "ㄊㄧㄢ ㄑㄧˋ",
+				"meaning": "weather"
+			}
+		},
+		"夫": {
+			"pinyin": [
+				"fū"
+			],
+			"bopomofo": [
+				"ㄈㄨ"
+			],
+			"meaning": "man; husband",
+			"strokes": 4,
+			"example": {
+				"word": "丈夫",
+				"pinyin": "zhàng fu",
+				"bopomofo": "ㄓㄤˋ ㄈㄨ",
+				"meaning": "husband"
+			}
+		},
+		"大": {
+			"pinyin": [
+				"dà"
+			],
+			"bopomofo": [
+				"ㄉㄚˋ"
+			],
+			"meaning": "big",
+			"strokes": 3,
+			"example": {
+				"word": "大家",
+				"pinyin": "dà jiā",
+				"bopomofo": "ㄉㄚˋ ㄐㄧㄚ",
+				"meaning": "everybody"
+			}
+		},
+		"太": {
+			"pinyin": [
+				"tài"
+			],
+			"bopomofo": [
+				"ㄊㄞˋ"
+			],
+			"meaning": "too; extremely",
+			"strokes": 4,
+			"example": {
+				"word": "太阳",
+				"hant": "太陽",
+				"pinyin": "tài yáng",
+				"bopomofo": "ㄊㄞˋ ㄧㄤˊ",
+				"meaning": "sun"
+			}
+		},
+		"犬": {
+			"pinyin": [
+				"quǎn"
+			],
+			"bopomofo": [
+				"ㄑㄩㄢˇ"
+			],
+			"meaning": "dog",
+			"strokes": 4,
+			"example": {
+				"word": "警犬",
+				"pinyin": "jǐng quǎn",
+				"bopomofo": "ㄐㄧㄥˇ ㄑㄩㄢˇ",
+				"meaning": "police dog"
+			}
+		},
+		"王": {
+			"pinyin": [
+				"wáng"
+			],
+			"bopomofo": [
+				"ㄨㄤˊ"
+			],
+			"meaning": "king",
+			"strokes": 4,
+			"example": {
+				"word": "国王",
+				"hant": "國王",
+				"pinyin": "guó wáng",
+				"bopomofo": "ㄍㄨㄛˊ ㄨㄤˊ",
+				"meaning": "king"
+			}
+		},
+		"玉": {
+			"pinyin": [
+				"yù"
+			],
+			"bopomofo": [
+				"ㄩˋ"
+			],
+			"meaning": "jade",
+			"strokes": 5,
+			"example": {
+				"word": "玉米",
+				"pinyin": "yù mǐ",
+				"bopomofo": "ㄩˋ ㄇㄧˇ",
+				"meaning": "corn"
+			}
+		},
+		"主": {
+			"pinyin": [
+				"zhǔ"
+			],
+			"bopomofo": [
+				"ㄓㄨˇ"
+			],
+			"meaning": "master; main",
+			"strokes": 5,
+			"example": {
+				"word": "主要",
+				"pinyin": "zhǔ yào",
+				"bopomofo": "ㄓㄨˇ ㄧㄠˋ",
+				"meaning": "main"
+			}
+		},
+		"刀": {
+			"pinyin": [
+				"dāo"
+			],
+			"bopomofo": [
+				"ㄉㄠ"
+			],
+			"meaning": "knife",
+			"strokes": 2,
+			"example": {
+				"word": "菜刀",
+				"pinyin": "cài dāo",
+				"bopomofo": "ㄘㄞˋ ㄉㄠ",
+				"meaning": "kitchen knife"
+			}
+		},
+		"力": {
+			"pinyin": [
+				"lì"
+			],
+			"bopomofo": [
+				"ㄌㄧˋ"
+			],
+			"meaning": "strength",
+			"strokes": 2,
+			"example": {
+				"word": "努力",
+				"pinyin": "nǔ lì",
+				"bopomofo": "ㄋㄨˇ ㄌㄧˋ",
+				"meaning": "to make an effort"
+			}
+		},
+		"刃": {
+			"pinyin": [
+				"rèn"
+			],
+			"bopomofo": [
+				"ㄖㄣˋ"
+			],
+			"meaning": "blade; edge",
+			"strokes": 3,
+			"example": {
+				"word": "刀刃",
+				"pinyin": "dāo rèn",
+				"bopomofo": "ㄉㄠ ㄖㄣˋ",
+				"meaning": "knife edge"
+			}
+		},
+		"午": {
+			"pinyin": [
+				"wǔ"
+			],
+			"bopomofo": [
+				"ㄨˇ"
+			],
+			"meaning": "noon",
+			"strokes": 4,
+			"example": {
+				"word": "中午",
+				"pinyin": "zhōng wǔ",
+				"bopomofo": "ㄓㄨㄥ ㄨˇ",
+				"meaning": "noon"
+			}
+		},
+		"牛": {
+			"pinyin": [
+				"niú"
+			],
+			"bopomofo": [
+				"ㄋㄧㄡˊ"
+			],
+			"meaning": "cow; ox",
+			"strokes": 4,
+			"example": {
+				"word": "牛奶",
+				"pinyin": "niú nǎi",
+				"bopomofo": "ㄋㄧㄡˊ ㄋㄞˇ",
+				"meaning": "milk"
+			}
+		},
+		"千": {
+			"pinyin": [
+				"qiān"
+			],
+			"bopomofo": [
+				"ㄑㄧㄢ"
+			],
+			"meaning": "thousand",
+			"strokes": 3,
+			"example": {
+				"word": "千万",
+				"pinyin": "qiān wàn",
+				"bopomofo": "ㄑㄧㄢ ㄨㄢˋ",
+				"meaning": "ten million; by all means"
+			}
+		},
+		"干": {
+			"pinyin": [
+				"gān",
+				"gàn"
+			],
+			"bopomofo": [
+				"ㄍㄢ",
+				"ㄍㄢˋ"
+			],
+			"meaning": "dry; to do",
+			"strokes": 3,
+			"example": {
+				"word": "干净",
+				"pinyin": "gān jìng",
+				"bopomofo": "ㄍㄢ ㄐㄧㄥˋ",
+				"meaning": "clean"
+			}
+		},
+		"于": {
+			"pinyin": [
+				"yú"
+			],
+			"bopomofo": [
+				"ㄩˊ"
+			],
+			"meaning": "at; in",
+			"strokes": 3,
+			"example": {
+				"word": "于是",
+				"pinyin": "yú shì",
+				"bopomofo": "ㄩˊ ㄕˋ",
+				"meaning": "so; thereupon"
+			}
+		},
+		"目": {
+			"pinyin": [
+				"mù"
+			],
+			"bopomofo": [
+				"ㄇㄨˋ"
+			],
+			"meaning": "eye",
+			"strokes": 5,
+			"example": {
+				"word": "题目",
+				"hant": "題目",
+				"pinyin": "tí mù",
+				"bopomofo": "ㄊㄧˊ ㄇㄨˋ",
+				"meaning": "title; question"
+			}
+		},
+		"自": {
+			"pinyin": [
+				"zì"
+			],
+			"bopomofo": [
+				"ㄗˋ"
+			],
+			"meaning": "self; from",
+			"strokes": 6,
+			"example": {
+				"word": "自行车",
+				"hant": "自行車",
+				"pinyin": "zì xíng chē",
+				"bopomofo": "ㄗˋ ㄒㄧㄥˊ ㄔㄜ",
+				"meaning": "bicycle"
+			}
+		},
+		"白": {
+			"pinyin": [
+				"bái"
+			],
+			"bopomofo": [
+				"ㄅㄞˊ"
+			],
+			"meaning": "white",
+			"strokes": 5,
+			"example": {
+				"word": "明白",
+				"pinyin": "míng bai",
+				"bopomofo": "ㄇㄧㄥˊ ㄅㄞ",
+				"meaning": "to understand"
+			}
+		},
+		"百": {
+			"pinyin": [
+				"bǎi"
+			],
+			"bopomofo": [
+				"ㄅㄞˇ"
+			],
+			"meaning": "hundred",
+			"strokes": 6,
+			"example": {
+				"word": "一百",
+				"pinyin": "yī bǎi",
+				"bopomofo": "ㄧ ㄅㄞˇ",
+				"meaning": "one hundred"
+			}
+		},
+		"贝": {
+			"pinyin": [
+				"bèi"
+			],
+			"bopomofo": [
+				"ㄅㄟˋ"
+			],
+			"meaning": "shell",
+			"strokes": 4,
+			"example": {
+				"word": "宝贝",
+				"pinyin": "bǎo bèi",
+				"bopomofo": "ㄅㄠˇ ㄅㄟˋ",
+				"meaning": "treasure; darling"
+			}
+		},
+		"见": {
+			"pinyin": [
+				"jiàn"
+			],
+			"bopomofo": [
+				"ㄐㄧㄢˋ"
+			],
+			"meaning": "to see",
+			"strokes": 4,
+			"example": {
+				"word": "再见",
+				"pinyin": "zài jiàn",
+				"bopomofo": "ㄗㄞˋ ㄐㄧㄢˋ",
+				"meaning": "goodbye"
+			}
+		},
+		"貝": {
+			"pinyin": [
+				"bèi"
+			],
+			"bopomofo": [
+				"ㄅㄟˋ"
+			],
+			"meaning": "shell",
+			"strokes": 7,
+			"example": {
+				"word": "寶貝",
+				"pinyin": "bǎo bèi",
+				"bopomofo": "ㄅㄠˇ ㄅㄟˋ",
+				"meaning": "treasure; darling"
+			}
+		},
+		"見": {
+			"pinyin": [
+				"jiàn"
+			],
+			"bopomofo": [
+				"ㄐㄧㄢˋ"
+			],
+			"meaning": "to see",
+			"strokes": 7,
+			"example": {
+				"word": "再見",
+				"pinyin": "zài jiàn",
+				"bopomofo": "ㄗㄞˋ ㄐㄧㄢˋ",
+				"meaning": "goodbye"
+			}
+		},
+		"问": {
+			"pinyin": [
+				"wèn"
+			],
+			"bopomofo": [
+				"ㄨㄣˋ"
+			],
+			"meaning": "to ask",
+			"strokes": 6,
+			"example": {
+				"word": "问题",
+				"pinyin": "wèn tí",
+				"bopomofo": "ㄨㄣˋ ㄊㄧˊ",
+				"meaning": "question"
+			}
+		},
+		"间": {
+			"pinyin": [
+				"jiān"
+			],
+			"bopomofo": [
+				"ㄐㄧㄢ"
+			],
+			"meaning": "between; room",
+			"strokes": 7,
+			"example": {
+				"word": "时间",
+				"pinyin": "shí jiān",
+				"bopomofo": "ㄕˊ ㄐㄧㄢ",
+				"meaning": "time"
+			}
+		},
+		"問": {
+			"pinyin": [
+				"wèn"
+			],
+			"bopomofo": [
+				"ㄨㄣˋ"
+			],
+			"meaning": "to ask",
+			"strokes": 11,
+			"example": {
+				"word": "問題",
+				"pinyin": "wèn tí",
+				"bopomofo": "ㄨㄣˋ ㄊㄧˊ",
+				"meaning": "question"
+			}
+		},
+		"間": {
+			"pinyin": [
+				"jiān"
+			],
+			"bopomofo": [
+				"ㄐㄧㄢ"
+			],
+			"meaning": "between; room",
+			"strokes": 12,
+			"example": {
+				"word": "時間",
+				"pinyin": "shí jiān",
+				"bopomofo": "ㄕˊ ㄐㄧㄢ",
+				"meaning": "time"
+			}
+		},
+		"体": {
+			"pinyin": [
+				"tǐ"
+			],
+			"bopomofo": [
+				"ㄊㄧˇ"
+			],
+			"meaning": "body",
+			"strokes": 7,
+			"example": {
+				"word": "身体",
+				"pinyin": "shēn tǐ",
+				"bopomofo": "ㄕㄣ ㄊㄧˇ",
+				"meaning": "body"
+			}
+		},
+		"休": {
+			"pinyin": [
+				"xiū"
+			],
+			"bopomofo": [
+				"ㄒㄧㄡ"
+			],
+			"meaning": "to rest",
+			"strokes": 6,
+			"example": {
+				"word": "休息",
+				"pinyin": "xiū xi",
+				"bopomofo": "ㄒㄧㄡ ㄒㄧ",
+				"meaning": "to rest"
+			}
+		},
+		"今": {
+			"pinyin": [
+				"jīn"
+			],
+			"bopomofo": [
+				"ㄐㄧㄣ"
+			],
+			"meaning": "now; today",
+			"strokes": 4,
+			"example": {
+				"word": "今年",
+				"pinyin": "jīn nián",
+				"bopomofo": "ㄐㄧㄣ ㄋㄧㄢˊ",
+				"meaning": "this year"
+			}
+		},
+		"令": {
+			"pinyin": [
+				"lìng"
+			],
+			"bopomofo": [
+				"ㄌㄧㄥˋ"
+			],
+			"meaning": "order; command",
+			"strokes": 5,
+			"example": {
+				"word": "命令",
+				"pinyin": "mìng lìng",
+				"bopomofo": "ㄇㄧㄥˋ ㄌㄧㄥˋ",
+				"meaning": "order"
+			}
+		},
+		"买": {
+			"pinyin": [
+				"mǎi"
+			],
+			"bopomofo": [
+				"ㄇㄞˇ"
+			],
+			"meaning": "to buy",
+			"strokes": 6,
+			"example": {
+				"word": "购买",
+				"pinyin": "gòu mǎi",
+				"bopomofo": "ㄍㄡˋ ㄇㄞˇ",
+				"meaning": "to purchase"
+			}
+		},
+		"卖": {
+			"pinyin": [
+				"mài"
+			],
+			"bopomofo": [
+				"ㄇㄞˋ"
+			],
+			"meaning": "to sell",
+			"strokes": 8,
+			"example": {
+				"word": "外卖",
+				"pinyin": "wài mài",
+				"bopomofo": "ㄨㄞˋ ㄇㄞˋ",
+				"meaning": "takeaway"
+			}
+		},
+		"買": {
+			"pinyin": [
+				"mǎi"
+			],
+			"bopomofo": [
+				"ㄇㄞˇ"
+			],
+			"meaning": "to buy",
+			"strokes": 12,
+			"example": {
+				"word": "購買",
+				"pinyin": "gòu mǎi",
+				"bopomofo": "ㄍㄡˋ ㄇㄞˇ",
+				"meaning": "to purchase"
+			}
+		},
+		"賣": {
+			"pinyin": [
+				"mài"
+			],
+			"bopomofo": [
+				"ㄇㄞˋ"
+			],
+			"meaning": "to sell",
+			"strokes": 15,
+			"example": {
+				"word": "拍賣",
+				"pinyin": "pāi mài",
+				"bopomofo": "ㄆㄞ ㄇㄞˋ",
+				"meaning": "auction"
+			}
+		},
+		"冰": {
+			"pinyin": [
+				"bīng"
+			],
+			"bopomofo": [
+				"ㄅㄧㄥ"
+			],
+			"meaning": "ice",
+			"strokes": 6,
+			"example": {
+				"word": "冰块",
+				"hant": "冰塊",
+				"pinyin": "bīng kuài",
+				"bopomofo": "ㄅㄧㄥ ㄎㄨㄞˋ",
+				"meaning": "ice cube"
+			}
+		},
+		"水": {
+			"pinyin": [
+				"shuǐ"
+			],
+			"bopomofo": [
+				"ㄕㄨㄟˇ"
+			],
+			"meaning": "water",
+			"strokes": 4,
+			"example": {
+				"word": "水果",
+				"pinyin": "shuǐ guǒ",
+				"bopomofo": "ㄕㄨㄟˇ ㄍㄨㄛˇ",
+				"meaning": "fruit"
+			}
+		},
+		"永": {
+			"pinyin": [
+				"yǒng"
+			],
+			"bopomofo": [
+				"ㄩㄥˇ"
+			],
+			"meaning": "forever",
+			"strokes": 5,
+			"example": {
+				"word": "永远",
+				"hant": "永遠",
+				"pinyin": "yǒng yuǎn",
+				"bopomofo": "ㄩㄥˇ ㄩㄢˇ",
+				"meaning": "forever"
+			}
+		},
+		"喝": {
+			"pinyin": [
+				"hē"
+			],
+			"bopomofo": [
+				"ㄏㄜ"
+			],
+			"meaning": "to drink",
+			"strokes": 12,
+			"example": {
+				"word": "喝茶",
+				"pinyin": "hē chá",
+				"bopomofo": "ㄏㄜ ㄔㄚˊ",
+				"meaning": "to drink tea"
+			}
+		},
+		"渴": {
+			"pinyin": [
+				"kě"
+			],
+			"bopomofo": [
+				"ㄎㄜˇ"
+			],
+			"meaning": "thirsty",
+			"strokes": 12,
+			"example": {
+				"word": "口渴",
+				"pinyin": "kǒu kě",
+				"bopomofo": "ㄎㄡˇ ㄎㄜˇ",
+				"meaning": "thirsty"
+			}
+		},
+		"晴": {
+			"pinyin": [
+				"qíng"
+			],
+			"bopomofo": [
+				"ㄑㄧㄥˊ"
+			],
+			"meaning": "sunny",
+			"strokes": 12,
+			"example": {
+				"word": "晴天",
+				"pinyin": "qíng tiān",
+				"bopomofo": "ㄑㄧㄥˊ ㄊㄧㄢ",
+				"meaning": "sunny day"
+			}
+		},
+		"睛": {
+			"pinyin": [
+				"jīng"
+			],
+			"bopomofo": [
+				"ㄐㄧㄥ"
+			],
+			"meaning": "eyeball",
+			"strokes": 13,
+			"example": {
+				"word": "眼睛",
+				"pinyin": "yǎn jing",
+				"bopomofo": "ㄧㄢˇ ㄐㄧㄥ",
+				"meaning": "eye"
+			}
+		},
+		"情": {
+			"pinyin": [
+				"qíng"
+			],
+			"bopomofo": [
+				"ㄑㄧㄥˊ"
+			],
+			"meaning": "feeling",
+			"strokes": 11,
+			"example": {
+				"word": "事情",
+				"pinyin": "shì qing",
+				"bopomofo": "ㄕˋ ㄑㄧㄥ",
+				"meaning": "matter; thing"
+			}
+		},
+		"清": {
+			"pinyin": [
+				"qīng"
+			],
+			"bopomofo": [
+				"ㄑㄧㄥ"
+			],
+			"meaning": "clear",
+			"strokes": 11,
+			"example": {
+				"word": "清楚",
+				"pinyin": "qīng chu",
+				"bopomofo": "ㄑㄧㄥ ㄔㄨ",
+				"meaning": "clear"
+			}
+		},
+		"请": {
+			"pinyin": [
+				"qǐng"
+			],
+			"bopomofo": [
+				"ㄑㄧㄥˇ"
+			],
+			"meaning": "please; to invite",
+			"strokes": 10,
+			"example": {
+				"word": "请问",
+				"pinyin": "qǐng wèn",
+				"bopomofo": "ㄑㄧㄥˇ ㄨㄣˋ",
+				"meaning": "excuse me, may I ask"
+			}
+		},
+		"請": {
+			"pinyin": [
+				"qǐng"
+			],
+			"bopomofo": [
+				"ㄑㄧㄥˇ"
+			],
+			"meaning": "please; to invite",
+			"strokes": 15,
+			"example": {
+				"word": "請問",
+				"pinyin": "qǐng wèn",
+				"bopomofo": "ㄑㄧㄥˇ ㄨㄣˋ",
+				"meaning": "excuse me, may I ask"
+			}
+		},
+		"住": {
+			"pinyin": [
+				"zhù"
+			],
+			"bopomofo": [
+				"ㄓㄨˋ"
+			],
+			"meaning": "to live (somewhere)",
+			"strokes": 7,
+			"example": {
+				"word": "住院",
+				"pinyin": "zhù yuàn",
+				"bopomofo": "ㄓㄨˋ ㄩㄢˋ",
+				"meaning": "to be in hospital"
+			}
+		},
+		"往": {
+			"pinyin": [
+				"wǎng"
+			],
+			"bopomofo": [
+				"ㄨㄤˇ"
+			],
+			"meaning": "to go; towards",
+			"strokes": 8,
+			"example": {
+				"word": "来往",
+				"hant": "來往",
+				"pinyin": "lái wǎng",
+				"bopomofo": "ㄌㄞˊ ㄨㄤˇ",
+				"meaning": "to come and go; contact"
+			}
+		},
+		"注": {
+			"pinyin": [
+				"zhù"
+			],
+			"bopomofo": [
+				"ㄓㄨˋ"
+			],
+			"meaning": "to pour; to note",
+			"strokes": 8,
+			"example": {
+				"word": "注意",
+				"pinyin": "zhù yì",
+				"bopomofo": "ㄓㄨˋ ㄧˋ",
+				"meaning": "to pay attention"
+			}
+		},
+		"找": {
+			"pinyin": [
+				"zhǎo"
+			],
+			"bopomofo": [
+				"ㄓㄠˇ"
+			],
+			"meaning": "to look for",
+			"strokes": 7,
+			"example": {
+				"word": "找到",
+				"pinyin": "zhǎo dào",
+				"bopomofo": "ㄓㄠˇ ㄉㄠˋ",
+				"meaning": "to find"
+			}
+		},
+		"我": {
+			"pinyin": [
+				"wǒ"
+			],
+			"bopomofo": [
+				"ㄨㄛˇ"
+			],
+			"meaning": "I; me",
+			"strokes": 7,
+			"example": {
+				"word": "我们",
+				"hant": "我們",
+				"pinyin": "wǒ men",
+				"bopomofo": "ㄨㄛˇ ㄇㄣ",
+				"meaning": "we"
+			}
+		},
+		"毛": {
+			"pinyin": [
+				"máo"
+			],
+			"bopomofo": [
+				"ㄇㄠˊ"
+			],
+			"meaning": "hair; fur",
+			"strokes": 4,
+			"example": {
+				"word": "毛衣",
+				"pinyin": "máo yī",
+				"bopomofo": "ㄇㄠˊ ㄧ",
+				"meaning": "sweater"
+			}
+		},
+		"手": {
+			"pinyin": [
+				"shǒu"
+			],
+			"bopomofo": [
+				"ㄕㄡˇ"
+			],
+			"meaning": "hand",
+			"strokes": 4,
+			"example": {
+				"word": "手机",
+				"hant": "手機",
+				"pinyin": "shǒu jī",
+				"bopomofo": "ㄕㄡˇ ㄐㄧ",
+				"meaning": "mobile phone"
+			}
+		},
+		"免": {
+			"pinyin": [
+				"miǎn"
+			],
+			"bopomofo": [
+				"ㄇㄧㄢˇ"
+			],
+			"meaning": "to avoid; free of",
+			"strokes": 7,
+			"example": {
+				"word": "免费",
+				"hant": "免費",
+				"pinyin": "miǎn fèi",
+				"bopomofo": "ㄇㄧㄢˇ ㄈㄟˋ",
+				"meaning": "free of charge"
+			}
+		},
+		"兔": {
+			"pinyin": [
+				"tù"
+			],
+			"bopomofo": [
+				"ㄊㄨˋ"
+			],
+			"meaning": "rabbit",
+			"strokes": 8,
+			"example": {
+				"word": "兔子",
+				"pinyin": "tù zi",
+				"bopomofo": "ㄊㄨˋ ㄗ",
+				"meaning": "rabbit"
+			}
+		},
+		"第": {
+			"pinyin": [
+				"dì"
+			],
+			"bopomofo": [
+				"ㄉㄧˋ"
+			],
+			"meaning": "ordinal prefix (first, second …)",
+			"strokes": 11,
+			"example": {
+				"word": "第一",
+				"pinyin": "dì yī",
+				"bopomofo": "ㄉㄧˋ ㄧ",
+				"meaning": "first"
+			}
+		},
+		"弟": {
+			"pinyin": [
+				"dì"
+			],
+			"bopomofo": [
+				"ㄉㄧˋ"
+			],
+			"meaning": "younger brother",
+			"strokes": 7,
+			"example": {
+				"word": "兄弟",
+				"pinyin": "xiōng dì",
+				"bopomofo": "ㄒㄩㄥ ㄉㄧˋ",
+				"meaning": "brothers"
+			}
+		},
+		"象": {
+			"pinyin": [
+				"xiàng"
+			],
+			"bopomofo": [
+				"ㄒㄧㄤˋ"
+			],
+			"meaning": "elephant",
+			"strokes": 11,
+			"example": {
+				"word": "大象",
+				"pinyin": "dà xiàng",
+				"bopomofo": "ㄉㄚˋ ㄒㄧㄤˋ",
+				"meaning": "elephant"
+			}
+		},
+		"像": {
+			"pinyin": [
+				"xiàng"
+			],
+			"bopomofo": [
+				"ㄒㄧㄤˋ"
+			],
+			"meaning": "to look like; likeness",
+			"strokes": 13,
+			"example": {
+				"word": "雕像",
+				"pinyin": "diāo xiàng",
+				"bopomofo": "ㄉㄧㄠ ㄒㄧㄤˋ",
+				"meaning": "statue"
+			}
+		},
+		"木": {
+			"pinyin": [
+				"mù"
+			],
+			"bopomofo": [
+				"ㄇㄨˋ"
+			],
+			"meaning": "wood; tree",
+			"strokes": 4,
+			"example": {
+				"word": "木头",
+				"pinyin": "mù tou",
+				"bopomofo": "ㄇㄨˋ ㄊㄡ",
+				"meaning": "wood"
+			}
+		},
+		"本": {
+			"pinyin": [
+				"běn"
+			],
+			"bopomofo": [
+				"ㄅㄣˇ"
+			],
+			"meaning": "root; measure word for books",
+			"strokes": 5,
+			"example": {
+				"word": "本子",
+				"pinyin": "běn zi",
+				"bopomofo": "ㄅㄣˇ ㄗ",
+				"meaning": "notebook"
+			}
+		},
+		"术": {
+			"pinyin": [
+				"shù"
+			],
+			"bopomofo": [
+				"ㄕㄨˋ"
+			],
+			"meaning": "skill; art",
+			"strokes": 5,
+			"example": {
+				"word": "美术",
+				"pinyin": "měi shù",
+				"bopomofo": "ㄇㄟˇ ㄕㄨˋ",
+				"meaning": "fine arts"
+			}
+		},
+		"田": {
+			"pinyin": [
+				"tián"
+			],
+			"bopomofo": [
+				"ㄊㄧㄢˊ"
+			],
+			"meaning": "field",
+			"strokes": 5,
+			"example": {
+				"word": "田野",
+				"pinyin": "tián yě",
+				"bopomofo": "ㄊㄧㄢˊ ㄧㄝˇ",
+				"meaning": "fields; countryside"
+			}
+		},
+		"由": {
+			"pinyin": [
+				"yóu"
+			],
+			"bopomofo": [
+				"ㄧㄡˊ"
+			],
+			"meaning": "from; by",
+			"strokes": 5,
+			"example": {
+				"word": "自由",
+				"pinyin": "zì yóu",
+				"bopomofo": "ㄗˋ ㄧㄡˊ",
+				"meaning": "freedom"
+			}
+		},
+		"甲": {
+			"pinyin": [
+				"jiǎ"
+			],
+			"bopomofo": [
+				"ㄐㄧㄚˇ"
+			],
+			"meaning": "first; shell",
+			"strokes": 5,
+			"example": {
+				"word": "指甲",
+				"pinyin": "zhǐ jia",
+				"bopomofo": "ㄓˇ ㄐㄧㄚ",
+				"meaning": "fingernail"
+			}
+		},
+		"申": {
+			"pinyin": [
+				"shēn"
+			],
+			"bopomofo": [
+				"ㄕㄣ"
+			],
+			"meaning": "to state",
+			"strokes": 5,
+			"example": {
+				"word": "申请",
+				"hant": "申請",
+				"pinyin": "shēn qǐng",
+				"bopomofo": "ㄕㄣ ㄑㄧㄥˇ",
+				"meaning": "to apply"
+			}
+		},
+		"小": {
+			"pinyin": [
+				"xiǎo"
+			],
+			"bopomofo": [
+				"ㄒㄧㄠˇ"
+			],
+			"meaning": "small",
+			"strokes": 3,
+			"example": {
+				"word": "小心",
+				"pinyin": "xiǎo xīn",
+				"bopomofo": "ㄒㄧㄠˇ ㄒㄧㄣ",
+				"meaning": "careful"
+			}
+		},
+		"少": {
+			"pinyin": [
+				"shǎo"
+			],
+			"bopomofo": [
+				"ㄕㄠˇ"
+			],
+			"meaning": "few; little",
+			"strokes": 4,
+			"example": {
+				"word": "多少",
+				"pinyin": "duō shao",
+				"bopomofo": "ㄉㄨㄛ ㄕㄠ",
+				"meaning": "how many"
+			}
+		},
+		"儿": {
+			"pinyin": [
+				"ér"
+			],
+			"bopomofo": [
+				"ㄦˊ"
+			],
+			"meaning": "child; son",
+			"strokes": 2,
+			"example": {
+				"word": "儿子",
+				"pinyin": "ér zi",
+				"bopomofo": "ㄦˊ ㄗ",
+				"meaning": "son"
+			}
+		},
+		"几": {
+			"pinyin": [
+				"jǐ"
+			],
+			"bopomofo": [
+				"ㄐㄧˇ"
+			],
+			"meaning": "how many; a few",
+			"strokes": 2,
+			"example": {
+				"word": "几个",
+				"pinyin": "jǐ ge",
+				"bopomofo": "ㄐㄧˇ ㄍㄜ",
+				"meaning": "how many; a few"
+			}
+		},
+		"考": {
+			"pinyin": [
+				"kǎo"
+			],
+			"bopomofo": [
+				"ㄎㄠˇ"
+			],
+			"meaning": "to test",
+			"strokes": 6,
+			"example": {
+				"word": "考试",
+				"hant": "考試",
+				"pinyin": "kǎo shì",
+				"bopomofo": "ㄎㄠˇ ㄕˋ",
+				"meaning": "exam"
+			}
+		},
+		"老": {
+			"pinyin": [
+				"lǎo"
+			],
+			"bopomofo": [
+				"ㄌㄠˇ"
+			],
+			"meaning": "old",
+			"strokes": 6,
+			"example": {
+				"word": "老师",
+				"hant": "老師",
+				"pinyin": "lǎo shī",
+				"bopomofo": "ㄌㄠˇ ㄕ",
+				"meaning": "teacher"
+			}
+		},
+		"季": {
+			"pinyin": [
+				"jì"
+			],
+			"bopomofo": [
+				"ㄐㄧˋ"
+			],
+			"meaning": "season",
+			"strokes": 8,
+			"example": {
+				"word": "季节",
+				"hant": "季節",
+				"pinyin": "jì jié",
+				"bopomofo": "ㄐㄧˋ ㄐㄧㄝˊ",
+				"meaning": "season"
+			}
+		},
+		"李": {
+			"pinyin": [
+				"lǐ"
+			],
+			"bopomofo": [
+				"ㄌㄧˇ"
+			],
+			"meaning": "plum; a surname",
+			"strokes": 7,
+			"example": {
+				"word": "行李",
+				"pinyin": "xíng li",
+				"bopomofo": "ㄒㄧㄥˊ ㄌㄧ",
+				"meaning": "luggage"
+			}
+		},
+		"很": {
+			"pinyin": [
+				"hěn"
+			],
+			"bopomofo": [
+				"ㄏㄣˇ"
+			],
+			"meaning": "very",
+			"strokes": 9,
+			"example": {
+				"word": "很好",
+				"pinyin": "hěn hǎo",
+				"bopomofo": "ㄏㄣˇ ㄏㄠˇ",
+				"meaning": "very good"
+			}
+		},
+		"恨": {
+			"pinyin": [
+				"hèn"
+			],
+			"bopomofo": [
+				"ㄏㄣˋ"
+			],
+			"meaning": "to hate",
+			"strokes": 9,
+			"example": {
+				"word": "可恨",
+				"pinyin": "kě hèn",
+				"bopomofo": "ㄎㄜˇ ㄏㄣˋ",
+				"meaning": "hateful"
+			}
+		},
+		"待": {
+			"pinyin": [
+				"dài"
+			],
+			"bopomofo": [
+				"ㄉㄞˋ"
+			],
+			"meaning": "to wait; to treat",
+			"strokes": 9,
+			"example": {
+				"word": "等待",
+				"pinyin": "děng dài",
+				"bopomofo": "ㄉㄥˇ ㄉㄞˋ",
+				"meaning": "to wait"
+			}
+		},
+		"持": {
+			"pinyin": [
+				"chí"
+			],
+			"bopomofo": [
+				"ㄔˊ"
+			],
+			"meaning": "to hold",
+			"strokes": 9,
+			"example": {
+				"word": "支持",
+				"pinyin": "zhī chí",
+				"bopomofo": "ㄓ ㄔˊ",
+				"meaning": "to support"
+			}
+		},
+		"特": {
+			"pinyin": [
+				"tè"
+			],
+			"bopomofo": [
+				"ㄊㄜˋ"
+			],
+			"meaning": "special",
+			"strokes": 10,
+			"example": {
+				"word": "特别",
+				"hant": "特別",
+				"pinyin": "tè bié",
+				"bopomofo": "ㄊㄜˋ ㄅㄧㄝˊ",
+				"meaning": "special"
+			}
+		},
+		"学": {
+			"pinyin": [
+				"xué"
+			],
+			"bopomofo": [
+				"ㄒㄩㄝˊ"
+			],
+			"meaning": "to study",
+			"strokes": 8,
+			"example": {
+				"word": "学校",
+				"pinyin": "xué xiào",
+				"bopomofo": "ㄒㄩㄝˊ ㄒㄧㄠˋ",
+				"meaning": "school"
+			}
+		},
+		"觉": {
+			"pinyin": [
+				"jué"
+			],
+			"bopomofo": [
+				"ㄐㄩㄝˊ"
+			],
+			"meaning": "to feel",
+			"strokes": 9,
+			"example": {
+				"word": "感觉",
+				"pinyin": "gǎn jué",
+				"bopomofo": "ㄍㄢˇ ㄐㄩㄝˊ",
+				"meaning": "feeling"
+			}
+		},
+		"學": {
+			"pinyin": [
+				"xué"
+			],
+			"bopomofo": [
+				"ㄒㄩㄝˊ"
+			],
+			"meaning": "to study",
+			"strokes": 16,
+			"example": {
+				"word": "學校",
+				"pinyin": "xué xiào",
+				"bopomofo": "ㄒㄩㄝˊ ㄒㄧㄠˋ",
+				"meaning": "school"
+			}
+		},
+		"覺": {
+			"pinyin": [
+				"jué"
+			],
+			"bopomofo": [
+				"ㄐㄩㄝˊ"
+			],
+			"meaning": "to feel",
+			"strokes": 20,
+			"example": {
+				"word": "感覺",
+				"pinyin": "gǎn jué",
+				"bopomofo": "ㄍㄢˇ ㄐㄩㄝˊ",
+				"meaning": "feeling"
+			}
+		},
+		"包": {
+			"pinyin": [
+				"bāo"
+			],
+			"bopomofo": [
+				"ㄅㄠ"
+			],
+			"meaning": "to wrap; bag",
+			"strokes": 5,
+			"example": {
+				"word": "面包",
+				"hant": "麵包",
+				"pinyin": "miàn bāo",
+				"bopomofo": "ㄇㄧㄢˋ ㄅㄠ",
+				"meaning": "bread"
+			}
+		},
+		"饱": {
+			"pinyin": [
+				"bǎo"
+			],
+			"bopomofo": [
+				"ㄅㄠˇ"
+			],
+			"meaning": "full (after eating)",
+			"strokes": 8,
+			"example": {
+				"word": "吃饱",
+				"pinyin": "chī bǎo",
+				"bopomofo": "ㄔ ㄅㄠˇ",
+				"meaning": "to eat one’s fill"
+			}
+		},
+		"飽": {
+			"pinyin": [
+				"bǎo"
+			],
+			"bopomofo": [
+				"ㄅㄠˇ"
+			],
+			"meaning": "full (after eating)",
+			"strokes": 13,
+			"example": {
+				"word": "吃飽",
+				"pinyin": "chī bǎo",
+				"bopomofo": "ㄔ ㄅㄠˇ",
+				"meaning": "to eat one’s fill"
+			}
+		},
+		"跑": {
+			"pinyin": [
+				"pǎo"
+			],
+			"bopomofo": [
+				"ㄆㄠˇ"
+			],
+			"meaning": "to run",
+			"strokes": 12,
+			"example": {
+				"word": "跑步",
+				"pinyin": "pǎo bù",
+				"bopomofo": "ㄆㄠˇ ㄅㄨˋ",
+				"meaning": "to jog"
+			}
+		},
+		"抱": {
+			"pinyin": [
+				"bào"
+			],
+			"bopomofo": [
+				"ㄅㄠˋ"
+			],
+			"meaning": "to hold in the arms",
+			"strokes": 8,
+			"example": {
+				"word": "拥抱",
+				"hant": "擁抱",
+				"pinyin": "yōng bào",
+				"bopomofo": "ㄩㄥ ㄅㄠˋ",
+				"meaning": "to hug"
+			}
+		},
+		"跟": {
+			"pinyin": [
+				"gēn"
+			],
+			"bopomofo": [
+				"ㄍㄣ"
+			],
+			"meaning": "to follow; with",
+			"strokes": 13,
+			"example": {
+				"word": "跟上",
+				"pinyin": "gēn shàng",
+				"bopomofo": "ㄍㄣ ㄕㄤˋ",
+				"meaning": "to keep up"
+			}
+		},
+		"根": {
+			"pinyin": [
+				"gēn"
+			],
+			"bopomofo": [
+				"ㄍㄣ"
+			],
+			"meaning": "root",
+			"strokes": 10,
+			"example": {
+				"word": "根本",
+				"pinyin": "gēn běn",
+				"bopomofo": "ㄍㄣ ㄅㄣˇ",
+				"meaning": "at all; basic"
+			}
+		},
+		"眼": {
+			"pinyin": [
+				"yǎn"
+			],
+			"bopomofo": [
+				"ㄧㄢˇ"
+			],
+			"meaning": "eye",
+			"strokes": 11,
+			"example": {
+				"word": "眼泪",
+				"hant": "眼淚",
+				"pinyin": "yǎn lèi",
+				"bopomofo": "ㄧㄢˇ ㄌㄟˋ",
+				"meaning": "tears"
+			}
+		},
+		"银": {
+			"pinyin": [
+				"yín"
+			],
+			"bopomofo": [
+				"ㄧㄣˊ"
+			],
+			"meaning": "silver",
+			"strokes": 11,
+			"example": {
+				"word": "银行",
+				"pinyin": "yín háng",
+				"bopomofo": "ㄧㄣˊ ㄏㄤˊ",
+				"meaning": "bank"
+			}
+		},
+		"銀": {
+			"pinyin": [
+				"yín"
+			],
+			"bopomofo": [
+				"ㄧㄣˊ"
+			],
+			"meaning": "silver",
+			"strokes": 14,
+			"example": {
+				"word": "銀行",
+				"pinyin": "yín háng",
+				"bopomofo": "ㄧㄣˊ ㄏㄤˊ",
+				"meaning": "bank"
+			}
+		},
+		"东": {
+			"pinyin": [
+				"dōng"
+			],
+			"bopomofo": [
+				"ㄉㄨㄥ"
+			],
+			"meaning": "east",
+			"strokes": 5,
+			"example": {
+				"word": "东方",
+				"pinyin": "dōng fāng",
+				"bopomofo": "ㄉㄨㄥ ㄈㄤ",
+				"meaning": "the East"
+			}
+		},
+		"车": {
+			"pinyin": [
+				"chē"
+			],
+			"bopomofo": [
+				"ㄔㄜ"
+			],
+			"meaning": "vehicle",
+			"strokes": 4,
+			"example": {
+				"word": "火车",
+				"pinyin": "huǒ chē",
+				"bopomofo": "ㄏㄨㄛˇ ㄔㄜ",
+				"meaning": "train"
+			}
+		},
+		"東": {
+			"pinyin": [
+				"dōng"
+			],
+			"bopomofo": [
+				"ㄉㄨㄥ"
+			],
+			"meaning": "east",
+			"strokes": 8,
+			"example": {
+				"word": "東方",
+				"pinyin": "dōng fāng",
+				"bopomofo": "ㄉㄨㄥ ㄈㄤ",
+				"meaning": "the East"
+			}
+		},
+		"車": {
+			"pinyin": [
+				"chē"
+			],
+			"bopomofo": [
+				"ㄔㄜ"
+			],
+			"meaning": "vehicle",
+			"strokes": 7,
+			"example": {
+				"word": "火車",
+				"pinyin": "huǒ chē",
+				"bopomofo": "ㄏㄨㄛˇ ㄔㄜ",
+				"meaning": "train"
+			}
+		},
+		"看": {
+			"pinyin": [
+				"kàn"
+			],
+			"bopomofo": [
+				"ㄎㄢˋ"
+			],
+			"meaning": "to look",
+			"strokes": 9,
+			"example": {
+				"word": "看见",
+				"pinyin": "kàn jiàn",
+				"bopomofo": "ㄎㄢˋ ㄐㄧㄢˋ",
+				"meaning": "to see"
+			}
+		},
+		"着": {
+			"pinyin": [
+				"zhe"
+			],
+			"bopomofo": [
+				"ㄓㄜ"
+			],
+			"meaning": "-ing (aspect particle)",
+			"strokes": 11,
+			"example": {
+				"word": "接着",
+				"pinyin": "jiē zhe",
+				"bopomofo": "ㄐㄧㄝ ㄓㄜ",
+				"meaning": "next; then"
+			}
+		},
+		"妈": {
+			"pinyin": [
+				"mā"
+			],
+			"bopomofo": [
+				"ㄇㄚ"
+			],
+			"meaning": "mum",
+			"strokes": 6,
+			"example": {
+				"word": "爸妈",
+				"pinyin": "bà mā",
+				"bopomofo": "ㄅㄚˋ ㄇㄚ",
+				"meaning": "mum and dad"
+			}
+		},
+		"吗": {
+			"pinyin": [
+				"ma"
+			],
+			"bopomofo": [
+				"ㄇㄚ"
+			],
+			"meaning": "question particle",
+			"strokes": 6,
+			"example": {
+				"word": "是吗",
+				"pinyin": "shì ma",
+				"bopomofo": "ㄕˋ ㄇㄚ",
+				"meaning": "really?"
+			}
+		},
+		"码": {
+			"pinyin": [
+				"mǎ"
+			],
+			"bopomofo": [
+				"ㄇㄚˇ"
+			],
+			"meaning": "number; code",
+			"strokes": 8,
+			"example": {
+				"word": "号码",
+				"pinyin": "hào mǎ",
+				"bopomofo": "ㄏㄠˋ ㄇㄚˇ",
+				"meaning": "number"
+			}
+		},
+		"马": {
+			"pinyin": [
+				"mǎ"
+			],
+			"bopomofo": [
+				"ㄇㄚˇ"
+			],
+			"meaning": "horse",
+			"strokes": 3,
+			"example": {
+				"word": "马上",
+				"pinyin": "mǎ shàng",
+				"bopomofo": "ㄇㄚˇ ㄕㄤˋ",
+				"meaning": "at once"
+			}
+		},
+		"媽": {
+			"pinyin": [
+				"mā"
+			],
+			"bopomofo": [
+				"ㄇㄚ"
+			],
+			"meaning": "mum",
+			"strokes": 13,
+			"example": {
+				"word": "爸媽",
+				"pinyin": "bà mā",
+				"bopomofo": "ㄅㄚˋ ㄇㄚ",
+				"meaning": "mum and dad"
+			}
+		},
+		"嗎": {
+			"pinyin": [
+				"ma"
+			],
+			"bopomofo": [
+				"ㄇㄚ"
+			],
+			"meaning": "question particle",
+			"strokes": 13,
+			"example": {
+				"word": "是嗎",
+				"pinyin": "shì ma",
+				"bopomofo": "ㄕˋ ㄇㄚ",
+				"meaning": "really?"
+			}
+		},
+		"碼": {
+			"pinyin": [
+				"mǎ"
+			],
+			"bopomofo": [
+				"ㄇㄚˇ"
+			],
+			"meaning": "number; code",
+			"strokes": 15,
+			"example": {
+				"word": "號碼",
+				"pinyin": "hào mǎ",
+				"bopomofo": "ㄏㄠˋ ㄇㄚˇ",
+				"meaning": "number"
+			}
+		},
+		"馬": {
+			"pinyin": [
+				"mǎ"
+			],
+			"bopomofo": [
+				"ㄇㄚˇ"
+			],
+			"meaning": "horse",
+			"strokes": 10,
+			"example": {
+				"word": "馬上",
+				"pinyin": "mǎ shàng",
+				"bopomofo": "ㄇㄚˇ ㄕㄤˋ",
+				"meaning": "at once"
+			}
+		},
+		"孩": {
+			"pinyin": [
+				"hái"
+			],
+			"bopomofo": [
+				"ㄏㄞˊ"
+			],
+			"meaning": "child",
+			"strokes": 9,
+			"example": {
+				"word": "小孩",
+				"pinyin": "xiǎo hái",
+				"bopomofo": "ㄒㄧㄠˇ ㄏㄞˊ",
+				"meaning": "child"
+			}
+		},
+		"该": {
+			"pinyin": [
+				"gāi"
+			],
+			"bopomofo": [
+				"ㄍㄞ"
+			],
+			"meaning": "should",
+			"strokes": 8,
+			"example": {
+				"word": "应该",
+				"pinyin": "yīng gāi",
+				"bopomofo": "ㄧㄥ ㄍㄞ",
+				"meaning": "should"
+			}
+		},
+		"該": {
+			"pinyin": [
+				"gāi"
+			],
+			"bopomofo": [
+				"ㄍㄞ"
+			],
+			"meaning": "should",
+			"strokes": 13,
+			"example": {
+				"word": "應該",
+				"pinyin": "yīng gāi",
+				"bopomofo": "ㄧㄥ ㄍㄞ",
+				"meaning": "should"
+			}
+		},
+		"刻": {
+			"pinyin": [
+				"kè"
+			],
+			"bopomofo": [
+				"ㄎㄜˋ"
+			],
+			"meaning": "to carve; quarter of an hour",
+			"strokes": 8,
+			"example": {
+				"word": "立刻",
+				"pinyin": "lì kè",
+				"bopomofo": "ㄌㄧˋ ㄎㄜˋ",
+				"meaning": "at once"
+			}
+		}
+	},
+	"sets": [
+		{
+			"members": [
+				"未",
+				"末"
+			],
+			"notes": {
+				"未": "The upper horizontal is the shorter one.",
+				"末": "The upper horizontal is the longer one."
+			},
+			"marks": {
+				"未": [
+					0,
+					1
+				],
+				"末": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"己",
+				"已"
+			],
+			"notes": {
+				"己": "Open: the last stroke starts at the middle line.",
+				"已": "Half closed: the last stroke rises halfway up the left side."
+			},
+			"marks": {
+				"己": [
+					2
+				],
+				"已": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"人",
+				"入",
+				"八"
+			],
+			"notes": {
+				"人": "The left stroke is the long one; the right stroke leans on it.",
+				"入": "The right stroke is the long one.",
+				"八": "The two strokes do not touch."
+			},
+			"marks": {
+				"人": [
+					0
+				],
+				"入": [
+					1
+				],
+				"八": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"土",
+				"士"
+			],
+			"notes": {
+				"土": "The lower horizontal is the longer one.",
+				"士": "The upper horizontal is the longer one."
+			},
+			"marks": {
+				"土": [
+					0,
+					2
+				],
+				"士": [
+					0,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"鸟",
+				"乌"
+			],
+			"script": "Hans",
+			"notes": {
+				"鸟": "Has the dot: the bird’s eye.",
+				"乌": "No dot: a crow is so black you cannot see its eye."
+			},
+			"marks": {
+				"鸟": [
+					2
+				],
+				"乌": []
+			}
+		},
+		{
+			"members": [
+				"鳥",
+				"烏"
+			],
+			"script": "Hant",
+			"notes": {
+				"鳥": "A stroke inside the top box: the bird’s eye.",
+				"烏": "No stroke in the top box: a crow is so black you cannot see its eye."
+			},
+			"marks": {
+				"鳥": [
+					3
+				],
+				"烏": []
+			}
+		},
+		{
+			"members": [
+				"天",
+				"夫"
+			],
+			"notes": {
+				"天": "The left-falling stroke starts at the top line and does not poke above it.",
+				"夫": "The left-falling stroke pokes out above the top line."
+			},
+			"marks": {
+				"天": [
+					2
+				],
+				"夫": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"大",
+				"太",
+				"犬"
+			],
+			"notes": {
+				"大": "No dot.",
+				"太": "A dot between the legs.",
+				"犬": "A dot at the top right."
+			},
+			"marks": {
+				"大": [],
+				"太": [
+					3
+				],
+				"犬": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"王",
+				"玉",
+				"主"
+			],
+			"notes": {
+				"王": "No dot.",
+				"玉": "A dot at the lower right.",
+				"主": "A dot on top."
+			},
+			"marks": {
+				"王": [],
+				"玉": [
+					4
+				],
+				"主": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"刀",
+				"力",
+				"刃"
+			],
+			"notes": {
+				"刀": "The left-falling stroke stays under the top.",
+				"力": "The left-falling stroke pokes out above the top.",
+				"刃": "A dot on the blade."
+			},
+			"marks": {
+				"刀": [
+					1
+				],
+				"力": [
+					1
+				],
+				"刃": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"午",
+				"牛"
+			],
+			"notes": {
+				"午": "The vertical stops at the upper horizontal.",
+				"牛": "The vertical pokes out above the top."
+			},
+			"marks": {
+				"午": [
+					3
+				],
+				"牛": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"千",
+				"干",
+				"于"
+			],
+			"script": "Hans",
+			"notes": {
+				"千": "Starts with a left-falling stroke.",
+				"干": "Starts with a flat horizontal; the vertical is straight.",
+				"于": "The vertical ends in a hook."
+			},
+			"marks": {
+				"千": [
+					0
+				],
+				"干": [
+					0,
+					2
+				],
+				"于": [
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"目",
+				"自"
+			],
+			"notes": {
+				"目": "Nothing on top.",
+				"自": "A short left-falling stroke on top."
+			},
+			"marks": {
+				"目": [],
+				"自": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"白",
+				"百"
+			],
+			"notes": {
+				"白": "Nothing above the short left-falling stroke.",
+				"百": "A horizontal on top."
+			},
+			"marks": {
+				"白": [],
+				"百": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"贝",
+				"见"
+			],
+			"script": "Hans",
+			"notes": {
+				"贝": "Ends in a short dot.",
+				"见": "Ends in a long stroke that bends right and hooks up."
+			},
+			"marks": {
+				"贝": [
+					3
+				],
+				"见": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"貝",
+				"見"
+			],
+			"script": "Hant",
+			"notes": {
+				"貝": "Ends in a short dot.",
+				"見": "Ends in a long stroke that bends right and hooks up."
+			},
+			"marks": {
+				"貝": [
+					6
+				],
+				"見": [
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"问",
+				"间"
+			],
+			"script": "Hans",
+			"notes": {
+				"问": "A mouth (口) in the door (门): you ask with your mouth.",
+				"间": "The sun (日) in the door (门)."
+			},
+			"marks": {
+				"问": [
+					3,
+					4,
+					5
+				],
+				"间": [
+					3,
+					4,
+					5,
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"問",
+				"間"
+			],
+			"script": "Hant",
+			"notes": {
+				"問": "A mouth (口) in the door (門): you ask with your mouth.",
+				"間": "The sun (日) in the door (門)."
+			},
+			"marks": {
+				"問": [
+					8,
+					9,
+					10
+				],
+				"間": [
+					8,
+					9,
+					10,
+					11
+				]
+			}
+		},
+		{
+			"members": [
+				"体",
+				"休"
+			],
+			"script": "Hans",
+			"notes": {
+				"体": "A short horizontal near the bottom (本).",
+				"休": "No horizontal at the bottom (木): a person resting by a tree."
+			},
+			"marks": {
+				"体": [
+					6
+				],
+				"休": []
+			}
+		},
+		{
+			"members": [
+				"今",
+				"令"
+			],
+			"notes": {
+				"今": "Nothing under the fold.",
+				"令": "A dot under the fold."
+			},
+			"marks": {
+				"今": [],
+				"令": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"买",
+				"卖"
+			],
+			"script": "Hans",
+			"notes": {
+				"买": "Nothing on top.",
+				"卖": "A cross (十) on top: what you sell, you have more of."
+			},
+			"marks": {
+				"买": [],
+				"卖": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"買",
+				"賣"
+			],
+			"script": "Hant",
+			"notes": {
+				"買": "Nothing on top.",
+				"賣": "士 on top."
+			},
+			"marks": {
+				"買": [],
+				"賣": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"冰",
+				"水",
+				"永"
+			],
+			"notes": {
+				"冰": "Two drops on the left (冫): ice.",
+				"水": "Nothing on top or on the left.",
+				"永": "A dot on top."
+			},
+			"marks": {
+				"冰": [
+					0,
+					1
+				],
+				"水": [],
+				"永": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"喝",
+				"渴"
+			],
+			"notes": {
+				"喝": "The mouth (口) on the left: you drink with your mouth.",
+				"渴": "Water (氵) on the left: thirsty for water."
+			},
+			"marks": {
+				"喝": [
+					0,
+					1,
+					2
+				],
+				"渴": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"晴",
+				"睛",
+				"情",
+				"清",
+				"请"
+			],
+			"script": "Hans",
+			"notes": {
+				"晴": "Sun (日): the weather.",
+				"睛": "Eye (目): the eyeball.",
+				"情": "Heart (忄): a feeling.",
+				"清": "Water (氵): clear water.",
+				"请": "Speech (讠): asking politely."
+			},
+			"marks": {
+				"晴": [
+					0,
+					1,
+					2,
+					3
+				],
+				"睛": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"情": [
+					0,
+					1,
+					2
+				],
+				"清": [
+					0,
+					1,
+					2
+				],
+				"请": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"晴",
+				"睛",
+				"情",
+				"清",
+				"請"
+			],
+			"script": "Hant",
+			"notes": {
+				"晴": "Sun (日): the weather.",
+				"睛": "Eye (目): the eyeball.",
+				"情": "Heart (忄): a feeling.",
+				"清": "Water (氵): clear water.",
+				"請": "Speech (言): asking politely."
+			},
+			"marks": {
+				"晴": [
+					0,
+					1,
+					2,
+					3
+				],
+				"睛": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"情": [
+					0,
+					1,
+					2
+				],
+				"清": [
+					0,
+					1,
+					2
+				],
+				"請": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"住",
+				"往",
+				"注"
+			],
+			"notes": {
+				"住": "Person (亻): where a person lives.",
+				"往": "Step (彳): going somewhere.",
+				"注": "Water (氵): pouring."
+			},
+			"marks": {
+				"住": [
+					0,
+					1
+				],
+				"往": [
+					0,
+					1,
+					2
+				],
+				"注": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"找",
+				"我"
+			],
+			"notes": {
+				"找": "The hand (扌) with nothing above it.",
+				"我": "A left-falling stroke on top."
+			},
+			"marks": {
+				"找": [],
+				"我": [
+					0
+				]
+			}
+		},
+		{
+			"members": [
+				"毛",
+				"手"
+			],
+			"notes": {
+				"毛": "The last stroke bends to the right.",
+				"手": "The vertical hooks to the left."
+			},
+			"marks": {
+				"毛": [
+					3
+				],
+				"手": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"免",
+				"兔"
+			],
+			"notes": {
+				"免": "No dot.",
+				"兔": "A dot: the rabbit’s tail."
+			},
+			"marks": {
+				"免": [],
+				"兔": [
+					7
+				]
+			}
+		},
+		{
+			"members": [
+				"第",
+				"弟"
+			],
+			"notes": {
+				"第": "Bamboo (⺮) on top.",
+				"弟": "Two dots on top."
+			},
+			"marks": {
+				"第": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"弟": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"象",
+				"像"
+			],
+			"notes": {
+				"象": "No person.",
+				"像": "A person (亻) on the left."
+			},
+			"marks": {
+				"象": [],
+				"像": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"木",
+				"本",
+				"术"
+			],
+			"script": "Hans",
+			"notes": {
+				"木": "Nothing added.",
+				"本": "A short horizontal near the bottom: the root.",
+				"术": "A dot at the top right."
+			},
+			"marks": {
+				"木": [],
+				"本": [
+					4
+				],
+				"术": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"田",
+				"由",
+				"甲",
+				"申"
+			],
+			"notes": {
+				"田": "The vertical stays inside.",
+				"由": "The vertical comes out at the top.",
+				"甲": "The vertical comes out at the bottom.",
+				"申": "The vertical comes out at both ends."
+			},
+			"marks": {
+				"田": [
+					3
+				],
+				"由": [
+					3
+				],
+				"甲": [
+					4
+				],
+				"申": [
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"小",
+				"少"
+			],
+			"notes": {
+				"小": "The vertical hooks; nothing at the bottom.",
+				"少": "No hook; a long left-falling stroke at the bottom."
+			},
+			"marks": {
+				"小": [
+					0
+				],
+				"少": [
+					0,
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"儿",
+				"几"
+			],
+			"script": "Hans",
+			"notes": {
+				"儿": "Two legs, open at the top.",
+				"几": "Closed at the top: the right stroke starts with a horizontal."
+			},
+			"marks": {
+				"儿": [
+					1
+				],
+				"几": [
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"考",
+				"老"
+			],
+			"notes": {
+				"考": "The bottom is 丂: a horizontal and a fold with a hook.",
+				"老": "The bottom is 匕: a left-falling stroke and a vertical that bends right."
+			},
+			"marks": {
+				"考": [
+					4,
+					5
+				],
+				"老": [
+					4,
+					5
+				]
+			}
+		},
+		{
+			"members": [
+				"季",
+				"李"
+			],
+			"notes": {
+				"季": "A left-falling stroke on top (禾).",
+				"李": "Nothing above the tree (木)."
+			},
+			"marks": {
+				"季": [
+					0
+				],
+				"李": []
+			}
+		},
+		{
+			"members": [
+				"很",
+				"恨"
+			],
+			"notes": {
+				"很": "Step (彳).",
+				"恨": "Heart (忄): hate is a feeling."
+			},
+			"marks": {
+				"很": [
+					0,
+					1,
+					2
+				],
+				"恨": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"待",
+				"持",
+				"特"
+			],
+			"notes": {
+				"待": "Step (彳): waiting for someone to come.",
+				"持": "Hand (扌): holding.",
+				"特": "Ox (牜)."
+			},
+			"marks": {
+				"待": [
+					0,
+					1,
+					2
+				],
+				"持": [
+					0,
+					1,
+					2
+				],
+				"特": [
+					0,
+					1,
+					2,
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"学",
+				"觉"
+			],
+			"script": "Hans",
+			"notes": {
+				"学": "The child (子) at the bottom.",
+				"觉": "See (见) at the bottom."
+			},
+			"marks": {
+				"学": [
+					5,
+					6,
+					7
+				],
+				"觉": [
+					5,
+					6,
+					7,
+					8
+				]
+			}
+		},
+		{
+			"members": [
+				"學",
+				"覺"
+			],
+			"script": "Hant",
+			"notes": {
+				"學": "The child (子) at the bottom.",
+				"覺": "See (見) at the bottom."
+			},
+			"marks": {
+				"學": [
+					13,
+					14,
+					15
+				],
+				"覺": [
+					13,
+					14,
+					15,
+					16,
+					17,
+					18,
+					19
+				]
+			}
+		},
+		{
+			"members": [
+				"包",
+				"饱",
+				"跑",
+				"抱"
+			],
+			"script": "Hans",
+			"notes": {
+				"包": "Nothing on the left: 包 alone.",
+				"饱": "Food (饣): full after eating.",
+				"跑": "Foot (⻊): running.",
+				"抱": "Hand (扌): holding."
+			},
+			"marks": {
+				"包": [],
+				"饱": [
+					0,
+					1,
+					2
+				],
+				"跑": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"抱": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"包",
+				"飽",
+				"跑",
+				"抱"
+			],
+			"script": "Hant",
+			"notes": {
+				"包": "Nothing on the left: 包 alone.",
+				"飽": "Food (飠): full after eating.",
+				"跑": "Foot (⻊): running.",
+				"抱": "Hand (扌): holding."
+			},
+			"marks": {
+				"包": [],
+				"飽": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7
+				],
+				"跑": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"抱": [
+					0,
+					1,
+					2
+				]
+			}
+		},
+		{
+			"members": [
+				"跟",
+				"根",
+				"眼",
+				"银"
+			],
+			"script": "Hans",
+			"notes": {
+				"跟": "Foot (⻊): following.",
+				"根": "Tree (木): the root.",
+				"眼": "Eye (目).",
+				"银": "Metal (钅): silver."
+			},
+			"marks": {
+				"跟": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"根": [
+					0,
+					1,
+					2,
+					3
+				],
+				"眼": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"银": [
+					0,
+					1,
+					2,
+					3,
+					4
+				]
+			}
+		},
+		{
+			"members": [
+				"跟",
+				"根",
+				"眼",
+				"銀"
+			],
+			"script": "Hant",
+			"notes": {
+				"跟": "Foot (⻊): following.",
+				"根": "Tree (木): the root.",
+				"眼": "Eye (目).",
+				"銀": "Metal (金): silver."
+			},
+			"marks": {
+				"跟": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"根": [
+					0,
+					1,
+					2,
+					3
+				],
+				"眼": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"銀": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7
+				]
+			}
+		},
+		{
+			"members": [
+				"东",
+				"车"
+			],
+			"script": "Hans",
+			"notes": {
+				"东": "Ends in two strokes spreading left and right.",
+				"车": "No spreading strokes at the bottom."
+			},
+			"marks": {
+				"东": [
+					3,
+					4
+				],
+				"车": [
+					3
+				]
+			}
+		},
+		{
+			"members": [
+				"東",
+				"車"
+			],
+			"script": "Hant",
+			"notes": {
+				"東": "Ends in two strokes spreading left and right.",
+				"車": "No spreading strokes at the bottom."
+			},
+			"marks": {
+				"東": [
+					6,
+					7
+				],
+				"車": [
+					6
+				]
+			}
+		},
+		{
+			"members": [
+				"看",
+				"着"
+			],
+			"script": "Hans",
+			"notes": {
+				"看": "A slanting stroke on top (a hand over the eye).",
+				"着": "Two dots on top."
+			},
+			"marks": {
+				"看": [
+					0
+				],
+				"着": [
+					0,
+					1
+				]
+			}
+		},
+		{
+			"members": [
+				"妈",
+				"吗",
+				"码",
+				"马"
+			],
+			"script": "Hans",
+			"notes": {
+				"妈": "Woman (女): mum.",
+				"吗": "Mouth (口): a question.",
+				"码": "Stone (石).",
+				"马": "Nothing on the left: the horse alone."
+			},
+			"marks": {
+				"妈": [
+					0,
+					1,
+					2
+				],
+				"吗": [
+					0,
+					1,
+					2
+				],
+				"码": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"马": []
+			}
+		},
+		{
+			"members": [
+				"媽",
+				"嗎",
+				"碼",
+				"馬"
+			],
+			"script": "Hant",
+			"notes": {
+				"媽": "Woman (女): mum.",
+				"嗎": "Mouth (口): a question.",
+				"碼": "Stone (石).",
+				"馬": "Nothing on the left: the horse alone."
+			},
+			"marks": {
+				"媽": [
+					0,
+					1,
+					2
+				],
+				"嗎": [
+					0,
+					1,
+					2
+				],
+				"碼": [
+					0,
+					1,
+					2,
+					3,
+					4
+				],
+				"馬": []
+			}
+		},
+		{
+			"members": [
+				"孩",
+				"该",
+				"刻"
+			],
+			"script": "Hans",
+			"notes": {
+				"孩": "Child (子) on the left.",
+				"该": "Speech (讠) on the left.",
+				"刻": "A knife (刂) on the right."
+			},
+			"marks": {
+				"孩": [
+					0,
+					1,
+					2
+				],
+				"该": [
+					0,
+					1
+				],
+				"刻": [
+					6,
+					7
+				]
+			}
+		},
+		{
+			"members": [
+				"孩",
+				"該",
+				"刻"
+			],
+			"script": "Hant",
+			"notes": {
+				"孩": "Child (子) on the left.",
+				"該": "Speech (言) on the left.",
+				"刻": "A knife (刂) on the right."
+			},
+			"marks": {
+				"孩": [
+					0,
+					1,
+					2
+				],
+				"該": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5,
+					6
+				],
+				"刻": [
+					6,
+					7
+				]
+			}
+		}
+	]
+}

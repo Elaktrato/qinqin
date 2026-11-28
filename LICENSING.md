@@ -58,6 +58,16 @@ Chinese measure words themselves are read at run time from the installed CC-CEDI
 licence (CC BY-SA 4.0); nothing derived from CC-CEDICT is bundled. Reviewed by agents acting as teachers, not yet by a
 person (`server/internal/counters/table/REVIEW.md`).
 
+### The look-alike character sets: CC BY 4.0
+
+The sets of the look-alike drill (`apps/web/src/lib/features/practice/lookAlikes/data/look-alikes-zh.json` and
+`look-alikes-ja.json`, #228: the sets, the readings, meanings, example words and notes of their characters, and the
+strokes the answer highlights) are written by the project and are under CC BY 4.0, with a `NOTICE` beside them and the
+credit in each file (rule i). They copy no third-party list and are not derived from KanjiVG (whose component index is
+CC BY-SA 3.0 and stays its own pack), Unihan or a dictionary. The stroke data the answer draws them with is served from
+the installed strokes packs and keeps its own licence. Reviewed by agents acting as teachers, not yet by a person
+(`REVIEW.md` beside them).
+
 ### The topic labels: CC BY-SA 4.0
 
 The topic labels of words (`server/internal/topics/labels/zh.json` and `ja.json`, #220) are written for the project

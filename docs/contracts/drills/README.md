@@ -22,7 +22,7 @@ across them. Drill work counts in the heatmap, the weekly summary, goals, EXP an
   | measure words and counters (#179, `counters/`; modes `produce`, `choose`): `measure-words`, `counters` | the noun: `<entryId>` | `5678` |
   | counter readings (#179, `counters/`): `counter-readings` | counter × number: `<counterId>:<number>` | `hon:3` |
   | tone pairs (#180) | the pair of citation tones: `<t1>-<t2>` (`5` neutral) | `3-4` |
-  | look-alike characters (#228) | the set: its characters in the set's order | `未末` |
+  | look-alike characters (#228, `lookalikes/`; modes `recognise`, `choose`): `look-alikes` | the set: its characters in the set's order | `未末` |
 
 - The **schedule key is the item**, whatever the mode: a drill that wants separate schedules per direction puts the
   direction into its item keys.
@@ -38,8 +38,9 @@ across them. Drill work counts in the heatmap, the weekly summary, goals, EXP an
   characters. Every mode of a drill counts for the same item.
 - `grade` is an FSRS grade as for a review: 1 Again, 2 Hard, 3 Good, 4 Easy. A drill that only knows right and wrong
   writes 3 or 1; a right answer after a hint can be 2.
-- Member order is part of the shape (`build`). A drill may add members **after** these (#228 the character chosen,
-  `given`); a client ignores members it does not know.
+- Member order is part of the shape (`build`). A drill may add members **after** these, in its own order (#228: the
+  character asked and the one chosen, `asked`, `given`; the web's `DrillAnswerInput.extra`, Go's `drills.Payload`
+  members); they never replace the three, and a client ignores members it does not know.
 - Written once per answered question, in the item's workspace, through the normal event path (the web: the session's
   outbox, `ReviewOutbox.recordEvent`, write-ahead, retried, seen by the study history while it waits).
 
@@ -52,7 +53,8 @@ answer and counts nowhere.
 
 `registry` in `drills.json` lists the drills a **server counts as activity** and a client offers as an activity
 source (goals, the weekly summary): `tone-pairs` (#180, items and rules in `tones/pairs.json`), `conjugation`
-(#178, `conjugation/`), and `measure-words`, `counters`, `counter-readings` (#179, `counters/`). Go `drills.IDs` and the web's `DRILL_IDS`
+(#178, `conjugation/`), `measure-words`, `counters`, `counter-readings` (#179, `counters/`) and `look-alikes` (#228,
+`lookalikes/`). Go `drills.IDs` and the web's `DRILL_IDS`
 (`lib/studycore/drills.ts`) must equal it (both decode the fixture).
 
 ### Adding a drill

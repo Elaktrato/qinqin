@@ -38,7 +38,7 @@ interface DrillsFixture {
 	registry: string[];
 	ids: { name: string; id: unknown; valid: boolean }[];
 	items: { name: string; item: unknown; valid: boolean }[];
-	build: { name: string; drill: string; item: string; mode: string; grade: 1 | 2 | 3 | 4; expect: { type: string; payload: unknown } }[];
+	build: { name: string; drill: string; item: string; mode: string; grade: 1 | 2 | 3 | 4; extra?: Record<string, string>; expect: { type: string; payload: unknown } }[];
 	parse: { name: string; event: StudyEvent; expect: Record<string, unknown> | null }[];
 }
 const drills = drillsFixture as unknown as DrillsFixture;
@@ -94,7 +94,7 @@ describe('docs/contracts/drills/drills.json', () => {
 		it(`build: ${c.name}`, () => {
 			expect(drillEventType(c.drill)).toBe(c.expect.type);
 			// Member order is part of the shape: the server stores the JSON text as sent.
-			expect(JSON.stringify(drillPayload(c.item, c.mode, c.grade))).toBe(JSON.stringify(c.expect.payload));
+			expect(JSON.stringify(drillPayload(c.item, c.mode, c.grade, c.extra))).toBe(JSON.stringify(c.expect.payload));
 		});
 	}
 	for (const c of drills.parse) {

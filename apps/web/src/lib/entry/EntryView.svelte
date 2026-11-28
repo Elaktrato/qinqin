@@ -36,6 +36,7 @@
 	import Chip from '$lib/ui/Chip.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { relatedWords } from './related';
+	import { confusionLanguage, loadConfusions, type Confusion } from '$lib/features/practice/lookAlikes/confused';
 	import { decksContaining } from './decks';
 	import { variantLabel } from './variant';
 	import { characterMeta } from './characterMeta';
@@ -287,6 +288,21 @@
 	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
 	// The credit of every recording this page can play.
 	const related = $derived(entry ? relatedWords(entry) : []);
+	// Look-alike characters (#228): the bundled sets, in the workspace's script when it reads the entry's language.
+	let confusions = $state<Confusion[]>([]);
+	$effect(() => {
+		const written = entry?.written ?? '';
+		const language = entry === null ? '' : confusionLanguage(entry.language, session.workspaces.current?.language);
+		confusions = [];
+		if (written === '' || language === '') return;
+		let live = true;
+		void loadConfusions(written, language).then((found) => {
+			if (live) confusions = found;
+		});
+		return () => {
+			live = false;
+		};
+	});
 	const strokeChar = $derived(
 		entry?.kind === 'character' ? entry.written : (chosenChar ?? entry?.characters?.[0]?.written ?? null)
 	);
@@ -492,6 +508,22 @@
 											{#if characterMeta(c)}<small>{characterMeta(c)}</small>{/if}
 										</span>
 									</a>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+				{#if confusions.length > 0}
+					<section class="section" aria-labelledby="confused-heading">
+						<h2 id="confused-heading">{t('entry.page.confusedWith')}</h2>
+						<ul class="plain-list confused">
+							{#each confusions as c (c.char)}
+								<li>
+									{#if confusions.length > 1 || c.char !== entry.written}<span lang={studyLang(entry.language)}>{c.char}</span><span class="sep" aria-hidden="true">→</span>{/if}
+									{#each c.others as other, i (other)}
+										{#if i > 0}<span class="sep" aria-hidden="true">·</span>{/if}
+										<a href={`/search?q=${encodeURIComponent(other)}`} lang={studyLang(entry.language)}>{other}</a>
+									{/each}
 								</li>
 							{/each}
 						</ul>
@@ -712,6 +744,11 @@
 		display: flex;
 		align-items: baseline;
 		gap: var(--space-1);
+	}
+
+	.plain-list.confused li {
+		flex-wrap: wrap;
+		font-size: 1.5rem;
 	}
 
 	.plain-list a,

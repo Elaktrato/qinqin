@@ -43,6 +43,7 @@ var IDs = []string{
 	"measure-words",    // Chinese measure words (#179)
 	"counters",         // Japanese counters (#179)
 	"counter-readings", // Japanese number + counter readings (#179)
+	"look-alikes",      // look-alike characters (#228)
 }
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
@@ -80,13 +81,29 @@ func DrillOf(eventType string) (string, bool) {
 	return id, true
 }
 
-// Payload is the payload of one answer, in the contract's member order.
-func Payload(item, mode string, grade int) json.RawMessage {
+// Member is one of a drill's own payload members, after item, mode and
+// grade (#228: the character asked and the one given).
+type Member struct {
+	Name, Value string
+}
+
+// Payload is the payload of one answer, in the contract's member order: item,
+// mode, grade, then the drill's own members in order; a member named item,
+// mode or grade is left out.
+func Payload(item, mode string, grade int, extra ...Member) json.RawMessage {
 	out, _ := json.Marshal(struct {
 		Item  string `json:"item"`
 		Mode  string `json:"mode"`
 		Grade int    `json:"grade"`
 	}{item, mode, grade})
+	for _, m := range extra {
+		if m.Name == "item" || m.Name == "mode" || m.Name == "grade" {
+			continue
+		}
+		name, _ := json.Marshal(m.Name)
+		value, _ := json.Marshal(m.Value)
+		out = append(append(append(append(out[:len(out)-1], ','), name...), ':'), append(value, '}')...)
+	}
 	return out
 }
 

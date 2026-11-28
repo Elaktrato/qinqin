@@ -253,8 +253,8 @@ describe('featureCredits', () => {
 			'Anthropic Go SDK'
 		]);
 		expect(result[1].credits.map((credit) => credit.name)).toEqual(['qinqin script charts']);
-		// The counters table and the measure-word corrections of the Practice drills (#179).
-		expect(result[2].credits.map((credit) => credit.name)).toEqual(['qinqin counters and measure words']);
+		// The counters table and the measure-word corrections of the Practice drills (#179), the look-alike sets (#228).
+		expect(result[2].credits.map((credit) => credit.name)).toEqual(['qinqin counters and measure words', 'qinqin look-alike sets']);
 	});
 });
 
