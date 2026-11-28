@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "language": "zh",
+  "title": {"en": "End-to-end course"},
+  "levels": {"scheme": "e2e-zh-levels"},
+  "checkpoints": {
+    "lesson": {"questions": 4},
+    "unit": {"questions": 4, "passPercent": 80},
+    "section": {"questions": 4, "passPercent": 75}
+  },
+  "sections": [
+    {"id": "level-1", "level": 1, "title": {"en": "Level 1"}, "units": [
+      {"id": "first", "title": {"en": "First words"}, "text": {"title": "你好", "body": "你好！学习！", "translation": {"en": "Hello! Study!"}}}
+    ]},
+    {"id": "level-2", "level": 2, "title": {"en": "Level 2"}, "units": [
+      {"id": "second", "title": {"en": "A country"}}
+    ]}
+  ]
+}
