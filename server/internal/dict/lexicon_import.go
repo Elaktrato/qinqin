@@ -665,7 +665,8 @@ func jsonLexiconEntries(es []entry, language string) []*lexicon.Entry {
 // line: Key = written, Kind as the pack gives it, the written form then
 // its traditional twin (flag "trad") as forms, the readings as given
 // with Plain and derived readings through the language pack, and one
-// sense of the glosses when there are any.
+// sense of the glosses when there are any, tagged with the line's own
+// readings (lexicon.TagReading).
 func jsonLexiconEntry(e entry, language string) *lexicon.Entry {
 	le := &lexicon.Entry{
 		Language: language,
@@ -679,7 +680,13 @@ func jsonLexiconEntry(e entry, language string) *lexicon.Entry {
 		le.Forms = append(le.Forms, lexicon.Form{Text: trad, Flags: []string{"trad"}})
 	}
 	if len(e.Glosses) > 0 {
-		le.Senses = []lexicon.Sense{{Glosses: e.Glosses}}
+		// The line's own readings as reading tags (docs/contracts/senses), as
+		// for a CC-CEDICT line; none for a line without readings.
+		var tags []string
+		for _, r := range e.Readings {
+			tags = append(tags, lexicon.TagReading+r.Value)
+		}
+		le.Senses = []lexicon.Sense{{Glosses: e.Glosses, Tags: tags}}
 	}
 	return le
 }

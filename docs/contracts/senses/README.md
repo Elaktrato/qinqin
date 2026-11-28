@@ -17,8 +17,8 @@ answer's `senses` list them), each with its `tags` and its `glosses`, and option
 The rule does not look at the dictionary: a caller keeps each unit's `sense` index to reach it.
 
 Tags are JMdict's `<misc>` entity names, plus **reading tags** `reading:<value>` (#346): the importer tags each
-CC-CEDICT sense with its line's reading as stored (`reading:Shū`, `reading:huáng sè`) and each JMdict sense with
-its `<stagr>` restrictions (`reading:こんにち`). A sense without a reading tag belongs to every reading. A client shows
+CC-CEDICT sense with its line's reading as stored (`reading:Shū`, `reading:huáng sè`), each json-pack line's sense
+with the line's own readings, and each JMdict sense with its `<stagr>` restrictions (`reading:こんにち`). A sense without a reading tag belongs to every reading. A client shows
 reading tags nowhere (they are not chips). A database imported before #346 has none: a pin then changes nothing.
 
 ## The pinned reading

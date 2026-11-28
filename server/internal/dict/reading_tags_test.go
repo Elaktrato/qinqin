@@ -58,3 +58,24 @@ func TestJMdictStagrBecomesAReadingTag(t *testing.T) {
 		t.Errorf("今日 sense tags = %v, want %v", tags, want)
 	}
 }
+
+// #346: a json pack line's sense is tagged with the line's own readings
+// (not the derived ones), like a CC-CEDICT line; a line without readings
+// gives an untagged sense of every reading.
+func TestJSONPackSensesCarryTheirLinesReadings(t *testing.T) {
+	sqlDB := dbtest.Open(t)
+	importLexiconPack(t, sqlDB, miniLexPack(t, `{"entries": [
+		{"written": "喝", "kind": "character", "readings": [{"type": "pinyin", "value": "hē"}], "glosses": ["to drink"]},
+		{"written": "喝", "kind": "character", "readings": [{"type": "pinyin", "value": "hè"}], "glosses": ["to shout"]},
+		{"written": "好", "kind": "character", "glosses": ["good"]}]}`))
+	var tags [][]string
+	for _, s := range lexByKey(t, sqlDB, "zh", "character", "喝").Senses {
+		tags = append(tags, s.Tags)
+	}
+	if want := [][]string{{"reading:hē"}, {"reading:hè"}}; !reflect.DeepEqual(tags, want) {
+		t.Errorf("喝 sense tags = %v, want %v", tags, want)
+	}
+	if hao := lexByKey(t, sqlDB, "zh", "character", "好"); len(hao.Senses) != 1 || len(hao.Senses[0].Tags) != 0 {
+		t.Errorf("好 senses = %+v, want one untagged sense", hao.Senses)
+	}
+}

@@ -13,7 +13,8 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   folded. New input `pinned`: only the senses of the pinned reading (sense tag `reading:<value>`, compared in lower
   case without spaces and apostrophes) and those without a reading tag take part; an unmatched pin is ignored.
 - **Sense tags:** the CC-CEDICT importer tags each sense with its line's reading (`reading:<marked pinyin>`), the
-  JMdict importer each sense with its `<stagr>` readings. Clients show no chip for them. Existing databases get them
+  json-pack importer each line's sense with the line's readings, the JMdict importer each sense with its `<stagr>`
+  readings. Clients show no chip for them. Existing databases get them
   with `qinqin seed`; without them a pin changes nothing.
 - **Cards:** a card row's `extra` may carry `reading` (a string): the reading the card is pinned to. The Starter add
   flow writes it from the set entry's new member `reading`.
