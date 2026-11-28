@@ -42,6 +42,15 @@ const esDict = `{"entries":[
  {"written":"agua","kind":"word","readings":[{"type":"latin","value":"agua"}],"glosses":["water"]},
  {"written":"casa","kind":"word","readings":[{"type":"latin","value":"casa"}],"glosses":["house"]}]}`
 
+// esCourse is a small course.json in the format of docs/contracts/courses/ (#221).
+const esCourse = `{"version":1,"language":"es","title":{"en":"Spanish"},"levels":{"scheme":"es-levels"},
+ "checkpoints":{"lesson":{"questions":5},"unit":{"questions":10,"passPercent":80},"section":{"questions":20,"passPercent":75}},
+ "sections":[{"id":"one","level":1,"title":{"en":"One"},"units":[{"id":"hello","title":{"en":"Hello"},"topics":["greetings"]}]}]}`
+
+func coursePack(t *testing.T) pack.Pack {
+	return buildPack(t, "course", "es-course", "Spanish course", "CC-BY-4.0", "course-json", map[string]string{"course.json": esCourse})
+}
+
 func dictPack(t *testing.T) pack.Pack {
 	return buildPack(t, "dictionary", "es-test", "Zeta dictionary", "CC0-1.0", "json", map[string]string{"dictionary.json": esDict})
 }

@@ -32,6 +32,10 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
   picture (on a card or a word page) tells the server it is wrong; it is then no longer shown to you for that word.
 - Fewer wrong pictures (#274): the doubtful automatic pictures of the Starter words, HSK 1-2 and ≈ N5-N4 were reviewed
   word by word (by teacher agents, not yet by a person): 262 removed, 14 replaced by a clearer picture.
+- The groundwork for courses (#221): a new pack type **Courses** (a course's sections, units, grammar, hanzi or kanji
+  and reading texts, written for qinqin; no word lists), which the server fills with words from its installed level
+  lists and serves to the app, and course progress kept as study events, so it syncs and is in backups. Nothing to
+  see in the app yet: the course screens and the real courses follow.
 
 - Japanese words now carry an estimated JLPT level, "≈ N5" to "≈ N1", from the new bundled list **JLPT words
   (approximate)** (#219): about 10,000 words, with badges on word pages, level sessions and level decks, and a

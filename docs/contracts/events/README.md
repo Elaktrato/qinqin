@@ -156,6 +156,7 @@ alter every stored log and the pull's string comparison — cost: none.
 | `journal` | the journal | distinct `entryId` (`journal`) |
 | `script` | the scripts trainer | count (`scripts`) |
 | `grammar` | grammar (a finished lesson run, #277) | distinct `point` (`grammar`) |
+| `course` | courses (lesson, unit test, section exam, placement, #221) | none yet (#225 decides) |
 
 The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
 there are no plugin manifests (#199). The server stores any type; a client writes only these.
@@ -171,6 +172,7 @@ there are no plugin manifests (#199). The server stores any type; a client write
 | `journal` | `{entryId: string}` (the journal entry's ULID) | when a save changed the text, at most once per entry per learner day | count distinct `entryId` **strings** per learner day; a non-string `entryId` never counts |
 | `script` | `{system, item, mode, ok}` | one per answer of the writing-system trainer | see `payloads.json` |
 | `grammar` | `{point: "<packId>:<lessonId>", mode: "lesson", score: int, total: int}` | once per finished lesson run, in the lesson's workspace, through the outbox (#277) | read a run only as `grammar/runs.json` `parse` says; count distinct `point` **strings** per learner day for activity; progress, EXP and the streak per `grammar/README.md` |
+| `course` | `{kind, course, …}` by kind (`courses/README.md`, Progress events) | when a lesson starts or finishes, a unit test or section exam ends, or a placement is chosen, in the course's workspace, through the outbox | read an event only as `courses/README.md` Parsing says; derive the path state as its Derivation says |
 
 Member order is part of the shape (`{bookId, seconds}`, not `{seconds, bookId}`): the server stores the JSON text
 as sent, so two clients writing the same event write the same bytes. The reading timer

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "language": "ja",
+  "title": {"en": "Japanese mini course (sample)"},
+  "levels": {"scheme": "jlpt-mini", "estimate": [3]},
+  "checkpoints": {
+    "lesson": {"questions": 5},
+    "unit": {"questions": 10, "passPercent": 80},
+    "section": {"questions": 20, "passPercent": 75}
+  },
+  "sections": [
+    {"id": "start", "level": null, "title": {"en": "Start"}, "units": [
+      {"id": "kana", "title": {"en": "Hiragana"}, "scripts": ["hiragana"], "test": false}
+    ]},
+    {"id": "n5", "level": 1, "title": {"en": "≈ N5"}, "units": [
+      {"id": "school", "title": {"en": "At school"}, "topics": ["school"], "characters": ["学", "校"]},
+      {"id": "meals", "title": {"en": "Meals"}, "topics": ["food", "drink"], "characters": ["水", "食"],
+       "text": {"title": "ひるごはん", "body": "水を飲みます。パンを食べます。", "translation": {"en": "I drink water. I eat bread."}}}
+    ]}
+  ]
+}

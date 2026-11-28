@@ -16,12 +16,12 @@ import (
 // seedOrder is the seed order the owner pinned for #192: dictionaries first
 // (the other packs refer to their entries), then frequency, levels,
 // sentences, grammar, audio, components, strokes, lemma-rules, theme,
-// font and images (appended last by #216, so no other type moved); within a type, path order. It is written out here on purpose, not
+// font and images (appended last by #216, so no other type moved), then course (appended by #221); within a type, path order. It is written out here on purpose, not
 // read from the pack-type table: a change of the table's order must fail
 // this test.
 var seedOrder = []string{
 	"dictionary", "frequency", "levels", "sentences", "grammar", "audio",
-	"components", "strokes", "lemma-rules", "theme", "font", "images",
+	"components", "strokes", "lemma-rules", "theme", "font", "images", "course",
 }
 
 // writeOrderPack writes a pack directory root/dir from its files.
@@ -67,6 +67,10 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		"pictures.tsv":   "concept\tfile\tlabel\tcredit\nA\tpictures/A.svg\ta\tb\n",
 		"pictures/A.svg": `<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>`,
 		"map.tsv":        "language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t好\t0\tA\t90\tname\t\n",
+	})
+	writeOrderPack(t, root, "0-course", map[string]string{
+		"manifest.json": manifest("order-course", "course", "zh", "course-json"),
+		"course.json":   `{"version":1,"language":"zh","title":{"en":"C"},"sections":[{"id":"s","level":1,"title":{"en":"S"},"units":[{"id":"u","title":{"en":"U"}}]}]}`,
 	})
 	writeOrderPack(t, root, "b-theme", map[string]string{
 		"manifest.json": manifest("order-theme", "theme", "", "themes-json"),
@@ -124,6 +128,7 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		"order-theme theme",
 		"order-font font",
 		"order-images images",
+		"order-course course",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("seed order\n%s\nwant\n%s\nfull output:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"), out.String())

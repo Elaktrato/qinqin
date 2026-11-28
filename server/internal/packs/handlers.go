@@ -8,6 +8,7 @@ import (
 
 	"qinqin/internal/audio"
 	"qinqin/internal/components"
+	"qinqin/internal/courses"
 	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
 	"qinqin/internal/freq"
@@ -248,6 +249,19 @@ var handlers = []handler{
 		},
 		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
 			return images.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	{
+		typ: pack.TypeCourse,
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := courses.Import(ctx, sqlDB, pk)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d sections, %d units", r.Sections, r.Units), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return courses.Uninstall(ctx, sqlDB, packID)
 		},
 	},
 }

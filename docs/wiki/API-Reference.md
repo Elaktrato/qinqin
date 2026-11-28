@@ -32,6 +32,8 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | `GET /api/sentence-packs` | The registered sentence packs with their credits (the Sources page lists them) |
 | `GET /api/grammar?language=` | The installed grammar packs of a language (all when omitted) with credits, levels and lesson summaries |
 | `GET /api/grammar/{pack}/{lesson}` | One lesson with its pack's credits and the neighbouring lessons; 404 for an unknown or removed lesson |
+| `GET /api/courses?language=` | Signed-in. The installed course packs: `{courses: [{id, name, version, language, license, attribution, notice, title}]}` (not for access tokens). Contract `docs/contracts/courses/` |
+| `GET /api/courses/{id}` | Signed-in. One course filled with words from the installed level packs: the pack's credits, `fill`, `source`, `checkpoints`, `sections` with units (words, lessons), `unplaced`, `counts`; strong `ETag`, `no-cache`, 304; unknown course 404 `not_found` (not for access tokens). See [Courses data model](Courses-data-model) |
 
 ## Characters, components, strokes, themes and fonts
 

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "language": "zh",
+  "title": {"en": "Chinese mini course (sample)"},
+  "levels": {"scheme": "hsk-mini", "estimate": [2, 4]},
+  "checkpoints": {
+    "lesson": {"questions": 5},
+    "unit": {"questions": 10, "passPercent": 80},
+    "section": {"questions": 20, "passPercent": 75}
+  },
+  "sections": [
+    {"id": "start", "level": null, "title": {"en": "Start"}, "units": [
+      {"id": "sounds", "title": {"en": "Sounds and tones"}, "focus": "listening", "test": false}
+    ]},
+    {"id": "level-1", "level": 1, "title": {"en": "Level 1"}, "units": [
+      {"id": "hello", "title": {"en": "Hello"}, "topics": ["greetings"], "grammar": ["zh-grammar-mini:shi"],
+       "characters": ["好", "谢"],
+       "text": {"title": "你好", "body": "你好！谢谢！", "translation": {"en": "Hello! Thank you!"}}}
+    ]},
+    {"id": "level-2", "level": 2, "title": {"en": "Level 2"}, "units": [
+      {"id": "money", "title": {"en": "Money"}, "topics": ["money", "city"], "characters": ["银", "行"]}
+    ]}
+  ]
+}

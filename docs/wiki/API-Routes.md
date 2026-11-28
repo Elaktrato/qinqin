@@ -92,6 +92,8 @@ A full session (`Authorization: Bearer <token>`).
 | `GET` | `/api/audio/clips/{file}` | read (all) |
 | `GET` | `/api/audio/entries/{id}` | read (all) |
 | `GET` | `/api/avatars/{user}/{hash}` | — |
+| `GET` | `/api/courses` | — |
+| `GET` | `/api/courses/{id}` | — |
 | `GET` | `/api/entries/{id}/examples` | — |
 | `GET` | `/api/events` | read (workspace) |
 | `GET` | `/api/features` | read (all) |

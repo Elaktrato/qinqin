@@ -1,0 +1,10 @@
+{
+  "id": "zh-course-mini",
+  "name": "Chinese mini course (sample)",
+  "version": "1.0",
+  "type": "course",
+  "language": "zh",
+  "license": "CC-BY-4.0",
+  "attribution": "Qinqin project — hand-written sample course for tests, not the real course",
+  "format": "course-json"
+}

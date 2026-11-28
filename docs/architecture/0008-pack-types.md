@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #179, #182, #216, #274. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #179, #182, #216, #221, #274. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -15,7 +15,7 @@ the types; the type's behaviour, the manifest, pack loading and the not-found er
 manifest, `packs` held a twelve-way `errors.Is` chain, and the registry rows were written in three different
 ways (some rewrote every row on every import). #192 made one pack system; the plan is
 `docs/superpowers/plans/2026-11-24-pack-system.md`. #179 (measure words) and #182 (pitch accent) may add
-types. #216 added `images` (pictures and a word mapping) as the last row, the way the record asks of a type that only adds; #274 gave it its data package (`images`), steps 6 and 7 below.
+types. #216 added `images` (pictures and a word mapping) as the last row, the way the record asks of a type that only adds; #274 gave it its data package (`images`), steps 6 and 7 below; #221 appended `course` (one course's skeleton, no data package) after it.
 
 ## Decision
 

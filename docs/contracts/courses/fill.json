@@ -1,0 +1,2237 @@
+{
+ "version": 1,
+ "rule": "courses/fill",
+ "note": "The unit fill rule (#221, README \"The fill rule\"): a course, the installed level pack (or none), the frequency rows (the level words' ranks, or the rows a fallback estimates levels from), the topic labels by dictionary key (`sense` absent = the word row) and the installed grammar points → the filled course a server serves in GET /api/courses/{id} (`expect`, without the pack's credits and the `fill` hash). Go: server/internal/courses/fill_contract_test.go (Fill); web: apps/web/src/lib/api/courses.test.ts (decodes every `expect`).",
+ "cases": [
+  {
+   "name": "topics first, then frequency; quotas; characters before the words that need them; a word whose character comes later is unplaced",
+   "note": "one: 12 placeable words over 2 units, quota 6 each. Pass 1 by topic in frequency order fills hello with 你好 谢谢 and food with 吃 喝 水 茶 米饭; pass 2 puts the rest in frequency order into the earliest allowed unit with room: 的 needs food (food introduces 的), 是 一 好 二 go to hello. 行 is a level-1 word, but its character comes in section two: unplaced. 龙 is level 3, which has no section: not a candidate. 喝's sense row (actions) comes after its word row (drink). Grammar point c is not installed.",
+   "course": {
+    "version": 1,
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "levels": {
+     "scheme": "hsk-test"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "title": {
+       "en": "Start"
+      },
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "focus": "listening",
+        "test": false
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "One"
+      },
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:a"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "text": {
+         "title": "你好",
+         "body": "你好！",
+         "translation": {
+          "en": "Hello!"
+         }
+        }
+       },
+       {
+        "id": "food",
+        "title": {
+         "en": "Food"
+        },
+        "topics": [
+         "food",
+         "drink"
+        ],
+        "grammar": [
+         "zh-grammar:b",
+         "zh-grammar:c"
+        ],
+        "characters": [
+         "水",
+         "的"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "level": 2,
+      "title": {
+       "en": "Two"
+      },
+      "units": [
+       {
+        "id": "city",
+        "title": {
+         "en": "City"
+        },
+        "topics": [
+         "city"
+        ],
+        "characters": [
+         "行",
+         "银"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "input": {
+    "levels": {
+     "pack": "hsk-test",
+     "levels": [
+      {
+       "name": "HSK 1",
+       "words": [
+        {
+         "key": "你好",
+         "form": "你好",
+         "reading": "",
+         "entryId": 1
+        },
+        {
+         "key": "谢谢",
+         "form": "谢谢",
+         "reading": "",
+         "entryId": 2
+        },
+        {
+         "key": "吃",
+         "form": "吃",
+         "reading": "",
+         "entryId": 3
+        },
+        {
+         "key": "喝",
+         "form": "喝",
+         "reading": "",
+         "entryId": 4
+        },
+        {
+         "key": "水",
+         "form": "水",
+         "reading": "",
+         "entryId": 5
+        },
+        {
+         "key": "米饭",
+         "form": "米饭",
+         "reading": "",
+         "entryId": 6
+        },
+        {
+         "key": "的",
+         "form": "的",
+         "reading": "",
+         "entryId": 7
+        },
+        {
+         "key": "是",
+         "form": "是",
+         "reading": "",
+         "entryId": 8
+        },
+        {
+         "key": "好",
+         "form": "好",
+         "reading": "",
+         "entryId": 9
+        },
+        {
+         "key": "茶",
+         "form": "茶",
+         "reading": "",
+         "entryId": 10
+        },
+        {
+         "key": "一",
+         "form": "一",
+         "reading": "",
+         "entryId": 11
+        },
+        {
+         "key": "二",
+         "form": "二",
+         "reading": "",
+         "entryId": 12
+        },
+        {
+         "key": "行",
+         "form": "行",
+         "reading": "",
+         "entryId": 13
+        }
+       ]
+      },
+      {
+       "name": "HSK 2",
+       "words": [
+        {
+         "key": "银行",
+         "form": "银行",
+         "reading": "",
+         "entryId": 14
+        },
+        {
+         "key": "医院",
+         "form": "医院",
+         "reading": "",
+         "entryId": 15
+        }
+       ]
+      },
+      {
+       "name": "HSK 3",
+       "words": [
+        {
+         "key": "龙",
+         "form": "龙",
+         "reading": "",
+         "entryId": 16
+        }
+       ]
+      }
+     ]
+    },
+    "frequency": {
+     "pack": "freq-test",
+     "rows": [
+      {
+       "key": "的",
+       "form": "的",
+       "reading": "",
+       "entryId": 7,
+       "rank": 1
+      },
+      {
+       "key": "是",
+       "form": "是",
+       "reading": "",
+       "entryId": 8,
+       "rank": 2
+      },
+      {
+       "key": "一",
+       "form": "一",
+       "reading": "",
+       "entryId": 11,
+       "rank": 3
+      },
+      {
+       "key": "好",
+       "form": "好",
+       "reading": "",
+       "entryId": 9,
+       "rank": 4
+      },
+      {
+       "key": "你好",
+       "form": "你好",
+       "reading": "",
+       "entryId": 1,
+       "rank": 10
+      },
+      {
+       "key": "吃",
+       "form": "吃",
+       "reading": "",
+       "entryId": 3,
+       "rank": 12
+      },
+      {
+       "key": "喝",
+       "form": "喝",
+       "reading": "",
+       "entryId": 4,
+       "rank": 15
+      },
+      {
+       "key": "水",
+       "form": "水",
+       "reading": "",
+       "entryId": 5,
+       "rank": 16
+      },
+      {
+       "key": "谢谢",
+       "form": "谢谢",
+       "reading": "",
+       "entryId": 2,
+       "rank": 20
+      },
+      {
+       "key": "二",
+       "form": "二",
+       "reading": "",
+       "entryId": 12,
+       "rank": 25
+      },
+      {
+       "key": "行",
+       "form": "行",
+       "reading": "",
+       "entryId": 13,
+       "rank": 30
+      },
+      {
+       "key": "茶",
+       "form": "茶",
+       "reading": "",
+       "entryId": 10,
+       "rank": 40
+      },
+      {
+       "key": "银行",
+       "form": "银行",
+       "reading": "",
+       "entryId": 14,
+       "rank": 50
+      },
+      {
+       "key": "龙",
+       "form": "龙",
+       "reading": "",
+       "entryId": 16,
+       "rank": 5
+      }
+     ]
+    },
+    "labels": [
+     {
+      "key": "的",
+      "topics": [
+       "function"
+      ]
+     },
+     {
+      "key": "是",
+      "topics": [
+       "function"
+      ]
+     },
+     {
+      "key": "一",
+      "topics": [
+       "numbers"
+      ]
+     },
+     {
+      "key": "好",
+      "topics": [
+       "qualities"
+      ]
+     },
+     {
+      "key": "你好",
+      "topics": [
+       "greetings"
+      ]
+     },
+     {
+      "key": "吃",
+      "topics": [
+       "food",
+       "actions"
+      ]
+     },
+     {
+      "key": "喝",
+      "sense": 2,
+      "topics": [
+       "actions"
+      ]
+     },
+     {
+      "key": "喝",
+      "topics": [
+       "drink"
+      ]
+     },
+     {
+      "key": "水",
+      "topics": [
+       "drink"
+      ]
+     },
+     {
+      "key": "谢谢",
+      "topics": [
+       "greetings"
+      ]
+     },
+     {
+      "key": "二",
+      "topics": [
+       "numbers"
+      ]
+     },
+     {
+      "key": "茶",
+      "topics": [
+       "drink",
+       "culture"
+      ]
+     },
+     {
+      "key": "米饭",
+      "topics": [
+       "food"
+      ]
+     },
+     {
+      "key": "行",
+      "topics": [
+       "movement"
+      ]
+     },
+     {
+      "key": "银行",
+      "topics": [
+       "money",
+       "city"
+      ]
+     },
+     {
+      "key": "医院",
+      "topics": [
+       "health"
+      ]
+     },
+     {
+      "key": "龙",
+      "topics": [
+       "animals"
+      ]
+     }
+    ],
+    "grammar": [
+     "zh-grammar:a",
+     "zh-grammar:b"
+    ]
+   },
+   "expect": {
+    "language": "zh",
+    "title": {
+     "en": "Chinese"
+    },
+    "source": {
+     "kind": "levels",
+     "pack": "hsk-test"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "start",
+      "level": null,
+      "levelName": null,
+      "title": {
+       "en": "Start"
+      },
+      "exam": false,
+      "units": [
+       {
+        "id": "sounds",
+        "title": {
+         "en": "Sounds"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": "listening",
+        "test": false,
+        "words": [],
+        "lessons": [
+         {
+          "id": "listening",
+          "kind": "listening"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "level": 1,
+      "levelName": "HSK 1",
+      "title": {
+       "en": "One"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "hello",
+        "title": {
+         "en": "Hello"
+        },
+        "topics": [
+         "greetings"
+        ],
+        "grammar": [
+         "zh-grammar:a"
+        ],
+        "characters": [
+         "你",
+         "好"
+        ],
+        "scripts": [],
+        "text": {
+         "title": "你好",
+         "body": "你好！",
+         "translation": {
+          "en": "Hello!"
+         }
+        },
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "是",
+          "form": "是",
+          "reading": "",
+          "entryId": 8,
+          "rank": 2,
+          "topics": [
+           "function"
+          ]
+         },
+         {
+          "key": "一",
+          "form": "一",
+          "reading": "",
+          "entryId": 11,
+          "rank": 3,
+          "topics": [
+           "numbers"
+          ]
+         },
+         {
+          "key": "好",
+          "form": "好",
+          "reading": "",
+          "entryId": 9,
+          "rank": 4,
+          "topics": [
+           "qualities"
+          ]
+         },
+         {
+          "key": "你好",
+          "form": "你好",
+          "reading": "",
+          "entryId": 1,
+          "rank": 10,
+          "topics": [
+           "greetings"
+          ]
+         },
+         {
+          "key": "谢谢",
+          "form": "谢谢",
+          "reading": "",
+          "entryId": 2,
+          "rank": 20,
+          "topics": [
+           "greetings"
+          ]
+         },
+         {
+          "key": "二",
+          "form": "二",
+          "reading": "",
+          "entryId": 12,
+          "rank": 25,
+          "topics": [
+           "numbers"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [
+           "你",
+           "好"
+          ],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "是",
+           "一",
+           "好",
+           "你好",
+           "谢谢",
+           "二"
+          ]
+         },
+         {
+          "id": "grammar-a",
+          "kind": "grammar",
+          "point": "zh-grammar:a",
+          "available": true
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         },
+         {
+          "id": "reading",
+          "kind": "reading"
+         }
+        ]
+       },
+       {
+        "id": "food",
+        "title": {
+         "en": "Food"
+        },
+        "topics": [
+         "food",
+         "drink"
+        ],
+        "grammar": [
+         "zh-grammar:b",
+         "zh-grammar:c"
+        ],
+        "characters": [
+         "水",
+         "的"
+        ],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "的",
+          "form": "的",
+          "reading": "",
+          "entryId": 7,
+          "rank": 1,
+          "topics": [
+           "function"
+          ]
+         },
+         {
+          "key": "吃",
+          "form": "吃",
+          "reading": "",
+          "entryId": 3,
+          "rank": 12,
+          "topics": [
+           "food",
+           "actions"
+          ]
+         },
+         {
+          "key": "喝",
+          "form": "喝",
+          "reading": "",
+          "entryId": 4,
+          "rank": 15,
+          "topics": [
+           "drink",
+           "actions"
+          ]
+         },
+         {
+          "key": "水",
+          "form": "水",
+          "reading": "",
+          "entryId": 5,
+          "rank": 16,
+          "topics": [
+           "drink"
+          ]
+         },
+         {
+          "key": "茶",
+          "form": "茶",
+          "reading": "",
+          "entryId": 10,
+          "rank": 40,
+          "topics": [
+           "drink",
+           "culture"
+          ]
+         },
+         {
+          "key": "米饭",
+          "form": "米饭",
+          "reading": "",
+          "entryId": 6,
+          "rank": null,
+          "topics": [
+           "food"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [
+           "水",
+           "的"
+          ],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "的",
+           "吃",
+           "喝",
+           "水",
+           "茶",
+           "米饭"
+          ]
+         },
+         {
+          "id": "grammar-b",
+          "kind": "grammar",
+          "point": "zh-grammar:b",
+          "available": true
+         },
+         {
+          "id": "grammar-c",
+          "kind": "grammar",
+          "point": "zh-grammar:c",
+          "available": false
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "level": 2,
+      "levelName": "HSK 2",
+      "title": {
+       "en": "Two"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "city",
+        "title": {
+         "en": "City"
+        },
+        "topics": [
+         "city"
+        ],
+        "grammar": [],
+        "characters": [
+         "行",
+         "银"
+        ],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "银行",
+          "form": "银行",
+          "reading": "",
+          "entryId": 14,
+          "rank": 50,
+          "topics": [
+           "money",
+           "city"
+          ]
+         },
+         {
+          "key": "医院",
+          "form": "医院",
+          "reading": "",
+          "entryId": 15,
+          "rank": null,
+          "topics": [
+           "health"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [
+           "行",
+           "银"
+          ],
+          "scripts": []
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "银行",
+           "医院"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "unplaced": [
+     {
+      "key": "行",
+      "form": "行",
+      "reading": "",
+      "level": 1,
+      "reason": "character-later"
+     }
+    ],
+    "counts": {
+     "candidates": 15,
+     "placed": 14,
+     "byTopic": 8,
+     "unplaced": 1
+    }
+   }
+  },
+  {
+   "name": "lessons of at most 7 words, as even as possible; grammar spread through the word lessons; no ranks keep the level pack's order",
+   "note": "17 words: 3 lessons of 6, 6 and 5. 8 words: 2 lessons of 4 (5–7 cannot hold for 8). Grammar x after words-ceil(1*3/2)=2, y after words-3. Without frequency the level pack's order stands.",
+   "course": {
+    "version": 1,
+    "language": "es",
+    "title": {
+     "en": "Sizes"
+    },
+    "levels": {
+     "scheme": "lv"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "One"
+      },
+      "units": [
+       {
+        "id": "big",
+        "title": {
+         "en": "Big"
+        },
+        "grammar": [
+         "g:x",
+         "g:y"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "level": 2,
+      "title": {
+       "en": "Two"
+      },
+      "units": [
+       {
+        "id": "eight",
+        "title": {
+         "en": "Eight"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "input": {
+    "levels": {
+     "pack": "lv",
+     "levels": [
+      {
+       "name": "1",
+       "words": [
+        {
+         "key": "a01",
+         "form": "a01",
+         "reading": "",
+         "entryId": 1
+        },
+        {
+         "key": "a02",
+         "form": "a02",
+         "reading": "",
+         "entryId": 2
+        },
+        {
+         "key": "a03",
+         "form": "a03",
+         "reading": "",
+         "entryId": 3
+        },
+        {
+         "key": "a04",
+         "form": "a04",
+         "reading": "",
+         "entryId": 4
+        },
+        {
+         "key": "a05",
+         "form": "a05",
+         "reading": "",
+         "entryId": 5
+        },
+        {
+         "key": "a06",
+         "form": "a06",
+         "reading": "",
+         "entryId": 6
+        },
+        {
+         "key": "a07",
+         "form": "a07",
+         "reading": "",
+         "entryId": 7
+        },
+        {
+         "key": "a08",
+         "form": "a08",
+         "reading": "",
+         "entryId": 8
+        },
+        {
+         "key": "a09",
+         "form": "a09",
+         "reading": "",
+         "entryId": 9
+        },
+        {
+         "key": "a10",
+         "form": "a10",
+         "reading": "",
+         "entryId": 10
+        },
+        {
+         "key": "a11",
+         "form": "a11",
+         "reading": "",
+         "entryId": 11
+        },
+        {
+         "key": "a12",
+         "form": "a12",
+         "reading": "",
+         "entryId": 12
+        },
+        {
+         "key": "a13",
+         "form": "a13",
+         "reading": "",
+         "entryId": 13
+        },
+        {
+         "key": "a14",
+         "form": "a14",
+         "reading": "",
+         "entryId": 14
+        },
+        {
+         "key": "a15",
+         "form": "a15",
+         "reading": "",
+         "entryId": 15
+        },
+        {
+         "key": "a16",
+         "form": "a16",
+         "reading": "",
+         "entryId": 16
+        },
+        {
+         "key": "a17",
+         "form": "a17",
+         "reading": "",
+         "entryId": 17
+        }
+       ]
+      },
+      {
+       "name": "2",
+       "words": [
+        {
+         "key": "b01",
+         "form": "b01",
+         "reading": "",
+         "entryId": 100
+        },
+        {
+         "key": "b02",
+         "form": "b02",
+         "reading": "",
+         "entryId": 101
+        },
+        {
+         "key": "b03",
+         "form": "b03",
+         "reading": "",
+         "entryId": 102
+        },
+        {
+         "key": "b04",
+         "form": "b04",
+         "reading": "",
+         "entryId": 103
+        },
+        {
+         "key": "b05",
+         "form": "b05",
+         "reading": "",
+         "entryId": 104
+        },
+        {
+         "key": "b06",
+         "form": "b06",
+         "reading": "",
+         "entryId": 105
+        },
+        {
+         "key": "b07",
+         "form": "b07",
+         "reading": "",
+         "entryId": 106
+        },
+        {
+         "key": "b08",
+         "form": "b08",
+         "reading": "",
+         "entryId": 107
+        }
+       ]
+      }
+     ]
+    },
+    "frequency": null,
+    "labels": [],
+    "grammar": [
+     "g:x",
+     "g:y"
+    ]
+   },
+   "expect": {
+    "language": "es",
+    "title": {
+     "en": "Sizes"
+    },
+    "source": {
+     "kind": "levels",
+     "pack": "lv"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "one",
+      "level": 1,
+      "levelName": "1",
+      "title": {
+       "en": "One"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "big",
+        "title": {
+         "en": "Big"
+        },
+        "topics": [],
+        "grammar": [
+         "g:x",
+         "g:y"
+        ],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "a01",
+          "form": "a01",
+          "reading": "",
+          "entryId": 1,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a02",
+          "form": "a02",
+          "reading": "",
+          "entryId": 2,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a03",
+          "form": "a03",
+          "reading": "",
+          "entryId": 3,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a04",
+          "form": "a04",
+          "reading": "",
+          "entryId": 4,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a05",
+          "form": "a05",
+          "reading": "",
+          "entryId": 5,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a06",
+          "form": "a06",
+          "reading": "",
+          "entryId": 6,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a07",
+          "form": "a07",
+          "reading": "",
+          "entryId": 7,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a08",
+          "form": "a08",
+          "reading": "",
+          "entryId": 8,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a09",
+          "form": "a09",
+          "reading": "",
+          "entryId": 9,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a10",
+          "form": "a10",
+          "reading": "",
+          "entryId": 10,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a11",
+          "form": "a11",
+          "reading": "",
+          "entryId": 11,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a12",
+          "form": "a12",
+          "reading": "",
+          "entryId": 12,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a13",
+          "form": "a13",
+          "reading": "",
+          "entryId": 13,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a14",
+          "form": "a14",
+          "reading": "",
+          "entryId": 14,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a15",
+          "form": "a15",
+          "reading": "",
+          "entryId": 15,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a16",
+          "form": "a16",
+          "reading": "",
+          "entryId": 16,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "a17",
+          "form": "a17",
+          "reading": "",
+          "entryId": 17,
+          "rank": null,
+          "topics": []
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "a01",
+           "a02",
+           "a03",
+           "a04",
+           "a05",
+           "a06"
+          ]
+         },
+         {
+          "id": "words-2",
+          "kind": "words",
+          "words": [
+           "a07",
+           "a08",
+           "a09",
+           "a10",
+           "a11",
+           "a12"
+          ]
+         },
+         {
+          "id": "grammar-x",
+          "kind": "grammar",
+          "point": "g:x",
+          "available": true
+         },
+         {
+          "id": "words-3",
+          "kind": "words",
+          "words": [
+           "a13",
+           "a14",
+           "a15",
+           "a16",
+           "a17"
+          ]
+         },
+         {
+          "id": "grammar-y",
+          "kind": "grammar",
+          "point": "g:y",
+          "available": true
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "two",
+      "level": 2,
+      "levelName": "2",
+      "title": {
+       "en": "Two"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "eight",
+        "title": {
+         "en": "Eight"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "b01",
+          "form": "b01",
+          "reading": "",
+          "entryId": 100,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b02",
+          "form": "b02",
+          "reading": "",
+          "entryId": 101,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b03",
+          "form": "b03",
+          "reading": "",
+          "entryId": 102,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b04",
+          "form": "b04",
+          "reading": "",
+          "entryId": 103,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b05",
+          "form": "b05",
+          "reading": "",
+          "entryId": 104,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b06",
+          "form": "b06",
+          "reading": "",
+          "entryId": 105,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b07",
+          "form": "b07",
+          "reading": "",
+          "entryId": 106,
+          "rank": null,
+          "topics": []
+         },
+         {
+          "key": "b08",
+          "form": "b08",
+          "reading": "",
+          "entryId": 107,
+          "rank": null,
+          "topics": []
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "b01",
+           "b02",
+           "b03",
+           "b04"
+          ]
+         },
+         {
+          "id": "words-2",
+          "kind": "words",
+          "words": [
+           "b05",
+           "b06",
+           "b07",
+           "b08"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "unplaced": [],
+    "counts": {
+     "candidates": 25,
+     "placed": 25,
+     "byTopic": 0,
+     "unplaced": 0
+    }
+   }
+  },
+  {
+   "name": "a topic word goes to the topic unit with the fewest words; a full unit takes no more",
+   "note": "4 words over 3 units: quotas 2, 1, 1. f1 to u1 (tie, the earlier), f2 to u2, f3 to u1 (u2 is full), f4 finds no topic unit with room and goes to u3 in pass 2.",
+   "course": {
+    "version": 1,
+    "language": "es",
+    "title": {
+     "en": "Balance"
+    },
+    "levels": {
+     "scheme": "lv"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "one",
+      "level": 1,
+      "title": {
+       "en": "One"
+      },
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "U1"
+        },
+        "topics": [
+         "food"
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "U2"
+        },
+        "topics": [
+         "food"
+        ]
+       },
+       {
+        "id": "u3",
+        "title": {
+         "en": "U3"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "input": {
+    "levels": {
+     "pack": "lv",
+     "levels": [
+      {
+       "name": "1",
+       "words": [
+        {
+         "key": "f1",
+         "form": "f1",
+         "reading": "",
+         "entryId": 1
+        },
+        {
+         "key": "f2",
+         "form": "f2",
+         "reading": "",
+         "entryId": 2
+        },
+        {
+         "key": "f3",
+         "form": "f3",
+         "reading": "",
+         "entryId": 3
+        },
+        {
+         "key": "f4",
+         "form": "f4",
+         "reading": "",
+         "entryId": 4
+        }
+       ]
+      }
+     ]
+    },
+    "frequency": {
+     "pack": "fq",
+     "rows": [
+      {
+       "key": "f1",
+       "form": "f1",
+       "reading": "",
+       "entryId": 1,
+       "rank": 1
+      },
+      {
+       "key": "f2",
+       "form": "f2",
+       "reading": "",
+       "entryId": 2,
+       "rank": 2
+      },
+      {
+       "key": "f3",
+       "form": "f3",
+       "reading": "",
+       "entryId": 3,
+       "rank": 3
+      },
+      {
+       "key": "f4",
+       "form": "f4",
+       "reading": "",
+       "entryId": 4,
+       "rank": 4
+      }
+     ]
+    },
+    "labels": [
+     {
+      "key": "f1",
+      "topics": [
+       "food"
+      ]
+     },
+     {
+      "key": "f2",
+      "topics": [
+       "food"
+      ]
+     },
+     {
+      "key": "f3",
+      "topics": [
+       "food"
+      ]
+     },
+     {
+      "key": "f4",
+      "topics": [
+       "food"
+      ]
+     }
+    ],
+    "grammar": []
+   },
+   "expect": {
+    "language": "es",
+    "title": {
+     "en": "Balance"
+    },
+    "source": {
+     "kind": "levels",
+     "pack": "lv"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "one",
+      "level": 1,
+      "levelName": "1",
+      "title": {
+       "en": "One"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "u1",
+        "title": {
+         "en": "U1"
+        },
+        "topics": [
+         "food"
+        ],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "f1",
+          "form": "f1",
+          "reading": "",
+          "entryId": 1,
+          "rank": 1,
+          "topics": [
+           "food"
+          ]
+         },
+         {
+          "key": "f3",
+          "form": "f3",
+          "reading": "",
+          "entryId": 3,
+          "rank": 3,
+          "topics": [
+           "food"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f1",
+           "f3"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u2",
+        "title": {
+         "en": "U2"
+        },
+        "topics": [
+         "food"
+        ],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "f2",
+          "form": "f2",
+          "reading": "",
+          "entryId": 2,
+          "rank": 2,
+          "topics": [
+           "food"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f2"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       },
+       {
+        "id": "u3",
+        "title": {
+         "en": "U3"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "f4",
+          "form": "f4",
+          "reading": "",
+          "entryId": 4,
+          "rank": 4,
+          "topics": [
+           "food"
+          ]
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "f4"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "unplaced": [],
+    "counts": {
+     "candidates": 4,
+     "placed": 4,
+     "byTopic": 3,
+     "unplaced": 0
+    }
+   }
+  },
+  {
+   "name": "no level pack: levels estimated from frequency ranks",
+   "note": "estimate [3, 5]: ranks 1–3 are level 1, 4–5 level 2, beyond out of scope. A key's best rank counts (水's second row is ignored). Ranks order the words.",
+   "course": {
+    "version": 1,
+    "language": "ja",
+    "title": {
+     "en": "Fallback"
+    },
+    "levels": {
+     "scheme": "jlpt-test",
+     "estimate": [
+      3,
+      5
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "n5",
+      "level": 1,
+      "title": {
+       "en": "N5"
+      },
+      "units": [
+       {
+        "id": "d1",
+        "title": {
+         "en": "D1"
+        }
+       }
+      ]
+     },
+     {
+      "id": "n4",
+      "level": 2,
+      "title": {
+       "en": "N4"
+      },
+      "units": [
+       {
+        "id": "d2",
+        "title": {
+         "en": "D2"
+        },
+        "scripts": [
+         "hiragana"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "input": {
+    "levels": null,
+    "frequency": {
+     "pack": "jiten-test",
+     "rows": [
+      {
+       "key": "j:1",
+       "form": "水",
+       "reading": "みず",
+       "entryId": 11,
+       "rank": 1
+      },
+      {
+       "key": "j:2",
+       "form": "犬",
+       "reading": "いぬ",
+       "entryId": 12,
+       "rank": 3
+      },
+      {
+       "key": "j:3",
+       "form": "猫",
+       "reading": "ねこ",
+       "entryId": 13,
+       "rank": 2
+      },
+      {
+       "key": "j:1",
+       "form": "水",
+       "reading": "みず",
+       "entryId": 11,
+       "rank": 4
+      },
+      {
+       "key": "j:4",
+       "form": "山",
+       "reading": "やま",
+       "entryId": 14,
+       "rank": 5
+      },
+      {
+       "key": "j:5",
+       "form": "川",
+       "reading": "かわ",
+       "entryId": 15,
+       "rank": 6
+      }
+     ]
+    },
+    "labels": [],
+    "grammar": []
+   },
+   "expect": {
+    "language": "ja",
+    "title": {
+     "en": "Fallback"
+    },
+    "source": {
+     "kind": "frequency",
+     "pack": "jiten-test"
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "n5",
+      "level": 1,
+      "levelName": null,
+      "title": {
+       "en": "N5"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "d1",
+        "title": {
+         "en": "D1"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "j:1",
+          "form": "水",
+          "reading": "みず",
+          "entryId": 11,
+          "rank": 1,
+          "topics": []
+         },
+         {
+          "key": "j:3",
+          "form": "猫",
+          "reading": "ねこ",
+          "entryId": 13,
+          "rank": 2,
+          "topics": []
+         },
+         {
+          "key": "j:2",
+          "form": "犬",
+          "reading": "いぬ",
+          "entryId": 12,
+          "rank": 3,
+          "topics": []
+         }
+        ],
+        "lessons": [
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "j:1",
+           "j:3",
+           "j:2"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "n4",
+      "level": 2,
+      "levelName": null,
+      "title": {
+       "en": "N4"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "d2",
+        "title": {
+         "en": "D2"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [
+         {
+          "key": "j:4",
+          "form": "山",
+          "reading": "やま",
+          "entryId": 14,
+          "rank": 5,
+          "topics": []
+         }
+        ],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": [
+           "hiragana"
+          ]
+         },
+         {
+          "id": "words-1",
+          "kind": "words",
+          "words": [
+           "j:4"
+          ]
+         },
+         {
+          "id": "practice",
+          "kind": "practice"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "unplaced": [],
+    "counts": {
+     "candidates": 4,
+     "placed": 4,
+     "byTopic": 0,
+     "unplaced": 0
+    }
+   }
+  },
+  {
+   "name": "no level pack and no frequency pack: units without words",
+   "note": "The source is none; units keep their non-word lessons.",
+   "course": {
+    "version": 1,
+    "language": "ja",
+    "title": {
+     "en": "Fallback"
+    },
+    "levels": {
+     "scheme": "jlpt-test",
+     "estimate": [
+      3,
+      5
+     ]
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "n5",
+      "level": 1,
+      "title": {
+       "en": "N5"
+      },
+      "units": [
+       {
+        "id": "d1",
+        "title": {
+         "en": "D1"
+        }
+       }
+      ]
+     },
+     {
+      "id": "n4",
+      "level": 2,
+      "title": {
+       "en": "N4"
+      },
+      "units": [
+       {
+        "id": "d2",
+        "title": {
+         "en": "D2"
+        },
+        "scripts": [
+         "hiragana"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "input": {
+    "levels": null,
+    "frequency": null,
+    "labels": [],
+    "grammar": []
+   },
+   "expect": {
+    "language": "ja",
+    "title": {
+     "en": "Fallback"
+    },
+    "source": {
+     "kind": "none",
+     "pack": null
+    },
+    "checkpoints": {
+     "lesson": {
+      "questions": 5
+     },
+     "unit": {
+      "questions": 20,
+      "passPercent": 80
+     },
+     "section": {
+      "questions": 40,
+      "passPercent": 75
+     }
+    },
+    "sections": [
+     {
+      "id": "n5",
+      "level": 1,
+      "levelName": null,
+      "title": {
+       "en": "N5"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "d1",
+        "title": {
+         "en": "D1"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [],
+        "lessons": []
+       }
+      ]
+     },
+     {
+      "id": "n4",
+      "level": 2,
+      "levelName": null,
+      "title": {
+       "en": "N4"
+      },
+      "exam": true,
+      "units": [
+       {
+        "id": "d2",
+        "title": {
+         "en": "D2"
+        },
+        "topics": [],
+        "grammar": [],
+        "characters": [],
+        "scripts": [
+         "hiragana"
+        ],
+        "text": null,
+        "focus": null,
+        "test": true,
+        "words": [],
+        "lessons": [
+         {
+          "id": "script",
+          "kind": "script",
+          "characters": [],
+          "scripts": [
+           "hiragana"
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "unplaced": [],
+    "counts": {
+     "candidates": 0,
+     "placed": 0,
+     "byTopic": 0,
+     "unplaced": 0
+    }
+   }
+  }
+ ]
+}

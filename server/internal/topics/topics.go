@@ -239,3 +239,25 @@ func (f *File) TopicsFor(form, reading string) []string {
 	}
 	return out
 }
+
+// TopicsForKey returns the topics of a dictionary entry by its key (zh: the simplified form; ja: `j:<ent_seq>`): every
+// label row of the key, the word row first, then the sense rows in sense order; each topic once. The course fill rule
+// (#221) reads the labels this way, since it starts from entries, not from a list's forms. Nil when no row matches.
+func (f *File) TopicsForKey(key string) []string {
+	var rows []Label
+	for _, l := range f.Labels {
+		if l.Key == key {
+			rows = append(rows, l)
+		}
+	}
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].Sense < rows[j].Sense })
+	var out []string
+	for _, r := range rows {
+		for _, t := range r.Topics {
+			if !slices.Contains(out, t) {
+				out = append(out, t)
+			}
+		}
+	}
+	return out
+}
