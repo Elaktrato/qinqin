@@ -2201,7 +2201,7 @@
 	"reader.library.addEpub": "Add an epub",
 	"reader.library.added": "Added \"{title}\".",
 	"reader.library.booksIn": "{count, plural, one {# book in} other {# books in}}",
-	"reader.library.browse": "Or <link>browse public-domain texts</link> from Aozora Bunko and Project Gutenberg.",
+	"reader.library.browse": "Or <link>browse graded readers and public-domain texts</link>: short texts for your level, Aozora Bunko and Project Gutenberg.",
 	"reader.library.chapters": "{count, plural, one {# chapter} other {# chapters}}",
 	"reader.library.confirmDelete": "Confirm delete of {title}",
 	"reader.library.deleteNamed": "Delete {title}",
