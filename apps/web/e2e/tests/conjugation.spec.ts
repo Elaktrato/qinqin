@@ -44,8 +44,10 @@ test('a conjugation round: produce through the IME, recognise, the answers on th
 
 	await page.goto('/practice');
 	await expect(page.getByRole('heading', { level: 2, name: 'Conjugation' })).toBeVisible();
-	await expect(page.getByText('9 new')).toBeVisible();
-	await expect(page.getByText('1 due')).toBeVisible();
+	// Within the conjugation drill (Japanese also lists the counter drills, #179, and the look-alike kana sets, #228).
+	const drill = page.getByRole('listitem').filter({ has: page.getByRole('heading', { level: 2, name: 'Conjugation' }) });
+	await expect(drill.getByText('9 new', { exact: true })).toBeVisible();
+	await expect(drill.getByText('1 due', { exact: true })).toBeVisible();
 	await expectNoSidewaysScroll(page, '/practice with the conjugation drill');
 
 	// Japanese lists the counter drills too (#179): the conjugation drill's own entry.
