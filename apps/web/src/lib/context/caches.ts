@@ -21,6 +21,7 @@ import type { Reached } from '../milestones/reached';
 import type { Timelines } from '../weekly/replay';
 import type { WeekPasses } from '../weekly/summary';
 import type { WidgetOptions } from '../widgets/options';
+import type { PairWords } from '../features/practice/tonePairs/words';
 
 /** AudioCache: a per-session cache (record 0009). */
 export class AudioCache {
@@ -238,6 +239,8 @@ export class SessionCaches {
 	readonly milestones = new MilestoneFlushes();
 	/** Goal loads in flight, by workspace, day and force (goals/loadGoal.ts). */
 	readonly goals = new Map<string, Promise<unknown>>();
+	/** The tone-pair drill's level-list words by language (features/practice/tonePairs/words.ts levelWords). */
+	readonly tonePairWords = new Map<string, Promise<PairWords>>();
 	readonly audio = new AudioCache();
 	readonly characters = new CharacterCache();
 	readonly components = new ComponentsCache();
@@ -263,6 +266,7 @@ export class SessionCaches {
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
 		this.goals.clear();
+		this.tonePairWords.clear();
 		this.journalSent.clear();
 		this.timelines.clear();
 		this.weekPasses.clear();

@@ -5,6 +5,19 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #180 — the tone-pair drill (contract 26)
+
+- **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
+  answers (`drill.tone-pairs`) are an activity rule, a `count` of feature `practice`, after the core rules
+  (`events/activity.json` `rules` gains it). `GET /api/stats/activity` lists six sources.
+- **New fixture `tones/pairs.json`** (rule `tones/pairs`, Go and web): the drill's 20 item keys `<t1>-<t2>` (citation
+  tones, 5 neutral) in grid order, which dictionary word practises which pair (two Han characters, the clean
+  two-syllable readings agree, first tone not neutral), how a typed answer reads, and a pair's accuracy over its last
+  10 answers with its band. Grading is `tones/sandhi.json` `grading`; a right pair is grade 3, a wrong one 1; mode
+  `mark`.
+- **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
+  streak) as before.
+
 ## Drills framework — drill answers as events, the Practice area (contract 25)
 
 - **New folder `drills/`** (README, `drills.json`, `schedule.json`, `pick.json`, `counting.json`): a drill answer is a

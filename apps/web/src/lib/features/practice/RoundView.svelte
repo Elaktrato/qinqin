@@ -43,6 +43,13 @@
 		round.next();
 	}
 
+	// A tap on Next leaves the focus in a typed answer field (the next question clears it), so the phone keyboard stays
+	// up between questions.
+	function keepFieldFocus(event: PointerEvent): void {
+		const active = document.activeElement;
+		if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) event.preventDefault();
+	}
+
 	function labelOf(entry: RoundEntry): string {
 		return drills.find((d) => d.id === entry.drill)?.label(entry.item) ?? entry.item.key;
 	}
@@ -79,7 +86,7 @@
 	</div>
 	{#if round.answered}
 		<div class="actions">
-			<Button variant="primary" bind:element={nextButton} onclick={next}>
+			<Button variant="primary" bind:element={nextButton} onpointerdown={keepFieldFocus} onclick={next}>
 				{round.position.n === round.position.of ? t('practice.round.finish') : t('practice.round.next')}
 			</Button>
 		</div>
