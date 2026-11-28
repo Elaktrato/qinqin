@@ -196,27 +196,33 @@ var rules = func() map[string]rule {
 		Causative:          one("させる"),
 	}
 	r["vs-i"] = rule{ending: "する", forms: suru}
-	special := clone(suru)
-	special[Negative] = one("さない", "しない")
-	special[PastNegative] = one("さなかった", "しなかった")
-	special[Potential] = one("せる")
-	special[Volitional] = one("そう")
-	special[ConditionalBa] = one("すれば", "せば")
-	r["vs-s"] = rule{ending: "する", forms: special}
-	// A する verb on a stem in っ (察する, 達する, 罰する) keeps the する forms;
-	// its potential, volitional and causative are rare and not drilled.
-	sokuon := clone(suru)
-	sokuon[Passive] = one("せられる", "される")
-	for _, id := range []string{Potential, Volitional, PoliteVolitional, Causative} {
-		delete(sokuon, id)
-	}
-	r[vsSokuon] = rule{ending: "する", forms: sokuon}
+	// A する verb with a godan twin in す (愛す, 訳す) takes the godan forms
+	// (愛さない, 訳せば), the する ones accepted; 愛する keeps 愛すれば first
+	// (愛すればこそ).
+	twin := clone(suru)
+	twin[Negative] = one("さない", "しない")
+	twin[PastNegative] = one("さなかった", "しなかった")
+	twin[Potential] = one("せる")
+	twin[Volitional] = one("そう")
+	twin[ConditionalBa] = one("せば", "すれば")
+	r[vsTwin] = rule{ending: "する", forms: twin}
+	ai := clone(twin)
+	ai[ConditionalBa] = one("すれば", "せば")
+	r[vsAi] = rule{ending: "する", forms: ai}
+	// Any other する verb of class vs-s (察する, 罰する, 有する, 要する) keeps
+	// the する forms, passive せられる first; its potential and causative are
+	// rare and not drilled.
+	only := clone(suru)
+	only[Passive] = one("せられる", "される")
+	delete(only, Potential)
+	delete(only, Causative)
+	r["vs-s"] = rule{ending: "する", forms: only}
 
 	adjI := adjectiveI("")
 	adjI[Polite] = one("いです")
 	r["adj-i"] = rule{ending: "い", forms: adjI}
 	adjIx := adjectiveI("よ")
-	adjIx[Polite] = one("いいです", "よいです")
+	adjIx[Polite] = one("いいです")
 	r["adj-ix"] = rule{ending: "いい", sounds: "いよ", forms: adjIx}
 	r["adj-na"] = rule{ending: "", forms: map[string][]string{
 		Polite:             one("です"),
@@ -244,11 +250,16 @@ var rules = func() map[string]rule {
 	return r
 }()
 
-// Variants of a class picked by the reading (never classes of their own).
+// Variants of a class picked by the word (never classes of their own).
 const (
-	vsSokuon   = "vs-s/sokuon"
+	vsTwin     = "vs-s/twin"
+	vsAi       = "vs-s/ai"
 	ichidanIru = "v1/iru"
 )
+
+// vsTwins are the written stems of the vs-s verbs that have a godan twin in
+// す (愛す, 訳す, 略す, …): only these take さない, せる, そう.
+var vsTwins = []string{"愛", "訳", "略", "課", "科", "解", "介", "期", "害", "属", "処", "適"}
 
 func clone(m map[string][]string) map[string][]string {
 	out := make(map[string][]string, len(m))
@@ -258,10 +269,17 @@ func clone(m map[string][]string) map[string][]string {
 	return out
 }
 
+// extraSuffixes are accepted answers of single words, by kana reading: more
+// suffixes of the class's ending (いい, 良い: よいです; not its compounds).
+var extraSuffixes = map[string]map[string][]string{
+	"いい": {Polite: {"よいです"}},
+}
+
 // extras are accepted answers of single words, by kana reading: whole
 // forms, written in kana.
 var extras = map[string]map[string][]string{
-	"いらっしゃる": {Te: {"いらして"}, Past: {"いらした"}},
+	"いらっしゃる": {Te: {"いらして"}, Past: {"いらした"}, ConditionalTara: {"いらしたら"}},
+	"ない":     {Polite: {"ありません"}, PolitePast: {"ありませんでした"}},
 }
 
 // Classes are the engine's classes (JMdict part-of-speech tags).
@@ -348,8 +366,11 @@ func conjugate(class, written, reading string) (map[string][]Answer, bool) {
 	}
 	rstem := strings.TrimSuffix(reading, r.ending)
 	switch {
-	case class == "vs-s" && strings.HasSuffix(rstem, "っ"):
-		r = rules[vsSokuon]
+	case class == "vs-s" && slices.Contains(vsTwins, strings.TrimSuffix(written, "する")):
+		r = rules[vsTwin]
+		if written == "愛する" {
+			r = rules[vsAi]
+		}
 	case class == "v1" && reading == "いる":
 		r = rules[ichidanIru]
 	}
@@ -375,6 +396,11 @@ func conjugate(class, written, reading string) (map[string][]Answer, bool) {
 	}
 	if class == "vs-i" {
 		forms[Potential] = append(forms[Potential], Answer{Written: writtenOf("出来る"), Reading: rstem + "できる"})
+	}
+	for id, list := range extraSuffixes[reading] {
+		for _, k := range list {
+			forms[id] = append(forms[id], Answer{Written: writtenOf(k), Reading: rstem + k})
+		}
 	}
 	for id, list := range extras[reading] {
 		for _, k := range list {

@@ -253,11 +253,9 @@
    "negative",
    "past",
    "te-form",
-   "potential",
    "volitional",
    "conditional",
-   "passive",
-   "causative"
+   "passive"
   ],
   "v1-s": [
    "polite",
@@ -373,13 +371,23 @@
    ],
    "class": "v5r",
    "forms": [
+    "polite",
+    "polite-negative",
+    "polite-volitional",
+    "polite-past",
+    "polite-past-negative",
+    "negative",
+    "past",
+    "past-negative",
+    "te",
     "potential",
     "volitional",
+    "conditional-ba",
+    "conditional-tara",
     "passive",
-    "causative",
-    "polite-volitional"
+    "causative"
    ],
-   "why": "要る in kana"
+   "why": "要る in kana: いる could be 居る, so the prompt would not say which verb"
   },
   {
    "written": [
@@ -390,6 +398,18 @@
     "potential"
    ],
    "why": "知れる means become known"
+  },
+  {
+   "written": [
+    "要する",
+    "有する"
+   ],
+   "forms": [
+    "volitional",
+    "polite-volitional",
+    "passive"
+   ],
+   "why": "states, not done on purpose"
   },
   {
    "written": [

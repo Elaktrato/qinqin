@@ -2407,10 +2407,12 @@
     },
     "conditional-tara": {
      "written": [
-      "いらっしゃったら"
+      "いらっしゃったら",
+      "いらしたら"
      ],
      "reading": [
-      "いらっしゃったら"
+      "いらっしゃったら",
+      "いらしたら"
      ]
     }
    }
@@ -3999,12 +4001,10 @@
    "forms": {
     "polite": {
      "written": [
-      "かっこいいです",
-      "かっこよいです"
+      "かっこいいです"
      ],
      "reading": [
-      "かっこいいです",
-      "かっこよいです"
+      "かっこいいです"
      ]
     },
     "polite-negative": {
@@ -4418,7 +4418,7 @@
    }
   },
   {
-   "name": "vs-s with a っ stem 察する: the する forms",
+   "name": "vs-s without a godan twin 察する: the する forms",
    "written": "察する",
    "reading": "さっする",
    "class": "vs-s",
@@ -4428,6 +4428,7 @@
     "negative",
     "past",
     "te-form",
+    "volitional",
     "conditional",
     "passive"
    ],
@@ -4496,6 +4497,22 @@
       "さっして"
      ]
     },
+    "volitional": {
+     "written": [
+      "察しよう"
+     ],
+     "reading": [
+      "さっしよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "察しましょう"
+     ],
+     "reading": [
+      "さっしましょう"
+     ]
+    },
     "conditional-ba": {
      "written": [
       "察すれば"
@@ -4525,7 +4542,7 @@
    }
   },
   {
-   "name": "vs-s with a っ stem 罰する",
+   "name": "vs-s without a godan twin 罰する",
    "written": "罰する",
    "reading": "ばっする",
    "class": "vs-s",
@@ -4535,6 +4552,7 @@
     "negative",
     "past",
     "te-form",
+    "volitional",
     "conditional",
     "passive"
    ],
@@ -4603,6 +4621,22 @@
       "ばっして"
      ]
     },
+    "volitional": {
+     "written": [
+      "罰しよう"
+     ],
+     "reading": [
+      "ばっしよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "罰しましょう"
+     ],
+     "reading": [
+      "ばっしましょう"
+     ]
+    },
     "conditional-ba": {
      "written": [
       "罰すれば"
@@ -4632,7 +4666,103 @@
    }
   },
   {
-   "name": "vs-s 訳する: the 愛する pattern",
+   "name": "vs-s without a godan twin 要する: 要しない",
+   "written": "要する",
+   "reading": "ようする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "要します"
+     ],
+     "reading": [
+      "ようします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "要しません"
+     ],
+     "reading": [
+      "ようしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "要しました"
+     ],
+     "reading": [
+      "ようしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "要しませんでした"
+     ],
+     "reading": [
+      "ようしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "要しない"
+     ],
+     "reading": [
+      "ようしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "要した"
+     ],
+     "reading": [
+      "ようした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "要しなかった"
+     ],
+     "reading": [
+      "ようしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "要して"
+     ],
+     "reading": [
+      "ようして"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "要すれば"
+     ],
+     "reading": [
+      "ようすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "要したら"
+     ],
+     "reading": [
+      "ようしたら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "vs-s with a godan twin 訳する: 訳さない, 訳せば",
    "written": "訳する",
    "reading": "やくする",
    "class": "vs-s",
@@ -4743,12 +4873,12 @@
     },
     "conditional-ba": {
      "written": [
-      "訳すれば",
-      "訳せば"
+      "訳せば",
+      "訳すれば"
      ],
      "reading": [
-      "やくすれば",
-      "やくせば"
+      "やくせば",
+      "やくすれば"
      ]
     },
     "conditional-tara": {
@@ -5428,102 +5558,6 @@
     "conditional-tara": {
      "written": [
       "要ったら"
-     ],
-     "reading": [
-      "いったら"
-     ]
-    }
-   }
-  },
-  {
-   "name": "要る in kana: the godan いる",
-   "written": "いる",
-   "reading": "いる",
-   "class": "v5r",
-   "families": [
-    "polite",
-    "polite-past",
-    "negative",
-    "past",
-    "te-form",
-    "conditional"
-   ],
-   "forms": {
-    "polite": {
-     "written": [
-      "いります"
-     ],
-     "reading": [
-      "いります"
-     ]
-    },
-    "polite-negative": {
-     "written": [
-      "いりません"
-     ],
-     "reading": [
-      "いりません"
-     ]
-    },
-    "polite-past": {
-     "written": [
-      "いりました"
-     ],
-     "reading": [
-      "いりました"
-     ]
-    },
-    "polite-past-negative": {
-     "written": [
-      "いりませんでした"
-     ],
-     "reading": [
-      "いりませんでした"
-     ]
-    },
-    "negative": {
-     "written": [
-      "いらない"
-     ],
-     "reading": [
-      "いらない"
-     ]
-    },
-    "past": {
-     "written": [
-      "いった"
-     ],
-     "reading": [
-      "いった"
-     ]
-    },
-    "past-negative": {
-     "written": [
-      "いらなかった"
-     ],
-     "reading": [
-      "いらなかった"
-     ]
-    },
-    "te": {
-     "written": [
-      "いって"
-     ],
-     "reading": [
-      "いって"
-     ]
-    },
-    "conditional-ba": {
-     "written": [
-      "いれば"
-     ],
-     "reading": [
-      "いれば"
-     ]
-    },
-    "conditional-tara": {
-     "written": [
-      "いったら"
      ],
      "reading": [
       "いったら"
@@ -6302,18 +6336,22 @@
    "forms": {
     "polite": {
      "written": [
-      "ないです"
+      "ないです",
+      "ありません"
      ],
      "reading": [
-      "ないです"
+      "ないです",
+      "ありません"
      ]
     },
     "polite-past": {
      "written": [
-      "なかったです"
+      "なかったです",
+      "ありませんでした"
      ],
      "reading": [
-      "なかったです"
+      "なかったです",
+      "ありませんでした"
      ]
     },
     "past": {
@@ -6805,6 +6843,12 @@
    "class": "vs-s"
   },
   {
+   "name": "要る in kana: not drilled (いる could be 居る)",
+   "written": "いる",
+   "reading": "いる",
+   "class": "v5r"
+  },
+  {
    "name": "来る read きたる (literary)",
    "written": "来る",
    "reading": "きたる",
@@ -6843,6 +6887,7 @@
   "いい よければ",
   "いく いったら",
   "いらっしゃる いらした",
+  "いらっしゃる いらしたら",
   "いらっしゃる いらして",
   "いらっしゃる いらっしゃいました",
   "いらっしゃる いらっしゃいます",
@@ -6860,7 +6905,6 @@
   "おっしゃる おっしゃいません",
   "おっしゃる おっしゃいませんでした",
   "かっこいい かっこいいです",
-  "かっこいい かっこよいです",
   "かっこいい かっこよかった",
   "かっこいい かっこよかったです",
   "かっこいい かっこよかったら",
@@ -6912,6 +6956,8 @@
   "とう とうた",
   "とう とうたら",
   "とう とうて",
+  "ない ありません",
+  "ない ありませんでした",
   "ない ないです",
   "ない なかったです",
   "ない なかったら",
@@ -6935,6 +6981,7 @@
   "ゆく いった",
   "ゆく いったら",
   "ゆく いって",
+  "ようする ようしたら",
   "下さる 下さいました",
   "下さる 下さいます",
   "下さる 下さいません",
@@ -6980,6 +7027,7 @@
   "良い 良くなかったです",
   "良い 良ければ",
   "行く 行ったら",
+  "要する 要したら",
   "訳する 訳さない",
   "訳する 訳さなかった",
   "訳する 訳したら",

@@ -52,13 +52,15 @@ form or reading does not end in the ending is not drilled.
 
 Accepted alternatives (the full list is `forms.json`): ら-less potentials of ichidan verbs and 来る (食べれる,
 これる; never for the passive, never for いる); 〜くありません beside 〜くないです; ではない/では… beside じゃない/じゃ…
-and じゃないです beside じゃありません; ならば and であれば beside なら; 愛さない/訳さない with 〜しない; 愛せば beside
-愛すれば; される beside せられる (察する); ないです/なかったです for ある; よいです for いい; 出来る for できる in a
-する verb; いらして/いらした for いらっしゃる; the written forms of the entry's other spellings (判る, 解る), after the
-headword's.
+and じゃないです beside じゃありません; ならば and であれば beside なら; 〜しない beside 愛さない/訳さない; 訳すれば beside
+訳せば (愛せば beside 愛すれば); される beside せられる (察する); ないです/なかったです for ある and ありません/ありませんでした
+for the adjective ない; よいです for いい and 良い; 出来る for できる in a する verb; いらして/いらした/いらしたら for
+いらっしゃる; the written forms of the entry's other spellings (判る, 解る, 行なう), after the headword's.
 
-Variants by reading: a `vs-s` verb whose stem ends in っ (察する, 罰する) keeps the する forms (察しない, 察せられる) and
-has no potential, volitional or causative; 行く read ゆく gives いった, いって, いったら.
+Variants by word: a `vs-s` verb takes the godan forms (愛さない, 訳せる, 訳そう, 訳せば) only when it has a godan twin in
+す (the written stems 愛, 訳, 略, 課, 科, 解, 介, 期, 害, 属, 処, 適); every other `vs-s` verb (察する, 罰する, 要する,
+有する) keeps the する forms (察しない, 察しよう, passive 察せられる) and has no potential or causative; 行く read ゆく gives
+いった, いって, いったら; いる (居る) has no ら-less potential.
 
 ## Families
 
@@ -67,8 +69,12 @@ has no potential, volitional or causative; 行く read ゆく gives いった, �
 verbs and adjectives have no potential, volitional, polite let's, passive or causative. **Exclusions** (by written
 form, with a class or a reading where the written form is ambiguous) take forms away from single words: verbs that are
 not done on purpose (分かる, できる, 見える, 起こる, 壊れる, …), the humble verbs (参ろう no, 参りましょう yes), ござる's
-plain forms, 関する/対する/反する (dropped), ない's double negatives, 死ぬ/殺す's volitional, 来る read きたる. A word
+plain forms, 関する/対する/反する and 要る written いる (dropped: the prompt could not say whether 居る is meant), ない's double negatives, 死ぬ/殺す's volitional, 来る read きたる. A word
 left with no form is not drilled.
+
+Ruling: a `vs-s` verb is conjugated as a godan verb **only from an allowlist** of the stems with a godan twin, every
+other one keeps the する forms — the second review found 有さない, 要さない, 反さない from a class-wide rule — cost if
+wrong: a rare twin verb missing from the list is drilled with its する forms only (they are right too).
 
 Ruling: the defaults are the **beginner families** (N5 in textbook order: Genki 3–9, Minna 4–20) and the rest is off
 — both teacher agents found potential and volitional on by default too early for a beginner — cost if wrong: an

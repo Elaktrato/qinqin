@@ -1,0 +1,836 @@
+{
+ "version": 1,
+ "rule": "conjugation/words",
+ "asked": [
+  "高い",
+  "水",
+  "食べる",
+  "(unknown)",
+  "勉強",
+  "行く",
+  "分かる",
+  "静か",
+  "食べる"
+ ],
+ "words": [
+  {
+   "written": "高い",
+   "class": "adj-i",
+   "reading": "たかい",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たかい"
+    },
+    {
+     "type": "romaji",
+     "value": "takai"
+    }
+   ],
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "conditional-ba": [
+     {
+      "written": "高ければ",
+      "reading": "たかければ",
+      "romaji": "takakereba"
+     }
+    ],
+    "conditional-tara": [
+     {
+      "written": "高かったら",
+      "reading": "たかかったら",
+      "romaji": "takakattara"
+     }
+    ],
+    "negative": [
+     {
+      "written": "高くない",
+      "reading": "たかくない",
+      "romaji": "takakunai"
+     }
+    ],
+    "past": [
+     {
+      "written": "高かった",
+      "reading": "たかかった",
+      "romaji": "takakatta"
+     }
+    ],
+    "past-negative": [
+     {
+      "written": "高くなかった",
+      "reading": "たかくなかった",
+      "romaji": "takakunakatta"
+     }
+    ],
+    "polite": [
+     {
+      "written": "高いです",
+      "reading": "たかいです",
+      "romaji": "takaidesu"
+     }
+    ],
+    "polite-negative": [
+     {
+      "written": "高くないです",
+      "reading": "たかくないです",
+      "romaji": "takakunaidesu"
+     },
+     {
+      "written": "高くありません",
+      "reading": "たかくありません",
+      "romaji": "takakuarimasen"
+     }
+    ],
+    "polite-past": [
+     {
+      "written": "高かったです",
+      "reading": "たかかったです",
+      "romaji": "takakattadesu"
+     }
+    ],
+    "polite-past-negative": [
+     {
+      "written": "高くなかったです",
+      "reading": "たかくなかったです",
+      "romaji": "takakunakattadesu"
+     },
+     {
+      "written": "高くありませんでした",
+      "reading": "たかくありませんでした",
+      "romaji": "takakuarimasendeshita"
+     }
+    ],
+    "te": [
+     {
+      "written": "高くて",
+      "reading": "たかくて",
+      "romaji": "takakute"
+     }
+    ]
+   }
+  },
+  {
+   "written": "食べる",
+   "class": "v1",
+   "reading": "たべる",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たべる"
+    },
+    {
+     "type": "romaji",
+     "value": "taberu"
+    }
+   ],
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "causative": [
+     {
+      "written": "食べさせる",
+      "reading": "たべさせる",
+      "romaji": "tabesaseru"
+     }
+    ],
+    "conditional-ba": [
+     {
+      "written": "食べれば",
+      "reading": "たべれば",
+      "romaji": "tabereba"
+     }
+    ],
+    "conditional-tara": [
+     {
+      "written": "食べたら",
+      "reading": "たべたら",
+      "romaji": "tabetara"
+     }
+    ],
+    "negative": [
+     {
+      "written": "食べない",
+      "reading": "たべない",
+      "romaji": "tabenai"
+     }
+    ],
+    "passive": [
+     {
+      "written": "食べられる",
+      "reading": "たべられる",
+      "romaji": "taberareru"
+     }
+    ],
+    "past": [
+     {
+      "written": "食べた",
+      "reading": "たべた",
+      "romaji": "tabeta"
+     }
+    ],
+    "past-negative": [
+     {
+      "written": "食べなかった",
+      "reading": "たべなかった",
+      "romaji": "tabenakatta"
+     }
+    ],
+    "polite": [
+     {
+      "written": "食べます",
+      "reading": "たべます",
+      "romaji": "tabemasu"
+     }
+    ],
+    "polite-negative": [
+     {
+      "written": "食べません",
+      "reading": "たべません",
+      "romaji": "tabemasen"
+     }
+    ],
+    "polite-past": [
+     {
+      "written": "食べました",
+      "reading": "たべました",
+      "romaji": "tabemashita"
+     }
+    ],
+    "polite-past-negative": [
+     {
+      "written": "食べませんでした",
+      "reading": "たべませんでした",
+      "romaji": "tabemasendeshita"
+     }
+    ],
+    "polite-volitional": [
+     {
+      "written": "食べましょう",
+      "reading": "たべましょう",
+      "romaji": "tabemashou"
+     }
+    ],
+    "potential": [
+     {
+      "written": "食べられる",
+      "reading": "たべられる",
+      "romaji": "taberareru"
+     },
+     {
+      "written": "食べれる",
+      "reading": "たべれる",
+      "romaji": "tabereru"
+     }
+    ],
+    "te": [
+     {
+      "written": "食べて",
+      "reading": "たべて",
+      "romaji": "tabete"
+     }
+    ],
+    "volitional": [
+     {
+      "written": "食べよう",
+      "reading": "たべよう",
+      "romaji": "tabeyou"
+     }
+    ]
+   }
+  },
+  {
+   "written": "行く",
+   "class": "v5k-s",
+   "reading": "いく",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "いく"
+    },
+    {
+     "type": "kana",
+     "value": "ゆく"
+    },
+    {
+     "type": "romaji",
+     "value": "iku"
+    },
+    {
+     "type": "romaji",
+     "value": "yuku"
+    }
+   ],
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "causative": [
+     {
+      "written": "行かせる",
+      "reading": "いかせる",
+      "romaji": "ikaseru"
+     },
+     {
+      "written": "往かせる",
+      "reading": "いかせる",
+      "romaji": "ikaseru"
+     }
+    ],
+    "conditional-ba": [
+     {
+      "written": "行けば",
+      "reading": "いけば",
+      "romaji": "ikeba"
+     },
+     {
+      "written": "往けば",
+      "reading": "いけば",
+      "romaji": "ikeba"
+     }
+    ],
+    "conditional-tara": [
+     {
+      "written": "行ったら",
+      "reading": "いったら",
+      "romaji": "ittara"
+     },
+     {
+      "written": "往ったら",
+      "reading": "いったら",
+      "romaji": "ittara"
+     }
+    ],
+    "negative": [
+     {
+      "written": "行かない",
+      "reading": "いかない",
+      "romaji": "ikanai"
+     },
+     {
+      "written": "往かない",
+      "reading": "いかない",
+      "romaji": "ikanai"
+     }
+    ],
+    "passive": [
+     {
+      "written": "行かれる",
+      "reading": "いかれる",
+      "romaji": "ikareru"
+     },
+     {
+      "written": "往かれる",
+      "reading": "いかれる",
+      "romaji": "ikareru"
+     }
+    ],
+    "past": [
+     {
+      "written": "行った",
+      "reading": "いった",
+      "romaji": "itta"
+     },
+     {
+      "written": "往った",
+      "reading": "いった",
+      "romaji": "itta"
+     }
+    ],
+    "past-negative": [
+     {
+      "written": "行かなかった",
+      "reading": "いかなかった",
+      "romaji": "ikanakatta"
+     },
+     {
+      "written": "往かなかった",
+      "reading": "いかなかった",
+      "romaji": "ikanakatta"
+     }
+    ],
+    "polite": [
+     {
+      "written": "行きます",
+      "reading": "いきます",
+      "romaji": "ikimasu"
+     },
+     {
+      "written": "往きます",
+      "reading": "いきます",
+      "romaji": "ikimasu"
+     }
+    ],
+    "polite-negative": [
+     {
+      "written": "行きません",
+      "reading": "いきません",
+      "romaji": "ikimasen"
+     },
+     {
+      "written": "往きません",
+      "reading": "いきません",
+      "romaji": "ikimasen"
+     }
+    ],
+    "polite-past": [
+     {
+      "written": "行きました",
+      "reading": "いきました",
+      "romaji": "ikimashita"
+     },
+     {
+      "written": "往きました",
+      "reading": "いきました",
+      "romaji": "ikimashita"
+     }
+    ],
+    "polite-past-negative": [
+     {
+      "written": "行きませんでした",
+      "reading": "いきませんでした",
+      "romaji": "ikimasendeshita"
+     },
+     {
+      "written": "往きませんでした",
+      "reading": "いきませんでした",
+      "romaji": "ikimasendeshita"
+     }
+    ],
+    "polite-volitional": [
+     {
+      "written": "行きましょう",
+      "reading": "いきましょう",
+      "romaji": "ikimashou"
+     },
+     {
+      "written": "往きましょう",
+      "reading": "いきましょう",
+      "romaji": "ikimashou"
+     }
+    ],
+    "potential": [
+     {
+      "written": "行ける",
+      "reading": "いける",
+      "romaji": "ikeru"
+     },
+     {
+      "written": "往ける",
+      "reading": "いける",
+      "romaji": "ikeru"
+     }
+    ],
+    "te": [
+     {
+      "written": "行って",
+      "reading": "いって",
+      "romaji": "itte"
+     },
+     {
+      "written": "往って",
+      "reading": "いって",
+      "romaji": "itte"
+     }
+    ],
+    "volitional": [
+     {
+      "written": "行こう",
+      "reading": "いこう",
+      "romaji": "ikou"
+     },
+     {
+      "written": "往こう",
+      "reading": "いこう",
+      "romaji": "ikou"
+     }
+    ]
+   }
+  },
+  {
+   "written": "分かる",
+   "class": "v5r",
+   "reading": "わかる",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "わかる"
+    },
+    {
+     "type": "romaji",
+     "value": "wakaru"
+    }
+   ],
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional",
+    "causative"
+   ],
+   "forms": {
+    "causative": [
+     {
+      "written": "分からせる",
+      "reading": "わからせる",
+      "romaji": "wakaraseru"
+     },
+     {
+      "written": "解らせる",
+      "reading": "わからせる",
+      "romaji": "wakaraseru"
+     },
+     {
+      "written": "判らせる",
+      "reading": "わからせる",
+      "romaji": "wakaraseru"
+     }
+    ],
+    "conditional-ba": [
+     {
+      "written": "分かれば",
+      "reading": "わかれば",
+      "romaji": "wakareba"
+     },
+     {
+      "written": "解れば",
+      "reading": "わかれば",
+      "romaji": "wakareba"
+     },
+     {
+      "written": "判れば",
+      "reading": "わかれば",
+      "romaji": "wakareba"
+     }
+    ],
+    "conditional-tara": [
+     {
+      "written": "分かったら",
+      "reading": "わかったら",
+      "romaji": "wakattara"
+     },
+     {
+      "written": "解ったら",
+      "reading": "わかったら",
+      "romaji": "wakattara"
+     },
+     {
+      "written": "判ったら",
+      "reading": "わかったら",
+      "romaji": "wakattara"
+     }
+    ],
+    "negative": [
+     {
+      "written": "分からない",
+      "reading": "わからない",
+      "romaji": "wakaranai"
+     },
+     {
+      "written": "解らない",
+      "reading": "わからない",
+      "romaji": "wakaranai"
+     },
+     {
+      "written": "判らない",
+      "reading": "わからない",
+      "romaji": "wakaranai"
+     }
+    ],
+    "past": [
+     {
+      "written": "分かった",
+      "reading": "わかった",
+      "romaji": "wakatta"
+     },
+     {
+      "written": "解った",
+      "reading": "わかった",
+      "romaji": "wakatta"
+     },
+     {
+      "written": "判った",
+      "reading": "わかった",
+      "romaji": "wakatta"
+     }
+    ],
+    "past-negative": [
+     {
+      "written": "分からなかった",
+      "reading": "わからなかった",
+      "romaji": "wakaranakatta"
+     },
+     {
+      "written": "解らなかった",
+      "reading": "わからなかった",
+      "romaji": "wakaranakatta"
+     },
+     {
+      "written": "判らなかった",
+      "reading": "わからなかった",
+      "romaji": "wakaranakatta"
+     }
+    ],
+    "polite": [
+     {
+      "written": "分かります",
+      "reading": "わかります",
+      "romaji": "wakarimasu"
+     },
+     {
+      "written": "解ります",
+      "reading": "わかります",
+      "romaji": "wakarimasu"
+     },
+     {
+      "written": "判ります",
+      "reading": "わかります",
+      "romaji": "wakarimasu"
+     }
+    ],
+    "polite-negative": [
+     {
+      "written": "分かりません",
+      "reading": "わかりません",
+      "romaji": "wakarimasen"
+     },
+     {
+      "written": "解りません",
+      "reading": "わかりません",
+      "romaji": "wakarimasen"
+     },
+     {
+      "written": "判りません",
+      "reading": "わかりません",
+      "romaji": "wakarimasen"
+     }
+    ],
+    "polite-past": [
+     {
+      "written": "分かりました",
+      "reading": "わかりました",
+      "romaji": "wakarimashita"
+     },
+     {
+      "written": "解りました",
+      "reading": "わかりました",
+      "romaji": "wakarimashita"
+     },
+     {
+      "written": "判りました",
+      "reading": "わかりました",
+      "romaji": "wakarimashita"
+     }
+    ],
+    "polite-past-negative": [
+     {
+      "written": "分かりませんでした",
+      "reading": "わかりませんでした",
+      "romaji": "wakarimasendeshita"
+     },
+     {
+      "written": "解りませんでした",
+      "reading": "わかりませんでした",
+      "romaji": "wakarimasendeshita"
+     },
+     {
+      "written": "判りませんでした",
+      "reading": "わかりませんでした",
+      "romaji": "wakarimasendeshita"
+     }
+    ],
+    "te": [
+     {
+      "written": "分かって",
+      "reading": "わかって",
+      "romaji": "wakatte"
+     },
+     {
+      "written": "解って",
+      "reading": "わかって",
+      "romaji": "wakatte"
+     },
+     {
+      "written": "判って",
+      "reading": "わかって",
+      "romaji": "wakatte"
+     }
+    ]
+   }
+  },
+  {
+   "written": "静か",
+   "class": "adj-na",
+   "reading": "しずか",
+   "readings": [
+    {
+     "type": "kana",
+     "value": "しずか"
+    },
+    {
+     "type": "romaji",
+     "value": "shizuka"
+    }
+   ],
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "conditional-ba": [
+     {
+      "written": "静かなら",
+      "reading": "しずかなら",
+      "romaji": "shizukanara"
+     },
+     {
+      "written": "静かならば",
+      "reading": "しずかならば",
+      "romaji": "shizukanaraba"
+     },
+     {
+      "written": "静かであれば",
+      "reading": "しずかであれば",
+      "romaji": "shizukadeareba"
+     }
+    ],
+    "conditional-tara": [
+     {
+      "written": "静かだったら",
+      "reading": "しずかだったら",
+      "romaji": "shizukadattara"
+     }
+    ],
+    "negative": [
+     {
+      "written": "静かじゃない",
+      "reading": "しずかじゃない",
+      "romaji": "shizukajanai"
+     },
+     {
+      "written": "静かではない",
+      "reading": "しずかではない",
+      "romaji": "shizukadehanai"
+     }
+    ],
+    "past": [
+     {
+      "written": "静かだった",
+      "reading": "しずかだった",
+      "romaji": "shizukadatta"
+     }
+    ],
+    "past-negative": [
+     {
+      "written": "静かじゃなかった",
+      "reading": "しずかじゃなかった",
+      "romaji": "shizukajanakatta"
+     },
+     {
+      "written": "静かではなかった",
+      "reading": "しずかではなかった",
+      "romaji": "shizukadehanakatta"
+     }
+    ],
+    "polite": [
+     {
+      "written": "静かです",
+      "reading": "しずかです",
+      "romaji": "shizukadesu"
+     }
+    ],
+    "polite-negative": [
+     {
+      "written": "静かじゃありません",
+      "reading": "しずかじゃありません",
+      "romaji": "shizukajaarimasen"
+     },
+     {
+      "written": "静かじゃないです",
+      "reading": "しずかじゃないです",
+      "romaji": "shizukajanaidesu"
+     },
+     {
+      "written": "静かではありません",
+      "reading": "しずかではありません",
+      "romaji": "shizukadehaarimasen"
+     },
+     {
+      "written": "静かではないです",
+      "reading": "しずかではないです",
+      "romaji": "shizukadehanaidesu"
+     }
+    ],
+    "polite-past": [
+     {
+      "written": "静かでした",
+      "reading": "しずかでした",
+      "romaji": "shizukadeshita"
+     }
+    ],
+    "polite-past-negative": [
+     {
+      "written": "静かじゃありませんでした",
+      "reading": "しずかじゃありませんでした",
+      "romaji": "shizukajaarimasendeshita"
+     },
+     {
+      "written": "静かじゃなかったです",
+      "reading": "しずかじゃなかったです",
+      "romaji": "shizukajanakattadesu"
+     },
+     {
+      "written": "静かではありませんでした",
+      "reading": "しずかではありませんでした",
+      "romaji": "shizukadehaarimasendeshita"
+     },
+     {
+      "written": "静かではなかったです",
+      "reading": "しずかではなかったです",
+      "romaji": "shizukadehanakattadesu"
+     }
+    ],
+    "te": [
+     {
+      "written": "静かで",
+      "reading": "しずかで",
+      "romaji": "shizukade"
+     }
+    ]
+   }
+  }
+ ]
+}

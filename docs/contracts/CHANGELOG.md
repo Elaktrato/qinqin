@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 29)
+
+- **New `conjugation/`:** the engine's classes (JMdict parts of speech), the ten form families (`families.json`:
+  forms, defaults, the families of each class, per-word exclusions), every form with its canonical answer and the
+  accepted alternatives (`forms.json`, checked against the lemmatizer's rule table; `lemmaGaps` lists what it cannot
+  reach yet), the workspace-settings key `conjugation` (`settings.json`) and the route's answer (`words.json`).
+- **New route `POST /api/drills/conjugation/words`** `{"ids": [...]}` (1 to 500; signed in, no access token): the
+  drilled words among the entries with their families and forms (written, kana, romaji).
+- **`drills/drills.json` `registry`:** `conjugation` (event type `drill.conjugation`, item `<entryId>:<family>`,
+  modes `produce` and `recognise`); **`events/activity.json`:** its count rule, feature `practice`.
+- **`settings/README.md`:** the key `conjugation: {families: {<family>: boolean}}`.
+
 ## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
 
 - **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
