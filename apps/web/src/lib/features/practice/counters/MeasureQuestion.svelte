@@ -95,9 +95,7 @@
 
 <div class="noun" {lang}>
 	{#if chinese}
-		<p class="prompt" aria-label={t('practice.measureWords.promptLabel', { noun: noun.written })}>
-			<span aria-hidden="true">一 <span class="gap">＿</span> {noun.written}</span>
-		</p>
+		<p class="prompt">一 <span class="gap">＿</span> {noun.written}</p>
 	{:else}
 		<p class="prompt">{noun.written}</p>
 	{/if}

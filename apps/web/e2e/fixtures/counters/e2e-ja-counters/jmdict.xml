@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY n "noun (common) (futsuumeishi)">
+]>
+<JMdict>
+<entry><ent_seq>1362810</ent_seq><k_ele><keb>紙</keb><ke_pri>ichi1</ke_pri></k_ele><r_ele><reb>かみ</reb><re_pri>ichi1</re_pri></r_ele><sense><pos>&n;</pos><gloss>paper</gloss></sense></entry>
+<entry><ent_seq>1166490</ent_seq><k_ele><keb>犬</keb><ke_pri>ichi1</ke_pri></k_ele><r_ele><reb>いぬ</reb><re_pri>ichi1</re_pri></r_ele><sense><pos>&n;</pos><gloss>dog</gloss></sense></entry>
+</JMdict>

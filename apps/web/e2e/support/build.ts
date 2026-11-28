@@ -19,6 +19,8 @@ export const fixturePacks = resolve(here, '..', 'fixtures', 'packs');
 export const fixtureImages = resolve(here, '..', 'fixtures', 'images');
 /** A small JMdict-format pack of verbs and adjectives only the conjugation spec installs (#178). */
 export const fixtureConjugation = resolve(here, '..', 'fixtures', 'conjugation');
+/** Small CC-CEDICT and JMdict packs of nouns only the measure-word and counter spec installs (#179). */
+export const fixtureCounters = resolve(here, '..', 'fixtures', 'counters');
 /** A one-word Korean pack: a language no drill applies to (the practice spec without a drill). */
 export const fixtureNoDrill = resolve(here, '..', 'fixtures', 'no-drill');
 

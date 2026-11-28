@@ -1932,7 +1932,6 @@
 	"practice.measureWords.choicesLabel": "Choose the measure word",
 	"practice.measureWords.description": "Chinese measure words (量词) for the nouns you study: which word goes in 一＿书?",
 	"practice.measureWords.fallback": "{fallback} is understood and common in speech, but {answer} is the standard word.",
-	"practice.measureWords.promptLabel": "One {noun}, with which measure word?",
 	"practice.measureWords.title": "Measure words",
 	"practice.measureWords.typeFirst": "Type a measure word first.",
 	"practice.none": "No drills for this language yet.",

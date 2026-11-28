@@ -12,15 +12,17 @@ test('the sample drill: a round, its answers on the server, the weakest round', 
 	await page.addInitScript((id) => {
 		localStorage.setItem('qinqin.dev.drills', 'sample');
 		// Japanese: the conjugation drill has no items there (the shared e2e pack has no parts of speech), so the
-		// sample drill is the only one to practise; Chinese has the tone-pair drill's words.
+		// sample drill and the counter readings (#179) are the ones to practise; Chinese has the tone-pair drill's words.
 		localStorage.setItem('qinqin.workspace', String(id));
 	}, learner.workspaces.ja);
 	await page.goto('/practice');
-	await expect(page.getByRole('heading', { level: 2, name: 'Sample drill' })).toBeVisible();
-	await expect(page.getByText('5 new')).toBeVisible();
+	// Japanese lists the counter drills too (#179): the sample drill's own entry.
+	const sample = page.getByRole('listitem').filter({ has: page.getByRole('heading', { level: 2, name: 'Sample drill' }) });
+	await expect(sample).toBeVisible();
+	await expect(sample.getByText('5 new')).toBeVisible();
 	await expectNoSidewaysScroll(page, '/practice');
 
-	await page.getByRole('link', { name: 'Practise', exact: true }).click();
+	await sample.getByRole('link', { name: 'Practise', exact: true }).click();
 	await expect(page).toHaveURL(/\/practice\/sample$/);
 	await expect(page.getByText('Question 1 of 5')).toBeVisible();
 	await expectNoSidewaysScroll(page, '/practice/sample');
