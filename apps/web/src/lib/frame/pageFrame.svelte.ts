@@ -75,7 +75,9 @@ const ROUTE_TITLES: Record<string, () => string> = {
 	'/account/two-factor-setup': () => t('account.mfa.setUp'),
 	'/reset': () => t('auth.reset.title'),
 	'/login': () => t('auth.signIn.title'),
-	'/register': () => t('auth.register.title')
+	'/register': () => t('auth.register.title'),
+	// Practice is a section only while a drill applies; its pages keep their title without one.
+	'/practice': () => t('features.practice.title')
 };
 
 /**
@@ -94,5 +96,6 @@ export function phoneTitle(
 	const section = sections.find((s) => s.id === current);
 	if (section) return section.label;
 	const trimmed = path.length > 1 ? path.replace(/\/+$/, '') : path;
-	return ROUTE_TITLES[trimmed]?.() ?? APP_NAME;
+	const first = `/${trimmed.split('/')[1] ?? ''}`;
+	return (ROUTE_TITLES[trimmed] ?? (first === '/practice' ? ROUTE_TITLES[first] : undefined))?.() ?? APP_NAME;
 }

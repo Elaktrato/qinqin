@@ -6,8 +6,9 @@ import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import type { Run } from '$lib/studycore/vacation';
 import type { Schedule } from '$lib/studycore/scheduler';
 import fixture from '../../../../../docs/contracts/stats/summary-numbers.json';
-import { grammarPayload } from '$lib/events/eventPayloads';
+import { drillPayload, grammarPayload } from '$lib/events/eventPayloads';
 import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
+import { parseDrillAnswer, type DrillAnswer } from '$lib/studycore/drills';
 
 // The recall figure must be the decks page's own function, called once for
 // the overall scope; the spy proves the reuse (the rest of the module stays
@@ -135,6 +136,19 @@ describe('summaryNumbers', () => {
 		const own = [run('g1', input.workspaceId, addDays(today, -1)), run('g2', input.workspaceId, today)];
 		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: own }).streak).toBe(2);
 		expect(summaryNumbers({ ...input, reviews: [], vacation: [], grammarRuns: [run('g3', input.workspaceId + 1, today)] }).streak).toBe(0);
+	});
+
+	it('counts a drill answer day in the streak, of this workspace only', () => {
+		const input = inputOf(cases[0]);
+		const today = input.day.today(input.now);
+		const answer = (id: string, ws: number, date: string): DrillAnswer => {
+			const a = parseDrillAnswer({ id, workspaceId: ws, ts: `${date}T12:00:00Z`, type: 'drill.tone-pairs', payload: drillPayload('3-4', 'produce', 1) });
+			if (a === null) throw new Error('no answer');
+			return a;
+		};
+		const own = [answer('d1', input.workspaceId, addDays(today, -1)), answer('d2', input.workspaceId, today)];
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], drillAnswers: own }).streak).toBe(2);
+		expect(summaryNumbers({ ...input, reviews: [], vacation: [], drillAnswers: [answer('d3', input.workspaceId + 1, today)] }).streak).toBe(0);
 	});
 
 	it('uses the decks page’s 30-day window, one constant for both', () => {

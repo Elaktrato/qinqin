@@ -5,7 +5,7 @@ import "qinqin/internal/update"
 // ContractVersion is the version of the client contracts in docs/contracts/.
 // It goes up by one in the change that adds a CHANGELOG entry a client must
 // follow (docs/contracts/version/README.md).
-const ContractVersion = 24
+const ContractVersion = 25
 
 // BridgeLevel and BridgeFeatures say what this server's web app uses from a
 // native shell (docs/contracts/version/README.md): features it uses when the

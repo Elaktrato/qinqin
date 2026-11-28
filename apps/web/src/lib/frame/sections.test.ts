@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { memoryStorage } from '$lib/testing/context';
 import { FLASHCARDS_ID, GRAMMAR_ID, JOURNAL_ID, READER_ID, STATS_ID } from '$lib/features';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
+import { DEV_DRILLS_KEY } from '$lib/features/practice/drills';
 import { currentSection, frameSections, homeSection, iconOf } from './sections';
 
 function state(id: string, enabled = true): FeatureSwitch {
@@ -54,6 +56,22 @@ describe('frameSections', () => {
 		expect(ids(null)).not.toContain('scripts');
 		expect(frameSections(ready([...all.list, state('scripts', false)]), 'ja').map((s) => s.id)).not.toContain('scripts');
 		expect(frameSections(withScripts, 'ja').find((s) => s.id === 'scripts')).toMatchObject({ label: 'Scripts', href: '/scripts', icon: 'words' });
+	});
+
+	it('shows Practice only while a drill applies to the language (none is registered yet; the sample drill behind its flag)', () => {
+		const ids = (language: string | null) => frameSections(all, language).map((s) => s.id);
+		expect(ids('ja')).not.toContain('practice');
+		const store = memoryStorage();
+		store.setItem(DEV_DRILLS_KEY, 'sample');
+		vi.stubGlobal('localStorage', store);
+		try {
+			expect(ids('ja')).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'scripts', 'practice', 'stats']);
+			expect(frameSections(all, 'zh').find((s) => s.id === 'practice')).toMatchObject({ label: 'Practice', href: '/practice', icon: 'repeat' });
+			expect(currentSection('/practice/weakest', frameSections(all, 'zh'))).toBe('practice');
+			expect(frameSections(ready([...all.list, state('practice', false)]), 'zh').map((s) => s.id)).not.toContain('practice');
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it('every id is unique', () => {

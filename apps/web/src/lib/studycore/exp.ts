@@ -1,10 +1,11 @@
-// EXP, levels and streaks are derived from the review log and the grammar
-// lesson runs (#277), never stored.
+// EXP, levels and streaks are derived from the review log, the grammar
+// lesson runs (#277) and the drill answers (drills.ts), never stored.
 // Day boundaries are the learner's day (lib/time/studyDay.ts), recomputed
 // for the whole log, so every device agrees on what "today" is.
 
 import { addDays, type StudyDay } from '$lib/time/studyDay';
 import { isVacationDay, type Run } from './vacation';
+import type { DrillAnswer } from './drills';
 import type { GrammarRun } from './grammarRuns';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
@@ -25,6 +26,9 @@ export const DAILY_BONUS = 10;
 
 /** XP of one finished grammar lesson run, whatever its score (#277). */
 export const LESSON_RUN_XP = 20;
+
+/** XP of one drill answer before its grade bonus (docs/contracts/drills/counting.json). */
+export const DRILL_ANSWER_XP = 5;
 
 interface ValidReview {
 	id: string;
@@ -62,17 +66,20 @@ function validReviews(reviews: readonly ReviewEvent[]): ValidReview[] {
  * xpFromReviews awards the kind's base XP plus a grade bonus per review,
  * a flat +10 for every distinct learner day that has at least one
  * review (`dayOf` maps an instant in ms to its day, StudyDay.dayOf), and
- * LESSON_RUN_XP per grammar lesson run (readable runs, grammarRuns.ts; a day
- * with runs only has no daily bonus). Only the day count matters, so the
- * total never depends on event order.
+ * LESSON_RUN_XP per grammar lesson run (readable runs, grammarRuns.ts) and
+ * DRILL_ANSWER_XP plus the grade bonus per drill answer (drills.ts); a day
+ * with runs or answers only has no daily bonus. Only the day count matters,
+ * so the total never depends on event order.
  */
 export function xpFromReviews(
 	reviews: readonly ReviewEvent[],
 	dayOf: (ms: number) => string,
-	lessonRuns: readonly GrammarRun[] = []
+	lessonRuns: readonly GrammarRun[] = [],
+	drillAnswers: readonly Pick<DrillAnswer, 'grade'>[] = []
 ): number {
 	const valid = validReviews(reviews);
 	let total = lessonRuns.length * LESSON_RUN_XP;
+	for (const answer of drillAnswers) total += DRILL_ANSWER_XP + GRADE_BONUS[answer.grade];
 	for (const review of valid) {
 		total += BASE_XP[review.mode] + GRADE_BONUS[review.grade];
 	}
@@ -145,8 +152,8 @@ export function streakRuns(days: readonly string[], vacation: readonly Run[]): n
 }
 
 /**
- * dailyStreak counts consecutive learner days with a review or a finished
- * grammar lesson (#277; civil dates, so a 23 or 25 hour day is one day). The
+ * dailyStreak counts consecutive learner days with a review, a finished
+ * grammar lesson (#277) or a drill answer (civil dates, so a 23 or 25 hour day is one day). The
  * current run counts back from today, or from yesterday while today has none
  * yet. Days after `now` (clock skew, a device set ahead) are ignored for both
  * the current run and the best run.
@@ -156,7 +163,8 @@ export function dailyStreak(
 	now: number,
 	day: StudyDay,
 	vacation: readonly Run[] = [],
-	lessonRuns: readonly GrammarRun[] = []
+	lessonRuns: readonly GrammarRun[] = [],
+	drillAnswers: readonly Pick<DrillAnswer, 'at'>[] = []
 ): { current: number; best: number; todayDone: boolean } {
 	const today = day.today(now);
 	const onVacation = (d: string): boolean => isVacationDay(vacation, d);
@@ -164,7 +172,7 @@ export function dailyStreak(
 	// review on one does not count (docs/contracts/scheduler/).
 	const days = [
 		...new Set(
-			[...validReviews(reviews), ...lessonRuns]
+			[...validReviews(reviews), ...lessonRuns, ...drillAnswers]
 				.map((item) => day.dayOf(item.at))
 				.filter((d) => d <= today && !onVacation(d))
 		)

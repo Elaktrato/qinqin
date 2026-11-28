@@ -14,6 +14,7 @@
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/studycore/exp';
 	import type { GrammarRun } from '$lib/studycore/grammarRuns';
+	import type { DrillAnswer } from '$lib/studycore/drills';
 	import Mascot from './Mascot.svelte';
 	import { setupKinds } from './setup/setup';
 	import { loadStudyHistory, onStudyChange, touches } from '$lib/studycore/data';
@@ -36,6 +37,7 @@
 		cards: StudyCard[];
 		reviews: ReviewEvent[];
 		grammarRuns: readonly GrammarRun[];
+		drillAnswers: readonly DrillAnswer[];
 		weights: readonly number[];
 		deckSettings: Record<string, DeckSettings>;
 		ctx: StudyContext;
@@ -47,6 +49,7 @@
 	const cards = $derived(shown.value?.cards ?? []);
 	const reviews = $derived(shown.value?.reviews ?? []);
 	const grammarRuns = $derived(shown.value?.grammarRuns ?? []);
+	const drillAnswers = $derived(shown.value?.drillAnswers ?? []);
 	const weights = $derived(shown.value?.weights ?? DEFAULT_W);
 	const deckSettings = $derived(shown.value?.deckSettings ?? {});
 	const fallbackCtx = currentContext(session.zone);
@@ -101,7 +104,7 @@
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
-	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns));
+	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns, drillAnswers));
 	const vacationText = $derived(
 		workspaceId === null
 			? null
@@ -109,7 +112,7 @@
 	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns, drillAnswers));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : shown.loading ? 'loading' : shown.error ? 'error' : 'ready'
 	);
@@ -130,6 +133,7 @@
 					cards: data.cards,
 					reviews: data.reviews,
 					grammarRuns: data.grammarRuns,
+					drillAnswers: data.drillAnswers ?? [],
 					deckSettings: data.deckSettings ?? {},
 					weights: activeWeights(data),
 					ctx: contextForData(session.zone, data, workspace),

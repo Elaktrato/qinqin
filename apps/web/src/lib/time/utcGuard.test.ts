@@ -32,6 +32,9 @@ const ALLOWED: Record<string, Record<string, string>> = {
 	'/src/lib/features/flashcards/fsrs/preview.ts': {
 		'/ DAY': 'FSRS elapsed-time arithmetic stays as ts-fsrs computes it (a non-goal of the study day)'
 	},
+	'/src/lib/studycore/drills.ts': {
+		'/ DAY': 'retrievability: FSRS elapsed time in 24 h units on the study clock, as ts-fsrs computes it (docs/contracts/drills/)'
+	},
 	'/src/lib/features/flashcards/fsrs/dataset.ts': {
 		'/ 86_400_000)': 'real UTC day numbers for the optimizer holdout split, not a learner day'
 	},
