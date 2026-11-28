@@ -26,6 +26,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- **Practice** (`/practice`), the home of the drills: each drill item has its own spaced schedule (FSRS, apart from your flashcards), a round per drill and **Practise weakest** across them; drill answers count for the heatmap, the weekly summary, daily goals, XP and the streak. It is a feature you can switch off in Settings → Features. The drills themselves (conjugation, counters, tone pairs, look-alike characters) come next; until one applies to your language, Practice is not in the navigation.
+
 - Pictures of words work offline (#274): while the Pictures visual aid is on, preparing for offline use keeps the
   installed picture sets of the workspace language on the device (about 2 MB, downloaded once in the background and
   again only when a set changes), in the browser, the installed app and the Android app. **Report picture** under a

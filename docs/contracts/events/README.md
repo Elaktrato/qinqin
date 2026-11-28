@@ -156,6 +156,7 @@ alter every stored log and the pull's string comparison — cost: none.
 | `journal` | the journal | distinct `entryId` (`journal`) |
 | `script` | the scripts trainer | count (`scripts`) |
 | `grammar` | grammar (a finished lesson run, #277) | distinct `point` (`grammar`) |
+| `drill.<id>` | practice (one answer in a registered drill, `drills/`) | count (`practice`); a drill the server has not registered scores nothing |
 
 The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
 there are no plugin manifests (#199). The server stores any type; a client writes only these.
@@ -170,6 +171,7 @@ there are no plugin manifests (#199). The server stores any type; a client write
 | `read` | `{bookId: int > 0, seconds: int ≥ 30}` | one event per flush of the reading timer when it holds ≥ 30 whole seconds (time accrues between activity pings while visible; a gap over 120 s counts 120 s; flushed every 5 minutes of accrued time, on page hide, `pagehide` and leaving the book; under 30 s is kept for the next flush of the same book and workspace and dropped on a book or workspace switch), in the **book's** workspace | count `readSeconds(payload)`: 0 unless `seconds` is a finite number ≥ 30, else `min(seconds, 7200)`; points `min(ceil(seconds/300), 24)`; `bookId` may be **absent** (restore of an unknown book) — the time still counts, book unknown |
 | `journal` | `{entryId: string}` (the journal entry's ULID) | when a save changed the text, at most once per entry per learner day | count distinct `entryId` **strings** per learner day; a non-string `entryId` never counts |
 | `script` | `{system, item, mode, ok}` | one per answer of the writing-system trainer | see `payloads.json` |
+| `drill.<id>` | `{item: string, mode: string, grade: 1..4}` (more members may follow) | once per answered drill question, in the item's workspace, through the outbox | read an answer only as `drills/drills.json` `parse` says; schedules, rounds, EXP and the streak per `drills/README.md` |
 | `grammar` | `{point: "<packId>:<lessonId>", mode: "lesson", score: int, total: int}` | once per finished lesson run, in the lesson's workspace, through the outbox (#277) | read a run only as `grammar/runs.json` `parse` says; count distinct `point` **strings** per learner day for activity; progress, EXP and the streak per `grammar/README.md` |
 
 Member order is part of the shape (`{bookId, seconds}`, not `{seconds, bookId}`): the server stores the JSON text

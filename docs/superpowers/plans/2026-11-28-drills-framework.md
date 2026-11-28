@@ -73,7 +73,7 @@ at `now`: `forgetting_curve(w, elapsedDays, stability)` with `elapsedDays = max(
    registered drills, the outbox's recently-sent list keeps drill answers.
 5. Web: the Practice feature (`lib/features/practice/`): the drill definition interface and registry, the Practice
    list, a drill's round, the weakest round, the round runner (records through `ReviewOutbox.recordEvent`), the
-   route `/practice/[...rest]`, nav, Settings → Features. The sample drill (`lib/features/practice/testing/`). DOM
+   route `/practice/[...rest]`, nav, Settings → Features. The sample drill (`lib/features/practice/sample/`). DOM
    tests first.
 6. e2e: `/practice` in `phone-width.spec.ts`; a `practice.spec.ts` with the sample drill at 360 px (list, a round, the
    summary, the weakest round, back button), the answers on the server.
@@ -94,7 +94,7 @@ at `now`: `forgetting_curve(w, elapsedDays, stability)` with `elapsedDays = max(
   must not happen before the drill exists — cost if wrong: each drill builder adds one id in three places (the README
   checklist, and a test that the three lists agree).
 - Ruling: **the reference drill** is a sample drill (`sample`, items `sample-1`…`sample-5`, a "Right"/"Wrong" pair of
-  buttons) in `lib/features/practice/testing/`, registered only when the device has the developer flag
+  buttons) in `lib/features/practice/sample/` (not `testing/`: it ships in the bundle), registered only when the device has the developer flag
   `localStorage["qinqin.dev.drills"] = "sample"` (set by DOM tests and e2e, never by the app). It proves the whole path
   in a real browser at 360 px: list, round, outbox, server, the weakest round. It is not in the registry, so the
   server counts none of its events; the web's EXP and streak count every parsed drill answer (see below), so a sample
@@ -149,6 +149,17 @@ at `now`: `forgetting_curve(w, elapsedDays, stability)` with `elapsedDays = max(
   components) — cost: none.
 - Ruling: icon `repeat` (already vendored) for Practice — no new icon vendoring — cost: none.
 - Ruling: a new i18n key area `practice` — the drills' strings get a home of their own — cost: none.
+- Ruling (made while building): `DRILL_ANSWER_XP` lives in `studycore/exp.ts` and `drills.ts` re-exports it — `drills.ts`
+  imports the scheduler, which re-exports from `exp.ts`; a value import the other way would be a cycle — cost: none.
+- Ruling (made while building): a phone bar title for `/practice/...` without a Practice section (no drill applies)
+  comes from the route titles (`pageFrame.svelte.ts`, first path segment for `/practice` only), and the page sets its
+  own title (`setFrameTitle`) — every route needs a title of its own (`pageFrame.test.ts`) — cost: none.
+- Ruling (made while building): every drill answer marks the event log stale (`changesLog` in
+  `activity/sources.ts`), registered or not — EXP and the streak read every parsed answer — cost: none.
+- Ruling (made while building): the Next button takes the focus after an answer only when the focus was lost (the
+  answer buttons went away), never from a field — a typed answer keeps the keyboard up — cost: none.
+- Ruling (made while building): a round counts Hard, Good and Easy as right and lists the Again items once each as
+  "To practise again" — Hard is a right answer after a hint — cost: none.
 - Ruling: ContractVersion 24 (23 on the base; the orchestrator renumbers on merge).
 
 ## Execution record
