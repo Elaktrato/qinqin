@@ -140,7 +140,22 @@ rebuilt them from the reviewed map (2 Japanese picture-only labels fewer), no fo
    packages (`imagesPackage.real.test.ts`, `QINQIN_IMAGES_PACKAGE_FILES`).
 5. e2e — `768f0bc4`. Written after the code (passed at once).
 6. Review — the batches, script and builder fixes in `f58522d9` (the library's tests seen failing first, module
-   missing); the agent review and its application in the next commit.
+   missing); the agent review and its application in `bcdaaccd` (I/O only, not test-first).
+7. Docs — `8d019fbf`.
+
+Merged `feature/v0.9.0` (with #220 and contract 22) before the work; this branch's contract is 23 (the orchestrator
+renumbers). The `TestDeleteUserRemovesEverythingPersonal`, `deleteView` and i18n-order fixes went into the commit
+they belong to (amended before any push), so every commit is green except where noted here: none known.
+
+Gates (2026-11-28): Go full `./...` — 62 packages ok, the only failure the known environment-only `internal/ai`
+`TestHostnameResolvingToEmbeddedFormIsRefused`; `gen-api-docs --check` clean; script tests 235 passed, 1 skipped;
+`build-topic-labels --check` clean; web check 0 errors 0 warnings, build ok, vitest 745 files / 15,085 tests passed,
+3 skipped (Node 26; on Node 22 nine DOM tests of other areas fail, environment only); e2e three runs: 61/61, 60/61,
+61/61 — the one failure `hide-romanisation.spec.ts:98`, the known timing flake of #284's spec (the #220 builder saw
+it too), passing in the other runs.
+
+Not verified here: the pictures on a real phone or in the Android shell, the Docker image build of the reviewed maps
+(local follow-up), and the review by a person.
 
 ## Local follow-up
 
