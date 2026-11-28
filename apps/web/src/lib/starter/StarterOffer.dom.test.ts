@@ -48,6 +48,22 @@ describe('StarterOffer', () => {
 		expect(screen.getByRole('button', { name: 'Start with Starter mode' })).toBeTruthy();
 	});
 
+	it('says how many words the set has and who reviewed it (#275)', async () => {
+		render(StarterOffer, { context: ctx.context });
+		const note = await screen.findByTestId('starter-set-note');
+		expect(note.textContent).toBe(
+			'55 everyday words with pictures. Reviewed by agents acting as native-speaker teachers, not yet by a person.'
+		);
+	});
+
+	it('leaves out the review note for a set a person has read', async () => {
+		vi.mocked(starterSets).mockResolvedValue([
+			{ id: 'starter-ja', language: 'ja', name: 'Starter words (Japanese)', license: 'CC-BY-4.0', attribution: 'x', wordCount: 1, humanReviewed: true }
+		]);
+		render(StarterOffer, { context: ctx.context });
+		expect((await screen.findByTestId('starter-set-note')).textContent).toBe('1 everyday word with pictures.');
+	});
+
 	it('is quiet when the workspace already has a card', async () => {
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [{ id: 'c' } as never] });
 		render(StarterOffer, { context: ctx.context });

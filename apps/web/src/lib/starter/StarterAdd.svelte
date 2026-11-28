@@ -82,6 +82,10 @@
 
 {#if set}
 	<div class="starter-add" data-testid="starter-add">
+		<p class="note" data-testid="starter-set-note">
+			{t('flashcards.starterSet.size', { count: set.wordCount })}{#if !set.humanReviewed}
+				{' '}{t('flashcards.starterSet.reviewedByAgents')}{/if}
+		</p>
 		<Button variant="primary" disabled={busy} onclick={add}>{label ?? t('flashcards.starterSet.add')}</Button>
 		{#if result}
 			<span role="status">{result}</span>
@@ -102,6 +106,12 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.note {
+		flex-basis: 100%;
+		margin: 0;
+		color: var(--readable-muted);
+		font-size: var(--font-size-s);
 	}
 	.error {
 		flex-basis: 100%;
