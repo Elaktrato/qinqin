@@ -4,10 +4,12 @@ import (
 	"compress/gzip"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -154,5 +156,17 @@ func benchSegment(t *testing.T, sqlDB *sql.DB, data, language string) {
 			t.Fatal(err)
 		}
 		t.Logf("run %d: 5,000 runes, %d tokens in %v", run, len(ms), time.Since(start))
+		// QINQIN_SEGMENT_BENCH_DUMP names a file for the first run's tokens
+		// (one per line: start, surface, lemma, first entry, function), to
+		// compare two builds.
+		if dump := os.Getenv("QINQIN_SEGMENT_BENCH_DUMP"); dump != "" && run == 0 {
+			var b strings.Builder
+			for _, m := range ms {
+				fmt.Fprintf(&b, "%d\t%s\t%s\t%d\t%v\n", m.Start, m.Surface, m.Lemma, m.Entries[0].ID, m.Function)
+			}
+			if err := os.WriteFile(dump, []byte(b.String()), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }
