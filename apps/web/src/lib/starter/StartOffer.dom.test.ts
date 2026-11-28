@@ -4,7 +4,11 @@ import { testContext, type TestContext } from '$lib/testing/context';
 
 vi.mock('$lib/api/starter', () => ({ starterSets: vi.fn(), starterSet: vi.fn() }));
 vi.mock('$lib/api/courses', async (importOriginal) => ({ ...(await importOriginal<typeof import('$lib/api/courses')>()), courses: vi.fn(), course: vi.fn() }));
-vi.mock('$lib/studycore/data', async (importOriginal) => ({ ...(await importOriginal<typeof import('$lib/studycore/data')>()), loadStudyHistory: vi.fn() }));
+vi.mock('$lib/studycore/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/studycore/data')>()),
+	loadStudyHistory: vi.fn(),
+	onStudyChange: vi.fn(() => () => undefined)
+}));
 vi.mock('$lib/features/flashcards/decks/starterSet', () => ({
 	addStarterSet: vi.fn(),
 	starterSetTarget: (s: { language: string; name: string }) => ({ id: `d-starter-${s.language}`, name: s.name })
@@ -12,7 +16,7 @@ vi.mock('$lib/features/flashcards/decks/starterSet', () => ({
 
 import { starterSets } from '$lib/api/starter';
 import { course, courses } from '$lib/api/courses';
-import { loadStudyHistory } from '$lib/studycore/data';
+import { loadStudyHistory, onStudyChange } from '$lib/studycore/data';
 import { testCourse } from '$lib/features/courses/testing/course';
 import { history } from '$lib/testing/study';
 import * as build from '$lib/testing/study';
@@ -56,6 +60,17 @@ describe('the course start card on Home (#225)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
 		expect(offer.isConnected).toBe(false);
 		expect(localStorage.getItem('qinqin.courseStart.dismissed.1')).toBe('1');
+	});
+
+	it('goes away when the study data changes and the workspace is no longer empty (levels marked known)', async () => {
+		render(StartOffer, { context: ctx.context });
+		await screen.findByTestId('course-start-offer');
+		// The held (older) history said empty; a refresh or a write then brings the known marks.
+		const listener = vi.mocked(onStudyChange).mock.calls.at(-1)?.[1];
+		expect(listener).toBeTypeOf('function');
+		vi.mocked(loadStudyHistory).mockResolvedValue(history({ known: [{ entryId: 1 } as never] }));
+		listener?.(1);
+		await waitFor(() => expect(screen.queryByTestId('course-start-offer')).toBeNull());
 	});
 
 	it('is not shown once the workspace has a card, but still stands in for the other offers', async () => {

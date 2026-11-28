@@ -13,7 +13,7 @@
 	import { courseHref } from '$lib/features/courses/route';
 	import { placementFirst } from '$lib/features/courses/tests';
 	import { languageLabel } from '$lib/languages';
-	import { loadStudyHistory } from '$lib/studycore/data';
+	import { loadStudyHistory, onStudyChange, touches } from '$lib/studycore/data';
 	import { Button } from '$lib/ui';
 	import { readStarterSettings, starterProfile } from './starter';
 	import { courseStartApplies, isCourseStartDismissed, setCourseStartDismissed, shouldOfferCourseStart } from './startOffer';
@@ -26,6 +26,9 @@
 
 	let offer = $state.raw<{ start: string; placement: string | null } | null>(null);
 	let seq = 0;
+	// Bumped when this workspace's study data or event log changes (a write, a background refresh): the card is
+	// decided again, so levels marked known or a first card after a reload of held data take it away (#225).
+	let changes = $state(0);
 	const workspace = $derived(session.workspaces.current);
 	const featuresReady = $derived(session.features.status === 'ready' || session.features.status === 'error');
 	const coursesOn = $derived(session.features.status === 'ready' && featureEnabled(COURSES_ID, session.features.list));
@@ -41,8 +44,23 @@
 
 	$effect(() => {
 		const ws = workspace;
+		if (ws === undefined || ws === null) return;
+		const again = (touched: number): void => {
+			if (touches(touched, ws.id)) changes++;
+		};
+		const offLog = session.events.onChange(again);
+		const offWrite = onStudyChange(session.study, again);
+		return () => {
+			offLog();
+			offWrite();
+		};
+	});
+
+	$effect(() => {
+		const ws = workspace;
 		const on = coursesOn;
 		const ready = featuresReady;
+		void changes;
 		const mine = ++seq;
 		offer = null;
 		// Deciding again (another workspace, the switches arrived): Home keeps the older offers back meanwhile, so they
