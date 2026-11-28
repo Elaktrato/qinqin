@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #231 — graded readers: the text format, the level rule and the catalogue (contract 42)
+
+- **New `graded/`:** the graded reader text file (format 1: a language's levels of a word level list, texts with id,
+  level, kind `story`/`dialogue`/`info`, title, paragraphs without ASCII letters or digits, names and glosses;
+  `format.json`), the level rule (function words and names not counted, uncovered letters as unknown words, a text
+  fits a level at 95 % within and at most 6 distinct words above; the computed level is the lowest that fits; a gloss
+  word containing an above-level word glosses it; `level-rule.json`, Go and web) and the catalogue answer
+  (`catalogue.json`).
+- **New route `GET /api/library/graded?language=`** (signed in, no personal access token, not cached offline): the
+  texts with level, kind, length, names and glosses. **`GET /api/library/sources`** lists the source `graded`
+  ("Graded readers", ja and zh) first; `POST /api/library/sources/graded/import` adds a text as a one-chapter book.
+
 ## #228 — look-alike characters: the `look-alikes` drill, its sets and rules (contract 39)
 
 - **New `lookalikes/`:** the item of the drill `look-alikes` is a set, keyed by its members in order (`未末`, `ソン`; 2–5

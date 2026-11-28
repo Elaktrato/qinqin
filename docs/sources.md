@@ -963,6 +963,18 @@ never a reason to leave a theme out; every built-in theme reaches 4.5:1 for
 text on its panel and for button text on its default accent. An administrator can add more themes by uploading a theme
 pack (Settings → Data), whose review shows the measured contrast.
 
+## Graded readers (Reader, #231)
+
+`server/internal/library/sources/graded/texts/zh.json` and `ja.json` (embedded in the server) are the Reader's graded
+readers: 20 Chinese texts (≈ HSK 1–4) and 15 Japanese texts (≈ N5–N3), five a level, stories, dialogues and
+informational texts, each with its proper names and the glossed words above its level (a reading and a short English
+meaning). The **project wrote them** (CC BY 4.0, credit "qinqin contributors, CC BY 4.0"; `NOTICE`); no third-party
+text was copied. They are checked against the bundled word level lists (`hsk-words`, `jlpt-words`) with the shipped
+dictionaries (CC-CEDICT, JMdict), which are not part of the files. They were **reviewed by agents acting as teachers,
+not yet by a person** (two teachers and an adjudicator per language; notes: `texts/REVIEW.md`); `humanReviewed` stays
+`false`. A text added to a library keeps the credit as the book's attribution and licence note; the Sources page credits
+them under Reader. Format: `docs/contracts/graded/README.md`. No pack type (record 0008; plan Ruling 2).
+
 ## Reader text sources
 
 The Reader (see `docs/wiki/Reader.md`) imports public-domain works on user request. Nothing
