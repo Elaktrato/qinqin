@@ -2899,7 +2899,7 @@
 	"sources.core.opencc": "Traditional/simplified conversion in the Reader uses opencc-js: the library is under the MIT License, and its conversion dictionaries, generated from [opencc-data](https://github.com/nk2028/opencc-data), under the Apache License, Version 2.0. Both license texts ship with this app.",
 	"sources.core.qinqinThemes": "The colours of the qinqin Day and qinqin Night themes are built into the app, so it paints before the server’s theme list arrives and when it is offline. The full set of built-in themes is credited under Themes.",
 	"sources.core.title": "Built into the app",
-	"sources.core.topicLabels": "Topic labels sort words into themes (food, family, travel …) for the courses. They were written for qinqin: suggested by an agent and reviewed by agents acting as native-speaker teachers of Chinese and Japanese, not yet by a person; some come from the group of a word’s OpenMoji picture. Licensed under CC BY 4.0.",
+	"sources.core.topicLabels": "Topic labels sort words into themes (food, family, travel …) for the courses. They were written for qinqin: suggested by an agent and reviewed by agents acting as native-speaker teachers of Chinese and Japanese, not yet by a person; some come from the group of a word’s OpenMoji picture. Shared under CC BY-SA 4.0: they draw on OpenMoji’s emoji groups and on the words and senses of CC-CEDICT and JMdict.",
 	"sources.core.tsFsrs": "Schedules flashcard reviews.",
 	"sources.core.uqr": "Draws the QR code for two-step sign-in setup in your browser. The code is never sent anywhere.",
 	"sources.dictionaries.hint": "Run <code>qinqin seed</code>, or install a dictionary pack, to add meanings and character data.",

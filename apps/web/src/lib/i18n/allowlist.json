@@ -71,6 +71,11 @@
 	},
 	{
 		"file": "lib/sources/coreCredits.ts",
+		"text": "CC BY-SA 4.0",
+		"reason": "A licence name (data), not prose: the topic labels' licence (#220)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
 		"text": "Aozora Bunko",
 		"reason": "A credited source's proper name (data)."
 	},
