@@ -201,6 +201,11 @@ export interface DeckSessionOptions {
 	newKey?: (card: StudyCard) => number | null;
 	/** Ignore the session and deck daily limits (the owner's Study all). */
 	studyAll?: boolean;
+	/**
+	 * Only these cards (the mistake notebook's, #227): other cards and every companion are left out; a listed card is
+	 * still asked only when it is due or new. Absent: every card of the decks.
+	 */
+	onlyCards?: ReadonlySet<string>;
 }
 
 /** A deck session: the queue, plus new items held back beyond the budget. */
@@ -289,7 +294,8 @@ export function deckSessionEntries({
 	deckSettings,
 	offline,
 	newKey,
-	studyAll = false
+	studyAll = false,
+	onlyCards
 }: DeckSessionOptions): { admission: Omit<Parameters<typeof admitSession>[0], 'candidates'>; entries: QueueEntry<FlowItem>[] } | null {
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0 || ctx.vacationToday) return null;
@@ -302,6 +308,7 @@ export function deckSessionEntries({
 	const allowed = cards.filter(
 		(card) =>
 			!buried.cardIds.has(card.id) &&
+			(onlyCards === undefined || onlyCards.has(card.id)) &&
 			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
 	// Reviews of cards that are not shown (buried, kind switched off) still
@@ -326,6 +333,8 @@ export function deckSessionEntries({
 	);
 	// Words with a queued real card get no opt-in companion (planCompanions).
 	const queuedReal = admitSession({ ...admission, candidates }).inSession;
+
+	if (onlyCards !== undefined) return { admission, entries: real };
 
 	const companions = planCompanions({
 		cards,

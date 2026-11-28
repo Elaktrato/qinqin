@@ -76,6 +76,16 @@ describe('loadConfig', () => {
 		expect(loadConfig().grammar).toBeUndefined();
 	});
 
+	it('keeps the cards a session is limited to only as a list of card ids (#227)', () => {
+		const base = { mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] };
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, cardIds: ['c-vocab-1', 'c-tone-2'] }));
+		expect(loadConfig().cardIds).toEqual(['c-vocab-1', 'c-tone-2']);
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, cardIds: 'c-vocab-1' }));
+		expect(loadConfig().cardIds).toBeUndefined();
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, cardIds: [] }));
+		expect(loadConfig().cardIds).toBeUndefined();
+	});
+
 	it('keeps the page a session was started from only when it is a path of this app (review)', () => {
 		const base = { mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] };
 		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...base, from: '/flashcards?x=1' }));
