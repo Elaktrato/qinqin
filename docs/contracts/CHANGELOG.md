@@ -5,6 +5,19 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #179 — measure words and counters: three drills, their rules and two routes (contract 35)
+
+- **New `counters/`:** item keys of the drills `measure-words` (Chinese, item `<entryId>`), `counters` (Japanese, item
+  `<entryId>`) and `counter-readings` (Japanese, item `<counterId>:<number>`) (`items.json`); Chinese measure words from
+  CC-CEDICT's CL notes with the project's corrections, the 个 fallback, the pool and the choice rules (`measures.json`);
+  every counter × number of the Japanese counters table with its readings and common mistakes (`readings.json`); the
+  route's answer (`words.json`); how a typed answer is checked (`check.json`).
+- **New routes** (signed in, no access token, not cached): `POST /api/drills/measure-words/words` `{"ids": [...]}`
+  (1 to 500) and `GET /api/drills/counters`.
+- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation", "measure-words", "counters",
+  "counter-readings"]`; **`events/activity.json`:** their count rules, feature `practice`; `GET /api/stats/activity`
+  lists ten sources.
+
 ## #223 — courses: a text's translation may be as long as its text (contract 34)
 
 - **`courses/pack.json`:** a unit text's `translation` is checked like a title (`en` required, known language codes)

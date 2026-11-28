@@ -1,0 +1,315 @@
+{
+ "version": 1,
+ "rule": "counters/check",
+ "doc": "How a typed answer is checked (README, \"Checking an answer\"). nouns: a noun of words.json (by key) and typed inputs with their verdict: canonical (the first measure word or counter), accepted (another listed one), fallback (个, acceptable but not idiomatic), wrong, or unread (nothing to check). readings: an item of readings.json (counter:number) and typed inputs: canonical, accepted, wrong, or kana (not graded: the text holds a kanji or a digit; the learner is asked for kana). Web: apps/web/src/lib/features/practice/counters/check.test.ts; Go: server/internal/counters/contract_test.go (every key and item exists).",
+ "nouns": [
+  {
+   "key": "zh:书",
+   "inputs": [
+    {
+     "typed": "本",
+     "verdict": "canonical"
+    },
+    {
+     "typed": " 本。",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "一本",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "ben3",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "běn",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "BĚN",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "ben",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "ben4",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "册",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "冊",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "部",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "个",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "",
+     "verdict": "unread"
+    },
+    {
+     "typed": "一",
+     "verdict": "unread"
+    }
+   ]
+  },
+  {
+   "key": "zh:猫",
+   "inputs": [
+    {
+     "typed": "只",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "隻",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "zhi1",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "个",
+     "verdict": "fallback"
+    },
+    {
+     "typed": "個",
+     "verdict": "fallback"
+    },
+    {
+     "typed": "ge4",
+     "verdict": "fallback"
+    },
+    {
+     "typed": "条",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "ge",
+     "verdict": "fallback"
+    }
+   ]
+  },
+  {
+   "key": "zh:人",
+   "inputs": [
+    {
+     "typed": "个",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "位",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "wei4",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "ge5",
+     "verdict": "canonical"
+    }
+   ]
+  },
+  {
+   "key": "ja:紙",
+   "inputs": [
+    {
+     "typed": "枚",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "まい",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "マイ",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "mai",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "三枚",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "３枚",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "冊",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "さつ",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "",
+     "verdict": "unread"
+    }
+   ]
+  },
+  {
+   "key": "ja:本",
+   "inputs": [
+    {
+     "typed": "冊",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "さつ",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "satsu",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "本",
+     "verdict": "wrong"
+    }
+   ]
+  }
+ ],
+ "readings": [
+  {
+   "item": "hon:3",
+   "inputs": [
+    {
+     "typed": "さんぼん",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "サンボン",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "さんぼん。",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "sanbon",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "sambon",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "SANBON",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "さんほん",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "さんぽん",
+     "verdict": "wrong"
+    },
+    {
+     "typed": "三本",
+     "verdict": "kana"
+    },
+    {
+     "typed": "3本",
+     "verdict": "kana"
+    },
+    {
+     "typed": "さん本",
+     "verdict": "kana"
+    },
+    {
+     "typed": "",
+     "verdict": "unread"
+    }
+   ]
+  },
+  {
+   "item": "hon:10",
+   "inputs": [
+    {
+     "typed": "じゅっぽん",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "juppon",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "じっぽん",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "jippon",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "じゅうほん",
+     "verdict": "wrong"
+    }
+   ]
+  },
+  {
+   "item": "nin:1",
+   "inputs": [
+    {
+     "typed": "ひとり",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "hitori",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "いちにん",
+     "verdict": "wrong"
+    }
+   ]
+  },
+  {
+   "item": "nichi:20",
+   "inputs": [
+    {
+     "typed": "はつか",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "にじゅうにち",
+     "verdict": "wrong"
+    }
+   ]
+  },
+  {
+   "item": "ji:7",
+   "inputs": [
+    {
+     "typed": "しちじ",
+     "verdict": "canonical"
+    },
+    {
+     "typed": "ななじ",
+     "verdict": "accepted"
+    },
+    {
+     "typed": "shichiji",
+     "verdict": "canonical"
+    }
+   ]
+  }
+ ]
+}

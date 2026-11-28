@@ -217,3 +217,69 @@ func TestMeasuresContract(t *testing.T) {
 		}
 	}
 }
+
+// TestCheckContract: check.json's nouns are nouns of words.json, its
+// readings items of the readings drill that readings.json has, and every
+// verdict is one the rule names (the checking itself is a client's:
+// apps/web/src/lib/features/practice/counters/check.test.ts).
+func TestCheckContract(t *testing.T) {
+	type input struct {
+		Typed   string `json:"typed"`
+		Verdict string `json:"verdict"`
+	}
+	var fx struct {
+		Version int    `json:"version"`
+		Rule    string `json:"rule"`
+		Doc     string `json:"doc"`
+		Nouns   []struct {
+			Key    string  `json:"key"`
+			Inputs []input `json:"inputs"`
+		} `json:"nouns"`
+		Readings []struct {
+			Item   string  `json:"item"`
+			Inputs []input `json:"inputs"`
+		} `json:"readings"`
+	}
+	decodeFixture(t, "check.json", &fx)
+	raw, err := os.ReadFile(filepath.Join(contractDir, "words.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var words struct {
+		Words []struct {
+			Key string `json:"key"`
+		} `json:"words"`
+	}
+	if err := json.Unmarshal(raw, &words); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range fx.Nouns {
+		if !slices.ContainsFunc(words.Words, func(w struct {
+			Key string `json:"key"`
+		}) bool {
+			return w.Key == n.Key
+		}) {
+			t.Errorf("noun %s is not in words.json", n.Key)
+		}
+		for _, in := range n.Inputs {
+			if !slices.Contains([]string{"canonical", "accepted", "fallback", "wrong", "unread"}, in.Verdict) {
+				t.Errorf("%s %q: verdict %q", n.Key, in.Typed, in.Verdict)
+			}
+		}
+	}
+	for _, r := range fx.Readings {
+		counter, number, ok := counters.ParseReadingItem(r.Item)
+		if !ok {
+			t.Errorf("%s is no reading item", r.Item)
+			continue
+		}
+		if _, ok := counters.ReadingsOf(counter, number); !ok {
+			t.Errorf("%s is not asked", r.Item)
+		}
+		for _, in := range r.Inputs {
+			if !slices.Contains([]string{"canonical", "accepted", "wrong", "kana", "unread"}, in.Verdict) {
+				t.Errorf("%s %q: verdict %q", r.Item, in.Typed, in.Verdict)
+			}
+		}
+	}
+}
