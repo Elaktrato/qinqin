@@ -37,6 +37,7 @@ import (
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
+	"qinqin/internal/library/sources/graded"
 	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/netguard"
 	"qinqin/internal/packs"
@@ -389,14 +390,15 @@ func newHTTPServer(h http.Handler) *http.Server {
 // main.version=1.2.3" (see commit and buildDate in buildinfo.go).
 var version = "dev"
 
-// librarySources builds the public-domain text sources, sharing one
+// librarySources builds the text sources: the graded readers (embedded, first: the Sources page opens on the first
+// source of the workspace language) and the public-domain sources, which share one
 // HTTP client (rate limits and cache under <data>/cache/sources).
 // Gutenberg's Chinese titles are indexed by pinyin from the lexicon in
 // sqlDB.
 func librarySources(dataDir string, sqlDB *sql.DB) []sources.Source {
 	c := sources.NewHTTPClient(filepath.Join(dataDir, "cache", "sources"),
 		"qinqin/"+version+" (+https://github.com/Elaktrato/qinqin)")
-	return []sources.Source{aozora.New(c), gutenberg.New(c, lexiconPinyin(lexicon.Store{DB: sqlDB}))}
+	return []sources.Source{graded.Source{}, aozora.New(c), gutenberg.New(c, lexiconPinyin(lexicon.Store{DB: sqlDB}))}
 }
 
 // lexiconPinyin converts text to toneless pinyin through the lexicon; a

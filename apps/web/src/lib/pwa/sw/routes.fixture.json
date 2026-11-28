@@ -380,6 +380,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/library/graded",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/library/sources",
 		"access": "user"
 	},
