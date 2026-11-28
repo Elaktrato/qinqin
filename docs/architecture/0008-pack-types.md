@@ -15,7 +15,7 @@ the types; the type's behaviour, the manifest, pack loading and the not-found er
 manifest, `packs` held a twelve-way `errors.Is` chain, and the registry rows were written in three different
 ways (some rewrote every row on every import). #192 made one pack system; the plan is
 `docs/superpowers/plans/2026-11-24-pack-system.md`. #179 (measure words) and #182 (pitch accent) may add
-types. #216 added `images` (pictures and a word mapping) as the last row, the way the record asks of a type that only adds; #274 gave it its data package (`images`), steps 6 and 7 below; #221 appended `course` (one course's skeleton, no data package) after it.
+types. #179 decided against a pack type (its plan's Ruling): the Chinese measure words are read from the installed CC-CEDICT at request time, and the Japanese counters table is project data embedded in `server/internal/counters`, like the Starter lists. #216 added `images` (pictures and a word mapping) as the last row, the way the record asks of a type that only adds; #274 gave it its data package (`images`), steps 6 and 7 below; #221 appended `course` (one course's skeleton, no data package) after it.
 
 ## Decision
 
@@ -72,7 +72,7 @@ types. #216 added `images` (pictures and a word mapping) as the last row, the wa
 7. **Tests that ask for it**: a case in `typeCases` (`TestReimportOfAnUnchangedPackWritesNothing`,
    `TestPackTransactionsTakeTheWriteLockFirst`) and in `typeChanges` (`TestReimportOfAChangedPackStoresTheChange`),
    and the pinned list of `TestSeedOrderIsPinned`. Appending the new type there at its table position is the
-   expected amendment (a type that only adds to the end, like the planned measure-word packs of #179, keeps
+   expected amendment (a type that only adds to the end, as a later counters pack would, keeps
    every existing type's place); moving an existing type is an owner's decision.
 8. **Later migrations of the type**: a migration that adds or backfills a data column must clear the type's
    `content_hash` (or the import's comparison must include the new column), or an unchanged pack is never

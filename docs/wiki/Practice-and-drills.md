@@ -3,8 +3,8 @@
 **Practice** (`/practice`) is the home of the drills: short exercises that train one thing at a time, apart from your
 flashcards. The drills of v0.9.0 are the conjugation trainer (Japanese verbs and adjectives, below), measure words
 and counters, tone pairs (Mandarin) and look-alike characters. Practice shows in the navigation once a drill applies
-to your workspace's language (today: Chinese, with tone pairs); until then `/practice` says "No drills for this
-language yet".
+to your workspace's language (today: Chinese, with tone pairs and measure words, and Japanese, with conjugation,
+counters and counter readings); until then `/practice` says "No drills for this language yet".
 
 ## How it works
 
@@ -61,6 +61,37 @@ through its forms.
   JMdict's part of speech, so a dictionary without parts of speech gives no conjugation items. The forms were reviewed
   by agents acting as Japanese teachers, not yet by a person.
 
+## Measure words (Chinese)
+
+In a Chinese workspace, **Measure words** asks the measure word (量词) of the nouns you study (a noun counts once you
+have reviewed one of its cards): 一 ＿ 书 (book) → 本. The measure words come from the installed CC-CEDICT
+dictionary's "CL:" notes, with corrections reviewed by agents acting as Chinese teachers (some nouns are left out,
+some lists are put in a better order, a few glosses are clearer); nouns without a note are not asked.
+
+- **Type** the measure word with your keyboard's Chinese input (simplified or traditional), or its pinyin with tones
+  (`ben3`, `běn`; toneless pinyin does not count), and press Enter (an Enter that finishes converting does not check);
+  a number in front (一本) is fine. **Show choices** offers four; a right choice counts as right after a hint (Hard).
+- Every measure word the dictionary lists is right; the answer names the usual one first and the others under "Also
+  right". Where 个 is understood but not the standard word (一个猫), it counts as right after a hint, and the answer says
+  which word is standard. 个 is never accepted for nouns where it is wrong (一个纸, 一个衣服, 一个水).
+- Pinyin and bopomofo show only while Settings → Study → Romanisation shows them. A noun you write in traditional
+  characters gets its measure words in traditional characters.
+
+## Counters and counter readings (Japanese)
+
+In a Japanese workspace there are two drills, built on a counters table written for qinqin (32 counters, about 160
+nouns; reviewed by agents acting as Japanese teachers, not yet by a person):
+
+- **Counters** asks the counter of the nouns you study: 紙 (paper) → 枚, 本 (book) → 冊. Type the counter in kanji, kana
+  or romaji (三枚 is fine too), or **Show choices**. Nouns that two counters fit (ビール: 本 or 杯) take either. Nouns
+  that are not in the table are not asked.
+- **Counter readings** asks how number + counter is read, with its sound changes: 1本 いっぽん, 3本 さんぼん, 6本 ろっぽん,
+  何本 なんぼん, 1人 ひとり, 4人 よにん, 20日 はつか. It does not need your decks: every counter of the table with 1 to 10 and
+  何 (dates also 14, 20 and 24; ages 20; o'clock and months 11 and 12), one counter after the other. Type the reading in
+  kana or romaji; if your keyboard turns it into kanji (三本), you are asked again in kana. Common variants are right
+  too (じっぽん, はちほん, さんかい), and the choices are the classic slips (さんほん, さんぽん, ようか for the 4th).
+- Romaji shows only while Settings → Study → Romanisation shows it; kana always shows.
+
 ## What a drill answer counts for
 
 Each answer is saved as a study event (`drill.<drill>`), like a review: it is sent at once, or later when you are
@@ -73,5 +104,6 @@ offline. It counts for:
 
 Practice is a feature you can switch off in Settings → Features; switching it off hides it and deletes nothing.
 
-For developers: the conjugation rules are in `docs/contracts/conjugation/`; the drill rules are in `docs/contracts/drills/` (item keys, the event, schedules, the rounds, counting) and
+For developers: the conjugation rules are in `docs/contracts/conjugation/`, the measure-word and counter rules in
+`docs/contracts/counters/` (the table and its review notes: `server/internal/counters/table/`); the drill rules are in `docs/contracts/drills/` (item keys, the event, schedules, the rounds, counting) and
 [Development](Development#drills) explains how a drill plugs in.

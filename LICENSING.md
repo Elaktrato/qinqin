@@ -48,6 +48,16 @@ The Starter lists copy no third-party text; the dictionary entries and pictures 
 licences. They were reviewed by agents acting as native-speaker teachers (#275, `server/internal/starter/sets/REVIEW.md`),
 not yet by a person. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
 
+### The counters table and the measure-word corrections: CC BY 4.0
+
+The Japanese counters table of the counter drills (`server/internal/counters/table/counters-ja.json`, #179: counters,
+what they count, the readings of number + counter, example nouns) and the corrections to the Chinese measure words
+(`measures-zh.json`: nouns left out, lists reordered or extended, question glosses) are written by the project and are
+under CC BY 4.0, with a `NOTICE` beside them and the credit in each file (rule i). They copy no third-party list. The
+Chinese measure words themselves are read at run time from the installed CC-CEDICT's `CL:` notes and keep CC-CEDICT's
+licence (CC BY-SA 4.0); nothing derived from CC-CEDICT is bundled. Reviewed by agents acting as teachers, not yet by a
+person (`server/internal/counters/table/REVIEW.md`).
+
 ### The topic labels: CC BY-SA 4.0
 
 The topic labels of words (`server/internal/topics/labels/zh.json` and `ja.json`, #220) are written for the project
