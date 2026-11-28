@@ -90,6 +90,31 @@ stops as soon as its result is clear. After a pass you take the next level's exa
 at the next level; the first exam you do not pass is where you start. Not passing the very first one starts you at
 the beginning of the course, nothing skipped. Everything you pass is skipped as above.
 
+## Home and starting out
+
+- **Continue course** on the home page (first in the default home layout) shows where you are in your course and the
+  next lesson one tap away (**Start** at the beginning, **Continue** afterwards, the unit test when its lessons are
+  done), with how many units are done and words met. A workspace whose language has no course shows nothing there.
+- A new workspace whose language has a course asks **How would you like to start?** on the home page:
+  - **I'm new to <language>:** **Start the course** at its first lesson, and **Also add the Starter words** (the
+    picture words of [Starter mode](Settings-tour), which the course does not include) with Starter mode on.
+  - **I know some already:** **Find your place** (below), or **Tell us which levels you know** (the level
+    declaration in Settings → Study).
+
+  The card replaces the separate Starter and placement offers for such a language and goes away once you have a
+  card, a known word or a finished lesson, or when you choose **Not now** (on this device).
+- **Course work counts**: a finished lesson (except a grammar lesson, which counts as a grammar lesson), a unit test
+  and a section exam are each a point on the [heatmap](Stats-and-heatmap) (once a day each), 20 XP, and a day for your
+  streak; "Course lessons" is a [daily goal](Daily-goals) and a row of the [weekly summary](Weekly-summary).
+- **Milestones** mark the way ([Milestones](Milestones)): your first lesson, each unit and section, all of a script
+  (hiragana, katakana), 100 … 1,000 characters and 50 … 3,000 words of the course, and finishing it.
+
+## After the course
+
+When every unit is done, the roadmap shows **What comes next**: your decks (the course words stay in your daily
+reviews), level sessions for the next level's words, the [Reader](Reader), and [grammar](Grammar-lessons)
+beyond the course. **Continue course** on the home page links there.
+
 ## Offline and Android
 
 The course and your place in it are kept on the device: the roadmap opens offline, and lessons work offline for the
