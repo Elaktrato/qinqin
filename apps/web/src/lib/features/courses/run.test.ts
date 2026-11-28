@@ -17,7 +17,7 @@ describe('FlowRun: one pass through a lesson (#222)', () => {
 		expect(run.canContinue).toBe(true);
 		run.next();
 		expect(run.done).toBe(true);
-		expect(run.results).toEqual([{ word: 'a', right: true, retry: false }]);
+		expect(run.results).toEqual([{ id: 'meaning:a:0', word: 'a', right: true, retry: false }]);
 		expect(run.progress).toBe(1);
 	});
 
@@ -35,9 +35,9 @@ describe('FlowRun: one pass through a lesson (#222)', () => {
 		run.next();
 		expect(run.done).toBe(true);
 		expect(run.results).toEqual([
-			{ word: 'a', right: false, retry: false },
-			{ word: 'b', right: true, retry: false },
-			{ word: 'a', right: false, retry: true }
+			{ id: 'meaning:a:0', word: 'a', right: false, retry: false },
+			{ id: 'meaning:b:0', word: 'b', right: true, retry: false },
+			{ id: 'meaning:a:0', word: 'a', right: false, retry: true }
 		]);
 	});
 
@@ -46,6 +46,19 @@ describe('FlowRun: one pass through a lesson (#222)', () => {
 		run.answer('x');
 		run.next();
 		expect(run.done).toBe(true);
+	});
+
+	it('a placement exam stops once its result is decided (#224, Ruling 14)', () => {
+		const run = new FlowRun([q('a'), q('b'), q('c'), q('d')], { retry: false, stopWhen: (r) => r.filter((x) => !x.right).length >= 2 });
+		run.answer('x');
+		run.next();
+		expect(run.done).toBe(false);
+		run.answer('x');
+		run.next();
+		expect(run.done).toBe(true);
+		expect(run.step).toBeNull();
+		expect(run.progress).toBe(1);
+		expect(run.results).toHaveLength(2);
 	});
 
 	it('progress counts the steps passed of all steps, and an empty flow is done at once', () => {

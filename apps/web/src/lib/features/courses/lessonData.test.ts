@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Entry, SearchHit } from '$lib/api/types';
-import { loadCharacterInfo, loadWordInfo } from './lessonData';
+import type { DisplayLesson } from '$lib/features/grammar/lessonData';
+import { courseKnownIndex, loadCharacterInfo, loadGrammarItems, loadWordInfo } from './lessonData';
+import { history } from '$lib/testing/study';
+import { IDENTITY_CLOCK } from '$lib/studycore/studyClock';
 import { word } from './testing/course';
 
 const entry = (id: number, gloss: string): Entry => ({ id, senses: gloss ? [{ gloss }] : [] }) as unknown as Entry;
@@ -26,5 +29,32 @@ describe('lesson data (#222)', () => {
 		const info = await loadCharacterInfo('zh', ['好', '谢'], searchFn);
 		expect([...info.entries()]).toEqual([['好', { key: '好', form: '好', reading: 'hǎo', entryId: 9, gloss: 'good' }]]);
 		expect(searchFn).toHaveBeenCalledWith('zh', '好', { kind: 'character' });
+	});
+
+	it('loadGrammarItems: the gap exercises of each available point; a missing or failing lesson gives none', async () => {
+		const lesson = {
+			id: 'shi',
+			examples: [
+				{ id: 'e1', text: '我是学生。', reading: '', translation: 'I am a student.', focus: '是', distractors: ['有', '在'] },
+				{ id: 'e2', text: '他很好。', reading: '', translation: 'He is well.', focus: '', distractors: [] }
+			]
+		};
+		const load = vi.fn(async (pack: string, id: string) => {
+			if (id === 'gone') return null;
+			if (id === 'boom') throw new TypeError('offline');
+			return { lesson, view: { pack: { language: 'zh' } }, textLang: 'zh-Hans' } as unknown as DisplayLesson;
+		});
+		const items = await loadGrammarItems(['g:shi', 'g:gone', 'g:boom', 'bad'], load);
+		expect([...items.keys()]).toEqual(['g:shi']);
+		const [item] = items.get('g:shi')!;
+		expect(item).toMatchObject({ id: 'e1', before: '我', after: '学生。', answer: '是', translation: 'I am a student.' });
+		expect([...item.choices].sort()).toEqual(['在', '是', '有']);
+		expect(load).toHaveBeenCalledTimes(3);
+	});
+
+	it('courseKnownIndex: the shared predicate index over the history (marks, carded words)', () => {
+		const index = courseKnownIndex(history({ known: [5], cards: [{ id: 'c1', kind: 'vocab', entryId: 6, deckIds: [], createdAt: '' }] as never }), IDENTITY_CLOCK);
+		expect(index.marks.has(5)).toBe(true);
+		expect(index.carded.has(6)).toBe(true);
 	});
 });

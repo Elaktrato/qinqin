@@ -1,4 +1,4 @@
-# Courses: the pack, the fill rule and progress (#221)
+# Courses: the pack, the fill rule, progress and tests (#221, #224)
 
 A course (design: `docs/superpowers/specs/2026-11-24-courses-design.md`; plan and rulings:
 `docs/superpowers/plans/2026-11-28-221-course-pack.md`) is a hand-written **skeleton** (sections, units, grammar,
@@ -18,6 +18,7 @@ Web: `apps/web/src/lib/api/courses.ts` (the routes and a strict decoder), `apps/
 | `fill.json` | `courses/fill`: course + level pack + frequency + labels + grammar → the filled course | Go: `courses/fill_contract_test.go` (`Fill`); web: `lib/api/courses.test.ts` (every `expect` through `decodeCourse`) |
 | `derive.json` | `courses/derive`: the payload builder (`build`), and events → path state | Go: `courses/derive_contract_test.go` (`Derive`, `ParseProgress`); web: `lib/studycore/courseProgress.test.ts` (`coursePayload`, `deriveCourseState`) |
 | `changes.json` | `courses/changes`: events recorded against an earlier course, replayed over the course as it is now | as `derive.json` |
+| `tests.json` | `courses/tests`: how a unit test or section exam is assembled, scored and judged, a placement exam's early stop, the placement chain (#224) | web: `lib/features/courses/tests.test.ts` (a client rule: the server only stores the events) |
 
 ## The pack
 
@@ -174,3 +175,40 @@ above already make progress survive it:
 - **A unit added before the learner's position** is unlocked, not current; **a lesson inserted before the learner's
   position in a unit** is unlocked.
 - A word added to a *skipped* unit is output as known.
+
+## Tests and exams (#224, `tests.json`)
+
+A **unit test** closes a unit (`test: true`), a **section exam** a section (`exam`); both can be taken early to skip
+ahead, and **placement** chains the section exams. Plan and rulings:
+`docs/superpowers/plans/2026-11-28-224-course-tests.md`. Web: `apps/web/src/lib/features/courses/tests.ts`.
+
+- **Questions.** `checkpoints.unit.questions` (`section.questions`) questions: **word** questions (meaning, form, how
+  it is read, which word was heard), **grammar** questions (the unit's or section's installed grammar lessons' own
+  fill-the-gap exercises, one per point in turn) and **text** questions (a gap in a sentence of a unit's reading text).
+  The order is a seeded shuffle with no two questions in a row on the same word where that can be avoided.
+- **Budget** (`budget`): grammar gets `min(G, ceil(Q/5))` and the text `min(T, ceil(Q/5))` of `Q`; the words the rest,
+  at most two questions per word; what the words cannot use goes to grammar, then text, up to what they have. A test
+  can be shorter than `Q`; one with nothing to ask is passed with 0 of 0.
+- **The word sample** (`sample`) is the level check's planner (#82, `lib/placement/levelCheck.ts` `planCheck`): one
+  stratum per word lesson of the unit (a unit test) or per unit of the section (an exam), an even share each (a small
+  stratum gives all it has), seeded with the placement test's generator. Words the shared known predicate
+  (`frequency/known.json`) calls known are left out while others remain; known ones fill only what is left. Every
+  sampled word is asked once before any word is asked twice. Word question types rotate meaning → form → reading →
+  listen, skipping a type that does not apply (listening needs a device voice; reading needs a reading the learner's
+  romanisation setting shows, `settings/` `romanisation`).
+- **Reading questions** (`tones`): Chinese asks the pinyin among variants with one syllable's tone changed (tones 1–4);
+  Japanese asks the kana reading of a word written with kanji among other course words' readings; others none.
+- **Text questions** (`sentences`, `gap`): sentences end after `。！？!?` or a line break; a sentence gives one gap, for
+  the first unit word (teaching order) that occurs in it literally (`cards/` cloze `blankSpans` without segmenter
+  matches), when at least two letters stay outside the gap and three wrong choices exist among the unit's, then the
+  section's, then the course's word forms (none that occurs in the sentence). Each word at most once.
+- **Judging** (`judge`): score = right first answers; `passed = total = 0 or score · 100 ≥ passPercent · total`, against
+  the pack's mark when taken. Recorded as `unit-test {unit, score, total, passed, early}` (`early`: some lesson of the
+  unit was not done) or `section-exam {section, score, total, passed}`. A failed test changes nothing (the
+  derivation) and can be taken again.
+- **Placement** (`decide`, `placement`): starts at the first section with an exam. A placement exam stops as soon as
+  its result cannot change (the pass mark reached, or out of reach) and records the questions asked as `total`. Each is
+  a `section-exam`; after a pass the learner takes the next section's exam or starts in the next section (`placement`
+  of it); a fail records `placement` of the failed section, or of the course's first section when the first exam
+  failed (nothing skipped). Passing the last exam ends it. A client offers placement while no unit of a section with
+  an exam is done and nothing was skipped.

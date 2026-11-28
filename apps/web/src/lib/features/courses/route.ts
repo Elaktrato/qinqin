@@ -6,7 +6,9 @@ export type CourseRoute =
 	| { view: 'roadmap'; course: string | null }
 	| { view: 'lesson'; course: string; unit: string; lesson: string }
 	| { view: 'test'; course: string; unit: string }
-	| { view: 'exam'; course: string; section: string };
+	| { view: 'exam'; course: string; section: string }
+	/** A placement exam (#224): the section exam of `section`, as a step of placement. */
+	| { view: 'placement'; course: string; section: string };
 
 /** The path segment the player lives under. */
 export const PLAY = 'play';
@@ -29,8 +31,8 @@ export function parseCourseRoute(rest: string): CourseRoute {
 		if (p[3] === 'test') return { view: 'test', course: p[1], unit: p[2] };
 		return { view: 'lesson', course: p[1], unit: p[2], lesson: p[3] };
 	}
-	if (p[0] === PLAY && p.length === 5 && p[2] === 'section' && p[4] === 'exam') {
-		return { view: 'exam', course: p[1], section: p[3] };
+	if (p[0] === PLAY && p.length === 5 && p[2] === 'section' && (p[4] === 'exam' || p[4] === 'placement')) {
+		return { view: p[4], course: p[1], section: p[3] };
 	}
 	return { view: 'roadmap', course: null };
 }
@@ -47,5 +49,7 @@ export function courseHref(route: CourseRoute): string {
 			return `/courses/${PLAY}/${enc(route.course)}/${enc(route.unit)}/test`;
 		case 'exam':
 			return `/courses/${PLAY}/${enc(route.course)}/section/${enc(route.section)}/exam`;
+		case 'placement':
+			return `/courses/${PLAY}/${enc(route.course)}/section/${enc(route.section)}/placement`;
 	}
 }

@@ -30,6 +30,7 @@ const RENDERERS: readonly string[] = [
 	'lib/features/flashcards/face/HintShown.svelte',
 	'lib/features/courses/GrammarStep.svelte',
 	'lib/features/courses/ReadingStep.svelte',
+	'lib/features/courses/TestReview.svelte',
 	'lib/features/grammar/LessonView.svelte',
 	'lib/features/grammar/PracticeRun.svelte',
 	'lib/features/reader/ChapterText.svelte',

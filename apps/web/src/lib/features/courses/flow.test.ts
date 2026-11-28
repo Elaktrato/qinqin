@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildExamFlow, buildLessonFlow, buildTestFlow, passed, scoreOf, shortGloss, wordGrades, type Question, type WordInfo } from './flow';
+import { buildLessonFlow, scoreOf, shortGloss, wordGrades, type Question, type WordInfo } from './flow';
 import { testCourse } from './testing/course';
 
 const course = testCourse();
@@ -111,33 +111,15 @@ describe('lesson flows (#222)', () => {
 		expect(buildLessonFlow({ ...base, unit: 'nope', lesson: { id: 'reading', kind: 'reading' } })).toBeNull();
 	});
 
-	it('the unit test asks over the unit words up to its question count; the exam over the section', () => {
-		const test = buildTestFlow({ ...base, unit: 'hello' })!;
-		expect(questions(test.steps)).toHaveLength(4);
-		expect(test.passPercent).toBe(80);
-		expect(test.steps.every((s) => s.kind === 'question')).toBe(true);
-		const exam = buildExamFlow({ ...base, section: 'level-1' })!;
-		expect(new Set(questions(exam.steps).map((q) => q.word))).toEqual(new Set(['你好', '谢谢', '学习']));
-		expect(exam.passPercent).toBe(75);
-		expect(buildTestFlow({ ...base, unit: 'sounds' })!.steps).toEqual([]);
-		expect(buildExamFlow({ ...base, section: 'nope' })).toBeNull();
-	});
-
 	it('scores count first tries; grades are Good for a word always right first, else Hard (Ruling 16)', () => {
 		const results = [
-			{ word: '你好', right: true, retry: false },
-			{ word: '谢谢', right: false, retry: false },
-			{ word: '谢谢', right: true, retry: true },
-			{ word: '你好', right: true, retry: false }
+			{ id: 'a', word: '你好', right: true, retry: false },
+			{ id: 'b', word: '谢谢', right: false, retry: false },
+			{ id: 'b', word: '谢谢', right: true, retry: true },
+			{ id: 'a', word: '你好', right: true, retry: false }
 		];
 		expect(scoreOf(results)).toEqual({ score: 2, total: 3 });
 		expect(wordGrades(['你好', '谢谢', '学习'], results)).toEqual(new Map([['你好', 3], ['谢谢', 2], ['学习', 3]]));
-	});
-
-	it('passed: score at or above the pass mark; nothing to ask passes', () => {
-		expect(passed(8, 10, 80)).toBe(true);
-		expect(passed(7, 10, 80)).toBe(false);
-		expect(passed(0, 0, 80)).toBe(true);
 	});
 
 	it('shortGloss: the first sense up to its first semicolon', () => {
