@@ -112,7 +112,7 @@
 	.blank {
 		display: inline-block;
 		min-inline-size: 2em;
-		border-block-end: 2px solid var(--accent);
+		border-block-end: 1px solid var(--accent);
 		text-align: center;
 	}
 
