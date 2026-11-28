@@ -1,10 +1,10 @@
 # Feature switches (`/api/features`)
 
 Issue #199, record 0006. qinqin has no code plugins: flashcards, the reader, the journal, grammar, the
-writing-system trainer (#204), courses (#222) and Stats (#295) are core features, each with a per-user switch
+writing-system trainer (#204), Practice (the drills, `drills/`), courses (#222) and Stats (#295) are core features, each with a per-user switch
 (`server/internal/features/`, migration 047, table `feature_switches`; since migration 055 the table has no list
 of ids and `features.IDs` is the only one). The ids and the order are fixed: `flashcards`, `reader`, `journal`,
-`grammar`, `scripts`, `courses`, `stats`.
+`grammar`, `scripts`, `practice`, `courses`, `stats`.
 
 | Route | Answer |
 | --- | --- |

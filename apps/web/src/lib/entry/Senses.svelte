@@ -3,23 +3,21 @@
 	import type { SenseGroup, SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { hiddenDictionaries, partitionSenses } from '$lib/workspace/dictionaryVisibility';
+	import { hiddenDictionaries } from '$lib/workspace/dictionaryVisibility';
 	import { licenseUrl } from '$lib/sources/licenses';
 	import { useSession } from '$lib/context/context';
+	import { Tag } from '$lib/ui';
+	import { entrySenses, markLabel, pageGroups } from './entrySenses';
 	const session = useSession();
 	let {
 		senses,
 		senseGroups = []
 	}: {
 		senses: SenseView[];
-		/** The same senses with their part of speech (and xrefs), for POS. */
+		/** The same senses with their part of speech, tags and xrefs. */
 		senseGroups?: SenseGroup[];
 	} = $props();
 
-	// Dictionaries the current workspace hides collapse behind a button.
-	const partition = $derived(
-		partitionSenses(senses, hiddenDictionaries(session.workspaces.current))
-	);
 	let revealed = $state(false);
 	let section = $state<HTMLElement | null>(null);
 
@@ -29,57 +27,14 @@
 		await tick();
 		section?.querySelector<HTMLElement>('h2')?.focus();
 	}
-	const visibleSenses = $derived(revealed ? senses : partition.shown);
 
-	interface GlossRow {
-		text: string;
-		pos: string[];
-	}
-
-	interface SenseGroupView {
-		dictionaryId: number;
-		dictionaryName: string;
-		license: string;
-		attribution: string;
-		glosses: GlossRow[];
-	}
-
-	// The part of speech per dictionary and gloss (one gloss can repeat in
-	// two senses; the first sense's POS wins).
-	const posByGloss = $derived.by((): Map<string, string[]> => {
-		const map = new Map<string, string[]>();
-		for (const group of senseGroups) {
-			for (const gloss of group.glosses) {
-				const key = `${group.dictionaryId}\u0000${gloss}`;
-				if (!map.has(key)) map.set(key, group.pos);
-			}
-		}
-		return map;
-	});
-
-	// Group by dictionary in first-seen order: the API's stable order is
-	// preserved rather than resorted by name or id.
-	const groups = $derived.by((): SenseGroupView[] => {
-		const byDictionary = new Map<number, SenseGroupView>();
-		for (const sense of visibleSenses) {
-			let group = byDictionary.get(sense.dictionaryId);
-			if (!group) {
-				group = {
-					dictionaryId: sense.dictionaryId,
-					dictionaryName: sense.dictionaryName,
-					license: sense.license,
-					attribution: sense.attribution,
-					glosses: []
-				};
-				byDictionary.set(sense.dictionaryId, group);
-			}
-			group.glosses.push({
-				text: sense.gloss,
-				pos: posByGloss.get(`${sense.dictionaryId}\u0000${sense.gloss}`) ?? []
-			});
-		}
-		return [...byDictionary.values()];
-	});
+	// Every sense of the full entry, in the order of the sense display rule (#345, docs/contracts/senses): the
+	// slang, vulgar and derogatory ones last in their dictionary and marked. Dictionaries the current workspace
+	// hides collapse behind a button.
+	const page = $derived(
+		pageGroups(entrySenses({ senses, senseGroups }), hiddenDictionaries(session.workspaces.current), revealed)
+	);
+	const groups = $derived(page.groups);
 
 	interface AttributionPart {
 		text: string;
@@ -102,10 +57,12 @@
 			<article class="dictionary" aria-labelledby={`meanings-${group.dictionaryId}`}>
 				<h2 id={`meanings-${group.dictionaryId}`} tabindex="-1">{t('entry.page.meaningsFrom', { dictionary: group.dictionaryName })}</h2>
 				<ol class="glosses">
-					{#each group.glosses as gloss, index (index)}
-						<li lang={glossLang(undefined)}>
-							{#if gloss.pos.length > 0}<span class="pos">{gloss.pos.join(', ')}</span>{/if}{gloss.text}
-						</li>
+					{#each group.units as unit, u (u)}
+						{#each unit.glosses as gloss, index (index)}
+							<li lang={glossLang(undefined)}>
+								{#if unit.mark}<span class="mark"><Tag>{markLabel(unit.mark)}</Tag></span>{/if}{#if unit.of.pos.length > 0}<span class="pos">{unit.of.pos.join(', ')}</span>{/if}{gloss}
+							</li>
+						{/each}
 					{/each}
 				</ol>
 				{#if group.license || group.attribution}
@@ -129,11 +86,11 @@
 				{/if}
 			</article>
 		{/each}
-		{#if partition.allHidden}
+		{#if page.allHidden}
 			<p class="hidden-note">{t('entry.senses.hiddenShown')}</p>
-		{:else if !revealed && partition.hidden.length > 0}
+		{:else if page.hiddenCount > 0}
 			<button type="button" class="reveal" onclick={reveal}>
-				{t('entry.senses.showHidden', { count: partition.hidden.length })}
+				{t('entry.senses.showHidden', { count: page.hiddenCount })}
 			</button>
 		{/if}
 	</section>
@@ -162,6 +119,10 @@
 		padding-inline-start: 1.4em;
 		display: grid;
 		gap: var(--space-1);
+	}
+
+	.mark {
+		margin-inline-end: var(--space-2);
 	}
 
 	.pos {

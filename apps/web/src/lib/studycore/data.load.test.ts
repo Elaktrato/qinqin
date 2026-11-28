@@ -246,7 +246,8 @@ describe("loading the study state", () => {
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
-        grammarRuns: [], courseEvents: [],
+        grammarRuns: [],
+        drillAnswers: [], courseEvents: [],
       });
     });
 
@@ -261,7 +262,8 @@ describe("loading the study state", () => {
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
-        grammarRuns: [], courseEvents: [],
+        grammarRuns: [],
+        drillAnswers: [], courseEvents: [],
       });
     });
 

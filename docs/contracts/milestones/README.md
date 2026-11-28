@@ -53,8 +53,8 @@ Families in this fixed order (the order breaks ties in lists):
 | `words-studied` | `words-studied:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000 | distinct entries of live vocab cards in an existing deck with at least one valid review |
 | `words-mature` | `words-mature:<n>` | 10, 50, 100, 250, 500, 1000, 2500, 5000 | live vocab cards in an existing deck whose replayed schedule is mature (`classifySchedule`) |
 | `characters-learned` | `characters-learned:<n>` | 10, 50, 100, 250, 500, 1000, 2000, 3000, 5000 | Han languages only: universe cells learned (`cellStates`, score ≥ `MASTERY_THRESHOLD`) |
-| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily streak of reviews and grammar lessons (`dailyStreak` rule), any run |
-| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`), a counted `journal` event (string `entryId`) or a grammar lesson run |
+| `streak` | `streak:<n>` | 3, 7, 14, 30, 60, 100, 180, 365, 500, 730, 1000 | the vacation-neutral daily streak of reviews, grammar lessons and drill answers (`dailyStreak` rule), any run |
+| `days-active` | `days-active:<n>` | 10, 30, 50, 100, 200, 365, 500, 1000 | non-vacation learner dates with a valid review, a counted `read` event (`readSeconds > 0`), a counted `journal` event (string `entryId`), a grammar lesson run or a drill answer (`drills/`) |
 | `reading-hours` | `reading-hours:<n>` | 1, 5, 10, 25, 50, 100, 250, 500, 1000 | `readSeconds` of `read` events summed (the heatmap's clamping: < 30 s is 0, at most 2 h per event); `bookId` is not read |
 | `journal-entries` | `journal-entries:<n>` | 1, 10, 25, 50, 100, 250, 365, 500 | distinct **string** `entryId` of `journal` events |
 | `level-complete` | `level-complete:<levelDeckId>` | one per level of each installed scheme of the workspace language | every member learned at one instant (below) |

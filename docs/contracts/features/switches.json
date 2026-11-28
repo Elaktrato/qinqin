@@ -2,13 +2,14 @@
  "version": 1,
  "rule": "features/switches",
  "note": "GET /api/features answers the caller's switch of every core feature, in this order; a feature never switched is on (updatedAt null). reads: how a client reads a list (no row, or a row it cannot read, is on).",
- "features": ["flashcards", "reader", "journal", "grammar", "scripts", "courses", "stats"],
+ "features": ["flashcards", "reader", "journal", "grammar", "scripts", "practice", "courses", "stats"],
  "list": [
   {"id": "flashcards", "enabled": true, "updatedAt": null},
   {"id": "reader", "enabled": true, "updatedAt": null},
   {"id": "journal", "enabled": false, "updatedAt": "2026-11-24T10:00:00Z"},
   {"id": "grammar", "enabled": true, "updatedAt": "2026-11-24T10:01:00Z"},
   {"id": "scripts", "enabled": true, "updatedAt": null},
+  {"id": "practice", "enabled": true, "updatedAt": null},
   {"id": "courses", "enabled": true, "updatedAt": null},
   {"id": "stats", "enabled": false, "updatedAt": "2026-11-27T09:00:00Z"}
  ],
@@ -20,6 +21,7 @@
  "put": [
   {"name": "switch one off", "id": "journal", "body": {"enabled": false}, "status": 200},
   {"name": "switch Stats off", "id": "stats", "body": {"enabled": false}, "status": 200},
+  {"name": "switch Practice off", "id": "practice", "body": {"enabled": false}, "status": 200},
   {"name": "switch Courses off", "id": "courses", "body": {"enabled": false}, "status": 200},
   {"name": "an unknown feature", "id": "qinqin-journal", "body": {"enabled": false}, "status": 404},
   {"name": "no enabled", "id": "journal", "body": {}, "status": 400}

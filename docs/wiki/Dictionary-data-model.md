@@ -9,12 +9,15 @@ The dictionary is stored as `entries`, `forms`, `readings`, `senses`, `entry_lin
 - An **entry** is one dictionary headword, identified by its source's key within a language and kind (`word` or `character`).
 - Its **forms** are the written forms, with flags.
 - Its **readings** carry the reading text plus a normalised `plain` form that lookup matches against (kana, pinyin, bopomofo).
-- Its **senses** belong to a dictionary and hold the glosses, cross-references and tags, so several dictionaries can gloss one entry.
+- Its **senses** belong to a dictionary and hold the glosses, cross-references and tags, so several dictionaries can gloss one entry. They are stored in the dictionary's order; the order they are **shown** in is a display rule (`docs/contracts/senses/`, `lexicon.DisplaySenses`, `lib/entry/senseDisplay.ts`): slang, vulgar and derogatory glosses last and folded on cards, surname, abbreviation, variant and archaic lines after the everyday ones, so picture mappings and cross-references keep counting stored senses. A sense's reading is a sense tag `reading:<value>`: each CC-CEDICT line's pinyin, each json-pack line's readings, a JMdict sense's `<stagr>`; a card pinned to a reading (`extra.reading`) shows only that reading's senses.
 - **Entry links** connect characters to their radical and to variants.
 
 Per language:
 
 - **Japanese**: one entry per JMdict word (`ent_seq`), with every form and reading, the part-of-speech tags **per sense**, the `uk` flag (usually written in kana) and a priority score derived from JMdict's priority markers. Homographs are separate entries, so 為る and 刷る are two results for する. An entry is shown by its **display form** (`docs/contracts/frequency/display-form.json`): the kana when its first sense is `uk` (事 → こと, 為る → する), never a search-only (`sK`) form (乃 → の); a starter deck word whose list row is kana shows that kana. Cards keep the form they were added with as their snapshot.
+- **Word lists** (levels, sentence packs, starter decks, the Starter sets) name a word by its written form and an
+  optional reading. A form that an entry keeps only for searching (JMdict `sK`) never wins over an entry where it is a
+  real written form: 虹 (にじ) is the rainbow, not 二次 (#347).
 - **Chinese**: one entry per simplified written form; its traditional forms are forms of the same entry (flag `trad`), so 學習 finds 学习. Homograph lines (行 xíng / háng) merge into one entry carrying all readings, with one sense per CC-CEDICT line.
 - **Characters** (kanji and hanzi) are `character` entries with `radical` and `variant` links.
 

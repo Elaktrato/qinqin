@@ -68,7 +68,7 @@ describe('the course roadmap (#222)', () => {
 		expect(within(hello).getByText('Skipped')).toBeTruthy();
 		within(hello).getByRole('button', { name: 'Add these as cards' }).click();
 		await waitFor(() => expect(addCourseCards).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(addCourseCards).mock.calls[0][3].map((w) => w.key)).toEqual(['你好', '谢谢']);
+		expect(vi.mocked(addCourseCards).mock.calls[0][3].map((w) => (w as unknown as { key: string }).key)).toEqual(['你好', '谢谢']);
 		await screen.findByText('These words already have cards.');
 	});
 

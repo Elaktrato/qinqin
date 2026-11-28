@@ -60,3 +60,8 @@ export function coursePayload(p: CoursePayload): CoursePayload {
 			return { kind: p.kind, course: p.course, section: p.section };
 	}
 }
+
+/** `drill.<id>`: one answer in a drill (docs/contracts/drills/): the item, the drill's mode and the FSRS grade (1 Again … 4 Easy). */
+export function drillPayload(item: string, mode: string, grade: 1 | 2 | 3 | 4): { item: string; mode: string; grade: 1 | 2 | 3 | 4 } {
+	return { item, mode, grade };
+}

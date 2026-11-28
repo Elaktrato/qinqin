@@ -8,6 +8,7 @@
 	import { useRomanisation } from '$lib/languages/useRomanisation';
 	import {
 		dictionaryNames,
+		firstVisible,
 		frequencyLabel,
 		hasCjk,
 		joinForms,
@@ -21,6 +22,7 @@
 		shownSenses
 	} from './entryDisplay';
 	import { SENSES_VISIBLE, visibleCount } from './showMore';
+	import { markLabel } from '$lib/entry/entrySenses';
 
 	// One dictionary entry of a lookup popup. Text that Shift+hover can look
 	// up (cross-reference headwords, glosses with Han or kana) is marked
@@ -71,8 +73,9 @@
 		sensesList?.focus();
 	}
 	const senses = $derived(revealed ? allSenses : partition.shown);
-	let shown = $state(SENSES_VISIBLE);
-	const visible = $derived(visibleCount(senses.length, 0, shown));
+	// Slang, vulgar and derogatory senses come last and never show before "more" (#345, docs/contracts/senses).
+	let steps = $state(0);
+	const visible = $derived(visibleCount(senses.length, firstVisible(senses), steps * SENSES_VISIBLE));
 	const more = $derived(senses.length - visible);
 </script>
 
@@ -111,6 +114,7 @@
 		<ol class="senses" bind:this={sensesList} tabindex="-1">
 			{#each senses.slice(0, visible) as sense, i (i)}
 				<li>
+					{#if sense.mark}<span class="pos mark">{markLabel(sense.mark)}</span>{/if}
 					{#each senseChips(sense) as chip, c (c)}<span class="pos">{chip}</span>{/each}
 					<!-- Separators are expressions: Svelte trims literal whitespace at block edges. -->
 					{#each sense.glosses as gloss, g (g)}
@@ -132,7 +136,7 @@
 			{/each}
 		</ol>
 		{#if more > 0}
-			<button type="button" class="more" onclick={() => (shown = visibleCount(senses.length, shown))}>
+			<button type="button" class="more" onclick={() => (steps += 1)}>
 				{moreLabel(more, 'sense')}
 			</button>
 		{/if}
@@ -224,6 +228,9 @@
 		margin-inline-end: var(--space-1);
 		color: var(--readable-muted);
 		font-size: var(--font-size-xs);
+	}
+	.mark {
+		font-weight: var(--weight-medium);
 	}
 
 	.source {

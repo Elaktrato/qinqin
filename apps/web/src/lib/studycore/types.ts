@@ -5,6 +5,7 @@
 import type { ParsedGoals } from '$lib/goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrsParams';
+import type { DrillAnswer } from './drills';
 import type { GrammarRun } from './grammarRuns';
 import type { StudyEvent } from '$lib/events';
 import type { KnownBatch } from './knownMarks';
@@ -102,6 +103,12 @@ export interface StudyCard {
 	skipKinds?: StudyCardKind[];
 	deckIds: string[];
 	createdAt: string;
+	/**
+	 * The reading the card is pinned to (#346): its back shows only that
+	 * reading's meanings (docs/contracts/senses). Stored as the row's
+	 * `extra.reading`; set when the Starter words are added.
+	 */
+	reading?: string;
 }
 
 /** The parsed `limits:*` rows of one workspace. */
@@ -142,6 +149,11 @@ export interface StudyHistory extends StudyData {
 	reviews: ReviewEvent[];
 	/** The workspace's grammar lesson runs (#277), in replay order: EXP and the streak count them. */
 	grammarRuns: GrammarRun[];
+	/**
+	 * The workspace's drill answers (docs/contracts/drills/), in replay order: EXP and the streak count them, the
+	 * Practice area schedules them. `historyOf` always sets it; absent means none (test mocks).
+	 */
+	drillAnswers?: DrillAnswer[];
 	/** The workspace's `course` events (#222) as logged (queued ones included), for the course derivation. */
 	courseEvents: StudyEvent[];
 	/** How many stored duplicate cards were folded away. */

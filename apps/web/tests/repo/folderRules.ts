@@ -106,6 +106,7 @@ export const ROUTE_FEATURES: Record<string, string> = {
 	login: 'account',
 	lookups: 'lookups',
 	p: 'routing',
+	practice: 'features/practice',
 	reader: 'features/reader',
 	register: 'account',
 	reset: 'account',

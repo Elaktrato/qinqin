@@ -1,8 +1,9 @@
 // The reverse card's pure logic: meaning in, word out. The front shows
-// the first sense's glosses (never the written form), the back reuses
+// the first shown sense's glosses (never the written form), the back reuses
 // buildVocabFaces.
 
 import type { Entry } from '$lib/api/types';
+import { entrySenses, shownGlosses, unitsOf } from '$lib/entry/entrySenses';
 import { normalizeAnswer } from '$lib/exercises/cloze';
 import type { ReviewGrade } from '$lib/studycore/types';
 
@@ -15,13 +16,20 @@ export interface ReverseFront {
 
 const MAX_GLOSSES = 3;
 
-/** The first sense group's pos and glosses; falls back to the flat senses. */
-export function buildReverseFront(entry: Entry): ReverseFront {
-	const group = entry.senseGroups?.find((g) => g.glosses.length > 0);
-	if (group !== undefined) {
-		return { pos: [...group.pos], glosses: group.glosses.slice(0, MAX_GLOSSES) };
+/**
+ * The first display unit's pos and glosses (the sense display rule,
+ * docs/contracts/senses: never a folded slang or vulgar gloss; only the
+ * card's pinned reading's when it has one); without
+ * sense groups, the flat senses' shown glosses.
+ */
+export function buildReverseFront(entry: Entry, pinned?: string): ReverseFront {
+	const units = unitsOf(entrySenses(entry), pinned);
+	if (entry.senseGroups === undefined || entry.senseGroups.length === 0) {
+		return { pos: [], glosses: shownGlosses(units, MAX_GLOSSES) };
 	}
-	return { pos: [], glosses: entry.senses.map((s) => s.gloss).slice(0, MAX_GLOSSES) };
+	const first = units[0];
+	if (first === undefined) return { pos: [], glosses: [] };
+	return { pos: [...first.of.pos], glosses: first.glosses.slice(0, MAX_GLOSSES) };
 }
 
 /** The accepted typed answers (normalised): written, forms and variants. */

@@ -1,0 +1,75 @@
+<script lang="ts">
+	// The Practice list: "Practise weakest" across the drills, then each drill with its counts and a round.
+	import { t } from '$lib/i18n';
+	import { Button, Section } from '$lib/ui';
+	import { formatNumber } from '$lib/i18n/format';
+	import { practiceHref } from './route';
+	import type { DrillSummary } from './overview';
+	import type { DrillDef } from './types';
+
+	let { summaries, weakestCount }: { summaries: readonly { drill: DrillDef; summary: DrillSummary }[]; weakestCount: number } = $props();
+</script>
+
+<h1>{t('practice.title')}</h1>
+{#if summaries.length === 0}
+	<p>{t('practice.none')}</p>
+{:else}
+	<p class="intro">{t('practice.intro')}</p>
+	<Section title={t('practice.weakest.title')}>
+		{#if weakestCount > 0}
+			<p>{t('practice.weakest.text', { count: weakestCount })}</p>
+			<Button variant="primary" href={practiceHref({ view: 'weakest' })}>{t('practice.weakest.start')}</Button>
+		{:else}
+			<p class="muted">{t('practice.weakest.empty')}</p>
+		{/if}
+	</Section>
+	<ul class="drills">
+		{#each summaries as { drill, summary } (drill.id)}
+			<li class="drill">
+				<h2>{drill.title}</h2>
+				<p class="muted">{drill.description}</p>
+				{#if summary.total === 0}
+					<p class="muted">{t('practice.drill.noItems')}</p>
+				{:else}
+					<p class="counts">
+						<span>{t('practice.drill.due', { n: formatNumber(summary.due) })}</span>
+						<span>{t('practice.drill.fresh', { n: formatNumber(summary.fresh) })}</span>
+						<span>{t('practice.drill.seen', { n: formatNumber(summary.seen) })}</span>
+					</p>
+					<Button href={practiceHref({ view: 'drill', drill: drill.id })}>{t('practice.drill.start')}</Button>
+				{/if}
+			</li>
+		{/each}
+	</ul>
+{/if}
+
+<style>
+	.intro,
+	.muted {
+		color: var(--readable-muted);
+	}
+	.drills {
+		list-style: none;
+		margin: var(--space-4) 0 0;
+		padding: 0;
+	}
+	.drill + .drill {
+		border-top: 1px solid var(--hair);
+	}
+	.drill {
+		padding-block: var(--space-3);
+	}
+	.drill h2 {
+		margin: 0;
+		font-size: var(--font-size-l);
+		overflow-wrap: anywhere;
+	}
+	.drill p {
+		overflow-wrap: anywhere;
+	}
+	.counts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+	}
+</style>

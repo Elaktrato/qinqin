@@ -32,6 +32,7 @@ export const KEY_AREAS = [
 	'milestones',
 	'scripts',
 	'topics',
+	'practice',
 	'courses'
 ] as const;
 

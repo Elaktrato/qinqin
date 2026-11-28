@@ -294,20 +294,17 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 	return set, nil
 }
 
-// metaGlossPrefixes start a gloss that is a CC-CEDICT surname or
-// cross-reference line rather than a meaning ("surname San", "old variant
-// of 乾", "see 丁丁", "CL:个[ge4]", "Kangxi radical 5"); lower case.
-var metaGlossPrefixes = []string{
-	"surname ",
-	"old variant of", "(old) variant of", "archaic variant of", "(archaic) variant of",
-	"(old) contracted variant of", "variant of",
-	"also written", "used in", "see ", "abbr. for", "cl:", "kangxi radical",
-}
-
-// isMetaGloss reports whether g starts with a metaGlossPrefixes entry,
-// ignoring ASCII case.
+// isMetaGloss reports whether g is a CC-CEDICT surname, abbreviation,
+// variant, cross-reference or archaic line rather than a meaning: the sense
+// display rule's minor prefixes (MinorGloss, docs/contracts/senses: "surname
+// San", "old variant of 乾", "see 丁丁", "(classical) to say"), plus the
+// classifier and radical lines a character's gloss list can start with
+// ("CL:个[ge4]", "Kangxi radical 5"). ASCII case is ignored.
 func isMetaGloss(g string) bool {
-	for _, p := range metaGlossPrefixes {
+	if MinorGloss(g) {
+		return true
+	}
+	for _, p := range []string{"cl:", "kangxi radical"} {
 		if len(g) >= len(p) && strings.EqualFold(g[:len(p)], p) {
 			return true
 		}
@@ -317,7 +314,9 @@ func isMetaGloss(g string) bool {
 
 // firstMeaning picks the gloss of a glossLists value: over every gloss
 // of every sense in order, the first non-empty one that is not a meta
-// line; when all are meta, the first non-empty one. Most characters stop
+// line nor marked slang, vulgar or derogatory (the sense display rule's
+// gloss marks, docs/contracts/senses); when all are, the first non-empty
+// one. Most characters stop
 // at the first gloss, so the later lists are decoded only when needed.
 func firstMeaning(lists string) (string, error) {
 	first := ""
@@ -330,7 +329,7 @@ func firstMeaning(lists string) (string, error) {
 			if g == "" {
 				continue
 			}
-			if !isMetaGloss(g) {
+			if !isMetaGloss(g) && glossMark(g, "") == "" {
 				return g, nil
 			}
 			if first == "" {

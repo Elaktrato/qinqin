@@ -6,6 +6,7 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 - Migration 057 adds the picture reports (#274). An upgrade wipes nothing. Images packs now build a data package; the
   server builds it at start. Re-seed (`qinqin seed`) to install the reviewed picture maps of a rebuilt image.
+- Run `qinqin seed` once after upgrading (#346): it re-imports CC-CEDICT and JMdict so each meaning knows its reading. Until then a Starter word's card shows the meanings of all its readings. Starter cards added before this release keep doing so (a pin is set when a word is first added); everyday meanings still come first on them. Nothing is wiped.
 
 - The bundled level list `jlpt-words` (#219) takes the id of the former local-only JLPT vocabulary pack
   (`prepare-level-packs.mjs --jlpt-vocab`, removed). If you generated that pack, delete `plugins/data-local/jlpt-words`
@@ -17,6 +18,9 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Changed
 
+- Dictionary: a word list's 虹 (にじ) is the rainbow again, not 二次 (#347): an entry where a spelling is only kept for searching no longer wins over the word that is really written that way. Level lists pick it up with `qinqin seed`.
+- Dictionary: the everyday meaning comes first (#346). Surname, abbreviation, variant, "see", archaic and classical lines move after it: 书 is "book" before "abbr. for 書經", 水 "water" before "surname Shui", 三, 马, 云 and about 400 more. A Starter word learned in one reading keeps it on its card: 喝 shows "to drink", not "to shout"; 猫 only māo. In the Reader's lookup, 目 and 山 are no longer called "usually kana".
+- Dictionary: slang, vulgar and derogatory meanings never come first (#345). 鸡 is "chicken" on a card, not "(slang) prostitute"; 黄色 is "yellow"; 草 is "grass". On cards they are folded behind **Show n more meanings**, in the Reader's lookup they come last, after **Show more senses**, and search results, the Starter words and a word's characters never show them; the word page lists them last, marked "slang", "vulgar" or "derogatory". Nothing to reinstall: the dictionaries stay as they are.
 - Starter mode: the Starter words grow from 47 Chinese and 55 Japanese words to 146 and 145 (#275), each with a checked picture: people, numbers, school, the body, food and drink, home, clothes, transport, places, colours, nature, animals and a few actions, now starting with people and numbers. They were reviewed by agents acting as native-speaker teachers, not yet by a person; the Home offer and Settings → Study say how many words there are and who reviewed them, and the Sources page credits them. Learners who already added the Starter words get the new ones with **Add the Starter words to my decks** again (words they have keep their history).
 - Flashcards: the level, the deck and the labels on a card (the Word Salad tier, "Again, look 2 of 3", "new") are small outlined tags (#286), the level in the accent colour. They wrap onto a second line on a phone.
 - Writing: strokes that flow into each other may be drawn in one motion, as in handwriting: き's third and fourth strokes, さ's last two, こ, い, う, た's last two, the dots of 心 (#292). A join is accepted where a stroke's hook or flick points at the next stroke's start; drawing the strokes separately still works, and the order still counts. In flashcards and the scripts trainer.
@@ -25,6 +29,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
 ## New
+
+- **Practice** (`/practice`), the home of the drills: each drill item has its own spaced schedule (FSRS, apart from your flashcards), a round per drill and **Practise weakest** across them; drill answers count for the heatmap, the weekly summary, daily goals, XP and the streak. It is a feature you can switch off in Settings → Features. The drills themselves (conjugation, counters, tone pairs, look-alike characters) come next; until one applies to your language, Practice is not in the navigation.
 
 - Pictures of words work offline (#274): while the Pictures visual aid is on, preparing for offline use keeps the
   installed picture sets of the workspace language on the device (about 2 MB, downloaded once in the background and

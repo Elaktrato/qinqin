@@ -199,7 +199,8 @@ func importJMdictLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, d
 // entries is a form of each. Homograph lines merge into the one entry:
 // its readings are the distinct marked pinyin in file order, followed by
 // the bopomofo the language pack derives from each, and it carries one
-// sense per line, in file order, holding that line's glosses. Pinyin
+// sense per line, in file order, holding that line's glosses and tagged
+// with its marked reading (lexicon.TagReading). Pinyin
 // that does not convert is kept as written and counted.
 func cedictLexiconEntries(p cedictParse, language string) ([]*lexicon.Entry, cedictStats) {
 	pk := lang.For(language)
@@ -234,7 +235,9 @@ func cedictLexiconEntries(p cedictParse, language string) ([]*lexicon.Entry, ced
 		if !slices.ContainsFunc(rs, func(x model.Reading) bool { return x.Value == marked }) {
 			pinyins[r.Written] = append(rs, model.Reading{Type: "pinyin", Value: marked})
 		}
-		e.Senses = append(e.Senses, lexicon.Sense{Glosses: r.Glosses})
+		// The line's reading as a sense tag (docs/contracts/senses): a
+		// pinned reading shows only its own lines.
+		e.Senses = append(e.Senses, lexicon.Sense{Glosses: r.Glosses, Tags: []string{lexicon.TagReading + marked}})
 	}
 	for _, e := range out {
 		e.Readings = lexiconReadings(pk, pinyins[e.Key], true)
@@ -662,7 +665,8 @@ func jsonLexiconEntries(es []entry, language string) []*lexicon.Entry {
 // line: Key = written, Kind as the pack gives it, the written form then
 // its traditional twin (flag "trad") as forms, the readings as given
 // with Plain and derived readings through the language pack, and one
-// sense of the glosses when there are any.
+// sense of the glosses when there are any, tagged with the line's own
+// readings (lexicon.TagReading).
 func jsonLexiconEntry(e entry, language string) *lexicon.Entry {
 	le := &lexicon.Entry{
 		Language: language,
@@ -676,7 +680,13 @@ func jsonLexiconEntry(e entry, language string) *lexicon.Entry {
 		le.Forms = append(le.Forms, lexicon.Form{Text: trad, Flags: []string{"trad"}})
 	}
 	if len(e.Glosses) > 0 {
-		le.Senses = []lexicon.Sense{{Glosses: e.Glosses}}
+		// The line's own readings as reading tags (docs/contracts/senses), as
+		// for a CC-CEDICT line; none for a line without readings.
+		var tags []string
+		for _, r := range e.Readings {
+			tags = append(tags, lexicon.TagReading+r.Value)
+		}
+		le.Senses = []lexicon.Sense{{Glosses: e.Glosses, Tags: tags}}
 	}
 	return le
 }
@@ -712,7 +722,8 @@ func streamJMdict(r io.Reader, fn func(jmdictEntry) error) error {
 // jmdictLexiconEntry builds the lexicon entry of one JMdict <entry>: key
 // "j:<ent_seq>", kind word, every keb a form and every reb a kana
 // reading (with the language pack's derived romaji after them), one
-// sense per <sense> with English glosses. Blank forms and readings are
+// sense per <sense> with English glosses, its misc tags and its <stagr>
+// readings as reading tags. Blank forms and readings are
 // dropped; an entry with no reading, or no English gloss, is an error
 // naming its sequence number.
 //
@@ -745,7 +756,12 @@ func jmdictLexiconEntry(x jmdictEntry, language string) (*lexicon.Entry, error) 
 				glosses = append(glosses, text)
 			}
 		}
+		// Misc tags, then the sense's reading restrictions (<stagr>) as
+		// reading tags (docs/contracts/senses).
 		tags := entityNames(s.Misc)
+		for _, r := range trimmed(s.Stagr) {
+			tags = append(tags, lexicon.TagReading+r)
+		}
 		for _, t := range tags {
 			senseUK = senseUK || t == "uk"
 		}

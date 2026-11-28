@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/events/activity.json';
-import { ACTIVITY_SOURCES, LOG_CHANGING_TYPES, activityLabel, activityText } from './sources';
+import { DRILL_IDS } from '$lib/studycore/drills';
+import { ACTIVITY_SOURCES, LOG_CHANGING_TYPES, activityLabel, activityText, changesLog } from './sources';
 
 // docs/contracts/events/activity.json `rules` is the server's core table
 // (server/internal/stats/rules.go): the client's fallback list follows it.
@@ -13,7 +14,23 @@ describe('the activity sources', () => {
 				unit: 'measure' in r.rule && r.rule.measure?.field === 'seconds' ? 'seconds' : 'count'
 			}))
 		);
-		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script', 'grammar']);
+		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script', 'grammar', ...DRILL_IDS.map((id) => `drill.${id}`)]);
+	});
+
+	it('every registered drill is a count source of Practice, worded from the catalogue', () => {
+		for (const id of DRILL_IDS) {
+			expect(ACTIVITY_SOURCES).toContainEqual({ type: `drill.${id}`, feature: 'practice', unit: 'count' });
+			expect(activityLabel({ type: `drill.${id}` })).not.toBe(`drill.${id}`);
+		}
+	});
+
+	it('every drill answer changes what the log readers show, a registered drill or not', () => {
+		expect(changesLog('review')).toBe(true);
+		expect(changesLog('grammar')).toBe(true);
+		expect(changesLog('drill.tone-pairs')).toBe(true);
+		expect(changesLog('drill.sample')).toBe(true);
+		expect(changesLog('drill.weakest')).toBe(false);
+		expect(changesLog('lookup')).toBe(false);
 	});
 
 	it('word themselves from the catalogue; an unknown type shows its id', () => {

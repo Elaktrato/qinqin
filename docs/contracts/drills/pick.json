@@ -1,0 +1,1177 @@
+{
+ "version": 1,
+ "rule": "drills/pick",
+ "generator": "scripts/contracts/gen-drills-fixtures.mjs",
+ "tsFsrs": "5.4.2",
+ "note": "A drill's round (`round`: due, new, ahead) and the practise-weakest round across drills (`weakest`), over workspace 7's answers, no vacation. `items` / `candidates` are the drills' candidate items in the order each drill introduces them. Decoded by the web.",
+ "constants": {
+  "roundSize": 20,
+  "newPerRound": 10
+ },
+ "round": [
+  {
+   "name": "a fresh drill: new items in the drill order, at most 10",
+   "now": "2026-11-28T09:00:00Z",
+   "drill": "tone-pairs",
+   "items": [
+    "n01",
+    "n02",
+    "n03",
+    "n04",
+    "n05",
+    "n06",
+    "n07",
+    "n08",
+    "n09",
+    "n10",
+    "n11",
+    "n12"
+   ],
+   "events": [],
+   "expect": [
+    {
+     "item": "n01",
+     "why": "new"
+    },
+    {
+     "item": "n02",
+     "why": "new"
+    },
+    {
+     "item": "n03",
+     "why": "new"
+    },
+    {
+     "item": "n04",
+     "why": "new"
+    },
+    {
+     "item": "n05",
+     "why": "new"
+    },
+    {
+     "item": "n06",
+     "why": "new"
+    },
+    {
+     "item": "n07",
+     "why": "new"
+    },
+    {
+     "item": "n08",
+     "why": "new"
+    },
+    {
+     "item": "n09",
+     "why": "new"
+    },
+    {
+     "item": "n10",
+     "why": "new"
+    }
+   ]
+  },
+  {
+   "name": "due first (earliest due first), then new, then the rest by lowest retrievability",
+   "now": "2026-12-10T08:00:00Z",
+   "drill": "tone-pairs",
+   "items": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f"
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000001001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "a",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000001002",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-09T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "b",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001003",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "c",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000001004",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "c",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000001005",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-10T07:59:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "d",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000001006",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-10T07:59:30Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "d",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000001007",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-01T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "e",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000001008",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-05T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "e",
+      "mode": "produce",
+      "grade": 4
+     }
+    }
+   ],
+   "expect": [
+    {
+     "item": "a",
+     "why": "due"
+    },
+    {
+     "item": "b",
+     "why": "due"
+    },
+    {
+     "item": "f",
+     "why": "new"
+    },
+    {
+     "item": "c",
+     "why": "ahead"
+    },
+    {
+     "item": "e",
+     "why": "ahead"
+    },
+    {
+     "item": "d",
+     "why": "ahead"
+    }
+   ]
+  },
+  {
+   "name": "answered items that are no longer candidates are not picked; other drills do not count",
+   "now": "2026-11-29T08:00:00Z",
+   "drill": "counters",
+   "items": [
+    "kept"
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000001009",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "gone",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001010",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "kept",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001011",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "kept",
+      "mode": "produce",
+      "grade": 4
+     }
+    }
+   ],
+   "expect": [
+    {
+     "item": "kept",
+     "why": "due"
+    }
+   ]
+  },
+  {
+   "name": "at most 20, due items first even beyond the new limit",
+   "now": "2026-12-01T08:00:00Z",
+   "drill": "conjugation",
+   "items": [
+    "d01",
+    "d02",
+    "d03",
+    "d04",
+    "d05",
+    "d06",
+    "d07",
+    "d08",
+    "d09",
+    "d10",
+    "d11",
+    "d12",
+    "d13",
+    "d14",
+    "d15",
+    "d16",
+    "d17",
+    "d18",
+    "n1",
+    "n2",
+    "n3",
+    "n4"
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000001012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d01",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:01:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d02",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:02:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d03",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:03:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d04",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001016",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:04:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d05",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:05:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d06",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:06:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d07",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001019",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:07:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d08",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:08:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d09",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:09:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d10",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001022",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:10:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d11",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:11:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d12",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:12:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d13",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:13:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d14",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:14:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d15",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:15:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d16",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:16:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d17",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000001029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:17:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "d18",
+      "mode": "produce",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "item": "d01",
+     "why": "due"
+    },
+    {
+     "item": "d02",
+     "why": "due"
+    },
+    {
+     "item": "d03",
+     "why": "due"
+    },
+    {
+     "item": "d04",
+     "why": "due"
+    },
+    {
+     "item": "d05",
+     "why": "due"
+    },
+    {
+     "item": "d06",
+     "why": "due"
+    },
+    {
+     "item": "d07",
+     "why": "due"
+    },
+    {
+     "item": "d08",
+     "why": "due"
+    },
+    {
+     "item": "d09",
+     "why": "due"
+    },
+    {
+     "item": "d10",
+     "why": "due"
+    },
+    {
+     "item": "d11",
+     "why": "due"
+    },
+    {
+     "item": "d12",
+     "why": "due"
+    },
+    {
+     "item": "d13",
+     "why": "due"
+    },
+    {
+     "item": "d14",
+     "why": "due"
+    },
+    {
+     "item": "d15",
+     "why": "due"
+    },
+    {
+     "item": "d16",
+     "why": "due"
+    },
+    {
+     "item": "d17",
+     "why": "due"
+    },
+    {
+     "item": "d18",
+     "why": "due"
+    },
+    {
+     "item": "n1",
+     "why": "new"
+    },
+    {
+     "item": "n2",
+     "why": "new"
+    }
+   ]
+  }
+ ],
+ "weakest": [
+  {
+   "name": "across drills, lowest retrievability first; unseen items are not weak",
+   "now": "2026-12-10T08:00:00Z",
+   "candidates": [
+    {
+     "drill": "tone-pairs",
+     "items": [
+      "3-4",
+      "2-3",
+      "1-1",
+      "unseen"
+     ]
+    },
+    {
+     "drill": "counters",
+     "items": [
+      "5678",
+      "9012"
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000002001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-01T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002002",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-09T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "2-3",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002003",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002004",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:10:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "1-1",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002005",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-25T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "5678",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002006",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-12-10T07:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "9012",
+      "mode": "produce",
+      "grade": 4
+     }
+    }
+   ],
+   "expect": [
+    {
+     "drill": "tone-pairs",
+     "item": "3-4"
+    },
+    {
+     "drill": "counters",
+     "item": "5678"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "1-1"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "2-3"
+    },
+    {
+     "drill": "counters",
+     "item": "9012"
+    }
+   ]
+  },
+  {
+   "name": "equal histories: the drill id, then the item key, decides",
+   "now": "2026-11-30T08:00:00Z",
+   "candidates": [
+    {
+     "drill": "tone-pairs",
+     "items": [
+      "b",
+      "a"
+     ]
+    },
+    {
+     "drill": "counters",
+     "items": [
+      "z"
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000002007",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "b",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002008",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "a",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002009",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "z",
+      "mode": "produce",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": [
+    {
+     "drill": "counters",
+     "item": "z"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "a"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "b"
+    }
+   ]
+  },
+  {
+   "name": "a drill that no longer applies is not a candidate; at most 20 items",
+   "now": "2026-12-01T08:00:00Z",
+   "candidates": [
+    {
+     "drill": "tone-pairs",
+     "items": [
+      "p01",
+      "p02",
+      "p03",
+      "p04",
+      "p05",
+      "p06",
+      "p07",
+      "p08",
+      "p09",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p20",
+      "p21",
+      "p22"
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "01KB0000000000000000002010",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p01",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002011",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p02",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p03",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-23T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p04",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-24T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p05",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-25T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p06",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002016",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-26T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p07",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-27T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p08",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p09",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002019",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p10",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p11",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-23T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p12",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002022",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-24T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p13",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-25T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p14",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-26T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p15",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-27T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p16",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p17",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p18",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p19",
+      "mode": "produce",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KB0000000000000000002029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-23T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p20",
+      "mode": "produce",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KB0000000000000000002030",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-24T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p21",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KB0000000000000000002031",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-25T08:00:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "p22",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KB0000000000000000002032",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-28T08:00:00Z",
+     "type": "drill.counters",
+     "payload": {
+      "item": "gone",
+      "mode": "produce",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "drill": "tone-pairs",
+     "item": "p01"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p09"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p17"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p05"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p13"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p21"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p02"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p10"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p18"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p06"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p14"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p22"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p03"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p11"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p19"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p07"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p15"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p04"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p12"
+    },
+    {
+     "drill": "tone-pairs",
+     "item": "p20"
+    }
+   ]
+  }
+ ]
+}

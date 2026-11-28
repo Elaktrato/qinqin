@@ -89,7 +89,8 @@ func WordOf(e lexicon.Entry) Word {
 }
 
 // RequestFor is the AI request for entry e at level: the word, its first
-// reading of the language's reading system, its first glosses and the texts
+// reading of the language's reading system, its first glosses (in display
+// order, folded ones left out) and the texts
 // of its sentences (not to repeat). exact: the server cannot recognise an
 // inflected form (no dictionary segmentation, no lemma table).
 func RequestFor(e lexicon.Entry, existing []model.Sentence, level string, exact bool) ai.ExamplesRequest {
@@ -103,9 +104,11 @@ func RequestFor(e lexicon.Entry, existing []model.Sentence, level string, exact 
 			}
 		}
 	}
-	for _, s := range e.Senses {
-		for _, g := range s.Glosses {
-			if len(r.Glosses) < ai.MaxExampleGlosses {
+	// The glosses in display order, folded slang and vulgar lines left out
+	// (docs/contracts/senses).
+	for _, u := range lexicon.DisplaySenses(e.Senses, "") {
+		for _, g := range u.Glosses {
+			if !u.Folded && len(r.Glosses) < ai.MaxExampleGlosses {
 				r.Glosses = append(r.Glosses, g)
 			}
 		}

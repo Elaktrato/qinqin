@@ -1,5 +1,5 @@
 // The core features: flashcards (Decks), the reader, the journal, grammar, the writing-system trainer (scripts, #204),
-// courses (#222) and Stats (#295).
+// Practice (the drills, docs/contracts/drills/), courses (#222) and Stats (#295).
 // They are the app (record 0006, #199): there are no code plugins. Each user
 // can switch one off for themselves (GET /api/features, PUT
 // /api/features/{id}; docs/contracts/features/). Switching off only hides the
@@ -20,6 +20,9 @@ import GrammarPage from '$lib/features/grammar/GrammarPage.svelte';
 import { grammarDef } from '$lib/features/grammar/manifest';
 import ScriptsPage from '$lib/features/scripts/ScriptsPage.svelte';
 import { scriptsDef } from '$lib/features/scripts/manifest';
+import PracticePage from '$lib/features/practice/PracticePage.svelte';
+import { practiceDef } from '$lib/features/practice/manifest';
+import { availableDrills, deviceStorage } from '$lib/features/practice/drills';
 import CoursesPage from '$lib/features/courses/CoursesPage.svelte';
 import { coursesDef } from '$lib/features/courses/manifest';
 import { statsDef } from '$lib/stats/manifest';
@@ -31,6 +34,7 @@ export const READER_ID = 'reader';
 export const JOURNAL_ID = 'journal';
 export const GRAMMAR_ID = 'grammar';
 export const SCRIPTS_ID = 'scripts';
+export const PRACTICE_ID = 'practice';
 export const COURSES_ID = 'courses';
 export const STATS_ID = 'stats';
 
@@ -81,7 +85,9 @@ function feature(
 
 /** The features that appear only for some languages: the language profile says which (#204). */
 const APPLIES_TO: Readonly<Record<string, (language: string) => boolean>> = {
-	[SCRIPTS_ID]: (language) => writingSystemsOf(language).length > 0
+	[SCRIPTS_ID]: (language) => writingSystemsOf(language).length > 0,
+	// Practice is in the navigation only while a drill applies to the language; /practice itself always answers.
+	[PRACTICE_ID]: (language) => availableDrills(language, deviceStorage()).length > 0
 };
 
 /** The core features in the navigation order (docs/contracts/features/switches.json). */
@@ -91,6 +97,7 @@ export const coreFeatures: readonly CoreFeature[] = [
 	feature(JOURNAL_ID, 'features.journal.title', journalDef, JournalPage),
 	feature(GRAMMAR_ID, 'features.grammar.title', grammarDef, GrammarPage),
 	feature(SCRIPTS_ID, 'features.scripts.title', scriptsDef, ScriptsPage),
+	feature(PRACTICE_ID, 'features.practice.title', practiceDef, PracticePage),
 	feature(COURSES_ID, 'features.courses.title', coursesDef, CoursesPage),
 	feature(STATS_ID, 'features.stats.title', statsDef)
 ];
@@ -105,6 +112,7 @@ const SWITCHED_OFF: Readonly<Record<string, MessageKey>> = {
 	[JOURNAL_ID]: 'features.journal.switchedOff',
 	[GRAMMAR_ID]: 'features.grammar.switchedOff',
 	[SCRIPTS_ID]: 'features.scripts.switchedOff',
+	[PRACTICE_ID]: 'features.practice.switchedOff',
 	[COURSES_ID]: 'features.courses.switchedOff',
 	[STATS_ID]: 'features.stats.switchedOff'
 };
