@@ -1,3 +1,5 @@
+import type { SentenceSource } from '$lib/api/types';
+
 export type ReaderRoute =
 	| { view: 'library' }
 	| { view: 'sources' }
@@ -35,4 +37,34 @@ export function parseRoute(rest: string): ReaderRoute {
 		if (id !== null && id > 0 && chapter !== null) return { view: 'book', id, chapter };
 	}
 	return library;
+}
+
+/** The contract's caps of a source's place (reader/sentence-sources.json `limits`). */
+export const MAX_SOURCE_PARAGRAPH = 100000;
+export const MAX_SOURCE_OFFSET = 100000;
+
+/** A word's place in the open chapter: paragraph and code-point range [start, end). */
+export interface SourcePlace {
+	paragraph: number;
+	start: number;
+	end: number;
+}
+
+/**
+ * sourceHref is the reader link of a saved sentence's source (#280):
+ * /reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}; null when
+ * there is no book to open (deleted, or not a book source).
+ */
+export function sourceHref(source: SentenceSource): string | null {
+	if (source.kind !== 'book' || source.bookId === null) return null;
+	return `${bookHref(source.bookId, source.chapter)}?at=${source.paragraph}:${source.start}-${source.end}`;
+}
+
+/** parseAt reads the reader's `at` parameter; anything malformed or out of range is null. */
+export function parseAt(at: string | null): SourcePlace | null {
+	const m = /^(\d+):(\d+)-(\d+)$/.exec(at ?? '');
+	if (!m) return null;
+	const [paragraph, start, end] = [m[1], m[2], m[3]].map(Number);
+	if (paragraph > MAX_SOURCE_PARAGRAPH || start >= end || end > MAX_SOURCE_OFFSET) return null;
+	return { paragraph, start, end };
 }

@@ -135,14 +135,51 @@ export function bookSentence(paragraph: string, start: number, end: number): str
 	return sentence === word ? '' : sentence;
 }
 
+import type { SentenceSourceRequest } from '$lib/api/types';
 import { normalizeSentence } from './savedSentences';
 // The contract's rule (reader/saved-sentences.json): whitespace runs become one space, the ends are trimmed.
 export { normalizeSentence };
 
 /** The calls resolveBookSentence makes (injected for tests). */
 export interface SentenceApi {
-	getEntry(entryId: number): Promise<{ sentences?: { id: number; hanzi: string }[] | null }>;
-	addSentence(entryId: number, hanzi: string): Promise<{ id: number }>;
+	getEntry(entryId: number): Promise<{ sentences?: SourcedSentence[] | null }>;
+	addSentence(entryId: number, hanzi: string, source?: SentenceSourceRequest): Promise<{ id: number }>;
+}
+
+/** What the save paths read of an entry's sentence. */
+export interface SourcedSentence {
+	id: number;
+	hanzi: string;
+	/** The owner (own sentences) or null (pack); absent in tests that do not care. */
+	userId?: number | null;
+	source?: unknown;
+}
+
+/**
+ * wantsSource: an own sentence without a source gets the book's when the
+ * same text is saved from the reader (#280, contract `merge`: the server
+ * adopts it on the POST).
+ */
+export function wantsSource(sentence: SourcedSentence, source: SentenceSourceRequest | undefined): boolean {
+	return source !== undefined && typeof sentence.userId === 'number' && (sentence.source ?? null) === null;
+}
+
+function post(api: Pick<SentenceApi, 'addSentence'>, entryId: number, text: string, source?: SentenceSourceRequest) {
+	return source ? api.addSentence(entryId, text, source) : api.addSentence(entryId, text);
+}
+
+/** adoptSource posts the text again with the source; a failure only loses the source. */
+export async function adoptSource(
+	api: Pick<SentenceApi, 'addSentence'>,
+	entryId: number,
+	text: string,
+	source: SentenceSourceRequest
+): Promise<void> {
+	try {
+		await api.addSentence(entryId, text, source);
+	} catch {
+		// The sentence stays as it was, without a source.
+	}
 }
 
 /**
@@ -155,19 +192,23 @@ export interface SentenceApi {
 export async function resolveBookSentence(
 	api: SentenceApi,
 	entryId: number,
-	text: string
+	text: string,
+	source?: SentenceSourceRequest
 ): Promise<{ sentenceId: number | undefined; failed: boolean }> {
 	const wanted = normalizeSentence(text);
 	if (!wanted) return { sentenceId: undefined, failed: false };
 	try {
 		const entry = await api.getEntry(entryId);
 		const same = (entry.sentences ?? []).find((s) => normalizeSentence(s.hanzi) === wanted);
-		if (same) return { sentenceId: same.id, failed: false };
+		if (same) {
+			if (source && wantsSource(same, source)) await adoptSource(api, entryId, wanted, source);
+			return { sentenceId: same.id, failed: false };
+		}
 	} catch {
 		// Could not check: posting may still work, a duplicate is harmless.
 	}
 	try {
-		const created = await api.addSentence(entryId, wanted);
+		const created = await post(api, entryId, wanted, source);
 		return { sentenceId: created.id, failed: false };
 	} catch {
 		return { sentenceId: undefined, failed: true };

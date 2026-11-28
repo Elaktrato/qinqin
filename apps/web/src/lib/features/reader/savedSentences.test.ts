@@ -116,6 +116,41 @@ describe('saveBookSentence', () => {
 		expect(d.getEntry).not.toHaveBeenCalled();
 	});
 
+	const source = { bookId: 5, chapter: 2, paragraph: 4, start: 10, end: 12 };
+
+	it('posts the source with a new sentence (#280)', async () => {
+		const d = deps();
+		await saveBookSentence(d, { workspaceId: 3, entryId: 7, entryKind: 'word', text: '他在学习。', source });
+		expect(d.addSentence).toHaveBeenCalledWith(7, '他在学习。', source);
+	});
+
+	it('gives an own sentence without a source the source (the server adopts it)', async () => {
+		const d = deps({ getEntry: vi.fn(async () => ({ sentences: [{ id: 1, hanzi: '我喜欢学习。', userId: 4 }] })) });
+		const out = await saveBookSentence(d, { workspaceId: 3, entryId: 7, entryKind: 'word', text: '我喜欢学习。', source });
+		expect(out).toEqual({ outcome: 'saved', sentenceId: 1 });
+		expect(d.addSentence).toHaveBeenCalledWith(7, '我喜欢学习。', source);
+	});
+
+	it('leaves pack sentences and sourced ones alone', async () => {
+		for (const s of [
+			{ id: 1, hanzi: '我喜欢学习。', userId: null },
+			{ id: 1, hanzi: '我喜欢学习。', userId: 4, source: { kind: 'book', bookId: 6, title: 'B', chapter: 0, paragraph: 0, start: 0, end: 1 } }
+		]) {
+			const d = deps({ getEntry: vi.fn(async () => ({ sentences: [s] })) });
+			await saveBookSentence(d, { workspaceId: 3, entryId: 7, entryKind: 'word', text: '我喜欢学习。', source });
+			expect(d.addSentence).not.toHaveBeenCalled();
+		}
+	});
+
+	it('a failed source adoption does not fail the save', async () => {
+		const d = deps({
+			getEntry: vi.fn(async () => ({ sentences: [{ id: 1, hanzi: '我喜欢学习。', userId: 4 }] })),
+			addSentence: vi.fn(async () => Promise.reject(new Error('422')))
+		});
+		const out = await saveBookSentence(d, { workspaceId: 3, entryId: 7, entryKind: 'word', text: '我喜欢学习。', source });
+		expect(out).toEqual({ outcome: 'saved', sentenceId: 1 });
+	});
+
 	it('a failed post throws (the caller reports it)', async () => {
 		const d = deps({ addSentence: vi.fn(async () => Promise.reject(new Error('offline'))) });
 		await expect(saveBookSentence(d, { workspaceId: 3, entryId: 7, entryKind: 'word', text: '他在学习。' })).rejects.toThrow('offline');

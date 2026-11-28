@@ -1041,6 +1041,8 @@
 	"entry.sentences.removeFailed": "Could not remove this sentence.",
 	"entry.sentences.shareLabel": "Share this sentence",
 	"entry.sentences.shared": "shared",
+	"entry.sentences.source": "From {title}, chapter {n}",
+	"entry.sentences.sourceUntitled": "From an untitled book, chapter {n}",
 	"entry.sentences.user": "user {id}",
 	"entry.strokes.failed": "Stroke order could not be loaded.",
 	"entry.strokes.label": "Stroke order for {char}",
