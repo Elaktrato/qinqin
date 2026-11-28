@@ -30,7 +30,6 @@
 				{"form":"物","reading":"もの"},
 				{"form":"来る","reading":"くる"},
 				{"form":"聞く","reading":"きく"},
-				"あの",
 				{"form":"人","reading":"ひと"},
 				{"form":"知る","reading":"しる"},
 				"はい",
@@ -512,7 +511,8 @@
 				{"form":"郵便局","reading":"ゆうびんきょく"},
 				{"form":"切手","reading":"きって"},
 				{"form":"易しい","reading":"やさしい"},
-				{"form":"父","reading":"ちち"}
+				{"form":"父","reading":"ちち"},
+				{"form":"彼の","reading":"あの"}
 			]
 		},
 		{
@@ -529,6 +529,7 @@
 				"だから",
 				{"form":"俺","reading":"おれ"},
 				{"form":"出来る","reading":"できる"},
+				"あの",
 				{"form":"自分","reading":"じぶん"},
 				{"form":"何て","reading":"なんて"},
 				"こんな",
@@ -1973,7 +1974,6 @@
 				{"form":"破壊","reading":"はかい"},
 				{"form":"満たす","reading":"みたす"},
 				{"form":"ように言う","reading":"ようにいう"},
-				{"form":"制服","reading":"せいふく"},
 				"いらっしゃいませ",
 				{"form":"眠い","reading":"ねむい"},
 				{"form":"携帯","reading":"けいたい"},
@@ -2052,6 +2052,7 @@
 				"よいしょ",
 				{"form":"目を覚ます","reading":"めをさます"},
 				{"form":"お友達","reading":"おともだち"},
+				{"form":"制服","reading":"せいふく"},
 				{"form":"幾つか","reading":"いくつか"},
 				{"form":"今更","reading":"いまさら"},
 				"ドキドキ",
@@ -4207,7 +4208,6 @@
 				{"form":"行","reading":"ぎょう"},
 				"スケジュール",
 				{"form":"仕掛け","reading":"しかけ"},
-				{"form":"怪物","reading":"かいぶつ"},
 				{"form":"中断","reading":"ちゅうだん"},
 				"テーマ",
 				{"form":"台所","reading":"だいどころ"},
@@ -5825,6 +5825,7 @@
 				{"form":"反射的に","reading":"はんしゃてきに"},
 				{"form":"隊","reading":"たい"},
 				{"form":"目を細める","reading":"めをほそめる"},
+				{"form":"怪物","reading":"かいぶつ"},
 				{"form":"計る","reading":"はかる"},
 				{"form":"頼りにする","reading":"たよりにする"},
 				{"form":"企む","reading":"たくらむ"},
@@ -7317,7 +7318,6 @@
 				"くすくす",
 				{"form":"瞼","reading":"まぶた"},
 				{"form":"誇らしい","reading":"ほこらしい"},
-				{"form":"敗れる","reading":"やぶれる"},
 				{"form":"物語る","reading":"ものがたる"},
 				"グッズ",
 				{"form":"乳","reading":"ちち"},
@@ -8468,6 +8468,7 @@
 				{"form":"苛立つ","reading":"いらだつ"},
 				{"form":"眉をひそめる","reading":"まゆをひそめる"},
 				{"form":"頭を振る","reading":"かぶりをふる"},
+				{"form":"敗れる","reading":"やぶれる"},
 				{"form":"悪人","reading":"あくにん"},
 				{"form":"警戒心","reading":"けいかいしん"},
 				{"form":"齧る","reading":"かじる"},
@@ -10021,8 +10022,7 @@
 				{"form":"飛び乗る","reading":"とびのる"},
 				{"form":"兄様","reading":"あにさま"},
 				"ですけど",
-				{"form":"寝息を立てる","reading":"ねいきをたてる"},
-				{"form":"魂胆","reading":"こんたん"}
+				{"form":"寝息を立てる","reading":"ねいきをたてる"}
 			]
 		}
 	]

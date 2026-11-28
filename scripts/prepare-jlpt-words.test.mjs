@@ -529,7 +529,7 @@ test('the anchors hold, the core list matches JMdict, and the estimate agrees wi
 	const anchors = /^anchors: (\d+) of (\d+) at or under their level/m.exec(res.stdout);
 	assert.ok(anchors, res.stdout);
 	assert.equal(anchors[1], anchors[2], res.stdout.split('\n').filter((l) => l.startsWith('anchor miss')).join('\n'));
-	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 73.2 % within one
+	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 73.0 % within one
 	// level on 2026-11-28. The review asked for 90 %; the rules alone reached 87.8 % before the blind teacher
 	// spot check showed the non-core words far too easy, and the fix (outside the core, ≈ N4 or harder; lifts
 	// stop at ≈ N3) costs this measure. The days of the week, 切手, 晴れ and the like rank 10,000–35,000 in

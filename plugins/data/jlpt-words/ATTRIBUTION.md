@@ -45,8 +45,8 @@ Method:
    のだ, として), set phrases of a word, a particle and a verb (言葉を失う),
    written numbers (５分), noise (repeated letters, あああ; clipped sounds,
    っつ, ゲッ) and one-kana fragments that are not particles (expression 201, fragment 12, grammar list 25, grammar 94, noise 34, number 97, particle 50, phrase 6).
-4. Frequency first: Jiten rank ≤ 1,290 → ≈ N5, ≤ 2,197 → ≈ N4, ≤ 4,928 → ≈ N3,
-   ≤ 7,664 → ≈ N2, ≤ 10,250 → ≈ N1; beyond that a word is not listed (but see 1).
+4. Frequency first: Jiten rank ≤ 1,288 → ≈ N5, ≤ 2,196 → ≈ N4, ≤ 4,927 → ≈ N3,
+   ≤ 7,663 → ≈ N2, ≤ 10,249 → ≈ N1; beyond that a word is not listed (but see 1).
 5. Kanji: when the hardest JLPT kanji level of the word's written form is
    harder, the word goes ONE level harder, never more, and not at all when
    JMdict gives it any priority tag. Kana-only and usually-kana words,
@@ -69,12 +69,12 @@ words, so the level sizes differ from those (see the level counts below). There 
 checks are:
 
 - the 538 core words placed by the rules alone (the core switched off):
-  69 at their core level, 394 (73.2%) within one level, 17 not listed;
+  69 at their core level, 393 (73.0%) within one level, 18 not listed;
 - 81 of 81 anchor words (scripts/jlpt-words/anchors.tsv) at or under
   their allowed level;
 - of the 723 one-kanji words, 175 (24.2%) sit at their kanji's own level;
-- of the 1,796 JLPT kanji the words use, 257 (14.3%) first appear in a word
-  at the kanji's own level, 1,531 in an easier one, 8 in a harder one;
+- of the 1,796 JLPT kanji the words use, 258 (14.4%) first appear in a word
+  at the kanji's own level, 1,530 in an easier one, 8 in a harder one;
 - no level is empty.
 
 A word can be a level off; treat a level as a rough guide.

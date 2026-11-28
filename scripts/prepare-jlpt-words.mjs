@@ -83,7 +83,7 @@ export const TARGET_CUMULATIVE = [800, 1500, 3700, 6000, 10000];
  *   - anchors (scripts/jlpt-words/anchors.tsv): 81 of 81 at or under their
  *     level (the first estimate failed most of the review's examples);
  *   - core words placed by the rules alone (the core switched off): 69 of
- *     538 exact, 394 (73.2 %) within one level, 17 not listed;
+ *     538 exact, 393 (73.0 %) within one level, 18 not listed;
  *   - two blind teacher spot checks (124 words): see the plan;
  *   - left out within R1: 201 expressions, 97 numbers, 94 grammar
  *     expressions, 50 particles, 34 noise, 25 on the grammar list, 12
@@ -91,7 +91,7 @@ export const TARGET_CUMULATIVE = [800, 1500, 3700, 6000, 10000];
  * No base list was available (its licence is unconfirmed): accuracy against
  * a list is unmeasured. With one, run --calibrate --base <dir>.
  */
-export const THRESHOLDS = { R5: 1290, R4: 2197, R3: 4928, R2: 7664, R1: 10250 };
+export const THRESHOLDS = { R5: 1288, R4: 2196, R3: 4927, R2: 7663, R1: 10249 };
 
 /** The credit of the lists the project writes. */
 const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';

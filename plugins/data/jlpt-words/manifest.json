@@ -1,7 +1,7 @@
 {
   "id": "jlpt-words",
   "name": "JLPT words (approximate)",
-  "version": "jiten@2026-11-12+jmdict@2026-11-11+kanjiapi.dev@76aa080+kanjidic2@2026-11-11+lists@cd21efe",
+  "version": "jiten@2026-11-12+jmdict@2026-11-11+kanjiapi.dev@76aa080+kanjidic2@2026-11-11+lists@bdafddb",
   "type": "levels",
   "language": "ja",
   "license": "CC BY-SA 4.0",

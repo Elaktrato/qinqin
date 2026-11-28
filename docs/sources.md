@@ -468,7 +468,7 @@ byte.
     its words directly. Grammar pieces and expressions, set phrases, numerals
     with counters (十人, ５分), particles, noise (あああ, っつ) and one-kana
     fragments are left out. Otherwise **frequency is the primary signal**: Jiten
-    rank ≤ 1,290 ≈ N5, ≤ 2,197 ≈ N4, ≤ 4,928 ≈ N3, ≤ 7,664 ≈ N2, ≤ 10,250 ≈ N1. Harder
+    rank ≤ 1,288 ≈ N5, ≤ 2,196 ≈ N4, ≤ 4,927 ≈ N3, ≤ 7,663 ≈ N2, ≤ 10,249 ≈ N1. Harder
     kanji raise a word by one level at most, and not at all when JMdict gives it a
     priority tag; kana, usually-kana, ateji and non-jōyō spellings (綺麗) count as
     kana words. A word on JMdict's basic list (ichi1) among its most frequent
@@ -491,7 +491,7 @@ byte.
     民間), so the lift above replaced them.
   - Evaluation (no ground truth; numbers of 2026-11-28): 81 of 81 anchor words at
     or under their allowed level; the core words placed by the rules alone (the
-    core switched off) 73.2% within one level; three blind spot checks by two
+    core switched off) 73.0% within one level; three blind spot checks by two
     native-Japanese teacher agents each, 184 words in all: on the last, fully
     out-of-sample one (60 words), 83% and 80% of the words the list puts at ≈ N5 or
     ≈ N4 are within one level of the teacher's level, and every word a teacher puts
