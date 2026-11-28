@@ -177,7 +177,8 @@ news2/ichi2/spec2/gai2 → 30, anything else 0 — rare/outdated/irregular/searc
 ranking by the first sense let 海松, 佝僂, 野老 and 奴 beat みる, くる, ところ and め without a frequency pack
 (#177 review). Consequence: bare して is 仕手 (`uk` on its second sense, priority 92) without a frequency pack.
 
-Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
+Segmentation is greedy longest match for a language without segmentation rules; Japanese reads whole sentences
+(`segment/README.md`, #348), where the boundary rule below drops the longest edge it would split. **Boundary rule**: when the match at a position is exact, its first
 entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that
 has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix either ends strictly after the expression, or ends exactly with

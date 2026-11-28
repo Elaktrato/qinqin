@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #348 — Japanese reads whole sentences; function words (contract 34)
+
+- **New `segment/`:** a language's segmentation rules (`ja.json`, embedded by the server) and the lattice: every match
+  at every position is an edge, costs per token (weak kana fit, priority-0 kana, a start between two kanji, an
+  unmatched rune), the cheapest path wins, ties to the longer edge first; the lemma boundary rule drops the longest
+  edge it would split; `splitWords` (今日は is 今日 | は). Fixture `cases.json` (Go and web). Chinese and data-only
+  languages stay greedy.
+- **`POST /api/segment`:** Japanese matches can differ from before (妹 | が | います, not 妹 | がい | ます), a function
+  word's first entry is its function entry (の the particle, not 野), and a match may carry **`function: true`** (sent
+  only when true). `/api/segment/at` and `/api/lookup` are unchanged.
+- **Clients (`reader/`):** a function word has no word state (never new or learning), is never unreached in a course
+  reading lesson (no reading, no gloss), and is not a coverage token.
+- **`lemma/README.md`:** "Segmentation is greedy longest match" now holds for languages without segmentation rules.
+
 ## #224 — courses: unit tests, section exams and placement (contract 33)
 
 - **New fixture `courses/tests.json`** (rule `courses/tests`, web): how a unit test or section exam is assembled (the
