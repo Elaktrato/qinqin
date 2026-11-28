@@ -197,7 +197,8 @@ schedule of each item, EXP, the streak and the activity rule. A question compone
 typed answer keeps focus and the phone keyboard), calls `onAnswer({mode, grade})` once per item, and shows readings only
 through the romanisation helpers. The tone-pair drill (`practice/tonePairs/`, #180) is the first registered one;
 the measure-word and counter drills (`practice/counters/`, #179) are three drills over one question component and
-two routes, with their rules in `docs/contracts/counters/`;
+two routes, with their rules in `docs/contracts/counters/`; the look-alike drill (`practice/lookAlikes/`, #228) bundles its
+sets as web data (a lazy chunk) and adds its own payload members after the grade (`onAnswer({mode, grade, extra})`);
 the sample drill (`practice/sample/`) is the test harness: set
 `localStorage["qinqin.dev.drills"] = "sample"` in a browser to see Practice with it (`e2e/tests/practice.spec.ts`);
 its events count nowhere on the server. `schedule.json` and `pick.json` are written by

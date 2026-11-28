@@ -34,7 +34,8 @@
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
 //   i. the project-written data embedded in the code (the script charts under
 //      apps/web/src/lib/features/scripts/data, the Starter lists under
-//      server/internal/starter/sets, the counters table under server/internal/counters/table and the JLPT word lists
+//      server/internal/starter/sets, the counters table under server/internal/counters/table, the look-alike sets
+//      under apps/web/src/lib/features/practice/lookAlikes/data and the JLPT word lists
 //      under scripts/jlpt-words) state license "CC-BY-4.0" (Starter lists also carry
 //      the credit) and have a NOTICE beside them; there is no CC0 exception (LICENSING.md).
 //   h. the images packs (#216; only when scripts/images/pins.json exists): each has its committed
@@ -93,6 +94,8 @@ const EMBEDDED_PROJECT_DATA = [
 	['server/internal/starter/sets', true],
 	// The counters table and the Chinese measure-word corrections (#179).
 	['server/internal/counters/table', true],
+	// The look-alike character sets (#228), bundled in the web app.
+	['apps/web/src/lib/features/practice/lookAlikes/data', true],
 	// The estimated JLPT word list's project lists (#219): TSV files, so only their NOTICE is checked.
 	['scripts/jlpt-words', false]
 ];

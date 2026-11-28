@@ -3,8 +3,8 @@
 **Practice** (`/practice`) is the home of the drills: short exercises that train one thing at a time, apart from your
 flashcards. The drills of v0.9.0 are the conjugation trainer (Japanese verbs and adjectives, below), measure words
 and counters, tone pairs (Mandarin) and look-alike characters. Practice shows in the navigation once a drill applies
-to your workspace's language (today: Chinese, with tone pairs and measure words, and Japanese, with conjugation,
-counters and counter readings); until then `/practice` says "No drills for this language yet".
+to your workspace's language (today: Chinese, with tone pairs, measure words and look-alike characters, and Japanese,
+with conjugation, counters, counter readings and look-alike characters); until then `/practice` says "No drills for this language yet".
 
 ## How it works
 
@@ -92,6 +92,27 @@ nouns; reviewed by agents acting as Japanese teachers, not yet by a person):
   too (じっぽん, はちほん, さんかい), and the choices are the classic slips (さんほん, さんぽん, ようか for the 4th).
 - Romaji shows only while Settings → Study → Romanisation shows it; kana always shows.
 
+## Look-alike characters (Chinese and Japanese)
+
+**Look-alike characters** trains the characters that are easy to confuse: 未 and 末, 己 and 已, 土 and 士, 晴, 睛, 情,
+清 and 请, シ, ツ, ソ and ン, ぬ and め. Each **set** of look-alikes has its own schedule. A set joins once you study one
+of its characters (a word or a character you have reviewed: 未来 brings 未/末); in a Japanese workspace the kana sets
+are there from the start. A traditional-Chinese workspace (zh-Hant) gets the traditional sets (鳥/烏, 問/間).
+
+- **A question** shows one of the set's characters, large, and asks what it is: tap its meaning (with its pinyin, its
+  kana readings, or for a kana the same kana in the other script). The next time the set comes up it shows a word
+  with a gap, ＿来 (future), and you tap the character that fills it. The two kinds take turns.
+- **The answer** lists every character of the set with its readings, meaning and example word, what to look at ("the
+  upper stroke is the shorter one") and the strokes that make the difference drawn in colour (from the installed stroke
+  data; the other strokes faded).
+- Pinyin, bopomofo and romaji show only while Settings → Study → Romanisation shows them; kana always shows.
+- The characters are set large in your hanzi font (Settings → Appearance) for your workspace's script, at a regular
+  weight, so the small differences stay visible on a phone.
+- **Word pages** name the look-alikes of their characters: "Easily confused with: 末", each a link.
+
+The sets (53 Chinese, 56 Japanese) are written for qinqin (CC BY 4.0) and were reviewed by agents acting as Chinese and
+Japanese teachers, not yet by a person.
+
 ## What a drill answer counts for
 
 Each answer is saved as a study event (`drill.<drill>`), like a review: it is sent at once, or later when you are
@@ -105,5 +126,6 @@ offline. It counts for:
 Practice is a feature you can switch off in Settings → Features; switching it off hides it and deletes nothing.
 
 For developers: the conjugation rules are in `docs/contracts/conjugation/`, the measure-word and counter rules in
-`docs/contracts/counters/` (the table and its review notes: `server/internal/counters/table/`); the drill rules are in `docs/contracts/drills/` (item keys, the event, schedules, the rounds, counting) and
+`docs/contracts/counters/` (the table and its review notes: `server/internal/counters/table/`), the look-alike rules in
+`docs/contracts/lookalikes/` (the sets and their review notes: `apps/web/src/lib/features/practice/lookAlikes/data/`); the drill rules are in `docs/contracts/drills/` (item keys, the event, schedules, the rounds, counting) and
 [Development](Development#drills) explains how a drill plugs in.

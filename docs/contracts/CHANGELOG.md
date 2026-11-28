@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #228 — look-alike characters: the `look-alikes` drill, its sets and rules (contract 40)
+
+- **New `lookalikes/`:** the item of the drill `look-alikes` is a set, keyed by its members in order (`未末`, `ソン`; 2–5
+  distinct Han characters or kana letters); the set file format (`look-alikes-zh.json`, `look-alikes-ja.json`, bundled
+  in the web app, CC BY 4.0) and its first problem; which sets a learner practises (a member in a reviewed card's
+  written form; Japanese kana sets always; a Chinese set in the workspace's script); the mode (`recognise`, then
+  `choose`, by the set's number of answers), the word with a gap, and an answer's grade (right 3, wrong 1)
+  (`sets.json`, `check.json`).
+- **`drills/drills.json`:** `registry` adds `look-alikes`; a `build` case pins a drill's own payload members after the
+  grade, in order (`{item, mode, grade, asked, given}`), which Go's `drills.Payload` and the web's `drillPayload` now
+  build. **`events/activity.json`:** the `drill.look-alikes` count rule, feature `practice`; `GET /api/stats/activity`
+  lists eleven sources.
+- No route: the sets are web data; the server stores the answers like any drill's.
+
 ## #179 — measure words and counters: three drills, their rules and two routes (contract 37)
 
 - **New `counters/`:** item keys of the drills `measure-words` (Chinese, item `<entryId>`), `counters` (Japanese, item
