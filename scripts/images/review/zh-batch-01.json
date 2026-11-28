@@ -27,7 +27,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 2,
@@ -50,7 +54,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 3,
@@ -74,7 +82,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 4,
@@ -101,7 +113,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 5,
@@ -125,7 +141,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 6,
@@ -149,7 +169,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 7,
@@ -179,7 +203,11 @@
     "not-the-first-sense",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 8,
@@ -204,7 +232,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 9,
@@ -231,7 +263,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 10,
@@ -258,7 +294,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 11,
@@ -281,7 +321,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 12,
@@ -305,7 +349,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 13,
@@ -329,7 +377,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 14,
@@ -355,7 +407,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 15,
@@ -378,7 +434,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 16,
@@ -402,7 +462,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 17,
@@ -425,7 +489,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 18,
@@ -450,7 +518,11 @@
     "one-gloss-match",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 19,
@@ -474,7 +546,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 20,
@@ -499,7 +575,11 @@
     "one-gloss-match",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 21,
@@ -523,7 +603,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 22,
@@ -546,7 +630,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 23,
@@ -569,7 +657,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
   },
   {
    "i": 24,
@@ -592,7 +684,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 25,
@@ -616,7 +712,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 26,
@@ -642,7 +742,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 27,
@@ -669,7 +773,11 @@
     "not-the-first-sense",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 28,
@@ -692,7 +800,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 29,
@@ -716,7 +828,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 30,
@@ -740,7 +856,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 31,
@@ -766,7 +886,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 32,
@@ -789,7 +913,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 33,
@@ -816,7 +944,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 34,
@@ -843,7 +975,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 35,
@@ -867,7 +1003,11 @@
    "why": [
     "one-gloss-match",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 36,
@@ -896,7 +1036,11 @@
     "several-senses",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 37,
@@ -924,7 +1068,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 38,
@@ -947,7 +1095,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 39,
@@ -970,7 +1122,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 40,
@@ -995,7 +1151,11 @@
    "why": [
     "one-gloss-match",
     "several-senses"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 41,
@@ -1020,7 +1180,11 @@
    "why": [
     "one-gloss-match",
     "not-the-first-sense"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 42,
@@ -1048,7 +1212,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 43,
@@ -1074,7 +1242,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 44,
@@ -1098,7 +1270,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 45,
@@ -1122,7 +1298,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 46,
@@ -1145,7 +1325,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 47,
@@ -1169,7 +1353,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "adjudicator"
+   }
   },
   {
    "i": 48,
@@ -1193,7 +1381,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 49,
@@ -1216,7 +1408,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 50,
@@ -1243,7 +1439,11 @@
     "several-senses",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 51,
@@ -1268,7 +1468,11 @@
     "one-gloss-match",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 52,
@@ -1294,7 +1498,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 53,
@@ -1317,7 +1525,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 54,
@@ -1341,7 +1553,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 55,
@@ -1367,7 +1583,11 @@
     "one-gloss-match",
     "several-senses",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 56,
@@ -1391,7 +1611,11 @@
    "why": [
     "one-gloss-match",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 57,
@@ -1414,7 +1638,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 58,
@@ -1437,7 +1665,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 59,
@@ -1460,7 +1692,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
   },
   {
    "i": 60,
@@ -1483,7 +1719,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 61,
@@ -1506,7 +1746,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "adjudicator"
+   }
   },
   {
    "i": 62,
@@ -1530,7 +1774,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 63,
@@ -1553,7 +1801,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 64,
@@ -1576,7 +1828,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 65,
@@ -1599,7 +1855,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 66,
@@ -1622,7 +1882,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 67,
@@ -1648,7 +1912,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 68,
@@ -1673,7 +1941,11 @@
    "why": [
     "one-gloss-match",
     "not-the-first-sense"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 69,
@@ -1697,7 +1969,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 70,
@@ -1724,7 +2000,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 71,
@@ -1750,7 +2030,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 72,
@@ -1774,7 +2058,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 73,
@@ -1798,7 +2086,11 @@
    "why": [
     "one-gloss-match",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 74,
@@ -1821,7 +2113,11 @@
    "basis": "name+gloss",
    "why": [
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 75,
@@ -1845,7 +2141,11 @@
    "why": [
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 76,
@@ -1870,7 +2170,11 @@
     "one-gloss-match",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 77,
@@ -1893,7 +2197,11 @@
    "basis": "name+gloss",
    "why": [
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 78,
@@ -1917,7 +2225,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 79,
@@ -1940,7 +2252,11 @@
    "basis": "name+gloss",
    "why": [
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 80,
@@ -1963,7 +2279,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 81,
@@ -1988,7 +2308,11 @@
    "why": [
     "one-gloss-match",
     "several-senses"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 82,
@@ -2011,7 +2335,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 83,
@@ -2034,7 +2362,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 84,
@@ -2057,7 +2389,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 85,
@@ -2084,7 +2420,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 86,
@@ -2111,7 +2451,11 @@
     "not-the-first-sense",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 87,
@@ -2135,7 +2479,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 88,
@@ -2158,7 +2506,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 89,
@@ -2185,7 +2537,11 @@
     "several-senses",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 90,
@@ -2210,7 +2566,11 @@
    "why": [
     "one-gloss-match",
     "not-the-first-sense"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 91,
@@ -2236,7 +2596,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 92,
@@ -2259,7 +2623,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 93,
@@ -2286,7 +2654,11 @@
     "not-the-first-sense",
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 94,
@@ -2313,7 +2685,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 95,
@@ -2339,7 +2715,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 96,
@@ -2362,7 +2742,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 97,
@@ -2385,7 +2769,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 98,
@@ -2408,7 +2796,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 99,
@@ -2432,7 +2824,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 100,
@@ -2458,7 +2854,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 101,
@@ -2484,7 +2884,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 102,
@@ -2507,7 +2911,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 103,
@@ -2531,7 +2939,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 104,
@@ -2557,7 +2969,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 105,
@@ -2581,7 +2997,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 106,
@@ -2607,7 +3027,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 107,
@@ -2633,7 +3057,11 @@
     "one-gloss-match",
     "several-senses",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "remove",
+    "by": "both"
+   }
   },
   {
    "i": 108,
@@ -2659,7 +3087,11 @@
     "one-gloss-match",
     "not-the-first-sense",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 109,
@@ -2682,7 +3114,11 @@
    "basis": "gloss",
    "why": [
     "one-gloss-match"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 110,
@@ -2705,7 +3141,11 @@
    "basis": "name",
    "why": [
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 111,
@@ -2728,7 +3168,11 @@
    "basis": "name+gloss",
    "why": [
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 112,
@@ -2752,7 +3196,11 @@
    "why": [
     "one-gloss-match",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 113,
@@ -2776,7 +3224,11 @@
    "why": [
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 114,
@@ -2800,7 +3252,11 @@
    "why": [
     "one-gloss-match",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 115,
@@ -2824,7 +3280,11 @@
    "why": [
     "shared-picture",
     "single-character"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
   },
   {
    "i": 116,
@@ -2848,7 +3308,1020 @@
    "why": [
     "one-gloss-match",
     "shared-picture"
-   ]
+   ],
+   "decision": {
+    "v": "accept",
+    "by": "both"
+   }
+  }
+ ],
+ "a": [
+  {
+   "i": 1,
+   "v": "accept"
+  },
+  {
+   "i": 2,
+   "v": "accept"
+  },
+  {
+   "i": 3,
+   "v": "accept"
+  },
+  {
+   "i": 4,
+   "v": "accept"
+  },
+  {
+   "i": 5,
+   "v": "accept"
+  },
+  {
+   "i": 6,
+   "v": "accept"
+  },
+  {
+   "i": 7,
+   "v": "accept"
+  },
+  {
+   "i": 8,
+   "v": "accept"
+  },
+  {
+   "i": 9,
+   "v": "accept"
+  },
+  {
+   "i": 10,
+   "v": "accept"
+  },
+  {
+   "i": 11,
+   "v": "accept"
+  },
+  {
+   "i": 12,
+   "v": "accept"
+  },
+  {
+   "i": 13,
+   "v": "accept"
+  },
+  {
+   "i": 14,
+   "v": "accept"
+  },
+  {
+   "i": 15,
+   "v": "accept"
+  },
+  {
+   "i": 16,
+   "v": "accept"
+  },
+  {
+   "i": 17,
+   "v": "accept"
+  },
+  {
+   "i": 18,
+   "v": "accept"
+  },
+  {
+   "i": 19,
+   "v": "accept"
+  },
+  {
+   "i": 20,
+   "v": "accept"
+  },
+  {
+   "i": 21,
+   "v": "accept"
+  },
+  {
+   "i": 22,
+   "v": "remove",
+   "r": "question word too abstract; symbol not distinguishable from how/which/who"
+  },
+  {
+   "i": 23,
+   "v": "accept"
+  },
+  {
+   "i": 24,
+   "v": "accept"
+  },
+  {
+   "i": 25,
+   "v": "accept"
+  },
+  {
+   "i": 26,
+   "v": "accept"
+  },
+  {
+   "i": 27,
+   "v": "remove",
+   "r": "'part' is abstract; beginners learn 分 as minute/cent/point"
+  },
+  {
+   "i": 28,
+   "v": "accept"
+  },
+  {
+   "i": 29,
+   "v": "accept"
+  },
+  {
+   "i": 30,
+   "v": "accept"
+  },
+  {
+   "i": 31,
+   "v": "accept"
+  },
+  {
+   "i": 32,
+   "v": "accept"
+  },
+  {
+   "i": 33,
+   "v": "remove",
+   "r": "'back' symbol likely shows the body part, not 'behind/after'"
+  },
+  {
+   "i": 34,
+   "v": "remove",
+   "r": "吗 is the yes-no question particle; 'what' picture teaches the wrong meaning"
+  },
+  {
+   "i": 35,
+   "v": "accept"
+  },
+  {
+   "i": 36,
+   "v": "remove",
+   "r": "哪 means which, not how; wrong picture"
+  },
+  {
+   "i": 37,
+   "v": "remove",
+   "r": "'which' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 38,
+   "v": "remove",
+   "r": "'which' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 39,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with other question symbols"
+  },
+  {
+   "i": 40,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with other question symbols"
+  },
+  {
+   "i": 41,
+   "v": "remove",
+   "r": "duplicate sense; question word too abstract to picture"
+  },
+  {
+   "i": 42,
+   "v": "remove",
+   "r": "generic waving 'hello' suggests 你好; 喂 is the telephone hello"
+  },
+  {
+   "i": 43,
+   "v": "accept"
+  },
+  {
+   "i": 44,
+   "v": "accept"
+  },
+  {
+   "i": 45,
+   "v": "accept"
+  },
+  {
+   "i": 46,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "accept"
+  },
+  {
+   "i": 48,
+   "v": "remove",
+   "r": "'highest' is not the meaning beginners learn; 太 = too/very"
+  },
+  {
+   "i": 49,
+   "v": "accept"
+  },
+  {
+   "i": 50,
+   "v": "accept"
+  },
+  {
+   "i": 51,
+   "v": "remove",
+   "r": "'letter' symbol likely shows a mail envelope (信), not a written character"
+  },
+  {
+   "i": 52,
+   "v": "remove",
+   "r": "'young' is the shào reading; card is shǎo = few/little"
+  },
+  {
+   "i": 53,
+   "v": "accept"
+  },
+  {
+   "i": 54,
+   "v": "accept"
+  },
+  {
+   "i": 55,
+   "v": "remove",
+   "r": "'how' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 56,
+   "v": "remove",
+   "r": "'how' picture doesn't convey 'how about/how is it'; too abstract"
+  },
+  {
+   "i": 57,
+   "v": "accept"
+  },
+  {
+   "i": 58,
+   "v": "accept"
+  },
+  {
+   "i": 59,
+   "v": "accept"
+  },
+  {
+   "i": 60,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "accept"
+  },
+  {
+   "i": 62,
+   "v": "accept"
+  },
+  {
+   "i": 63,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 64,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 65,
+   "v": "accept"
+  },
+  {
+   "i": 66,
+   "v": "accept"
+  },
+  {
+   "i": 67,
+   "v": "accept"
+  },
+  {
+   "i": 68,
+   "v": "accept"
+  },
+  {
+   "i": 69,
+   "v": "remove",
+   "r": "question word too abstract; easily confused with person/他"
+  },
+  {
+   "i": 70,
+   "v": "accept"
+  },
+  {
+   "i": 71,
+   "v": "remove",
+   "r": "'side' is vague; 边 is mainly learned as a locality suffix"
+  },
+  {
+   "i": 72,
+   "v": "accept"
+  },
+  {
+   "i": 73,
+   "v": "remove",
+   "r": "beginners learn 先生 as Mr./husband; 'teacher' picture is misleading (老师)"
+  },
+  {
+   "i": 74,
+   "v": "accept"
+  },
+  {
+   "i": 75,
+   "v": "accept"
+  },
+  {
+   "i": 76,
+   "v": "accept"
+  },
+  {
+   "i": 77,
+   "v": "accept"
+  },
+  {
+   "i": 78,
+   "v": "accept"
+  },
+  {
+   "i": 79,
+   "v": "accept"
+  },
+  {
+   "i": 80,
+   "v": "accept"
+  },
+  {
+   "i": 81,
+   "v": "accept"
+  },
+  {
+   "i": 82,
+   "v": "remove",
+   "r": "checkmark teaches 对 'correct'; beginners learn 不错 as 'pretty good'"
+  },
+  {
+   "i": 83,
+   "v": "remove",
+   "r": "'why' is too abstract to picture for a beginner"
+  },
+  {
+   "i": 84,
+   "v": "accept"
+  },
+  {
+   "i": 85,
+   "v": "accept"
+  },
+  {
+   "i": 86,
+   "v": "remove",
+   "r": "reading de is the adverbial particle; Earth picture fits dì and shows the planet"
+  },
+  {
+   "i": 87,
+   "v": "accept"
+  },
+  {
+   "i": 88,
+   "v": "accept"
+  },
+  {
+   "i": 89,
+   "v": "accept"
+  },
+  {
+   "i": 90,
+   "v": "accept"
+  },
+  {
+   "i": 91,
+   "v": "accept"
+  },
+  {
+   "i": 92,
+   "v": "accept"
+  },
+  {
+   "i": 93,
+   "v": "remove",
+   "r": "'straight' is not how beginners learn 正 (正在 / just); too abstract"
+  },
+  {
+   "i": 94,
+   "v": "accept"
+  },
+  {
+   "i": 95,
+   "v": "accept"
+  },
+  {
+   "i": 96,
+   "v": "accept"
+  },
+  {
+   "i": 97,
+   "v": "accept"
+  },
+  {
+   "i": 98,
+   "v": "accept"
+  },
+  {
+   "i": 99,
+   "v": "accept"
+  },
+  {
+   "i": 100,
+   "v": "accept"
+  },
+  {
+   "i": 101,
+   "v": "accept"
+  },
+  {
+   "i": 102,
+   "v": "accept"
+  },
+  {
+   "i": 103,
+   "v": "remove",
+   "r": "'heel' is not the beginner meaning; 跟 = with/to follow"
+  },
+  {
+   "i": 104,
+   "v": "accept"
+  },
+  {
+   "i": 105,
+   "v": "accept"
+  },
+  {
+   "i": 106,
+   "v": "accept"
+  },
+  {
+   "i": 107,
+   "v": "remove",
+   "r": "'between' is abstract; beginners meet 间 as the room classifier"
+  },
+  {
+   "i": 108,
+   "v": "accept"
+  },
+  {
+   "i": 109,
+   "v": "accept"
+  },
+  {
+   "i": 110,
+   "v": "accept"
+  },
+  {
+   "i": 111,
+   "v": "accept"
+  },
+  {
+   "i": 112,
+   "v": "accept"
+  },
+  {
+   "i": 113,
+   "v": "accept"
+  },
+  {
+   "i": 114,
+   "v": "accept"
+  },
+  {
+   "i": 115,
+   "v": "accept"
+  },
+  {
+   "i": 116,
+   "v": "accept"
+  }
+ ],
+ "b": [
+  {
+   "i": 1,
+   "v": "accept"
+  },
+  {
+   "i": 2,
+   "v": "accept"
+  },
+  {
+   "i": 3,
+   "v": "accept"
+  },
+  {
+   "i": 4,
+   "v": "accept"
+  },
+  {
+   "i": 5,
+   "v": "accept"
+  },
+  {
+   "i": 6,
+   "v": "accept"
+  },
+  {
+   "i": 7,
+   "v": "accept"
+  },
+  {
+   "i": 8,
+   "v": "accept"
+  },
+  {
+   "i": 9,
+   "v": "accept"
+  },
+  {
+   "i": 10,
+   "v": "accept"
+  },
+  {
+   "i": 11,
+   "v": "accept"
+  },
+  {
+   "i": 12,
+   "v": "accept"
+  },
+  {
+   "i": 13,
+   "v": "accept"
+  },
+  {
+   "i": 14,
+   "v": "accept"
+  },
+  {
+   "i": 15,
+   "v": "accept"
+  },
+  {
+   "i": 16,
+   "v": "accept"
+  },
+  {
+   "i": 17,
+   "v": "accept"
+  },
+  {
+   "i": 18,
+   "v": "accept"
+  },
+  {
+   "i": 19,
+   "v": "accept"
+  },
+  {
+   "i": 20,
+   "v": "accept"
+  },
+  {
+   "i": 21,
+   "v": "accept"
+  },
+  {
+   "i": 22,
+   "v": "remove",
+   "r": "question word; a 'what' symbol is too abstract to teach"
+  },
+  {
+   "i": 23,
+   "v": "remove",
+   "r": "calendar-style 'today' symbol is easily confused with yesterday/tomorrow"
+  },
+  {
+   "i": 24,
+   "v": "accept"
+  },
+  {
+   "i": 25,
+   "v": "accept"
+  },
+  {
+   "i": 26,
+   "v": "accept"
+  },
+  {
+   "i": 27,
+   "v": "remove",
+   "r": "'part' is abstract; beginners learn 分 as minute/cent/divide"
+  },
+  {
+   "i": 28,
+   "v": "accept"
+  },
+  {
+   "i": 29,
+   "v": "accept"
+  },
+  {
+   "i": 30,
+   "v": "accept"
+  },
+  {
+   "i": 31,
+   "v": "accept"
+  },
+  {
+   "i": 32,
+   "v": "accept"
+  },
+  {
+   "i": 33,
+   "v": "remove",
+   "r": "'back' likely shows the body part, not 'behind/after'"
+  },
+  {
+   "i": 34,
+   "v": "remove",
+   "r": "吗 is a yes-no question particle, not 'what'"
+  },
+  {
+   "i": 35,
+   "v": "accept"
+  },
+  {
+   "i": 36,
+   "v": "remove",
+   "r": "哪 means which, not how; question word too abstract"
+  },
+  {
+   "i": 37,
+   "v": "remove",
+   "r": "question word; 'which' symbol too abstract to teach"
+  },
+  {
+   "i": 38,
+   "v": "remove",
+   "r": "question word; 'which' symbol too abstract to teach"
+  },
+  {
+   "i": 39,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 40,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 41,
+   "v": "remove",
+   "r": "question word; 'where' symbol too abstract to teach"
+  },
+  {
+   "i": 42,
+   "v": "remove",
+   "r": "a waving 'hello' suggests 你好; 喂 is the phone greeting/hey"
+  },
+  {
+   "i": 43,
+   "v": "accept"
+  },
+  {
+   "i": 44,
+   "v": "accept"
+  },
+  {
+   "i": 45,
+   "v": "accept"
+  },
+  {
+   "i": 46,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "remove",
+   "r": "'day' symbol is vague; 天 also means sky, picture may read as 太阳"
+  },
+  {
+   "i": 48,
+   "v": "remove",
+   "r": "beginners learn 太 as 'too'; 'highest' is the wrong sense"
+  },
+  {
+   "i": 49,
+   "v": "accept"
+  },
+  {
+   "i": 50,
+   "v": "accept"
+  },
+  {
+   "i": 51,
+   "v": "remove",
+   "r": "'letter' is ambiguous (mail letter vs alphabet letter); 字 is a Chinese character"
+  },
+  {
+   "i": 52,
+   "v": "remove",
+   "r": "'young' is shào; 少 shǎo means few/little"
+  },
+  {
+   "i": 53,
+   "v": "accept"
+  },
+  {
+   "i": 54,
+   "v": "accept"
+  },
+  {
+   "i": 55,
+   "v": "remove",
+   "r": "question word; 'how' symbol too abstract to teach"
+  },
+  {
+   "i": 56,
+   "v": "remove",
+   "r": "question word; 'how' symbol too abstract to teach"
+  },
+  {
+   "i": 57,
+   "v": "accept"
+  },
+  {
+   "i": 58,
+   "v": "accept"
+  },
+  {
+   "i": 59,
+   "v": "remove",
+   "r": "calendar-style 'tomorrow' symbol is easily confused with today/yesterday"
+  },
+  {
+   "i": 60,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "remove",
+   "r": "calendar-style 'yesterday' symbol is easily confused with today/tomorrow"
+  },
+  {
+   "i": 62,
+   "v": "accept"
+  },
+  {
+   "i": 63,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 64,
+   "v": "remove",
+   "r": "'some' is too abstract to picture"
+  },
+  {
+   "i": 65,
+   "v": "accept"
+  },
+  {
+   "i": 66,
+   "v": "accept"
+  },
+  {
+   "i": 67,
+   "v": "accept"
+  },
+  {
+   "i": 68,
+   "v": "accept"
+  },
+  {
+   "i": 69,
+   "v": "remove",
+   "r": "question word; 'who' symbol too abstract to teach"
+  },
+  {
+   "i": 70,
+   "v": "accept"
+  },
+  {
+   "i": 71,
+   "v": "remove",
+   "r": "'side' is too abstract; 边 is mostly a locality suffix for beginners"
+  },
+  {
+   "i": 72,
+   "v": "accept"
+  },
+  {
+   "i": 73,
+   "v": "remove",
+   "r": "in Taiwan 先生 mainly means Mr./husband; a teacher picture is misleading"
+  },
+  {
+   "i": 74,
+   "v": "accept"
+  },
+  {
+   "i": 75,
+   "v": "accept"
+  },
+  {
+   "i": 76,
+   "v": "accept"
+  },
+  {
+   "i": 77,
+   "v": "accept"
+  },
+  {
+   "i": 78,
+   "v": "accept"
+  },
+  {
+   "i": 79,
+   "v": "accept"
+  },
+  {
+   "i": 80,
+   "v": "accept"
+  },
+  {
+   "i": 81,
+   "v": "accept"
+  },
+  {
+   "i": 82,
+   "v": "remove",
+   "r": "不错 is 'not bad/pretty good'; a 'correct' symbol misleads"
+  },
+  {
+   "i": 83,
+   "v": "remove",
+   "r": "question word; 'why' symbol too abstract to teach"
+  },
+  {
+   "i": 84,
+   "v": "accept"
+  },
+  {
+   "i": 85,
+   "v": "accept"
+  },
+  {
+   "i": 86,
+   "v": "remove",
+   "r": "reading de is the particle; Earth (planet) picture is the dì sense and not 'ground'"
+  },
+  {
+   "i": 87,
+   "v": "accept"
+  },
+  {
+   "i": 88,
+   "v": "accept"
+  },
+  {
+   "i": 89,
+   "v": "accept"
+  },
+  {
+   "i": 90,
+   "v": "accept"
+  },
+  {
+   "i": 91,
+   "v": "accept"
+  },
+  {
+   "i": 92,
+   "v": "accept"
+  },
+  {
+   "i": 93,
+   "v": "remove",
+   "r": "'straight' is abstract; beginners learn 正 as in 正在 (in progress)"
+  },
+  {
+   "i": 94,
+   "v": "accept"
+  },
+  {
+   "i": 95,
+   "v": "accept"
+  },
+  {
+   "i": 96,
+   "v": "accept"
+  },
+  {
+   "i": 97,
+   "v": "accept"
+  },
+  {
+   "i": 98,
+   "v": "accept"
+  },
+  {
+   "i": 99,
+   "v": "accept"
+  },
+  {
+   "i": 100,
+   "v": "accept"
+  },
+  {
+   "i": 101,
+   "v": "accept"
+  },
+  {
+   "i": 102,
+   "v": "accept"
+  },
+  {
+   "i": 103,
+   "v": "remove",
+   "r": "beginners learn 跟 as 'with/and/follow'; a heel picture misleads"
+  },
+  {
+   "i": 104,
+   "v": "accept"
+  },
+  {
+   "i": 105,
+   "v": "accept"
+  },
+  {
+   "i": 106,
+   "v": "accept"
+  },
+  {
+   "i": 107,
+   "v": "remove",
+   "r": "'between' is abstract; beginners learn 间 as room/classifier for rooms"
+  },
+  {
+   "i": 108,
+   "v": "accept"
+  },
+  {
+   "i": 109,
+   "v": "accept"
+  },
+  {
+   "i": 110,
+   "v": "accept"
+  },
+  {
+   "i": 111,
+   "v": "accept"
+  },
+  {
+   "i": 112,
+   "v": "accept"
+  },
+  {
+   "i": 113,
+   "v": "accept"
+  },
+  {
+   "i": 114,
+   "v": "accept"
+  },
+  {
+   "i": 115,
+   "v": "accept"
+  },
+  {
+   "i": 116,
+   "v": "accept"
+  }
+ ],
+ "c": [
+  {
+   "i": 23,
+   "v": "accept"
+  },
+  {
+   "i": 47,
+   "v": "remove",
+   "r": "'day' symbol is vague and likely read as 太阳 or 白天; 天 covers both day and sky, so one picture misleads"
+  },
+  {
+   "i": 59,
+   "v": "accept"
+  },
+  {
+   "i": 61,
+   "v": "accept"
   }
  ]
 }

@@ -20,7 +20,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { MANUAL_HEADER, MAP_HEADER, formatTsv, mulberryConcepts, openmojiConcepts, parseCedict, parseJMdict, parseTsv, sortRows } from './images-lib.mjs';
+import { MANUAL_HEADER, MAP_HEADER, formatTsv, mulberryConcepts, openmojiConcepts, parseCedict, parseJMdict, parseTsv } from './images-lib.mjs';
 import { fetchPinned } from './images-io.mjs';
 import { batches, decideItem, decisionRows, doubtReasons, readVerdicts, REMOVED_HEADER } from './picture-review-lib.mjs';
 import { jaTargets, parseJsonLines } from './topics-lib.mjs';
@@ -237,7 +237,8 @@ async function apply(o) {
 			const keyOf = (r) => `${r.language}\t${r.target}\t${r.sense}\t${r.concept}`;
 			const known = new Set(have.map(keyOf));
 			const rows = [...have, ...add.filter((r) => r.pack === pack && !known.has(keyOf(r))).map(({ pack: _, ...r }) => r)];
-			writeFileSync(file, formatTsv(header, sortRows(rows.map((r) => ({ score: '0', ...r }))).map(({ score: _, ...r }) => r)));
+			// The rows already there keep their order (manual.tsv is also written by hand); new ones follow.
+			writeFileSync(file, formatTsv(header, rows));
 		};
 		write('removed.tsv', REMOVED_HEADER, removed);
 		write('manual.tsv', MANUAL_HEADER, manual);

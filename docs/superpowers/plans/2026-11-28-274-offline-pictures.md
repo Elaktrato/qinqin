@@ -79,9 +79,68 @@ Issue #274 (follow-up to #216 and #214). No owner-decision comment on the issue;
     rows; the batches keep every answer and reason — why: the owner's content rule (§2 of the v0.9.0 plan) —
     cost if wrong: the agents may remove good pictures; the owner reviews later from the batch files.
 
+## Review notes (the doubtful pictures)
+
+Who: per language two teacher agents and an adjudicator (`scripts/images/review/reviewers.json`): zh — a Beijing HSK
+teacher, a Taipei university course writer, a department head (adjudicates); ja — a Tokyo JLPT teacher, an Osaka
+日本語学校 teacher, a curriculum lead (adjudicates). All agents, run with the `claude` command line
+(`claude -p --effort high`, no tools, `scripts/picture-review.mjs run`), one call per batch and stage; not reviewed by a
+person yet. Every answer and its reason is kept in the batch file (`a`, `b`, `c`; `decision` on each item).
+
+Batches (word, reading, the sense the picture is for, the dictionary senses, pack, concept, the picture's English name,
+score, basis, why it is doubtful):
+
+- `scripts/images/review/zh-batch-01.json` — 116 items (every doubtful Chinese mapping of the Starter set and HSK 1–2;
+  fewer than 150 because that is all of them)
+- `scripts/images/review/ja-batch-01.json` — 208 items
+- `scripts/images/review/ja-batch-02.json` — 208 items (the Starter set and ≈ N5–N4 of the bundled `jlpt-words`)
+
+| | Chinese | Japanese |
+|---|---|---|
+| doubtful mappings reviewed | 116 | 416 |
+| both teachers gave the same verdict | 112 | 398 |
+| adjudicated | 4 | 18 |
+| accepted | 88 | 168 |
+| removed | 28 (27 Mulberry, 1 OpenMoji) | 234 (215 Mulberry, 19 OpenMoji) |
+| changed to another picture | 0 | 14 (13 were Mulberry rows) |
+| of which Starter words | 11 accepted | 35 accepted, 9 removed, 1 changed |
+
+What the teachers removed, by their reasons: the wrong sense of a polysemous word (左 "leftist", 土 → planet Earth, 吐く
+"vomit" for つく, 先生 → teacher, 跟 → heel, 太 → highest, 吗 → what), abstract words a symbol cannot teach (答え, 先, 哪个,
+以外 → outside), ambiguous symbols (デート → calendar date, 字 → a mail letter) and pictures of a figurative sense (耳
+"an ear for music"). The changes give a clearer OpenMoji picture (茶/お茶 → teacup, 右/左 → arrows, 少し/僅か/多少/少々/稍 →
+pinching hand, 手紙 → envelope, 電気 → light bulb, 正しい → hollow red circle, 美味しい → face savouring food, 人 → person).
+Every change named an existing OpenMoji picture (0 unknown names). The decisions are rows of
+`scripts/images/<pack>/removed.tsv` (276) and `manual.tsv` (14); `scripts/build-picture-map.mjs` rebuilt the maps:
+OpenMoji 3,172 → 3,165 rows, Mulberry 2,570 → 2,315.
+
+Builder's own fixes (before the review, recorded in `removed.tsv` with the note `#274 builder`): 吗 → "what", 太 →
+"highest", 跟 → "heel" (Mulberry) and 先生 → the teacher emoji (OpenMoji): each the wrong sense of a polysemous word for a
+learner. Both teachers removed all four independently too.
+
+A change becomes a manual row, which replaces every automatic row of that word in the pack (the builder's rule): 茶's
+"brown" row (sense 4) went with it — the teachers had removed it as well.
+
+The topic labels of #220 read the OpenMoji map for their picture-only labels: `node scripts/build-topic-labels.mjs`
+rebuilt them from the reviewed map (2 Japanese picture-only labels fewer), no format change.
+
 ## Execution record
 
-(filled in as the tasks land)
+1. Plan — `6eda54b0`.
+2. The images package — `8fb61da5`. Test first: `TestBuildImagesCarriesMappedPictures` written and the table row set,
+   seen failing (`undefined: datapkg.TypeImages`, and the pack-types contract), then the type. The package fixture
+   test (`TestImagesPackageFixture`) was written with the code. Real packs measured (`TestBuiltImagesPackages`,
+   `QINQIN_IMAGES_PACKS`, packs built here from the pinned releases): `images.images-openmoji` 510,702 bytes,
+   `images.images-mulberry` 1,569,231 bytes; budget 4 MiB each.
+3. Reports and `pictureTargets` — `acfeb4bf`. Tests first (handler, store, entry answer), seen failing (404s, no
+   package), then the code; regenerated the routes fixture and the domain pins (the entry answer's new key).
+4. Web — `aa3e89de`. The zip, package-database, check and resolve tests were written with the code and passed at
+   once; their power was checked by breaking the reader twice (the overflow rule, the interior-page child): both runs
+   failed. The prepare, clear and report tests were seen failing first. The web reader also read the two real
+   packages (`imagesPackage.real.test.ts`, `QINQIN_IMAGES_PACKAGE_FILES`).
+5. e2e — `768f0bc4`. Written after the code (passed at once).
+6. Review — the batches, script and builder fixes in `f58522d9` (the library's tests seen failing first, module
+   missing); the agent review and its application in the next commit.
 
 ## Local follow-up
 

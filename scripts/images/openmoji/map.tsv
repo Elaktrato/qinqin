@@ -12,6 +12,7 @@ ja	j:1002320	1	1F474	100	name+gloss	お祖父さん
 ja	j:1002320	2	1F474	100	name+gloss	お祖父さん
 ja	j:1002330	1	1F475	100	name+gloss	お祖母さん
 ja	j:1002330	2	1F475	100	name+gloss	お祖母さん
+ja	j:1002430	1	1F375	100	manual	#274 review: お茶 -> teacup without handle
 ja	j:1002680	2	1F44D	80	gloss	お墨付き
 ja	j:1003500	0	2728	90	name	キラキラ
 ja	j:1005930	1	1F954	100	name+gloss	じゃが芋
@@ -80,7 +81,6 @@ ja	j:1042770	1	2699	90	name+gloss	ギア
 ja	j:1042820	1	1F3B8	100	name+gloss	ギター
 ja	j:1043260	2	1F36A	80	gloss	クーキー
 ja	j:1043760	1	1F36A	100	name+gloss	クッキー
-ja	j:1043760	2	1F36A	100	name+gloss	クッキー
 ja	j:1043770	1	1F373	80	gloss	クッキング
 ja	j:1043980	1	1F451	90	name+gloss	クラウン
 ja	j:1043980	2	1F451	90	name+gloss	クラウン
@@ -243,7 +243,6 @@ ja	j:1097810	1	1F3CD	80	gloss	バイク
 ja	j:1097810	2	1F6B2	80	gloss	バイク
 ja	j:1098340	1	1FAA3	100	name+gloss	馬穴
 ja	j:1098390	1	1F68C	100	name+gloss	バス
-ja	j:1098390	2	1F68C	100	name+gloss	バス
 ja	j:1098430	1	1F9FA	80	gloss	バスケット
 ja	j:1098430	2	1F3C0	80	gloss	バスケット
 ja	j:1098440	1	1F3C0	100	name+gloss	バスケットボール
@@ -340,7 +339,6 @@ ja	j:1123540	1	1F3B3	100	name+gloss	ボウリング
 ja	j:1123640	1	1F9B4	80	gloss	ボーン
 ja	j:1123800	1	1F94A	100	name+gloss	ボクシング
 ja	j:1124310	5	E1D5	80	gloss	ボリューム
-ja	j:1124860	7	E1C3	80	gloss	ポイント
 ja	j:1125000	1	1F4DF	90	name+gloss	ポケットベル
 ja	j:1125150	1	1F4EE	80	gloss	ポスト
 ja	j:1125400	1	1F954	80	gloss	ポテト
@@ -411,7 +409,6 @@ ja	j:1153520	1	1F36C	80	gloss	飴
 ja	j:1154860	2	2139	80	gloss	案内
 ja	j:1155950	5	1F3F0	80	gloss	囲い
 ja	j:1157070	1	1FA91	100	name+gloss	椅子
-ja	j:1157080	2	1F376	80	gloss	為
 ja	j:1158500	1	E313	80	gloss	胃
 ja	j:1158600	1	E313	80	gloss	胃袋
 ja	j:1161400	5	E006	80	gloss	一角
@@ -424,6 +421,7 @@ ja	j:1167270	3	1F3EB	80	gloss	一流
 ja	j:1167350	3	1F315	80	gloss	一輪
 ja	j:1167820	0	1F33E	90	name	稲
 ja	j:1170000	0	1F6B0	90	name	飲料水
+ja	j:1171010	1	27A1	100	manual	#274 review: 右 -> right arrow
 ja	j:1171400	1	1F9D1-200D-1F680	100	name+gloss	宇宙飛行士
 ja	j:1171570	1	1F991	100	name+gloss	烏賊
 ja	j:1171680	1	1FAB6	100	name+gloss	羽
@@ -531,7 +529,6 @@ ja	j:1236980	1	1F9D1-200D-1F3EB	80	gloss	教員
 ja	j:1237030	1	26EA	100	name+gloss	教会
 ja	j:1237050	1	1F9D1-200D-1F3EB	80	gloss	教官
 ja	j:1237130	1	1F9D1-200D-1F3EB	100	name+gloss	教師
-ja	j:1237150	4	1F3EB	80	gloss	教室
 ja	j:1237360	1	1F9D1-200D-1F3EB	80	gloss	教諭
 ja	j:1237820	4	1FAC1	80	gloss	胸
 ja	j:1237820	5	E313	80	gloss	胸
@@ -541,6 +538,7 @@ ja	j:1240530	14	1F95A	80	gloss	玉
 ja	j:1240530	16	1FA99	80	gloss	玉
 ja	j:1240670	1	1F9C5	100	name+gloss	玉ねぎ
 ja	j:1240700	1	1F33D	100	name+gloss	玉蜀黍
+ja	j:1240750	1	1F90F	100	manual	#274 review: 僅か -> pinching hand
 ja	j:1240890	1	1F9D1-200D-1F4BC	80	gloss	勤め人
 ja	j:1241750	8	1F3EB	80	gloss	筋
 ja	j:1241990	1	1F9E3	90	name+gloss	襟巻き
@@ -553,7 +551,6 @@ ja	j:1246880	0	1F330	90	name	栗
 ja	j:1247240	0	1F396	90	name	勲章
 ja	j:1247400	1	26A0	80	gloss	訓戒
 ja	j:1249660	1	1F575	80	gloss	刑事
-ja	j:1249960	3	1F9C9	80	gloss	兄弟
 ja	j:1250680	2	1F4F1	80	gloss	携帯
 ja	j:1250690	1	1F4F1	100	name+gloss	携帯電話
 ja	j:1252330	1	1F46E	80	gloss	警官
@@ -587,7 +584,6 @@ ja	j:1258090	2	E08F	80	gloss	権威
 ja	j:1260030	1	2139	80	gloss	見聞
 ja	j:1260040	1	2139	80	gloss	見聞き
 ja	j:1260490	1	1F511	100	name+gloss	鍵
-ja	j:1260490	3	1F511	100	name+gloss	鍵
 ja	j:1260520	0	1F3B9	90	name	鍵盤
 ja	j:1260660	1	1F52C	100	name+gloss	顕微鏡
 ja	j:1260970	1	1F4D2	80	gloss	元帳
@@ -605,8 +601,6 @@ ja	j:1270590	1	1F35A	100	name+gloss	ご飯
 ja	j:1271510	1	1F482	80	gloss	護衛
 ja	j:1273880	1	1F934	80	gloss	公爵
 ja	j:1275640	1	1F444	100	name+gloss	口
-ja	j:1275640	3	1F444	100	name+gloss	口
-ja	j:1275640	7	1F444	100	name+gloss	口
 ja	j:1276110	1	1F484	100	name+gloss	口紅
 ja	j:1277040	5	1F9D1	80	gloss	向き
 ja	j:1277820	0	1F99A	90	name	孔雀
@@ -625,6 +619,7 @@ ja	j:1288060	1	1F408-200D-2B1B	100	name+gloss	黒猫
 ja	j:1288370	1	1F4BA	80	gloss	腰掛け
 ja	j:1288550	1	1F9B4	100	name+gloss	骨
 ja	j:1290560	0	1F615	90	name	混乱
+ja	j:1290800	1	2B05	100	manual	#274 review: 左 -> left arrow
 ja	j:1291540	0	231B	90	name	砂時計
 ja	j:1291660	2	1F9D2	80	gloss	砂利
 ja	j:1291730	1	26D3	100	name+gloss	鎖
@@ -641,7 +636,6 @@ ja	j:1299670	1	1F988	100	name+gloss	鮫
 ja	j:1301340	1	1F319	100	name+gloss	三日月
 ja	j:1301940	1	2602	100	name+gloss	傘
 ja	j:1302680	1	26F0	100	name+gloss	山
-ja	j:1302680	4	26F0	100	name+gloss	山
 ja	j:1303180	1	1F6D8	90	name+gloss	山崩れ
 ja	j:1303710	1	1FAB8	100	name+gloss	珊瑚
 ja	j:1307230	0	1F553	90	name	４時
@@ -666,8 +660,6 @@ ja	j:1313350	2	2699	100	name+gloss	歯車
 ja	j:1317080	1	1F9F2	80	gloss	磁石
 ja	j:1317080	2	1F9ED	80	gloss	磁石
 ja	j:1317170	1	1F442	100	name+gloss	耳
-ja	j:1317170	3	1F442	100	name+gloss	耳
-ja	j:1317170	5	1F442	100	name+gloss	耳
 ja	j:1318290	1	1F6B2	100	name+gloss	自転車
 ja	j:1318400	1	1F697	100	name+gloss	自動車
 ja	j:1319030	1	1F98C	100	name+gloss	鹿
@@ -680,8 +672,8 @@ ja	j:1323280	1	1F6DE	90	name+gloss	車輪
 ja	j:1323350	1	1F40D	100	name+gloss	蛇
 ja	j:1323350	2	1F40D	100	name+gloss	蛇
 ja	j:1327130	1	1F482	80	gloss	守衛
-ja	j:1327190	13	E103	80	gloss	手
 ja	j:1327250	0	1F91A	90	name	手の甲
+ja	j:1327720	1	2709	100	manual	#274 review: 手紙 -> envelope
 ja	j:1328020	2	1F6BB	80	gloss	手洗い
 ja	j:1328090	0	1F9E4	90	name	手袋
 ja	j:1328160	1	1F45C	80	gloss	手提げ
@@ -694,7 +686,6 @@ ja	j:1334160	0	1F3D8	90	name	住宅街
 ja	j:1334650	0	271D	90	name	十字架
 ja	j:1337190	2	1F3E0	80	gloss	宿
 ja	j:1338850	1	E10D	80	gloss	出口
-ja	j:1338850	2	E144	80	gloss	出口
 ja	j:1341840	1	1F6E1	100	name+gloss	盾
 ja	j:1342110	1	1F46E	80	gloss	巡査
 ja	j:1344080	1	1F9D1-200D-1F393	80	gloss	書生
@@ -711,6 +702,7 @@ ja	j:1345420	3	1F469	80	gloss	女房
 ja	j:1345440	1	1F469	80	gloss	女流
 ja	j:1347830	1	1F6D6	90	name+gloss	小屋
 ja	j:1348350	1	1F9D2	80	gloss	小人
+ja	j:1348870	1	1F90F	100	manual	#274 review: 少し -> pinching hand
 ja	j:1349170	1	1F466	90	name+gloss	少年
 ja	j:1349370	1	1F6CF	80	gloss	床
 ja	j:1349410	0	1F488	90	name	床屋
@@ -739,11 +731,10 @@ ja	j:1362360	1	1F4F0	100	name+gloss	新聞
 ja	j:1362390	2	1F4F0	80	gloss	新聞紙
 ja	j:1362820	1	1F412	100	name+gloss	申
 ja	j:1362900	2	1F9D2	80	gloss	申し子
-ja	j:1365040	5	1F511	80	gloss	親
 ja	j:1365570	1	1F457	80	gloss	身なり
 ja	j:1366210	2	1FA9D	80	gloss	針
 ja	j:1366250	1	E1D4	80	gloss	針金
-ja	j:1366410	3	1F468	80	gloss	人
+ja	j:1366410	3	1F9D1	100	manual	#274 review: 人 -> person
 ja	j:1366650	1	1F3E0	80	gloss	人家
 ja	j:1367430	0	1F6F0	90	name	人工衛星
 ja	j:1367800	1	1F955	100	name+gloss	人参
@@ -752,7 +743,6 @@ ja	j:1370110	1	E316	80	gloss	腎臓
 ja	j:1370410	1	1F4DA	80	gloss	図書
 ja	j:1370550	2	1F9CC	80	gloss	厨房
 ja	j:1370860	5	1F469	80	gloss	垂れ
-ja	j:1371260	3	E09F	80	gloss	水
 ja	j:1371400	1	1F403	100	name+gloss	水牛
 ja	j:1372350	1	1F373	80	gloss	炊事
 ja	j:1372660	1	E181	80	gloss	酔っ払い
@@ -763,6 +753,7 @@ ja	j:1376310	2	2B50	80	gloss	星
 ja	j:1376310	3	2B50	80	gloss	星
 ja	j:1376310	5	1F3AF	80	gloss	星
 ja	j:1376310	10	2B50	80	gloss	星
+ja	j:1376600	1	2B55	100	manual	#274 review: 正しい -> hollow red circle
 ja	j:1379620	1	1FADA	100	name+gloss	生姜
 ja	j:1380890	1	1F349	100	name+gloss	西瓜
 ja	j:1382090	1	1F6C3	100	name+gloss	税関
@@ -791,11 +782,11 @@ ja	j:1402820	1	E0A1	80	gloss	送信
 ja	j:1404630	1	1F9B6	80	gloss	足
 ja	j:1404630	2	1F9B5	80	gloss	足
 ja	j:1406000	2	1FABD	80	gloss	袖
+ja	j:1407810	1	1F90F	100	manual	#274 review: 多少 -> pinching hand
 ja	j:1408280	1	1F941	80	gloss	太鼓
 ja	j:1409270	1	1F321	80	gloss	体温計
 ja	j:1410600	2	E0AF	80	gloss	待機
 ja	j:1410670	0	1F9A5	90	name	怠け者
-ja	j:1414170	0	1F9D1	90	name	大人
 ja	j:1414210	1	E09F	80	gloss	大水
 ja	j:1414560	1	E314	80	gloss	大腸
 ja	j:1415610	1	1F3D3	100	name+gloss	卓球
@@ -817,6 +808,7 @@ ja	j:1420900	1	1F687	100	name+gloss	地下鉄
 ja	j:1420960	1	1F6D8	100	name+gloss	地すべり
 ja	j:1421210	1	E09C	80	gloss	地震
 ja	j:1421960	1	1F577	100	name+gloss	蜘蛛
+ja	j:1422570	1	1F375	100	manual	#274 review: 茶 -> teacup without handle
 ja	j:1423240	1	1F458	100	name+gloss	着物
 ja	j:1426680	2	1FAB1	80	gloss	虫
 ja	j:1427010	0	1F417	90	name	猪
@@ -830,7 +822,6 @@ ja	j:1430250	1	1F426	100	name+gloss	鳥
 ja	j:1430280	0	26E9	90	name	鳥居
 ja	j:1432220	1	E09B	80	gloss	津波
 ja	j:1432840	1	E08F	80	gloss	通
-ja	j:1432920	4	E0A1	80	gloss	通り
 ja	j:1433880	3	1FA9D	80	gloss	爪
 ja	j:1435180	1	1FA92	100	name+gloss	剃刀
 ja	j:1435180	2	1FA92	100	name+gloss	剃刀
@@ -850,6 +841,7 @@ ja	j:1442160	1	E0A1	80	gloss	伝送
 ja	j:1442240	1	E0A1	80	gloss	伝達
 ja	j:1442370	1	E0A1	80	gloss	伝播
 ja	j:1442450	2	E0A1	80	gloss	伝来
+ja	j:1443000	2	1F4A1	100	manual	#274 review: 電気 -> light bulb
 ja	j:1443170	1	1F4A1	100	name+gloss	電球
 ja	j:1443620	1	1F50B	100	name+gloss	電池
 ja	j:1443840	2	260E	80	gloss	電話
@@ -910,6 +902,7 @@ ja	j:1485470	1	2708	100	name+gloss	飛行機
 ja	j:1485500	1	1F9D1-200D-2708-FE0F	80	gloss	飛行士
 ja	j:1486030	0	1F642	90	name	微笑む
 ja	j:1486090	0	1F9A0	90	name	微生物
+ja	j:1486650	1	1F60B	100	manual	#274 review: 美味しい -> face savoring food
 ja	j:1486720	1	1F443	100	name+gloss	鼻
 ja	j:1488090	1	1F3EC	90	name+gloss	百貨店
 ja	j:1488250	1	1F9D1-200D-1F33E	80	gloss	百姓
@@ -1024,6 +1017,7 @@ ja	j:1567040	1	1F415	100	name+gloss	戌
 ja	j:1568080	1	1F989	100	name+gloss	梟
 ja	j:1568330	1	1F334	80	gloss	椰子
 ja	j:1569810	0	1F635	90	name	眩暈
+ja	j:1570120	1	1F90F	100	manual	#274 review: 稍 -> pinching hand
 ja	j:1571460	1	1F353	100	name+gloss	苺
 ja	j:1571760	1	1F339	100	name+gloss	薔薇
 ja	j:1572070	1	1F40C	100	name+gloss	蝸牛
@@ -1075,6 +1069,7 @@ ja	j:1592420	1	1FABC	100	name+gloss	水母
 ja	j:1593710	1	1F338	100	name+gloss	桜
 ja	j:1593800	1	1F3DC	100	name+gloss	砂漠
 ja	j:1594660	1	1F4F7	80	gloss	写真機
+ja	j:1594930	1	1F90F	100	manual	#274 review: 少々 -> pinching hand
 ja	j:1595090	6	1F3E6	80	gloss	銀
 ja	j:1595650	1	1F363	100	name+gloss	寿司
 ja	j:1596700	1	1F9EE	100	name+gloss	算盤
@@ -1094,7 +1089,6 @@ ja	j:1602800	1	1F6A2	100	name+gloss	船
 ja	j:1603860	1	1F41A	100	name+gloss	巻き貝
 ja	j:1603990	1	E203	80	gloss	町
 ja	j:1604890	3	1F440	100	name+gloss	目
-ja	j:1604890	4	1F440	100	name+gloss	目
 ja	j:1604940	1	23F0	100	name+gloss	目覚まし時計
 ja	j:1606880	1	2797	100	name+gloss	割り算
 ja	j:1606940	2	1F962	80	gloss	割り箸
