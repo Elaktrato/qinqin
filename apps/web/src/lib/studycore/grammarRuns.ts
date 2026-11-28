@@ -3,7 +3,8 @@
 // `point` = `<packId>:<lessonId>` naming the grammar point. Progress (best score,
 // last run) is replayed from these events, never stored. The core reads them
 // for EXP and the streak; the grammar feature for its pages; grammar review and
-// courses will key on the point.
+// courses key on the point; grammar review (#181, grammarReview.ts) writes
+// runs of the mode `review` and schedules each learned point from its runs.
 
 import type { StudyEvent } from '$lib/events';
 
@@ -13,8 +14,14 @@ export const GRAMMAR_MAX_EXERCISES = 1000;
 /** The event type of a grammar run. */
 export const GRAMMAR_EVENT = 'grammar';
 
-/** The one mode written today: a finished lesson. */
+/** A finished lesson run. */
 export const LESSON_MODE = 'lesson';
+
+/** A review run of a learned point (#181, grammarReview.ts). */
+export const REVIEW_MODE = 'review';
+
+/** The modes a client reads; another mode is no run. */
+export type GrammarRunMode = typeof LESSON_MODE | typeof REVIEW_MODE;
 
 const PACK_ID = /^[A-Za-z0-9._-]{1,128}$/;
 const LESSON_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -29,7 +36,7 @@ export interface GrammarRun {
 	point: string;
 	packId: string;
 	lessonId: string;
-	mode: typeof LESSON_MODE;
+	mode: GrammarRunMode;
 	score: number;
 	total: number;
 }
@@ -62,19 +69,19 @@ function isCount(value: unknown): value is number {
 	return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= GRAMMAR_MAX_EXERCISES;
 }
 
-/** parseGrammarRun reads a stored event as a lesson run; null when it is not a readable one (an unknown mode included). */
+/** parseGrammarRun reads a stored event as a run (a lesson or a review); null when it is not a readable one (an unknown mode included). */
 export function parseGrammarRun(event: Pick<StudyEvent, 'id' | 'workspaceId' | 'ts' | 'type' | 'payload'>): GrammarRun | null {
 	if (event === null || typeof event !== 'object' || event.type !== GRAMMAR_EVENT) return null;
 	const p = event.payload;
 	if (typeof p !== 'object' || p === null || Array.isArray(p)) return null;
 	const { point, mode, score, total } = p as Record<string, unknown>;
-	if (mode !== LESSON_MODE || typeof point !== 'string') return null;
+	if ((mode !== LESSON_MODE && mode !== REVIEW_MODE) || typeof point !== 'string') return null;
 	const ids = splitPoint(point);
 	if (ids === null || !isCount(score) || !isCount(total) || score > total) return null;
 	if (typeof event.ts !== 'string') return null;
 	const at = Date.parse(event.ts);
 	if (!Number.isFinite(at)) return null;
-	return { id: String(event.id), workspaceId: event.workspaceId, ts: event.ts, at, point, ...ids, mode: LESSON_MODE, score, total };
+	return { id: String(event.id), workspaceId: event.workspaceId, ts: event.ts, at, point, ...ids, mode, score, total };
 }
 
 /** grammarRunsOf keeps the workspace's readable runs of a log, in replay order (instant, then id). */
@@ -98,9 +105,13 @@ export function applyRun(prev: GrammarProgress | undefined, run: Pick<GrammarRun
 	return { best, total: run.total, completedAt: run.ts, runs: (prev?.runs ?? 0) + 1 };
 }
 
-/** grammarProgress replays runs (in replay order, as grammarRunsOf gives them) into each point's progress. */
+/**
+ * grammarProgress replays the lesson runs (in replay order, as grammarRunsOf gives them) into each point's
+ * progress. A review run (#181) has its own number of exercises and is left out: the review state is its own
+ * derivation (grammarReview.ts).
+ */
 export function grammarProgress(runs: readonly GrammarRun[]): Map<string, GrammarProgress> {
 	const out = new Map<string, GrammarProgress>();
-	for (const run of runs) out.set(run.point, applyRun(out.get(run.point), run));
+	for (const run of runs) if (run.mode === LESSON_MODE) out.set(run.point, applyRun(out.get(run.point), run));
 	return out;
 }

@@ -28,9 +28,18 @@ export function scriptPayload(system: string, item: string, mode: string, ok: bo
 	return { system, item, mode, ok };
 }
 
-/** `grammar`: one finished grammar lesson run (#277): the grammar point (`<packId>:<lessonId>`), the mode, the score and the number of exercises. */
-export function grammarPayload(packId: string, lessonId: string, score: number, total: number): { point: string; mode: 'lesson'; score: number; total: number } {
-	return { point: `${packId}:${lessonId}`, mode: 'lesson', score, total };
+/**
+ * `grammar`: one finished grammar run (#277): the grammar point (`<packId>:<lessonId>`), the mode (`lesson`, or
+ * `review` for a review of a learned point, #181), the score and the number of exercises.
+ */
+export function grammarPayload<M extends 'lesson' | 'review' = 'lesson'>(
+	packId: string,
+	lessonId: string,
+	score: number,
+	total: number,
+	mode: M = 'lesson' as M
+): { point: string; mode: M; score: number; total: number } {
+	return { point: `${packId}:${lessonId}`, mode, score, total };
 }
 
 /** The members of a `course` event, by kind (docs/contracts/courses/README.md "Progress events"). */

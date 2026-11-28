@@ -1,0 +1,2302 @@
+{
+ "version": 1,
+ "rule": "grammar/review",
+ "generator": "scripts/contracts/gen-grammar-review-fixtures.mjs",
+ "tsFsrs": "5.4.2",
+ "note": "The spaced review of grammar points (#181), over workspace 7's `grammar` runs: `learned` and `grade` (a run's score to an FSRS grade), `build` (the review payload), `states` (each learned point replayed from its runs as a card's reviews: default weights, the study clock; `clock` lists frozen runs {a, days}), `round` (the due points and the new points under the daily cap; `zone` is the learner's zone, `candidates` the installed points in lesson order), `pick` (the examples a review asks). Compare `due` as an instant and the numbers to 8 decimals. Decoded by the web (FSRS is client-side).",
+ "constants": {
+  "learnedPercent": 80,
+  "newPerDay": 5,
+  "roundSize": 20,
+  "exercisesPerReview": 3,
+  "reviewMode": "review"
+ },
+ "weights": [
+  0.212,
+  1.2931,
+  2.3065,
+  8.2956,
+  6.4133,
+  0.8334,
+  3.0194,
+  0.001,
+  1.8722,
+  0.1666,
+  0.796,
+  1.4835,
+  0.0614,
+  0.2629,
+  1.6483,
+  0.6014,
+  1.8729,
+  0.5425,
+  0.0912,
+  0.0658,
+  0.1542
+ ],
+ "learned": [
+  {
+   "score": 4,
+   "total": 5,
+   "expect": true
+  },
+  {
+   "score": 8,
+   "total": 10,
+   "expect": true
+  },
+  {
+   "score": 3,
+   "total": 4,
+   "expect": false
+  },
+  {
+   "score": 79,
+   "total": 100,
+   "expect": false
+  },
+  {
+   "score": 0,
+   "total": 0,
+   "expect": false
+  },
+  {
+   "score": 1,
+   "total": 1,
+   "expect": true
+  },
+  {
+   "score": 5,
+   "total": 6,
+   "expect": true
+  }
+ ],
+ "grade": [
+  {
+   "score": 3,
+   "total": 3,
+   "expect": 3
+  },
+  {
+   "score": 2,
+   "total": 3,
+   "expect": 2
+  },
+  {
+   "score": 1,
+   "total": 3,
+   "expect": 1
+  },
+  {
+   "score": 0,
+   "total": 3,
+   "expect": 1
+  },
+  {
+   "score": 4,
+   "total": 5,
+   "expect": 3
+  },
+  {
+   "score": 3,
+   "total": 4,
+   "expect": 2
+  },
+  {
+   "score": 2,
+   "total": 4,
+   "expect": 2
+  },
+  {
+   "score": 1,
+   "total": 4,
+   "expect": 1
+  },
+  {
+   "score": 1,
+   "total": 2,
+   "expect": 2
+  }
+ ],
+ "build": [
+  {
+   "name": "a review run names the point, the mode review, the score and the total, in this member order",
+   "args": [
+    "zh-grammar",
+    "le-change",
+    2,
+    3
+   ],
+   "expect": {
+    "point": "zh-grammar:le-change",
+    "mode": "review",
+    "score": 2,
+    "total": 3
+   }
+  }
+ ],
+ "states": [
+  {
+   "name": "a lesson below 80 % is not learned: no schedule",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 3,
+      "total": 4
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "the first lesson run at 80 % is learned and the first Good: due after the learning step",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000002",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 2,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000003",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 4,
+      "total": 5
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:le-change",
+     "learnedAt": "2026-11-20T09:00:00Z",
+     "reviews": 0,
+     "lastReviewed": null,
+     "due": "2026-11-20T09:10:00Z",
+     "stability": 2.3065,
+     "difficulty": 2.11810397,
+     "state": 1
+    }
+   ]
+  },
+  {
+   "name": "reviews after learning: Good, Hard, Again move the due; lastReviewed is the last review",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000004",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 5,
+      "total": 5
+     }
+    },
+    {
+     "id": "01KC0000000000000000000005",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000006",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-06T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 2,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000007",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-12T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 0,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000008",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-12T08:20:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:le-change",
+     "learnedAt": "2026-11-01T08:00:00Z",
+     "reviews": 4,
+     "lastReviewed": "2026-11-12T08:20:00Z",
+     "due": "2026-11-14T08:20:00Z",
+     "stability": 1.67402743,
+     "difficulty": 8.24599462,
+     "state": 2
+    }
+   ]
+  },
+  {
+   "name": "a lesson run after learning is a review too; a run with no exercises is skipped",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000009",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000010",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-03T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "lesson",
+      "score": 6,
+      "total": 6
+     }
+    },
+    {
+     "id": "01KC0000000000000000000011",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-04T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "review",
+      "score": 0,
+      "total": 0
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:shi",
+     "learnedAt": "2026-11-01T08:00:00Z",
+     "reviews": 1,
+     "lastReviewed": "2026-11-03T08:00:00Z",
+     "due": "2026-11-14T08:00:00Z",
+     "stability": 10.96433194,
+     "difficulty": 2.11121424,
+     "state": 2
+    }
+   ]
+  },
+  {
+   "name": "a review before the point is learned is ignored; the order is (ts, id), not the log order",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-03T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:ba",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-03T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:ba",
+      "mode": "review",
+      "score": 1,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:ba",
+      "mode": "lesson",
+      "score": 5,
+      "total": 5
+     }
+    },
+    {
+     "id": "01KC0000000000000000000012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T07:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:ba",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:ba",
+     "learnedAt": "2026-11-01T08:00:00Z",
+     "reviews": 2,
+     "lastReviewed": "2026-11-03T08:00:00Z",
+     "due": "2026-11-03T08:10:00Z",
+     "stability": 0.65967433,
+     "difficulty": 7.38233661,
+     "state": 1
+    }
+   ]
+  },
+  {
+   "name": "other workspaces, other types and unknown modes count nowhere",
+   "clock": [],
+   "events": [
+    {
+     "id": "01KC0000000000000000000016",
+     "workspaceId": 8,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "drill",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "review",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000019",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:shi",
+     "learnedAt": "2026-11-01T08:00:00Z",
+     "reviews": 0,
+     "lastReviewed": null,
+     "due": "2026-11-01T08:10:00Z",
+     "stability": 2.3065,
+     "difficulty": 2.11810397,
+     "state": 1
+    }
+   ]
+  },
+  {
+   "name": "a frozen vacation run between reviews: its days do not count and the due moves past it",
+   "clock": [
+    {
+     "a": "2026-11-05T00:00:00Z",
+     "days": 7
+    }
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 5,
+      "total": 5
+     }
+    },
+    {
+     "id": "01KC0000000000000000000021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:15:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000022",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-03T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": [
+    {
+     "point": "zh-grammar:le-change",
+     "learnedAt": "2026-11-01T08:00:00Z",
+     "reviews": 2,
+     "lastReviewed": "2026-11-03T08:00:00Z",
+     "due": "2026-11-21T08:00:00Z",
+     "stability": 10.97104786,
+     "difficulty": 2.1043314,
+     "state": 2
+    }
+   ]
+  }
+ ],
+ "round": [
+  {
+   "name": "new points, earliest learned first, at most 5 a day",
+   "now": "2026-11-22T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "zh-grammar:a",
+    "zh-grammar:b",
+    "zh-grammar:c",
+    "zh-grammar:d",
+    "zh-grammar:e",
+    "zh-grammar:f",
+    "zh-grammar:g"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:d",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:e",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:f",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:g",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "zh-grammar:a",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:b",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:c",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:d",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:e",
+      "why": "new"
+     }
+    ],
+    "due": 0,
+    "new": 5,
+    "newToday": 0
+   }
+  },
+  {
+   "name": "points whose first review was today use up the cap; their next review is not due yet",
+   "now": "2026-11-22T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "zh-grammar:a",
+    "zh-grammar:b",
+    "zh-grammar:c",
+    "zh-grammar:d",
+    "zh-grammar:e",
+    "zh-grammar:f",
+    "zh-grammar:g"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:d",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:e",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:f",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:g",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000030",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000031",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T09:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "zh-grammar:c",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:d",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:e",
+      "why": "new"
+     }
+    ],
+    "due": 0,
+    "new": 3,
+    "newToday": 2
+   }
+  },
+  {
+   "name": "a first review yesterday does not count today; due reviewed points come first, earliest due first",
+   "now": "2026-11-25T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "zh-grammar:a",
+    "zh-grammar:b",
+    "zh-grammar:c",
+    "zh-grammar:d",
+    "zh-grammar:e",
+    "zh-grammar:f",
+    "zh-grammar:g"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:d",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:e",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:f",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:g",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000032",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000033",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-24T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "review",
+      "score": 1,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000034",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-23T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "zh-grammar:b",
+      "why": "due"
+     },
+     {
+      "point": "zh-grammar:d",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:e",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:f",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:g",
+      "why": "new"
+     }
+    ],
+    "due": 1,
+    "new": 4,
+    "newToday": 0
+   }
+  },
+  {
+   "name": "the learner day follows the zone: 23:30 UTC is already tomorrow in Tokyo",
+   "now": "2026-11-22T23:30:00Z",
+   "zone": "Asia/Tokyo",
+   "candidates": [
+    "zh-grammar:a",
+    "zh-grammar:b",
+    "zh-grammar:c",
+    "zh-grammar:d",
+    "zh-grammar:e",
+    "zh-grammar:f",
+    "zh-grammar:g"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:d",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:e",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:f",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:g",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000035",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T10:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000036",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-22T10:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "zh-grammar:c",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:d",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:e",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:f",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:g",
+      "why": "new"
+     }
+    ],
+    "due": 0,
+    "new": 5,
+    "newToday": 0
+   }
+  },
+  {
+   "name": "only candidate points (installed lessons) are offered; not-learned points never",
+   "now": "2026-11-22T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "zh-grammar:b",
+    "zh-grammar:z",
+    "zh-grammar:a",
+    "zh-grammar:b"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000023",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:a",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000024",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:b",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000025",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:c",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000026",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:d",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000027",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:e",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000028",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:f",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000029",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-21T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:g",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000037",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-20T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "zh-grammar:z",
+      "mode": "lesson",
+      "score": 1,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "zh-grammar:a",
+      "why": "new"
+     },
+     {
+      "point": "zh-grammar:b",
+      "why": "new"
+     }
+    ],
+    "due": 0,
+    "new": 2,
+    "newToday": 0
+   }
+  },
+  {
+   "name": "nothing learned: an empty round",
+   "now": "2026-11-22T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "zh-grammar:a",
+    "zh-grammar:b",
+    "zh-grammar:c",
+    "zh-grammar:d",
+    "zh-grammar:e",
+    "zh-grammar:f",
+    "zh-grammar:g"
+   ],
+   "events": [],
+   "expect": {
+    "items": [],
+    "due": 0,
+    "new": 0,
+    "newToday": 0
+   }
+  },
+  {
+   "name": "at most 20 points in a round, due ones first",
+   "now": "2026-12-20T10:00:00Z",
+   "zone": "UTC",
+   "candidates": [
+    "big:p00",
+    "big:p01",
+    "big:p02",
+    "big:p03",
+    "big:p04",
+    "big:p05",
+    "big:p06",
+    "big:p07",
+    "big:p08",
+    "big:p09",
+    "big:p10",
+    "big:p11",
+    "big:p12",
+    "big:p13",
+    "big:p14",
+    "big:p15",
+    "big:p16",
+    "big:p17",
+    "big:p18",
+    "big:p19",
+    "big:p20",
+    "big:p21",
+    "big:p22",
+    "big:p23"
+   ],
+   "events": [
+    {
+     "id": "01KC0000000000000000000038",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p00",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000039",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p00",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000040",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p01",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000041",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p01",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000042",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p02",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000043",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:02:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p02",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000044",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p03",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000045",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p03",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000046",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p04",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000047",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:04:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p04",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000048",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p05",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000049",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:05:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p05",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000050",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p06",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000051",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:06:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p06",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000052",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:07:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p07",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000053",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:07:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p07",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000054",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:08:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p08",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000055",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:08:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p08",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000056",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:09:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p09",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000057",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:09:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p09",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000058",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:10:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p10",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000059",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:10:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p10",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000060",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:11:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p11",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000061",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:11:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p11",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000062",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:12:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p12",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000063",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:12:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p12",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000064",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:13:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p13",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000065",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:13:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p13",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000066",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:14:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p14",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000067",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:14:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p14",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000068",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:15:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p15",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000069",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:15:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p15",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000070",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:16:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p16",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000071",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:16:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p16",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000072",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:17:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p17",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000073",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:17:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p17",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000074",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:18:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p18",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000075",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:18:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p18",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000076",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:19:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p19",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000077",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:19:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p19",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000078",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:20:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p20",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000079",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:20:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p20",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000080",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:21:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p21",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000081",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-02T08:21:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p21",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KC0000000000000000000082",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:22:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p22",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    },
+    {
+     "id": "01KC0000000000000000000083",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T08:23:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "big:p23",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     }
+    }
+   ],
+   "expect": {
+    "items": [
+     {
+      "point": "big:p00",
+      "why": "due"
+     },
+     {
+      "point": "big:p01",
+      "why": "due"
+     },
+     {
+      "point": "big:p02",
+      "why": "due"
+     },
+     {
+      "point": "big:p03",
+      "why": "due"
+     },
+     {
+      "point": "big:p04",
+      "why": "due"
+     },
+     {
+      "point": "big:p05",
+      "why": "due"
+     },
+     {
+      "point": "big:p06",
+      "why": "due"
+     },
+     {
+      "point": "big:p07",
+      "why": "due"
+     },
+     {
+      "point": "big:p08",
+      "why": "due"
+     },
+     {
+      "point": "big:p09",
+      "why": "due"
+     },
+     {
+      "point": "big:p10",
+      "why": "due"
+     },
+     {
+      "point": "big:p11",
+      "why": "due"
+     },
+     {
+      "point": "big:p12",
+      "why": "due"
+     },
+     {
+      "point": "big:p13",
+      "why": "due"
+     },
+     {
+      "point": "big:p14",
+      "why": "due"
+     },
+     {
+      "point": "big:p15",
+      "why": "due"
+     },
+     {
+      "point": "big:p16",
+      "why": "due"
+     },
+     {
+      "point": "big:p17",
+      "why": "due"
+     },
+     {
+      "point": "big:p18",
+      "why": "due"
+     },
+     {
+      "point": "big:p19",
+      "why": "due"
+     }
+    ],
+    "due": 22,
+    "new": 2,
+    "newToday": 0
+   }
+  }
+ ],
+ "pick": [
+  {
+   "name": "the first review: examples 1 to 3, cloze, order, cloze",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e3",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e4",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e5",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e6",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 0,
+   "expect": [
+    {
+     "example": "e1",
+     "kind": "cloze"
+    },
+    {
+     "example": "e2",
+     "kind": "order"
+    },
+    {
+     "example": "e3",
+     "kind": "cloze"
+    }
+   ]
+  },
+  {
+   "name": "the second review starts three examples on, order first",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e3",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e4",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e5",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e6",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 1,
+   "expect": [
+    {
+     "example": "e4",
+     "kind": "order"
+    },
+    {
+     "example": "e5",
+     "kind": "cloze"
+    },
+    {
+     "example": "e6",
+     "kind": "order"
+    }
+   ]
+  },
+  {
+   "name": "the third review is back at the first example, each with the other kind",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e3",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e4",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e5",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e6",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 2,
+   "expect": [
+    {
+     "example": "e1",
+     "kind": "order"
+    },
+    {
+     "example": "e2",
+     "kind": "cloze"
+    },
+    {
+     "example": "e3",
+     "kind": "order"
+    }
+   ]
+  },
+  {
+   "name": "two examples: two exercises",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 0,
+   "expect": [
+    {
+     "example": "e1",
+     "kind": "cloze"
+    },
+    {
+     "example": "e2",
+     "kind": "order"
+    }
+   ]
+  },
+  {
+   "name": "four examples, the second review starts at the fourth and wraps",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e3",
+     "cloze": true,
+     "order": true
+    },
+    {
+     "id": "e4",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 1,
+   "expect": [
+    {
+     "example": "e4",
+     "kind": "order"
+    },
+    {
+     "example": "e1",
+     "kind": "cloze"
+    },
+    {
+     "example": "e2",
+     "kind": "order"
+    }
+   ]
+  },
+  {
+   "name": "an example that cannot be the preferred kind gives the other; one that can be neither is skipped",
+   "examples": [
+    {
+     "id": "e1",
+     "cloze": false,
+     "order": true
+    },
+    {
+     "id": "e2",
+     "cloze": false,
+     "order": false
+    },
+    {
+     "id": "e3",
+     "cloze": true,
+     "order": false
+    },
+    {
+     "id": "e4",
+     "cloze": true,
+     "order": true
+    }
+   ],
+   "reviews": 0,
+   "expect": [
+    {
+     "example": "e1",
+     "kind": "order"
+    },
+    {
+     "example": "e3",
+     "kind": "cloze"
+    },
+    {
+     "example": "e4",
+     "kind": "cloze"
+    }
+   ]
+  },
+  {
+   "name": "no example: no exercise",
+   "examples": [],
+   "reviews": 3,
+   "expect": []
+  }
+ ]
+}
