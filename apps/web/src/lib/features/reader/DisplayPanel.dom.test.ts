@@ -174,3 +174,19 @@ describe('DisplayPanel', () => {
 		expect(ontoggleAll).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe('DisplayPanel: saved sentences (#279)', () => {
+	it('is off by default and switches the automatic mode', async () => {
+		const { onchange } = mount();
+		const box = screen.getByRole('checkbox', { name: 'Save new sentences of words in study' }) as HTMLInputElement;
+		expect(box.checked).toBe(false);
+		expect(box.getAttribute('aria-describedby')).toBeTruthy();
+		await fireEvent.click(box);
+		expect(onchange).toHaveBeenCalledWith({ saveSentences: true });
+	});
+
+	it('shows the stored setting', () => {
+		mount({ saveSentences: true });
+		expect((screen.getByRole('checkbox', { name: 'Save new sentences of words in study' }) as HTMLInputElement).checked).toBe(true);
+	});
+});
