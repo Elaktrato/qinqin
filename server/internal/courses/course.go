@@ -232,6 +232,26 @@ func (t Title) check() error {
 	return nil
 }
 
+// checkTranslation checks a text's translations: like a title, but each up to the text limit (#223: a translation is
+// as long as its text).
+func (t Title) checkTranslation() error {
+	if t["en"] == "" {
+		return fmt.Errorf("the text's translation: %w", errNoEnglish)
+	}
+	for k, v := range t {
+		if !titleLanguage.MatchString(k) {
+			return fmt.Errorf("the text's translation: %w", errTitleLocale)
+		}
+		if v == "" || !utf8.ValidString(v) {
+			return errors.New("the text's translation is empty or not UTF-8")
+		}
+		if len(v) > maxTextBytes {
+			return fmt.Errorf("the text's translation is longer than %d bytes", maxTextBytes)
+		}
+	}
+	return nil
+}
+
 func (l *Levels) check() error {
 	if l == nil {
 		return nil
@@ -331,8 +351,8 @@ func (u Unit) check(chars map[string]string) error {
 			return fmt.Errorf("the text is longer than %d bytes", maxTextBytes)
 		}
 		if u.Text.Translation != nil {
-			if err := u.Text.Translation.check(); err != nil {
-				return fmt.Errorf("the text's translation: %w", err)
+			if err := u.Text.Translation.checkTranslation(); err != nil {
+				return err
 			}
 		}
 	}

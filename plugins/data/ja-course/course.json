@@ -1,0 +1,2074 @@
+{
+ "version": 1,
+ "language": "ja",
+ "title": {
+  "en": "Japanese from the start to ≈ JLPT N3"
+ },
+ "levels": {
+  "scheme": "jlpt-words"
+ },
+ "checkpoints": {
+  "lesson": {
+   "questions": 5
+  },
+  "unit": {
+   "questions": 12,
+   "passPercent": 80
+  },
+  "section": {
+   "questions": 30,
+   "passPercent": 75
+  }
+ },
+ "sections": [
+  {
+   "id": "ja-start",
+   "level": null,
+   "title": {
+    "en": "Start: sounds and kana"
+   },
+   "units": [
+    {
+     "id": "ja-start-sounds",
+     "title": {
+      "en": "The sounds of Japanese"
+     },
+     "focus": "listening",
+     "test": false
+    },
+    {
+     "id": "ja-start-hiragana",
+     "title": {
+      "en": "Hiragana"
+     },
+     "scripts": [
+      "hiragana"
+     ],
+     "test": false
+    },
+    {
+     "id": "ja-start-katakana",
+     "title": {
+      "en": "Katakana"
+     },
+     "scripts": [
+      "katakana"
+     ],
+     "test": false
+    }
+   ]
+  },
+  {
+   "id": "n5",
+   "level": 1,
+   "title": {
+    "en": "≈ N5"
+   },
+   "units": [
+    {
+     "id": "n5-hello",
+     "title": {
+      "en": "Hello"
+     },
+     "topics": [
+      "greetings",
+      "people"
+     ],
+     "grammar": [
+      "ja-grammar:n5-desu",
+      "ja-grammar:n5-ka-question-words",
+      "ja-grammar:n5-ne-yo"
+     ],
+     "characters": [
+      "人",
+      "大",
+      "夫",
+      "女",
+      "願",
+      "若",
+      "皆",
+      "帰",
+      "行"
+     ],
+     "text": {
+      "title": "あいさつ",
+      "body": "朝。\n「行ってきます。」\n「いってらっしゃい。」\n夜。\n「ただいま。」\n「お帰りなさい。」\n「どうぞ。」\n「いただきます。」\n「ごちそうさま。」\n「おやすみなさい。」",
+      "translation": {
+       "en": "Morning.\n“I'm off.”\n“See you later.”\nEvening.\n“I'm home.”\n“Welcome back.”\n“Here you are.”\n“Thank you for the food.”\n“That was delicious.”\n“Good night.”"
+      }
+     }
+    },
+    {
+     "id": "n5-about-me",
+     "title": {
+      "en": "About me"
+     },
+     "topics": [
+      "people",
+      "language",
+      "work"
+     ],
+     "grammar": [
+      "ja-grammar:n5-no",
+      "ja-grammar:n5-mo",
+      "ja-grammar:n5-dewa-arimasen"
+     ],
+     "characters": [
+      "私",
+      "見",
+      "何",
+      "物",
+      "知",
+      "待",
+      "男",
+      "仕",
+      "事",
+      "言",
+      "葉",
+      "名",
+      "前",
+      "意",
+      "味",
+      "書",
+      "読",
+      "子",
+      "供",
+      "生",
+      "働",
+      "一",
+      "忙",
+      "二",
+      "会",
+      "社",
+      "英",
+      "語",
+      "日",
+      "本",
+      "漢",
+      "字",
+      "辞"
+     ],
+     "text": {
+      "title": "はじめまして",
+      "body": "はじめまして。私の名前はアンナです。会社員です。仕事はちょっと忙しいです。日本語は難しいです。でも、好きです。漢字も好きです。よろしくお願いします。",
+      "translation": {
+       "en": "Nice to meet you. My name is Anna. I'm an office worker. Work is a little busy. Japanese is difficult. But I like it. I like kanji, too. Pleased to meet you."
+      }
+     }
+    },
+    {
+     "id": "n5-this-and-that",
+     "title": {
+      "en": "This and that"
+     },
+     "topics": [
+      "position",
+      "home"
+     ],
+     "grammar": [
+      "ja-grammar:n5-kore-kono",
+      "ja-grammar:n5-koko-kochira",
+      "ja-grammar:n5-arimasu-imasu",
+      "ja-grammar:n5-ni-arimasu-position",
+      "ja-grammar:n5-masu"
+     ],
+     "characters": [
+      "中",
+      "後",
+      "家",
+      "上",
+      "部",
+      "屋",
+      "外",
+      "近",
+      "下",
+      "住",
+      "遠",
+      "窓",
+      "右",
+      "横",
+      "左",
+      "除",
+      "閉",
+      "風",
+      "電",
+      "気",
+      "東"
+     ],
+     "text": {
+      "title": "トイレはどこですか",
+      "body": "「すみません、トイレはどこですか。」\n「トイレですか。あそこです。」\n「あそこのドアですか。」\n「はい。お風呂の隣です。」\n「ありがとうございます。あ、私の鍵はどこですか。」\n「鍵は椅子の上にありますよ。」\n「あ、ここにありますね。」",
+      "translation": {
+       "en": "“Excuse me, where is the toilet?”\n“The toilet? Over there.”\n“That door over there?”\n“Yes. Next to the bath.”\n“Thank you. Oh, where are my keys?”\n“Your keys are on the chair.”\n“Oh, here they are.”"
+      }
+     }
+    },
+    {
+     "id": "n5-family",
+     "title": {
+      "en": "My family"
+     },
+     "topics": [
+      "family",
+      "relationships"
+     ],
+     "grammar": [
+      "ja-grammar:n5-wa-ga",
+      "ja-grammar:n5-wo",
+      "ja-grammar:n5-to"
+     ],
+     "characters": [
+      "持",
+      "悪",
+      "緒",
+      "使",
+      "出",
+      "当",
+      "忘",
+      "友",
+      "達",
+      "族",
+      "母",
+      "父",
+      "婚",
+      "妹",
+      "両",
+      "親",
+      "兄",
+      "弟",
+      "姉"
+     ],
+     "text": {
+      "title": "私の家族",
+      "body": "これは私の家族の写真です。父と母と兄と妹がいます。兄は結婚しています。妹はまだ子供です。家族はみんな元気です。",
+      "translation": {
+       "en": "This is a photo of my family. In it are my father, my mother, my older brother and my younger sister. My brother is married. My sister is still a child. Everyone in my family is well."
+      }
+     }
+    },
+    {
+     "id": "n5-numbers-time",
+     "title": {
+      "en": "Numbers and time"
+     },
+     "topics": [
+      "numbers",
+      "time"
+     ],
+     "grammar": [
+      "ja-grammar:n5-time",
+      "ja-grammar:n5-counters"
+     ],
+     "characters": [
+      "今",
+      "少",
+      "時",
+      "間",
+      "年",
+      "全",
+      "多",
+      "番",
+      "遅",
+      "昨",
+      "早",
+      "毎",
+      "三",
+      "去",
+      "十",
+      "四",
+      "五",
+      "半",
+      "百",
+      "六",
+      "千",
+      "七",
+      "万",
+      "八",
+      "朝",
+      "明"
+     ],
+     "text": {
+      "title": "毎日五つ",
+      "body": "私は毎日、日本語の言葉を五つ書きます。漢字も三つ書きます。毎朝、六時半に書きます。時間は五分だけです。でも、一年で言葉は千八百ぐらいです。",
+      "translation": {
+       "en": "Every day I write five Japanese words. I write three kanji, too. I write them every morning at half past six. It takes only five minutes. But in a year that comes to about 1,800 words."
+      }
+     },
+     "focus": "listening"
+    },
+    {
+     "id": "n5-days",
+     "title": {
+      "en": "Days and weeks"
+     },
+     "topics": [
+      "calendar",
+      "time",
+      "routine"
+     ],
+     "grammar": [
+      "ja-grammar:n5-mashita",
+      "ja-grammar:n5-ni-he"
+     ],
+     "characters": [
+      "終",
+      "初",
+      "起",
+      "寝",
+      "夜",
+      "長",
+      "始",
+      "休",
+      "洗",
+      "午",
+      "昼",
+      "夕",
+      "方",
+      "計",
+      "来",
+      "週",
+      "曜",
+      "月",
+      "晩",
+      "先"
+     ],
+     "text": {
+      "title": "私の一週間",
+      "body": "私はいつも朝六時に起きます。午前は仕事が忙しいです。午後は時々休みます。夜は十時に寝ます。先週の日曜日は休みでした。朝、洗濯をしました。午後はたくさん寝ました。来週の日曜日は私の誕生日です！",
+      "translation": {
+       "en": "I always get up at six in the morning. In the morning, work keeps me busy. In the afternoon I sometimes take a break. At night I go to bed at ten. Last Sunday was my day off. In the morning I did the laundry. In the afternoon I slept a lot. Next Sunday is my birthday!"
+      }
+     }
+    },
+    {
+     "id": "n5-food",
+     "title": {
+      "en": "Food"
+     },
+     "topics": [
+      "food"
+     ],
+     "grammar": [
+      "ja-grammar:n5-tai",
+      "ja-grammar:n5-ga-suki",
+      "ja-grammar:n5-i-adjectives",
+      "ja-grammar:n5-ga-kedo"
+     ],
+     "characters": [
+      "作",
+      "強",
+      "変",
+      "覚",
+      "欲",
+      "置",
+      "然",
+      "新",
+      "料",
+      "理",
+      "肉",
+      "食",
+      "野",
+      "果",
+      "御",
+      "飯"
+     ],
+     "text": {
+      "title": "朝ごはんと晩ごはん",
+      "body": "今朝、朝ごはんを作りました。パンと卵と果物です。りんごは甘かったです。晩ごはんはいつも母が作ります。肉と野菜の料理が多いです。ちょっと辛いですが、本当においしいです。私も母の料理を覚えたいです。",
+      "translation": {
+       "en": "This morning I made breakfast: bread, eggs and fruit. The apple was sweet. My mother always makes dinner. Her dishes are mostly meat and vegetables. They're a little spicy, but really delicious. I want to learn my mother's cooking, too."
+      }
+     }
+    },
+    {
+     "id": "n5-cafe",
+     "title": {
+      "en": "At a café"
+     },
+     "topics": [
+      "drink",
+      "food",
+      "shopping"
+     ],
+     "grammar": [
+      "ja-grammar:n5-mashou",
+      "ja-grammar:n5-tekudasai"
+     ],
+     "characters": [
+      "飲",
+      "返",
+      "単",
+      "開",
+      "優",
+      "危",
+      "座",
+      "難",
+      "水",
+      "小",
+      "店",
+      "売",
+      "茶",
+      "買",
+      "酒",
+      "牛"
+     ],
+     "text": {
+      "title": "喫茶店で",
+      "body": "「あそこの喫茶店に入りませんか。」\n「いいですね。入りましょう。」\n「ここに座ってください。何を飲みますか。」\n「私はコーヒーを飲みます。」\n「私はジュースを飲みます。パンも食べましょうか。」\n「はい。すみません、コーヒーとジュースをお願いします。大きいパンはありますか。」\n「すみません、今日は小さいのだけです。」\n「じゃあ、小さいのを二つお願いします。」",
+      "translation": {
+       "en": "“Shall we go into that café over there?”\n“Good idea. Let's go in.”\n“Sit here, please. What will you drink?”\n“I'll have a coffee.”\n“I'll have a juice. Shall we have some bread too?”\n“Yes. Excuse me, a coffee and a juice, please. Do you have big rolls?”\n“Sorry, today we only have small ones.”\n“Then two small ones, please.”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "n5-shopping",
+     "title": {
+      "en": "Shopping"
+     },
+     "topics": [
+      "shopping",
+      "money",
+      "clothing",
+      "colours"
+     ],
+     "grammar": [
+      "ja-grammar:n5-na-adjectives",
+      "ja-grammar:n5-adjective-positions"
+     ],
+     "characters": [
+      "高",
+      "切",
+      "着",
+      "金",
+      "服",
+      "借",
+      "貸",
+      "色",
+      "赤",
+      "白",
+      "円",
+      "黒",
+      "安",
+      "青",
+      "靴",
+      "財",
+      "銀"
+     ],
+     "text": {
+      "title": "かばんを買います",
+      "body": "「すみません、この赤いかばんはいくらですか。」\n「八千円です。」\n「ちょっと高いですね。この黒いかばんは？」\n「黒いのは五千円です。軽いですよ。」\n「じゃあ、黒いのを買います。」",
+      "translation": {
+       "en": "“Excuse me, how much is this red bag?”\n“Eight thousand yen.”\n“That's a bit expensive. What about this black bag?”\n“The black one is five thousand yen. It's light, you know.”\n“Then I'll buy the black one.”"
+      }
+     }
+    },
+    {
+     "id": "n5-town",
+     "title": {
+      "en": "Around town"
+     },
+     "topics": [
+      "city",
+      "transport",
+      "movement"
+     ],
+     "grammar": [
+      "ja-grammar:n5-de",
+      "ja-grammar:n5-kara-made",
+      "ja-grammar:n5-te-linking"
+     ],
+     "characters": [
+      "入",
+      "乗",
+      "歩",
+      "立",
+      "道",
+      "走",
+      "熱",
+      "国",
+      "消",
+      "車",
+      "町",
+      "降",
+      "渡",
+      "駅",
+      "公",
+      "園",
+      "曲",
+      "自",
+      "転",
+      "飛",
+      "機",
+      "図",
+      "館",
+      "地",
+      "便",
+      "局"
+     ],
+     "text": {
+      "title": "私の町",
+      "body": "私の町は小さいですが、にぎやかです。駅の前に公園と図書館があります。私は毎朝、駅まで歩いて、電車で会社に行きます。夜はバスで帰ります。",
+      "translation": {
+       "en": "My town is small, but lively. In front of the station there is a park and a library. Every morning I walk to the station and take the train to work. In the evening I come home by bus."
+      }
+     }
+    },
+    {
+     "id": "n5-school",
+     "title": {
+      "en": "At school"
+     },
+     "topics": [
+      "school",
+      "language",
+      "communication"
+     ],
+     "grammar": [
+      "ja-grammar:n5-teiru",
+      "ja-grammar:n5-temoii",
+      "ja-grammar:n5-naide"
+     ],
+     "characters": [
+      "聞",
+      "話",
+      "呼",
+      "教",
+      "頼",
+      "問",
+      "題",
+      "学",
+      "校",
+      "勉",
+      "質",
+      "広",
+      "静",
+      "習",
+      "手",
+      "紙",
+      "業",
+      "室",
+      "試",
+      "験",
+      "夏",
+      "宿",
+      "留"
+     ],
+     "text": {
+      "title": "日本語の授業",
+      "body": "私は留学生です。大学で日本語を習っています。教室は広くて、静かです。先生はとても優しいです。授業で辞書を使ってもいいですが、英語で話してはいけません。分からない言葉は、先生に聞きます。来週は試験です。今日は宿題がたくさんあります。",
+      "translation": {
+       "en": "I'm an international student. I'm learning Japanese at university. The classroom is big and quiet. The teacher is very kind. In class we may use a dictionary, but we must not speak English. When I don't understand a word, I ask the teacher. Next week there's a test. Today I have a lot of homework."
+      }
+     }
+    },
+    {
+     "id": "n5-weather",
+     "title": {
+      "en": "Weather and nature"
+     },
+     "topics": [
+      "weather",
+      "nature",
+      "animals",
+      "plants"
+     ],
+     "grammar": [
+      "ja-grammar:n5-naru",
+      "ja-grammar:n5-kara-because"
+     ],
+     "characters": [
+      "秋",
+      "空",
+      "海",
+      "冷",
+      "山",
+      "花",
+      "古",
+      "有",
+      "雨",
+      "寒",
+      "犬",
+      "木",
+      "猫",
+      "魚",
+      "春",
+      "動",
+      "川",
+      "鳥",
+      "冬",
+      "雪",
+      "天",
+      "晴"
+     ],
+     "text": {
+      "title": "日本の季節",
+      "body": "日本には春と夏と秋と冬があります。春は暖かくて、花がきれいです。夏は暑いです。秋は涼しくて、山の木がきれいです。十一月から、だんだん寒くなります。冬は雪が降ります。今日は雨ですから、傘を持って出かけます。",
+      "translation": {
+       "en": "Japan has spring, summer, autumn and winter. Spring is warm and the flowers are beautiful. Summer is hot. Autumn is cool and the trees on the mountains are beautiful. From November it gradually gets colder. In winter it snows. It's raining today, so I'll take an umbrella when I go out."
+      }
+     }
+    },
+    {
+     "id": "n5-body",
+     "title": {
+      "en": "Body and health"
+     },
+     "topics": [
+      "body",
+      "health",
+      "feelings"
+     ],
+     "grammar": [
+      "ja-grammar:n5-yori-nohouga",
+      "ja-grammar:n5-ichiban",
+      "ja-grammar:n5-mou-mada"
+     ],
+     "characters": [
+      "顔",
+      "好",
+      "目",
+      "頭",
+      "体",
+      "楽",
+      "元",
+      "痛",
+      "口",
+      "足",
+      "面",
+      "重",
+      "暗",
+      "耳",
+      "病",
+      "院",
+      "分",
+      "吸",
+      "薬",
+      "腹",
+      "医",
+      "者",
+      "利",
+      "歯",
+      "西",
+      "南",
+      "北"
+     ],
+     "text": {
+      "title": "病院で",
+      "body": "「どうしましたか。」\n「頭が痛いです。お腹も少し痛いです。」\n「いつからですか。」\n「昨日からです。昨日より今日のほうが痛いです。」\n「風邪ですね。もう薬を飲みましたか。」\n「いいえ、まだです。」\n「じゃあ、この薬を飲んで、今晩は早く寝てください。お大事に。」\n「ありがとうございます。」",
+      "translation": {
+       "en": "“What seems to be the problem?”\n“I have a headache. My stomach hurts a little too.”\n“Since when?”\n“Since yesterday. It hurts more today than yesterday.”\n“It's a cold. Have you taken any medicine yet?”\n“No, not yet.”\n“Then take this medicine and go to bed early tonight. Take care.”\n“Thank you.”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "n5-free-time",
+     "title": {
+      "en": "Free time"
+     },
+     "topics": [
+      "hobbies",
+      "arts",
+      "sports",
+      "media",
+      "travel"
+     ],
+     "grammar": [
+      "ja-grammar:n5-kotogadekiru",
+      "ja-grammar:n5-takotogaaru",
+      "ja-grammar:n5-tari",
+      "ja-grammar:n5-mae-ato"
+     ],
+     "characters": [
+      "遊",
+      "写",
+      "真",
+      "歌",
+      "映",
+      "画",
+      "泳",
+      "散",
+      "音",
+      "旅",
+      "雑",
+      "九",
+      "土",
+      "火"
+     ],
+     "text": {
+      "title": "土曜日と日曜日",
+      "body": "土曜日は暇です。午前は公園を散歩して、写真を撮ります。午後は友達と映画館で映画を見ます。日曜日は家で音楽を聞いたり、雑誌を読んだりします。歌は下手ですが、好きです。",
+      "translation": {
+       "en": "On Saturdays I'm free. In the morning I take a walk in the park and take photos. In the afternoon I see a film at the cinema with a friend. On Sundays I listen to music or read magazines at home. I'm bad at singing, but I like it."
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "n4",
+   "level": 2,
+   "title": {
+    "en": "≈ N4"
+   },
+   "units": [
+    {
+     "id": "n4-weekend",
+     "title": {
+      "en": "Time and timing"
+     },
+     "topics": [
+      "routine",
+      "time",
+      "hobbies"
+     ],
+     "grammar": [
+      "ja-grammar:n4-plain-forms",
+      "ja-grammar:n4-no-koto"
+     ],
+     "characters": [
+      "度",
+      "最",
+      "回",
+      "突",
+      "代",
+      "同",
+      "以",
+      "常",
+      "次",
+      "経",
+      "点",
+      "直"
+     ],
+     "text": {
+      "title": "雨の日曜日",
+      "body": "今日は日曜日だ。朝からずっと雨が降っている。私は家で本を読んで、映画を二本見た。最初の映画は長かったが、面白かった。そろそろ晩ごはんの時間だ。今度の週末は、いい天気だといいな。",
+      "translation": {
+       "en": "Today is Sunday. It's been raining since this morning. I read a book at home and watched two films. The first film was long, but interesting. It's almost time for dinner. I hope the weather is nice next weekend."
+      }
+     }
+    },
+    {
+     "id": "n4-opinions",
+     "title": {
+      "en": "What I think"
+     },
+     "topics": [
+      "thinking",
+      "communication"
+     ],
+     "grammar": [
+      "ja-grammar:n4-to-omou",
+      "ja-grammar:n4-to-iu"
+     ],
+     "characters": [
+      "思",
+      "無",
+      "信",
+      "決",
+      "由",
+      "慣",
+      "選",
+      "場",
+      "合",
+      "認",
+      "確",
+      "法",
+      "解",
+      "可",
+      "能",
+      "性",
+      "的",
+      "考",
+      "違",
+      "識",
+      "実",
+      "望",
+      "得",
+      "原",
+      "因",
+      "迷",
+      "現",
+      "指",
+      "偶",
+      "疑",
+      "注",
+      "反",
+      "対",
+      "誤",
+      "戦",
+      "配",
+      "予",
+      "想",
+      "感",
+      "非",
+      "不",
+      "探"
+     ],
+     "text": {
+      "title": "漢字は無理？",
+      "body": "友達は「漢字は無理だ」と言う。でも、私はそう思わない。毎日少しずつ練習することが大切だと思う。私の方法は簡単だ。毎朝、新しい漢字を五つ書く。朝に書く理由は一つ。朝は頭がよく働くからだ。",
+      "translation": {
+       "en": "My friend says, “Kanji are impossible.” But I don't think so. I think it's important to practise a little every day. My method is simple. Every morning I write five new kanji. There's one reason I write them in the morning: my mind works well then."
+      }
+     }
+    },
+    {
+     "id": "n4-skills",
+     "title": {
+      "en": "Actions"
+     },
+     "topics": [
+      "actions",
+      "sports",
+      "arts"
+     ],
+     "grammar": [
+      "ja-grammar:n4-potential",
+      "ja-grammar:n4-you-ni-naru"
+     ],
+     "characters": [
+      "取",
+      "続",
+      "受",
+      "付",
+      "残",
+      "助",
+      "止",
+      "備",
+      "任",
+      "用",
+      "伝",
+      "済",
+      "失",
+      "与",
+      "落",
+      "引",
+      "運",
+      "向",
+      "集",
+      "力",
+      "抜",
+      "押",
+      "打",
+      "進",
+      "流"
+     ],
+     "text": {
+      "title": "自転車の練習",
+      "body": "弟はまだ自転車に乗れない。だから、毎週日曜日に公園で練習を手伝っている。私が自転車の後ろを持って、弟は前を見る。最初は難しかったが、今は少し走れるようになった。来週はきっと一人で乗れると思う。",
+      "translation": {
+       "en": "My little brother can't ride a bicycle yet, so every Sunday I help him practise in the park. I hold the back of the bike and he looks ahead. At first it was hard, but now he can ride a little. I think he'll surely be able to ride on his own next week."
+      }
+     }
+    },
+    {
+     "id": "n4-plans",
+     "title": {
+      "en": "Plans"
+     },
+     "topics": [
+      "calendar",
+      "time",
+      "travel"
+     ],
+     "grammar": [
+      "ja-grammar:n4-volitional",
+      "ja-grammar:n4-tsumori-yotei",
+      "ja-grammar:n4-koto-ni-suru-naru"
+     ],
+     "characters": [
+      "昔",
+      "急",
+      "過",
+      "定",
+      "相",
+      "未",
+      "在",
+      "際",
+      "期",
+      "速",
+      "内",
+      "都",
+      "発",
+      "産",
+      "約",
+      "末"
+     ],
+     "text": {
+      "title": "週末の予定",
+      "body": "今度の週末、家族と旅行する予定だ。もうホテルを予約した。今回は車ではなく、電車で行くことにした。金曜日の夜に出発して、日曜日に帰る。土曜日は町を散歩して、有名なレストランで晩ごはんを食べるつもりだ。友達にお土産を買おうと思っている。早く行きたい。",
+      "translation": {
+       "en": "This weekend I'm going on a trip with my family. I've already booked the hotel. This time we've decided to go by train, not by car. We'll leave on Friday evening and come back on Sunday. On Saturday we plan to stroll around the town and have dinner at a famous restaurant. I'm thinking of buying souvenirs for my friends. I can't wait to go."
+      }
+     }
+    },
+    {
+     "id": "n4-health",
+     "title": {
+      "en": "Body and senses"
+     },
+     "topics": [
+      "health",
+      "body"
+     ],
+     "grammar": [
+      "ja-grammar:n4-hougaii",
+      "ja-grammar:n4-nakereba-naranai",
+      "ja-grammar:n4-nakutemoii"
+     ],
+     "characters": [
+      "死",
+      "声",
+      "命",
+      "疲",
+      "身",
+      "調",
+      "首",
+      "背",
+      "髪",
+      "息",
+      "具",
+      "亡",
+      "心",
+      "治",
+      "眠"
+     ],
+     "text": {
+      "title": "熱がある",
+      "body": "「どうしましたか。」\n「昨日から熱があって、頭と首が痛いんです。体もとても疲れています。」\n「風邪ですね。今日は仕事を休んだほうがいいですよ。この薬を一日三回、ごはんの後に飲んでください。」\n「毎日飲まなければなりませんか。」\n「いいえ、熱がない日は飲まなくてもいいですよ。よく寝て、無理をしないでくださいね。」\n「はい、ありがとうございます。」",
+      "translation": {
+       "en": "“What seems to be the problem?”\n“I've had a fever since yesterday, and my head and neck hurt. I'm also very tired.”\n“It's a cold. You'd better take today off work. Take this medicine three times a day after meals.”\n“Do I have to take it every day?”\n“No, on days when you don't have a fever, you don't need to. Get plenty of sleep and don't overdo it.”\n“All right, thank you.”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "n4-cooking",
+     "title": {
+      "en": "Home and meals"
+     },
+     "topics": [
+      "food",
+      "drink",
+      "home"
+     ],
+     "grammar": [
+      "ja-grammar:n4-te-oku",
+      "ja-grammar:n4-te-miru",
+      "ja-grammar:n4-sugiru"
+     ],
+     "characters": [
+      "位",
+      "君",
+      "別",
+      "他",
+      "絶",
+      "必",
+      "勝",
+      "段",
+      "箱",
+      "米"
+     ],
+     "text": {
+      "title": "初めての料理",
+      "body": "今日、初めて晩ごはんを作ってみた。まず、米を洗っておいた。それから、肉と野菜を焼いた。塩を一さじ入れたが、味が少し薄かった。それに、作りすぎて、半分残った。食事の後、皿を洗って、片付けた。次はもっとおいしく作りたい。",
+      "translation": {
+       "en": "Today I tried cooking dinner for the first time. First I washed the rice in advance. Then I fried the meat and vegetables. I added a spoonful of salt, but it tasted a little bland. On top of that, I made too much, and half was left over. After the meal I washed the plates and tidied up. Next time I want to make it tastier."
+      }
+     }
+    },
+    {
+     "id": "n4-directions",
+     "title": {
+      "en": "Finding the way"
+     },
+     "topics": [
+      "city",
+      "position",
+      "transport",
+      "movement"
+     ],
+     "grammar": [
+      "ja-grammar:n4-to-conditional",
+      "ja-grammar:n4-te-iku-kuru"
+     ],
+     "characters": [
+      "所",
+      "特",
+      "途",
+      "側",
+      "通",
+      "席",
+      "正",
+      "居",
+      "込"
+     ],
+     "text": {
+      "title": "図書館への道",
+      "body": "「すみません、図書館へ行きたいんですが。」\n「この道をまっすぐ行くと、右側に銀行があります。その先を左に曲がると、図書館は目の前ですよ。」\n「遠いですか。」\n「いいえ、歩いて五分ぐらいです。」\n「ありがとうございます。」",
+      "translation": {
+       "en": "“Excuse me, I'd like to get to the library.”\n“If you go straight along this road, there's a bank on the right. Turn left just past it, and the library is right in front of you.”\n“Is it far?”\n“No, it's about five minutes on foot.”\n“Thank you.”"
+      }
+     },
+     "focus": "listening"
+    },
+    {
+     "id": "n4-gifts",
+     "title": {
+      "en": "Relationships"
+     },
+     "topics": [
+      "relationships",
+      "shopping",
+      "festivals"
+     ],
+     "grammar": [
+      "ja-grammar:n4-ageru-kureru-morau",
+      "ja-grammar:n4-te-ageru-kureru-morau"
+     ],
+     "characters": [
+      "彼",
+      "許",
+      "関",
+      "係",
+      "束",
+      "形",
+      "増",
+      "愛",
+      "互",
+      "似",
+      "迎",
+      "良",
+      "告",
+      "交"
+     ],
+     "text": {
+      "title": "誕生日のプレゼント",
+      "body": "来週は彼女の誕生日だ。プレゼントに何をあげようか、ずっと考えている。去年は花をあげた。彼女は「ありがとう」と言って、とても喜んでくれた。今年は青いかばんをあげるつもりだ。彼女には青い物がよく似合う。私の時計も、彼女にもらった物だ。",
+      "translation": {
+       "en": "Next week is my girlfriend's birthday. I keep thinking about what to give her as a present. Last year I gave her flowers. She said “Thank you” and was really pleased. This year I'm going to give her a blue bag. Blue things really suit her. My watch is something she gave me, too."
+      }
+     }
+    },
+    {
+     "id": "n4-weather",
+     "title": {
+      "en": "Sky and nature"
+     },
+     "topics": [
+      "weather",
+      "nature",
+      "plants",
+      "animals"
+     ],
+     "grammar": [
+      "ja-grammar:n4-sou-appearance",
+      "ja-grammar:n4-kamoshirenai",
+      "ja-grammar:n4-deshou-darou"
+     ],
+     "characters": [
+      "光",
+      "払",
+      "数",
+      "参",
+      "加",
+      "抱",
+      "共",
+      "戻",
+      "倒",
+      "要",
+      "石",
+      "景",
+      "太",
+      "陽",
+      "吹",
+      "台"
+     ],
+     "text": {
+      "title": "日本の秋",
+      "body": "日本の秋は空気が涼しくて、景色がきれいだ。森の木が赤や黄色になる。夜は星もよく見える。でも、今日は空が暗くて、雨が降りそうだ。テレビで「明日は台風が来るでしょう」と言っていた。風も強くなるかもしれない。明日は家にいよう。",
+      "translation": {
+       "en": "Autumn in Japan has cool air and beautiful scenery. The trees in the forests turn red and yellow. At night you can see the stars clearly, too. But today the sky is dark and it looks like it's going to rain. On TV they said, “A typhoon will probably come tomorrow.” The wind might get stronger, too. I'll stay at home tomorrow."
+      }
+     }
+    },
+    {
+     "id": "n4-feelings",
+     "title": {
+      "en": "Feelings"
+     },
+     "topics": [
+      "feelings",
+      "character"
+     ],
+     "grammar": [
+      "ja-grammar:n4-te-shimau",
+      "ja-grammar:n4-noni"
+     ],
+     "characters": [
+      "怖",
+      "笑",
+      "困",
+      "怒",
+      "幸",
+      "喜",
+      "恥",
+      "念",
+      "平",
+      "苦",
+      "格",
+      "表",
+      "情",
+      "恐",
+      "適",
+      "才"
+     ],
+     "text": {
+      "title": "大切な試験",
+      "body": "昨日、大切な試験があった。朝から緊張して、何も食べられなかった。たくさん勉強したのに、試験は難しくて、泣きそうになった。しかも、名前を書くのを忘れてしまった。本当に恥ずかしい。でも、母は「大丈夫、心配しないで」と言って、笑ってくれた。それで、少し落ち着いた。",
+      "translation": {
+       "en": "Yesterday I had an important exam. I was nervous from the morning and couldn't eat anything. Even though I had studied a lot, the exam was hard and I nearly cried. What's more, I forgot to write my name. It's really embarrassing. But my mother smiled and said, “It's all right, don't worry.” That calmed me down a little."
+      }
+     }
+    },
+    {
+     "id": "n4-work",
+     "title": {
+      "en": "People at work"
+     },
+     "topics": [
+      "work",
+      "business",
+      "people"
+     ],
+     "grammar": [
+      "ja-grammar:n4-o-ninaru-o-suru",
+      "ja-grammar:n4-te-aru"
+     ],
+     "characters": [
+      "員",
+      "件",
+      "責",
+      "成",
+      "連",
+      "客",
+      "歳",
+      "努",
+      "完",
+      "限",
+      "支",
+      "役",
+      "育",
+      "偉"
+     ],
+     "text": {
+      "title": "仕事のミス",
+      "body": "私は会社でお客様の担当をしている。今日、仕事でミスをしてしまった。すぐお客様の会社に電話して、「申し訳ありません。今日中に新しい物をお持ちします」と言った。上の人は「自分の責任だと思って、次は気をつけなさい」と言った。明日使う物は、もう机の上に置いてある。",
+      "translation": {
+       "en": "At my company I look after customers. Today I made a mistake at work. I phoned the customer's company straight away and said, “I'm terribly sorry. I'll bring you a new one before the end of today.” My boss said, “Take it as your own responsibility and be careful next time.” The things I'll need tomorrow are already laid out on my desk."
+      }
+     }
+    },
+    {
+     "id": "n4-school-life",
+     "title": {
+      "en": "Learning"
+     },
+     "topics": [
+      "school",
+      "language"
+     ],
+     "grammar": [
+      "ja-grammar:n4-you-ni-suru",
+      "ja-grammar:n4-you-ni-purpose",
+      "ja-grammar:n4-tame-ni"
+     ],
+     "characters": [
+      "化",
+      "例",
+      "値",
+      "文",
+      "徒",
+      "研",
+      "究",
+      "組",
+      "科"
+     ],
+     "text": {
+      "title": "留学の思い出",
+      "body": "高校の時、私は留学するために、一生懸命英語を勉強した。毎朝、教科書を読むようにした。新しい言葉は、忘れないように紙に書いた。先輩は「毎日少しずつ勉強すると、必ず上手になるよ」と教えてくれた。高校を卒業した後、一年留学した。そこで学んだ知識は、今も役に立っている。",
+      "translation": {
+       "en": "In high school I studied English very hard in order to study abroad. I made a point of reading my textbook every morning. I wrote new words on paper so that I wouldn't forget them. An older student told me, “If you study a little every day, you'll definitely get good.” After finishing high school, I studied abroad for a year. What I learnt there is still useful to me now."
+      }
+     }
+    },
+    {
+     "id": "n4-rules",
+     "title": {
+      "en": "Law and order"
+     },
+     "topics": [
+      "law",
+      "society",
+      "culture"
+     ],
+     "grammar": [
+      "ja-grammar:n4-passive",
+      "ja-grammar:n4-causative"
+     ],
+     "characters": [
+      "世",
+      "界",
+      "守",
+      "殺",
+      "険",
+      "神",
+      "罪",
+      "捕",
+      "警",
+      "察",
+      "放",
+      "鳴",
+      "負",
+      "犯",
+      "和",
+      "様",
+      "権"
+     ],
+     "text": {
+      "title": "公園のルール",
+      "body": "この公園にはルールがある。夜九時から朝六時まで、公園に入ることは禁止されている。子供が安全に遊べるように、自転車に乗ることも禁止されている。犬を自由に走らせてもいけない。ルールを守らない人は、公園の人に注意される。",
+      "translation": {
+       "en": "This park has rules. Entering the park is forbidden from nine at night until six in the morning. So that children can play safely, cycling is forbidden too. You also mustn't let dogs run around freely. People who break the rules get told off by the park staff."
+      }
+     }
+    },
+    {
+     "id": "n4-news",
+     "title": {
+      "en": "News and rumours"
+     },
+     "topics": [
+      "media",
+      "communication",
+      "technology"
+     ],
+     "grammar": [
+      "ja-grammar:n4-sou-hearsay",
+      "ja-grammar:n4-rashii",
+      "ja-grammar:n4-you-mitai"
+     ],
+     "characters": [
+      "送",
+      "説",
+      "答",
+      "談",
+      "断",
+      "報",
+      "申",
+      "否",
+      "示",
+      "逃",
+      "術"
+     ],
+     "text": {
+      "title": "新しい本屋",
+      "body": "友達から携帯に連絡が来た。来月、駅の前に新しい本屋ができるそうだ。クラスでもみんなその噂をしている。でも、本当かな。先生に聞くと、「本当らしいよ。駅の前で工事をしているみたいだね」と答えてくれた。",
+      "translation": {
+       "en": "A friend sent a message to my phone. I hear a new bookshop is opening in front of the station next month. Everyone in class is talking about it too. But is it true? When I asked the teacher, the answer was, “Apparently it is. It looks like there's building work going on in front of the station.”"
+      }
+     }
+    },
+    {
+     "id": "n4-if",
+     "title": {
+      "en": "What if"
+     },
+     "topics": [
+      "thinking",
+      "qualities"
+     ],
+     "grammar": [
+      "ja-grammar:n4-ba-conditional",
+      "ja-grammar:n4-tara",
+      "ja-grammar:n4-nara"
+     ],
+     "characters": [
+      "構",
+      "状",
+      "議",
+      "深",
+      "敗",
+      "余",
+      "程",
+      "美",
+      "易",
+      "容"
+     ],
+     "text": {
+      "title": "もしお金があったら",
+      "body": "もし時間とお金がたくさんあったら、何をしたいだろう。私なら、いろいろな国を旅行したい。同じ所に長くいるのは、私には無理だ。でも、お金がなければ、旅行はできない。だから、今はしっかり働いて、必要な物だけ買っている。",
+      "translation": {
+       "en": "If I had lots of time and money, what would I want to do? As for me, I'd want to travel to all sorts of countries. Staying in the same place for a long time isn't for me. But without money you can't travel. So for now I work hard and buy only what I need."
+      }
+     }
+    },
+    {
+     "id": "n4-reasons",
+     "title": {
+      "en": "Reasons"
+     },
+     "topics": [
+      "thinking",
+      "feelings"
+     ],
+     "grammar": [
+      "ja-grammar:n4-node",
+      "ja-grammar:n4-shi",
+      "ja-grammar:n4-temo"
+     ],
+     "characters": [
+      "夢",
+      "存",
+      "求",
+      "記",
+      "悲",
+      "判",
+      "労",
+      "満"
+     ],
+     "text": {
+      "title": "日本語を勉強する理由",
+      "body": "日本の映画に興味があるので、日本語を勉強している。言葉は難しいし、漢字も多いし、大変だ。でも、意味が分かると、とても嬉しい。失敗しても、諦めないで頑張りたい。夢は、日本の映画を日本語だけで楽しむことだ。",
+      "translation": {
+       "en": "I'm studying Japanese because I'm interested in Japanese films. The words are difficult, there are lots of kanji, and it's hard work. But when I understand the meaning, I'm really happy. Even if I fail, I want to keep going and not give up. My dream is to enjoy Japanese films in Japanese alone."
+      }
+     }
+    },
+    {
+     "id": "n4-family-life",
+     "title": {
+      "en": "Family life"
+     },
+     "topics": [
+      "family",
+      "home",
+      "routine"
+     ],
+     "grammar": [
+      "ja-grammar:n4-nagara",
+      "ja-grammar:n4-aida-ni",
+      "ja-grammar:n4-madeni-made"
+     ],
+     "characters": [
+      "娘",
+      "活",
+      "暮",
+      "妻",
+      "差"
+     ],
+     "text": {
+      "title": "私の家族の朝",
+      "body": "私は妻と息子と娘の四人で暮らしている。毎朝、子供たちを起こして、着替えさせる。妻はラジオを聞きながら朝ごはんを作る。子供たちが学校にいる間、私たちは仕事をしている。夜は九時までに子供たちを寝かせる。週末は実家に帰って、両親に子供たちの顔を見せる。",
+      "translation": {
+       "en": "There are four of us at home: my wife, my son, my daughter and me. Every morning I wake the children and get them dressed. My wife makes breakfast while listening to the radio. While the children are at school, we are at work. In the evening we put the children to bed by nine. At weekends we go back to my parents' home so they can see the children."
+      }
+     }
+    },
+    {
+     "id": "n4-moving",
+     "title": {
+      "en": "Coming and going"
+     },
+     "topics": [
+      "home",
+      "city",
+      "movement"
+     ],
+     "grammar": [
+      "ja-grammar:n4-tokoro-da",
+      "ja-grammar:n4-ta-bakari"
+     ],
+     "characters": [
+      "追",
+      "寄",
+      "越",
+      "浮",
+      "訪",
+      "到",
+      "建",
+      "京"
+     ],
+     "text": {
+      "title": "東京に来たばかり",
+      "body": "先月、東京に来たばかりだ。前の町を離れるのは寂しかったが、新しい生活が始まった。今、荷物を部屋に運んでいるところだ。建物は古いが、駅に近くて便利だ。窓から川が見える。",
+      "translation": {
+       "en": "I came to Tokyo just last month. It was sad to leave my old town, but a new life has begun. Right now I'm in the middle of carrying my things into the room. The building is old, but it's close to the station and convenient. I can see a river from the window."
+      }
+     }
+    },
+    {
+     "id": "n4-hobbies",
+     "title": {
+      "en": "Hobbies"
+     },
+     "topics": [
+      "hobbies",
+      "arts",
+      "sports",
+      "media"
+     ],
+     "grammar": [
+      "ja-grammar:n4-yasui-nikui"
+     ],
+     "characters": [
+      "絵",
+      "破",
+      "投",
+      "品",
+      "登",
+      "種",
+      "類",
+      "堂",
+      "掛",
+      "精"
+     ],
+     "text": {
+      "title": "私の趣味",
+      "body": "私の趣味は絵を描くことだ。子供の時から、物語の絵を描くのが大好きだった。人の顔は描きにくいが、動物は描きやすい。今は友達と一緒に作品を作って、町の図書館でみんなに見てもらっている。週末は、ゲームで遊ぶのも好きだ。でも、弟と勝負すると、いつも負ける。",
+      "translation": {
+       "en": "My hobby is drawing. Since I was a child I've loved drawing pictures for stories. Faces are hard to draw, but animals are easy. Now I make works with a friend and show them to people at the town library. At weekends I also like playing games. But whenever I play against my little brother, I always lose."
+      }
+     }
+    },
+    {
+     "id": "n4-questions",
+     "title": {
+      "en": "Greetings and thanks"
+     },
+     "topics": [
+      "communication",
+      "people",
+      "greetings"
+     ],
+     "grammar": [
+      "ja-grammar:n4-ka-douka",
+      "ja-grammar:n4-hazu"
+     ],
+     "characters": [
+      "礼",
+      "頂"
+     ],
+     "text": {
+      "title": "久しぶり",
+      "body": "「久しぶり！元気？」\n「はい、おかげさまで。あ、結婚おめでとうございます！」\n「ありがとう。来てくれるかどうか、心配していたんだ。」\n「もちろん行きますよ。他の先輩たちも来るはずです。」\n「よかった。じゃあ、またね。」",
+      "translation": {
+       "en": "“Long time no see! How are you?”\n“Fine, thank you. Oh, congratulations on getting married!”\n“Thanks. I was worried you might not come.”\n“Of course I'll come. The other senpai should be coming too.”\n“Great. See you then.”"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "n3",
+   "level": 3,
+   "title": {
+    "en": "≈ N3"
+   },
+   "units": [
+    {
+     "id": "n3-daily-life",
+     "title": {
+      "en": "Daily life"
+     },
+     "topics": [
+      "routine",
+      "home"
+     ],
+     "grammar": [
+      "ja-grammar:n3-wake-da",
+      "ja-grammar:n3-wake-dewa-nai"
+     ],
+     "characters": [
+      "庭",
+      "宅"
+     ]
+    },
+    {
+     "id": "n3-friendship",
+     "title": {
+      "en": "Friendship"
+     },
+     "topics": [
+      "relationships",
+      "people"
+     ],
+     "grammar": [
+      "ja-grammar:n3-wake-ga-nai",
+      "ja-grammar:n3-koto-ni-natteiru"
+     ],
+     "characters": [
+      "招",
+      "主",
+      "老",
+      "婦"
+     ]
+    },
+    {
+     "id": "n3-family",
+     "title": {
+      "en": "Family"
+     },
+     "topics": [
+      "family",
+      "relationships"
+     ],
+     "grammar": [
+      "ja-grammar:n3-you-ni-iu",
+      "ja-grammar:n3-sasete-kudasai"
+     ],
+     "characters": [
+      "争",
+      "等",
+      "祖"
+     ]
+    },
+    {
+     "id": "n3-personality",
+     "title": {
+      "en": "Personality"
+     },
+     "topics": [
+      "character",
+      "qualities"
+     ],
+     "grammar": [
+      "ja-grammar:n3-saserareru"
+     ],
+     "characters": [
+      "更",
+      "欠",
+      "積",
+      "杯",
+      "舞"
+     ]
+    },
+    {
+     "id": "n3-emotions",
+     "title": {
+      "en": "Emotions"
+     },
+     "topics": [
+      "feelings"
+     ],
+     "grammar": [
+      "ja-grammar:n3-toshite"
+     ],
+     "characters": [
+      "退"
+     ]
+    },
+    {
+     "id": "n3-health",
+     "title": {
+      "en": "Health"
+     },
+     "topics": [
+      "health",
+      "body"
+     ],
+     "grammar": [
+      "ja-grammar:n3-ni-tsuite",
+      "ja-grammar:n3-ni-yotte"
+     ],
+     "characters": [
+      "草",
+      "害"
+     ]
+    },
+    {
+     "id": "n3-body",
+     "title": {
+      "en": "The body"
+     },
+     "topics": [
+      "body",
+      "actions"
+     ],
+     "grammar": [
+      "ja-grammar:n3-ni-totte",
+      "ja-grammar:n3-ni-taishite"
+     ],
+     "characters": [
+      "割",
+      "処"
+     ]
+    },
+    {
+     "id": "n3-food",
+     "title": {
+      "en": "Food and cooking"
+     },
+     "topics": [
+      "food",
+      "drink"
+     ],
+     "grammar": [
+      "ja-grammar:n3-tabi-ni"
+     ],
+     "characters": [
+      "刻",
+      "給"
+     ]
+    },
+    {
+     "id": "n3-shopping",
+     "title": {
+      "en": "Shopping"
+     },
+     "topics": [
+      "shopping",
+      "money"
+     ],
+     "grammar": [
+      "ja-grammar:n3-uchi-ni",
+      "ja-grammar:n3-saichuu-ni"
+     ],
+     "characters": [
+      "商",
+      "費",
+      "資",
+      "市",
+      "収",
+      "富",
+      "政"
+     ]
+    },
+    {
+     "id": "n3-money",
+     "title": {
+      "en": "Money matters"
+     },
+     "topics": [
+      "money",
+      "business"
+     ],
+     "grammar": [
+      "ja-grammar:n3-tokoro-datta",
+      "ja-grammar:n3-okage-de"
+     ],
+     "characters": [
+      "工",
+      "列",
+      "式"
+     ]
+    },
+    {
+     "id": "n3-housing",
+     "title": {
+      "en": "Housing"
+     },
+     "topics": [
+      "home",
+      "city"
+     ],
+     "grammar": [
+      "ja-grammar:n3-tame-ni-cause",
+      "ja-grammar:n3-ba-ii"
+     ],
+     "characters": [
+      "田",
+      "路",
+      "民",
+      "港"
+     ]
+    },
+    {
+     "id": "n3-town",
+     "title": {
+      "en": "The town"
+     },
+     "topics": [
+      "city",
+      "position"
+     ],
+     "grammar": [
+      "ja-grammar:n3-question-temo",
+      "ja-grammar:n3-ba-hodo"
+     ]
+    },
+    {
+     "id": "n3-transport",
+     "title": {
+      "en": "Transport"
+     },
+     "topics": [
+      "transport",
+      "movement"
+     ],
+     "grammar": [
+      "ja-grammar:n3-hodo-kurai",
+      "ja-grammar:n3-koso"
+     ],
+     "characters": [
+      "船"
+     ]
+    },
+    {
+     "id": "n3-travel",
+     "title": {
+      "en": "Travel"
+     },
+     "topics": [
+      "travel",
+      "geography"
+     ],
+     "grammar": [
+      "ja-grammar:n3-sae",
+      "ja-grammar:n3-nanka-nante"
+     ],
+     "characters": [
+      "福",
+      "観",
+      "洋"
+     ]
+    },
+    {
+     "id": "n3-nature",
+     "title": {
+      "en": "Nature"
+     },
+     "topics": [
+      "nature",
+      "plants",
+      "animals"
+     ],
+     "grammar": [
+      "ja-grammar:n3-bakari",
+      "ja-grammar:n3-te-bakari-iru"
+     ],
+     "characters": [
+      "煙",
+      "馬",
+      "球"
+     ]
+    },
+    {
+     "id": "n3-weather",
+     "title": {
+      "en": "Weather and seasons"
+     },
+     "topics": [
+      "weather",
+      "calendar"
+     ],
+     "grammar": [
+      "ja-grammar:n3-mama",
+      "ja-grammar:n3-zuni-naide"
+     ]
+    },
+    {
+     "id": "n3-school",
+     "title": {
+      "en": "School"
+     },
+     "topics": [
+      "school",
+      "language"
+     ],
+     "grammar": [
+      "ja-grammar:n3-kawari-ni",
+      "ja-grammar:n3-tsuideni"
+     ],
+     "characters": [
+      "師",
+      "論",
+      "演"
+     ]
+    },
+    {
+     "id": "n3-study",
+     "title": {
+      "en": "Studying"
+     },
+     "topics": [
+      "school",
+      "thinking"
+     ],
+     "grammar": [
+      "ja-grammar:n3-toori-ni",
+      "ja-grammar:n3-kke"
+     ],
+     "characters": [
+      "賛"
+     ]
+    },
+    {
+     "id": "n3-work",
+     "title": {
+      "en": "Work"
+     },
+     "topics": [
+      "work"
+     ],
+     "grammar": [
+      "ja-grammar:n3-toka"
+     ],
+     "characters": [
+      "務",
+      "勤",
+      "職"
+     ]
+    },
+    {
+     "id": "n3-company",
+     "title": {
+      "en": "The company"
+     },
+     "topics": [
+      "business",
+      "work"
+     ],
+     "grammar": [
+      "ja-grammar:n3-wari-ni",
+      "ja-grammar:n3-ippou-da",
+      "ja-grammar:n3-sonkeigo"
+     ],
+     "characters": [
+      "規"
+     ]
+    },
+    {
+     "id": "n3-communication",
+     "title": {
+      "en": "Talking and writing"
+     },
+     "topics": [
+      "communication",
+      "language"
+     ],
+     "grammar": [
+      "ja-grammar:n3-koto-wa-nai",
+      "ja-grammar:n3-shika-nai",
+      "ja-grammar:n3-tte"
+     ],
+     "characters": [
+      "号"
+     ]
+    },
+    {
+     "id": "n3-media",
+     "title": {
+      "en": "Media"
+     },
+     "topics": [
+      "media",
+      "technology"
+     ],
+     "grammar": [
+      "ja-grammar:n3-beki-da",
+      "ja-grammar:n3-you-to-suru",
+      "ja-grammar:n3-ni-yoru-to"
+     ],
+     "characters": [
+      "制"
+     ]
+    },
+    {
+     "id": "n3-science",
+     "title": {
+      "en": "Science"
+     },
+     "topics": [
+      "science",
+      "technology"
+     ],
+     "grammar": [
+      "ja-grammar:n3-kakeru"
+     ]
+    },
+    {
+     "id": "n3-society",
+     "title": {
+      "en": "Society"
+     },
+     "topics": [
+      "society"
+     ],
+     "grammar": [
+      "ja-grammar:n3-kiru"
+     ],
+     "characters": [
+      "王",
+      "候"
+     ]
+    },
+    {
+     "id": "n3-law",
+     "title": {
+      "en": "Rules and law"
+     },
+     "topics": [
+      "law",
+      "society"
+     ],
+     "grammar": [
+      "ja-grammar:n3-phase-verbs"
+     ],
+     "characters": [
+      "盗",
+      "官"
+     ]
+    },
+    {
+     "id": "n3-culture",
+     "title": {
+      "en": "Culture"
+     },
+     "topics": [
+      "culture",
+      "festivals"
+     ],
+     "grammar": [
+      "ja-grammar:n3-totan-ni"
+     ]
+    },
+    {
+     "id": "n3-arts",
+     "title": {
+      "en": "Arts"
+     },
+     "topics": [
+      "arts",
+      "hobbies"
+     ],
+     "grammar": [
+      "ja-grammar:n3-te-kara-de-nai-to"
+     ]
+    },
+    {
+     "id": "n3-sports",
+     "title": {
+      "en": "Sport"
+     },
+     "topics": [
+      "sports",
+      "hobbies"
+     ],
+     "grammar": [
+      "ja-grammar:n3-ni-chigai-nai"
+     ]
+    },
+    {
+     "id": "n3-clothes",
+     "title": {
+      "en": "Clothes"
+     },
+     "topics": [
+      "clothing",
+      "colours"
+     ],
+     "grammar": [
+      "ja-grammar:n3-towa-kagiranai"
+     ]
+    },
+    {
+     "id": "n3-time",
+     "title": {
+      "en": "Time"
+     },
+     "topics": [
+      "time",
+      "calendar"
+     ],
+     "grammar": [
+      "ja-grammar:n3-kuse-ni"
+     ],
+     "characters": [
+      "折"
+     ]
+    },
+    {
+     "id": "n3-numbers",
+     "title": {
+      "en": "Numbers and measures"
+     },
+     "topics": [
+      "numbers",
+      "measures"
+     ],
+     "grammar": [
+      "ja-grammar:n3-hodo-nai"
+     ]
+    },
+    {
+     "id": "n3-thinking",
+     "title": {
+      "en": "Thinking"
+     },
+     "topics": [
+      "thinking"
+     ],
+     "grammar": [
+      "ja-grammar:n3-ppoi-rashii"
+     ]
+    },
+    {
+     "id": "n3-actions",
+     "title": {
+      "en": "Doing things"
+     },
+     "topics": [
+      "actions",
+      "movement"
+     ],
+     "grammar": [
+      "ja-grammar:n3-ki-ga-suru"
+     ]
+    },
+    {
+     "id": "n3-qualities",
+     "title": {
+      "en": "Describing things"
+     },
+     "topics": [
+      "qualities"
+     ],
+     "grammar": [
+      "ja-grammar:n3-marude-you-da"
+     ]
+    },
+    {
+     "id": "n3-greetings",
+     "title": {
+      "en": "Polite expressions"
+     },
+     "topics": [
+      "greetings",
+      "communication"
+     ],
+     "grammar": [
+      "ja-grammar:n3-koto-ka",
+      "ja-grammar:n3-kenjougo"
+     ]
+    },
+    {
+     "id": "n3-events",
+     "title": {
+      "en": "Events"
+     },
+     "topics": [
+      "festivals",
+      "society",
+      "time"
+     ],
+     "grammar": [
+      "ja-grammar:n3-mono-ka"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -49,7 +49,8 @@ Unknown members are refused (so is a `words` list).
   not checked against the installed packs (a missing one is `available: false`). **`characters`**: single Han
   characters, each in at most one unit of the course, at most 60. **`scripts`**: writing-system ids of the scripts
   trainer (`hiragana` …), at most 6.
-- **`text`**: the unit's reading text in the course's language (body at most 8000 bytes), with optional translations.
+- **`text`**: the unit's reading text in the course's language (body at most 8000 bytes), with optional translations
+  (`{language code: text}`, `en` required, each at most 8000 bytes like the body).
   Words of the text the learner has not reached show a reading and a gloss (plan §4, #224); the client works that out
   from the dictionary and the state's `met` and `known`.
 - **`test`** (default true): a unit test closes the unit. A start unit may have none.

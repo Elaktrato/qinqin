@@ -5,6 +5,13 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #223 — courses: a text's translation may be as long as its text (contract 34)
+
+- **`courses/pack.json`:** a unit text's `translation` is checked like a title (`en` required, known language codes)
+  but each value may be up to 8000 bytes, the limit of the text's body, instead of a title's 200 bytes (two new
+  cases). A server refused every real reading text's translation before. No other format change.
+- **Clients:** none; the web decoder never checked the length.
+
 ## #224 — courses: unit tests, section exams and placement (contract 33)
 
 - **New fixture `courses/tests.json`** (rule `courses/tests`, web): how a unit test or section exam is assembled (the

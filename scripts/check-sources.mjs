@@ -45,7 +45,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Packs whose content the qinqin project writes: CC BY 4.0, credited "qinqin contributors, CC BY 4.0". */
-export const PROJECT_PACKS = ['zh-grammar', 'ja-grammar', 'ja-lemma', 'qinqin', 'qinqin-extras'];
+export const PROJECT_PACKS = ['zh-grammar', 'ja-grammar', 'ja-lemma', 'zh-course', 'ja-course', 'qinqin', 'qinqin-extras'];
 export const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
 
 /** Optional packs the docs describe that are never in the repository. */

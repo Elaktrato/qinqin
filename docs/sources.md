@@ -115,6 +115,18 @@ unverified facts marked unverified) must stay the same in both places.
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
 
+## Courses
+
+- **Chinese course (≈ HSK 1–4)** (`zh-course`, type `course`; bundled) and **Japanese course (≈ JLPT N5–N3)**
+  (`ja-course`, type `course`; bundled): the course skeletons (sections, units, themes, the placement of the
+  grammar lessons, the characters each unit introduces, checkpoints) and the reading texts with their English
+  translations, **written for qinqin by the project and released under CC BY 4.0** (credit: "qinqin contributors,
+  CC BY 4.0", https://github.com/Elaktrato/qinqin; `plugins/data/zh-course` and `plugins/data/ja-course`, each with
+  `LICENSE`, `ATTRIBUTION.md` and `REVIEW.md`). The selection and order are qinqin's own, not taken from a textbook,
+  a course or a syllabus. The packs contain **no level-list words**: each server fills the units from its installed
+  `hsk-words` or `jlpt-words` list, which keep their own licences (above). The content was **reviewed by agents
+  acting as native-speaker teachers, not yet by a person** (`REVIEW.md`); errors are possible.
+
 ## Writing-system trainer data (kana, Hangul, Cyrillic)
 
 The writing-system trainer (#204, kana study #63) ships three small data files in the web build,
