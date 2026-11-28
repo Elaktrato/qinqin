@@ -31,7 +31,8 @@ export const KEY_AREAS = [
 	'features',
 	'milestones',
 	'scripts',
-	'topics'
+	'topics',
+	'courses'
 ] as const;
 
 export type KeyArea = (typeof KEY_AREAS)[number];

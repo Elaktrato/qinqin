@@ -4,7 +4,7 @@
 // of skipped units are marked known as one declaration; "Add these as cards" adds them as new cards. Written through
 // the study core's write primitives (record 0004: the course never imports the flashcards feature).
 
-import type { Course } from '$lib/api/courses';
+import type { Course, CourseWord } from '$lib/api/courses';
 import type { Session } from '$lib/context/session.svelte';
 import { pushStudy, replanned, requireWorkspaceArg } from '$lib/studycore/commands/write';
 import { setKnownMarks } from '$lib/studycore/commands/keyed';
@@ -82,6 +82,17 @@ export async function recordFirstReviews(
 	grades: ReadonlyMap<number, ReviewGrade>
 ): Promise<void> {
 	for (const card of cards) await session.outbox.recordReview(workspaceId, card.id, grades.get(card.entryId) ?? 3, 'vocab');
+}
+
+/**
+ * uncardedMetWords: the course words met in lessons whose entry has no vocab card: the cards of a lesson finished
+ * offline (the lesson counts; its cards could not be written), or cards the learner deleted. The roadmap offers to add
+ * them; nothing adds them by itself.
+ */
+export function uncardedMetWords(course: Course, met: readonly string[], cards: readonly StudyCard[]): CourseWord[] {
+	const words = wordsByKey(course);
+	const carded = new Set(cards.filter((c) => c.kind === 'vocab').map((c) => c.entryId));
+	return met.map((k) => words.get(k)).filter((w): w is CourseWord => w !== undefined && !carded.has(w.entryId));
 }
 
 /** markCourseKnown marks the entries of course word keys known, as one declaration of the course (Ruling 12). */

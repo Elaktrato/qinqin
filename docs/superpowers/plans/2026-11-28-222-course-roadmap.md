@@ -85,11 +85,12 @@ Format: `Ruling: <what> — <why> — <cost if wrong>`.
 ### Data, offline, progress
 
 6. Ruling: **the course is picked per workspace language: the learner's choice on this device, else the first course
-   by pack id** (#221 ruling 3); the choice is a per-device convenience in localStorage (`qinqin.course.pick.<user>`,
-   by workspace id), not synced — the real courses are one per language (#223); a second course is rare — cost if
+   by pack id** (#221 ruling 3); the choice is a per-device convenience in localStorage (`qinqin.course.v1.<user>.picks`,
+   by workspace id, removed at sign-out with the course copies), not synced — the real courses are one per language (#223); a second course is rare — cost if
    wrong: a learner with two courses picks again on another device.
 7. Ruling: **the filled course is held in the session and in a device copy** (localStorage
-   `qinqin.course.v1.<user>.<courseId>`, the decoded answer as JSON), shown at once and refreshed behind (#290); the
+   `qinqin.course.v1.<user>.<courseId>`, the decoded answer as JSON, read back through `decodeCourse`; the
+   installed list under `qinqin.course.v1.<user>.list.<language>`), shown at once and refreshed behind (#290); the
    copy is replaced when `fill` changes and removed at sign-out with the Home copies — #221 serves it to signed-in
    users only and the service worker does not cache it, so the app must keep it (record 0009 allows a device copy of
    non-sensitive data keyed by the user id); the course holds level-list words, which every user of the server sees

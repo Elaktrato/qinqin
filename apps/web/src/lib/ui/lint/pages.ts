@@ -42,6 +42,7 @@ export const PAGES: PageEntry[] = [
 	{ route: '/journal/[...rest]', files: ['routes/journal/[...rest]/+page.svelte', 'lib/features/FeaturePage.svelte', 'lib/features/journal/JournalPage.svelte'], owner: '#106', views: ['journal', 'switched off'] },
 	{ route: '/grammar/[...rest]', files: ['routes/grammar/[...rest]/+page.svelte', 'lib/features/FeaturePage.svelte', 'lib/features/grammar/GrammarPage.svelte'], owner: '#106', views: ['grammar', 'switched off'] },
 	{ route: '/scripts/[...rest]', files: ['routes/scripts/[...rest]/+page.svelte', 'lib/features/FeaturePage.svelte', 'lib/features/scripts/ScriptsPage.svelte'], owner: '#106', views: ['scripts', 'switched off'] },
+	{ route: '/courses/[...rest]', files: ['routes/courses/[...rest]/+page.svelte', 'lib/features/FeaturePage.svelte', 'lib/features/courses/CoursesPage.svelte', 'lib/features/courses/Roadmap.svelte', 'lib/features/courses/LessonPlayer.svelte'], owner: 'none', views: ['roadmap', 'lesson', 'switched off'] },
 	{ route: '/p/[plugin]/[...rest]', files: ['routes/p/[plugin]/[...rest]/+page.ts'], owner: 'none', views: ['redirect'] },
 	{ route: '/search', files: ['routes/search/+page.svelte'], owner: '#104', views: ['results', 'selected entry'] },
 	{ route: '/search/parts', files: ['routes/search/parts/+page.svelte'], owner: '#106', views: ['radical and parts'] },

@@ -7,7 +7,7 @@ import { StudyServer } from '$lib/testing/studyServer';
 import { cardRow, type CardRow, type DeckRow } from '$lib/studycore/rows';
 import { getStudyData } from '$lib/studycore/data';
 import * as build from '$lib/testing/study';
-import { addCourseCards, courseDeckId, markCourseKnown, planCourseCards, recordFirstReviews } from './cards';
+import { addCourseCards, courseDeckId, markCourseKnown, planCourseCards, recordFirstReviews, uncardedMetWords } from './cards';
 import { testCourse } from './testing/course';
 
 const WS = 7;
@@ -83,5 +83,10 @@ describe('course cards (#222, Rulings 16–18)', () => {
 			[WS, 'c-vocab-101', 2, 'vocab'],
 			[WS, 'c-vocab-103', 3, 'vocab']
 		]);
+	});
+
+	it('uncardedMetWords: the course words met in lessons that have no vocab card (cards not written offline)', () => {
+		const cards = [build.card({ id: 'c-vocab-101', entryId: 101 }), build.card({ id: 'c-reverse-102', kind: 'reverse', entryId: 102 } as never)];
+		expect(uncardedMetWords(course, ['你好', '谢谢', 'gone'], cards).map((w) => w.key)).toEqual(['谢谢']);
 	});
 });

@@ -9,6 +9,7 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 
 - **New core feature `courses`** (`features/switches.json`, `features/README.md`): seven ids, `courses` after `scripts` and before
   `stats`; a client lists it in that place, and `PUT /api/features/courses` switches it.
+- **New catalogue key area `courses`** (`i18n/README.md`).
 
 ## #221 — courses: the pack, the fill rule and progress (contract 24)
 

@@ -1,7 +1,8 @@
 <script lang="ts">
-	// The courses feature's page: the roadmap or the lesson player, by `rest` (route.ts).
-	import { t } from '$lib/i18n';
-	import { pageTitle } from '$lib/routing/pageTitle';
+	// The courses feature's page (#222): the roadmap or the lesson player, by `rest` (route.ts). A new route is a new
+	// view: nothing of one lesson leaks into the next.
+	import LessonPlayer from './LessonPlayer.svelte';
+	import Roadmap from './Roadmap.svelte';
 	import { parseCourseRoute } from './route';
 
 	let { rest }: { rest: string } = $props();
@@ -9,13 +10,10 @@
 	const route = $derived(parseCourseRoute(rest));
 </script>
 
-<svelte:head>
-	<title>{pageTitle(t('features.courses.title'))}</title>
-</svelte:head>
-
 {#key rest}
-	<div class="page-body">
-		<h1>{t('features.courses.title')}</h1>
-		{#if route.view !== 'roadmap'}<p></p>{/if}
-	</div>
+	{#if route.view === 'roadmap'}
+		<Roadmap courseId={route.course} />
+	{:else}
+		<LessonPlayer {route} />
+	{/if}
 {/key}
