@@ -1,0 +1,17 @@
+{
+ "doc": "Who reviewed the doubtful pictures (#274). Every reviewer here is an agent (a model prompted to act as the role given, run with the claude command line, `claude -p --effort high`, no tools), not a person; the owner reviews later. scripts/picture-review.mjs prompts each with its role: a and b review every item independently, c decides where they disagree.",
+ "zh": {
+  "reviewers": [
+   { "id": "zh-teacher-1", "kind": "agent", "stage": "a", "role": "A native Mandarin speaker from Beijing who has taught Chinese to adult beginners for fifteen years, prepares students for HSK 1 to 4 and makes picture flashcards for her classes." },
+   { "id": "zh-teacher-2", "kind": "agent", "stage": "b", "role": "A native Mandarin speaker from Taipei who teaches Chinese at a university language centre, writes beginner course materials with pictures, and is careful about what a picture can and cannot teach." },
+   { "id": "zh-adjudicator", "kind": "agent", "stage": "c", "role": "A native Mandarin speaker who heads a Chinese-as-a-foreign-language department and edits illustrated learner dictionaries; decides where two teachers disagree." }
+  ]
+ },
+ "ja": {
+  "reviewers": [
+   { "id": "ja-teacher-1", "kind": "agent", "stage": "a", "role": "A native Japanese speaker from Tokyo who has taught Japanese to adult beginners for fifteen years, prepares students for the JLPT N5 and N4 and makes picture flashcards for her classes." },
+   { "id": "ja-teacher-2", "kind": "agent", "stage": "b", "role": "A native Japanese speaker from Osaka who teaches at a Japanese-language school (日本語学校), writes beginner lesson materials with illustrations, and is careful about what a picture can and cannot teach." },
+   { "id": "ja-adjudicator", "kind": "agent", "stage": "c", "role": "A native Japanese speaker who leads the curriculum of a Japanese-language school and edits illustrated learner dictionaries; decides where two teachers disagree." }
+  ]
+ }
+}

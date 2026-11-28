@@ -1,0 +1,5660 @@
+{
+ "version": 1,
+ "rule": "images/review",
+ "note": "Doubtful automatic word -> picture mappings (#274): word, reading, the sense the picture is for (0: the whole entry) and the senses, the picture (pack, concept, English name), its score and how the matcher found it, and why it is doubtful. a and b: two teacher agents, c: the adjudicator where they disagree (scripts/images/review/reviewers.json); decision: what was applied. scripts/picture-review.mjs.",
+ "language": "ja",
+ "batch": 2,
+ "items": [
+  {
+   "i": 1,
+   "id": "mulberry|ja|j:2028960|4|O",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2028960",
+   "word": "や",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) such things as ...; and ... and",
+    "2) the minute (that) ...; no sooner than ...; as soon as",
+    "3) be; is",
+    "4) o; oh",
+    "5) huh; what",
+    "6) hi"
+   ],
+   "concept": "O",
+   "picture": "O",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 2,
+   "id": "mulberry|ja|j:2028970|7|some",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2028970",
+   "word": "か",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 7,
+   "senses": [
+    "1) indicates a question",
+    "2) indicates an embedded question; indicates an indirect question",
+    "3) or; whether or not; either ... or ...",
+    "4) some- (e.g. something, someone)",
+    "5) hmm; huh; I wonder (if, why, etc.); it might (be)",
+    "6) shouldn't we ...?; why don't we ...?; what about ...?; how about ...?"
+   ],
+   "concept": "some",
+   "picture": "some",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 3,
+   "id": "mulberry|ja|j:2028990|23|when",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2028990",
+   "word": "に",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 23,
+   "senses": [
+    "1) at; in; on",
+    "2) to; toward; into; for",
+    "3) to; for; in order to",
+    "4) because of; for; with; by",
+    "5) marks the target of an action; marks the recipient of an action",
+    "6) marks the outcome of a change; marks the result of an action"
+   ],
+   "concept": "when",
+   "picture": "when",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 4,
+   "id": "mulberry|ja|j:2029080|1|right",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2029080",
+   "word": "ね",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) right?; isn't it?; doesn't it?; don't you?",
+    "2) hey; say; listen; look",
+    "3) you know; you see; I must say; I should think",
+    "4) will you?; please",
+    "5) so, ...; well, ...; you see, ...; you understand?",
+    "6) I'm not sure if ...; I have my doubts about whether ..."
+   ],
+   "concept": "right",
+   "picture": "right",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 5,
+   "id": "mulberry|ja|j:2082450|1|large",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2082450",
+   "word": "大",
+   "reading": "だい",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) large; big; great; huge",
+    "2) great; prominent; eminent; distinguished",
+    "3) -sized; as big as; the size of",
+    "4) university",
+    "5) large (e.g. serving size); large option",
+    "6) long month (i.e. having 31 days)"
+   ],
+   "concept": "large",
+   "picture": "large",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 6,
+   "id": "mulberry|ja|j:2082450|2|great",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2082450",
+   "word": "大",
+   "reading": "だい",
+   "sources": [
+    "n5"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) large; big; great; huge",
+    "2) great; prominent; eminent; distinguished",
+    "3) -sized; as big as; the size of",
+    "4) university",
+    "5) large (e.g. serving size); large option",
+    "6) long month (i.e. having 31 days)"
+   ],
+   "concept": "great",
+   "picture": "great",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 7,
+   "id": "mulberry|ja|j:2082450|5|large",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2082450",
+   "word": "大",
+   "reading": "だい",
+   "sources": [
+    "n5"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) large; big; great; huge",
+    "2) great; prominent; eminent; distinguished",
+    "3) -sized; as big as; the size of",
+    "4) university",
+    "5) large (e.g. serving size); large option",
+    "6) long month (i.e. having 31 days)"
+   ],
+   "concept": "large",
+   "picture": "large",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 8,
+   "id": "mulberry|ja|j:2147630|1|after",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2147630",
+   "word": "後",
+   "reading": "ご",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) after"
+   ],
+   "concept": "after",
+   "picture": "after",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 9,
+   "id": "mulberry|ja|j:2216900|3|last",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2216900",
+   "word": "この前",
+   "reading": "このまえ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) the other day; previously; before; earlier",
+    "2) last time",
+    "3) last (Sunday, summer, etc.); previous (e.g. mayor, chapter); preceding"
+   ],
+   "concept": "last",
+   "picture": "last",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 10,
+   "id": "mulberry|ja|j:2839962|1|Zero",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2839962",
+   "word": "０",
+   "reading": "ゼロ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) zero; 0; nought; nil",
+    "2) nothing; zilch"
+   ],
+   "concept": "Zero",
+   "picture": "Zero",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 11,
+   "id": "mulberry|ja|j:2845606|1|how",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2845606",
+   "word": "如何",
+   "reading": "いかが",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) how; in what way; how about",
+    "2) questionable"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 12,
+   "id": "mulberry|ja|j:2846738|1|what",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2846738",
+   "word": "何",
+   "reading": "なん",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) what",
+    "2) how many",
+    "3) many; a lot of",
+    "4) several; a few; some"
+   ],
+   "concept": "what",
+   "picture": "what",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 13,
+   "id": "mulberry|ja|j:2846738|2|how_many",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2846738",
+   "word": "何",
+   "reading": "なん",
+   "sources": [
+    "n5"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) what",
+    "2) how many",
+    "3) many; a lot of",
+    "4) several; a few; some"
+   ],
+   "concept": "how_many",
+   "picture": "how_many",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 14,
+   "id": "openmoji|ja|j:1084810|1|1F6BB",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1084810",
+   "word": "トイレ",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) toilet; restroom; bathroom; lavatory",
+    "2) going to the toilet; relieving oneself"
+   ],
+   "concept": "1F6BB",
+   "picture": "restroom",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses"
+   ]
+  },
+  {
+   "i": 15,
+   "id": "openmoji|ja|j:1087820|1|1F6AA",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1087820",
+   "word": "ドア",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) door"
+   ],
+   "concept": "1F6AA",
+   "picture": "door",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 16,
+   "id": "openmoji|ja|j:1119650|1|1F6CF",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1119650",
+   "word": "ベッド",
+   "reading": "",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) bed"
+   ],
+   "concept": "1F6CF",
+   "picture": "bed",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 17,
+   "id": "openmoji|ja|j:1157080|2|1F376",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1157080",
+   "word": "為",
+   "reading": "ため",
+   "sources": [
+    "n5"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) good; advantage; benefit; welfare",
+    "2) sake; purpose; objective; aim",
+    "3) consequence; result; effect",
+    "4) affecting; regarding; concerning"
+   ],
+   "concept": "1F376",
+   "picture": "sake",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 18,
+   "id": "openmoji|ja|j:1209250|1|1F986",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1209250",
+   "word": "鴨",
+   "reading": "かも",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) duck",
+    "2) easy mark; sucker; sitting duck"
+   ],
+   "concept": "1F986",
+   "picture": "duck",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses"
+   ]
+  },
+  {
+   "i": 19,
+   "id": "openmoji|ja|j:1302680|1|26F0",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1302680",
+   "word": "山",
+   "reading": "やま",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) mountain; hill",
+    "2) mine",
+    "3) (mountain) forest",
+    "4) heap; pile; stack; mountain",
+    "5) protruding or high part of an object; crown (of a hat); thread (of a screw); tread (of a tire)",
+    "6) climax; peak; critical point"
+   ],
+   "concept": "26F0",
+   "picture": "mountain",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 20,
+   "id": "openmoji|ja|j:1302680|4|26F0",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1302680",
+   "word": "山",
+   "reading": "やま",
+   "sources": [
+    "n5"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) mountain; hill",
+    "2) mine",
+    "3) (mountain) forest",
+    "4) heap; pile; stack; mountain",
+    "5) protruding or high part of an object; crown (of a hat); thread (of a screw); tread (of a tire)",
+    "6) climax; peak; critical point"
+   ],
+   "concept": "26F0",
+   "picture": "mountain",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 21,
+   "id": "openmoji|ja|j:1307770|1|1F9D2",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1307770",
+   "word": "子",
+   "reading": "こ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) child; kid; teenager; youngster",
+    "2) (one's) child; offspring",
+    "3) young woman",
+    "4) young (animal)",
+    "5) offshoot",
+    "6) interest"
+   ],
+   "concept": "1F9D2",
+   "picture": "child",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 22,
+   "id": "openmoji|ja|j:1307770|2|1F9D2",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1307770",
+   "word": "子",
+   "reading": "こ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) child; kid; teenager; youngster",
+    "2) (one's) child; offspring",
+    "3) young woman",
+    "4) young (animal)",
+    "5) offshoot",
+    "6) interest"
+   ],
+   "concept": "1F9D2",
+   "picture": "child",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 23,
+   "id": "openmoji|ja|j:1344930|1|1F469",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1344930",
+   "word": "女",
+   "reading": "おんな",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) woman; female",
+    "2) female lover; girlfriend; mistress; (someone's) woman"
+   ],
+   "concept": "1F469",
+   "picture": "woman",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 24,
+   "id": "openmoji|ja|j:1344970|1|1F467",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1344970",
+   "word": "女の子",
+   "reading": "おんなのこ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) girl; daughter; baby girl",
+    "2) young woman"
+   ],
+   "concept": "1F467",
+   "picture": "girl",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 25,
+   "id": "openmoji|ja|j:1345140|1|1F469",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1345140",
+   "word": "女子",
+   "reading": "じょし",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) woman; girl"
+   ],
+   "concept": "1F469",
+   "picture": "woman",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 26,
+   "id": "openmoji|ja|j:1366410|3|1F468",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1366410",
+   "word": "人",
+   "reading": "じん",
+   "sources": [
+    "n5"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) -ian (e.g. Italian); -ite (e.g. Tokyoite)",
+    "2) -er (e.g. performer, etc.); person working with ...",
+    "3) man; person; people"
+   ],
+   "concept": "1F468",
+   "picture": "man",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 27,
+   "id": "openmoji|ja|j:1387990|1|1F9D1-200D-1F3EB",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1387990",
+   "word": "先生",
+   "reading": "せんせい",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) teacher; instructor; master",
+    "2) sensei; title or form of address for a teacher, master, doctor, lawyer, etc.",
+    "3) intimate or teasing form of address",
+    "4) one's elder"
+   ],
+   "concept": "1F9D1-200D-1F3EB",
+   "picture": "teacher",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 28,
+   "id": "openmoji|ja|j:1414170|0|1F9D1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1414170",
+   "word": "大人",
+   "reading": "おとな",
+   "sources": [
+    "n5"
+   ],
+   "sense": 0,
+   "senses": [
+    "1) adult; grown-up"
+   ],
+   "concept": "1F9D1",
+   "picture": "person",
+   "score": 90,
+   "basis": "name",
+   "why": [
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 29,
+   "id": "openmoji|ja|j:1419990|1|1F468",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1419990",
+   "word": "男",
+   "reading": "おとこ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) man; male",
+    "2) fellow; guy; chap; bloke",
+    "3) male lover; boyfriend; man",
+    "4) manliness; manly honor; manly honour; manly reputation"
+   ],
+   "concept": "1F468",
+   "picture": "man",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 30,
+   "id": "openmoji|ja|j:1420010|1|1F466",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1420010",
+   "word": "男の子",
+   "reading": "おとこのこ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) boy; son; baby boy",
+    "2) young man"
+   ],
+   "concept": "1F466",
+   "picture": "boy",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 31,
+   "id": "openmoji|ja|j:1463770|2|2600",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1463770",
+   "word": "日",
+   "reading": "ひ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) day; days",
+    "2) sun; sunshine; sunlight",
+    "3) (the) day; daytime; daylight",
+    "4) date; deadline",
+    "5) (past) days; time (e.g. of one's childhood)",
+    "6) case (esp. unfortunate); event"
+   ],
+   "concept": "2600",
+   "picture": "sun",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 32,
+   "id": "openmoji|ja|j:1580640|1|1F9D1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1580640",
+   "word": "人",
+   "reading": "ひと",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) person; someone; somebody",
+    "2) human beings; mankind; man; people",
+    "3) human (Homo sapiens)",
+    "4) (other) people; others",
+    "5) character; personality; nature",
+    "6) capable person; competent person; suitable person; right person"
+   ],
+   "concept": "1F9D1",
+   "picture": "person",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 33,
+   "id": "openmoji|ja|j:1585630|1|1F944",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1585630",
+   "word": "匙",
+   "reading": "さじ",
+   "sources": [
+    "n5"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) spoon"
+   ],
+   "concept": "1F944",
+   "picture": "spoon",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 34,
+   "id": "mulberry|ja|j:1002430|1|tea",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1002430",
+   "word": "お茶",
+   "reading": "おちゃ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) tea (esp. green or barley)",
+    "2) tea break; teatime",
+    "3) tea ceremony"
+   ],
+   "concept": "tea",
+   "picture": "tea",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 35,
+   "id": "mulberry|ja|j:1009160|1|both",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1009160",
+   "word": "何方も",
+   "reading": "どちらも",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) both",
+    "2) (not) either"
+   ],
+   "concept": "both",
+   "picture": "both",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 36,
+   "id": "mulberry|ja|j:1009160|2|either",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1009160",
+   "word": "何方も",
+   "reading": "どちらも",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) both",
+    "2) (not) either"
+   ],
+   "concept": "either",
+   "picture": "either",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 37,
+   "id": "mulberry|ja|j:1009900|5|ingredients",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1009900",
+   "word": "ねた",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) material (for a story, article, etc.); information; news item",
+    "2) joke; jest; (comedy) routine; made-up story",
+    "3) proof; evidence",
+    "4) (magician's) trick; secret",
+    "5) ingredients (esp. for sushi)",
+    "6) (Internet) meme"
+   ],
+   "concept": "ingredients",
+   "picture": "ingredients",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 38,
+   "id": "mulberry|ja|j:1010050|2|relax_3_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1010050",
+   "word": "のんびり",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) at leisure; in a relaxed manner; in a carefree manner; quietly",
+    "2) to relax; to take it easy; to chill"
+   ],
+   "concept": "relax_3_to",
+   "picture": "relax",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 39,
+   "id": "mulberry|ja|j:1067470|1|skirt",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1067470",
+   "word": "スカート",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) skirt"
+   ],
+   "concept": "skirt",
+   "picture": "skirt",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 40,
+   "id": "mulberry|ja|j:1079760|1|test",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1079760",
+   "word": "テスト",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) test (of ability, knowledge, etc.); exam; examination; quiz",
+    "2) test (of performance, quality, etc.); trial",
+    "3) rehearsal"
+   ],
+   "concept": "test",
+   "picture": "test",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 41,
+   "id": "mulberry|ja|j:1079760|2|test",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1079760",
+   "word": "テスト",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) test (of ability, knowledge, etc.); exam; examination; quiz",
+    "2) test (of performance, quality, etc.); trial",
+    "3) rehearsal"
+   ],
+   "concept": "test",
+   "picture": "test",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 42,
+   "id": "mulberry|ja|j:1085030|1|top",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1085030",
+   "word": "トップ",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) top",
+    "2) top position",
+    "3) senior management; senior bureaucrat",
+    "4) home page (of a website)"
+   ],
+   "concept": "top",
+   "picture": "top",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 43,
+   "id": "mulberry|ja|j:1123880|1|button",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1123880",
+   "word": "釦",
+   "reading": "ボタン",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) button (clothing)",
+    "2) push-button; button"
+   ],
+   "concept": "button",
+   "picture": "button",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 44,
+   "id": "mulberry|ja|j:1124970|1|pocket",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1124970",
+   "word": "ポケット",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) pocket"
+   ],
+   "concept": "pocket",
+   "picture": "pocket",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 45,
+   "id": "mulberry|ja|j:1132620|1|email",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1132620",
+   "word": "メール",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) email",
+    "2) mail; post",
+    "3) message (in an instant messaging application); instant message; IM; (SMS) text"
+   ],
+   "concept": "email",
+   "picture": "email",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 46,
+   "id": "mulberry|ja|j:1133790|1|menu",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1133790",
+   "word": "メニュー",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) menu",
+    "2) schedule; program; programme; course",
+    "3) menu"
+   ],
+   "concept": "menu",
+   "picture": "menu",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 47,
+   "id": "mulberry|ja|j:1133790|3|menu",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1133790",
+   "word": "メニュー",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) menu",
+    "2) schedule; program; programme; course",
+    "3) menu"
+   ],
+   "concept": "menu",
+   "picture": "menu",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 48,
+   "id": "mulberry|ja|j:1151260|1|bad",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1151260",
+   "word": "悪い",
+   "reading": "わるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) bad; poor; undesirable",
+    "2) poor (quality); inferior; insufficient",
+    "3) evil; sinful",
+    "4) ugly; not beautiful",
+    "5) at fault; to blame; in the wrong",
+    "6) bad (at doing something)"
+   ],
+   "concept": "bad",
+   "picture": "bad",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 49,
+   "id": "mulberry|ja|j:1151260|4|ugly",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1151260",
+   "word": "悪い",
+   "reading": "わるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) bad; poor; undesirable",
+    "2) poor (quality); inferior; insufficient",
+    "3) evil; sinful",
+    "4) ugly; not beautiful",
+    "5) at fault; to blame; in the wrong",
+    "6) bad (at doing something)"
+   ],
+   "concept": "ugly",
+   "picture": "ugly",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 50,
+   "id": "mulberry|ja|j:1151260|6|bad",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1151260",
+   "word": "悪い",
+   "reading": "わるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) bad; poor; undesirable",
+    "2) poor (quality); inferior; insufficient",
+    "3) evil; sinful",
+    "4) ugly; not beautiful",
+    "5) at fault; to blame; in the wrong",
+    "6) bad (at doing something)"
+   ],
+   "concept": "bad",
+   "picture": "bad",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 51,
+   "id": "mulberry|ja|j:1155060|2|below",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1155060",
+   "word": "以下",
+   "reading": "いか",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) not exceeding ...; not more than ...; ... and under; ... and below",
+    "2) below (a standard, level, etc.); under; beneath; less than",
+    "3) the following; the below-mentioned; the rest; followed by ...",
+    "4) including ...; ... and other (employees, officials, etc.)"
+   ],
+   "concept": "below",
+   "picture": "below",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 52,
+   "id": "mulberry|ja|j:1155090|2|outside",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1155090",
+   "word": "以外",
+   "reading": "いがい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) excluding; except (for); apart from; other than",
+    "2) outside (a boundary, scope, etc.)"
+   ],
+   "concept": "outside",
+   "picture": "outside",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 53,
+   "id": "mulberry|ja|j:1155120|3|above",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1155120",
+   "word": "以上",
+   "reading": "いじょう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) not less than ...; ... and over; ... and above; ... and upwards",
+    "2) beyond (e.g. one's expectations); above; more than; further than",
+    "3) the above; the above-mentioned; the aforementioned; the foregoing",
+    "4) since ...; seeing that ...; now that ...; once ...",
+    "5) that's all; that is the end; the end"
+   ],
+   "concept": "above",
+   "picture": "above",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 54,
+   "id": "mulberry|ja|j:1155150|1|before",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1155150",
+   "word": "以前",
+   "reading": "いぜん",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) before; prior to; ago",
+    "2) the past; before; previously; former times"
+   ],
+   "concept": "before",
+   "picture": "before",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 55,
+   "id": "mulberry|ja|j:1155150|2|past",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1155150",
+   "word": "以前",
+   "reading": "いぜん",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) before; prior to; ago",
+    "2) the past; before; previously; former times"
+   ],
+   "concept": "past",
+   "picture": "past",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 56,
+   "id": "mulberry|ja|j:1159980|1|doctor_1a",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1159980",
+   "word": "医者",
+   "reading": "いしゃ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) doctor; physician"
+   ],
+   "concept": "doctor_1a",
+   "picture": "doctor",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 57,
+   "id": "mulberry|ja|j:1166510|1|one",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1166510",
+   "word": "一方",
+   "reading": "いっぽう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) one (esp. of two); the other; one way; the other way",
+    "2) on the one hand; on the other hand",
+    "3) whereas; although; but at the same time; meanwhile",
+    "4) just keeps; being inclined to ...; tending to be ...; tending to do ..."
+   ],
+   "concept": "one",
+   "picture": "one",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 58,
+   "id": "mulberry|ja|j:1169870|1|drink_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1169870",
+   "word": "飲む",
+   "reading": "のむ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to drink; to swallow; to take (medicine)",
+    "2) to smoke (tobacco)",
+    "3) to swallow up; to engulf",
+    "4) to suppress (one's anger, bitter feelings, etc.); to keep down; to hold back; to swallow (one's tears)",
+    "5) to accept (a demand, conditions, etc.); to agree to",
+    "6) to make light of (someone); to think nothing of; to overwhelm; to overawe"
+   ],
+   "concept": "drink_to",
+   "picture": "drink",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 59,
+   "id": "mulberry|ja|j:1169870|2|smoke_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1169870",
+   "word": "飲む",
+   "reading": "のむ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) to drink; to swallow; to take (medicine)",
+    "2) to smoke (tobacco)",
+    "3) to swallow up; to engulf",
+    "4) to suppress (one's anger, bitter feelings, etc.); to keep down; to hold back; to swallow (one's tears)",
+    "5) to accept (a demand, conditions, etc.); to agree to",
+    "6) to make light of (someone); to think nothing of; to overwhelm; to overawe"
+   ],
+   "concept": "smoke_to",
+   "picture": "smoke",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 60,
+   "id": "mulberry|ja|j:1171120|1|right_hand",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1171120",
+   "word": "右手",
+   "reading": "みぎて",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) right hand",
+    "2) right-hand side; right-hand direction; (on) the right"
+   ],
+   "concept": "right_hand",
+   "picture": "right_hand",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 61,
+   "id": "mulberry|ja|j:1188980|1|who",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1188980",
+   "word": "何者",
+   "reading": "なにもの",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) who; what kind of person"
+   ],
+   "concept": "who",
+   "picture": "who",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 62,
+   "id": "mulberry|ja|j:1189370|1|who",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1189370",
+   "word": "何方",
+   "reading": "どなた",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) who"
+   ],
+   "concept": "who",
+   "picture": "who",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 63,
+   "id": "mulberry|ja|j:1191320|1|summer",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1191320",
+   "word": "夏",
+   "reading": "なつ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) summer"
+   ],
+   "concept": "summer",
+   "picture": "summer",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 64,
+   "id": "mulberry|ja|j:1215240|3|room",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1215240",
+   "word": "間",
+   "reading": "ま",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) time; pause",
+    "2) space",
+    "3) room"
+   ],
+   "concept": "room",
+   "picture": "room",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 65,
+   "id": "mulberry|ja|j:1222230|3|smooth",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1222230",
+   "word": "気持ちいい",
+   "reading": "きもちいい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) pleasant (of a sensation); comfortable; nice",
+    "2) cheerful; happy; feeling good",
+    "3) smooth (of function); working well",
+    "4) agreeable; frank; open; willing"
+   ],
+   "concept": "smooth",
+   "picture": "smooth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 66,
+   "id": "mulberry|ja|j:1231650|6|last",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1231650",
+   "word": "去る",
+   "reading": "さる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) to leave; to go away",
+    "2) to pass; to elapse",
+    "3) to be distant",
+    "4) to send away; to drive off; to divorce",
+    "5) to (do) completely",
+    "6) last ... (e.g. \"last April\")"
+   ],
+   "concept": "last",
+   "picture": "last",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 67,
+   "id": "mulberry|ja|j:1236070|1|strong",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1236070",
+   "word": "強い",
+   "reading": "つよい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) strong; potent; competent; domineering",
+    "2) strong; brawny; powerful; healthy",
+    "3) good (at); skilled; knowledgeable",
+    "4) being able to handle; know how to deal (with); durable (against); resistant (to)",
+    "5) firm; rigid; solid",
+    "6) intense; strong; fierce; high"
+   ],
+   "concept": "strong",
+   "picture": "strong",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 68,
+   "id": "mulberry|ja|j:1236070|2|strong",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1236070",
+   "word": "強い",
+   "reading": "つよい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) strong; potent; competent; domineering",
+    "2) strong; brawny; powerful; healthy",
+    "3) good (at); skilled; knowledgeable",
+    "4) being able to handle; know how to deal (with); durable (against); resistant (to)",
+    "5) firm; rigid; solid",
+    "6) intense; strong; fierce; high"
+   ],
+   "concept": "strong",
+   "picture": "strong",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 69,
+   "id": "mulberry|ja|j:1236070|3|good",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1236070",
+   "word": "強い",
+   "reading": "つよい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) strong; potent; competent; domineering",
+    "2) strong; brawny; powerful; healthy",
+    "3) good (at); skilled; knowledgeable",
+    "4) being able to handle; know how to deal (with); durable (against); resistant (to)",
+    "5) firm; rigid; solid",
+    "6) intense; strong; fierce; high"
+   ],
+   "concept": "good",
+   "picture": "good",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 70,
+   "id": "mulberry|ja|j:1240750|1|little",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1240750",
+   "word": "僅か",
+   "reading": "わずか",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) a little; a few; small; slight",
+    "2) only; just; merely; no more than"
+   ],
+   "concept": "little",
+   "picture": "little",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 71,
+   "id": "mulberry|ja|j:1242130|1|near",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1242130",
+   "word": "近い",
+   "reading": "ちかい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) near; close; short (distance)",
+    "2) close (in time); soon",
+    "3) close (relationship); friendly; intimate",
+    "4) closely related",
+    "5) similar; almost the same; close to; nearly"
+   ],
+   "concept": "near",
+   "picture": "near",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 72,
+   "id": "mulberry|ja|j:1242160|1|near",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1242160",
+   "word": "近く",
+   "reading": "ちかく",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) near; neighbourhood; neighborhood; vicinity",
+    "2) nearly (e.g. \"it took nearly one year\"); close to",
+    "3) shortly; soon"
+   ],
+   "concept": "near",
+   "picture": "near",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 73,
+   "id": "mulberry|ja|j:1251900|2|tie_2_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1251900",
+   "word": "繋ぐ",
+   "reading": "つなぐ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) to connect; to link together",
+    "2) to tie; to fasten; to restrain",
+    "3) to maintain; to preserve; to keep",
+    "4) to transfer (phone call); to put a person through",
+    "5) to hedge; to buy or sell forward",
+    "6) to connect (stones)"
+   ],
+   "concept": "tie_2_to",
+   "picture": "tie",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 74,
+   "id": "mulberry|ja|j:1260670|5|side",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1260670",
+   "word": "元",
+   "reading": "もと",
+   "sources": [
+    "n4"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) origin; source; beginning",
+    "2) basis; base; foundation; root",
+    "3) cause",
+    "4) (raw) material; ingredient; base; mix (e.g. for a cake)",
+    "5) (one's) side",
+    "6) capital; principal; cost price"
+   ],
+   "concept": "side",
+   "picture": "side",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 75,
+   "id": "mulberry|ja|j:1260720|2|healthy",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1260720",
+   "word": "元気",
+   "reading": "げんき",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) lively; full of spirit; energetic; vigorous",
+    "2) healthy; well; fit; in good health"
+   ],
+   "concept": "healthy",
+   "picture": "healthy",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 76,
+   "id": "mulberry|ja|j:1265070|2|long",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1265070",
+   "word": "古い",
+   "reading": "ふるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) old; aged; ancient; antiquated",
+    "2) long; since long ago; time-honored",
+    "3) of the distant past; long-ago",
+    "4) stale; threadbare; hackneyed; corny",
+    "5) old-fashioned; outmoded; out-of-date"
+   ],
+   "concept": "long",
+   "picture": "long",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 77,
+   "id": "mulberry|ja|j:1268060|1|five",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1268060",
+   "word": "五",
+   "reading": "ご",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) five; 5"
+   ],
+   "concept": "five",
+   "picture": "five",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 78,
+   "id": "mulberry|ja|j:1287410|1|black",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1287410",
+   "word": "黒",
+   "reading": "くろ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) black",
+    "2) black stone",
+    "3) guilt; guilty person"
+   ],
+   "concept": "black",
+   "picture": "black",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 79,
+   "id": "mulberry|ja|j:1287420|1|black",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1287420",
+   "word": "黒い",
+   "reading": "くろい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) black",
+    "2) dark; blackish; sun-tanned (skin)",
+    "3) suspicious; criminal; illicit",
+    "4) darkened and dirty; sooty; covered in dirt",
+    "5) evil; wicked; black-hearted",
+    "6) inauspicious; ill-boding; unlucky"
+   ],
+   "concept": "black",
+   "picture": "black",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 80,
+   "id": "mulberry|ja|j:1289000|1|now",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1289000",
+   "word": "今や",
+   "reading": "いまや",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) now (esp. in contrast to the past); now at last; at present; right now"
+   ],
+   "concept": "now",
+   "picture": "now",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 81,
+   "id": "mulberry|ja|j:1290810|4|side",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1290810",
+   "word": "左右",
+   "reading": "さゆう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) left and right; right and left",
+    "2) (asserting) control; influence; domination",
+    "3) one's attendants; people accompanying one",
+    "4) (serving at someone's) side",
+    "5) equivocation"
+   ],
+   "concept": "side",
+   "picture": "side",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 82,
+   "id": "mulberry|ja|j:1290900|1|left_hand",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1290900",
+   "word": "左手",
+   "reading": "ひだりて",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) left hand",
+    "2) left-hand side; left-hand direction; (on) the left"
+   ],
+   "concept": "left_hand",
+   "picture": "left_hand",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 83,
+   "id": "mulberry|ja|j:1310720|2|out",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1310720",
+   "word": "死",
+   "reading": "し",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) death",
+    "2) (an) out",
+    "3) death penalty (by strangulation or decapitation; most severe of the five ritsuryō punishments)"
+   ],
+   "concept": "out",
+   "picture": "out",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 84,
+   "id": "mulberry|ja|j:1311110|1|I",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1311110",
+   "word": "私",
+   "reading": "わたし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) I; me"
+   ],
+   "concept": "I",
+   "picture": "I",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 85,
+   "id": "mulberry|ja|j:1311530|1|paper",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1311530",
+   "word": "紙",
+   "reading": "かみ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) paper"
+   ],
+   "concept": "paper",
+   "picture": "paper",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 86,
+   "id": "mulberry|ja|j:1318610|2|I",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1318610",
+   "word": "自分",
+   "reading": "じぶん",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) myself; yourself; oneself; himself",
+    "2) I; me",
+    "3) you"
+   ],
+   "concept": "I",
+   "picture": "I",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 87,
+   "id": "mulberry|ja|j:1320300|1|room",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1320300",
+   "word": "室",
+   "reading": "しつ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) room",
+    "2) wife (of someone of high rank)",
+    "3) scabbard",
+    "4) Chinese \"Encampment\" constellation (one of the 28 mansions)"
+   ],
+   "concept": "room",
+   "picture": "room",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 88,
+   "id": "mulberry|ja|j:1320300|2|wife",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1320300",
+   "word": "室",
+   "reading": "しつ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) room",
+    "2) wife (of someone of high rank)",
+    "3) scabbard",
+    "4) Chinese \"Encampment\" constellation (one of the 28 mansions)"
+   ],
+   "concept": "wife",
+   "picture": "wife",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 89,
+   "id": "mulberry|ja|j:1324960|1|head",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1324960",
+   "word": "主",
+   "reading": "ぬし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) head (of a household, etc.); leader; master",
+    "2) owner; proprietor; proprietress",
+    "3) subject (of a rumour, etc.); doer (of a deed)",
+    "4) guardian spirit (e.g. long-resident beast, usu. with mystical powers); long-time resident (or employee, etc.)",
+    "5) husband",
+    "6) you"
+   ],
+   "concept": "head",
+   "picture": "head",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 90,
+   "id": "mulberry|ja|j:1324960|5|husband",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1324960",
+   "word": "主",
+   "reading": "ぬし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) head (of a household, etc.); leader; master",
+    "2) owner; proprietor; proprietress",
+    "3) subject (of a rumour, etc.); doer (of a deed)",
+    "4) guardian spirit (e.g. long-resident beast, usu. with mystical powers); long-time resident (or employee, etc.)",
+    "5) husband",
+    "6) you"
+   ],
+   "concept": "husband",
+   "picture": "husband",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 91,
+   "id": "mulberry|ja|j:1325680|2|head",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1325680",
+   "word": "主人公",
+   "reading": "しゅじんこう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) protagonist; main character; hero; heroine",
+    "2) head (of a household); proprietor (of a store)"
+   ],
+   "concept": "head",
+   "picture": "head",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 92,
+   "id": "mulberry|ja|j:1327720|1|letter",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1327720",
+   "word": "手紙",
+   "reading": "てがみ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) letter; note"
+   ],
+   "concept": "letter",
+   "picture": "letter",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 93,
+   "id": "mulberry|ja|j:1328030|6|I",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1328030",
+   "word": "手前",
+   "reading": "てまえ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) before oneself; in front of one; nearby",
+    "2) a bit before reaching (a location); this side (of a location)",
+    "3) one's standpoint; one's appearance; face; honour",
+    "4) skill; dexterity; artistry; ingenuity",
+    "5) tea-ceremony procedures",
+    "6) I; me"
+   ],
+   "concept": "I",
+   "picture": "I",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 94,
+   "id": "mulberry|ja|j:1332650|1|autumn",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1332650",
+   "word": "秋",
+   "reading": "あき",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) autumn; fall"
+   ],
+   "concept": "autumn",
+   "picture": "autumn",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 95,
+   "id": "mulberry|ja|j:1335750|1|heavy",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1335750",
+   "word": "重い",
+   "reading": "おもい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) heavy; weighty",
+    "2) heavy (feeling); depressed; gloomy; blue",
+    "3) slow; sluggish; lumbering; ponderous",
+    "4) important (position, responsibility, etc.); serious; grave",
+    "5) serious (punishment, illness, etc.); severe; critical",
+    "6) solid; established; dignified; sensible"
+   ],
+   "concept": "heavy",
+   "picture": "heavy",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 96,
+   "id": "mulberry|ja|j:1335750|2|heavy",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1335750",
+   "word": "重い",
+   "reading": "おもい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) heavy; weighty",
+    "2) heavy (feeling); depressed; gloomy; blue",
+    "3) slow; sluggish; lumbering; ponderous",
+    "4) important (position, responsibility, etc.); serious; grave",
+    "5) serious (punishment, illness, etc.); severe; critical",
+    "6) solid; established; dignified; sensible"
+   ],
+   "concept": "heavy",
+   "picture": "heavy",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 97,
+   "id": "mulberry|ja|j:1335750|7|heavy",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1335750",
+   "word": "重い",
+   "reading": "おもい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 7,
+   "senses": [
+    "1) heavy; weighty",
+    "2) heavy (feeling); depressed; gloomy; blue",
+    "3) slow; sluggish; lumbering; ponderous",
+    "4) important (position, responsibility, etc.); serious; grave",
+    "5) serious (punishment, illness, etc.); severe; critical",
+    "6) solid; established; dignified; sensible"
+   ],
+   "concept": "heavy",
+   "picture": "heavy",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 98,
+   "id": "mulberry|ja|j:1341000|1|spring",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1341000",
+   "word": "春",
+   "reading": "はる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) spring; springtime",
+    "2) New Year",
+    "3) prime (of life); height (of one's prosperity); heyday",
+    "4) adolescence; puberty",
+    "5) sexuality; sexual desire"
+   ],
+   "concept": "spring",
+   "picture": "spring",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 99,
+   "id": "mulberry|ja|j:1342540|2|first",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1342540",
+   "word": "始め",
+   "reading": "はじめ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) beginning; start; outset; opening",
+    "2) first (in line, etc.)",
+    "3) origin",
+    "4) such as ...; not to mention ..."
+   ],
+   "concept": "first",
+   "picture": "first",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 100,
+   "id": "mulberry|ja|j:1348870|1|little",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1348870",
+   "word": "少し",
+   "reading": "すこし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) a little; a bit; a small amount; a few",
+    "2) a little while; a short time; a moment; a minute",
+    "3) a little way; a short distance"
+   ],
+   "concept": "little",
+   "picture": "little",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 101,
+   "id": "mulberry|ja|j:1355790|2|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1355790",
+   "word": "場",
+   "reading": "ば",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) place; spot; space",
+    "2) field; discipline; sphere; realm",
+    "3) occasion; situation",
+    "4) scene (of a play, movie, etc.)",
+    "5) session",
+    "6) field; table; area in which cards are laid out"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 102,
+   "id": "mulberry|ja|j:1355790|6|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1355790",
+   "word": "場",
+   "reading": "ば",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) place; spot; space",
+    "2) field; discipline; sphere; realm",
+    "3) occasion; situation",
+    "4) scene (of a play, movie, etc.)",
+    "5) session",
+    "6) field; table; area in which cards are laid out"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 103,
+   "id": "mulberry|ja|j:1355790|8|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1355790",
+   "word": "場",
+   "reading": "ば",
+   "sources": [
+    "n4"
+   ],
+   "sense": 8,
+   "senses": [
+    "1) place; spot; space",
+    "2) field; discipline; sphere; realm",
+    "3) occasion; situation",
+    "4) scene (of a play, movie, etc.)",
+    "5) session",
+    "6) field; table; area in which cards are laid out"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 104,
+   "id": "mulberry|ja|j:1355790|9|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1355790",
+   "word": "場",
+   "reading": "ば",
+   "sources": [
+    "n4"
+   ],
+   "sense": 9,
+   "senses": [
+    "1) place; spot; space",
+    "2) field; discipline; sphere; realm",
+    "3) occasion; situation",
+    "4) scene (of a play, movie, etc.)",
+    "5) session",
+    "6) field; table; area in which cards are laid out"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 105,
+   "id": "mulberry|ja|j:1357600|1|colour",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1357600",
+   "word": "色",
+   "reading": "いろ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) colour; color; hue; tint",
+    "2) complexion; skin colour; skin color",
+    "3) look (on one's face); expression",
+    "4) appearance; air; feeling",
+    "5) personality; character",
+    "6) tone (of one's voice, etc.); tune; sound; ring"
+   ],
+   "concept": "colour",
+   "picture": "colour",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 106,
+   "id": "mulberry|ja|j:1358340|1|food",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1358340",
+   "word": "食べ物",
+   "reading": "たべもの",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) food"
+   ],
+   "concept": "food",
+   "picture": "food",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 107,
+   "id": "mulberry|ja|j:1373860|1|world",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1373860",
+   "word": "世界",
+   "reading": "せかい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) the world; society; the universe",
+    "2) sphere; circle; world",
+    "3) world-renowned; world-famous",
+    "4) realm governed by one Buddha; space"
+   ],
+   "concept": "world",
+   "picture": "world",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 108,
+   "id": "mulberry|ja|j:1373970|1|world",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1373970",
+   "word": "世間",
+   "reading": "せけん",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) world; society; people; the public"
+   ],
+   "concept": "world",
+   "picture": "world",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 109,
+   "id": "mulberry|ja|j:1376600|1|right",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1376600",
+   "word": "正しい",
+   "reading": "ただしい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) right; correct",
+    "2) proper; righteous; just; honest"
+   ],
+   "concept": "right",
+   "picture": "right",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 110,
+   "id": "mulberry|ja|j:1380840|1|west",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1380840",
+   "word": "西",
+   "reading": "にし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) west"
+   ],
+   "concept": "west",
+   "picture": "west",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 111,
+   "id": "mulberry|ja|j:1381380|1|blue",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381380",
+   "word": "青",
+   "reading": "あお",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) green light (traffic)",
+    "4) black (horse coat color)",
+    "5) blue 5-point card",
+    "6) immature; unripe; young"
+   ],
+   "concept": "blue",
+   "picture": "blue",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 112,
+   "id": "mulberry|ja|j:1381380|2|green",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381380",
+   "word": "青",
+   "reading": "あお",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) green light (traffic)",
+    "4) black (horse coat color)",
+    "5) blue 5-point card",
+    "6) immature; unripe; young"
+   ],
+   "concept": "green",
+   "picture": "green",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 113,
+   "id": "mulberry|ja|j:1381380|3|green_light",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381380",
+   "word": "青",
+   "reading": "あお",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) green light (traffic)",
+    "4) black (horse coat color)",
+    "5) blue 5-point card",
+    "6) immature; unripe; young"
+   ],
+   "concept": "green_light",
+   "picture": "green_light",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 114,
+   "id": "mulberry|ja|j:1381380|4|black",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381380",
+   "word": "青",
+   "reading": "あお",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) green light (traffic)",
+    "4) black (horse coat color)",
+    "5) blue 5-point card",
+    "6) immature; unripe; young"
+   ],
+   "concept": "black",
+   "picture": "black",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 115,
+   "id": "mulberry|ja|j:1381390|1|blue",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381390",
+   "word": "青い",
+   "reading": "あおい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) pale (facial color); gray; grey",
+    "4) unripe; inexperienced"
+   ],
+   "concept": "blue",
+   "picture": "blue",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 116,
+   "id": "mulberry|ja|j:1381390|2|green",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1381390",
+   "word": "青い",
+   "reading": "あおい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) blue; azure",
+    "2) green",
+    "3) pale (facial color); gray; grey",
+    "4) unripe; inexperienced"
+   ],
+   "concept": "green",
+   "picture": "green",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 117,
+   "id": "mulberry|ja|j:1383240|1|red",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1383240",
+   "word": "赤い",
+   "reading": "あかい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) red; crimson; scarlet; vermilion",
+    "2) Red; communist"
+   ],
+   "concept": "red",
+   "picture": "red",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 118,
+   "id": "mulberry|ja|j:1384860|1|break_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1384860",
+   "word": "切れる",
+   "reading": "きれる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to break; to snap; to be cut; to split",
+    "2) to be injured",
+    "3) to wear out; to be worn out",
+    "4) to break; to burst; to collapse",
+    "5) to wear off; to stop working; to go dead",
+    "6) to expire (time limit, etc.); to run out; to become due"
+   ],
+   "concept": "break_to",
+   "picture": "break",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 119,
+   "id": "mulberry|ja|j:1384860|4|break_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1384860",
+   "word": "切れる",
+   "reading": "きれる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) to break; to snap; to be cut; to split",
+    "2) to be injured",
+    "3) to wear out; to be worn out",
+    "4) to break; to burst; to collapse",
+    "5) to wear off; to stop working; to go dead",
+    "6) to expire (time limit, etc.); to run out; to become due"
+   ],
+   "concept": "break_to",
+   "picture": "break",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 120,
+   "id": "mulberry|ja|j:1402540|1|run_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1402540",
+   "word": "走る",
+   "reading": "はしる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to run",
+    "2) to run (of a vehicle); to drive; to travel; to move",
+    "3) to rush (to); to dash; to race",
+    "4) to retreat; to flee; to defect (to)",
+    "5) to run away; to abscond; to elope",
+    "6) to flash (of lightning); to streak; to shoot (through; e.g. of pain); to run (through)"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 121,
+   "id": "mulberry|ja|j:1402540|2|run_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1402540",
+   "word": "走る",
+   "reading": "はしる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) to run",
+    "2) to run (of a vehicle); to drive; to travel; to move",
+    "3) to rush (to); to dash; to race",
+    "4) to retreat; to flee; to defect (to)",
+    "5) to run away; to abscond; to elope",
+    "6) to flash (of lightning); to streak; to shoot (through; e.g. of pain); to run (through)"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 122,
+   "id": "mulberry|ja|j:1402540|8|run_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1402540",
+   "word": "走る",
+   "reading": "はしる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 8,
+   "senses": [
+    "1) to run",
+    "2) to run (of a vehicle); to drive; to travel; to move",
+    "3) to rush (to); to dash; to race",
+    "4) to retreat; to flee; to defect (to)",
+    "5) to run away; to abscond; to elope",
+    "6) to flash (of lightning); to streak; to shoot (through; e.g. of pain); to run (through)"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 123,
+   "id": "mulberry|ja|j:1404975|1|fast_2",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1404975",
+   "word": "早い",
+   "reading": "はやい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) fast; quick; rapid; swift",
+    "2) early; soon; earlier than usual",
+    "3) premature; too soon; too early",
+    "4) easy; simple; quick; fast",
+    "5) as soon as ...; the moment ...; the instant ..."
+   ],
+   "concept": "fast_2",
+   "picture": "fast",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 124,
+   "id": "mulberry|ja|j:1407810|1|little",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1407810",
+   "word": "多少",
+   "reading": "たしょう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) a little; some; somewhat; slightly",
+    "2) amount; quantity; number"
+   ],
+   "concept": "little",
+   "picture": "little",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 125,
+   "id": "mulberry|ja|j:1412560|3|stock",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1412560",
+   "word": "台",
+   "reading": "だい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) stand; rest; base; pedestal",
+    "2) setting (of a gem); mounting",
+    "3) stock (in grafting)",
+    "4) counter for machines and vehicles",
+    "5) level (e.g. price level); mark; range; decade (of one's life)",
+    "6) tall building (with a fine view); (observation) platform"
+   ],
+   "concept": "stock",
+   "picture": "stock",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 126,
+   "id": "mulberry|ja|j:1420730|1|Earth",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1420730",
+   "word": "地",
+   "reading": "ち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) earth; ground; land; soil",
+    "2) place",
+    "3) territory",
+    "4) bottom (of a package, book, etc.)",
+    "5) earth (one of the five elements)"
+   ],
+   "concept": "Earth",
+   "picture": "Earth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 127,
+   "id": "mulberry|ja|j:1420730|4|bottom",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1420730",
+   "word": "地",
+   "reading": "ち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) earth; ground; land; soil",
+    "2) place",
+    "3) territory",
+    "4) bottom (of a package, book, etc.)",
+    "5) earth (one of the five elements)"
+   ],
+   "concept": "bottom",
+   "picture": "bottom",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 128,
+   "id": "mulberry|ja|j:1420730|5|Earth",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1420730",
+   "word": "地",
+   "reading": "ち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) earth; ground; land; soil",
+    "2) place",
+    "3) territory",
+    "4) bottom (of a package, book, etc.)",
+    "5) earth (one of the five elements)"
+   ],
+   "concept": "Earth",
+   "picture": "Earth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 129,
+   "id": "mulberry|ja|j:1426250|3|lunch_1",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1426250",
+   "word": "昼",
+   "reading": "ひる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) noon; midday",
+    "2) daytime",
+    "3) lunch"
+   ],
+   "concept": "lunch_1",
+   "picture": "lunch",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 130,
+   "id": "mulberry|ja|j:1428280|1|morning",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1428280",
+   "word": "朝",
+   "reading": "あさ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) morning",
+    "2) breakfast"
+   ],
+   "concept": "morning",
+   "picture": "morning",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 131,
+   "id": "mulberry|ja|j:1428280|2|breakfast_1",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1428280",
+   "word": "朝",
+   "reading": "あさ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) morning",
+    "2) breakfast"
+   ],
+   "concept": "breakfast_1",
+   "picture": "breakfast",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 132,
+   "id": "mulberry|ja|j:1429740|1|head",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1429740",
+   "word": "長",
+   "reading": "ちょう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) head; chief; leader; elder",
+    "2) merit; strong point",
+    "3) superiority",
+    "4) major"
+   ],
+   "concept": "head",
+   "picture": "head",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 133,
+   "id": "mulberry|ja|j:1433030|2|run_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1433030",
+   "word": "通る",
+   "reading": "とおる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) to go by; to go past; to go along; to travel along",
+    "2) to run (between; of a rail service, bus route, etc.); to operate (between); to connect",
+    "3) to go indoors; to go into a room; to be admitted; to be shown in",
+    "4) to penetrate; to pierce; to skewer; to go through",
+    "5) to permeate; to soak into; to spread throughout",
+    "6) to carry (e.g. of a voice); to reach far"
+   ],
+   "concept": "run_to",
+   "picture": "run",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 134,
+   "id": "mulberry|ja|j:1443000|2|light",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1443000",
+   "word": "電気",
+   "reading": "でんき",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) electricity",
+    "2) (electric) light"
+   ],
+   "concept": "light",
+   "picture": "light",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 135,
+   "id": "mulberry|ja|j:1444150|3|vomit_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1444150",
+   "word": "吐く",
+   "reading": "つく",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) to breathe out; to breathe",
+    "2) to tell (a lie); to use (foul language)",
+    "3) to vomit; to throw up; to spit up"
+   ],
+   "concept": "vomit_to",
+   "picture": "vomit",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 136,
+   "id": "mulberry|ja|j:1445270|1|Earth",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1445270",
+   "word": "土",
+   "reading": "つち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) earth; soil; dirt; clay",
+    "2) the earth (historically, esp. as opposed to the heavens); the ground; the land",
+    "3) low-quality torinoko-gami (containing mud)",
+    "4) (period of) refraining from construction in the direction of the god of the earth (in Onmyōdō)"
+   ],
+   "concept": "Earth",
+   "picture": "Earth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 137,
+   "id": "mulberry|ja|j:1445270|2|Earth",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1445270",
+   "word": "土",
+   "reading": "つち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) earth; soil; dirt; clay",
+    "2) the earth (historically, esp. as opposed to the heavens); the ground; the land",
+    "3) low-quality torinoko-gami (containing mud)",
+    "4) (period of) refraining from construction in the direction of the god of the earth (in Onmyōdō)"
+   ],
+   "concept": "Earth",
+   "picture": "Earth",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 138,
+   "id": "mulberry|ja|j:1446070|1|winter",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1446070",
+   "word": "冬",
+   "reading": "ふゆ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) winter"
+   ],
+   "concept": "winter",
+   "picture": "winter",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 139,
+   "id": "mulberry|ja|j:1447440|1|east",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1447440",
+   "word": "東",
+   "reading": "ひがし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) east"
+   ],
+   "concept": "east",
+   "picture": "east",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 140,
+   "id": "mulberry|ja|j:1449530|1|answer",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1449530",
+   "word": "答え",
+   "reading": "こたえ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) answer; reply; response",
+    "2) answer; solution; result"
+   ],
+   "concept": "answer",
+   "picture": "answer",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 141,
+   "id": "mulberry|ja|j:1449530|2|answer",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1449530",
+   "word": "答え",
+   "reading": "こたえ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) answer; reply; response",
+    "2) answer; solution; result"
+   ],
+   "concept": "answer",
+   "picture": "answer",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 142,
+   "id": "mulberry|ja|j:1451750|1|same",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1451750",
+   "word": "同じ",
+   "reading": "おなじ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) same; identical; equal; alike",
+    "2) anyway; in any case; if one must ...; if one has to ..."
+   ],
+   "concept": "same",
+   "picture": "same",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 143,
+   "id": "mulberry|ja|j:1454080|1|road",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1454080",
+   "word": "道",
+   "reading": "みち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) road; path; street; lane",
+    "2) route; way",
+    "3) distance; journey",
+    "4) road (e.g. to victory); course",
+    "5) way (of living, proper conduct, etc.); moral principles",
+    "6) teachings (esp. Confucian or Buddhist); dogma"
+   ],
+   "concept": "road",
+   "picture": "road",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 144,
+   "id": "mulberry|ja|j:1454080|4|road",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1454080",
+   "word": "道",
+   "reading": "みち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) road; path; street; lane",
+    "2) route; way",
+    "3) distance; journey",
+    "4) road (e.g. to victory); course",
+    "5) way (of living, proper conduct, etc.); moral principles",
+    "6) teachings (esp. Confucian or Buddhist); dogma"
+   ],
+   "concept": "road",
+   "picture": "road",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 145,
+   "id": "mulberry|ja|j:1454080|7|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1454080",
+   "word": "道",
+   "reading": "みち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 7,
+   "senses": [
+    "1) road; path; street; lane",
+    "2) route; way",
+    "3) distance; journey",
+    "4) road (e.g. to victory); course",
+    "5) way (of living, proper conduct, etc.); moral principles",
+    "6) teachings (esp. Confucian or Buddhist); dogma"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 146,
+   "id": "mulberry|ja|j:1462470|1|both",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1462470",
+   "word": "二人とも",
+   "reading": "ふたりとも",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) both (people); the two of them"
+   ],
+   "concept": "both",
+   "picture": "both",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 147,
+   "id": "mulberry|ja|j:1463520|2|meat",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1463520",
+   "word": "肉",
+   "reading": "にく",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) flesh",
+    "2) meat",
+    "3) flesh (of a fruit); pulp",
+    "4) the physical body (as opposed to the spirit); flesh",
+    "5) thickness",
+    "6) content; substance; flesh"
+   ],
+   "concept": "meat",
+   "picture": "meat",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 148,
+   "id": "mulberry|ja|j:1466970|1|how",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1466970",
+   "word": "如何に",
+   "reading": "いかに",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) how; in what way",
+    "2) how (much); to what extent",
+    "3) however (much); no matter how",
+    "4) hey; oi"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 149,
+   "id": "mulberry|ja|j:1466970|2|how",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1466970",
+   "word": "如何に",
+   "reading": "いかに",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) how; in what way",
+    "2) how (much); to what extent",
+    "3) however (much); no matter how",
+    "4) hey; oi"
+   ],
+   "concept": "how",
+   "picture": "how",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 150,
+   "id": "mulberry|ja|j:1505390|1|letter",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1505390",
+   "word": "文字",
+   "reading": "もじ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) letter (of an alphabet); character",
+    "2) writing"
+   ],
+   "concept": "letter",
+   "picture": "letter",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 151,
+   "id": "mulberry|ja|j:1516930|2|side",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1516930",
+   "word": "方",
+   "reading": "ほう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) direction; way; side; area (in a particular direction)",
+    "2) side (of an argument, etc.); one's part",
+    "3) type; category",
+    "4) field (of study, etc.)",
+    "5) indicates one side of a comparison",
+    "6) way; method; manner; means"
+   ],
+   "concept": "side",
+   "picture": "side",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 152,
+   "id": "mulberry|ja|j:1516930|4|field",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1516930",
+   "word": "方",
+   "reading": "ほう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) direction; way; side; area (in a particular direction)",
+    "2) side (of an argument, etc.); one's part",
+    "3) type; category",
+    "4) field (of study, etc.)",
+    "5) indicates one side of a comparison",
+    "6) way; method; manner; means"
+   ],
+   "concept": "field",
+   "picture": "field",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 153,
+   "id": "mulberry|ja|j:1527010|1|taste_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1527010",
+   "word": "味わう",
+   "reading": "あじわう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) to taste; to savor; to savour; to relish",
+    "2) to appreciate; to enjoy; to relish; to digest",
+    "3) to experience; to go through; to taste (e.g. victory); to know (e.g. pain)"
+   ],
+   "concept": "taste_to",
+   "picture": "taste",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 154,
+   "id": "mulberry|ja|j:1532310|2|bright",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1532310",
+   "word": "明らか",
+   "reading": "あきらか",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) clear; obvious; evident; plain",
+    "2) bright; light"
+   ],
+   "concept": "bright",
+   "picture": "bright",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 155,
+   "id": "mulberry|ja|j:1532350|1|light",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1532350",
+   "word": "明るい",
+   "reading": "あかるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) light; bright; well-lit; well-lighted",
+    "2) bright (colour)",
+    "3) cheerful; bright; spirited; sunny (e.g. disposition)",
+    "4) bright (future, prospects, etc.); rosy; encouraging; promising",
+    "5) knowledgeable (about); familiar (with); well versed (in); well acquainted (with)",
+    "6) fair (e.g. politics); clean; impartial"
+   ],
+   "concept": "light",
+   "picture": "light",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 156,
+   "id": "mulberry|ja|j:1532350|2|bright",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1532350",
+   "word": "明るい",
+   "reading": "あかるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) light; bright; well-lit; well-lighted",
+    "2) bright (colour)",
+    "3) cheerful; bright; spirited; sunny (e.g. disposition)",
+    "4) bright (future, prospects, etc.); rosy; encouraging; promising",
+    "5) knowledgeable (about); familiar (with); well versed (in); well acquainted (with)",
+    "6) fair (e.g. politics); clean; impartial"
+   ],
+   "concept": "bright",
+   "picture": "bright",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 157,
+   "id": "mulberry|ja|j:1532350|4|bright",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1532350",
+   "word": "明るい",
+   "reading": "あかるい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) light; bright; well-lit; well-lighted",
+    "2) bright (colour)",
+    "3) cheerful; bright; spirited; sunny (e.g. disposition)",
+    "4) bright (future, prospects, etc.); rosy; encouraging; promising",
+    "5) knowledgeable (about); familiar (with); well versed (in); well acquainted (with)",
+    "6) fair (e.g. politics); clean; impartial"
+   ],
+   "concept": "bright",
+   "picture": "bright",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 158,
+   "id": "mulberry|ja|j:1536350|1|night",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1536350",
+   "word": "夜",
+   "reading": "よる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) night; evening",
+    "2) dinner"
+   ],
+   "concept": "night",
+   "picture": "night",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 159,
+   "id": "mulberry|ja|j:1536350|2|dinner",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1536350",
+   "word": "夜",
+   "reading": "よる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) night; evening",
+    "2) dinner"
+   ],
+   "concept": "dinner",
+   "picture": "dinner",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 160,
+   "id": "mulberry|ja|j:1547710|1|next",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1547710",
+   "word": "来",
+   "reading": "らい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) next (year, spring, etc.); coming",
+    "2) since (e.g. last month); for (e.g. 20 years)"
+   ],
+   "concept": "next",
+   "picture": "next",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 161,
+   "id": "mulberry|ja|j:1548010|1|next_week",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1548010",
+   "word": "来週",
+   "reading": "らいしゅう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) next week"
+   ],
+   "concept": "next_week",
+   "picture": "next_week",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 162,
+   "id": "mulberry|ja|j:1551530|6|spread_to",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1551530",
+   "word": "立てる",
+   "reading": "たてる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) to stand (something) up; to put upright; to set up; to erect",
+    "2) to thrust into; to bury into; to dig into",
+    "3) to make (a noise); to let out; to produce (a sound)",
+    "4) to raise (a cloud of dust, smoke, etc.); to kick up; to stir up; to cause (waves, ripples, etc.)",
+    "5) to make (plans); to formulate (an idea); to lay out; to establish (a goal)",
+    "6) to spread (a rumor); to circulate"
+   ],
+   "concept": "spread_to",
+   "picture": "spread",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 163,
+   "id": "mulberry|ja|j:1553120|1|travel",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1553120",
+   "word": "旅",
+   "reading": "たび",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) travel; trip; journey"
+   ],
+   "concept": "travel",
+   "picture": "travel",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 164,
+   "id": "mulberry|ja|j:1553170|1|travel",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1553170",
+   "word": "旅行",
+   "reading": "りょこう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) travel; trip; journey; excursion"
+   ],
+   "concept": "travel",
+   "picture": "travel",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 165,
+   "id": "mulberry|ja|j:1570120|1|little",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1570120",
+   "word": "稍",
+   "reading": "やや",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) a little; partially; somewhat; slightly"
+   ],
+   "concept": "little",
+   "picture": "little",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 166,
+   "id": "mulberry|ja|j:1579470|1|four",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1579470",
+   "word": "四",
+   "reading": "し",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) four; 4"
+   ],
+   "concept": "four",
+   "picture": "four",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 167,
+   "id": "mulberry|ja|j:1579840|1|ten",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1579840",
+   "word": "十",
+   "reading": "じゅう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) ten; 10",
+    "2) ten years of age",
+    "3) book containing a collection of poems"
+   ],
+   "concept": "ten",
+   "picture": "ten",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 168,
+   "id": "mulberry|ja|j:1581930|3|pupil",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1581930",
+   "word": "弟",
+   "reading": "おとうと",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) younger brother; little brother; kid brother",
+    "2) brother-in-law (spouse's younger brother or younger sister's husband)",
+    "3) pupil; apprentice"
+   ],
+   "concept": "pupil",
+   "picture": "pupil",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 169,
+   "id": "mulberry|ja|j:1584660|1|tomorrow",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1584660",
+   "word": "明日",
+   "reading": "あした",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) tomorrow",
+    "2) near future"
+   ],
+   "concept": "tomorrow",
+   "picture": "tomorrow",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 170,
+   "id": "mulberry|ja|j:1594930|1|little",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1594930",
+   "word": "少々",
+   "reading": "しょうしょう",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) a little; a bit; a small amount; a few",
+    "2) a little while; a short time; a moment; a minute"
+   ],
+   "concept": "little",
+   "picture": "little",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 171,
+   "id": "mulberry|ja|j:1600430|1|drink",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1600430",
+   "word": "飲み物",
+   "reading": "のみもの",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) drink; beverage"
+   ],
+   "concept": "drink",
+   "picture": "drink",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 172,
+   "id": "mulberry|ja|j:1604350|1|middle",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1604350",
+   "word": "真ん中",
+   "reading": "まんなか",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) middle; centre; center; midpoint"
+   ],
+   "concept": "middle",
+   "picture": "middle",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 173,
+   "id": "mulberry|ja|j:1605810|1|world",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1605810",
+   "word": "世",
+   "reading": "よ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) world; society; public",
+    "2) life; lifetime",
+    "3) age; era; period; epoch",
+    "4) reign; rule",
+    "5) the times",
+    "6) world (of existence)"
+   ],
+   "concept": "world",
+   "picture": "world",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 174,
+   "id": "mulberry|ja|j:1605810|6|world",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1605810",
+   "word": "世",
+   "reading": "よ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 6,
+   "senses": [
+    "1) world; society; public",
+    "2) life; lifetime",
+    "3) age; era; period; epoch",
+    "4) reign; rule",
+    "5) the times",
+    "6) world (of existence)"
+   ],
+   "concept": "world",
+   "picture": "world",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 175,
+   "id": "mulberry|ja|j:1605940|2|outside",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1605940",
+   "word": "余所",
+   "reading": "よそ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) another place; somewhere else; strange parts",
+    "2) outside (one's family or group); someone else; other people",
+    "3) not caring for; being indifferent to; taking little notice of; ignoring"
+   ],
+   "concept": "outside",
+   "picture": "outside",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 176,
+   "id": "mulberry|ja|j:1611600|2|more",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1611600",
+   "word": "増し",
+   "reading": "まし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) better; preferable; less objectionable; least-worst",
+    "2) more; increase; extra",
+    "3) increase; growth"
+   ],
+   "concept": "more",
+   "picture": "more",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 177,
+   "id": "mulberry|ja|j:1660100|1|lunch_1",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:1660100",
+   "word": "お昼",
+   "reading": "おひる",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) lunch",
+    "2) noon; midday",
+    "3) daytime",
+    "4) waking up; getting up; rising"
+   ],
+   "concept": "lunch_1",
+   "picture": "lunch",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 178,
+   "id": "mulberry|ja|j:2013900|1|red",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2013900",
+   "word": "赤",
+   "reading": "あか",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) red; crimson; scarlet",
+    "2) red-containing colour (e.g. brown, pink, orange)",
+    "3) Red (i.e. communist)",
+    "4) red light (traffic)",
+    "5) red ink (i.e. in finance or proof-reading); (in) the red",
+    "6) complete; total; perfect; obvious"
+   ],
+   "concept": "red",
+   "picture": "red",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 179,
+   "id": "mulberry|ja|j:2034520|1|even",
+   "pack": "mulberry",
+   "language": "ja",
+   "target": "j:2034520",
+   "word": "でさえ",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) even (e.g. even a child)",
+    "2) as long as (it is, you are, etc.); (if) only; just"
+   ],
+   "concept": "even",
+   "picture": "even",
+   "score": 75,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 180,
+   "id": "openmoji|ja|j:1036400|4|1F4B3",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1036400",
+   "word": "カード",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) card (information, filing, etc.)",
+    "2) card (greetings, congratulations, etc.)",
+    "3) (Western) playing cards",
+    "4) credit card; debit card",
+    "5) card; program; matchup; pairing",
+    "6) card (to play); (one's) hand; bargaining chip; leverage"
+   ],
+   "concept": "1F4B3",
+   "picture": "credit card",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 181,
+   "id": "openmoji|ja|j:1047860|1|E0C7",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1047860",
+   "word": "ケーキ",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) cake"
+   ],
+   "concept": "E0C7",
+   "picture": "cake",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match"
+   ]
+  },
+  {
+   "i": 182,
+   "id": "openmoji|ja|j:1124860|7|E1C3",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1124860",
+   "word": "ポイント",
+   "reading": "",
+   "sources": [
+    "n4"
+   ],
+   "sense": 7,
+   "senses": [
+    "1) point (of a story, argument, etc.); key point; important part",
+    "2) point; site; spot",
+    "3) point (in scoring)",
+    "4) point (in a loyalty program); points",
+    "5) (percentage) point",
+    "6) (decimal) point"
+   ],
+   "concept": "E1C3",
+   "picture": "switch",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 183,
+   "id": "openmoji|ja|j:1175140|1|1F689",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1175140",
+   "word": "駅",
+   "reading": "えき",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) railway station; train station",
+    "2) staging post on a highway (in pre-modern Japan)",
+    "3) counter for railway stations and bus stations"
+   ],
+   "concept": "1F689",
+   "picture": "station",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 184,
+   "id": "openmoji|ja|j:1192150|1|1F46A",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1192150",
+   "word": "家族",
+   "reading": "かぞく",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) family"
+   ],
+   "concept": "1F46A",
+   "picture": "family",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 185,
+   "id": "openmoji|ja|j:1237150|4|1F3EB",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1237150",
+   "word": "教室",
+   "reading": "きょうしつ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) classroom; lecture room",
+    "2) department (in a university)",
+    "3) class; lessons; course",
+    "4) school (for a particular discipline); teaching establishment"
+   ],
+   "concept": "1F3EB",
+   "picture": "school",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 186,
+   "id": "openmoji|ja|j:1249960|3|1F9C9",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1249960",
+   "word": "兄弟",
+   "reading": "きょうだい",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) brothers and sisters; siblings",
+    "2) half-siblings; step-siblings; siblings by marriage or adoption",
+    "3) mate; friend"
+   ],
+   "concept": "1F9C9",
+   "picture": "mate",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 187,
+   "id": "openmoji|ja|j:1275640|1|1F444",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1275640",
+   "word": "口",
+   "reading": "くち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) mouth",
+    "2) opening; hole; gap; orifice",
+    "3) mouth (of a bottle); spout; nozzle; mouthpiece",
+    "4) gate; door; entrance; exit",
+    "5) speaking; speech; talk (i.e. gossip)",
+    "6) taste; palate"
+   ],
+   "concept": "1F444",
+   "picture": "mouth",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses"
+   ]
+  },
+  {
+   "i": 188,
+   "id": "openmoji|ja|j:1275640|3|1F444",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1275640",
+   "word": "口",
+   "reading": "くち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 3,
+   "senses": [
+    "1) mouth",
+    "2) opening; hole; gap; orifice",
+    "3) mouth (of a bottle); spout; nozzle; mouthpiece",
+    "4) gate; door; entrance; exit",
+    "5) speaking; speech; talk (i.e. gossip)",
+    "6) taste; palate"
+   ],
+   "concept": "1F444",
+   "picture": "mouth",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 189,
+   "id": "openmoji|ja|j:1275640|7|1F444",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1275640",
+   "word": "口",
+   "reading": "くち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 7,
+   "senses": [
+    "1) mouth",
+    "2) opening; hole; gap; orifice",
+    "3) mouth (of a bottle); spout; nozzle; mouthpiece",
+    "4) gate; door; entrance; exit",
+    "5) speaking; speech; talk (i.e. gossip)",
+    "6) taste; palate"
+   ],
+   "concept": "1F444",
+   "picture": "mouth",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 190,
+   "id": "openmoji|ja|j:1322990|1|1F9D1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1322990",
+   "word": "者",
+   "reading": "もの",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) person"
+   ],
+   "concept": "1F9D1",
+   "picture": "person",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 191,
+   "id": "openmoji|ja|j:1338850|1|E10D",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1338850",
+   "word": "出口",
+   "reading": "でぐち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) exit; way out",
+    "2) outlet; vent"
+   ],
+   "concept": "E10D",
+   "picture": "exit",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 192,
+   "id": "openmoji|ja|j:1338850|2|E144",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1338850",
+   "word": "出口",
+   "reading": "でぐち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) exit; way out",
+    "2) outlet; vent"
+   ],
+   "concept": "E144",
+   "picture": "outlet",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 193,
+   "id": "openmoji|ja|j:1344980|1|1F469",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1344980",
+   "word": "女の人",
+   "reading": "おんなのひと",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) woman"
+   ],
+   "concept": "1F469",
+   "picture": "woman",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 194,
+   "id": "openmoji|ja|j:1349170|1|1F466",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1349170",
+   "word": "少年",
+   "reading": "しょうねん",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) boy",
+    "2) juvenile; child"
+   ],
+   "concept": "1F466",
+   "picture": "boy",
+   "score": 90,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 195,
+   "id": "openmoji|ja|j:1365040|5|1F511",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1365040",
+   "word": "親",
+   "reading": "おや",
+   "sources": [
+    "n4"
+   ],
+   "sense": 5,
+   "senses": [
+    "1) parent; parents; mother and father",
+    "2) dealer; banker",
+    "3) founder; inventor",
+    "4) (pet) owner",
+    "5) key; parent (organization); main",
+    "6) ancestor; forefather"
+   ],
+   "concept": "1F511",
+   "picture": "key",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 196,
+   "id": "openmoji|ja|j:1369070|1|1F9D1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1369070",
+   "word": "人物",
+   "reading": "じんぶつ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) person; character; figure; personage",
+    "2) one's character; one's personality",
+    "3) able person; talented person"
+   ],
+   "concept": "1F9D1",
+   "picture": "person",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 197,
+   "id": "openmoji|ja|j:1404630|1|1F9B6",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1404630",
+   "word": "足",
+   "reading": "あし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) foot; paw; arm (of an octopus, squid, etc.)",
+    "2) leg",
+    "3) gait",
+    "4) pace",
+    "5) lower radical of a kanji",
+    "6) means of transportation; (one's) ride"
+   ],
+   "concept": "1F9B6",
+   "picture": "foot",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 198,
+   "id": "openmoji|ja|j:1404630|2|1F9B5",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1404630",
+   "word": "足",
+   "reading": "あし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) foot; paw; arm (of an octopus, squid, etc.)",
+    "2) leg",
+    "3) gait",
+    "4) pace",
+    "5) lower radical of a kanji",
+    "6) means of transportation; (one's) ride"
+   ],
+   "concept": "1F9B5",
+   "picture": "leg",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  },
+  {
+   "i": 199,
+   "id": "openmoji|ja|j:1420020|1|1F468",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1420020",
+   "word": "男の人",
+   "reading": "おとこのひと",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) man"
+   ],
+   "concept": "1F468",
+   "picture": "man",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 200,
+   "id": "openmoji|ja|j:1420070|1|1F466",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1420070",
+   "word": "男子",
+   "reading": "だんし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) boy",
+    "2) man; male"
+   ],
+   "concept": "1F466",
+   "picture": "boy",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 201,
+   "id": "openmoji|ja|j:1420070|2|1F468",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1420070",
+   "word": "男子",
+   "reading": "だんし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) boy",
+    "2) man; male"
+   ],
+   "concept": "1F468",
+   "picture": "man",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 202,
+   "id": "openmoji|ja|j:1432920|4|E0A1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1432920",
+   "word": "通り",
+   "reading": "とおり",
+   "sources": [
+    "n4"
+   ],
+   "sense": 4,
+   "senses": [
+    "1) street; road; avenue; thoroughfare",
+    "2) traffic; coming and going",
+    "3) flow (of water, air, etc.); passage; running",
+    "4) transmission (of sound); reach (of voice)",
+    "5) reputation; favor; favour; popularity",
+    "6) understanding; comprehension; comprehensibility; clarity"
+   ],
+   "concept": "E0A1",
+   "picture": "transmission",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 203,
+   "id": "openmoji|ja|j:1482010|1|1F35A",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1482010",
+   "word": "飯",
+   "reading": "めし",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) cooked rice",
+    "2) meal; food",
+    "3) one's living; livelihood"
+   ],
+   "concept": "1F35A",
+   "picture": "cooked rice",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 204,
+   "id": "openmoji|ja|j:1516925|2|1F9D1",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1516925",
+   "word": "方",
+   "reading": "かた",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) direction; way",
+    "2) person; lady; gentleman",
+    "3) method of; manner of; way of",
+    "4) care of ...",
+    "5) person in charge of ...",
+    "6) side (e.g. \"on my mother's side\")"
+   ],
+   "concept": "1F9D1",
+   "picture": "person",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 205,
+   "id": "openmoji|ja|j:1554310|1|1F373",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1554310",
+   "word": "料理",
+   "reading": "りょうり",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) cooking; cookery; cuisine; food",
+    "2) dealing with (skillfully); handling (well); managing"
+   ],
+   "concept": "1F373",
+   "picture": "cooking",
+   "score": 100,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 206,
+   "id": "openmoji|ja|j:1580290|1|1F467",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1580290",
+   "word": "少女",
+   "reading": "しょうじょ",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) girl (usu. between 7 and 17); young lady",
+    "2) female between 17 and 20 years old (ritsuryō period)"
+   ],
+   "concept": "1F467",
+   "picture": "girl",
+   "score": 90,
+   "basis": "name+gloss",
+   "why": [
+    "several-senses",
+    "shared-picture"
+   ]
+  },
+  {
+   "i": 207,
+   "id": "openmoji|ja|j:1603990|1|E203",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1603990",
+   "word": "町",
+   "reading": "まち",
+   "sources": [
+    "n4"
+   ],
+   "sense": 1,
+   "senses": [
+    "1) town; block; neighbourhood; neighborhood",
+    "2) downtown; main street",
+    "3) street; road"
+   ],
+   "concept": "E203",
+   "picture": "town",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "several-senses"
+   ]
+  },
+  {
+   "i": 208,
+   "id": "openmoji|ja|j:1610620|2|1F516",
+   "pack": "openmoji",
+   "language": "ja",
+   "target": "j:1610620",
+   "word": "お気に入り",
+   "reading": "おきにいり",
+   "sources": [
+    "n4"
+   ],
+   "sense": 2,
+   "senses": [
+    "1) favorite; favourite; pet (e.g. teacher's pet)",
+    "2) bookmark (in a web browser)"
+   ],
+   "concept": "1F516",
+   "picture": "bookmark",
+   "score": 80,
+   "basis": "gloss",
+   "why": [
+    "one-gloss-match",
+    "not-the-first-sense"
+   ]
+  }
+ ]
+}
