@@ -62,6 +62,9 @@ func (b *Budget) Left() int { return b.left }
 // tagUsuallyKana marks an entry JMdict says is usually written in kana.
 const tagUsuallyKana = "usually kana"
 
+// tagUK is JMdict's sense tag "usually written in kana alone".
+const tagUK = "uk"
+
 // flagTrad marks a CC-CEDICT traditional form.
 const flagTrad = "trad"
 
@@ -106,7 +109,7 @@ type Result struct {
 	// Reasons is the inflection chain in application order; empty when
 	// the match is exact.
 	Reasons []string
-	// Tags are entry-level tags such as "usually kana".
+	// Tags are entry-level tags such as "usually kana" (its first sense is uk).
 	Tags []string
 	// Frequencies holds one value per frequency pack with data for the
 	// entry, in pack priority order.
@@ -537,7 +540,10 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 	case len(e.Readings) > 0:
 		r.Reading = e.Readings[0].Value
 	}
-	if e.UK {
+	// "usually kana" follows the first sense, as the display form does
+	// (docs/contracts/frequency/display-form.json): 目 and 山 are uk only in
+	// a side sense. Ranking keeps e.UK (any sense: how kana text matches).
+	if len(e.Senses) > 0 && slices.Contains(e.Senses[0].Tags, tagUK) {
 		r.Tags = append(r.Tags, tagUsuallyKana)
 	}
 	for i, s := range e.Senses {

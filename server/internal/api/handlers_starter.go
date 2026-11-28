@@ -36,7 +36,11 @@ func (s *server) handleListStarterSets(w http.ResponseWriter, r *http.Request) {
 
 type starterSetEntryBody struct {
 	model.EntryBase
-	// Gloss is the first gloss of the entry's first sense, for the list that lets a learner tell words apart.
+	// Reading is the reading the set pins the word to ("" for none): a card copied from the set keeps it, and its
+	// back shows only that reading's meanings (docs/contracts/senses).
+	Reading string `json:"reading"`
+	// Gloss is the entry's one gloss for that reading (the sense display rule), for the list that lets a learner
+	// tell words apart.
 	Gloss string `json:"gloss"`
 	// PictureConcept is the picture the set expects for the word in its images pack; whether that pack is
 	// installed is not known here (the client asks GET /api/images/entries/{id}).
@@ -96,7 +100,8 @@ func (s *server) handleStarterSet(w http.ResponseWriter, r *http.Request) {
 			word := byID[b.ID]
 			// The deck shows, and a copy snapshots, the word as the set lists it: a kana row stays kana.
 			b.Written = es[i].DisplayForm(word.Form)
-			entries = append(entries, starterSetEntryBody{EntryBase: b, Gloss: firstGloss(es[i]), PictureConcept: word.Picture.Concept})
+			entries = append(entries, starterSetEntryBody{EntryBase: b, Reading: word.Reading,
+				Gloss: lexicon.DisplayGloss(es[i].Senses, word.Reading), PictureConcept: word.Picture.Concept})
 		}
 	}
 	// GetMany does not promise the order of ids: the set's order is the deck's order.
