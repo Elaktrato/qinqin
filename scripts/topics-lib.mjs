@@ -307,7 +307,7 @@ export function buildLabels(language, batches, picture, ids, meta) {
 	return {
 		version: 1,
 		language,
-		license: 'CC-BY-4.0',
+		license: 'CC-BY-SA-4.0',
 		attribution: meta.attribution,
 		humanReviewed: false,
 		reviewers: meta.reviewers,

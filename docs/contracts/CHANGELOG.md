@@ -11,6 +11,8 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   with an English scope; names are the messages `topics.name.<id>`), decoded by Go and web; the labels file a server
   embeds and the lookup of a listed word's topics (`labels.json`, rule `topics/labels`), decoded by Go.
 - **i18n:** a new key area `topics`.
+- **Licence:** a labels file's `license` is `CC-BY-SA-4.0` (the labels draw on OpenMoji's groups and are keyed to
+  CC-CEDICT and JMdict); a server refuses any other value (`labels.json` case "another licence is refused").
 - **Clients:** no route changes. The labels are read by the server (the course fill rule, #221); a client shows a
   topic by its id's name and ignores an id it does not know.
 
