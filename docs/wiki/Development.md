@@ -187,14 +187,16 @@ removes. The rule clients follow is "Serving held rows" in `docs/contracts/sync/
 
 A drill (the conjugation trainer, counters, tone pairs, look-alikes) plugs into the Practice feature
 (`apps/web/src/lib/features/practice/`): its definition (`DrillDef` in `types.ts`: title, description, the languages
-it applies to, its candidate items, a label per item, its question component) goes into `DRILLS` in `drills.ts`; its
+it applies to, its candidate items, a label per item, its question component, optionally an overview on the Practice
+list) goes into `DRILLS` in `drills.ts`; its
 id into `DRILL_IDS` (`apps/web/src/lib/studycore/drills.ts`), Go `drills.IDs` (`server/internal/drills/drills.go`) and
-the contract's `registry` (`docs/contracts/drills/drills.json`), and its activity words into
+the contract's `registry` (`docs/contracts/drills/drills.json`), and its activity words into `DRILL_WORDS` in
 `apps/web/src/lib/activity/sources.ts` (checklist: `docs/contracts/drills/README.md`, "Adding a drill"). The framework
 does the rest: the list, the rounds and the weakest round, the `drill.<id>` events through the outbox, the FSRS
 schedule of each item, EXP, the streak and the activity rule. A question component is not remounted between items (a
 typed answer keeps focus and the phone keyboard), calls `onAnswer({mode, grade})` once per item, and shows readings only
-through the romanisation helpers. The sample drill (`practice/sample/`) is the reference: set
+through the romanisation helpers. The tone-pair drill (`practice/tonePairs/`, #180) is the first registered one;
+the sample drill (`practice/sample/`) is the test harness: set
 `localStorage["qinqin.dev.drills"] = "sample"` in a browser to see Practice with it (`e2e/tests/practice.spec.ts`);
 its events count nowhere on the server. `schedule.json` and `pick.json` are written by
 `node scripts/contracts/gen-drills-fixtures.mjs` (`--check` in the web tests).

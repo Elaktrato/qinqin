@@ -50,7 +50,7 @@ answer and counts nowhere.
 ## The registry
 
 `registry` in `drills.json` lists the drills a **server counts as activity** and a client offers as an activity
-source (goals, the weekly summary). It starts empty; Go `drills.IDs` and the web's `DRILL_IDS`
+source (goals, the weekly summary): `tone-pairs` (#180, items and rules in `tones/pairs.json`). Go `drills.IDs` and the web's `DRILL_IDS`
 (`lib/studycore/drills.ts`) must equal it (both decode the fixture).
 
 ### Adding a drill
@@ -58,10 +58,13 @@ source (goals, the weekly summary). It starts empty; Go `drills.IDs` and the web
 1. Its id and item key shape in its own plan and contract; the id in `registry` (`drills.json`), Go `drills.IDs`
    (`server/internal/drills/drills.go`) and web `DRILL_IDS`. The activity rule follows (one `count` rule, feature
    `practice`); add it to `events/activity.json` `rules` too.
-2. The activity words `activity.source.drill.<id>.label` / `.count` (web `lib/activity/sources.ts`).
+2. The activity words `activity.source.drill.<id in camel case>.label` / `.count`, as literal keys in
+   `DRILL_WORDS` (web `lib/activity/sources.ts`; a test checks one pair per registered id).
 3. The web drill definition (`lib/features/practice/drills.ts`, `DrillDef`): title, description, the languages it
-   applies to, its candidate items and its question component. The framework does the rest: the Practice list, the
-   rounds, the events, the schedule, the counting.
+   applies to, its candidate items and its question component, and optionally an `overview` shown under the drill on
+   the Practice list (its items, its own answers, the states; the tone-pair grid). The framework does the rest: the
+   Practice list, the rounds (also the drill's own weakest round, `/practice/<id>/weakest`), the events, the
+   schedule, the counting.
 
 ## Schedule (`schedule.json`)
 
@@ -111,7 +114,8 @@ String order is plain UTF-16 code unit order.
 
 `/practice` lists the drills that apply to the workspace language, each with its due, learning and new counts and a
 "Practise" button, and "Practise weakest" once an item has an answer; `/practice/<id>` is a drill's round and
-`/practice/weakest` the round across drills. Practice is in the navigation only while a drill applies to the
+`/practice/weakest` the round across drills; `/practice/<id>/weakest` is the `weakest` pick over that drill alone (the
+tone-pair grid's "Practise my weakest pairs"). Practice is in the navigation only while a drill applies to the
 workspace language. Every screen fits a 360 px phone and shows readings only through the romanisation settings
 (`settings/README.md`, `romanisation`).
 
