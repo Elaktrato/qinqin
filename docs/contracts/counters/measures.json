@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "counters/measures",
- "doc": "Chinese measure words from CC-CEDICT's CL notes (README, \"Chinese measure words\"). Each case is an entry's senses in stored order (tags and glosses as the importer stores them); measures are what the server derives (simplified, traditional, tone-marked pinyin), canonical first; gloss is the one gloss shown (the sense display rule after the CL notes are taken out); fallback says whether 个 is acceptable but not idiomatic. fallbackAfter: the measure words after which 个 is a fallback; fallbackNot: nouns for which it is not even then. pool: the measure words wrong choices are taken from. Go: server/internal/counters/contract_test.go; web: apps/web/src/lib/features/practice/counters/check.test.ts (the pool's shape).",
+ "doc": "Chinese measure words from CC-CEDICT's CL notes (README, \"Chinese measure words\"). cases: an entry's senses in stored order (tags and glosses as the importer stores them) → the measure words derived (simplified, traditional, tone-marked pinyin), canonical first, the gloss shown (the sense display rule over the glosses the note counts, CC-CEDICT markup taken out) and whether 个 is acceptable but not idiomatic. corrected: the same through the project's corrections (server/internal/counters/table/measures-zh.json: nouns left out, lists replaced or extended, glosses) and the rules below; ok false: the noun is not drilled. fallbackAfter / fallbackNot: the 个 fallback rule. asPeople: a first measure word after which 个 is fully right too. equivalents: measure words that are one word (each right when the other is). altPinyin: other accepted readings. pool: the measure words wrong choices are taken from; containers / containerAvoid: when a noun's measure words hold a container word, these are never wrong choices; a pool member written in the noun is never one either. Go: server/internal/counters/contract_test.go; web: apps/web/src/lib/features/practice/counters/check.test.ts (the pool and the choice rules).",
  "fallback": {
   "simplified": "个",
   "traditional": "個",
@@ -9,7 +9,6 @@
  },
  "fallbackAfter": [
   "只",
-  "条",
   "张",
   "件",
   "辆",
@@ -23,8 +22,6 @@
   "家",
   "所",
   "间",
-  "头",
-  "匹",
   "枝",
   "支",
   "部",
@@ -33,18 +30,30 @@
   "门",
   "首",
   "道",
-  "根",
-  "块"
+  "扇",
+  "盏",
+  "项",
+  "处"
  ],
  "fallbackNot": [
-  "纸"
+  "纸",
+  "课",
+  "衣服",
+  "雨衣",
+  "衬衫",
+  "毛衣",
+  "外套",
+  "大衣",
+  "票",
+  "机票",
+  "车票",
+  "门票",
+  "邮票",
+  "照片",
+  "脸",
+  "光"
  ],
  "pool": [
-  {
-   "simplified": "个",
-   "traditional": "個",
-   "pinyin": "gè"
-  },
   {
    "simplified": "本",
    "traditional": "本",
@@ -241,11 +250,6 @@
    "pinyin": "chǎng"
   },
   {
-   "simplified": "口",
-   "traditional": "口",
-   "pinyin": "kǒu"
-  },
-  {
    "simplified": "层",
    "traditional": "層",
    "pinyin": "céng"
@@ -256,9 +260,29 @@
    "pinyin": "miàn"
   },
   {
-   "simplified": "枝",
-   "traditional": "枝",
-   "pinyin": "zhī"
+   "simplified": "扇",
+   "traditional": "扇",
+   "pinyin": "shàn"
+  },
+  {
+   "simplified": "盏",
+   "traditional": "盞",
+   "pinyin": "zhǎn"
+  },
+  {
+   "simplified": "幅",
+   "traditional": "幅",
+   "pinyin": "fú"
+  },
+  {
+   "simplified": "顿",
+   "traditional": "頓",
+   "pinyin": "dùn"
+  },
+  {
+   "simplified": "次",
+   "traditional": "次",
+   "pinyin": "cì"
   }
  ],
  "cases": [
@@ -490,7 +514,7 @@
      "pinyin": "gāng"
     }
    ],
-   "gloss": "beer (loanword)",
+   "gloss": "beer",
    "fallback": false
   },
   {
@@ -707,6 +731,289 @@
     }
    ],
    "gloss": "job",
+   "fallback": false
+  },
+  {
+   "name": "CC-CEDICT markup and register notes are not in the shown gloss",
+   "written": "超市",
+   "senses": [
+    {
+     "tags": [
+      "reading:chāo shì"
+     ],
+     "glosses": [
+      "(coll.) supermarket (abbr. for 超級市場|超级市场[chao1 ji2 shi4 chang3])",
+      "CL:家[jia1]"
+     ]
+    }
+   ],
+   "measures": [
+    {
+     "simplified": "家",
+     "traditional": "家",
+     "pinyin": "jiā"
+    }
+   ],
+   "gloss": "supermarket",
+   "fallback": true
+  },
+  {
+   "name": "条 is no fallback (一个路 is wrong)",
+   "written": "路",
+   "senses": [
+    {
+     "tags": [
+      "reading:lù"
+     ],
+     "glosses": [
+      "road",
+      "path",
+      "way",
+      "CL:條|条[tiao2]"
+     ]
+    }
+   ],
+   "measures": [
+    {
+     "simplified": "条",
+     "traditional": "條",
+     "pinyin": "tiáo"
+    }
+   ],
+   "gloss": "road",
+   "fallback": false
+  }
+ ],
+ "asPeople": [
+  "位",
+  "名"
+ ],
+ "equivalents": [
+  [
+   "支",
+   "枝"
+  ]
+ ],
+ "altPinyin": {
+  "场": [
+   "cháng",
+   "chǎng"
+  ],
+  "个": [
+   "ge"
+  ],
+  "匹": [
+   "pī"
+  ]
+ },
+ "containers": [
+  "杯",
+  "瓶",
+  "碗",
+  "壶",
+  "盒",
+  "盘",
+  "份"
+ ],
+ "containerAvoid": [
+  "杯",
+  "瓶",
+  "碗",
+  "壶",
+  "盒",
+  "盘",
+  "份",
+  "片",
+  "块",
+  "颗",
+  "口"
+ ],
+ "corrected": [
+  {
+   "name": "left out (年)",
+   "written": "年",
+   "senses": [
+    {
+     "tags": [
+      "reading:nián"
+     ],
+     "glosses": [
+      "year",
+      "CL:個|个[ge4]"
+     ]
+    }
+   ],
+   "ok": false
+  },
+  {
+   "name": "a list replaced and a gloss given (月)",
+   "written": "月",
+   "senses": [
+    {
+     "tags": [
+      "reading:yuè"
+     ],
+     "glosses": [
+      "moon",
+      "month",
+      "CL:個|个[ge4],輪|轮[lun2]"
+     ]
+    }
+   ],
+   "ok": true,
+   "measures": [
+    {
+     "simplified": "个",
+     "traditional": "個",
+     "pinyin": "gè"
+    }
+   ],
+   "gloss": "month",
+   "fallback": false
+  },
+  {
+   "name": "a list extended: 个 is fully right (面包)",
+   "written": "面包",
+   "senses": [
+    {
+     "tags": [
+      "reading:miàn bāo"
+     ],
+     "glosses": [
+      "bread",
+      "CL:片[pian4],袋[dai4],塊|块[kuai4]"
+     ]
+    }
+   ],
+   "ok": true,
+   "measures": [
+    {
+     "simplified": "片",
+     "traditional": "片",
+     "pinyin": "piàn"
+    },
+    {
+     "simplified": "袋",
+     "traditional": "袋",
+     "pinyin": "dài"
+    },
+    {
+     "simplified": "块",
+     "traditional": "塊",
+     "pinyin": "kuài"
+    },
+    {
+     "simplified": "个",
+     "traditional": "個",
+     "pinyin": "gè"
+    }
+   ],
+   "gloss": "bread",
+   "fallback": false
+  },
+  {
+   "name": "people: 个 is right after 位 (老师)",
+   "written": "老师",
+   "senses": [
+    {
+     "tags": [
+      "reading:lǎo shī"
+     ],
+     "glosses": [
+      "teacher",
+      "CL:位[wei4]"
+     ]
+    }
+   ],
+   "ok": true,
+   "measures": [
+    {
+     "simplified": "位",
+     "traditional": "位",
+     "pinyin": "wèi"
+    },
+    {
+     "simplified": "个",
+     "traditional": "個",
+     "pinyin": "gè"
+    }
+   ],
+   "gloss": "teacher",
+   "fallback": false
+  },
+  {
+   "name": "支 and 枝 are one word (花)",
+   "written": "花",
+   "senses": [
+    {
+     "tags": [
+      "reading:huā"
+     ],
+     "glosses": [
+      "flower",
+      "CL:朵[duo3],支[zhi1],束[shu4]"
+     ]
+    }
+   ],
+   "ok": true,
+   "measures": [
+    {
+     "simplified": "朵",
+     "traditional": "朵",
+     "pinyin": "duǒ"
+    },
+    {
+     "simplified": "支",
+     "traditional": "支",
+     "pinyin": "zhī"
+    },
+    {
+     "simplified": "束",
+     "traditional": "束",
+     "pinyin": "shù"
+    },
+    {
+     "simplified": "枝",
+     "traditional": "枝",
+     "pinyin": "zhī"
+    }
+   ],
+   "gloss": "flower",
+   "fallback": false
+  },
+  {
+   "name": "no correction: as derived",
+   "written": "书",
+   "senses": [
+    {
+     "tags": [
+      "reading:shū"
+     ],
+     "glosses": [
+      "book",
+      "CL:本[ben3],冊|册[ce4],部[bu4]"
+     ]
+    }
+   ],
+   "ok": true,
+   "measures": [
+    {
+     "simplified": "本",
+     "traditional": "本",
+     "pinyin": "běn"
+    },
+    {
+     "simplified": "册",
+     "traditional": "冊",
+     "pinyin": "cè"
+    },
+    {
+     "simplified": "部",
+     "traditional": "部",
+     "pinyin": "bù"
+    }
+   ],
+   "gloss": "book",
    "fallback": false
   }
  ]

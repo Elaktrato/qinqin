@@ -95,14 +95,31 @@ type fixtureMeasure struct {
 }
 
 type measuresFixture struct {
-	Version       int              `json:"version"`
-	Rule          string           `json:"rule"`
-	Doc           string           `json:"doc"`
-	Fallback      fixtureMeasure   `json:"fallback"`
-	FallbackAfter []string         `json:"fallbackAfter"`
-	FallbackNot   []string         `json:"fallbackNot"`
-	Pool          []fixtureMeasure `json:"pool"`
-	Cases         []struct {
+	Version        int                 `json:"version"`
+	Rule           string              `json:"rule"`
+	Doc            string              `json:"doc"`
+	Fallback       fixtureMeasure      `json:"fallback"`
+	FallbackAfter  []string            `json:"fallbackAfter"`
+	FallbackNot    []string            `json:"fallbackNot"`
+	Pool           []fixtureMeasure    `json:"pool"`
+	AsPeople       []string            `json:"asPeople"`
+	Equivalents    [][]string          `json:"equivalents"`
+	AltPinyin      map[string][]string `json:"altPinyin"`
+	Containers     []string            `json:"containers"`
+	ContainerAvoid []string            `json:"containerAvoid"`
+	Corrected      []struct {
+		Name    string `json:"name"`
+		Written string `json:"written"`
+		Senses  []struct {
+			Tags    []string `json:"tags"`
+			Glosses []string `json:"glosses"`
+		} `json:"senses"`
+		OK       bool             `json:"ok"`
+		Measures []fixtureMeasure `json:"measures"`
+		Gloss    string           `json:"gloss"`
+		Fallback bool             `json:"fallback"`
+	} `json:"corrected"`
+	Cases []struct {
 		Name    string `json:"name"`
 		Written string `json:"written"`
 		Senses  []struct {
@@ -142,6 +159,46 @@ func TestMeasuresContract(t *testing.T) {
 	}
 	if got := asFixture(counters.ChinesePool); !slices.Equal(got, fx.Pool) {
 		t.Errorf("pool = %+v\nwant %+v", got, fx.Pool)
+	}
+	if !slices.Equal(counters.AsPeople, fx.AsPeople) || !slices.Equal(counters.Containers, fx.Containers) ||
+		!slices.Equal(counters.ContainerAvoid, fx.ContainerAvoid) {
+		t.Errorf("asPeople, containers or containerAvoid differ from the fixture")
+	}
+	if len(counters.Equivalents) != len(fx.Equivalents) {
+		t.Errorf("equivalents = %v, want %v", counters.Equivalents, fx.Equivalents)
+	}
+	for i := range fx.Equivalents {
+		if i < len(counters.Equivalents) && !slices.Equal(counters.Equivalents[i], fx.Equivalents[i]) {
+			t.Errorf("equivalents = %v, want %v", counters.Equivalents, fx.Equivalents)
+		}
+	}
+	if len(counters.AltPinyin) != len(fx.AltPinyin) {
+		t.Errorf("altPinyin = %v, want %v", counters.AltPinyin, fx.AltPinyin)
+	}
+	for k, v := range fx.AltPinyin {
+		if !slices.Equal(counters.AltPinyin[k], v) {
+			t.Errorf("altPinyin[%s] = %v, want %v", k, counters.AltPinyin[k], v)
+		}
+	}
+	for _, c := range fx.Corrected {
+		senses := make([]lexicon.Sense, len(c.Senses))
+		for i, s := range c.Senses {
+			senses[i] = lexicon.Sense{Ord: i, Tags: s.Tags, Glosses: s.Glosses}
+		}
+		ms, gloss, fallback, ok := counters.ChineseNoun(c.Written, senses)
+		if ok != c.OK {
+			t.Errorf("%s: ok = %v, want %v", c.Name, ok, c.OK)
+			continue
+		}
+		if !ok {
+			continue
+		}
+		if got := asFixture(ms); !slices.Equal(got, c.Measures) {
+			t.Errorf("%s: measures = %+v, want %+v", c.Name, got, c.Measures)
+		}
+		if gloss != c.Gloss || fallback != c.Fallback {
+			t.Errorf("%s: gloss %q fallback %v, want %q %v", c.Name, gloss, fallback, c.Gloss, c.Fallback)
+		}
 	}
 	for _, c := range fx.Cases {
 		senses := make([]lexicon.Sense, len(c.Senses))
