@@ -76,6 +76,12 @@ export const STRUCTURE_FOLDERS = ['ui', 'frame', 'components', 'features', 'test
  */
 export const STUDY_CORE_FOLDERS = ['studycore', 'exercises'];
 
+/**
+ * The course player and roadmap (#222) build on the study core only: like it, they never import the flashcards
+ * feature, so a course lesson cannot pull in a flashcard face.
+ */
+export const FLASHCARDS_FREE = ['lib/features/courses/', 'routes/courses/'];
+
 /** What the study core must not import: the flashcards feature and the routes that show it. */
 export const FLASHCARDS = ['lib/features/flashcards/', 'routes/study/', 'routes/flashcards/'];
 
@@ -259,14 +265,16 @@ export function uiImportFindings(files: SourceFile[]): string[] {
 }
 
 /**
- * Nothing shipped in the study core (`STUDY_CORE_FOLDERS`) imports the flashcards feature. A test may (record
- * 0004: tests import anything): the core's data tests write their rows through the flashcards commands.
+ * Nothing shipped in the study core (`STUDY_CORE_FOLDERS`) or the courses feature (`FLASHCARDS_FREE`) imports the
+ * flashcards feature. A test may (record 0004: tests import anything): the core's data tests write their rows
+ * through the flashcards commands.
  */
 export function studyCoreImportFindings(files: SourceFile[]): string[] {
 	const g = graph(files);
 	const out: string[] = [];
 	for (const f of files) {
-		if (!STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`)) || isTestOnly(f.path)) continue;
+		const bound = STUDY_CORE_FOLDERS.some((d) => f.path.startsWith(`lib/${d}/`)) || FLASHCARDS_FREE.some((p) => f.path.startsWith(p));
+		if (!bound || isTestOnly(f.path)) continue;
 		for (const t of g.imports.get(f.path) ?? []) {
 			if (FLASHCARDS.some((p) => t.startsWith(p))) out.push(`${f.path} imports ${t}`);
 		}
