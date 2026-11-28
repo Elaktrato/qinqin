@@ -65,7 +65,7 @@ function flashcards(enabled: boolean): void {
 beforeEach(() => {
 	select(1);
 	flashcards(true);
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(summaryNumbers).mockReturnValue(NUMBERS);
 });
 afterEach(() => {
@@ -170,10 +170,10 @@ describe('SummaryWidget', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: []
+			merged: 0, grammarRuns: [], courseEvents: []
 		} as never);
 		await waitFor(() => expect(screen.getByText('30')).toBeTruthy());
-		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		await tick();
 		await Promise.resolve();
 		expect(screen.getByText('30')).toBeTruthy();
@@ -196,7 +196,7 @@ describe('SummaryWidget', () => {
 		expect(screen.getByText('23')).toBeTruthy();
 		expect(screen.queryByText('Loading…')).toBeNull();
 		vi.mocked(summaryNumbers).mockReturnValue({ ...NUMBERS, streak: 24 });
-		later.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] } as never);
+		later.resolve({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		await waitFor(() => expect(screen.getByText('24')).toBeTruthy());
 	});
 

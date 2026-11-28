@@ -55,7 +55,7 @@ beforeEach(() => {
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(onStudyDayChange).mockReturnValue(() => {});
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to));
 	ctx.session.workspaces.set({ list: [WS], current: WS });
 });
@@ -70,7 +70,7 @@ function withGoal(target = 50): void {
 		decks: [],
 		cards: [],
 		reviews: [],
-		merged: 0, grammarRuns: [],
+		merged: 0, grammarRuns: [], courseEvents: [],
 		goals: { version: 1, showStreak: true, history: [{ from: '2026-09-01', metric: 'activity:review', target }] }
 	});
 }

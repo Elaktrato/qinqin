@@ -6,6 +6,7 @@ import type { ParsedGoals } from '$lib/goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrsParams';
 import type { GrammarRun } from './grammarRuns';
+import type { StudyEvent } from '$lib/events';
 import type { KnownBatch } from './knownMarks';
 import type { LimitPair } from './limits';
 import type { SeenMilestone } from '$lib/milestones/seen';
@@ -141,6 +142,8 @@ export interface StudyHistory extends StudyData {
 	reviews: ReviewEvent[];
 	/** The workspace's grammar lesson runs (#277), in replay order: EXP and the streak count them. */
 	grammarRuns: GrammarRun[];
+	/** The workspace's `course` events (#222) as logged (queued ones included), for the course derivation. */
+	courseEvents: StudyEvent[];
 	/** How many stored duplicate cards were folded away. */
 	merged: number;
 }

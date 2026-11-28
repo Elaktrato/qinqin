@@ -54,7 +54,7 @@ beforeEach(() => {
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(onStudyDayChange).mockReturnValue(() => {});
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(fetchActivity).mockImplementation(async (from, to) => reply(from, to));
 	ctx.session.workspaces.set({ list: [WS], current: WS });
 });
@@ -142,7 +142,7 @@ describe('HeatmapMonth', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			goals: { version: 1, showStreak: true, history: [{ from: '2026-11-10', metric: 'activity:review', target: 5 }] }
 		});
 		vi.mocked(fetchActivity).mockImplementation(async (from, to) =>
@@ -188,7 +188,7 @@ describe('HeatmapMonth', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			goals: { version: 1, showStreak: true, history: [{ from: '2026-11-16', metric: 'activity:review', target: 5 }] }
 		});
 		render(ActivityHeatmap, { props: { layout: 'month' }, context: ctx.context });

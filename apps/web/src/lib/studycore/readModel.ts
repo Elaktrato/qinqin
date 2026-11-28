@@ -17,6 +17,7 @@ import { DEFAULT_W, resolveState, type ParamSet } from './fsrsParams';
 import type { DeckSettings } from './deckSettings';
 import type { LimitPair } from './limits';
 import { grammarRunsOf } from './grammarRuns';
+import { COURSE_EVENT } from './courseProgress';
 import { liveReviews } from './replaced';
 import { parseReview } from './reviewParse';
 import {
@@ -429,9 +430,10 @@ export function withQueued(events: readonly StudyEvent[], queued: readonly Study
  * historyOf is what every page that shows, counts or schedules cards reads:
  * the data with the review log, duplicate cards (one word added on two devices
  * before card ids were deterministic) merged by `canonicalCards` and their
- * reviews re-pointed to the surviving card; and the grammar lesson runs (#277).
+ * reviews re-pointed to the surviving card; the grammar lesson runs (#277); and the course events (#222).
  */
 export function historyOf(workspaceId: number, data: StudyData, events: readonly StudyEvent[]): StudyHistory {
 	const { cards, reviews, merged } = canonicalCards(data.cards, reviewsOf(workspaceId, events));
-	return { ...data, cards, reviews, merged, grammarRuns: grammarRunsOf(workspaceId, events) };
+	const courseEvents = events.filter((event) => event?.workspaceId === workspaceId && event.type === COURSE_EVENT);
+	return { ...data, cards, reviews, merged, grammarRuns: grammarRunsOf(workspaceId, events), courseEvents };
 }
