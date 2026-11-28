@@ -76,21 +76,22 @@ export const TARGET_CUMULATIVE = [800, 1500, 3700, 6000, 10000];
  * Fitted 2026-11-28 on jiten-frequency 2026-11-12, JMdict 2026-11-11,
  * jlpt-kanji kanjiapi.dev@76aa080+kanjidic2@2026-11-11 and the project lists
  * (core 538 words after the agent review). By rank: 800 / 1,500 / 3,700 /
- * 6,000 / 8,067 words; placed (after the core, the lifts and the other
- * rules): ≈ N5 544, ≈ N4 1,437, ≈ N3 3,798, ≈ N2 2,628, ≈ N1 1,592
- * (cumulative 544 / 1,981 / 5,779 / 8,407 / 9,999). Checks (no ground truth
+ * 6,000 / 8,109 words; placed (after the core, the lifts and the other
+ * rules): ≈ N5 509, ≈ N4 1,475, ≈ N3 3,778, ≈ N2 2,599, ≈ N1 1,638
+ * (cumulative 509 / 1,984 / 5,762 / 8,361 / 9,999). Checks (no ground truth
  * exists; see the #219 plan, "Evaluation"):
  *   - anchors (scripts/jlpt-words/anchors.tsv): 81 of 81 at or under their
  *     level (the first estimate failed most of the review's examples);
- *   - core words placed by the rules alone (the core switched off): 70 of
- *     538 exact, 391 (72.7 %) within one level, 12 not listed;
- *   - blind teacher spot checks: see the plan;
- *   - left out within R1: 92 grammar expressions, 25 on the grammar list, 37
- *     noise, 33 written numbers, 12 one-kana fragments, 6 set phrases.
+ *   - core words placed by the rules alone (the core switched off): 69 of
+ *     538 exact, 394 (73.2 %) within one level, 17 not listed;
+ *   - two blind teacher spot checks (124 words): see the plan;
+ *   - left out within R1: 201 expressions, 97 numbers, 94 grammar
+ *     expressions, 50 particles, 34 noise, 25 on the grammar list, 12
+ *     one-kana fragments, 6 set phrases.
  * No base list was available (its licence is unconfirmed): accuracy against
  * a list is unmeasured. With one, run --calibrate --base <dir>.
  */
-export const THRESHOLDS = { R5: 1226, R4: 2095, R3: 4719, R2: 7381, R1: 9844 };
+export const THRESHOLDS = { R5: 1290, R4: 2197, R3: 4928, R2: 7664, R1: 10250 };
 
 /** The credit of the lists the project writes. */
 const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
@@ -381,14 +382,13 @@ export const LIFT2_NF = 6;
 export const LIFT_FROM = 3;
 /**
  * NONCORE_FLOOR: a word outside the core list goes no easier than ≈ N4, except
- * a kana function word (particle, pronoun, conjunction, auxiliary: は, これ,
- * でも). The blind teacher spot check of 2026-11-28 put the non-core words the
+ * a kana function word (pronoun, conjunction, auxiliary: これ, でも). The blind teacher spot check of 2026-11-28 put the non-core words the
  * rank alone made ≈ N5 (先輩, 平気, 程度, 更に, 意外, 母親) mostly at N3: the
  * N5 vocabulary is the textbook core, and frequency in media does not make a
  * word N5.
  */
 export const NONCORE_FLOOR = 1;
-const FUNCTION_POS = ['prt', 'pn', 'conj', 'aux', 'aux-v', 'aux-adj', 'cop'];
+const FUNCTION_POS = ['pn', 'conj', 'aux', 'aux-v', 'aux-adj', 'cop'];
 const functionWord = (e) => kanaWritten(e) && FUNCTION_POS.some((p) => e.firstPos.has(p));
 
 /**
@@ -418,6 +418,10 @@ const GRAMMAR_HEAD = /^[のにとでかがはもをへだなや]/u;
 const SET_PHRASE = /\p{Script=Han}[\p{Script=Hiragana}]*?(?:を|が|に(?=\p{Script=Han}))./u;
 const DIGIT = /[0-9０-９]/u;
 const NOISE = /(.)\1\1/u;
+/** COUNTED: a numeral and a counter (十人, 一台, 一ヶ月, 三回): a counted amount, not a word to study. */
+const COUNTED = /^[一二三四五六七八九十百千万何数]+(?:人|台|枚|本|匹|冊|個|回|階|歳|才|年|ヶ月|か月|カ月|ヵ月|月|日|時|分|秒|円|杯|軒|頭|羽|週間|時間|年間|日間|度|番|件|点|名|位|号|代|曲|話|発|歩|部|着|足)$/u;
+/** BASIC_TAGS: JMdict's basic-list and common-word tags; an expression without one is not a vocabulary word. */
+const BASIC_TAGS = ['ichi1', 'spec1', 'spec2', 'news1'];
 /** CLIPPED: a kana word that starts with a small kana or ends in a small っ (っつ, ゲッ, あっ): a sound, not a word. */
 const CLIPPED = /^[っッゃゅょぁぃぅぇぉャュョァィゥェォ]|[っッ]$/u;
 const SMALL_KANA = /[ゃゅょぁぃぅぇぉゎャュョァィゥェォヮ]/gu;
@@ -430,8 +434,9 @@ const kanaText = (e) => e.rebs[0].text;
  * dropReason says why an entry is left out of the list, or null (#219
  * review): a grammar piece on the project's list (`grammar list`, the
  * curated scripts/jlpt-words/grammar.tsv), a grammar expression
- * (GRAMMAR_HEAD), a set phrase (SET_PHRASE), a written number (５分:
- * `number`), noise (repeated letters, あああ; a clipped sound, っつ, ゲッ) or a one-kana fragment
+ * (GRAMMAR_HEAD), a set phrase (SET_PHRASE), a written number or counted
+ * amount (５分, 十人: `number`), an expression JMdict does not count as common
+ * (`expression`), a particle (`particle`), noise (repeated letters, あああ; a clipped sound, っつ, ゲッ) or a one-kana fragment
  * that is not a particle (げ, ちょ: `fragment`).
  */
 export function dropReason(e, ctx) {
@@ -440,7 +445,12 @@ export function dropReason(e, ctx) {
 	if (e.expOnly && GRAMMAR_HEAD.test(kanaText(e)) && !kanjiFirst) return 'grammar';
 	const form = headForm(e) ?? kanaText(e);
 	if (e.expOnly && SET_PHRASE.test(form)) return 'phrase';
-	if (DIGIT.test(form)) return 'number';
+	if (DIGIT.test(form) || COUNTED.test(form)) return 'number';
+	// An expression JMdict does not count among its common words is an
+	// inflected form or a loose phrase (死んでいる, どうしたん, もう無理), not a word.
+	if (e.expOnly && !BASIC_TAGS.some((t) => e.tags.has(t))) return 'expression';
+	// A particle (な, ね, よ) is grammar: the JLPT does not list it as vocabulary.
+	if (kanaWritten(e) && e.firstPos.size > 0 && [...e.firstPos].every((p) => p === 'prt')) return 'particle';
 	if (NOISE.test(kanaText(e)) || NOISE.test(form)) return 'noise';
 	if (kanaWritten(e) && CLIPPED.test(kanaText(e))) return 'noise';
 	const kana = kanaText(e);
@@ -1112,8 +1122,7 @@ Method:
    among its 3,000 most frequent newspaper words (nf01–nf06), one level for
    one among the 6,000 most frequent (nf07–nf12), or tagged spec1 or gai1.
 7. Outside the core list a word goes no easier than ≈ N4, except a kana
-   function word (a particle, pronoun, conjunction or auxiliary: は, これ,
-   でも): ≈ N5 is the textbook core, and frequency in media does not make a
+   function word (a pronoun, conjunction or auxiliary: これ, でも): ≈ N5 is the textbook core, and frequency in media does not make a
    word N5.
 8. Slang, vulgar and colloquial words and interjections not on JMdict's
    basic lists go no easier than ≈ N3.

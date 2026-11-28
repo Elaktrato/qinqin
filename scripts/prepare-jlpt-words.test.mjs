@@ -91,7 +91,7 @@ ${[
 	entry(115, k('大人'), r('おとな'), sense('adult')),
 	entry(116, k('事'), k('縡', 'sK'), r('こと'), sense('thing')),
 	entry(117, r('のだ'), '<sense><pos>&exp;</pos><gloss>it is that</gloss></sense>', '<sense><gloss>the explanation is</gloss></sense>'),
-	entry(118, k('有難う'), r('ありがとう'), '<sense><pos>&exp;</pos><misc>&uk;</misc><gloss>thank you</gloss></sense>'),
+	entry(118, k('有難う'), r('ありがとう', '<re_pri>ichi1</re_pri>'), '<sense><pos>&exp;</pos><misc>&uk;</misc><gloss>thank you</gloss></sense>'),
 	entry(119, '<k_ele><keb>銀行</keb><ke_pri>ichi1</ke_pri><ke_pri>news1</ke_pri><ke_pri>nf01</ke_pri></k_ele>', r('ぎんこう'), sense('bank')),
 	entry(120, k('綺麗', 'ateji'), r('きれい', '<re_pri>ichi1</re_pri>'), sense('pretty')),
 	entry(121, r('あああ'), '<sense><pos>&int;</pos><gloss>aaah</gloss></sense>'),
@@ -282,12 +282,14 @@ test('dropReason: grammar, set phrases, numbers, noise and one-kana fragments go
 	const { entries, ctx } = fixture();
 	const bySeq = (n) => entries.find((e) => e.seq === n);
 	assert.equal(dropReason(bySeq(117), ctx), 'grammar'); // のだ: exp, starts with a particle, no kanji form
-	assert.equal(dropReason(bySeq(125), ctx), null); // 初めまして: exp starting with は, but written with a kanji
+	assert.equal(dropReason({ ...bySeq(125), tags: new Set(['ichi1']) }, ctx), null); // 初めまして: exp starting with は, written with a kanji, common
 	assert.equal(dropReason(bySeq(124), ctx), 'phrase'); // 言葉を失う
 	assert.equal(dropReason(bySeq(123), ctx), 'number'); // ５分
 	assert.equal(dropReason(bySeq(121), ctx), 'noise'); // あああ
 	assert.equal(dropReason(bySeq(122), ctx), 'fragment'); // げ
-	assert.equal(dropReason(bySeq(128), ctx), null); // ね: a particle
+	assert.equal(dropReason(bySeq(128), ctx), 'particle'); // ね: grammar, not vocabulary
+	assert.equal(dropReason({ ...bySeq(104), kebs: [{ text: '十人', inf: [] }] }, ctx), 'number'); // a numeral and a counter
+	assert.equal(dropReason({ ...bySeq(124), kebs: [{ text: 'もう無理', inf: [] }] }, ctx), 'expression'); // exp, no common-word tag
 	const kana = (text, pos = 'int') => ({ seq: 1, kebs: [], rebs: [{ text, inf: [], restr: [], nokanji: false }], uk: false, expOnly: false, pos: new Set([pos]), firstPos: new Set([pos]) });
 	assert.equal(dropReason(kana('っつ'), ctx), 'noise'); // a clipped sound
 	assert.equal(dropReason(kana('ゲッ'), ctx), 'noise');
@@ -527,7 +529,7 @@ test('the anchors hold, the core list matches JMdict, and the estimate agrees wi
 	const anchors = /^anchors: (\d+) of (\d+) at or under their level/m.exec(res.stdout);
 	assert.ok(anchors, res.stdout);
 	assert.equal(anchors[1], anchors[2], res.stdout.split('\n').filter((l) => l.startsWith('anchor miss')).join('\n'));
-	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 72.7 % within one
+	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 73.2 % within one
 	// level on 2026-11-28. The review asked for 90 %; the rules alone reached 87.8 % before the blind teacher
 	// spot check showed the non-core words far too easy, and the fix (outside the core, ≈ N4 or harder; lifts
 	// stop at ≈ N3) costs this measure. The days of the week, 切手, 晴れ and the like rank 10,000–35,000 in
