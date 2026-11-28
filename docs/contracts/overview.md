@@ -32,6 +32,7 @@ where the rule is implemented today.
 | Reminders | `reminders/` (the opt-in `reminders` row, the client's facts, the plan the shell schedules local notifications from, web push routes, the email unsubscribe link) |
 | Data safety | `backup/` (archive format 2, id remapping) |
 | Starter mode | `starter/` (the stage of a word from its own review history, what the front shows at each stage, the `starter` workspace setting, the Starter set format and its routes; builds on `cards/` hints and `images/`) |
+| Courses (data) | `topics/` (the topic list and the topic labels of words that fill course units by theme; nothing stored per user) |
 | Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the picture vocabulary, theming and credits) |
 | Visual aids | `aids/` (the `visualAids` workspace setting; pictures on entries and cards, tone colours and contours, character anatomy) |
 | Stroke order | `strokes/` (`GET /hanzi/U<HEX>.json`, the optional `?lang=` and which strokes pack answers for it) |
@@ -44,7 +45,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `tones/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
