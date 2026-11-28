@@ -1,8 +1,8 @@
 # Courses data model
 
 How a course is stored, filled with words and followed (#221). The screens, the roadmap and the lesson player (#222),
-are on the [Courses](Courses) page; later work brings the real Chinese and Japanese courses (#223) and the full unit
-tests and section exams (#224). The rules are contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
+are on the [Courses](Courses) page with the unit tests, section exams and placement (#224); later work brings the
+real Chinese and Japanese courses (#223). The rules are contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
 
 ## Three layers
 
@@ -41,5 +41,10 @@ tests and section exams (#224). The rules are contracts: [docs/contracts/courses
   id become word keys); `roadmap.ts` and `flow.ts` are the pure roadmap and lesson models; `cards.ts` writes the
   course deck (`d-course-<course id>`), its cards and their first reviews through the study core, and the known marks
   of skipped words as one declaration (`source: "placement"`).
+- `tests.ts` (#224) assembles the unit tests and section exams: word, grammar and text questions within the pack's
+  question count, the word sample drawn with the level check's planner (`lib/placement/levelCheck.ts`) over the
+  unit's word lessons or the section's units, words the shared known predicate already calls known left out first
+  (`lessonData.ts` `courseKnownIndex` builds that index from the study core); judging, what to review, and the
+  placement chain with its early stop. Contract `courses/tests.json`.
 - The courses feature never imports the flashcards feature (`tests/repo/folderRules.ts`, `FLASHCARDS_FREE`).
-- Rulings: `docs/superpowers/plans/2026-11-28-222-course-roadmap.md`.
+- Rulings: `docs/superpowers/plans/2026-11-28-222-course-roadmap.md`, `docs/superpowers/plans/2026-11-28-224-course-tests.md`.

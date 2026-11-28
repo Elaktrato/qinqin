@@ -46,8 +46,34 @@ course page (**Add these as cards** under the word count).
 
 ## Unit tests and section exams
 
-For now, a unit test asks the meaning of the unit's words (at most ten questions) and passes at 80 %; a section exam
-asks across the section and passes at 75 %. The full tests come with a later update.
+A **unit test** closes a unit; a **section exam** closes a section. Both are a mixed test of the course's own
+material:
+
+- **Words:** what a word means, which word means something, how it is read (the pinyin with its tones for Chinese, the
+  kana for a Japanese word written with kanji; never when you hide that romanisation), and which word you hear (with a
+  device voice).
+- **Grammar:** fill-the-gap exercises from the unit's grammar lessons.
+- **Reading:** a word missing from a sentence of the unit's reading text.
+
+The number of questions and the pass mark come with the course: a unit test passes at **80 %**, a section exam at
+**75 %**. The questions spread over the unit's word lessons (or the section's units) like the
+[level check](Settings-tour) samples a level, and words you have already shown you know (marked known, or cards you
+know well) are asked only when nothing else is left. A wrong answer shows the right one; nothing is asked twice.
+
+- **Passed:** the unit (or section) is done. Taken early, before its lessons, it **skips everything before it**: those
+  units are done, and their words are marked known (they do not become new cards; **Add these as cards** on the
+  roadmap if you want them).
+- **Not passed yet:** the summary shows the pass mark, **what to review** (the words you missed with their reading and
+  meaning, the grammar lessons, the units to go back to) and **Try again**. A test never takes anything away: your
+  lessons and words stay as they were.
+
+## Find your place
+
+If you already know some of the language, **Already know some? Find your place** on the roadmap (shown until you
+have finished a unit of a level) takes the section exams one after another, starting at the first level. Each exam
+stops as soon as its result is clear. After a pass you take the next level's exam, or choose **Start here** to begin
+at the next level; the first exam you do not pass is where you start. Not passing the very first one starts you at
+the beginning of the course, nothing skipped. Everything you pass is skipped as above.
 
 ## Offline and Android
 
