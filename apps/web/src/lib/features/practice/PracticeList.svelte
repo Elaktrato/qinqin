@@ -3,6 +3,7 @@
 	import { t } from '$lib/i18n';
 	import { Button, Section } from '$lib/ui';
 	import { formatNumber } from '$lib/i18n/format';
+	import { NOTEBOOK_HREF } from '$lib/notebook/href';
 	import { practiceHref } from './route';
 	import type { DrillAnswer, DrillStates } from '$lib/studycore/drills';
 	import type { DrillSummary } from './overview';
@@ -26,6 +27,7 @@
 	<p>{t('practice.none')}</p>
 {:else}
 	<p class="intro">{t('practice.intro')}</p>
+	<p><a href={NOTEBOOK_HREF}>{t('study.notebook.link')}</a></p>
 	<Section title={t('practice.weakest.title')}>
 		{#if weakestCount > 0}
 			<p>{t('practice.weakest.text', { count: weakestCount })}</p>
