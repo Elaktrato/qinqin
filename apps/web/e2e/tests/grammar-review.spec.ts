@@ -29,7 +29,7 @@ const EXAMPLES = [
 const LESSON = { id: 'wa', level: 'n5', title: 'The topic particle は', summary: 'X は Y です', pattern: ['X は Y です'], body: ['は marks the topic.'], examples: EXAMPLES };
 
 /** A lesson run of the point finished a day ago with 4 of 5: learned. */
-async function learnPoint(learner: { api: { post: (path: string, body: unknown) => Promise<unknown> }; workspaces: { ja: number } }): Promise<void> {
+async function learnPoint(learner: { api: { post: (path: string, body: unknown) => Promise<unknown> }; workspaces: Record<string, number> }): Promise<void> {
 	const at = Date.now() - 86_400_000;
 	await learner.api.post('/api/events/batch', {
 		events: [
