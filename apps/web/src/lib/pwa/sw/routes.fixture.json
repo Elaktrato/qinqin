@@ -260,6 +260,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/drills/counters",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/entries/{id}",
 		"access": "public"
 	},
@@ -677,6 +681,10 @@
 	},
 	{
 		"pattern": "POST /api/drills/conjugation/words",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/drills/measure-words/words",
 		"access": "user"
 	},
 	{
