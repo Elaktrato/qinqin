@@ -63,6 +63,11 @@ const (
 	zhAAttribution = "# zh-a\nMade for tests.\n"
 )
 
+// svgDrop is a picture whose stored form differs from the pack's bytes (a
+// style attribute becomes a fill attribute): the package carries the stored,
+// canonical form.
+const svgDrop = `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><path d="M36 10 L50 50 L22 50 Z" style="fill:#000000"/></svg>`
+
 // seeded is a test database with one pack of every type.
 type seeded struct {
 	db       *sql.DB
@@ -72,7 +77,8 @@ type seeded struct {
 // seedAll installs, through packs.Import: two zh dictionaries (zh-a with
 // LICENSE and ATTRIBUTION.md, zh-b without licence files), a ja dictionary,
 // and one levels, sentences, frequency, components, grammar, audio and
-// strokes pack, and a lemma-rules pack (ja-rules).
+// strokes pack, a lemma-rules pack (ja-rules) and an images pack (pics: three
+// pictures, two of them mapped).
 func seedAll(t *testing.T) seeded {
 	t.Helper()
 	t.Cleanup(func() { lemma.SetInstalled(nil) }) // ja-rules overlays the built-in table
@@ -119,6 +125,15 @@ func seedAll(t *testing.T) seeded {
 			map[string][]byte{"strokes.jsonl.gz": gz(`{"char":"好","data":{"strokes":["M 1 2"]}}` + "\n" + `{"char":"一","data":{"strokes":["M 3 4"]}}` + "\n"), "LICENSE": []byte("Arphic\n")}),
 		writePack(t, map[string]any{"id": "ja-rules", "name": "Ja rules", "type": "lemma-rules", "language": "ja", "license": "CC0-1.0", "format": "rules-json"},
 			map[string][]byte{"rules.json": []byte(jaRules), "LICENSE": []byte("CC0\n")}),
+		writePack(t, map[string]any{"id": "pics", "name": "Pictures", "type": "images", "languages": []string{"zh", "ja"}, "license": "CC BY-SA 4.0", "format": "images-svg"},
+			map[string][]byte{
+				"pictures.tsv":        []byte("concept\tfile\tlabel\tcredit\n1F4A7\tpictures/1F4A7.svg\tdroplet\tOpenMoji, A\n1F600\tpictures/1F600.svg\tgrinning face\tOpenMoji, B\nunused\tpictures/unused.svg\tnot mapped\tOpenMoji, C\n"),
+				"pictures/1F4A7.svg":  []byte(svgDrop),
+				"pictures/1F600.svg":  []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><circle cx="36" cy="36" r="20" fill="#000"/></svg>`),
+				"pictures/unused.svg": []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect width="9" height="9"/></svg>`),
+				"map.tsv":             []byte("language\ttarget\tsense\tconcept\tscore\tbasis\tnote\nzh\t水\t0\t1F4A7\t90\tname\tshui3\nja\t水\t1\t1F4A7\t80\tgloss\tみず\nzh\t好\t2\t1F600\t75\tgloss\thao3\n"),
+				"LICENSE":             []byte("CC BY-SA 4.0 legal code\n"),
+			}),
 	} {
 		if _, err := packs.Import(ctx, s.db, p, packs.WithAudioStore(s.audioDir)); err != nil {
 			t.Fatalf("import %s: %v", p.ID, err)

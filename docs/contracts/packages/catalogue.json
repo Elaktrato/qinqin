@@ -2,7 +2,7 @@
  "version": 1,
  "rule": "packages/catalogue",
  "_doc": "GET /api/packages answers one catalogue. valid cases decode; invalid ones must be refused for the reason given (a strict decoder: every key of rowKeys present, no other key except error, types as in README.md). error appears only in an administrator's catalogue, on a row whose last build failed. Decoded by server/internal/api (A7) and apps/web/src/lib/api/packages.ts (C5).",
- "idPattern": "^(lexicon\\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules)\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$",
+ "idPattern": "^(lexicon\\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules|images)\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$",
  "types": [
   "lexicon",
   "levels",
@@ -12,7 +12,8 @@
   "audio",
   "grammar",
   "strokes",
-  "lemma-rules"
+  "lemma-rules",
+  "images"
  ],
  "states": [
   "building",

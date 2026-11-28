@@ -107,7 +107,7 @@
    "registry": "image_packs",
    "languages": "many",
    "uploadable": true,
-   "package": null,
+   "package": "images",
    "requiresLexicon": false,
    "optionalPackage": false
   }

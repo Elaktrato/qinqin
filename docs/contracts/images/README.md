@@ -10,6 +10,8 @@ Fixtures:
 - `resolve.json` — which mapping the server picks for an entry (Go: `server/internal/images/contract_test.go`).
 - `svg.json` — the picture vocabulary the server accepts, what a client must refuse, and `themeSvg` (Go: the same
   test; web: `lib/api/images.dom.test.ts`).
+- `package.qqpkg` and `package.json` — an images package the server's builder wrote, and its rows (Go:
+  `server/internal/datapkg/images_fixture_test.go`; web: `lib/packages/imagesPackage.contract.test.ts`).
 
 Owner code: `server/internal/images` (import, validation, resolution), `server/internal/api/handlers_images.go`
 (routes). Web: `apps/web/src/lib/api/images.ts` (`entryPicture`, `imagePacks`, `safeSvg`, `themeSvg`,
@@ -41,8 +43,20 @@ glosses, hand-made `manual.tsv` overrides; scores: name 90, first-gloss label 80
 manual 100; ambiguous or weak matches are left out) and committed as `scripts/images/<pack>/map.tsv`. The pack
 builder `scripts/prepare-images-pack.mjs` adds the pictures from the pinned upstream release.
 
-There is **no data package** for images packs (`pack-types.json`: `package: null`): pictures are fetched from the
-server per entry. An offline client keeps what it fetched (a later change may add a package type).
+## Offline: the images package (#274)
+
+Every live images pack builds a data package `images.<packId>` (`../packages/README.md`; format 1, the pack's
+`languages`, no `requires`, not optional). Its `data.sqlite` holds
+
+- `map (language, target, sense, concept, score, basis)`: the pack's map rows exactly as the server stores them, keyed
+  by the word targets (not entry ids, so a dictionary change does not touch the package);
+- `pictures (concept, label, credit, svg)`: only the pictures a map row uses, each in the stored canonical form.
+
+A client that holds the packages finds an entry's picture with the rule of "Resolution" over every package it holds
+(a package's pack id is its `packId` in the answer; `license` and `attribution` come from the package's `qq_sources`
+row). The targets are the entry answer's `pictureTargets` (below). Measured on the bundled packs (OpenMoji 17.0.0, 962
+pictures; Mulberry 3.6.1, 711 pictures): `images.images-openmoji` 510,702 bytes, `images.images-mulberry` 1,569,231
+bytes.
 
 ## Pictures are drawings
 
