@@ -5,7 +5,8 @@
 // choices; the answers reach the server as drill.measure-words events; the back button leaves the round. Japanese:
 // the counter of 紙 typed in kana, and a counter reading (text the IME turned into kanji is asked again in kana).
 
-import { test as base, expect, type Page } from '../support/fixtures';
+import type { Page } from '@playwright/test';
+import { test as base, expect } from '../support/fixtures';
 import { fixtureCounters } from '../support/build';
 import { PHONE, expectNoSidewaysScroll } from '../support/layout';
 import { startServer, type RunningServer } from '../support/server';
