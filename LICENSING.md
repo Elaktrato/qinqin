@@ -47,6 +47,18 @@ licence and points at the legal code in `plugins/data/ja-lemma/LICENSE`, as the 
 The Starter lists copy no third-party text; the dictionary entries and pictures they point at keep their own
 licences. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
 
+### The topic labels: CC BY-SA 4.0
+
+The topic labels of words (`server/internal/topics/labels/zh.json` and `ja.json`, #220) are written for the project
+(the topics were suggested by an agent and reviewed by agents acting as native-language teachers, or taken from the
+group of the word's OpenMoji picture through the project's own group → topic table) and are shared under
+**CC BY-SA 4.0**, not the project's CC BY 4.0 (orchestrator ruling, 2026-11-28, under the owner's "licensing first"
+rule): they are adapted in part from OpenMoji's emoji groups and are keyed to CC-CEDICT and JMdict words whose senses
+the agents read, all CC BY-SA 4.0. Each file's `attribution` credits qinqin contributors, CC-CEDICT or JMdict and
+OpenMoji; the group table `scripts/topics/openmoji-groups.tsv`, the group → topic table and the review batches in
+`scripts/topics/` are under the same licence (`scripts/topics/NOTICE.md`). The owner may loosen this later. The topic
+list itself (`docs/contracts/topics/topics.json`, ids and scopes) is the project's and stays CC BY 4.0.
+
 ## Third-party data keeps its own licence
 
 The MIT licence of the code does **not** cover the bundled data. Dictionaries, frequency lists, stroke data,
