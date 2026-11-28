@@ -970,6 +970,7 @@
 	"entry.page.backToSearch": "Back to search",
 	"entry.page.browseStrokes": "Browse by stroke count",
 	"entry.page.characters": "Characters",
+	"entry.page.confusedWith": "Easily confused with",
 	"entry.page.edit": "Edit",
 	"entry.page.examples": "Examples",
 	"entry.page.loadFailed": "Could not load this entry.",
