@@ -59,8 +59,8 @@ Format: `Ruling: <what> — <why> — <cost if wrong>`.
 
 ### Feature, navigation, routes
 
-1. Ruling: **Courses is a core feature switch** (`courses`, per user like the others, on by default, after `scripts`
-   and before `stats` in the order) — the #294/#295 pattern gives a switch, a hidden nav entry and the switched-off
+1. Ruling: **Courses is a core feature switch** (`courses`, per user like the others, on by default, after `practice`
+   (the drills' feature, merged meanwhile) and before `stats` in the order) — the #294/#295 pattern gives a switch, a hidden nav entry and the switched-off
    notice for free; a learner who uses only the toolbox can hide it — cost if wrong: one id in `features.IDs`, a
    contract change.
 2. Ruling: **Courses applies to every language** (no `appliesTo`); a workspace whose language has no installed
@@ -181,12 +181,60 @@ Format: `Ruling: <what> — <why> — <cost if wrong>`.
 
 ## Execution record
 
-(filled in as the tasks land)
+- Task 1, plan: committed first.
+- Task 2, feature: the Go route test and `switches.json` changed first and seen failing (`TestFeatureRoutes`,
+  `TestFeaturesContract`), as were the web contract test and the frame tests (sections, `barHiddenOn`); then
+  `features.IDs`, the registry, the frame, the route folder. A first try changed the default bottom bar too; it rippled
+  through the nav-layout contract and eleven DOM tests, so it was reverted and Ruling 3 rewritten. The other DOM tests
+  that list the features (TopBar, NavDrawer, Settings) were updated after they failed.
+- Task 3, progress: `progress.test.ts` seen failing (module missing), then `progress.ts`. The `courseEvents` history
+  test was written before the change but run only after it (not seen failing).
+- Task 4, course data: `courseData.test.ts` seen failing (module missing), then `courseData.ts` and the session
+  cache; sign-out removal through the session's dispose.
+- Task 5, roadmap model: test first, seen failing, passed on the first implementation.
+- Task 6, flows: `flow.test.ts` seen failing (module missing), one failure after the first implementation (choices
+  from the unit were not guaranteed) fixed by tiering the choice pool. `run.test.ts` and `run.svelte.ts` were written
+  together (not seen failing).
+- Task 7, cards: `cards.test.ts` seen failing (module missing), then `cards.ts`; the folder guard's planted case seen
+  failing before `FLASHCARDS_FREE`. `uncardedMetWords` was written with its test in one go.
+- Task 8, screens: `readingText` and `lessonData` tests first (one wrong expectation in my own test fixed);
+  components, then the DOM tests (`Roadmap.dom.test.ts`, `LessonPlayer.dom.test.ts`) written after them, not test-first.
+  The screens commit (`af85b37d`) had one svelte-check error in a test's type cast; the merge commit after it fixes it
+  (every suite at that commit was green otherwise).
+- Merge of `feature/v0.9.0` (drills, #345–#347): conflicts in the feature ids (`practice` and `courses` both added),
+  the history (`drillAnswers` and `courseEvents`), the key areas and the contract version; resolved to eight features
+  with `courses` after `practice`, ContractVersion 29.
+- Task 9, e2e: `courses.spec.ts` found a real bug: on a fresh page load the workspaces arrive after the page mounts,
+  and the roadmap said "Choose a workspace"; `CoursesPage` now waits for them. A first version checked the deck after a
+  full reload within the same second as the cards' push and missed them (the pull's round cut, sync README); the test
+  now goes to Decks through the app.
+- Task 10, docs: wiki `Courses.md` (sidebar), `Courses-data-model.md`, Finding your way, Settings tour, API reference,
+  Core data API; records 0004, 0006, 0009 "Touched by"; `NEXT.md`.
+- Written content: none (Ruling 27). Unit titles and texts are the packs' (#223); the e2e fixture course is test data.
+  No teacher review was needed.
 
 ## Gates
 
-(filled in at the end)
+On the branch head after the merge of `feature/v0.9.0`:
+- Web (Node 26): `npm run check` 0 errors, 0 warnings (2123 files); `npm run build` ok; full vitest 768 files passed
+  (1 skipped), 15,415 tests passed, 3 skipped; e2e one full run, 69 passed.
+- `node --test scripts/*.test.mjs`: 242 tests, 241 pass, 0 fail, 1 skipped; `node scripts/gen-api-docs.mjs --check` ok
+  (no new routes).
+- Go: `gofmt` clean, `go vet ./...` ok, `go test ./...` 64 packages ok; the only failure the known environment one
+  (`internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`, no IPv6).
 
 ## Local follow-up
 
-(filled in at the end)
+- #222 on a phone and in the Android shell, with a course pack installed (`plugins/samples/zh-course-mini` plus
+  `hsk-mini`, or the e2e fixture `apps/web/e2e/fixtures/packs/e2e-zh-course` with `e2e-zh-levels`, `qinqin seed
+  --packs <dir>`): open Courses from More, pin it in Settings → Layout; finish a word lesson; the Android back button
+  leaves the lesson to the roadmap and the focus lands on the step heading; the device voice plays the words
+  (listening questions only appear with a voice); the reading lesson's readings hide with romanisation set to Never.
+- Offline: open the roadmap online, go offline (airplane mode), reload: the roadmap and the current unit's lessons
+  work; finish one and see the "cards could not be added" line; back online, **Add these as cards** on the roadmap.
+
+## Not done here (later issues)
+
+- The real tests (#224), the real skeletons and texts (#223), course milestones, Home's "Continue course" and
+  onboarding (#225). Pictures, hints and Starter stages inside word lessons wait for those faces to move into the study
+  core (Ruling 13).
