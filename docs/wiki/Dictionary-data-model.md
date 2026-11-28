@@ -15,6 +15,9 @@ The dictionary is stored as `entries`, `forms`, `readings`, `senses`, `entry_lin
 Per language:
 
 - **Japanese**: one entry per JMdict word (`ent_seq`), with every form and reading, the part-of-speech tags **per sense**, the `uk` flag (usually written in kana) and a priority score derived from JMdict's priority markers. Homographs are separate entries, so 為る and 刷る are two results for する. An entry is shown by its **display form** (`docs/contracts/frequency/display-form.json`): the kana when its first sense is `uk` (事 → こと, 為る → する), never a search-only (`sK`) form (乃 → の); a starter deck word whose list row is kana shows that kana. Cards keep the form they were added with as their snapshot.
+- **Word lists** (levels, sentence packs, starter decks, the Starter sets) name a word by its written form and an
+  optional reading. A form that an entry keeps only for searching (JMdict `sK`) never wins over an entry where it is a
+  real written form: 虹 (にじ) is the rainbow, not 二次 (#347).
 - **Chinese**: one entry per simplified written form; its traditional forms are forms of the same entry (flag `trad`), so 學習 finds 学习. Homograph lines (行 xíng / háng) merge into one entry carrying all readings, with one sense per CC-CEDICT line.
 - **Characters** (kanji and hanzi) are `character` entries with `radical` and `variant` links.
 

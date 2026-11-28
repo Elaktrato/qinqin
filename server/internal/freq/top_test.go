@@ -32,6 +32,8 @@ type resolution struct {
 		Readings []string `json:"readings"`
 		Pri      int      `json:"pri"`
 		UK       bool     `json:"uk"`
+		// FormFlags, when given, are the info flags of the entry's forms (sK: search-only).
+		FormFlags map[string][]string `json:"formFlags"`
 		// SenseTags, when given, are the tags of the entry's senses.
 		SenseTags [][]string `json:"senseTags"`
 	} `json:"lexicon"`
@@ -91,7 +93,7 @@ func seedLexicon(t *testing.T, sqlDB *sql.DB, r resolution) map[string]int64 {
 			}
 		}
 		for _, f := range e.Forms {
-			entry.Forms = append(entry.Forms, lexicon.Form{Text: f})
+			entry.Forms = append(entry.Forms, lexicon.Form{Text: f, Flags: e.FormFlags[f]})
 		}
 		for _, rd := range e.Readings {
 			entry.Readings = append(entry.Readings, lexicon.Reading{Type: "kana", Value: rd, Plain: rd})

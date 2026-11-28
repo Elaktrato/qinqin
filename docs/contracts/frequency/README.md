@@ -51,8 +51,10 @@ term written only in hiragana, katakana and ー) first takes the word with no wr
 reading is exactly the term and whose priority is above 0, highest priority, then lowest id (so `で` is
 the particle, not the usually-kana 出; a kana-only `こと` without priority does not displace 事). Every
 other row, and a kana row without such a word, resolves like a level pack word (`BestWordReading`: form +
-reading, then the form, then the kana reading fallback); level imports never use the kana step. Skip unresolved rows and entries already taken; stop at `size`
-entries or after `4 × size` rows. Fixture: a toy Japanese lexicon (`forms`, kana `readings`, `pri`, `uk`)
+reading, then the form, then the kana reading fallback; among the entries with the form, one where it is a real
+written form comes before one where it is only search-only, `sK`, whatever the priorities: 虹 with にじ is the
+rainbow, not 二次, #347); level imports never use the kana step. Skip unresolved rows and entries already taken; stop at `size`
+entries or after `4 × size` rows. Fixture: a toy Japanese lexicon (`forms`, optional `formFlags`, kana `readings`, `pri`, `uk`)
 and toy packs; `expected` lists entry keys with the rank of the row that took them. Sizes other than 500,
 1000, 2000 appear only in this fixture.
 

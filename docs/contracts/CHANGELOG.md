@@ -5,6 +5,14 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #347 — a search-only form never outranks a real written form in word resolution (contract 25)
+
+- **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
+  虹 with and without the reading にじ resolves to the rainbow, not to 二次, which has 虹 only as a search-only (`sK`)
+  form and the higher priority. The rule (`BestWord`, `BestWordReading`, and so level packs, sentence packs,
+  frequency starter decks and the Starter sets): an entry where the form is not search-only first, then the priority
+  order as before.
+
 ## #346 — everyday meanings before surname, abbreviation and variant lines; pinned readings (contract 24)
 
 - **`senses/display.json`:** a third class `minor` between everyday and sensitive: a sense with a JMdict tag of
