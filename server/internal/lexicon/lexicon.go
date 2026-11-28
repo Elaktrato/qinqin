@@ -317,13 +317,20 @@ const (
 		CROSS JOIN entries e ON e.id = f.entry_id
 		WHERE f.text = ? AND f.deleted_at IS NULL
 		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
-		ORDER BY (? = 'character' AND f.ord = 0) DESC, (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
+		ORDER BY (? = 'character' AND f.ord = 0) DESC, ` + searchOnlyLast + `, (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
 		LIMIT 1`
 )
 
+// searchOnlyLast is the ORDER BY key, over the matched form f, that puts an
+// entry having the form only as a search-only form (JMdict sK: 虹 of 二次)
+// after every entry where it is a real written form, whatever the
+// priorities (#347). Flags are a JSON list of strings.
+const searchOnlyLast = `(f.flags LIKE '%"sK"%')`
+
 // Best returns the best-ranked active entry of the language and kind that
-// has form as an active form: usually-kana entries that carry a priority
-// first, then priority (higher first), then entry id. A character first
+// has form as an active form: an entry where the form is not search-only
+// (sK) first, then usually-kana entries that carry a priority, then
+// priority (higher first), then entry id. A character first
 // prefers an entry headed by the form (its first form): CC-CEDICT folds
 // 覆 into 复's entry as a traditional form, and 覆 also heads its own. It
 // returns ErrNotFound when no entry has the form.
@@ -418,7 +425,7 @@ func (s Store) bestWordID(ctx context.Context, language, form string) (int64, er
 // bestFormReadingQuery is BestWordReading's first step, driven from forms
 // like bestQuery: a word entry with the written form that also has the
 // reading, compared by its plain form (the language pack's kana folding)
-// or as written, ranked like Best.
+// or as written, ranked like Best (a search-only form last).
 const bestFormReadingQuery = `
 	SELECT e.id FROM forms f
 	CROSS JOIN entries e ON e.id = f.entry_id
@@ -426,7 +433,7 @@ const bestFormReadingQuery = `
 	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
 	  AND EXISTS (SELECT 1 FROM readings r
 		WHERE r.entry_id = e.id AND r.deleted_at IS NULL AND (r.plain IN (?, ?) OR r.value = ?))
-	ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
+	ORDER BY ` + searchOnlyLast + `, (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
 	LIMIT 1`
 
 // BestWordReading is BestWord for a written form whose reading is known

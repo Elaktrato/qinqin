@@ -4,6 +4,8 @@
  "language": "ja",
  "kanaNote": "a kana row (no reading, or the reading equal to the term) first takes a word with no written form whose first reading is the term and whose priority is above 0, highest priority first; levels do not use this step",
  "sizeNote": "sizes other than 500/1000/2000 are test-only overrides of the resolution function",
+ "formFlagsNote": "formFlags, when given, are the JMdict info flags of an entry's forms (form -> flags); sK = search-only",
+ "writtenNote": "written is the display form served and snapshotted (frequency/display-form.json) with the row's term as list form; uk means entries.uk and, unless senseTags gives the senses' tags, a first sense tagged uk",
  "lexicon": [
   {
    "key": "kaze",
@@ -127,6 +129,41 @@
     ]
    ],
    "note": "uk on a later sense only (JMdict 犬): entries.uk ranks it, but its display form is 犬"
+  },
+  {
+   "key": "niji-second",
+   "forms": [
+    "二次",
+    "２次",
+    "虹"
+   ],
+   "formFlags": {
+    "虹": [
+     "sK"
+    ]
+   },
+   "readings": [
+    "にじ"
+   ],
+   "pri": 95,
+   "uk": false
+  },
+  {
+   "key": "niji",
+   "forms": [
+    "虹",
+    "霓"
+   ],
+   "formFlags": {
+    "霓": [
+     "rK"
+    ]
+   },
+   "readings": [
+    "にじ"
+   ],
+   "pri": 84,
+   "uk": false
   }
  ],
  "packs": {
@@ -238,6 +275,22 @@
     "reading": "",
     "rank": 3
    }
+  ],
+  "rainbow": [
+   {
+    "term": "虹",
+    "reading": "にじ",
+    "rank": 1,
+    "note": "form + reading: 二次 has 虹 only as a search-only form and a higher priority; the real 虹 wins (#347)"
+   }
+  ],
+  "rainbow-bare": [
+   {
+    "term": "虹",
+    "reading": "",
+    "rank": 1,
+    "note": "form alone: the same, without the reading"
+   }
   ]
  },
  "cases": [
@@ -344,7 +397,30 @@
      "written": "の"
     }
    ]
+  },
+  {
+   "name": "a search-only form never outranks a real written form, form and reading (#347)",
+   "pack": "rainbow",
+   "size": 1,
+   "expected": [
+    {
+     "key": "niji",
+     "rank": 1,
+     "written": "虹"
+    }
+   ]
+  },
+  {
+   "name": "a search-only form never outranks a real written form, form alone (#347)",
+   "pack": "rainbow-bare",
+   "size": 1,
+   "expected": [
+    {
+     "key": "niji",
+     "rank": 1,
+     "written": "虹"
+    }
+   ]
   }
- ],
- "writtenNote": "written is the display form served and snapshotted (frequency/display-form.json) with the row's term as list form; uk means entries.uk and, unless senseTags gives the senses' tags, a first sense tagged uk"
+ ]
 }
