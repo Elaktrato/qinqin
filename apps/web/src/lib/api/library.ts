@@ -1,5 +1,14 @@
 import { ApiError, api } from './client';
-import type { Book, Bookmark, Chapter, Highlight, HighlightColor, SourceInfo, SourceResult } from './types';
+import type {
+	Book,
+	Bookmark,
+	Chapter,
+	GradedText,
+	Highlight,
+	HighlightColor,
+	SourceInfo,
+	SourceResult
+} from './types';
 
 /** listAllBooks lists the books of all the caller's workspaces (each carries its workspaceId). */
 export function listAllBooks(): Promise<Book[]> {
@@ -183,4 +192,11 @@ export function browseSource(
 	if (opts.seed) query.set('seed', opts.seed);
 	query.set('limit', String(opts.limit ?? BROWSE_LIMIT));
 	return api<SourceResult[]>(`/api/library/sources/${encodeURIComponent(source)}/browse?${query}`);
+}
+
+/** gradedCatalogue lists the graded readers of a language (every language without one), level by level. */
+export async function gradedCatalogue(language?: string): Promise<GradedText[]> {
+	const query = language ? `?${new URLSearchParams({ language })}` : '';
+	const res = await api<{ texts: GradedText[] }>(`/api/library/graded${query}`);
+	return res.texts;
 }

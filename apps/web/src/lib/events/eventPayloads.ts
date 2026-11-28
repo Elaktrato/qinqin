@@ -85,3 +85,11 @@ export function drillPayload(
 	for (const [name, value] of Object.entries(extra)) if (name !== 'item' && name !== 'mode' && name !== 'grade') payload[name] = value;
 	return payload;
 }
+
+/** The members of a `notebook` mark (#227, docs/contracts/notebook/): a removal by hand of one item, or a clear. */
+export type NotebookPayload = { action: 'remove'; item: string } | { action: 'clear' };
+
+/** `notebook`: a mark of the mistake notebook; the members come out in the contract's order (notebook.json `build`). */
+export function notebookPayload(p: NotebookPayload): NotebookPayload {
+	return p.action === 'remove' ? { action: p.action, item: p.item } : { action: p.action };
+}

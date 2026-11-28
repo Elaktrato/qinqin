@@ -68,6 +68,11 @@ Course progress (`courses/README.md`, #221) is `course` events and travels with 
 words are dictionary keys, never entry ids, so a restore remaps nothing in it (`backup_roundtrip_test.go`). The
 courses themselves are packs, not in an archive.
 
+The mistake notebook (`notebook/README.md`, #227) is derived from the events; its only data are the `notebook` mark
+events (a removal by hand, a clear), which travel with the other events. A mark whose `item` is `card:<cardId>` names a
+card: the export lists the card's entry in `refs/entries.json` and a restore maps the id as a review's `cardId`
+(`remap.json`); other items are kept byte for byte.
+
 Grammar lesson runs (`grammar/README.md`, #277) are `grammar` events and travel with the other events; an export
 writes no grammar rows. An archive written before #277 carries the progress as a workspace row of the `rows` family
 per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`: a restore turns each into the

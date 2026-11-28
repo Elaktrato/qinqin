@@ -204,7 +204,13 @@ func (m *Maps) Card(key string, data json.RawMessage) (newKey string, newData js
 	return cardKeyPrefix + newID, nd, false
 }
 
-// cardID maps the cardId of a review event.
+// The mistake notebook's mark event and the prefix of a card item (docs/contracts/notebook/).
+const (
+	notebookEvent      = "notebook"
+	notebookCardPrefix = "card:"
+)
+
+// cardID maps the cardId of a review event (and of a notebook mark's card item).
 func (m *Maps) cardID(old string) string {
 	if n, ok := m.Cards[old]; ok {
 		return n
@@ -234,6 +240,15 @@ func (m *Maps) Event(e Event) (Event, bool) {
 			if json.Unmarshal(v, &id) == nil {
 				b, _ := json.Marshal(m.cardID(id))
 				e.Payload = rewriteObject(e.Payload, map[string]json.RawMessage{"cardId": b})
+			}
+		}
+	case notebookEvent:
+		// A notebook mark of a card item names the card (#227, docs/contracts/notebook/): it follows the review's map.
+		if v, ok := member(e.Payload, "item"); ok {
+			var item string
+			if json.Unmarshal(v, &item) == nil && strings.HasPrefix(item, notebookCardPrefix) {
+				b, _ := json.Marshal(notebookCardPrefix + m.cardID(strings.TrimPrefix(item, notebookCardPrefix)))
+				e.Payload = rewriteObject(e.Payload, map[string]json.RawMessage{"item": b})
 			}
 		}
 	case "read":

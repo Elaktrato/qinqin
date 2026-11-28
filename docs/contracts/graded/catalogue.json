@@ -1,0 +1,112 @@
+{
+ "version": 1,
+ "rule": "graded/catalogue",
+ "doc": "The answer of GET /api/library/graded (README, Catalogue), cut to four texts: each is the route's entry for that id, key for key. Go: server/internal/api/handlers_graded_test.go; web: apps/web/src/lib/features/reader/graded/catalogue.contract.test.ts.",
+ "answer": {
+  "texts": [
+   {
+    "id": "zh-hsk1-new-friend",
+    "language": "zh",
+    "scheme": "hsk-words",
+    "level": 0,
+    "levelName": "HSK 1",
+    "levels": 4,
+    "kind": "dialogue",
+    "title": "新朋友",
+    "length": 82,
+    "names": [
+     "王明",
+     "张文文"
+    ],
+    "glosses": [],
+    "humanReviewed": false
+   },
+   {
+    "id": "zh-hsk3-hotel",
+    "language": "zh",
+    "scheme": "hsk-words",
+    "level": 2,
+    "levelName": "HSK 3",
+    "levels": 4,
+    "kind": "dialogue",
+    "title": "在宾馆",
+    "length": 207,
+    "names": [
+     "李文",
+     "李先生",
+     "长城"
+    ],
+    "glosses": [
+     {
+      "word": "订",
+      "reading": "dìng",
+      "meaning": "to book, to reserve"
+     },
+     {
+      "word": "房卡",
+      "reading": "fángkǎ",
+      "meaning": "room key card"
+     },
+     {
+      "word": "餐厅",
+      "reading": "cāntīng",
+      "meaning": "restaurant, dining room"
+     }
+    ],
+    "humanReviewed": false
+   },
+   {
+    "id": "ja-n5-bread",
+    "language": "ja",
+    "scheme": "jlpt-words",
+    "level": 0,
+    "levelName": "≈ N5",
+    "levels": 3,
+    "kind": "dialogue",
+    "title": "パン屋で",
+    "length": 183,
+    "names": [],
+    "glosses": [
+     {
+      "word": "ください",
+      "reading": "ください",
+      "meaning": "please (give me / do …)"
+     },
+     {
+      "word": "人気",
+      "reading": "にんき",
+      "meaning": "popularity (人気がある = popular)"
+     }
+    ],
+    "humanReviewed": false
+   },
+   {
+    "id": "ja-n4-party",
+    "language": "ja",
+    "scheme": "jlpt-words",
+    "level": 1,
+    "levelName": "≈ N4",
+    "levels": 3,
+    "kind": "dialogue",
+    "title": "パーティーにさそう",
+    "length": 242,
+    "names": [
+     "山田"
+    ],
+    "glosses": [
+     {
+      "word": "パーティー",
+      "reading": "ぱーてぃー",
+      "meaning": "party"
+     },
+     {
+      "word": "迎えに行く",
+      "reading": "むかえにいく",
+      "meaning": "to go to meet, to pick up"
+     }
+    ],
+    "humanReviewed": false
+   }
+  ]
+ }
+}

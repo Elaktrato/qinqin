@@ -489,6 +489,7 @@ func (s *server) routes() []route {
 		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil, noTok},
 		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil, noTok},
 		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil, noTok},
+		{"GET /api/library/graded", s.handleGradedCatalogue, accUser, nil, noTok},
 		{"PUT /api/features/{id}", s.handleSetFeature, accUser, nil, tokWriteAny},
 		{"GET /api/rows", s.handleListRows, accUser, nil, tokReadWS},
 		{"GET /api/rows/{key}", s.handleGetRow, accUser, nil, tokReadWS},

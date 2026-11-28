@@ -23,6 +23,30 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   place).
 - **The reader** opens at `/reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}`.
 
+## #231 — graded readers: the text format, the level rule and the catalogue (contract 42)
+
+- **New `graded/`:** the graded reader text file (format 1: a language's levels of a word level list, texts with id,
+  level, kind `story`/`dialogue`/`info`, title, paragraphs without ASCII letters or digits, names and glosses;
+  `format.json`), the level rule (function words and names not counted, uncovered letters as unknown words, a text
+  fits a level at 95 % within and at most 6 distinct words above; the computed level is the lowest that fits; a gloss
+  word containing an above-level word glosses it; `level-rule.json`, Go and web) and the catalogue answer
+  (`catalogue.json`).
+- **New route `GET /api/library/graded?language=`** (signed in, no personal access token, not cached offline): the
+  texts with level, kind, length, names and glosses. **`GET /api/library/sources`** lists the source `graded`
+  ("Graded readers", ja and zh) first; `POST /api/library/sources/graded/import` adds a text as a one-chapter book.
+
+## #227 — the mistake notebook (contract 41)
+
+- **New `notebook/`:** the mistake notebook is derived from the study events: which `review`, `drill.<id>`, `grammar`
+  and `course` events are a wrong or right answer about which item (`card:<cardId>`, `drill.<id>:<item>`,
+  `grammar:<point>`, `course:<course>:lesson:<unit>:<lesson>`, `course:<course>:unit:<unit>`,
+  `course:<course>:section:<section>`), the replay (an item enters on a wrong answer and leaves after **3** right
+  answers in a row), the groups and the order. Fixture `notebook.json` (web).
+- **New event type `notebook`:** `{action: "remove", item}` (an item removed by hand) and `{action: "clear"}`, written
+  through the outbox; no activity rule (`events/README.md`, `payloads.json` `build`).
+- **Backup:** a restore remaps the card id in a `notebook` mark's `card:` item as it remaps a review's `cardId`, and the
+  export names its entry in `refs/entries.json` (`backup/remap.json`, two cases).
+
 ## #225 — courses count; course milestones; the Home widget (contract 40)
 
 - **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course

@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #278 (the study core), #284 (the reading convention), #222 (the courses feature stays off flashcards). A merge from an issue that changes what this record names adds it here and
+Touched by: #278 (the study core), #284 (the reading convention), #222 (the courses feature stays off flashcards), #227 (the `notebook` feature folder). A merge from an issue that changes what this record names adds it here and
 updates the record.
 
 ## Context
@@ -29,7 +29,7 @@ Under `apps/web/src/lib/`:
   under `lib/features/<feature>` (flashcards, reader, journal, grammar: the features of record
   [0006](0006-core-features-instead-of-code-plugins.md), each with a switch); every other feature folder sits
   at the top of `lib/`: `account`, `activity`, `admin`, `aids` (the visual aids: tone colours, pictures, anatomy), `entry`, `goals`, `lookups` (the lookup history and
-  its page), `milestones`, `notes`, `placement` (the placement test and "I already know this", #74), `pwa`, `search`, `settings`, `sources`, `starter` (Starter mode's settings, offer and add button, #214), `stats`, `weekly`, `widgets` (the
+  its page), `milestones`, `notebook` (the mistake notebook and its round, #227), `notes`, `placement` (the placement test and "I already know this", #74), `pwa`, `search`, `settings`, `sources`, `starter` (Starter mode's settings, offer and add button, #214), `stats`, `weekly`, `widgets` (the
   home and Stats overview board) and `workspace`.
 - **Logic-only folders**: the shared layers below the features, with no component: `api`, `audio`, `auth`,
   `context`, `events`, `exercises`, `fonts`, `i18n`, `languages`, `native`, `packages`, `radicals`, `routing`,

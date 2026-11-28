@@ -457,6 +457,13 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 				if json.Unmarshal(e.Payload, &p) == nil {
 					refs.noteCardID(p.CardID)
 				}
+			case notebookEvent:
+				var p struct {
+					Item string `json:"item"`
+				}
+				if json.Unmarshal(e.Payload, &p) == nil && strings.HasPrefix(p.Item, notebookCardPrefix) {
+					refs.noteCardID(strings.TrimPrefix(p.Item, notebookCardPrefix))
+				}
 			case "view":
 				var p struct {
 					EntryID int64 `json:"entryId"`
