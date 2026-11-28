@@ -26,10 +26,9 @@ const maxEstimateWords = 20000
 // readingTypes are the reading types a course word shows, best first.
 var readingTypes = []string{"pinyin", "kana"}
 
-// gathered is what Fill reads from the installed packs, and the fingerprint of all of it.
+// gathered is what Fill reads from the installed packs.
 type gathered struct {
-	in          Input
-	fingerprint string
+	in Input
 }
 
 // wordOf is the course word of an entry: its key, display form and first pinyin or kana reading.
@@ -79,29 +78,12 @@ func entries(ctx context.Context, store lexicon.Store, ids []int64) ([]lexicon.E
 func gather(ctx context.Context, sqlDB *sql.DB, p Pack, c *Course) (gathered, error) {
 	store := lexicon.Store{DB: sqlDB}
 	fs := freq.Store{DB: sqlDB}
-	lexVersion, err := store.CharactersVersion(ctx)
-	if err != nil {
-		return gathered{}, err
-	}
-	fp := []string{"course:" + p.hash, "lexicon:" + lexVersion}
 	var g gathered
 
-	// The frequency pack: the first live pack of the language in priority order.
-	var fpack *freq.PackInfo
-	packs, err := fs.Packs(ctx)
+	fpack, err := firstFrequencyPack(ctx, fs, c.Language)
 	if err != nil {
 		return gathered{}, err
 	}
-	for i := range packs {
-		if strings.EqualFold(packs[i].Language, c.Language) {
-			fpack = &packs[i]
-			break
-		}
-	}
-	if fpack != nil {
-		fp = append(fp, fmt.Sprintf("frequency:%s:%d:%s", fpack.PackID, fpack.ID, fpack.ContentHash))
-	}
-
 	scheme := ""
 	if c.Levels != nil {
 		scheme = c.Levels.Scheme
@@ -115,7 +97,6 @@ func gather(ctx context.Context, sqlDB *sql.DB, p Pack, c *Course) (gathered, er
 	}
 	switch {
 	case err == nil && scheme != "":
-		fp = append(fp, fmt.Sprintf("levels:%s:%d:%s", scheme, words.SchemeID, words.Version))
 		li := &LevelInput{Pack: scheme}
 		var all []lexicon.Entry
 		for _, lv := range words.Levels {
@@ -180,14 +161,63 @@ func gather(ctx context.Context, sqlDB *sql.DB, p Pack, c *Course) (gathered, er
 	}
 	g.in.Grammar = map[string]bool{}
 	for _, gp := range gps {
-		fp = append(fp, "grammar:"+gp.PackID+":"+gp.Version)
 		for _, l := range gp.Lessons {
 			g.in.Grammar[gp.PackID+":"+l.ID] = true
 		}
 	}
-	sum := sha256.Sum256([]byte(strings.Join(fp, "\n")))
-	g.fingerprint = hex.EncodeToString(sum[:])
 	return g, nil
+}
+
+// firstFrequencyPack is the first live frequency pack of the language in priority order; nil when it has none.
+func firstFrequencyPack(ctx context.Context, fs freq.Store, language string) (*freq.PackInfo, error) {
+	packs, err := fs.Packs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range packs {
+		if strings.EqualFold(packs[i].Language, language) {
+			return &packs[i], nil
+		}
+	}
+	return nil, nil
+}
+
+// fingerprintOf identifies everything a fill of the course reads, in a few small queries: the course and its
+// credits, the lexicon, the frequency pack, the level scheme's version and the installed grammar packs. A cached
+// fill is served while it holds.
+func fingerprintOf(ctx context.Context, sqlDB *sql.DB, p Pack, c *Course) (string, error) {
+	lexVersion, err := lexicon.Store{DB: sqlDB}.CharactersVersion(ctx)
+	if err != nil {
+		return "", err
+	}
+	fp := []string{"course:" + p.hash, p.Name, p.Version, p.License, p.Attribution, p.Notice, "lexicon:" + lexVersion}
+	fpack, err := firstFrequencyPack(ctx, freq.Store{DB: sqlDB}, c.Language)
+	if err != nil {
+		return "", err
+	}
+	if fpack != nil {
+		fp = append(fp, fmt.Sprintf("frequency:%s:%d:%s", fpack.PackID, fpack.ID, fpack.ContentHash))
+	}
+	if c.Levels != nil && c.Levels.Scheme != "" {
+		id, version, err := levels.WordSchemeVersion(ctx, sqlDB, c.Levels.Scheme, c.Language)
+		switch {
+		case errors.Is(err, levels.ErrNotFound):
+			fp = append(fp, "levels:none")
+		case err != nil:
+			return "", err
+		default:
+			fp = append(fp, fmt.Sprintf("levels:%d:%s", id, version))
+		}
+	}
+	gps, err := grammar.ListPacks(ctx, sqlDB, c.Language)
+	if err != nil {
+		return "", err
+	}
+	for _, gp := range gps {
+		fp = append(fp, "grammar:"+gp.PackID+":"+gp.Version+fmt.Sprintf(":%d", len(gp.Lessons)))
+	}
+	sum := sha256.Sum256([]byte(strings.Join(fp, "\n")))
+	return hex.EncodeToString(sum[:]), nil
 }
 
 // ranksOf looks up the frequency ranks of entries in the pack: the best rank of any of an entry's written forms
@@ -284,13 +314,16 @@ func (c *Cache) Get(ctx context.Context, sqlDB *sql.DB, packID string) (Served, 
 	// One fill at a time: a fill reads a few thousand rows, and two requests for a changed course fill it once.
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	fingerprint, err := fingerprintOf(ctx, sqlDB, p, course)
+	if err != nil {
+		return Served{}, fmt.Errorf("courses: fingerprint %s: %w", packID, err)
+	}
+	if e, ok := c.entries[packID]; ok && e.fingerprint == fingerprint {
+		return e.served, nil
+	}
 	g, err := gather(ctx, sqlDB, p, course)
 	if err != nil {
 		return Served{}, fmt.Errorf("courses: gather %s: %w", packID, err)
-	}
-	fingerprint := g.fingerprint + "\n" + p.Name + "\n" + p.Version + "\n" + p.License + "\n" + p.Attribution + "\n" + p.Notice
-	if e, ok := c.entries[packID]; ok && e.fingerprint == fingerprint {
-		return e.served, nil
 	}
 	filled := Fill(course, g.in)
 	raw, err := json.Marshal(filled)

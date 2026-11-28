@@ -24,16 +24,11 @@ type Words struct {
 // SchemeWords returns the live word scheme with pack id packID of the language. An unknown, uninstalled,
 // character-unit or other-language scheme returns ErrNotFound.
 func SchemeWords(ctx context.Context, sqlDB *sql.DB, packID, language string) (Words, error) {
-	var w Words
-	err := sqlDB.QueryRowContext(ctx, `SELECT id FROM schemes
-		WHERE pack_id = ? AND language = ? AND unit = 'word' AND deleted_at IS NULL`, packID, language).Scan(&w.SchemeID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return Words{}, ErrNotFound
-	}
-	if err != nil {
-		return Words{}, fmt.Errorf("find scheme %s: %w", packID, err)
-	}
-	if w.Version, err = SchemeVersion(ctx, sqlDB, w.SchemeID); err != nil {
+	var (
+		w   Words
+		err error
+	)
+	if w.SchemeID, w.Version, err = WordSchemeVersion(ctx, sqlDB, packID, language); err != nil {
 		return Words{}, err
 	}
 	rows, err := sqlDB.QueryContext(ctx, `
@@ -68,4 +63,20 @@ func SchemeWords(ctx context.Context, sqlDB *sql.DB, packID, language string) (W
 		return Words{}, fmt.Errorf("words of scheme %s: %w", packID, err)
 	}
 	return w, nil
+}
+
+// WordSchemeVersion returns the id and SchemeVersion of the live word scheme with pack id packID of the language,
+// without its members (a cache's cheap check); ErrNotFound as SchemeWords.
+func WordSchemeVersion(ctx context.Context, sqlDB *sql.DB, packID, language string) (int64, string, error) {
+	var id int64
+	err := sqlDB.QueryRowContext(ctx, `SELECT id FROM schemes
+		WHERE pack_id = ? AND language = ? AND unit = 'word' AND deleted_at IS NULL`, packID, language).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, "", ErrNotFound
+	}
+	if err != nil {
+		return 0, "", fmt.Errorf("find scheme %s: %w", packID, err)
+	}
+	version, err := SchemeVersion(ctx, sqlDB, id)
+	return id, version, err
 }
