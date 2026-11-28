@@ -1,0 +1,10 @@
+{
+  "id": "e2e-ja-counters",
+  "name": "Japanese nouns with counters (end-to-end test)",
+  "version": "1",
+  "type": "dictionary",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written test data in the JMdict format",
+  "format": "jmdict"
+}

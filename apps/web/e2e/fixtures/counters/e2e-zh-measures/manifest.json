@@ -1,0 +1,10 @@
+{
+  "id": "e2e-zh-measures",
+  "name": "Chinese nouns with measure words (end-to-end test)",
+  "version": "1",
+  "type": "dictionary",
+  "language": "zh",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written test data in the CC-CEDICT format",
+  "format": "cedict"
+}

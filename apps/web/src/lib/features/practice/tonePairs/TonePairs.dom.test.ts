@@ -62,7 +62,14 @@ function workspace(settings: Record<string, unknown> = {}): void {
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ['Date'] });
 	vi.setSystemTime(NOW);
-	ctx = testContext();
+	// The measure-word drill (#179) applies to Chinese, the counter drills to Japanese: nothing to count here.
+	ctx = testContext({
+		routes: {
+			'POST /api/drills/measure-words/words': { words: [], pools: {} },
+			'GET /api/drills/counters': { counters: [] },
+			'POST /api/drills/conjugation/words': { words: [] }
+		}
+	});
 	recorded = [];
 	workspace();
 	vi.mocked(loadStudyHistory).mockResolvedValue(history());

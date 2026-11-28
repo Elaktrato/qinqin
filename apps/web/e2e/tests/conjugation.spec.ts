@@ -48,7 +48,12 @@ test('a conjugation round: produce through the IME, recognise, the answers on th
 	await expect(page.getByText('1 due')).toBeVisible();
 	await expectNoSidewaysScroll(page, '/practice with the conjugation drill');
 
-	await page.getByRole('link', { name: 'Practise', exact: true }).click();
+	// Japanese lists the counter drills too (#179): the conjugation drill's own entry.
+	await page
+		.getByRole('listitem')
+		.filter({ has: page.getByRole('heading', { level: 2, name: 'Conjugation' }) })
+		.getByRole('link', { name: 'Practise', exact: true })
+		.click();
 	await expect(page).toHaveURL(/\/practice\/conjugation$/);
 	await expect(page.getByText('Question 1 of 10')).toBeVisible();
 	await expect(page.getByText('書く', { exact: true })).toBeVisible();

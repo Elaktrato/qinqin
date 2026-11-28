@@ -177,6 +177,20 @@ and its picture (notes: `server/internal/starter/sets/REVIEW.md`); `humanReviewe
 `false` until the owner has read them, and each file's `attribution` says so.
 Licence confirmed by the owner on 2026-11-26.
 
+## Counters and measure words (Practice, #179)
+
+`server/internal/counters/table/counters-ja.json` (embedded in the server) is the Japanese counters table of the
+counter drills: 32 counters, what each counts, the numbers asked, the readings of number + counter with their sound
+changes (the rule in `docs/contracts/counters/`, the irregular readings in the table) and 161 example nouns.
+`measures-zh.json` corrects the Chinese measure words the measure-word drill reads from the installed CC-CEDICT's
+`CL:` notes (nouns left out, lists reordered or extended, question glosses). The **project wrote both** (CC BY 4.0,
+credit "qinqin contributors, CC BY 4.0"; JMdict lists no counter per noun, so nothing is taken from it, and no
+commercial list was copied). The Chinese measure words are CC-CEDICT's (CC BY-SA 4.0), derived when a drill asks and
+never bundled separately. Both files were **reviewed by agents acting as teachers, not yet by a person** (two Japanese
+teachers and an adjudicator for the table and its readings, two Chinese teachers for a sample of 161 derived nouns;
+notes: `server/internal/counters/table/REVIEW.md`); `humanReviewed` stays `false`. Credited on the Sources page under
+Practice.
+
 ## Topic labels (courses, #220)
 
 `server/internal/topics/labels/zh.json` and `ja.json` (embedded in the server) give words their **topics** (49

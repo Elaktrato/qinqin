@@ -6,13 +6,17 @@
 
 import type { DrillDef } from './types';
 import { conjugationDrill } from './conjugation/conjugationDrill';
+import { counterReadingsDrill, countersDrill, measureWordsDrill } from './counters/counterDrills';
 import { sampleDrill } from './sample/sampleDrill';
 import { tonePairDrill } from './tonePairs/tonePairDrill';
 
 /** The registered drills, in the order the list shows them. */
 export const DRILLS: readonly DrillDef[] = Object.freeze<DrillDef[]>([
 	tonePairDrill, // #180
-	conjugationDrill // #178
+	conjugationDrill, // #178
+	measureWordsDrill, // #179
+	countersDrill, // #179
+	counterReadingsDrill // #179
 ]);
 
 /** The developer flag: `localStorage["qinqin.dev.drills"] = "sample"` offers the sample drill on this device. */

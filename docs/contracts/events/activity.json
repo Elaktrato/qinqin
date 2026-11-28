@@ -52,6 +52,24 @@
    "rule": {
     "feature": "practice"
    }
+  },
+  {
+   "type": "drill.measure-words",
+   "rule": {
+    "feature": "practice"
+   }
+  },
+  {
+   "type": "drill.counters",
+   "rule": {
+    "feature": "practice"
+   }
+  },
+  {
+   "type": "drill.counter-readings",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [

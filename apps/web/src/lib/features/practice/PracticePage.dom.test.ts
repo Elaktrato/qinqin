@@ -40,7 +40,8 @@ function history(events: StudyEvent[] = []) {
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ['Date'] });
 	vi.setSystemTime(NOW);
-	ctx = testContext();
+	// The counter drills (#179) apply to Japanese too: no counters, no nouns here.
+	ctx = testContext({ routes: { 'GET /api/drills/counters': { counters: [] }, 'POST /api/drills/measure-words/words': { words: [], pools: {} } } });
 	recorded = [];
 	localStorage.setItem(DEV_DRILLS_KEY, 'sample');
 	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'ja', name: 'ja' } as never });

@@ -25,7 +25,10 @@ export const DRILL_FEATURE = 'practice';
  */
 export const DRILL_IDS: readonly string[] = Object.freeze<string[]>([
 	'tone-pairs', // the tone-pair drill (#180)
-	'conjugation' // the conjugation trainer (#178)
+	'conjugation', // the conjugation trainer (#178)
+	'measure-words', // Chinese measure words (#179)
+	'counters', // Japanese counters (#179)
+	'counter-readings' // Japanese number + counter readings (#179)
 ]);
 
 export const MAX_DRILL_ID_LENGTH = 32;
