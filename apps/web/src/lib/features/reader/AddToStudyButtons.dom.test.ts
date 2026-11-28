@@ -300,6 +300,14 @@ describe('Save this sentence (#279)', () => {
 		vi.mocked(hasCard).mockReturnValue(false);
 	});
 
+	it('saves the book, chapter and the word\'s place with the sentence (#280)', async () => {
+		studied();
+		mount({ place: { bookId: 8, chapter: 1, paragraph: 4 } });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Save this sentence for 学' }));
+		await screen.findByText('Sentence saved as a new card.');
+		expect(addSentence).toHaveBeenCalledWith(11, '我在学中文。', { bookId: 8, chapter: 1, paragraph: 4, start: 2, end: 3 });
+	});
+
 	it('saves the book sentence of a studied word as a sentence card in its decks', async () => {
 		studied();
 		mount();

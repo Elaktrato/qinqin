@@ -7,6 +7,7 @@
 	import WordSaladBoard from './WordSaladBoard.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import HintControl from '../face/HintControl.svelte';
@@ -122,6 +123,7 @@
 				<p class="translation">{sentence.translation}</p>
 			{/if}
 			{#if sentence.credit}<SentenceCredit credit={sentence.credit} />{/if}
+			{#if sentence.source}<SentenceSource source={sentence.source} linked={false} />{/if}
 		</section>
 	</FaceAnswer>
 {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
@@ -133,6 +134,7 @@
 			<p class="sentence">{line}</p>
 		{/each}
 		{#if faces.back.sentenceLines.length > 0}<AiTag ai={shownSentence?.ai} />{/if}
+		{#if faces.back.sentenceLines.length > 0 && shownSentence?.source}<SentenceSource source={shownSentence.source} linked={false} />{/if}
 		{#if faces.back.glosses.length > 0}
 			{#key entry.id}<CardGlosses glosses={faces.back.glosses} folded={faces.back.folded} />{/key}
 		{:else if entry.kind !== 'character'}

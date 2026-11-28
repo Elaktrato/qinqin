@@ -8,6 +8,8 @@
 	import { markTerm } from '$lib/entry/markTerm';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import SentenceCredit from '$lib/entry/SentenceCredit.svelte';
+	import SentenceSource from '$lib/entry/SentenceSource.svelte';
+	import { sourceText } from '$lib/entry/sentenceSource';
 	import ShareButton from '$lib/entry/ShareButton.svelte';
 	import { creditText, sentenceShareText } from '$lib/entry/shareText';
 
@@ -35,8 +37,10 @@
 	const parts = (hanzi: string) => markTerm(hanzi, term);
 
 	// Pack sentences carry their source pack; user sentences have no
-	// pack, so they are labelled with the user that wrote them.
+	// pack, so they are labelled with the user that wrote them, or with the
+	// book the reader saved them from (#280).
 	function origin(sentence: Sentence): string {
+		if (sentence.source) return sourceText(sentence.source);
 		if (sentence.userId !== null) {
 			return sentence.sourcePack
 				? t('entry.sentences.packUser', { pack: sentence.sourcePack, id: `#${sentence.userId}` })
@@ -66,7 +70,7 @@
 					{:else if sentence.credit}
 						<SentenceCredit credit={sentence.credit} />
 					{:else}
-						<span class="origin">{origin(sentence)}</span>
+						{#if sentence.source}<SentenceSource source={sentence.source} />{:else}<span class="origin">{origin(sentence)}</span>{/if}
 						{#if sentence.userId !== null}{@render ownActions?.(sentence, `sentence-${sentence.id}`)}{/if}
 					{/if}
 					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? (sentence.credit ? creditText(sentence.credit) : origin(sentence)) : '')} label={t('entry.sentences.shareLabel')} /></span>

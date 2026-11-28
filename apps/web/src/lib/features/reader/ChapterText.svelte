@@ -274,10 +274,21 @@
 		background-color: var(--selected-wash);
 	}
 
+	/* The word a saved sentence's link opened the reader at (#280): underlined, so it stays apart from a lookup. */
+	:global(::highlight(reader-source)) {
+		background-color: var(--selected-wash);
+		text-decoration: underline 2px var(--reading-accent);
+		text-underline-offset: 0.2em;
+	}
+
 	/* Forced colours: the looked-up word is the system selection, user
 	   highlights the system mark colours (their names stay in the panel). */
 	@media (forced-colors: active) {
 		:global(::highlight(reader-lookup)) {
+			background-color: Highlight;
+			color: HighlightText;
+		}
+		:global(::highlight(reader-source)) {
 			background-color: Highlight;
 			color: HighlightText;
 		}
