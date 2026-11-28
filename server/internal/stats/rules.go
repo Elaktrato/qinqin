@@ -1,5 +1,11 @@
 package stats
 
+import (
+	"slices"
+
+	"qinqin/internal/drills"
+)
+
 // The activity rules of the heatmap, goals and the weekly summary (#199): one
 // core table, pinned by docs/contracts/events/activity.json. Before #199 the
 // rules came from the plugin manifests; there are no plugins any more, so a
@@ -52,8 +58,22 @@ func (r Rule) Unit() string {
 	return "count"
 }
 
-// Rules are the activity rules, in the order the activity route lists them.
-var Rules = []Rule{
+// Rules are the activity rules, in the order the activity route lists them:
+// the core types, then one rule per registered drill (drills.IDs).
+var Rules = slices.Concat(coreRules, DrillRules(drills.IDs))
+
+// DrillRules are the activity rules of drills (docs/contracts/drills/,
+// counting.json): one count rule per drill, type "drill.<id>", feature
+// practice; every answer is a point and its payload is not read.
+func DrillRules(ids []string) []Rule {
+	out := make([]Rule, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, Rule{Type: drills.EventType(id), Feature: drills.Feature})
+	}
+	return out
+}
+
+var coreRules = []Rule{
 	{Type: "review", Feature: "flashcards"},
 	{Type: "read", Feature: "reader", Measure: &Measure{Field: "seconds", Min: 30, Max: 7200}, PointsPer: 300},
 	{Type: "journal", Feature: "journal", DistinctBy: "entryId"},
