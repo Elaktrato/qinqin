@@ -8,6 +8,7 @@ import { activityAmounts, amountsOf, flashcardAmounts, type FlashcardDay } from 
 import type { GoalsRow } from '../goals/goals';
 import { goalDays, type UnitOf } from '../goals/progress';
 import { dailyStreak } from '$lib/studycore/exp';
+import type { DrillAnswer } from '$lib/studycore/drills';
 import type { GrammarRun } from '$lib/studycore/grammarRuns';
 import { isValidReview } from '$lib/studycore/scheduler';
 import type { ReviewEvent } from '$lib/studycore/types';
@@ -70,6 +71,8 @@ export interface WeekInputs {
 	reviews: readonly ReviewEvent[];
 	/** The workspace's grammar lesson runs: they keep the streak (#277). */
 	grammarRuns?: readonly GrammarRun[];
+	/** The workspace's drill answers: they keep the streak too. */
+	drillAnswers?: readonly DrillAnswer[];
 	vacation: readonly Run[];
 	/** null = the activity request failed (offline). */
 	activity: { cells: readonly ActivityCell[]; sources: readonly ActivitySource[] } | null;
@@ -226,7 +229,8 @@ export function weekSummary(passes: WeekPasses, input: WeekInputs): WeekSummary 
 		end,
 		day,
 		vacation,
-		(input.grammarRuns ?? []).filter((run) => run.workspaceId === workspaceId)
+		(input.grammarRuns ?? []).filter((run) => run.workspaceId === workspaceId),
+		(input.drillAnswers ?? []).filter((answer) => answer.workspaceId === workspaceId)
 	).current;
 
 	const cuts = weekCutoffs(monday, today, day);

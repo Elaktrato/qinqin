@@ -69,6 +69,7 @@
 					decks: data.decks,
 					reviews: data.reviews,
 					grammarRuns: data.grammarRuns,
+					drillAnswers: data.drillAnswers,
 					known: data.known,
 					vacation: ctx.vacation,
 					w: activeWeights(data),

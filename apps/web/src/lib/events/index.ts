@@ -9,7 +9,7 @@ import type { Api, Timers } from '$lib/context/deps';
 import { firstEventsPageUrl, readEventLog } from './eventPages';
 import { pruneSavedEventPages, type PageCachesLike } from '$lib/pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
-import { LOG_CHANGING_TYPES } from '$lib/activity/sources';
+import { changesLog } from '$lib/activity/sources';
 import type { StudyEventBody } from '$lib/api/types';
 import type { StudyDay } from '$lib/time/studyDay';
 import { newUlid } from './ulid';
@@ -242,10 +242,9 @@ export class EventLog {
 	}
 
 	#changed(events: readonly StudyEventBody[]): void {
-		const types = LOG_CHANGING_TYPES;
 		const touched = new Set<number>();
 		for (const event of events) {
-			if (types.has(event.type)) touched.add(event.workspaceId);
+			if (changesLog(event.type)) touched.add(event.workspaceId);
 		}
 		for (const workspaceId of touched) {
 			// The held log stays for the next read, which reloads it behind (#290);

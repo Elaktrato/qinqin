@@ -5,6 +5,7 @@
 import type { ParsedGoals } from '$lib/goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrsParams';
+import type { DrillAnswer } from './drills';
 import type { GrammarRun } from './grammarRuns';
 import type { KnownBatch } from './knownMarks';
 import type { LimitPair } from './limits';
@@ -141,6 +142,11 @@ export interface StudyHistory extends StudyData {
 	reviews: ReviewEvent[];
 	/** The workspace's grammar lesson runs (#277), in replay order: EXP and the streak count them. */
 	grammarRuns: GrammarRun[];
+	/**
+	 * The workspace's drill answers (docs/contracts/drills/), in replay order: EXP and the streak count them, the
+	 * Practice area schedules them. `historyOf` always sets it; absent means none (test mocks).
+	 */
+	drillAnswers?: DrillAnswer[];
 	/** How many stored duplicate cards were folded away. */
 	merged: number;
 }

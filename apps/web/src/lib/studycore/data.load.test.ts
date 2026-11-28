@@ -247,6 +247,7 @@ describe("loading the study state", () => {
         reviews: [],
         merged: 0,
         grammarRuns: [],
+        drillAnswers: [],
       });
     });
 
@@ -262,6 +263,7 @@ describe("loading the study state", () => {
         reviews: [],
         merged: 0,
         grammarRuns: [],
+        drillAnswers: [],
       });
     });
 

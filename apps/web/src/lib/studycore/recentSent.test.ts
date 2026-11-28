@@ -39,6 +39,12 @@ describe('recent sent reviews', () => {
 		expect(recentSentReviews(2, 7, NOW, store).map((e) => e.id)).toEqual(['c']);
 	});
 
+	it('keeps sent drill answers too', () => {
+		const typed = (id: string, type: string) => ({ ...(ev(id) as object), type }) as never;
+		rememberSent(1, [typed('d', 'drill.tone-pairs'), typed('x', 'drill.weakest')], NOW, store);
+		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['d']);
+	});
+
 	it('keeps sent grammar lesson runs too (#277), never other events', () => {
 		const typed = (id: string, type: string) => ({ ...(ev(id) as object), type }) as never;
 		rememberSent(1, [typed('g', 'grammar'), typed('r', 'read'), typed('s', 'session')], NOW, store);

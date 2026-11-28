@@ -11,8 +11,9 @@ import { addDays, studyDay, type ZoneChange } from '../time/studyDay';
 import { charactersLearned, givenTimelines, wordsReachingMature } from './replay';
 import { weekSummary, type WeekInputs, type WeekPasses } from './summary';
 import { oldestWeek } from './week';
-import { grammarPayload } from '$lib/events/eventPayloads';
+import { drillPayload, grammarPayload } from '$lib/events/eventPayloads';
 import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
+import { parseDrillAnswer, type DrillAnswer } from '$lib/studycore/drills';
 
 // A fresh memo per test (record 0009: the session owns one).
 let weekPasses = new Map() as WeekPasses;
@@ -107,6 +108,23 @@ const base = cases.find((c) => c.name.startsWith('a completed week'))!;
 describe('weekSummary', () => {
 	it('throws for a week after the current one', () => {
 		expect(() => weekSummary(weekPasses, { ...inputsOf(base), monday: '2026-11-23' })).toThrow(RangeError);
+	});
+
+	it('counts drill answer days of the workspace in the streak', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const answerAt = (id: string, ws: number, ts: string): DrillAnswer => {
+			const a = parseDrillAnswer({ id, workspaceId: ws, ts, type: 'drill.counters', payload: drillPayload('5678', 'produce', 3) });
+			if (a === null) throw new Error('no answer');
+			return a;
+		};
+		const answers = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => answerAt(`d${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withAnswers = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], drillAnswers: answers(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, drillAnswers: answers(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withAnswers).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
 	});
 
 	it('counts grammar lesson days of the workspace in the streak (#277)', () => {
