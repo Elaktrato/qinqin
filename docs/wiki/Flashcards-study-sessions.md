@@ -131,7 +131,7 @@ Loanwords show katakana where hiragana is used above. Words that are normally wr
 
 A word moves up when you answer it **Good or Easy on a different day** (at least twelve hours after the last answer that counted): one step for the first answer, then at 2, 3, 5 and 7 such answers for Japanese (1, 2, 4 and 6 for Chinese). **Hard** keeps the word where it is, and **Again** drops it one stage. The first time a word reaches a new stage its card says what changed ("New: now with hiragana").
 
-Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are a seed list that has not yet been read through by a person.
+Turn it on in Settings → Study → **Starter mode**, or accept the offer on Home when a workspace has nothing in it yet. The same place adds the Starter words to your decks (deck "Starter words") and lets you apply the mode to **the Starter words only** or to **all your vocabulary cards**. Switch it off and every card shows normally; nothing is lost. The Starter words are about 150 everyday words per language with pictures (people, numbers, school, the body, food and drink, home, clothes, transport, places, colours, nature, animals and a few actions), in an order meant for the first weeks; the offer and Settings say how many there are. They were reviewed by agents acting as native-speaker teachers, not yet by a person.
 
 ## Your notes on the answer side
 

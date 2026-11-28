@@ -4,7 +4,7 @@
  "language": "ja",
  "name": "Starter words (Japanese)",
  "license": "CC-BY-4.0",
- "attribution": "Starter words: common, picturable words for beginners, chosen for this project by qinqin contributors (CC BY 4.0; https://github.com/Elaktrato/qinqin) and reviewed by agents acting as native-speaker teachers, not yet by a person. The dictionaries and pictures they point at keep their own licences.",
+ "attribution": "Starter words: common, picturable words for beginners, chosen for this project and reviewed by agents acting as native-speaker teachers, not yet by a person. Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin). The dictionaries and pictures they point at keep their own licences.",
  "humanReviewed": false,
  "words": [
   {"form": "男の人", "reading": "おとこのひと", "gloss": "man", "picture": {"pack": "images-openmoji", "concept": "1F468", "target": "j:1420020"}},
