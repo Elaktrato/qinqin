@@ -9,7 +9,7 @@ The dictionary is stored as `entries`, `forms`, `readings`, `senses`, `entry_lin
 - An **entry** is one dictionary headword, identified by its source's key within a language and kind (`word` or `character`).
 - Its **forms** are the written forms, with flags.
 - Its **readings** carry the reading text plus a normalised `plain` form that lookup matches against (kana, pinyin, bopomofo).
-- Its **senses** belong to a dictionary and hold the glosses, cross-references and tags, so several dictionaries can gloss one entry.
+- Its **senses** belong to a dictionary and hold the glosses, cross-references and tags, so several dictionaries can gloss one entry. They are stored in the dictionary's order; the order they are **shown** in is a display rule (`docs/contracts/senses/`, `lexicon.DisplaySenses`, `lib/entry/senseDisplay.ts`): slang, vulgar and derogatory glosses last and folded on cards, so picture mappings and cross-references keep counting stored senses.
 - **Entry links** connect characters to their radical and to variants.
 
 Per language:
