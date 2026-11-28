@@ -10,7 +10,7 @@
   },
   "sections": [
     {"id": "start", "level": null, "title": {"en": "Start"}, "units": [
-      {"id": "kana", "title": {"en": "Hiragana"}, "test": false}
+      {"id": "kana", "title": {"en": "Hiragana"}, "scripts": ["hiragana"], "test": false}
     ]},
     {"id": "n5", "level": 1, "title": {"en": "≈ N5"}, "units": [
       {"id": "school", "title": {"en": "At school"}, "topics": ["school"], "characters": ["学", "校"]},

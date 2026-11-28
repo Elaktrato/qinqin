@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"unicode"
 	"unicode/utf8"
 
@@ -93,8 +94,10 @@ type Unit struct {
 	Topics     []string `json:"topics,omitempty"`
 	Grammar    []string `json:"grammar,omitempty"`
 	Characters []string `json:"characters,omitempty"`
-	Text       *Text    `json:"text,omitempty"`
-	Focus      string   `json:"focus,omitempty"`
+	// Scripts names writing systems the unit's script lesson trains (hiragana, katakana …, the scripts trainer's ids).
+	Scripts []string `json:"scripts,omitempty"`
+	Text    *Text    `json:"text,omitempty"`
+	Focus   string   `json:"focus,omitempty"`
 	// Test is whether a unit test closes the unit (default true).
 	Test *bool `json:"test,omitempty"`
 }
@@ -308,6 +311,14 @@ func (u Unit) check(chars map[string]string) error {
 			return fmt.Errorf("character %s twice in the course (also in unit %s)", ch, other)
 		}
 		chars[ch] = u.ID
+	}
+	if len(u.Scripts) > maxGrammar {
+		return fmt.Errorf("%d scripts, at most %d", len(u.Scripts), maxGrammar)
+	}
+	for i, sc := range u.Scripts {
+		if !idPattern.MatchString(sc) || len(sc) > maxIDBytes || slices.Contains(u.Scripts[:i], sc) {
+			return fmt.Errorf("script %q is not an id or twice", sc)
+		}
 	}
 	if u.Text != nil {
 		if u.Text.Body == "" {
