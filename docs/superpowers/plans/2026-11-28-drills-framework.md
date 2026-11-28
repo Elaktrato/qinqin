@@ -164,8 +164,42 @@ at `now`: `forgetting_curve(w, elapsedDays, stability)` with `elapsedDays = max(
 
 ## Execution record
 
-(filled in as the work goes)
+Commits: the plan; the contract and the web core (`drills/` fixtures, `studycore/drills.ts`, EXP and streak in
+`exp.ts`); the server (`internal/drills`, `stats.DrillRules`); the web counting callers (history, flashcards widget,
+study session, Stats summary, weekly summary, milestones, activity sources, recently sent); the Practice feature
+(`features/practice/`, feature id `practice` in Go and `switches.json`, nav, route, the sample drill); e2e; docs and
+contract 24.
+
+Test-first, seen failing before the code: `drills.contract.test.ts` (module missing), `drills.counting.test.ts` (9
+cases), `eventPayloads.test.ts` (builder count, after the `payloads.json` case), `TestDrillsContract` (package
+missing), `TestContractDrillActivity` (`stats.DrillRules` missing), `TestFeaturesContract` (seven ids; 404 for
+`practice`), the practice logic tests (`route`, `overview`, `answer`, `drills`, `round`: modules missing),
+`sources.test.ts` and `recentSent.test.ts` drill cases.
+
+Written after the code, then seen failing with the code stashed: the drill-answer streak cases of
+`stats/summary.test.ts`, `weekly/summary.test.ts` and the `milestones/reached.json` case (the edits to the six callers
+were made before these tests; stashing the three modules turned them red, restoring them green). Written with or
+after the code (not seen failing first): `PracticePage.dom.test.ts`, the `sections.test.ts` Practice case, the e2e
+spec `practice.spec.ts` (passed on its first run), `TestBuiltinRulesCountRegisteredDrills`. The full vitest run after
+the Practice commit found seven guards (feature count, page manifest, phone titles, module state, UTC guard, wall
+clock in a test, the Settings → Features count); fixed before that commit.
+
+Not done here: the oracle for `schedule.json`/`pick.json` is my own second implementation from the README, run on plain
+ts-fsrs; it shares no code with `studycore/drills.ts`, but one person wrote both. The server has no FSRS, so the Go side
+decodes `drills.json` and the `counting.json` activity only. With the registry empty, no drill event scores on the
+heatmap yet (pinned by `counting.json` with a fixture registry). No separate scratch-server run: the e2e suite runs the
+real binary and checks the five `drill.sample` events on the server.
+
+Gates (final state): Go `gofmt` clean, `go vet ./...` and `go test ./...` 63 packages ok, only the known
+`internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6); web `check` 0 errors (2078 files); `build` ok
+(inside e2e); full vitest on Node 26: 753 files, 15222 passed, 3 skipped; e2e 64 passed; `node --test
+scripts/*.test.mjs` 241 passed, 1 skipped; `gen-api-docs --check` clean; `gen-drills-fixtures.mjs --check` fresh.
 
 ## Local follow-up
 
-(filled in at the end)
+- Android shell (drills framework): with `localStorage["qinqin.dev.drills"] = "sample"` set in the WebView (Chrome
+  remote debugging, `chrome://inspect`), open Practice, play a round: the hardware back button leaves the round to
+  `/practice`, Next takes the focus after an answer, nothing scrolls sideways. Then clear the flag. No emulator here.
+- A hand check on a phone browser of the same path (360 px is covered by e2e in headless Chromium only).
+- When the first drill (#178, #179, #180, #228) registers: its activity row, goal choice and heatmap points appear;
+  check the weekly summary and the goal picker with it.
