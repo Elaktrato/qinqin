@@ -1,6 +1,6 @@
 <script lang="ts">
 	// One member on a look-alike answer (#228): drawn from the stroke data with the strokes that make the difference in
-	// the accent colour and the other strokes faded (a cue that is not a hue; forced colours: Highlight), or the font's glyph where there is no usable data (a kana, a
+	// the accent colour and the other strokes in the muted text colour (a cue that is not a hue; forced colours: Highlight), or the font's glyph where there is no usable data (a kana, a
 	// character no installed pack has, data with another stroke count). The member's note says the same in words.
 	import { useSession } from '$lib/context/context';
 	import { fetchStrokeData } from '$lib/writing/strokeData';
@@ -69,7 +69,7 @@
 		fill: var(--accent);
 	}
 	svg.glyph path.rest {
-		opacity: 0.45;
+		fill: var(--readable-muted);
 	}
 	.text {
 		font-size: 3.5rem;
@@ -85,7 +85,6 @@
 			fill: Highlight;
 		}
 		svg.glyph path.rest {
-			opacity: 1;
 			fill: GrayText;
 		}
 	}
