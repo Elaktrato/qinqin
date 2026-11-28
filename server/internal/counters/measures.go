@@ -93,22 +93,60 @@ func parseItem(item string) (ChineseMeasure, bool) {
 	return ChineseMeasure{Simplified: simp, Traditional: trad, Pinyin: marked}, true
 }
 
-// ShownGloss is the one gloss the drill shows for an entry: the sense
-// display rule's (lexicon.DisplayGloss) after the CL notes are taken out,
-// which would give the answer away.
+// ShownGloss is the one gloss the drill shows for an entry, by the sense
+// display rule (lexicon.DisplayGloss, marks and minor senses included) over
+// the glosses the measure words belong to: in each sense with a CL note,
+// the glosses before the note (CC-CEDICT writes the note after the
+// meanings it counts), nouns before verbs ("to …"), the note itself taken
+// out (it would give the answer away). Without such a gloss, the rule over
+// every gloss without its notes.
 func ShownGloss(senses []lexicon.Sense) string {
-	stripped := make([]lexicon.Sense, len(senses))
+	counted := make([]lexicon.Sense, 0, len(senses))
+	all := make([]lexicon.Sense, len(senses))
 	for i, s := range senses {
-		var keep []string
+		var before, nouns, verbs, keep []string
+		noted := false
 		for _, g := range s.Glosses {
-			if g = strings.TrimSpace(noteIn.ReplaceAllString(g, "")); g != "" {
+			hasNote := clNote.MatchString(g)
+			g = strings.TrimSpace(noteIn.ReplaceAllString(g, ""))
+			if g != "" {
 				keep = append(keep, g)
+				if !noted {
+					before = append(before, g)
+				}
+			}
+			if hasNote && !noted {
+				noted = true
 			}
 		}
-		s.Glosses = keep
-		stripped[i] = s
+		all[i] = s
+		all[i].Glosses = keep
+		if !noted || len(before) == 0 || lexicon.MinorSense(s) {
+			continue
+		}
+		for _, g := range before {
+			if isVerbGloss(g) {
+				verbs = append(verbs, g)
+			} else {
+				nouns = append(nouns, g)
+			}
+		}
+		c := s
+		c.Glosses = append(nouns, verbs...)
+		counted = append(counted, c)
 	}
-	return lexicon.DisplayGloss(stripped, "")
+	if g := lexicon.DisplayGloss(counted, ""); g != "" {
+		return g
+	}
+	return lexicon.DisplayGloss(all, "")
+}
+
+// leadingNotes are parenthesised notes at the start of a gloss.
+var leadingNotes = regexp.MustCompile(`^(?:\([^()]*\)\s*)+`)
+
+// isVerbGloss: a gloss that reads "to …" after its leading notes.
+func isVerbGloss(g string) bool {
+	return strings.HasPrefix(leadingNotes.ReplaceAllString(g, ""), "to ")
 }
 
 // HasFallback reports whether 个 is acceptable but not idiomatic for the
