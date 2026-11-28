@@ -236,3 +236,79 @@ func getEntryBodyAs(t *testing.T, tsURL string, id int64, token string) entryBod
 	decodeJSON(t, resp, &body)
 	return body
 }
+
+// Saved sentences (#279): a POST of a text the caller already sees on the
+// entry answers that sentence (200) instead of a second row; DELETE removes
+// any own sentence, never a pack one or another user's; a reason is only
+// for AI examples.
+func TestSavedSentenceRoutes(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	ctx := context.Background()
+	importSchemeCedict(t, sqlDB)
+	nihao := lexID(t, sqlDB, "zh", "word", "你好")
+	pk, err := pack.LoadPack(sentencesFixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sentences.ImportPack(ctx, sqlDB, pk); err != nil {
+		t.Fatal(err)
+	}
+	admin := registerUser(t, ts.URL, "admin", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	path := "/api/entries/" + strconv.FormatInt(nihao, 10) + "/sentences"
+
+	post := func(token, hanzi string) (int, model.Sentence) {
+		t.Helper()
+		resp := doJSON(t, http.MethodPost, ts.URL, path, token, map[string]string{"hanzi": hanzi})
+		var got model.Sentence
+		decodeJSON(t, resp, &got)
+		return resp.StatusCode, got
+	}
+	code, first := post(bob, "他说你好。")
+	if code != http.StatusCreated {
+		t.Fatalf("first POST = %d", code)
+	}
+	if code, again := post(bob, " 他说你好。　"); code != http.StatusOK || again.ID != first.ID {
+		t.Fatalf("the same text again = %d %+v, want 200 with sentence %d", code, again, first.ID)
+	}
+	// A pack sentence with the same text is the one answered.
+	if code, packed := post(bob, "你好吗？"); code != http.StatusOK || packed.SourcePack != "zh-mini" {
+		t.Fatalf("a pack sentence's text = %d %+v, want 200 with the pack sentence", code, packed)
+	}
+	// Another user's sentence is private: the admin gets a row of their own.
+	if code, theirs := post(admin, "他说你好。"); code != http.StatusCreated || theirs.ID == first.ID {
+		t.Fatalf("another user's text = %d %+v, want their own row", code, theirs)
+	}
+	if n := len(getEntryBodyAs(t, ts.URL, nihao, bob).Sentences); n != 3 {
+		t.Fatalf("bob sees %d sentences, want the pack's two and his one", n)
+	}
+
+	one := path + "/" + strconv.FormatInt(first.ID, 10)
+	if r := doJSON(t, http.MethodDelete, ts.URL, one, "", nil); r.StatusCode != http.StatusUnauthorized {
+		t.Errorf("DELETE without a session = %d, want 401", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodDelete, ts.URL, one, admin, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("DELETE another user's sentence = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodDelete, ts.URL, one+"?reason=unnatural", bob, nil); r.StatusCode != http.StatusBadRequest {
+		t.Errorf("a report of a saved sentence = %d, want 400", r.StatusCode)
+	}
+	var packID int64
+	if err := sqlDB.QueryRow(`SELECT id FROM sentences WHERE source_pack = 'zh-mini' LIMIT 1`).Scan(&packID); err != nil {
+		t.Fatal(err)
+	}
+	if r := doJSON(t, http.MethodDelete, ts.URL, path+"/"+strconv.FormatInt(packID, 10), bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("DELETE a pack sentence = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodDelete, ts.URL, one, bob, nil); r.StatusCode != http.StatusNoContent {
+		t.Fatalf("DELETE own sentence = %d, want 204", r.StatusCode)
+	}
+	if n := len(getEntryBodyAs(t, ts.URL, nihao, bob).Sentences); n != 2 {
+		t.Fatalf("bob sees %d sentences after the delete, want 2", n)
+	}
+	// Saved again after a removal, it is a new row.
+	if code, back := post(bob, "他说你好。"); code != http.StatusCreated || back.ID == first.ID {
+		t.Fatalf("saved again = %d %+v", code, back)
+	}
+}

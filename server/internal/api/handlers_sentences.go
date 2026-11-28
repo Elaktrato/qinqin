@@ -33,7 +33,9 @@ type sentenceRequest struct {
 // them, never touched by pack imports — and responds with the stored
 // sentence. The entry may be of any kind (word, character, ...): the
 // word-only rule binds pack sentences, not a user's own. Only the text (hanzi) is required; pinyin and translation
-// are optional (the reader saves book sentences as text only). Unknown
+// are optional (the reader saves book sentences as text only). A text the
+// caller already sees on the entry (a pack sentence or their own, compared
+// normalised) is answered with that sentence and 200; a new one is 201. Unknown
 // and malformed ids are 404, unauthenticated calls 401, malformed bodies
 // and a blank text 400, a field over 2000 characters 422 and a body over
 // 16 KiB 413.
@@ -74,6 +76,18 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		writeInternal(w, r)
+		return
+	}
+	// The same text (normalised, docs/contracts/reader/saved-sentences.json)
+	// already on the entry for this caller is answered as it is (#279): a
+	// second tab or the reader's automatic mode never makes two rows.
+	same, found, err := sentences.FindSame(r.Context(), s.db, id, u.ID, req.Hanzi)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if found {
+		writeJSON(w, http.StatusOK, same)
 		return
 	}
 	sid, err := sentences.AddUser(r.Context(), s.db, u.ID, id, model.Sentence{

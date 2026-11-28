@@ -192,16 +192,20 @@ func TestDeleteAnAIExample(t *testing.T) {
 	_ = e.db.QueryRow(`SELECT id FROM sentences WHERE source_pack = 'zh-pack'`).Scan(&packID)
 	for name, c := range map[string]struct{ user, entry, id int64 }{
 		"another user": {e.bob, e.xuexi, s.ID}, "another entry": {e.alice, e.nihao, s.ID},
-		"an own sentence the AI did not write": {e.alice, e.xuexi, own}, "a pack sentence": {e.alice, e.xuexi, packID},
+		"a pack sentence": {e.alice, e.xuexi, packID},
 	} {
-		if err := sentences.DeleteAI(e.ctx, e.db, c.user, c.entry, c.id, ""); !errors.Is(err, sentences.ErrSentenceNotFound) {
+		if err := sentences.DeleteOwn(e.ctx, e.db, c.user, c.entry, c.id, ""); !errors.Is(err, sentences.ErrSentenceNotFound) {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
-	if err := sentences.DeleteAI(e.ctx, e.db, e.alice, e.xuexi, s.ID, "wrong_translation"); err != nil {
+	// An own sentence the AI did not write cannot be reported (#279: it can be deleted).
+	if err := sentences.DeleteOwn(e.ctx, e.db, e.alice, e.xuexi, own, "unnatural"); !errors.Is(err, sentences.ErrNotReportable) {
+		t.Fatalf("a report of an own sentence: %v", err)
+	}
+	if err := sentences.DeleteOwn(e.ctx, e.db, e.alice, e.xuexi, s.ID, "wrong_translation"); err != nil {
 		t.Fatal(err)
 	}
-	if err := sentences.DeleteAI(e.ctx, e.db, e.alice, e.xuexi, s.ID, ""); !errors.Is(err, sentences.ErrSentenceNotFound) {
+	if err := sentences.DeleteOwn(e.ctx, e.db, e.alice, e.xuexi, s.ID, ""); !errors.Is(err, sentences.ErrSentenceNotFound) {
 		t.Fatalf("deleted twice: %v", err)
 	}
 	var deleted sql.NullString

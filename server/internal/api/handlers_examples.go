@@ -62,6 +62,8 @@ func answerExamplesError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusConflict, "examples_full", "The word has the maximum of kept AI examples; delete one first.")
 	case errors.Is(err, sentences.ErrBadReason):
 		writeError(w, http.StatusBadRequest, "bad_request", "Unknown report reason.")
+	case errors.Is(err, sentences.ErrNotReportable):
+		writeError(w, http.StatusBadRequest, "bad_request", "Only AI-written examples can be reported.")
 	default:
 		writeInternal(w, r)
 	}
@@ -236,10 +238,12 @@ func (s *server) handleDiscardExample(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleDeleteAIExample serves DELETE /api/entries/{id}/sentences/{sentenceId}
-// [?reason=]: the caller's kept AI example goes (a tombstone); with a reason
-// it is also reported. Any other sentence is 404.
-func (s *server) handleDeleteAIExample(w http.ResponseWriter, r *http.Request) {
+// handleDeleteOwnSentence serves DELETE /api/entries/{id}/sentences/{sentenceId}
+// [?reason=]: the caller's own sentence goes (a tombstone), a kept AI example
+// or one the reader saved (#279); with a reason an AI example is also
+// reported (a reason on another sentence is 400). Pack sentences and other
+// users' are 404.
+func (s *server) handleDeleteOwnSentence(w http.ResponseWriter, r *http.Request) {
 	u, e, ok := s.examplesScope(w, r)
 	if !ok {
 		return
@@ -253,7 +257,7 @@ func (s *server) handleDeleteAIExample(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "Sentence not found.")
 		return
 	}
-	if err := sentences.DeleteAI(r.Context(), s.db, u.ID, e.ID, sentenceID, reason); err != nil {
+	if err := sentences.DeleteOwn(r.Context(), s.db, u.ID, e.ID, sentenceID, reason); err != nil {
 		answerExamplesError(w, r, err)
 		return
 	}
