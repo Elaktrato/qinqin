@@ -11,6 +11,7 @@
 	import type { CardResult, FlowItem } from '../session/cardFlow';
 	import type { StarterFront } from '$lib/starter/starter';
 	import { buildVocabFaces } from './cardView';
+	import CardGlosses from './CardGlosses.svelte';
 	import AnswerAids from '../face/AnswerAids.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
@@ -49,7 +50,8 @@
 				? null
 				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null)
 	);
-	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language));
+	// A card pinned to a reading (#346, a Starter word's) shows only that reading's meanings.
+	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language, item.card?.reading));
 
 	// The prompt is the word alone; its readings and example sentence belong
 	// to the answer, below the hairline (design §9, #101).
@@ -132,16 +134,7 @@
 		{/each}
 		{#if faces.back.sentenceLines.length > 0}<AiTag ai={shownSentence?.ai} />{/if}
 		{#if faces.back.glosses.length > 0}
-			{#each faces.back.glosses as group (group.dictionaryName)}
-				<article class="dictionary">
-					<ol class="fa-glosses">
-						{#each group.glosses as gloss, glossIndex (glossIndex)}
-							<li>{gloss}</li>
-						{/each}
-					</ol>
-					<p class="fa-source">{group.dictionaryName}</p>
-				</article>
-			{/each}
+			{#key entry.id}<CardGlosses glosses={faces.back.glosses} folded={faces.back.folded} />{/key}
 		{:else if entry.kind !== 'character'}
 			<p class="hint">{t('flashcards.card.noGlosses')}</p>
 		{/if}
@@ -178,9 +171,5 @@
 	}
 	.hint {
 		color: var(--readable-muted);
-	}
-	.dictionary {
-		display: grid;
-		gap: var(--space-1);
 	}
 </style>

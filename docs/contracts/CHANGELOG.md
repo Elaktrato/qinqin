@@ -5,7 +5,8 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #180 — the tone-pair drill (contract 26)
+<<<<<<< HEAD
+## #180 — the tone-pair drill (contract 29)
 
 - **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
   answers (`drill.tone-pairs`) are an activity rule, a `count` of feature `practice`, after the core rules
@@ -17,6 +18,44 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `mark`.
 - **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
   streak) as before.
+=======
+## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
+
+- **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
+  虹 with and without the reading にじ resolves to the rainbow, not to 二次, which has 虹 only as a search-only (`sK`)
+  form and the higher priority. The rule (`BestWord`, `BestWordReading`, and so level packs, sentence packs,
+  frequency starter decks and the Starter sets): an entry where the form is not search-only first, then the priority
+  order as before.
+
+## #346 — everyday meanings before surname, abbreviation and variant lines; pinned readings (contract 27)
+
+- **`senses/display.json`:** a third class `minor` between everyday and sensitive: a sense with a JMdict tag of
+  `minorTags` (`arch`, `obs`, `rare`, `dated`, `surname`) or whose first gloss starts with one of `minorPrefixes`
+  (surname, abbr. for, variant of, see, used in, (archaic), (classical) …), shown after the everyday units, never
+  folded. New input `pinned`: only the senses of the pinned reading (sense tag `reading:<value>`, compared in lower
+  case without spaces and apostrophes) and those without a reading tag take part; an unmatched pin is ignored.
+- **Sense tags:** the CC-CEDICT importer tags each sense with its line's reading (`reading:<marked pinyin>`), the
+  json-pack importer each line's sense with the line's readings, the JMdict importer each sense with its `<stagr>`
+  readings. Clients show no chip for them. Existing databases get them
+  with `qinqin seed`; without them a pin changes nothing.
+- **Cards:** a card row's `extra` may carry `reading` (a string): the reading the card is pinned to. The Starter add
+  flow writes it from the set entry's new member `reading`.
+- **`GET /api/starter-sets/{id}`:** each entry carries `reading` (the set's pinned reading, `""` without one), and its
+  `gloss` is the first gloss of that reading.
+- **`GET /api/lookup`:** the entry tag `"usually kana"` follows the first sense (as the display form does), not any
+  sense: 目 and 山 no longer carry it.
+
+## #345 — slang, vulgar and derogatory senses last and folded (contract 26)
+
+- **New folder `senses/`:** the sense display rule (`display.json`, rule `senses/display`), decoded by Go and web: a
+  gloss is marked `vulg`, `derog` or `sl` by its sense's JMdict tag (`vulg`, `derog`, `sl`, `net-sl`, `m-sl`), a
+  CC-CEDICT parenthesised note ("(slang)", "(vulgar)", "(derog.)"), an explicit word or a vulgar character; each sense
+  splits into an everyday and a sensitive unit; everyday units first, sensitive ones folded unless nothing else is
+  left. Stored senses are not reordered.
+- **Answers:** the one gloss of `GET /api/starter-sets/{id}` and `GET /api/frequency-packs/{id}/top` entries, the first
+  gloss per dictionary of `GET /api/search` hits and the `gloss` of an entry's `characters` follow the rule (鸡 shows
+  "fowl"; a list never shows a folded gloss). The lookup and entry answers are unchanged: clients apply the rule.
+>>>>>>> feature/v0.9.0
 
 ## Drills framework — drill answers as events, the Practice area (contract 25)
 

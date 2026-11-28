@@ -36,6 +36,8 @@ export interface AddItem {
 	written: string;
 	/** Set for the items of a character level: no sentence or tone companions follow. */
 	entryKind?: 'character';
+	/** A reading a new card is pinned to (#346: a Starter word's); a card that exists keeps its own. */
+	reading?: string;
 }
 
 export interface AddPlan {
@@ -101,6 +103,7 @@ export function planAddToDeck(input: AddInput): AddPlan {
 				createdAt: new Date(base + i).toISOString()
 			};
 			if (item.entryKind === 'character') card.entryKind = 'character';
+			if (item.reading) card.reading = item.reading;
 			writes.push(card);
 			created += 1;
 			return;

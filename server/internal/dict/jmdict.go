@@ -62,9 +62,11 @@ type jmdictREle struct {
 	Inf []string `xml:"re_inf"`
 }
 
-// jmdictSense is one <sense> of the word: its glosses and its misc tags
-// (<misc>, entity references such as "&uk;").
+// jmdictSense is one <sense> of the word: the readings it is restricted to
+// (<stagr>), its glosses and its misc tags (<misc>, entity references such
+// as "&uk;").
 type jmdictSense struct {
+	Stagr   []string      `xml:"stagr"`
 	Pos     []string      `xml:"pos"`
 	Xref    []string      `xml:"xref"`
 	Glosses []jmdictGloss `xml:"gloss"`

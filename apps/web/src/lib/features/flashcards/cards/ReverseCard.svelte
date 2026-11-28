@@ -11,6 +11,7 @@
 	import type { CardAudio } from '$lib/audio/cue';
 	import type { CardResult, FlowItem } from '../session/cardFlow';
 	import { buildVocabFaces } from './cardView';
+	import CardGlosses from './CardGlosses.svelte';
 	import {
 		acceptedReverseAnswers,
 		buildReverseFront,
@@ -38,11 +39,12 @@
 		audio?: CardAudio;
 	}
 
-	let { entry, revealed, language, onDone, audio }: Props = $props();
+	let { item, entry, revealed, language, onDone, audio }: Props = $props();
 	const roman = useRomanisation();
 
-	const front = $derived(buildReverseFront(entry));
-	const faces = $derived(buildVocabFaces(entry, null, language).back);
+	// A card pinned to a reading (#346) shows only that reading's meanings.
+	const front = $derived(buildReverseFront(entry, item.card?.reading));
+	const faces = $derived(buildVocabFaces(entry, null, language, item.card?.reading).back);
 	const accepted = $derived(acceptedReverseAnswers(entry));
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
@@ -149,16 +151,7 @@
 				{/if}
 			</div>
 		{/if}
-		{#each faces.glosses as group (group.dictionaryName)}
-			<article class="dictionary">
-				<ol class="fa-glosses">
-					{#each group.glosses as gloss, i (i)}
-						<li>{gloss}</li>
-					{/each}
-				</ol>
-				<p class="fa-source">{group.dictionaryName}</p>
-			</article>
-		{/each}
+		{#key entry.id}<CardGlosses glosses={faces.glosses} folded={faces.folded} />{/key}
 		{#if credit}
 			<p class="credit fa-source">{credit}</p>
 		{/if}
@@ -199,9 +192,5 @@
 	}
 	.feedback.bad {
 		color: var(--readable-bad);
-	}
-	.dictionary {
-		display: grid;
-		gap: var(--space-1);
 	}
 </style>

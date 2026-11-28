@@ -46,6 +46,25 @@ describe('buildReverseFront', () => {
 		expect(front).toEqual({ pos: [], glosses: ['1', '2', '3'] });
 	});
 
+	it('never prompts with a folded slang or vulgar gloss (#345)', () => {
+		const groups = [
+			{ pos: ['noun'], tags: [], glosses: ['(slang) prostitute'] },
+			{ pos: ['noun'], tags: [], glosses: ['fowl', 'chicken'] }
+		] as unknown as Entry['senseGroups'];
+		expect(buildReverseFront(entry({ senseGroups: groups }))).toEqual({ pos: ['noun'], glosses: ['fowl', 'chicken'] });
+		const mixed = [{ pos: ['noun'], tags: [], glosses: ['yellow', 'vulgar; lewd; pornographic'] }] as unknown as Entry['senseGroups'];
+		expect(buildReverseFront(entry({ senseGroups: mixed }))).toEqual({ pos: ['noun'], glosses: ['yellow'] });
+		expect(buildReverseFront(entry({ senses: [sense('(slang) prostitute'), sense('fowl')] }))).toEqual({ pos: [], glosses: ['fowl'] });
+	});
+
+	it('prompts with the pinned reading\'s first meaning (#346)', () => {
+		const groups = [
+			{ pos: [], tags: ['reading:hē'], glosses: ['to drink'] },
+			{ pos: [], tags: ['reading:hè'], glosses: ['to shout'] }
+		] as unknown as Entry['senseGroups'];
+		expect(buildReverseFront(entry({ senseGroups: groups }), 'hè')).toEqual({ pos: [], glosses: ['to shout'] });
+	});
+
 	it('never contains the written form', () => {
 		const front = buildReverseFront(entry());
 		expect(JSON.stringify(front)).not.toContain('喜欢');

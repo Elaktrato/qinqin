@@ -25,6 +25,18 @@ Results are grouped by total stroke count, at most 300 at first (**Show all** sh
 
 An entry is one dictionary headword, either a **word** or a **character** (kanji or hanzi).
 
+- **Everyday meanings first.** Slang, vulgar and derogatory meanings (CC-CEDICT's "(slang)", "(vulgar)" and
+  "(derog.)" lines, JMdict's `vulg`, `sl` and `derog` senses, and a short list of explicit words the dictionaries
+  leave unmarked, such as 黄色 "pornographic") are shown last, marked "slang", "vulgar" or "derogatory". On cards they
+  are folded behind **Show n more meanings**, in the Reader's lookup they come after **Show more senses**, and lists
+  that show one meaning (search results, Starter words, a word's characters) never pick them; the word page shows
+  them all. A word whose only meaning is vulgar shows it, marked (docs/contracts/senses).
+- **Surname, abbreviation and variant lines after the everyday meaning.** A CC-CEDICT line that starts "surname",
+  "abbr. for", "variant of", "see", "used in", "(archaic)" or "(classical)", and a JMdict sense marked archaic,
+  obsolete, rare, dated or a surname, comes after the everyday meanings everywhere: 书 is "book" before "abbr. for
+  書經", 水 "water" before "surname Shui", 云 "cloud" before "(classical) to say". JMdict's own order is kept otherwise.
+- **A card keeps its word's reading.** The Starter words that are learned in one reading (猫 māo, 喝 hē, 书 shū …)
+  remember it once added: their card shows only that reading's meanings (喝: "to drink", not "to shout").
 - **Meanings keep their source.** Each sense is tagged with the dictionary it comes from, with its licence and attribution, so several dictionaries can describe the same entry. A licence the app recognises exactly (CC BY and BY-SA 3.0/4.0, CC0 1.0 and the Unicode License v3, by name or SPDX id) links to its text; any other licence name is shown as written. Hidden dictionaries ([Workspaces and languages](Workspaces-and-languages)) are filtered out.
 - **Chinese**: one entry per simplified written form; traditional forms are forms of the same entry, so searching 學習 finds 学习. A written form with several readings (行 xíng, háng) is one entry with all readings.
 - **Japanese**: one entry per JMdict word, with all forms and readings and part-of-speech tags per sense. Homographs are separate entries.
