@@ -62,8 +62,10 @@
 import { contextForData } from '$lib/studycore/currentContext';
 import { IDENTITY_CLOCK, type StudyClock } from '$lib/studycore/studyClock';
 import type { Run } from '$lib/studycore/vacation';
-	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/studycore/exp';
+	import { LESSON_RUN_XP, dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/studycore/exp';
 	import type { GrammarRun } from '$lib/studycore/grammarRuns';
+	import ReviewRound from '$lib/features/grammar/review/ReviewRound.svelte';
+	import { GRAMMAR_ID, featureEnabled } from '$lib/features';
 	import type { DrillAnswer } from '$lib/studycore/drills';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/features/flashcards/session/grade';
@@ -493,17 +495,32 @@ import type { Run } from '$lib/studycore/vacation';
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
+	// Grammar review (#181): a session whose setup includes it runs the round after its cards (also when no card
+	// is due), while the grammar feature is on; its runs count in this session's EXP and the streak.
+	let grammarDone = $state(false);
+	let sessionGrammarRuns = $state.raw<readonly GrammarRun[]>([]);
+	const grammarOn = $derived(session.features.status === 'ready' && featureEnabled(GRAMMAR_ID, session.features.list));
+	const grammarPending = $derived(config.grammar === true && grammarOn && !grammarDone);
+	const sessionReady = $derived(!missingConfig && !workspaceMismatch && !loadError && !noWorkspace && !loading);
+	const showGrammar = $derived(sessionReady && grammarPending && (queue.length === 0 || (complete && viewing === null)));
+	const allGrammarRuns = $derived([...grammarRuns, ...sessionGrammarRuns]);
+
 	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns, drillAnswers));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf, grammarRuns, drillAnswers));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf, allGrammarRuns, drillAnswers));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation, grammarRuns, drillAnswers));
-	// Per-kind XP of this session; whatever the kinds do not explain is
-	// the daily bonus.
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation, allGrammarRuns, drillAnswers));
+	// Per-kind XP of this session and the grammar runs' EXP; whatever they do not explain is the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
+	const grammarXp = $derived(sessionGrammarRuns.length * LESSON_RUN_XP);
 	const dailyBonusXp = $derived(
-		sessionXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
+		sessionXp - grammarXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
 	);
+
+	function grammarFinished(runs: GrammarRun[]): void {
+		sessionGrammarRuns = runs;
+		grammarDone = true;
+	}
 
 	async function loadEntry(entryId: number): Promise<void> {
 		if (entries[entryId] !== undefined || pendingEntryId === entryId) return;
@@ -1370,7 +1387,7 @@ import type { Run } from '$lib/studycore/vacation';
 <svelte:window onkeydown={onKeydown} />
 
 <div class="page-body session" class:open={viewing !== null || (currentItem !== undefined && !complete)}>
-	{#if missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0}
+	{#if (missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0) && !showGrammar}
 		<!-- The face and the summary carry their own h1; every state between them keeps the page outline. -->
 		<h1 class="visually-hidden">{t('study.session.title')}</h1>
 	{/if}
@@ -1396,16 +1413,21 @@ import type { Run } from '$lib/studycore/vacation';
 		</Section>
 	{:else if loading}
 		<p class="hint" role="status">{t('study.session.loading')}</p>
-	{:else if queue.length === 0}
+	{:else if showGrammar}
+		<ReviewRound embedded onDone={grammarFinished} />
+	{:else if queue.length === 0 && sessionGrammarRuns.length === 0}
 		<Section title={t('study.session.empty')} level={2}>
 			<p class="hint">{t('study.session.emptyText')}</p>
 			<div class="actions"><Button href="/study" onclick={(e: MouseEvent) => backToStudy(e, true)}>{t('study.session.back')}</Button></div>
 		</Section>
-	{:else if complete && viewing === null}
+	{:else if (complete || queue.length === 0) && viewing === null}
 		<h1 class="summary-title">{t('study.session.complete')}</h1>
 		<Section>
 			<div class="stats">
 				<Stat value={formatNumber(sessionReviews.length)} label={t('study.session.reviews', { count: sessionReviews.length })} />
+				{#if sessionGrammarRuns.length > 0}
+					<Stat value={formatNumber(sessionGrammarRuns.length)} label={t('study.session.grammar', { count: sessionGrammarRuns.length })} />
+				{/if}
 				{#if reshown > 0}
 					<Stat value={formatNumber(reshown)} label={t('study.session.reshows', { count: reshown })} />
 				{/if}
@@ -1418,6 +1440,9 @@ import type { Run } from '$lib/studycore/vacation';
 						<li>{KIND_LABELS[kind]} <strong>+{kindXp[kind]}</strong></li>
 					{/if}
 				{/each}
+				{#if grammarXp > 0}
+					<li>{t('study.session.grammarXp')} <strong>+{grammarXp}</strong></li>
+				{/if}
 				{#if dailyBonusXp > 0}
 					<li>{t('study.session.dailyBonus')} <strong>+{dailyBonusXp}</strong></li>
 				{/if}

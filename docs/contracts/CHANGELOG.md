@@ -18,6 +18,9 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   progress replays lesson runs only (`progress`: a new case).
 - **`events/activity.json`:** a new case: a review run is a `grammar` run under the `distinct` rule on `point` (a
   lesson and a review of one point on one day are one point). The server is unchanged.
+- **`study/setup.json`:** the `study-setup` row gains `grammar` (boolean, default `false`; every `expect` carries it,
+  two new `parse` cases): a session started from the setup runs the grammar review round after its cards while the
+  grammar feature is on.
 - **Clients:** a client that does not know `review` ignores those runs (as before, an unknown mode); no route
   change.
 

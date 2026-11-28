@@ -9,6 +9,9 @@ vi.mock('$lib/studycore/data', async (importOriginal) => ({
 	loadStudyHistory: vi.fn()
 }));
 
+const { loadReview } = vi.hoisted(() => ({ loadReview: vi.fn() }));
+vi.mock('$lib/features/grammar/review/review', () => ({ loadReview }));
+
 import { getSchemes } from '$lib/api/schemes';
 import type { Scheme } from '$lib/api/types';
 import { loadStudyHistory } from '$lib/studycore/data';
@@ -273,5 +276,57 @@ describe('the study modal', () => {
 		const dialog = await open();
 		await fireEvent.keyDown(dialog, { key: 'Escape' });
 		expect(ctx.session.studyModal.open).toBe(false);
+	});
+});
+
+describe('grammar review in the study modal (#181)', () => {
+	const grammarOn = () => ctx.session.features.set({ list: [{ id: 'grammar', enabled: true }], status: 'ready' });
+	beforeEach(() => {
+		loadReview.mockResolvedValue({ round: { items: [], due: 2, new: 1, newToday: 0 } });
+	});
+
+	it('is no choice while the grammar feature is off or unknown', async () => {
+		const dialog = await open();
+		await within(dialog).findByRole('checkbox', { name: 'Writing' });
+		expect(within(dialog).queryByRole('checkbox', { name: /Grammar review/ })).toBeNull();
+		ctx.session.features.set({ list: [{ id: 'grammar', enabled: false }], status: 'ready' });
+		await Promise.resolve();
+		expect(within(dialog).queryByRole('checkbox', { name: /Grammar review/ })).toBeNull();
+	});
+
+	it('is a chip with the points due that saves the setup at once', async () => {
+		grammarOn();
+		const dialog = await open();
+		const chip = (await within(dialog).findByRole('checkbox', { name: 'Grammar review · 3' })) as HTMLInputElement;
+		expect(chip.checked).toBe(false);
+		await waitFor(() => expect(chip.disabled).toBe(false));
+		await fireEvent.click(chip);
+		expect(update).toHaveBeenCalledWith(1, { grammar: true });
+		await waitFor(() => expect(saved.grammar).toBe(true));
+	});
+
+	it('Start includes it in the session, and starts with only grammar points due', async () => {
+		grammarOn();
+		saved = { ...defaultSetup(), grammar: true };
+		eligible = () => [];
+		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
+		const dialog = await open();
+		const start = within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement;
+		await waitFor(() => expect(start.disabled).toBe(false));
+		await fireEvent.click(start);
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).grammar).toBe(true);
+	});
+
+	it('with no grammar point due and no card, Start stays disabled', async () => {
+		grammarOn();
+		loadReview.mockResolvedValue({ round: { items: [], due: 0, new: 0, newToday: 0 } });
+		saved = { ...defaultSetup(), grammar: true };
+		eligible = () => [];
+		const reviewed = build.review({ cardId: 'c-vocab-1', ts: new Date().toISOString(), grade: 4 });
+		vi.mocked(loadStudyHistory).mockResolvedValue(build.history({ decks: [], cards: [vocab(1)], reviews: [reviewed] }));
+		const dialog = await open();
+		await within(dialog).findByRole('checkbox', { name: 'Grammar review · 0' });
+		expect((within(dialog).getByRole('button', { name: 'Start studying' }) as HTMLButtonElement).disabled).toBe(true);
 	});
 });

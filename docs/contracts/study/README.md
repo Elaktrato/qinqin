@@ -147,7 +147,8 @@ keyed row and never reads its members.
  "unchecked": ["reverse" | "cloze"],   // opt-in kinds the learner switched off
  "newLimit": 1..999, "reviewLimit": 1..999,
  "newOrder": "random" | "deck" | {"by": "added"} | {"by": "frequency"} | {"by": "level", "packId": string},
- "typeOrder": "mixed" | "grouped"}
+ "typeOrder": "mixed" | "grouped",
+ "grammar": false | true}   // #181: run the grammar review round after the cards
 ```
 
 - **Read** member by member (`parse` cases): a missing or bad member is its default (`defaults`), never the
@@ -162,5 +163,8 @@ keyed row and never reads its members.
   the note; the repaired value is used but written back only when the learner changes something.
 - **Write** (`write` cases): the stored object with the setup's members replaced; unknown members kept; a stored
   integer `version` ≥ 1 kept, else 1. A client re-reads the row before it writes.
+- **Grammar review** (`grammar`, #181): `true` runs the grammar review round (`grammar/README.md`, "Review") after a
+  session's cards, also when no card is due; anything but `true` is `false`. A client offers it only while the
+  grammar feature is on, and a session runs no round while the feature is off.
 - **Not in the row:** a running session (its seed, Study all and the page it was started from) stays in the tab;
   a one-off start from a deck or a level never changes the row.
