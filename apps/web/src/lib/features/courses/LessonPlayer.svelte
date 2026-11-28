@@ -228,7 +228,7 @@
 		</div>
 	</header>
 
-	<main class="stage">
+	<div class="stage">
 		{#if status === 'loading'}
 			<h1 tabindex="-1">{t('features.courses.title')}</h1>
 			<p role="status">{t('common.loading')}</p>
@@ -299,7 +299,7 @@
 				/>
 			{/if}
 		{/if}
-	</main>
+	</div>
 
 	{#if status === 'ready'}
 		<footer class="dock">
