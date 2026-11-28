@@ -103,6 +103,40 @@ an opt-in "Read the sentence" kind that can be planned from the same saved rows.
 Nothing: this issue adds UI strings only (no course text, glosses or translations). The `de`/`ja` catalogues do
 not exist yet on the integration branch (#144/#145 come last).
 
+## Local follow-up
+
+- **#279, Android WebView:** in the APK (`apps/android`, a debug build on an emulator or phone), open a book, tap a
+  word that has a card, press **Save this sentence** in the bottom sheet: the sheet stays open, the status line
+  "Sentence saved as a new card." appears and the hardware back button still closes the sheet first; on the word's
+  page **Remove** takes the sentence away without the page jumping. Not checked here (no Android SDK or emulator);
+  the same flow passed in headless Chromium at 360 × 740 with touch (`e2e/tests/saved-sentences.spec.ts`).
+
 ## Execution record
 
-(filled in as the tasks land)
+- Task 1 (plan): f3ed7409.
+- Task 2 (server, df92904b): test first. `saved_contract_test.go` (normalise, whitespace set, same text, remove
+  rules, `FindSame` visibility) and `TestSavedSentenceRoutes` (200 on a duplicate, pack text answered, another user's
+  text private, 401, 404 for another user's and a pack sentence, 400 for a report of an own sentence, 204, saved again
+  after a removal) were written and seen failing (undefined functions; the duplicate POST answered 201), then
+  `saved.go` and the handler change made them pass. `DeleteAI` became `DeleteOwn`; its old test case "an own sentence
+  the AI did not write is 404" now checks that such a sentence cannot be reported.
+- Task 3 (web logic, 21531561): test first. `savedSentences.test.ts` (the fixture's normalize, whitespace set, same,
+  plan and auto cases, and `saveBookSentence` with fakes) failed on the missing module, then passed (45 tests). The
+  display-settings fixture cases for `saveSentences` were added with the parse change. `sentence.ts` now re-exports
+  the contract's `normalizeSentence` (the old JavaScript `\s` rule left U+0085 alone, unlike Go); the reader's
+  `resolveBookSentence` keeps its own tests green.
+- Task 4 (popup, a530d711): **not test first**: `AddToStudyButtons` and the Display switch were written, then their
+  DOM tests (seven popup cases, two panel cases), which passed on the first run.
+- Task 5 (entry page, 2089b6f1): `removeSentence.test.ts` first (failed on the missing module, then passed); the
+  `Sentences` snippet and `EntryView` DOM tests were written after the components.
+- Pacing (99cca716): a test that pins the existing behaviour (four stored sentence cards of one word, new limit 2 →
+  two planned); it passed at once, as expected: nothing in the queue changed.
+- E2E (acdc041a): `saved-sentences.spec.ts`, two tests at 360 × 740 with touch, the no-sideways-scroll guard on the
+  sheet with the new button and on the entry page with Remove; the cards checked through the pull API. No new path:
+  the reader and entry pages are in `phone-width.spec.ts` already.
+- Hidden romanisation: no new reading is shown (the popup and the entry's sentence list already use
+  `useRomanisation()`); the guard passes.
+- Gates at 4b053026: Go `./...` all packages ok except the known `internal/ai`
+  `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6); vitest 785 files, 15685 passed, 3 skipped; `check` 0
+  errors; `build` ok; e2e 77 passed (the whole suite ran); `node --test scripts/*.test.mjs` 243 passed, 1 skipped;
+  `gen-api-docs --check` clean (no route row changed).
