@@ -123,4 +123,39 @@ Nothing: this issue adds UI strings only. The `de`/`ja` catalogues do not exist 
 
 ## Execution record
 
-(Filled in per task.)
+- Task 1 (plan): b0349c16.
+- Task 2 (server, d46fc60b): test first for the rules. `source_contract_test.go` (`check`, `merge`, `detach`, limits)
+  failed on the missing types, then `source.go`, migration 059 and the scan/insert changes made it pass.
+  `library/sources_test.go` (a book delete and a workspace delete detach) failed ("still links to book 1"), then the
+  `DetachBooks` calls made it pass. `TestSentenceSourceRoutes` (201 with the book's title, 422 for another user's
+  book, another language, a missing chapter, an unknown book, an empty range and a deleted book; 401; adoption on the
+  same text; a pack sentence unchanged; the owner alone sees it; the delete keeps the title) was written after the
+  handler, then seen failing with the handler change stashed (`POST with a source = 201 <nil>`) and passing with it.
+  **Not test first:** the sync pull's `source` (`sentence_source_test.go` written after `encodeSentence`; it passed
+  at once) and the web `rows.ts` shape.
+- Task 3 (backup, 1e6f9178): test first. The sample archive's sentence got a source and two reject cases were added
+  (`sentence_source_unlisted_book`, `sentence_source_malformed`); `TestOpenAcceptsTheSampleArchive` and
+  `TestRestoreMapsTheSentenceSourceToTheRestoredBook` failed ("sentences holds a malformed line"), then the format,
+  check, export and restore changes made them pass. A first full run of the package hung in
+  `TestServerBackupPicturesMatchTheSnapshot` (the decode slots, after the sample-based tests failed); with the change
+  in, the package runs in about 7 s.
+- Task 4 (web logic, 334ab8e8): test first. `sentenceSource.test.ts`, the `route.test.ts` link/at cases and the new
+  `sentence.test.ts` and `savedSentences.test.ts` cases failed on the missing functions and arguments, then passed.
+- Task 5 (web UI, adf44c79): **not test first.** `SentenceSource.dom.test.ts` (link, deleted book, card text, entry
+  page) and the `AddToStudyButtons` case (the source is posted) were written after the components; two failed first
+  (a missing space before "·"; the forced-colours lint wants the `reader-lookup` rule in its own block) and were fixed.
+  The reader's `at` jump and word mark have no DOM test; the e2e covers them.
+- E2E (dfd1fa97): `sentence-sources.spec.ts` at 360 × 740 with touch: save from the sheet, the API `source`, the entry
+  link, the reader at `?at=` with the paragraph in view and `CSS.highlights.has('reader-source')`, no sideways scroll
+  on both pages, `page.goBack()` back to the word's page, and the deleted book's text. `phone-width.spec.ts` adds
+  `/reader/book/{id}/0?at=1:0-1`.
+- Docs (fdf0e3cd): contract 43, CHANGELOG, `reader/README.md`, sync and backup READMEs, wiki Reader, API reference,
+  Your data, Searching and entries, release notes.
+- Merge of `feature/v0.9.0` (#227 contract 41, #231 contract 42): conflicts in the contract version (kept 43), the
+  CHANGELOG, NEXT.md and `phone-width.spec.ts` (kept both). Graded readers (#231) are imported as one-chapter
+  library books, so their sentences get a source like any book's. No other migration 059 on the branch.
+- Hidden romanisation: no new reading is shown; the guard passes.
+- Gates after the merge: Go `./...` 67 packages ok (including `cmd/qinqin`), the only failure is the known
+  `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6); gofmt clean; vitest 816 files, 16262
+  passed, 3 skipped; `check` 0 errors; `build` ok; e2e 91 passed (the whole suite); `node --test scripts/*.test.mjs`
+  243 passed, 1 skipped; `gen-api-docs --check` clean (no route row changed).
