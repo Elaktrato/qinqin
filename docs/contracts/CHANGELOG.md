@@ -5,7 +5,12 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-<<<<<<< HEAD
+## #222 — courses: the roadmap, the lesson player and progress (contract 30)
+
+- **New core feature `courses`** (`features/switches.json`, `features/README.md`): eight ids, `courses` after `practice` and before
+  `stats`; a client lists it in that place, and `PUT /api/features/courses` switches it.
+- **New catalogue key area `courses`** (`i18n/README.md`).
+
 ## #180 — the tone-pair drill (contract 29)
 
 - **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
@@ -18,7 +23,7 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `mark`.
 - **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
   streak) as before.
-=======
+
 ## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
 
 - **`frequency/starter-resolution.json`:** toy entries may carry `formFlags` (form -> JMdict info flags); two cases:
@@ -55,7 +60,6 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Answers:** the one gloss of `GET /api/starter-sets/{id}` and `GET /api/frequency-packs/{id}/top` entries, the first
   gloss per dictionary of `GET /api/search` hits and the `gloss` of an entry's `characters` follow the rule (鸡 shows
   "fowl"; a list never shows a folded gloss). The lookup and entry answers are unchanged: clients apply the rule.
->>>>>>> feature/v0.9.0
 
 ## Drills framework — drill answers as events, the Practice area (contract 25)
 

@@ -74,7 +74,7 @@ describe('Settings -> Features', () => {
 
 	it('the switches are hairline rows and the view has no primary action (#106)', () => {
 		render(FeatureSettings, { context: ctx.context });
-		expect(document.querySelectorAll('.features li').length).toBe(7);
+		expect(document.querySelectorAll('.features li').length).toBe(8);
 		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 

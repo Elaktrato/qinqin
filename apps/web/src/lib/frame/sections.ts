@@ -4,7 +4,7 @@
 //
 // Order (plan Ruling): Search first (owner request, 2026-11-18), then the
 // core features that are on in their fixed order (Decks, Reader, Journal,
-// Grammar, Scripts; #199; Practice), Stats last (a feature since #295). Before the
+// Grammar, Scripts; #199; Practice; Courses, #222), Stats last (a feature since #295). Before the
 // switches are loaded only Search shows, so a switched-off feature never
 // flashes in.
 
@@ -31,6 +31,7 @@ const FEATURE_ICONS: Record<string, string> = {
 	grammar: 'grammar',
 	scripts: 'words',
 	practice: 'repeat',
+	courses: 'map',
 	stats: 'stats'
 };
 const FEATURE_MATCH: Record<string, string[]> = { flashcards: ['/flashcards', '/study'], reader: ['/reader'] };

@@ -5,6 +5,7 @@ import changesFixture from '../../../../../docs/contracts/courses/changes.json';
 import type { StudyEvent } from '$lib/events';
 import { coursePayload, type CoursePayload } from '$lib/events/eventPayloads';
 import { COURSE_EVENT, deriveCourseState, parseCourseEvent, type DeriveCourse } from './courseProgress';
+import { historyOf } from './readModel';
 
 interface DeriveCase {
 	name: string;
@@ -54,3 +55,20 @@ for (const [file, fixture, rule] of [
 		}
 	});
 }
+
+describe('the study history carries the course events (#222)', () => {
+	it('historyOf keeps the workspace course events, readable or not, in log order', () => {
+		const lesson: StudyEvent = {
+			id: 'c1',
+			workspaceId: 7,
+			device: 'web',
+			ts: '2026-11-28T08:00:00Z',
+			type: 'course',
+			payload: { kind: 'lesson-started', course: 'zh', unit: 'u', lesson: 'words-1' }
+		};
+		const other: StudyEvent = { ...lesson, id: 'c2', workspaceId: 8 };
+		const grammar: StudyEvent = { ...lesson, id: 'g1', type: 'grammar' };
+		const history = historyOf(7, { decks: [], cards: [] } as never, [lesson, other, grammar]);
+		expect(history.courseEvents.map((e) => e.id)).toEqual(['c1']);
+	});
+});

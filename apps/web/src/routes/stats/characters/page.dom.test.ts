@@ -64,7 +64,7 @@ beforeEach(() => {
 	vi.mocked(getSchemes).mockResolvedValue([
 		{ id: 7, name: 'HSK 3.0', unit: 'level', language: 'zh', levels: [] }
 	]);
-	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(masteryForChars).mockReturnValue(mastery());
 });
 afterEach(() => {

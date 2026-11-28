@@ -91,7 +91,7 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		reviews: build.strongReviews('c-vocab-4'),
-		merged: 0, grammarRuns: []
+		merged: 0, grammarRuns: [], courseEvents: []
 	}));
 	vi.mocked(loadRawStudyData).mockImplementation(async () => ({
 		decks: structuredClone(decks),

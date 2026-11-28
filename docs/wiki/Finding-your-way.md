@@ -7,7 +7,7 @@ Every signed-in page sits in the same frame. On a screen 720 px wide or more it 
 - **The logo**, on the left, is the link to the home page (its tooltip says "Home"). There is no separate Home icon.
 - **The sections**, in the middle, as icons. Hover or focus one to see its name. In order:
   1. **Search** (also the place of entries and the [lookup history](Searching-and-entries#lookup-history)),
-  2. **Decks**, **Reader**, **Journal**, **Grammar**, **Scripts** and **Practice** (Scripts only in a workspace whose language has a writing system to practise, Practice only once a drill applies to its language), unless you switched them off in Settings → Features,
+  2. **Decks**, **Reader**, **Journal**, **Grammar**, **Scripts**, **Practice** and **Courses** (Scripts only in a workspace whose language has a writing system to practise, Practice only once a drill applies to its language), unless you switched them off in Settings → Features,
   3. **Stats**, last, unless you switched it off too.
 
   The current section has an accent-coloured icon with a small dot. Until your settings have loaded only Search shows, so a feature you switched off (Stats included) never flashes in.

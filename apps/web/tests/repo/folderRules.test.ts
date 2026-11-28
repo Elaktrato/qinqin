@@ -73,7 +73,7 @@ describe('the web folder rules hold on apps/web/src', () => {
 		expect(unresolvedImportFindings(tree)).toEqual([]);
 	});
 
-	it('the study core and the exercises never import the flashcards feature', () => {
+	it('the study core, the exercises and the courses feature never import the flashcards feature', () => {
 		expect(studyCoreImportFindings(tree)).toEqual([]);
 	});
 
@@ -189,13 +189,18 @@ describe('each check fails on a planted violation', () => {
 			file('lib/studycore/mastery.ts', 'const m = import(`$lib/features/flashcards/mascot`);'),
 			file('lib/studycore/page.ts', "import P from '../../routes/study/session/+page.svelte';"),
 			file('lib/studycore/types.ts', "import type { ParsedGoals } from '../goals/goals';"),
-			file('lib/studycore/exp.ts', "// import { x } from '$lib/features/flashcards/mascot';")
+			file('lib/studycore/exp.ts', "// import { x } from '$lib/features/flashcards/mascot';"),
+			file('lib/features/courses/cards.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('lib/features/courses/cards.test.ts', "import { addCard } from '$lib/features/flashcards/commands/cards';"),
+			file('routes/courses/[...rest]/+page.svelte', "import { cardFlow } from '$lib/features/flashcards/session/cardFlow';")
 		];
 		expect(studyCoreImportFindings(planted)).toEqual([
 			'lib/studycore/known.ts imports lib/features/flashcards/session/cardFlow.ts',
 			'lib/exercises/cloze.ts imports lib/features/flashcards/face/hints.ts',
 			'lib/studycore/mastery.ts imports lib/features/flashcards/mascot.ts',
-			'lib/studycore/page.ts imports routes/study/session/+page.svelte'
+			'lib/studycore/page.ts imports routes/study/session/+page.svelte',
+			'lib/features/courses/cards.ts imports lib/features/flashcards/commands/cards.ts',
+			'routes/courses/[...rest]/+page.svelte imports lib/features/flashcards/session/cardFlow.ts'
 		]);
 	});
 

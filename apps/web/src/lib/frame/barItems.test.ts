@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { barItems, MORE } from './barItems';
+import { barHiddenOn, barItems, MORE } from './barItems';
 import { DEFAULT_BAR } from './navLayout';
 import type { FrameSection } from './sections';
 
@@ -77,5 +77,15 @@ describe('barItems: rules', () => {
 		const visible = ['home', 'search', 'reader'].map(section);
 		const r = barItems(visible, DEFAULT_BAR, 'home');
 		expect(r.items[0]).toBe(visible[0]);
+	});
+});
+
+describe('barHiddenOn', () => {
+	it('hides the bar in the study session and the course lesson player, not on the roadmap (#222)', () => {
+		expect(barHiddenOn('/study/session')).toBe(true);
+		expect(barHiddenOn('/courses/play/zh-course/hello/words-1')).toBe(true);
+		expect(barHiddenOn('/courses')).toBe(false);
+		expect(barHiddenOn('/courses/zh-course')).toBe(false);
+		expect(barHiddenOn('/courses/player')).toBe(false);
 	});
 });

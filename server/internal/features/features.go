@@ -15,7 +15,7 @@ import (
 )
 
 // IDs are the core features, in the order of the navigation.
-var IDs = []string{"flashcards", "reader", "journal", "grammar", "scripts", "practice", "stats"}
+var IDs = []string{"flashcards", "reader", "journal", "grammar", "scripts", "practice", "courses", "stats"}
 
 // ErrUnknown reports an id that names no feature.
 var ErrUnknown = errors.New("features: unknown feature")

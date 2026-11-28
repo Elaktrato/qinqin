@@ -84,7 +84,7 @@ function install(): void {
 		decks: [verbs, nouns],
 		cards: structuredClone(cards),
 		reviews: [],
-		merged: 0, grammarRuns: [],
+		merged: 0, grammarRuns: [], courseEvents: [],
 		deckSettings: settings as never
 	}));
 	vi.mocked(loadEntryBases).mockImplementation(async (_study, ids) => new Map(ids.filter((id) => BASES.has(id)).map((id) => [id, BASES.get(id)!])));
@@ -274,7 +274,7 @@ describe('DeckDetail', () => {
 			],
 			cards: structuredClone(cards).map((c) => ({ ...c, deckIds: ['cp'] })),
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never
 		}));
 		render(DeckDetail, { props: { deckId: 'cp' }, context: ctx.context });
@@ -328,7 +328,7 @@ describe('DeckDetail daily limits and vacation', () => {
 			decks: [verbs, nouns],
 			cards: structuredClone(cards),
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never,
 			limits: { workspace: { new: 2 }, decks: {} }
 		}));
@@ -342,7 +342,7 @@ describe('DeckDetail daily limits and vacation', () => {
 			decks: [verbs, nouns],
 			cards: structuredClone(cards),
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: settings as never,
 			vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 		}));

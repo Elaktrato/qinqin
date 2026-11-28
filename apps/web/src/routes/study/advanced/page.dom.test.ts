@@ -96,7 +96,7 @@ function setup(scheme: Scheme, cardTypes: StudySetup['cardTypes']): void {
 beforeEach(() => {
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(getSchemes).mockResolvedValue([]);
-	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(fetchSchemeCharacters).mockResolvedValue([]);
 	vi.mocked(fetchCharacters).mockResolvedValue({ count: 0, chars: [] });
 	vi.mocked(getSchemeEntries).mockImplementation(async () => {
@@ -178,7 +178,7 @@ describe('the advanced study setup', () => {
 	});
 
 	it('"All decks" is the live all; unticking a deck makes the list explicit', async () => {
-		vi.mocked(loadStudyData).mockResolvedValue({ decks: [VERBS], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [VERBS], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 		render(Page, { context: ctx.context });
 		const all = (await screen.findByRole('checkbox', { name: 'All decks' })) as HTMLInputElement;
 		expect(all.checked).toBe(true);
@@ -250,7 +250,7 @@ describe('levels', () => {
 			decks: [],
 			cards: [build.card({ id: 'c-vocab-11', kind: 'vocab', entryId: 11, written: '日月', deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' })],
 			reviews: build.strongReviews('c-vocab-11'),
-			merged: 0, grammarRuns: []
+			merged: 0, grammarRuns: [], courseEvents: []
 		});
 		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('option', { name: 'N5 — 2 of 4 learned' })).toBeTruthy();
@@ -282,7 +282,7 @@ describe('reverse and cloze', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: { general: { deckId: 'general', cardTypes, extra: {} } }
 		} as never);
 	}
@@ -354,7 +354,7 @@ describe('the day', () => {
 
 	it('caps the new cards by the workspace limit', async () => {
 		setup(charScheme, ['vocab']);
-		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], limits: { workspace: { new: 2 }, decks: {} } });
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [], limits: { workspace: { new: 2 }, decks: {} } });
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(screen.getByText(/^Today:/).textContent).toBe('Today: 0 reviews and 2 new (daily limits applied)'));
 	});
@@ -366,7 +366,7 @@ describe('the day', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			vacations: [{ version: 1, id: 'V', start: today, end, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 		});
 		render(Page, { context: ctx.context });
@@ -377,7 +377,7 @@ describe('the day', () => {
 	it('shows the notice of rows this version cannot read (#167)', async () => {
 		vi.mocked(loadStudyData).mockImplementation(async (_study, id) => {
 			ctx.session.study.unreadable.record(id as number, { cards: 1 }, []);
-			return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] };
+			return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] };
 		});
 		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/1 saved study item could not be read/)).toBeTruthy();
@@ -404,7 +404,7 @@ describe('orders', () => {
 			decks: [],
 			cards: [],
 			reviews: [],
-			merged: 0, grammarRuns: [],
+			merged: 0, grammarRuns: [], courseEvents: [],
 			deckSettings: { general: { deckId: 'general', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 		} as never);
 		saved = { ...defaultSetup(), decks: ['general', 'gone'], newOrder: 'deck' };
@@ -438,7 +438,7 @@ describe('the study cache (#193)', () => {
 	it('reloads its counts when the rows of the shown workspace change, not for another workspace', async () => {
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(1));
-		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0, grammarRuns: [] });
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 		ctx.session.study.cache.markStale(2);
 		await tick();
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
@@ -456,7 +456,7 @@ describe('the study cache (#193)', () => {
 
 describe('per-deck switches', () => {
 	it('lists every deck with its own switches', async () => {
-		vi.mocked(loadStudyData).mockResolvedValue({ decks: [VERBS], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [VERBS], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 		render(Page, { context: ctx.context });
 		const toggle = await screen.findByRole('button', { name: 'Per-deck card types' });
 		await fireEvent.click(toggle);

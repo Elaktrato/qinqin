@@ -45,7 +45,7 @@ const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] };
 
 beforeEach(() => {
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(onStudyDayChange).mockReturnValue(() => {});
 });
@@ -153,7 +153,7 @@ function withGoal(): string {
 		decks: [],
 		cards: [],
 		reviews: [],
-		merged: 0, grammarRuns: [],
+		merged: 0, grammarRuns: [], courseEvents: [],
 		goals: {
 			version: 1,
 			showStreak: true,

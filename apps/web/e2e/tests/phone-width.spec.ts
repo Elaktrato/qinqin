@@ -67,6 +67,9 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		'/stats',
 		'/stats/week',
 		'/stats/characters',
+		'/courses',
+		'/courses/e2e-zh-course',
+		'/courses/play/e2e-zh-course/first/words-1',
 		'/sources',
 		'/account/password',
 		...LEARNER_TABS.map((tab) => `/settings?tab=${tab}`)
