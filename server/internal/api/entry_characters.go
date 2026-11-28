@@ -159,13 +159,9 @@ func entryCharacters(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) ([]en
 	return out, nil
 }
 
+// firstEntryGloss is the one gloss of a character (see firstGloss).
 func firstEntryGloss(e lexicon.Entry) string {
-	for _, sense := range e.Senses {
-		if len(sense.Glosses) > 0 {
-			return sense.Glosses[0]
-		}
-	}
-	return ""
+	return lexicon.DisplayGloss(e.Senses)
 }
 
 func strokesOf(e lexicon.Entry) int {

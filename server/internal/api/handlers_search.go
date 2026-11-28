@@ -76,20 +76,23 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// firstGlosses is the first gloss of each dictionary in the entry's sense
-// order, at most three; the arrays are never nil.
+// firstGlosses is the first gloss of each dictionary in the display order
+// of the entry's senses (docs/contracts/senses), at most three; a folded
+// unit is never one, so a dictionary that only has folded glosses is left
+// out. The arrays are never nil.
 func firstGlosses(e lexicon.Entry) []searchGloss {
 	out := make([]searchGloss, 0, 3)
 	seen := map[int64]bool{}
-	for _, sense := range e.Senses {
+	for _, u := range lexicon.DisplaySenses(e.Senses) {
+		id := e.Senses[u.Sense].DictionaryID
 		if len(out) == 3 {
 			break
 		}
-		if seen[sense.DictionaryID] || len(sense.Glosses) == 0 {
+		if seen[id] || u.Folded {
 			continue
 		}
-		seen[sense.DictionaryID] = true
-		out = append(out, searchGloss{DictionaryID: sense.DictionaryID, Gloss: sense.Glosses[0]})
+		seen[id] = true
+		out = append(out, searchGloss{DictionaryID: id, Gloss: u.Glosses[0]})
 	}
 	return out
 }

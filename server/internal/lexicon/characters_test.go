@@ -218,6 +218,9 @@ func TestCharactersMeaningfulFields(t *testing.T) {
 	zh(unihan, "兙", []lexicon.Reading{pinyin("shi2ke4")}, []string{"decagram"})
 	// Only meta glosses: the first one stays.
 	ding := zh(cedict, "丁", py, []string{"see also 丁丁"}, []string{"used in 丁丁[zheng1 zheng1]"})
+	// A slang or vulgar line is skipped like a meta line (#345, docs/contracts/senses).
+	ji := zh(cedict, "鸡", py, []string{"(slang) prostitute"}, []string{"variant of 雞|鸡[ji1]", "fowl"})
+	cao := zh(cedict, "肏", py, []string{"to fuck (vulgar)"})
 	metas := map[string]string{
 		"乚": "archaic variant of 乙", "乛": "also written 乙", "乜": "abbr. for 乜斜",
 		"乞": "CL:个[ge4]", "乡": "Kangxi radical 5", "乢": "see 乞", "乣": "(archaic) variant of 糾",
@@ -253,6 +256,8 @@ func TestCharactersMeaningfulFields(t *testing.T) {
 		{"干", gan, "x", "dry"},
 		{"兙", ke, "", "decagram"},
 		{"丁", ding, "x", "see also 丁丁"},
+		{"鸡", ji, "x", "fowl"},
+		{"肏", cao, "x", "to fuck (vulgar)"},
 		{"々", iter, "", "iteration mark"},
 		{"里", li, "lǐ", "inside"},
 		{"𠀀", astral, "x", "astral"},
