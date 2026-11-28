@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
+	"qinqin/internal/courses"
 	"qinqin/internal/datapkg"
 	"qinqin/internal/freq"
 	"qinqin/internal/journal"
@@ -74,6 +75,7 @@ type server struct {
 
 	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
 	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
+	courses       courses.Cache // GET /api/courses/{id}: the filled courses per input fingerprint
 
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
@@ -402,6 +404,8 @@ func (s *server) routes() []route {
 		{"GET /api/image-packs", s.handleListImagePacks, accPublic, nil, noTok},
 		{"GET /api/starter-sets", s.handleListStarterSets, accPublic, nil, noTok},
 		{"GET /api/starter-sets/{id}", s.handleStarterSet, accUser, nil, noTok},
+		{"GET /api/courses", s.handleListCourses, accUser, nil, noTok},
+		{"GET /api/courses/{id}", s.handleCourse, accUser, nil, noTok},
 		{"GET /api/schemes", s.handleListSchemes, accPublic, nil, tokReadGlobal},
 		{"GET /api/schemes/{id}/entries", s.handleSchemeEntries, accPublic, nil, tokReadGlobal},
 		{"GET /api/schemes/{id}/characters", s.handleSchemeCharacters, accPublic, nil, tokReadGlobal},
