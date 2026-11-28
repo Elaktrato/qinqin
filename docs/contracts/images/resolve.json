@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "images/resolve",
- "note": "The picture of an entry: which mapping the server picks (docs/contracts/images/README.md, Resolution). packs holds the installed packs' rows; each case asks for language, targets (the entry key, its written forms, its kana reading when it has no written form) and sense (0: the whole entry) and names the expected pack and concept, or null for no picture. Go: server/internal/images/contract_test.go.",
+ "note": "The picture of an entry: which mapping the server picks (docs/contracts/images/README.md, Resolution). packs holds the installed packs' rows; each case asks for language, targets (the entry key, its written forms, its kana reading when it has no written form) and sense (0: the whole entry) and names the expected pack and concept, or null for no picture; skip (optional) lists pictures the caller reported for the entry (#274), which are passed over. Go: server/internal/images/contract_test.go; web: apps/web/src/lib/packages/pictures.contract.test.ts.",
  "packs": [
   {
    "packId": "images-a",
@@ -48,6 +48,9 @@
   {"name": "another language is another table", "language": "ja", "targets": ["苹果"], "sense": 0, "pack": null, "concept": null},
   {"name": "an uninstalled pack maps nothing", "language": "zh", "targets": ["桌子"], "sense": 0, "pack": null, "concept": null},
   {"name": "an unknown word", "language": "zh", "targets": ["椅子"], "sense": 0, "pack": null, "concept": null},
-  {"name": "no targets", "language": "zh", "targets": [], "sense": 0, "pack": null, "concept": null}
+  {"name": "no targets", "language": "zh", "targets": [], "sense": 0, "pack": null, "concept": null},
+  {"name": "a reported picture is passed over", "language": "zh", "targets": ["苹果"], "sense": 0, "skip": [{"packId": "images-a", "concept": "A"}], "pack": "images-b", "concept": "D", "note": "#274: the caller reported images-a/A for this entry; the next best mapping shows"},
+  {"name": "a report names one pack's picture", "language": "zh", "targets": ["苹果"], "sense": 0, "skip": [{"packId": "images-b", "concept": "A"}], "pack": "images-a", "concept": "A"},
+  {"name": "every mapping reported: no picture", "language": "zh", "targets": ["打"], "sense": 1, "skip": [{"packId": "images-a", "concept": "H"}], "pack": null, "concept": null}
  ]
 }

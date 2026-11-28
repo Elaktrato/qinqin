@@ -191,6 +191,13 @@ export function applyManual(rows, manual, conceptIds) {
 	return kept;
 }
 
+/** Drop the automatic rows a review removed (#274, scripts/images/<pack>/removed.tsv): each names one (language,
+ * target, sense, concept). */
+export function applyRemovals(rows, removed) {
+	const drop = new Set(removed.map((r) => `${r.language}\t${r.target}\t${r.sense}\t${r.concept}`));
+	return rows.filter((r) => !drop.has(`${r.language}\t${r.target}\t${r.sense}\t${r.concept}`));
+}
+
 /** Deterministic order of map rows: language, target, sense, score descending. */
 export function sortRows(rows) {
 	return [...rows].sort(

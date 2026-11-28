@@ -300,6 +300,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/images/reports",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/journal/capabilities",
 		"access": "user"
 	},
@@ -685,6 +689,10 @@
 	},
 	{
 		"pattern": "POST /api/events/batch",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/images/reports",
 		"access": "user"
 	},
 	{

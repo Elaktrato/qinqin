@@ -1,6 +1,6 @@
 // The package catalogue (GET /api/packages, docs/contracts/packages/). The web
-// reads it to show what the server has built; it installs no packages (a
-// native client does). Decoding is strict: a catalogue that does not match the
+// reads it to show what the server has built and installs only the images
+// packages (#274, lib/packages/store.ts); a native client may install all. Decoding is strict: a catalogue that does not match the
 // contract is refused whole, never guessed at.
 import { api } from './client';
 import type { StrokePack } from './types';
@@ -14,7 +14,8 @@ export type PackageType =
 	| 'audio'
 	| 'grammar'
 	| 'strokes'
-	| 'lemma-rules';
+	| 'lemma-rules'
+	| 'images';
 export type PackageState = 'building' | 'ready' | 'failed' | 'deleted';
 
 export interface PackageSource {
@@ -67,12 +68,13 @@ export const PACKAGE_TYPES: readonly PackageType[] = [
 	'audio',
 	'grammar',
 	'strokes',
-	'lemma-rules'
+	'lemma-rules',
+	'images'
 ];
 const TYPES: readonly string[] = PACKAGE_TYPES;
 const STATES: readonly string[] = ['building', 'ready', 'failed', 'deleted'];
 /** The package id grammar (catalogue.json idPattern). */
-export const PACKAGE_ID = /^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$/;
+export const PACKAGE_ID = /^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules|images)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$/;
 const ID = PACKAGE_ID;
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;

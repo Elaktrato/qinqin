@@ -19,7 +19,9 @@ export const OFFLINE_API_PATHS: readonly string[] = [
 	'/api/workspaces',
 	'/api/features',
 	'/api/languages',
-	'/api/me/time-zone'
+	'/api/me/time-zone',
+	// The learner's reported pictures (#274): the kept images packages pass them over offline.
+	'/api/images/reports'
 ];
 
 export const PREPARE_THROTTLE_MS = 30 * 60 * 1000;
@@ -116,6 +118,12 @@ export interface PrepareDeps {
 	extraNew?: number;
 	/** Entries prepared for an offline Study all session beyond the others (planOffline). */
 	studyAllExtra?: number;
+	/**
+	 * Keeps the images packages of the workspace language on the device (#274; only while the Pictures aid is on,
+	 * the runtime decides). Best effort: a failure leaves the rest of the preparation standing and is tried again at
+	 * the next preparation.
+	 */
+	syncPictures?: () => Promise<unknown>;
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
@@ -227,6 +235,13 @@ export async function prepareOffline(
 			if (!(await d.isCached(entryPath(id)))) await d.fetchEntry(id);
 		});
 		await pool(plan.chars, (ch) => d.fetchStroke(ch));
+		if (d.syncPictures) {
+			try {
+				await d.syncPictures();
+			} catch {
+				// No new pictures this round; what was kept before still answers.
+			}
+		}
 		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length, pages: d.pullPages(workspaceId), partition };
 		try {
 			d.storage?.setItem(key, JSON.stringify(saved));

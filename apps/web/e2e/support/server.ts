@@ -1,7 +1,7 @@
 // One qinqin server per Playwright worker: a copy of the template data
 // directory, a free loopback port, the log in the test output folder.
 
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { cpSync, createWriteStream, mkdirSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
@@ -43,7 +43,11 @@ async function waitHealthy(url: string, proc: ChildProcess, logFile: string, dea
 	throw new Error(`qinqin did not come up at ${url} (${exited ? 'it exited' : 'timeout'}); see ${logFile}`);
 }
 
-export async function startServer(logDir: string, name: string): Promise<RunningServer> {
+/**
+ * startServer serves a copy of the template. `seed` names a directory of more packs the copy gets before it starts
+ * (a spec whose server must hold a pack the others must not see, such as the images pack of the offline pictures).
+ */
+export async function startServer(logDir: string, name: string, opts: { seed?: string } = {}): Promise<RunningServer> {
 	const bin = process.env.QINQIN_E2E_BIN;
 	const template = process.env.QINQIN_E2E_TEMPLATE;
 	if (!bin || !template) throw new Error('QINQIN_E2E_BIN / QINQIN_E2E_TEMPLATE unset: run through the e2e config (global setup)');
@@ -52,6 +56,7 @@ export async function startServer(logDir: string, name: string): Promise<Running
 	const packs = join(root, 'no-packs');
 	mkdirSync(packs, { recursive: true });
 	cpSync(template, dataDir, { recursive: true });
+	if (opts.seed !== undefined) execFileSync(bin, ['seed', '--data', dataDir, '--packs', opts.seed], { env: serverEnv(packs), stdio: 'pipe' });
 	mkdirSync(logDir, { recursive: true });
 	const logFile = join(logDir, `server-${name}.log`);
 	const log = createWriteStream(logFile);

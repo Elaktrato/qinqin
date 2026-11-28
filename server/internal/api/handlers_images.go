@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -48,9 +50,11 @@ func pictureTargets(e *lexicon.Entry) []string {
 // answer for most words). sense (1..999) asks for the picture of that sense
 // of the entry (and entry-wide ones); without it every mapping counts.
 // The picture's svg is the pack's file in canonical form (images.CanonicalSVG); clients draw it
-// themselves (docs/contracts/images/). Signed-in users only.
+// themselves (docs/contracts/images/). Signed-in users only. A picture the
+// caller reported for the entry (#274) is passed over.
 func (s *server) handleEntryPicture(w http.ResponseWriter, r *http.Request) {
-	if s.requireUser(w, r) == nil {
+	u := s.requireUser(w, r)
+	if u == nil {
 		return
 	}
 	sense := 0
@@ -66,7 +70,12 @@ func (s *server) handleEntryPicture(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	f, found, err := images.Resolve(r.Context(), s.db, e.Language, pictureTargets(e), sense)
+	skip, err := images.ReportedOf(r.Context(), s.db, u.ID, e.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	f, found, err := images.Resolve(r.Context(), s.db, e.Language, pictureTargets(e), sense, skip)
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -111,4 +120,74 @@ func (s *server) handleListImagePacks(w http.ResponseWriter, r *http.Request) {
 		out = append(out, packJSON{p.PackID, p.Name, p.Version, p.Languages, p.License, p.Attribution, p.Notice, p.Pictures, p.Mappings})
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// maxPictureReportBody bounds the body of POST /api/images/reports.
+const maxPictureReportBody = 1 << 10
+
+// handleReportPicture serves POST /api/images/reports {entryId, packId,
+// concept, reason}: the caller reports a wrong picture of an entry (#274).
+// 204; the picture is not answered to them for that entry again. 400 for a
+// bad body or reason, 404 for an unknown entry or picture.
+func (s *server) handleReportPicture(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	body, ok := readBody(w, r, maxPictureReportBody)
+	if !ok {
+		return
+	}
+	var in struct {
+		EntryID int64  `json:"entryId"`
+		PackID  string `json:"packId"`
+		Concept string `json:"concept"`
+		Reason  string `json:"reason"`
+	}
+	if json.Unmarshal(body, &in) != nil || in.EntryID <= 0 || in.PackID == "" || in.Concept == "" || len(in.PackID) > 64 || len(in.Concept) > 64 {
+		writeError(w, http.StatusBadRequest, "bad_request", "The body must be {entryId, packId, concept, reason}.")
+		return
+	}
+	if _, err := (lexicon.Store{DB: s.db}).Get(r.Context(), in.EntryID); errors.Is(err, lexicon.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
+		return
+	} else if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	switch err := images.Report(r.Context(), s.db, u.ID, in.EntryID, in.PackID, in.Concept, in.Reason); {
+	case errors.Is(err, images.ErrBadReason):
+		writeError(w, http.StatusBadRequest, "bad_request", "Unknown reason.")
+	case errors.Is(err, images.ErrNoSuchPicture):
+		writeError(w, http.StatusNotFound, "not_found", "Picture not found.")
+	case err != nil:
+		writeInternal(w, r)
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// handleReportedPictures serves GET /api/images/reports: the pictures the
+// caller reported, {"reports": [{entryId, packId, concept}]}, so a client
+// that answers pictures offline passes them over too (#274).
+func (s *server) handleReportedPictures(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	list, err := images.Reported(r.Context(), s.db, u.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	type reportJSON struct {
+		EntryID int64  `json:"entryId"`
+		PackID  string `json:"packId"`
+		Concept string `json:"concept"`
+	}
+	out := make([]reportJSON, 0, len(list))
+	for _, rp := range list {
+		out = append(out, reportJSON{rp.EntryID, rp.PackID, rp.Concept})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reports": out})
 }

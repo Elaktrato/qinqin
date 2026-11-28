@@ -36,7 +36,7 @@ func TestPlanListsOnePackagePerLanguageAndPack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"audio.ja-audio", "components.zh-comp", "frequency.zh-freq", "grammar.zh-gram", "lemma-rules.ja-rules",
+	want := []string{"audio.ja-audio", "components.zh-comp", "frequency.zh-freq", "grammar.zh-gram", "images.pics", "lemma-rules.ja-rules",
 		"levels.zh-levels", "lexicon.ja", "lexicon.zh", "sentences.zh-sent", "strokes.hw"}
 	if got := specIDs(specs); !slices.Equal(got, want) {
 		t.Fatalf("Plan ids = %v, want %v (sorted)", got, want)

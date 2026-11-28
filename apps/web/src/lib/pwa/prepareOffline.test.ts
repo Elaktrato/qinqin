@@ -168,6 +168,15 @@ describe('prepareOffline', () => {
 		expect(deps.active.max).toBeLessThanOrEqual(2);
 	});
 
+	it('keeps the images packages after the study data; a failed picture round leaves the preparation standing (#274)', async () => {
+		const order: string[] = [];
+		const deps = makeDeps({ syncPictures: async () => void order.push(`pictures after ${deps.calls.length} requests`) });
+		expect((await prepareOffline(7, deps)).status).toBe('prepared');
+		expect(order).toEqual([`pictures after ${deps.calls.length} requests`]);
+		const failing = makeDeps({ syncPictures: async () => Promise.reject(new Error('download_busy')) });
+		expect((await prepareOffline(7, failing)).status).toBe('prepared');
+	});
+
 	it('prepares the opt-in kinds the decks switch on, as the study modal selects them', async () => {
 		// Word 9 was learned (Easy, not due); its reverse card is new. General switches reverse on, and
 		// the saved setup is the default one (Vocab, opt-in kinds as the decks say).

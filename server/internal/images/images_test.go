@@ -214,7 +214,7 @@ func TestResolve(t *testing.T) {
 		{"unknown word", "zh", []string{"桌子"}, 0, ""},
 		{"no targets", "zh", nil, 0, ""},
 	} {
-		f, ok, err := images.Resolve(ctx, sqlDB, c.language, c.targets, c.sense)
+		f, ok, err := images.Resolve(ctx, sqlDB, c.language, c.targets, c.sense, nil)
 		if err != nil {
 			t.Fatalf("%s: %v", c.name, err)
 		}
@@ -222,7 +222,7 @@ func TestResolve(t *testing.T) {
 			t.Errorf("%s: got %q (ok %v), want %q", c.name, got, ok, c.want)
 		}
 	}
-	f, _, _ := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0)
+	f, _, _ := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0, nil)
 	if f.SVG != apple || f.Label != "red apple" || f.Credit != "OpenMoji, Liz Bravo" || f.License != "CC BY-SA 4.0" || f.PackID != "images-test" {
 		t.Errorf("Found = %+v", f)
 	}
@@ -239,7 +239,7 @@ func TestResolvePrefersTheHigherScoreAcrossPacks(t *testing.T) {
 	if _, err := images.Import(ctx, sqlDB, build(t, "images-b", map[string]*string{"map.tsv": s(low)})); err != nil {
 		t.Fatal(err)
 	}
-	f, _, err := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0)
+	f, _, err := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0, nil)
 	if err != nil || f.Concept != "1F34E" || f.PackID != "images-a" {
 		t.Fatalf("Resolve = %+v, %v; want the higher-scoring apple of images-a", f, err)
 	}
@@ -247,7 +247,7 @@ func TestResolvePrefersTheHigherScoreAcrossPacks(t *testing.T) {
 	if err := images.Uninstall(ctx, sqlDB, "images-a"); err != nil {
 		t.Fatal(err)
 	}
-	f, ok, err := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0)
+	f, ok, err := images.Resolve(ctx, sqlDB, "zh", []string{"苹果"}, 0, nil)
 	if err != nil || !ok || f.PackID != "images-b" || f.Concept != "1F415" {
 		t.Fatalf("after the uninstall Resolve = %+v, %v, %v", f, ok, err)
 	}

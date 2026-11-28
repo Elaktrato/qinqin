@@ -1,15 +1,16 @@
 # Data packages
 
 Every data set a client needs (dictionaries per language, level lists, pack sentences, frequency, components,
-audio, grammar, stroke data, lemmatizer rules) is a versioned, checksummed **package** the server builds from its own database
+audio, grammar, stroke data, lemmatizer rules, pictures) is a versioned, checksummed **package** the server builds from its own database
 and serves for download. A package is read-only data: it never holds user rows. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (issue #93). User data travels in the paged pull
 (`docs/contracts/sync/`).
 
 Owner code: `server/internal/datapkg` (ids, writers, content hash, registry, builder),
 `server/internal/api/handlers_packages.go` (routes). Web: `apps/web/src/lib/api/packages.ts` (`parseCatalogue`)
-and `apps/web/src/lib/packages/versioning.ts` (`packageAction`, the reference client rule; the web installs no
-packages).
+and `apps/web/src/lib/packages/versioning.ts` (`packageAction`, the reference client rule). The web installs only
+`images` packages (#274: `apps/web/src/lib/packages/store.ts`, `zip.ts`, `sqlite.ts`; it reads `data.sqlite` read-only
+with its own reader).
 
 Fixtures:
 
@@ -17,6 +18,8 @@ Fixtures:
 - `manifest.json` — valid manifests (one per type) and invalid ones.
 - `versioning.json` — `server` cases (pack operations → catalogue rows) and `client` cases (`packageAction`).
 - `schemas.json` — the exact `data.sqlite` schema per type (format 1; the `sentences` type is format 2), and the row order of each table.
+- `../images/package.qqpkg` and `../images/package.json` — an `images` package the server's builder wrote and its rows,
+  read by Go and by the web's zip and package-database reader.
 - `pack-types.json` — every data **pack** type (the manifest `type` of a pack an administrator installs) and
   what it builds; see "Pack types" below.
 
@@ -33,6 +36,7 @@ Fixtures:
 | `grammar` | `grammar.<packId>` | the pack's lessons and its levels | — |
 | `strokes` | `strokes.<packId>` | the pack's stroke-order data; `languages: ["ja", "zh"]` | — |
 | `lemma-rules` | `lemma-rules.<packId>` | the pack's lemmatizer rule table: one `lemma_rules` row, `rules_json` byte for byte as imported (`docs/contracts/lemma/README.md`, Rule-table packs) | — |
+| `images` | `images.<packId>` | the pack's word → picture map (`map`, the rows the server resolves) and the pictures a map row uses (`pictures`, each SVG in the stored canonical form); `languages` the pack's (#274; `../images/README.md`, "Offline") | — |
 
 An id matches `catalogue.json` `idPattern`. `.` separates type and pack id (pack ids and language codes have
 no dot). A lexicon package exists per language that has at least one live dictionary; installing or removing
@@ -49,7 +53,8 @@ dictionaries' `lexicon` is per language), and that package's `requiresLexicon` a
 server keeps one table of these (`server/internal/pack/types.go`) and a Go test compares it with the fixture; the web
 test `lib/settings/packTypes.contract.test.ts` checks the web knows every type. How the server adds a type:
 [architecture record 0008](../../architecture/0008-pack-types.md). A client meets a pack type it does
-not know only in admin and Sources views; it shows it by its `type` string. The `images` type (#216) builds no package: its pictures are fetched per entry (`../images/README.md`).
+not know only in admin and Sources views; it shows it by its `type` string. The `images` type (#216) builds an
+`images` package since #274 (`../images/README.md`, "Offline").
 
 **Data packs are content, not features.** There are no code plugins (#199): a pack id has no feature switch
 and no rows of its own (`features/`, `keyed/`). Packs are listed by

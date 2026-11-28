@@ -4,6 +4,9 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Upgrading
 
+- Migration 057 adds the picture reports (#274). An upgrade wipes nothing. Images packs now build a data package; the
+  server builds it at start. Re-seed (`qinqin seed`) to install the reviewed picture maps of a rebuilt image.
+
 - The bundled level list `jlpt-words` (#219) takes the id of the former local-only JLPT vocabulary pack
   (`prepare-level-packs.mjs --jlpt-vocab`, removed). If you generated that pack, delete `plugins/data-local/jlpt-words`
   before seeding: both have the id `jlpt-words`, and a seed keeps whichever it imports last (path order). Run `qinqin seed` to install the new list on an
@@ -22,6 +25,13 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
 ## New
+
+- Pictures of words work offline (#274): while the Pictures visual aid is on, preparing for offline use keeps the
+  installed picture sets of the workspace language on the device (about 2 MB, downloaded once in the background and
+  again only when a set changes), in the browser, the installed app and the Android app. **Report picture** under a
+  picture (on a card or a word page) tells the server it is wrong; it is then no longer shown to you for that word.
+- Fewer wrong pictures (#274): the doubtful automatic pictures of the Starter words, HSK 1-2 and ≈ N5-N4 were reviewed
+  word by word (by teacher agents, not yet by a person): 262 removed, 14 replaced by a clearer picture.
 
 - Japanese words now carry an estimated JLPT level, "≈ N5" to "≈ N1", from the new bundled list **JLPT words
   (approximate)** (#219): about 10,000 words, with badges on word pages, level sessions and level decks, and a

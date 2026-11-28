@@ -259,6 +259,7 @@ describe('classify: the server route table', () => {
 		'GET /api/rows/{key}',
 		'GET /api/events',
 		'GET /api/entries/{id}',
+		'GET /api/images/reports',
 		'GET /api/themes',
 		'GET /api/fonts'
 	]);

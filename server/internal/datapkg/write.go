@@ -50,6 +50,7 @@ var typeDefs = map[Type]typeDef{
 	TypeGrammar:    grammarDef,
 	TypeStrokes:    strokesDef,
 	TypeLemmaRules: lemmaRulesDef,
+	TypeImages:     imagesDef,
 }
 
 var commonStatements = []string{
