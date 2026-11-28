@@ -45,6 +45,10 @@ func TestContractResolve(t *testing.T) {
 			Sense    int      `json:"sense"`
 			Pack     *string  `json:"pack"`
 			Concept  *string  `json:"concept"`
+			Skip     []struct {
+				PackID  string `json:"packId"`
+				Concept string `json:"concept"`
+			} `json:"skip"`
 		} `json:"cases"`
 	}
 	readFixture(t, "resolve.json", &fx)
@@ -75,7 +79,11 @@ func TestContractResolve(t *testing.T) {
 		t.Fatal("no cases")
 	}
 	for _, c := range fx.Cases {
-		f, ok, err := images.Resolve(ctx, sqlDB, c.Language, c.Targets, c.Sense)
+		var skip []images.Key
+		for _, k := range c.Skip {
+			skip = append(skip, images.Key{PackID: k.PackID, Concept: k.Concept})
+		}
+		f, ok, err := images.Resolve(ctx, sqlDB, c.Language, c.Targets, c.Sense, skip)
 		if err != nil {
 			t.Fatalf("%s: %v", c.Name, err)
 		}

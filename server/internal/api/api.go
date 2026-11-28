@@ -399,6 +399,8 @@ func (s *server) routes() []route {
 		{"GET /api/audio-packs", s.handleListAudioPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/audio-packs/{id}/credits", s.handleAudioCredits, accPublic, nil, tokReadGlobal},
 		{"GET /api/images/entries/{id}", s.handleEntryPicture, accUser, nil, noTok},
+		{"GET /api/images/reports", s.handleReportedPictures, accUser, nil, noTok},
+		{"POST /api/images/reports", s.handleReportPicture, accUser, nil, noTok},
 		{"GET /api/image-packs", s.handleListImagePacks, accPublic, nil, noTok},
 		{"GET /api/starter-sets", s.handleListStarterSets, accPublic, nil, noTok},
 		{"GET /api/starter-sets/{id}", s.handleStarterSet, accUser, nil, noTok},

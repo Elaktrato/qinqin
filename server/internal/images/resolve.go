@@ -30,7 +30,9 @@ type Found struct {
 // qualifies, so a word whose first sense has no picture but whose second has
 // one still shows it. Ties break by score (higher), then sense (lower), then
 // pack id and concept, so the answer is stable. ok is false when none maps.
-func Resolve(ctx context.Context, q Querier, language string, targets []string, sense int) (f Found, ok bool, err error) {
+// A picture in skip (the caller's reported pictures of the entry, #274) is
+// passed over.
+func Resolve(ctx context.Context, q Querier, language string, targets []string, sense int, skip []Key) (f Found, ok bool, err error) {
 	seen := map[string]bool{}
 	var uniq []string
 	for _, t := range targets {
@@ -50,6 +52,10 @@ func Resolve(ctx context.Context, q Querier, language string, targets []string, 
 	if sense > 0 {
 		where += ` AND m.sense IN (0, ?)`
 		args = append(args, sense)
+	}
+	for _, k := range skip {
+		where += ` AND NOT (m.pack_id = ? AND m.concept = ?)`
+		args = append(args, k.PackID, k.Concept)
 	}
 	order := `m.score DESC, m.sense, m.pack_id, m.concept`
 	if sense > 0 {

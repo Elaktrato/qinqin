@@ -26,6 +26,7 @@ describe('previewLines', () => {
 	it('counts the reports of AI examples (#186)', () => {
 		expect(previewLines({ ...zero, sentences: 2, exampleReports: 3 })).toEqual(['2 sentences they added', '3 reports of AI example sentences']);
 		expect(previewLines({ ...zero, exampleReports: 1 })).toEqual(['1 report of an AI example sentence']);
+		expect(previewLines({ ...zero, pictureReports: 2 })).toEqual(['2 reports of wrong pictures']);
 	});
 	it('counts access tokens', () => {
 		expect(previewLines({ ...zero, accessTokens: 1 })).toEqual(['1 personal access token']);

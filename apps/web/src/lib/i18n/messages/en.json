@@ -229,6 +229,7 @@
 	"admin.delete.preview.keyedRows": "{count, plural, one {# other saved item (notes, known words, settings)} other {# other saved items (notes, known words, settings)}}",
 	"admin.delete.preview.nothing": "Nothing else: there is no data in this account yet.",
 	"admin.delete.preview.overlays": "{count, plural, one {# edited dictionary entry} other {# edited dictionary entries}}",
+	"admin.delete.preview.pictureReports": "{count, plural, one {# report of a wrong picture} other {# reports of wrong pictures}}",
 	"admin.delete.preview.sentences": "{count, plural, one {# sentence they added} other {# sentences they added}}",
 	"admin.delete.preview.sessions": "{count, plural, one {# signed-in session} other {# signed-in sessions}}",
 	"admin.delete.preview.studyEvents": "{count, plural, one {# recorded review and study event} other {# recorded reviews and study events}}",

@@ -5,6 +5,25 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #274 — pictures offline, and picture reports (contract 23)
+
+- **New package type `images`** (`packages/`): every live images pack builds `images.<packId>` (format 1, the pack's
+  `languages`, no `requires`, not optional); its `data.sqlite` holds `map` (the pack's map rows as stored) and
+  `pictures` (only the pictures a map row uses, in canonical form). `pack-types.json` row `images` now has
+  `"package": "images"`; `catalogue.json` `types` and `idPattern`, `schemas.json` and `manifest.json` gain it. New
+  fixture `images/package.qqpkg` with `images/package.json` (rule `images/package`): a package the builder wrote and
+  its rows, read by Go and the web.
+- **The web installs images packages:** offline preparation downloads them (Pictures aid on, the workspace language),
+  checks them by the package rules and answers a picture from them when the server cannot be reached
+  (`images/README.md`, "Offline").
+- **Entry answer:** `GET /api/entries/{id}` gains `pictureTargets` (the strings the picture route looks the entry up
+  by).
+- **Picture reports:** new routes `POST /api/images/reports {entryId, packId, concept, reason}` (204; reasons
+  `wrong`, `unclear`, `offensive`, `other`; 400 `bad_request`, 404 `not_found`) and `GET /api/images/reports`
+  (`{"reports": [{entryId, packId, concept}]}`; kept offline by the worker), signed-in users, no access tokens. A
+  reported picture of an entry is no longer answered to its reporter: `resolve.json` cases gain `skip`. The deletion
+  preview gains `pictureReports` (`auth/admin-users.json`).
+
 ## #220 — topic labels of words (contract 22)
 
 - **New folder `topics/`:** the fixed topic list shared by every language (`topics.json`, rule `topics/list`: 49 ids
