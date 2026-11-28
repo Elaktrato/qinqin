@@ -5,7 +5,7 @@ import { formatNumber } from '$lib/i18n/format';
 import type { LookupResult } from '$lib/api/types';
 import { formatReading } from '$lib/languages/format';
 import { MARK_TAGS, unitsOf } from '$lib/entry/entrySenses';
-import type { SenseMark } from '$lib/entry/senseDisplay';
+import { TAG_READING, type SenseMark } from '$lib/entry/senseDisplay';
 import { SENSES_VISIBLE } from './showMore';
 
 type Sense = LookupResult['senses'][number];
@@ -113,11 +113,11 @@ export function firstVisible(senses: readonly PopupSense[]): number {
 
 /**
  * senseChips are a sense's part-of-speech and other tags; "usually kana"
- * shows per entry, and the slang, vulgar and derogatory tags as the unit's
- * mark chip.
+ * shows per entry, the slang, vulgar and derogatory tags as the unit's
+ * mark chip, and reading tags (`reading:hē`) not at all.
  */
 export function senseChips(s: Sense): string[] {
-	return [...s.pos, ...s.tags.filter((t) => t !== 'uk' && !MARK_TAGS.includes(t))];
+	return [...s.pos, ...s.tags.filter((t) => t !== 'uk' && !MARK_TAGS.includes(t) && !t.startsWith(TAG_READING))];
 }
 
 const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;

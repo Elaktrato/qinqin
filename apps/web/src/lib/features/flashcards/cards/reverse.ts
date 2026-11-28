@@ -18,11 +18,12 @@ const MAX_GLOSSES = 3;
 
 /**
  * The first display unit's pos and glosses (the sense display rule,
- * docs/contracts/senses: never a folded slang or vulgar gloss); without
+ * docs/contracts/senses: never a folded slang or vulgar gloss; only the
+ * card's pinned reading's when it has one); without
  * sense groups, the flat senses' shown glosses.
  */
-export function buildReverseFront(entry: Entry): ReverseFront {
-	const units = unitsOf(entrySenses(entry));
+export function buildReverseFront(entry: Entry, pinned?: string): ReverseFront {
+	const units = unitsOf(entrySenses(entry), pinned);
 	if (entry.senseGroups === undefined || entry.senseGroups.length === 0) {
 		return { pos: [], glosses: shownGlosses(units, MAX_GLOSSES) };
 	}

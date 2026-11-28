@@ -151,6 +151,24 @@ describe('buildVocabFaces', () => {
 		]);
 	});
 
+	it("shows only the pinned reading's meanings, minor lines last (#346)", () => {
+		const groups: SenseGroup[] = [
+			{ ...group('CC-CEDICT', ['surname Mao']), tags: ['reading:Máo'] },
+			{ ...group('CC-CEDICT', ['cat (CL:隻|只[zhi1])', '(dialect) to hide oneself']), tags: ['reading:māo'] },
+			{ ...group('CC-CEDICT', ['used in 貓腰|猫腰[mao2 yao1]']), tags: ['reading:máo'] }
+		];
+		const cat = entry({ written: '猫', senseGroups: groups });
+		expect(buildVocabFaces(cat, null, 'zh', 'māo').back.glosses).toEqual([
+			{ dictionaryName: 'CC-CEDICT', glosses: [plain('cat (CL:隻|只[zhi1])'), plain('(dialect) to hide oneself')] }
+		]);
+		expect(buildVocabFaces(cat, null, 'zh').back.glosses[0].glosses.map((g) => g.text)).toEqual([
+			'cat (CL:隻|只[zhi1])',
+			'(dialect) to hide oneself',
+			'surname Mao',
+			'used in 貓腰|猫腰[mao2 yao1]'
+		]);
+	});
+
 	it('shows a vulgar-only word unfolded, marked', () => {
 		const faces = buildVocabFaces(entry({ written: '鸡巴', senseGroups: [group('CC-CEDICT', ['dick', 'penis (vulgar)'])] }), null, 'zh');
 		expect(faces.back.glosses).toEqual([

@@ -44,10 +44,10 @@ export interface UnitOf<T> extends SenseUnit {
 	firstOfSense: boolean;
 }
 
-/** unitsOf: the display units of senses (display order), each with its sense. */
-export function unitsOf<T extends SenseLike>(senses: readonly T[]): UnitOf<T>[] {
+/** unitsOf: the display units of senses (display order, pinned to a reading when given), each with its sense. */
+export function unitsOf<T extends SenseLike>(senses: readonly T[], pinned?: string): UnitOf<T>[] {
 	const seen = new Set<number>();
-	return displaySenses(senses).map((unit) => {
+	return displaySenses(senses, pinned).map((unit) => {
 		const firstOfSense = !seen.has(unit.sense);
 		seen.add(unit.sense);
 		return { ...unit, of: senses[unit.sense], firstOfSense };

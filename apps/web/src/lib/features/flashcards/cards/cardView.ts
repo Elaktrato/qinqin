@@ -89,11 +89,11 @@ function sentenceLines(entry: Entry, sentence: Sentence | null | undefined): str
  * Grouping is by name because that is what the card shows; a dictionary
  * renamed between responses still collapses to one group.
  */
-function groupGlosses(entry: Entry): Pick<VocabBackFace, 'glosses' | 'folded'> {
+function groupGlosses(entry: Entry, pinned: string | undefined): Pick<VocabBackFace, 'glosses' | 'folded'> {
 	const shown: VocabGlossGroup[] = [];
 	const folded: VocabGlossGroup[] = [];
 	const byName = new Map<string, VocabGlossGroup>();
-	for (const unit of unitsOf(entrySenses(entry))) {
+	for (const unit of unitsOf(entrySenses(entry), pinned)) {
 		const name = unit.of.dictionaryName;
 		const key = `${unit.folded ? 1 : 0}\u0000${name}`;
 		let group = byName.get(key);
@@ -115,14 +115,16 @@ function groupReadings(readings: readonly VocabReading[]): VocabReading[] {
 
 /**
  * buildVocabFaces turns one resolved entry and its optional example
- * sentence into the two card faces. `language` is accepted so callers do
+ * sentence into the two card faces; `pinned` is the card's pinned reading
+ * (#346): the back shows only that reading's meanings. `language` is accepted so callers do
  * not have to special-case a workspace's scripts; the blanking rule is
  * language-independent.
  */
 export function buildVocabFaces(
 	entry: Entry,
 	sentence: Sentence | null | undefined,
-	language: string
+	language: string,
+	pinned?: string
 ): VocabFaces {
 	void language;
 
@@ -137,7 +139,7 @@ export function buildVocabFaces(
 				written: entry.written,
 				readings: groupReadings(readings),
 				sentenceLines: [],
-				...groupGlosses(entry)
+				...groupGlosses(entry, pinned)
 			}
 		};
 	}
@@ -152,7 +154,7 @@ export function buildVocabFaces(
 		front,
 		back: {
 			...front,
-			...groupGlosses(entry)
+			...groupGlosses(entry, pinned)
 		}
 	};
 }

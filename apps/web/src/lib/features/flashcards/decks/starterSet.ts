@@ -15,12 +15,16 @@ export function starterSetTarget(set: { language: string; name: string }): { id:
 	return { id: starterSetDeckId(set.language), name: set.name };
 }
 
-/** The add items of a set's words, in the set's order; a character entry gets no sentence or tone companions. */
+/**
+ * The add items of a set's words, in the set's order; a character entry gets no sentence or tone companions, and a
+ * word the set pins to a reading passes it on to its new card (#346).
+ */
 export function starterSetItems(entries: readonly StarterSetEntry[]): AddItem[] {
 	return entries.map((entry) => ({
 		entryId: entry.id,
 		written: entry.written,
-		...(entry.kind === 'character' ? { entryKind: 'character' as const } : {})
+		...(entry.kind === 'character' ? { entryKind: 'character' as const } : {}),
+		...(entry.reading ? { reading: entry.reading } : {})
 	}));
 }
 

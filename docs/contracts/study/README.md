@@ -85,6 +85,10 @@ typed value always wins: the server drops `extra` members shadowed by a set type
 `entryId`, `deckIds`, `createdAt` of a card; `deckId`, `cardTypes`, `updatedAt` of deck settings;
 `version` of limits; and every optional member that is not `null`), and a writer must not send them.
 
+Members of `extra` a client reads (written by clients, never by the server): `reading` on a card (#346), a string,
+the reading the card is pinned to (the Starter add flow writes it from the set's `reading`); its back shows only that
+reading's meanings (`senses/README.md`). Anything else (not a string, empty) is no pin.
+
 ## Last-write-wins and tombstones (`lww.json`)
 
 The keyed-row rule, per row: a push item's edit time is its `updatedAt`, or its `deletedAt` when later,

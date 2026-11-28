@@ -50,7 +50,8 @@
 				? null
 				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null)
 	);
-	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language));
+	// A card pinned to a reading (#346, a Starter word's) shows only that reading's meanings.
+	const faces = $derived(buildVocabFaces(entry, shownSentence, entry.language, item.card?.reading));
 
 	// The prompt is the word alone; its readings and example sentence belong
 	// to the answer, below the hairline (design §9, #101).

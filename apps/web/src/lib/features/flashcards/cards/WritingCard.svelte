@@ -75,7 +75,7 @@
 	const written = $derived(item.written ?? entry.written);
 	const masked = $derived(maskWritten(written, chars, done ? chars.length : position));
 	// The prompt's meaning: shown glosses only, never a folded slang or vulgar one (docs/contracts/senses).
-	const glosses = $derived(shownGlosses(unitsOf(entrySenses(entry)), 3));
+	const glosses = $derived(shownGlosses(unitsOf(entrySenses(entry), item.card?.reading), 3));
 
 	async function loadChar(index: number): Promise<void> {
 		busy = true;

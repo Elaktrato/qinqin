@@ -17,8 +17,10 @@ export interface StarterSetInfo {
 	humanReviewed: boolean;
 }
 
-/** One word of a set: the entry's base fields, its first gloss and the picture the set expects. */
+/** One word of a set: the entry's base fields, its pinned reading, its gloss and the picture the set expects. */
 export interface StarterSetEntry extends EntryBase {
+	/** The reading the set pins the word to ('' or absent: none). */
+	reading?: string;
 	gloss: string;
 	pictureConcept: string;
 }
