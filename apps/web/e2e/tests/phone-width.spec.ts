@@ -56,6 +56,8 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		'/study/advanced',
 		'/reader',
 		`/reader/book/${bookId}/0`,
+		// A saved sentence's link (#280): the reader opened at a word.
+		`/reader/book/${bookId}/0?at=1:0-1`,
 		'/search',
 		`/search?q=${encodeURIComponent('学校')}`,
 		`/entry/${entry}`,
