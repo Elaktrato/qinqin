@@ -17,6 +17,7 @@ import { ReviewOutbox } from '$lib/studycore/events';
 import { createOutboxStore } from '$lib/studycore/outboxStore';
 import { clearRecentSent, rememberSent } from '$lib/studycore/recentSent';
 import { forgetHomeCopies } from '$lib/widgets/homeData';
+import { forgetCourseCopies } from '$lib/features/courses/courseData';
 import { StudySetups } from '$lib/features/flashcards/setup/setupStore.svelte';
 import { StudyModalState } from '$lib/features/flashcards/setup/studyModal.svelte';
 import { EligibilityIndex } from '$lib/features/flashcards/session/eligibility.svelte';
@@ -146,6 +147,7 @@ export class Session {
 			if (reason === 'signOut') {
 				clearRecentSent(local());
 				forgetHomeCopies(local());
+				forgetCourseCopies(local());
 				this.setups.forget();
 			}
 		});
