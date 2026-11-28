@@ -4,6 +4,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Upgrading
 
+- Run `qinqin seed` once after upgrading (#346): it re-imports CC-CEDICT and JMdict so each meaning knows its reading. Until then a Starter word's card shows the meanings of all its readings. Starter cards added before this release keep doing so (a pin is set when a word is first added); everyday meanings still come first on them. Nothing is wiped.
+
 - The bundled level list `jlpt-words` (#219) takes the id of the former local-only JLPT vocabulary pack
   (`prepare-level-packs.mjs --jlpt-vocab`, removed). If you generated that pack, delete `plugins/data-local/jlpt-words`
   before seeding: both have the id `jlpt-words`, and a seed keeps whichever it imports last (path order). Run `qinqin seed` to install the new list on an
@@ -14,6 +16,7 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Changed
 
+- Dictionary: the everyday meaning comes first (#346). Surname, abbreviation, variant, "see", archaic and classical lines move after it: 书 is "book" before "abbr. for 書經", 水 "water" before "surname Shui", 三, 马, 云 and about 400 more. A Starter word learned in one reading keeps it on its card: 喝 shows "to drink", not "to shout"; 猫 only māo. In the Reader's lookup, 目 and 山 are no longer called "usually kana".
 - Dictionary: slang, vulgar and derogatory meanings never come first (#345). 鸡 is "chicken" on a card, not "(slang) prostitute"; 黄色 is "yellow"; 草 is "grass". On cards they are folded behind **Show n more meanings**, in the Reader's lookup they come last, after **Show more senses**, and search results, the Starter words and a word's characters never show them; the word page lists them last, marked "slang", "vulgar" or "derogatory". Nothing to reinstall: the dictionaries stay as they are.
 - Starter mode: the Starter words grow from 47 Chinese and 55 Japanese words to 146 and 145 (#275), each with a checked picture: people, numbers, school, the body, food and drink, home, clothes, transport, places, colours, nature, animals and a few actions, now starting with people and numbers. They were reviewed by agents acting as native-speaker teachers, not yet by a person; the Home offer and Settings → Study say how many words there are and who reviewed them, and the Sources page credits them. Learners who already added the Starter words get the new ones with **Add the Starter words to my decks** again (words they have keep their history).
 - Flashcards: the level, the deck and the labels on a card (the Word Salad tier, "Again, look 2 of 3", "new") are small outlined tags (#286), the level in the accent colour. They wrap onto a second line on a phone.
