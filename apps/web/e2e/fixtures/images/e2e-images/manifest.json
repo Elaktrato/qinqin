@@ -1,0 +1,10 @@
+{
+  "id": "e2e-images",
+  "name": "End-to-end test pictures",
+  "version": "1",
+  "type": "images",
+  "languages": ["ja", "zh"],
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-drawn test pictures",
+  "format": "images-svg"
+}

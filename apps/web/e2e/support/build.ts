@@ -15,6 +15,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const webRoot = resolve(here, '..', '..');
 export const repoRoot = resolve(webRoot, '..', '..');
 export const fixturePacks = resolve(here, '..', 'fixtures', 'packs');
+/** A small images pack only the offline pictures spec installs (#274). */
+export const fixtureImages = resolve(here, '..', 'fixtures', 'images');
 
 /** The admin of every e2e instance; the password exists only in the throw-away data directory. */
 export const ADMIN = { username: 'e2e-admin', password: 'e2e-admin-Passw0rd!' } as const;
