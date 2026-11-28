@@ -10,6 +10,7 @@
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import PlacementOffer from '$lib/placement/PlacementOffer.svelte';
 	import StarterOffer from '$lib/starter/StarterOffer.svelte';
+	import StartOffer from '$lib/starter/StartOffer.svelte';
 	import LevelCheckOffer from '$lib/placement/LevelCheckOffer.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { homeEmptyReason, placeWidgets, resolveLayout } from '$lib/widgets/layout';
@@ -20,6 +21,9 @@
 
 	const session = useSession();
 	let query = $state('');
+	// Where the workspace's language has a course, its start card stands in for the Starter and placement offers
+	// (#225); they wait until it has settled, so they never flash in first. null: not settled yet.
+	let courseStart = $state<boolean | null>(null);
 
 	// The greeting follows the device's hour; the date line is the learner's
 	// today (their study-day zone), which can differ near midnight.
@@ -78,8 +82,11 @@
 	</header>
 
 	<EmailBanner />
-	<PlacementOffer />
-	<StarterOffer />
+	<StartOffer onsettle={(applies) => (courseStart = applies)} />
+	{#if courseStart === false}
+		<PlacementOffer />
+		<StarterOffer />
+	{/if}
 	<LevelCheckOffer />
 
 	<form class="search" role="search" onsubmit={search}>
