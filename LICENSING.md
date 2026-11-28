@@ -70,12 +70,15 @@ and an `ATTRIBUTION.md` in `plugins/data/<pack>/`.
 
 ### The estimated JLPT word levels (`jlpt-words`): CC BY-SA 4.0
 
-`plugins/data/jlpt-words` is computed by `scripts/prepare-jlpt-words.mjs` from three bundled packs: the Jiten
-frequency ranks (CC BY-SA 4.0), JMdict (CC BY-SA 4.0, EDRDG) and the JLPT kanji levels (`jlpt-kanji`: kanjiapi.dev,
-MIT, and KANJIDIC2, CC BY-SA 4.0). It copies no published JLPT vocabulary list. Being an adaptation of the Jiten ranks
-and JMdict, it is shared under **CC BY-SA 4.0**, not under the project's CC BY 4.0, and keeps the credits of its inputs
-and kanjiapi.dev's MIT notice (`LICENSE-kanjiapi.dev`). It is a levels pack served on its own, so no CC BY pack embeds
-it (a course pack refers to it by pack id). See `docs/sources.md`, "JLPT words (approximate)".
+`plugins/data/jlpt-words` is computed by `scripts/prepare-jlpt-words.mjs` from four bundled packs: the Jiten
+frequency ranks (CC BY-SA 4.0), JMdict (CC BY-SA 4.0, EDRDG), the JLPT kanji levels (`jlpt-kanji`: kanjiapi.dev, MIT,
+and KANJIDIC2, CC BY-SA 4.0) and the jōyō kanji (`joyo-grades`, KANJIDIC2), and from three short lists the project
+writes, `scripts/jlpt-words/core.tsv`, `grammar.tsv` and `anchors.tsv` (CC BY 4.0, credit "qinqin contributors, CC BY
+4.0"; `scripts/jlpt-words/NOTICE`). It copies no published JLPT vocabulary list. Being an adaptation of the Jiten
+ranks and JMdict, it is shared under **CC BY-SA 4.0**, not under the project's CC BY 4.0 (CC BY 4.0 content may be
+adapted into a CC BY-SA 4.0 work), and keeps the credits of its inputs and kanjiapi.dev's MIT notice
+(`LICENSE-kanjiapi.dev`). It is a levels pack served on its own, so no CC BY pack embeds it (a course pack refers to
+it by pack id). See `docs/sources.md`, "JLPT words (approximate)".
 
 ### Pictures (OpenMoji and Mulberry Symbols)
 

@@ -25,8 +25,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Japanese words now carry an estimated JLPT level, "≈ N5" to "≈ N1", from the new bundled list **JLPT words
   (approximate)** (#219): about 10,000 words, with badges on word pages, level sessions and level decks, and a
   grouping on the character map, like the JLPT kanji. It is qinqin's estimate (the JLPT has published no official
-  vocabulary list since 2010): each word gets the harder of its kanji's JLPT level and a level from how often it is
-  used, so a word can be a level off. A fresh install gets it automatically; an existing server gets it with
+  vocabulary list since 2010): about 540 basic textbook words have their level set directly, the rest go mainly by
+  how often they are used, so a word can be a level off. A fresh install gets it automatically; an existing server gets it with
   `qinqin seed`.
 
 - Topic labels for words (#220): 49 themes (food, family, travel, work …) for about 2,000 Chinese words (HSK 1–4)
