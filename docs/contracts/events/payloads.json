@@ -13,7 +13,8 @@
     {"type": "read", "write": true, "builder": "readPayload"},
     {"type": "journal", "write": true, "builder": "journalPayload"},
     {"type": "script", "write": true, "builder": "scriptPayload"},
-    {"type": "grammar", "write": true, "builder": "grammarPayload"}
+    {"type": "grammar", "write": true, "builder": "grammarPayload"},
+    {"type": "course", "write": true, "builder": "coursePayload"}
   ],
   "cases": [
     {
@@ -47,6 +48,12 @@
       "note": "{point, mode, score, total} in this member order (#277): point is <packId>:<lessonId> (neither id holds a colon); mode is lesson (a finished lesson run; a client ignores a mode it does not know); score and total are whole numbers with 0 <= score <= total <= 1000. Parse and replay rules: grammar/runs.json",
       "args": ["zh-grammar", "le-change", 3, 4],
       "expect": {"point": "zh-grammar:le-change", "mode": "lesson", "score": 3, "total": 4}
+    },
+    {
+      "kind": "build", "type": "course", "name": "course names the kind, the course and what the learner did",
+      "note": "{kind, course, …} in the contract's member order whatever the input's (#221); kinds lesson-started, lesson-finished (with score, total and the words it taught), unit-test (score, total, passed, early), section-exam (score, total, passed), placement. Every kind, the parse rules and the derivation: courses/derive.json",
+      "args": [{"words": ["好"], "lesson": "words-1", "unit": "hello", "course": "zh-course", "kind": "lesson-finished", "score": 5, "total": 6}],
+      "expect": {"kind": "lesson-finished", "course": "zh-course", "unit": "hello", "lesson": "words-1", "score": 5, "total": 6, "words": ["好"]}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",

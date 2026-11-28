@@ -32,7 +32,7 @@ where the rule is implemented today.
 | Reminders | `reminders/` (the opt-in `reminders` row, the client's facts, the plan the shell schedules local notifications from, web push routes, the email unsubscribe link) |
 | Data safety | `backup/` (archive format 2, id remapping) |
 | Starter mode | `starter/` (the stage of a word from its own review history, what the front shows at each stage, the `starter` workspace setting, the Starter set format and its routes; builds on `cards/` hints and `images/`) |
-| Courses (data) | `topics/` (the topic list and the topic labels of words that fill course units by theme; nothing stored per user) |
+| Courses (data) | `topics/` (the topic list and the topic labels of words that fill course units by theme; nothing stored per user), `courses/` (the course pack, the fill rule and `GET /api/courses/{id}`, the `course` progress events and the path-state derivation) |
 | Pictures | `images/` (images packs: the pack format, the word → picture mapping, the picture of an entry `GET /api/images/entries/{id}`, the picture vocabulary, theming and credits) |
 | Visual aids | `aids/` (the `visualAids` workspace setting; pictures on entries and cards, tone colours and contours, character anatomy) |
 | Stroke order | `strokes/` (`GET /hanzi/U<HEX>.json`, the optional `?lang=` and which strokes pack answers for it) |
@@ -45,7 +45,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `version/` → `events/` → `study/` → `cards/` → `tones/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `strokes/` → `images/` → `aids/` → `starter/` → `topics/` → `journal/` → `grammar/` → `courses/` → `settings/` → `reminders/` → `themes/` → `fonts/` → `overlays/` → `examples/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -192,6 +192,7 @@ fixes the shape.
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/events/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |
 | Grammar lesson runs | workspace; study events (`grammar`, #277), in the event log and the pull like reviews | `{point: "<packId>:<lessonId>", mode: "lesson", score, total}`; progress (best score, last run) is replayed by the client | `studycore/grammarRuns.ts`, `features/grammar/progress.ts`; server `internal/grammar/events.go` | `grammar/runs.json` |
+| Course progress | workspace; study events (`course`, #221), in the event log, the pull and backups like reviews | `{kind, course, …}`: lesson started/finished (with its words), unit test, section exam, placement; the path state is derived by the client over the filled course | `studycore/courseProgress.ts`, `events/eventPayloads.ts`; server `internal/courses/progress.go` | `courses/derive.json`, `courses/changes.json` |
 | Journal entries, reviews, topic ideas, settings | workspace (`journal_*` tables, not rows); not in the pull: `/api/journal/*` | see `journal/README.md` | `features/journal/store.ts`; server `internal/journal/store.go` | `journal/entries.json`, `journal/review-docs.json`, `journal/kind-resolve.json` |
 | AI examples (#186) | user and entry: kept ones are own sentences (`sentences` with `ai_provider`/`ai_model`; pull `sentences` with `ai`; backup `sentences/` line with `ai`); drafts and reports in their own tables, not in the pull or a backup | see `examples/README.md` | `entry/examples/examples.ts`; server `internal/sentences/examples.go` | `examples/examples.json` |
 | Journal conversations (the partner, #185) | workspace (`journal_conversations`, `journal_messages`); not in the pull: `/api/journal/conversations*`; backup key `journal:conversation:<id>` | see `journal/README.md#conversations` | `features/journal/conversation/conversations.ts`; server `internal/journal/conversation.go` | `journal/conversations.json` |

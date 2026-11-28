@@ -32,3 +32,31 @@ export function scriptPayload(system: string, item: string, mode: string, ok: bo
 export function grammarPayload(packId: string, lessonId: string, score: number, total: number): { point: string; mode: 'lesson'; score: number; total: number } {
 	return { point: `${packId}:${lessonId}`, mode: 'lesson', score, total };
 }
+
+/** The members of a `course` event, by kind (docs/contracts/courses/README.md "Progress events"). */
+export type CoursePayload =
+	| { kind: 'lesson-started'; course: string; unit: string; lesson: string }
+	| { kind: 'lesson-finished'; course: string; unit: string; lesson: string; score: number; total: number; words: readonly string[] }
+	| { kind: 'unit-test'; course: string; unit: string; score: number; total: number; passed: boolean; early: boolean }
+	| { kind: 'section-exam'; course: string; section: string; score: number; total: number; passed: boolean }
+	| { kind: 'placement'; course: string; section: string };
+
+/**
+ * `course`: course progress (#221): a lesson started or finished (with the keys of the words it taught), a unit test
+ * (passed as judged then; `early` when taken before the unit's lessons were done), a section exam, a placement. The
+ * members come out in the contract's order (courses/derive.json `build`), whatever order the input has.
+ */
+export function coursePayload(p: CoursePayload): CoursePayload {
+	switch (p.kind) {
+		case 'lesson-started':
+			return { kind: p.kind, course: p.course, unit: p.unit, lesson: p.lesson };
+		case 'lesson-finished':
+			return { kind: p.kind, course: p.course, unit: p.unit, lesson: p.lesson, score: p.score, total: p.total, words: [...p.words] };
+		case 'unit-test':
+			return { kind: p.kind, course: p.course, unit: p.unit, score: p.score, total: p.total, passed: p.passed, early: p.early };
+		case 'section-exam':
+			return { kind: p.kind, course: p.course, section: p.section, score: p.score, total: p.total, passed: p.passed };
+		case 'placement':
+			return { kind: p.kind, course: p.course, section: p.section };
+	}
+}

@@ -63,32 +63,6 @@ type Progress struct {
 	id      string
 }
 
-// LessonPayload is the payload of a lesson-started (finished false) or lesson-finished event, in its member order.
-func LessonPayload(course, unit, lesson string, finished bool, score, total int, words []string) json.RawMessage {
-	if !finished {
-		raw, _ := json.Marshal(struct {
-			Kind   string `json:"kind"`
-			Course string `json:"course"`
-			Unit   string `json:"unit"`
-			Lesson string `json:"lesson"`
-		}{EventLessonStarted, course, unit, lesson})
-		return raw
-	}
-	if words == nil {
-		words = []string{}
-	}
-	raw, _ := json.Marshal(struct {
-		Kind   string   `json:"kind"`
-		Course string   `json:"course"`
-		Unit   string   `json:"unit"`
-		Lesson string   `json:"lesson"`
-		Score  int      `json:"score"`
-		Total  int      `json:"total"`
-		Words  []string `json:"words"`
-	}{EventLessonFinished, course, unit, lesson, score, total, words})
-	return raw
-}
-
 // ParseProgress reads a stored event as a course event (README "Parsing"); ok false: it is not one and counts
 // nowhere. Members a kind does not name are ignored.
 func ParseProgress(e StoredEvent) (Progress, bool) {

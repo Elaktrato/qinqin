@@ -1,7 +1,119 @@
 {
  "version": 1,
  "rule": "courses/derive",
- "note": "The derivation of a learner's path state (#221, README \"Derivation\"): a filled course (only the members the derivation reads: section and unit ids, a unit's test, its words' keys and its lessons), one workspace's stored events of every type, the words the learner has marked known, and the state. The course id is `zh-test`. Go: server/internal/courses/derive_contract_test.go (Derive); web: apps/web/src/lib/studycore/courseProgress.test.ts (deriveCourseState).",
+ "build": [
+  {
+   "name": "a started lesson",
+   "builder": "coursePayload",
+   "args": [
+    {
+     "lesson": "words-1",
+     "unit": "u1",
+     "course": "zh-test",
+     "kind": "lesson-started"
+    }
+   ],
+   "expect": {
+    "kind": "lesson-started",
+    "course": "zh-test",
+    "unit": "u1",
+    "lesson": "words-1"
+   }
+  },
+  {
+   "name": "a finished lesson names the words it taught",
+   "builder": "coursePayload",
+   "args": [
+    {
+     "words": [
+      "a",
+      "b"
+     ],
+     "total": 5,
+     "score": 4,
+     "kind": "lesson-finished",
+     "course": "zh-test",
+     "unit": "u1",
+     "lesson": "words-1"
+    }
+   ],
+   "expect": {
+    "kind": "lesson-finished",
+    "course": "zh-test",
+    "unit": "u1",
+    "lesson": "words-1",
+    "score": 4,
+    "total": 5,
+    "words": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "name": "a unit test says whether it passed and whether it was taken early",
+   "builder": "coursePayload",
+   "args": [
+    {
+     "early": true,
+     "passed": true,
+     "kind": "unit-test",
+     "unit": "u2",
+     "course": "zh-test",
+     "total": 20,
+     "score": 17
+    }
+   ],
+   "expect": {
+    "kind": "unit-test",
+    "course": "zh-test",
+    "unit": "u2",
+    "score": 17,
+    "total": 20,
+    "passed": true,
+    "early": true
+   }
+  },
+  {
+   "name": "a section exam",
+   "builder": "coursePayload",
+   "args": [
+    {
+     "passed": false,
+     "section": "one",
+     "score": 29,
+     "total": 40,
+     "course": "zh-test",
+     "kind": "section-exam"
+    }
+   ],
+   "expect": {
+    "kind": "section-exam",
+    "course": "zh-test",
+    "section": "one",
+    "score": 29,
+    "total": 40,
+    "passed": false
+   }
+  },
+  {
+   "name": "a placement",
+   "builder": "coursePayload",
+   "args": [
+    {
+     "section": "two",
+     "course": "zh-test",
+     "kind": "placement"
+    }
+   ],
+   "expect": {
+    "kind": "placement",
+    "course": "zh-test",
+    "section": "two"
+   }
+  }
+ ],
+ "note": "The course events (`build`: what coursePayload writes for its input, member order included) and the derivation of a learner's path state (#221, README \"Derivation\"): a filled course (only the members the derivation reads: section and unit ids, a unit's test, its words' keys and its lessons), one workspace's stored events of every type, the words the learner has marked known, and the state. The course id is `zh-test`. Go: server/internal/courses/derive_contract_test.go (Derive); web: apps/web/src/lib/studycore/courseProgress.test.ts (deriveCourseState).",
  "course": "zh-test",
  "cases": [
   {

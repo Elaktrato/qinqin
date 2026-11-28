@@ -52,12 +52,29 @@ func TestDeriveContract(t *testing.T) {
 	}
 }
 
-// LessonPayload writes the members in their contract order.
-func TestLessonPayload(t *testing.T) {
-	if got := string(courses.LessonPayload("c", "u", "words-1", true, 4, 5, []string{"a"})); got != `{"kind":"lesson-finished","course":"c","unit":"u","lesson":"words-1","score":4,"total":5,"words":["a"]}` {
-		t.Fatal(got)
+// Every payload of derive.json's build block parses as a course event of its kind.
+func TestBuiltPayloadsParse(t *testing.T) {
+	raw, err := os.ReadFile("../../../docs/contracts/courses/derive.json")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got := string(courses.LessonPayload("c", "u", "words-1", false, 0, 0, nil)); got != `{"kind":"lesson-started","course":"c","unit":"u","lesson":"words-1"}` {
-		t.Fatal(got)
+	var fixture struct {
+		Build []struct {
+			Name   string          `json:"name"`
+			Expect json.RawMessage `json:"expect"`
+		} `json:"build"`
+	}
+	if err := json.Unmarshal(raw, &fixture); err != nil || len(fixture.Build) != 5 {
+		t.Fatalf("%v, %d build cases", err, len(fixture.Build))
+	}
+	for _, c := range fixture.Build {
+		p, ok := courses.ParseProgress(courses.StoredEvent{ID: "01JD0000000000000000000001", TS: "2026-11-28T10:00:00Z", Type: courses.EventType, Payload: c.Expect})
+		var kind struct {
+			Kind string `json:"kind"`
+		}
+		_ = json.Unmarshal(c.Expect, &kind)
+		if !ok || p.Kind != kind.Kind || p.Course != "zh-test" {
+			t.Errorf("%s: parsed %+v, %v", c.Name, p, ok)
+		}
 	}
 }
