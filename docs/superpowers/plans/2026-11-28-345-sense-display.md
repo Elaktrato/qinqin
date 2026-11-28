@@ -73,6 +73,34 @@ re-import.
 - Ruling: the popup shows its first three units as before, but a sensitive unit is never among the ones shown before
   "Show more senses" (unless every unit is sensitive).
 
+- Ruling: JMdict's derog first senses fold too (7 common words: おっさん, くたばる, 彼奴, 気違い, 成金 …): one rule, no
+  exception list — cost if wrong: おっさん's "middle-aged man" sits behind "Buddhist priest" on its card.
+- Ruling: a word's mark is the strongest of its glosses' marks, the explicit words included, so 鸡's "(slang)
+  prostitute" is marked "vulgar", not "slang" — cost if wrong: a chip wording.
+- Ruling: the AI example request leaves folded glosses out, and the character universe's meaning skips marked glosses
+  like it skips surname lines — the example writer and the character map are beginner views too.
+
 ## Execution record
 
-(filled in as the work goes)
+1. Plan committed first (`docs(plan)`).
+2. Contract and both implementations, test first: the Go and web fixture tests were written and run red (undefined
+   symbols / no module) before `lexicon.DisplaySenses` and `senseDisplay.ts`. The first green run showed two fixture
+   expectations wrong (鸡, 鸭子: "prostitute" is an explicit word, so the strongest mark is vulg, not sl); the fixture
+   was corrected to the rule, not the code changed. Contract 23.
+3. Server picks, test first: `api/sense_display_internal_test.go`, `sentences/examples_glosses_test.go` and the new
+   鸡 / 肏 rows of `TestCharactersMeaningfulFields` failed first, then passed. The real-dictionary test
+   (`lexicon/senses_real_test.go`, through the new `internal/realdict` helper that imports the shipped CC-CEDICT and
+   JMdict cut down to the named words) was written after the rule and passed at once: 鸡, 鸭子, 黄色, 草, 鸟, 干, 犬, 猫,
+   山.
+4. Web, test first for the logic (`entrySenses.test.ts`, `cardView.test.ts`, `reverse.test.ts`,
+   `entryDisplay.test.ts` red, then green). The DOM tests (`VocabCard.dom.test.ts`, `EntryCard.dom.test.ts`) were
+   written after the components and passed at once. One test expectation was wrong (a two-sense entry cannot show
+   three) and was fixed.
+5. e2e `sense-display.spec.ts` at 360 px (card back, lookup sheet, word page; a 鸡 line added to the e2e zh fixture
+   pack): passed on its first run.
+6. Wiki (Searching and entries, Reader, Dictionary data model) and NEXT.md.
+
+Gates on the branch head: `npm run check` 0 errors 0 warnings; full vitest 744 files, 15,092 passed, 2 skipped;
+targeted Go (`lexicon`, `api`, `sentences`, `starter`, `realdict`) ok; `node --test scripts/*.test.mjs` 235 passed;
+e2e `sense-display.spec.ts` 3 passed. The full Go suite, the build and the 3-run e2e are run on the last branch
+(#347), which contains this one.
