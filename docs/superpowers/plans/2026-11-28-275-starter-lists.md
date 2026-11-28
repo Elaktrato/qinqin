@@ -78,9 +78,11 @@ native-language teacher agents now, by the owner later. Starter mode itself is #
 ## Review summary (details: `server/internal/starter/sets/REVIEW.md`)
 
 Two teacher agents per language reviewed independently (`claude -p --effort high`, no tools; personas in REVIEW.md),
-an adjudicator per language decided every raised point. Chinese: 47 points raised (27 by both), 11 words dropped, 4
-replaced, 1 added, 6 readings pinned, 1 gloss fixed. Japanese: 44 points raised (24 by both), 8 dropped, 5 replaced,
-2 added, 8 kana forms adopted (10 more not possible, ruling 10), 2 glosses fixed. Both asked to start with people and
+an adjudicator per language decided every raised point. Chinese: 46 points raised (18 by both teachers); 24 kept
+(most with a dictionary follow-up), 11 words dropped, 4 replaced or respelt (云彩, 闹钟, 洗手间, 桃子), 6 readings
+pinned, 1 gloss fixed, 零 added. Japanese: 44 points raised (27 by both); 11 kept, 8 dropped, 3 replaced (じゃがいも,
+お茶, 子供), 18 kana forms asked of which 8 were possible (ruling 10), おまわりさん and 葉っぱ adopted, 2 glosses
+fixed, 財布 and 携帯電話 added. Both asked to start with people and
 numbers. The reviews' main findings outside the lists: CC-CEDICT slang lines on child-facing cards, surname/variant
 lines first on one-character cards, JMdict sense order and "usually kana" flags on 目/山, a resolution bug (虹 → 二次,
 via a search-only form), and the pictures wanted for 22 words.
