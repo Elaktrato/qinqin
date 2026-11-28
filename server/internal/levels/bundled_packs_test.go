@@ -46,7 +46,7 @@ func TestBundledLevelPacks(t *testing.T) {
 			"MIT AND CC BY-SA 4.0", []string{"ATTRIBUTION.md", "LICENSE", "LICENSE-KANJIDIC2"},
 			[]string{"The JLPT kanji levels are approximate", "(https://github.com/onlyskin/kanjiapi.dev)", "KANJIDIC2"}},
 		// The estimate: Jiten ranks cut at the commonly cited cumulative
-		// sizes (800 … 10,000), less one {form, reading} two entries share.
+		// size of 10,000, less one {form, reading} two entries share.
 		{"jlpt-words", "JLPT words (approximate)", "ja", "word", jlptApprox, 9999,
 			"CC BY-SA 4.0", []string{"ATTRIBUTION.md", "LICENSE", "LICENSE-kanjiapi.dev", "UNMATCHED.tsv"},
 			[]string{"an estimate, not an official list", "since 2010", "(https://jiten.moe/frequency-dictionaries)", "JMdict"}},

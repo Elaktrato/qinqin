@@ -33,8 +33,8 @@
 //      exactly CC-BY-4.0 (optionally followed by " (qualifier)"), carry the credit "qinqin contributors, CC BY 4.0" in their
 //      attribution and ship the CC BY 4.0 legal code as LICENSE (#217).
 //   i. the project-written data embedded in the code (the script charts under
-//      apps/web/src/lib/features/scripts/data and the Starter lists under
-//      server/internal/starter/sets) state license "CC-BY-4.0" (Starter lists also carry
+//      apps/web/src/lib/features/scripts/data, the Starter lists under
+//      server/internal/starter/sets and the JLPT word lists under scripts/jlpt-words) state license "CC-BY-4.0" (Starter lists also carry
 //      the credit) and have a NOTICE beside them; there is no CC0 exception (LICENSING.md).
 //   h. the images packs (#216; only when scripts/images/pins.json exists): each has its committed
 //      mapping, and docs/sources.md names the pack, its pinned version and its licence.
@@ -89,7 +89,9 @@ export const IMAGES_PACKS = { 'images-openmoji': ['openmoji', 'CC BY-SA 4.0'], '
 /** Embedded project-written data: [directory, files carry a credit]. */
 const EMBEDDED_PROJECT_DATA = [
 	['apps/web/src/lib/features/scripts/data', false],
-	['server/internal/starter/sets', true]
+	['server/internal/starter/sets', true],
+	// The estimated JLPT word list's project lists (#219): TSV files, so only their NOTICE is checked.
+	['scripts/jlpt-words', false]
 ];
 
 /** embeddedDataProblems checks rule i; a directory that does not exist is skipped. */

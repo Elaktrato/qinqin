@@ -5,7 +5,7 @@ This is an estimate, not an official list:
 no official JLPT vocabulary list has been published since 2010 (the Japan
 Foundation and JEES stopped publishing the test's lists with the 2010
 revision). qinqin computes it with `scripts/prepare-jlpt-words.mjs` from
-three packs it already bundles:
+four packs it already bundles and three short lists written for it:
 
 - the Jiten frequency list (`jiten-frequency`, version 2026-11-12),
   © Jitensoft, https://jiten.moe/frequency-dictionaries, CC BY-SA 4.0;
@@ -16,7 +16,11 @@ three packs it already bundles:
 - the approximate JLPT kanji levels (`jlpt-kanji`, version kanjiapi.dev@76aa080+kanjidic2@2026-11-11):
   kanjiapi.dev's list (MIT, Copyright 2023 Iridium Szreter,
   https://github.com/onlyskin/kanjiapi.dev; its licence text is
-  LICENSE-kanjiapi.dev here) with gap fill from KANJIDIC2 (CC BY-SA 4.0, EDRDG).
+  LICENSE-kanjiapi.dev here) with gap fill from KANJIDIC2 (CC BY-SA 4.0, EDRDG);
+- the jōyō kanji (`joyo-grades`, version kanjidic2@2026-315, from KANJIDIC2, CC BY-SA 4.0, EDRDG);
+- `scripts/jlpt-words/core.tsv` (538 N5/N4 textbook words) and
+  `grammar.tsv` (grammar pieces left out), written for qinqin:
+  qinqin contributors, CC BY 4.0, https://github.com/Elaktrato/qinqin.
 
 Licence: this pack is an adaptation of the Jiten ranks and JMdict and is
 shared under CC BY-SA 4.0 (LICENSE is the legal code, copied from the
@@ -24,42 +28,57 @@ bundled jmdict pack). Whoever redistributes it keeps these credits and
 shares changes under CC BY-SA 4.0; the MIT notice of kanjiapi.dev stays with
 it.
 
-Method (one Jiten rank is one word):
+Method:
 
-1. Each rank's rows (every form and reading Jiten lists for the word) are
-   matched to the JMdict entry that has most of them as a written form
-   with that reading, a kana row as a reading. Ties go to the kana-written
-   entry, then the one with more priority tags, then the lower sequence
-   number (11,636 ranks were ties, most of them beyond the cut below).
-   10,944 ranks match no entry; the 11 of them within the cut are
-   listed in UNMATCHED.tsv (inflected forms and grammar patterns such as
-   はずだ and でした), never guessed. Grammar expressions (JMdict entries
-   that are only expressions and start with a particle or the copula, such
-   as のだ, として and かもしれない: the JLPT tests them as grammar) are
-   left out (160 within the cut).
-2. Kanji level: the hardest JLPT kanji level among the kanji of the word's
-   written form; a kanji the kanji list has no level for counts as N1.
-   Kana-only words and words JMdict marks "usually written using kana
-   alone" have none (する is not N1 for 為).
-3. Rank level: Jiten rank ≤ 2,203 → ≈ N5, ≤ 3,249 → ≈ N4, ≤ 5,633 → ≈ N3,
-   ≤ 8,336 → ≈ N2, ≤ 11,441 → ≈ N1; a word ranked beyond 11,441 is not
-   listed.
-4. The word's level is the harder of the two.
+1. Words: one Jiten rank is matched to the JMdict entry that has most of
+   its rows (every form and reading Jiten lists under the rank) as a written
+   form with that reading, a kana row as a reading. Ties go to the
+   kana-written entry, then the one with more priority tags, then the lower
+   sequence number. 10,944 ranks match no entry; the 8 within the cut
+   below are listed in UNMATCHED.tsv, never guessed. Words on JMdict's basic
+   list (ichi1) among its 6,000 most frequent newspaper words (nf01–nf12) are
+   in even when Jiten ranks them beyond the cut (郵便局, 切手).
+2. The core list sets the level of its 538 words directly.
+3. Left out (within the cut): grammar pieces on the project's list and
+   grammar expressions (JMdict entries that are only expressions, start
+   with a particle or the copula and have no form starting with a kanji:
+   のだ, として), set phrases of a word, a particle and a verb (言葉を失う),
+   written numbers (５分), noise (repeated letters, あああ; clipped sounds,
+   っつ, ゲッ) and one-kana fragments that are not particles (expression 201, fragment 12, grammar list 25, grammar 94, noise 34, number 97, particle 50, phrase 6).
+4. Frequency first: Jiten rank ≤ 1,288 → ≈ N5, ≤ 2,196 → ≈ N4, ≤ 4,927 → ≈ N3,
+   ≤ 7,663 → ≈ N2, ≤ 10,249 → ≈ N1; beyond that a word is not listed (but see 1).
+5. Kanji: when the hardest JLPT kanji level of the word's written form is
+   harder, the word goes ONE level harder, never more, and not at all when
+   JMdict gives it any priority tag. Kana-only and usually-kana words,
+   ateji spellings (綺麗) and spellings with a kanji outside the jōyō set
+   count as kana words.
+6. JMdict's priority tags lift a word that rank puts at ≈ N2 or harder,
+   to ≈ N3 at most: two levels for a word on JMdict's basic list (ichi1)
+   among its 3,000 most frequent newspaper words (nf01–nf06), one level for
+   one among the 6,000 most frequent (nf07–nf12), or tagged spec1 or gai1.
+7. Outside the core list a word goes no easier than ≈ N4, except a kana
+   function word (a pronoun, conjunction or auxiliary: これ, でも): ≈ N5 is the textbook core, and frequency in media does not make a
+   word N5.
+8. Slang, vulgar and colloquial words and interjections not on JMdict's
+   basic lists go no easier than ≈ N3.
 
-The rank cuts are fitted so the cumulative size up to each level matches the
-commonly cited sizes of the JLPT vocabulary (800, 1,500, 3,700, 6,000, 10,000 words
-up to N5 … N1): sizes, not a list. There is no ground truth to measure
-accuracy against; the consistency checks are:
+The rank cuts are fitted on the rank alone to the commonly cited cumulative
+sizes of the JLPT vocabulary (800, 1,500, 3,700, 6,000, 10,000 words up to N5 … N1;
+sizes, not a list), the last one on the whole list; the rules above then move
+words, so the level sizes differ from those (see the level counts below). There is no ground truth to measure accuracy against; the
+checks are:
 
-- of the 696 one-kanji words, 522 (75.0%) sit at their kanji's own level;
-- of the 1,704 JLPT kanji the words use, 1,637 (96.1%) first appear in a word
-  at the kanji's own level, 50 one level harder, 17 more;
-- no level is empty;
-- the share of words JMdict marks with a priority tag (its own commonness
-  data, independent of Jiten) per level: ≈ N5 81%, ≈ N4 83%, ≈ N3 81%, ≈ N2 76%, ≈ N1 74%.
+- the 538 core words placed by the rules alone (the core switched off):
+  69 at their core level, 393 (73.0%) within one level, 18 not listed;
+- 81 of 81 anchor words (scripts/jlpt-words/anchors.tsv) at or under
+  their allowed level;
+- of the 723 one-kanji words, 175 (24.2%) sit at their kanji's own level;
+- of the 1,796 JLPT kanji the words use, 258 (14.4%) first appear in a word
+  at the kanji's own level, 1,530 in an easier one, 8 in a harder one;
+- no level is empty.
 
 A word can be a level off; treat a level as a rough guide.
 
-Each level lists its words by Jiten rank. Entries are {"form", "reading"}
-for a word with a kanji form, its kana for a kana-only word. 9,999 words;
-levels: ≈ N5 800, ≈ N4 700, ≈ N3 2,200, ≈ N2 2,299, ≈ N1 4,000.
+Each level lists its words by Jiten rank (unranked words last). Entries are
+{"form", "reading"} for a word with a kanji form, its kana for a kana-only
+word. 9,999 words; levels: ≈ N5 509, ≈ N4 1,475, ≈ N3 3,778, ≈ N2 2,599, ≈ N1 1,638.
