@@ -13,7 +13,7 @@ export interface StarterSetInfo {
 	license: string;
 	attribution: string;
 	wordCount: number;
-	/** False for a seed that only its author checked: the UI says so. */
+	/** False until a person has read the set; the UI then says it was reviewed by agents (#275). */
 	humanReviewed: boolean;
 }
 

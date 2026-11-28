@@ -142,10 +142,38 @@ func TestShippedSets(t *testing.T) {
 		if s.License == "" || s.Attribution == "" {
 			t.Errorf("%s: licence and attribution are required", s.ID)
 		}
+		// #275: a set no person has read yet says who did review it; the shipped ones were reviewed by agents.
+		if !s.HumanReviewed && !strings.Contains(s.Attribution, "reviewed by agents acting as native-speaker teachers, not yet by a person") {
+			t.Errorf("%s: the attribution does not say the set was reviewed by agents: %q", s.ID, s.Attribution)
+		}
 	}
 	for _, want := range []string{"ja", "zh"} {
 		if !languages[want] {
 			t.Errorf("no set for %s", want)
+		}
+	}
+	for _, s := range sets {
+		// #275: about 150 words per language (owner, 2026-11-26), never more than a set may hold.
+		if n := len(s.Words); n < minShippedWords || n > starter.MaxWords {
+			t.Errorf("%s: %d words, want %d-%d", s.ID, n, minShippedWords, starter.MaxWords)
+		}
+		// One word per form, picture and gloss: at the first stage the picture and its sound are all a learner
+		// sees, so two words sharing a picture could not be told apart, and two words with one gloss are one word.
+		forms, concepts, glosses := map[string]string{}, map[string]string{}, map[string]string{}
+		for _, w := range s.Words {
+			if prev, ok := forms[w.Form]; ok {
+				t.Errorf("%s: %s is listed twice (readings %q and %q)", s.ID, w.Form, prev, w.Reading)
+			}
+			forms[w.Form] = w.Reading
+			key := w.Picture.Pack + "/" + w.Picture.Concept
+			if prev, ok := concepts[key]; ok {
+				t.Errorf("%s: %s and %s share the picture %s", s.ID, prev, w.Form, key)
+			}
+			concepts[key] = w.Form
+			if prev, ok := glosses[w.Gloss]; ok {
+				t.Errorf("%s: %s and %s share the gloss %q", s.ID, prev, w.Form, w.Gloss)
+			}
+			glosses[w.Gloss] = w.Form
 		}
 	}
 	for _, s := range sets {
@@ -161,6 +189,9 @@ func TestShippedSets(t *testing.T) {
 		}
 	}
 }
+
+// minShippedWords is the smallest shipped set: #275 asks for about 150 words per language.
+const minShippedWords = 140
 
 // mappingRows reads the committed mapping of the set's pictures: language TAB target TAB concept keys.
 func mappingRows(t *testing.T, s starter.Set) map[string]bool {

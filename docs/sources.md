@@ -157,9 +157,12 @@ images pack. The **project wrote them**: the choice and order of words, the
 glosses and the picture pairing. They copy no third-party text; the dictionary
 entries and the pictures they point at stay under their own licences (see
 "Pictures"), and each file's `license` is **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0";
-the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They are seeds, not reviewed lists: `humanReviewed` is
-`false`, and they hold 47 (Chinese) and 55 (Japanese) words where the issue asks
-for 100 to 300; a person has not yet read every word against the dictionary.
+the owner decided on 2026-11-26 against a CC0 exception, `LICENSING.md`). They hold 146 (Chinese) and 145 (Japanese) words (#275; the owner's
+target was about 150), each with the picture the server serves for it. They were
+**reviewed by agents acting as native-speaker teachers, not yet by a person**: two
+teacher agents per language and an adjudicator read every word, its dictionary entry
+and its picture (notes: `server/internal/starter/sets/REVIEW.md`); `humanReviewed` stays
+`false` until the owner has read them, and each file's `attribution` says so.
 Licence confirmed by the owner on 2026-11-26.
 
 ## Topic labels (courses, #220)
@@ -1088,7 +1091,8 @@ never bundled in the web build or the APK's web assets: the web app and the APK 
 - **Mulberry** pictures with a `<style>` or another element outside the drawing vocabulary (346 of 3,435) are left out: the server accepts drawings only.
 - **Quality.** About 90% of a 60-word sample of the automatic OpenMoji rows was right at a glance; wrong ones are
   mostly a homonym or a near meaning (a "dress" for clothing). The base sets for the Starter mode (#214) are
-  described under "Starter sets" (47 and 55 words so far, not yet hand-reviewed; the issue asks for 100-300 per language).
+  described under "Starter sets" (146 and 145 words, reviewed by agents, not yet by a person; every Starter word's
+  picture was looked at, and the doubtful rows it found are listed in `server/internal/starter/sets/REVIEW.md`).
 - **Not bundled:** ARASAAC (CC BY-NC-SA, non-commercial); Wikimedia Commons pictures via Wikidata (per-file
   licences, later); OpenMoji's colour set (a later per-user choice).
 

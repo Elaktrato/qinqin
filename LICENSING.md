@@ -45,7 +45,8 @@ Issue #204 asked for CC0 for the charts and an earlier version of this file made
 `"license": "CC-BY-4.0"`; a `NOTICE` next to each (the copies in the web build and in the server binary) names the
 licence and points at the legal code in `plugins/data/ja-lemma/LICENSE`, as the lemma table does.
 The Starter lists copy no third-party text; the dictionary entries and pictures they point at keep their own
-licences. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
+licences. They were reviewed by agents acting as native-speaker teachers (#275, `server/internal/starter/sets/REVIEW.md`),
+not yet by a person. `scripts/check-sources.mjs` (rule i) checks the licence field, the credit and the notices.
 
 ### The topic labels: CC BY-SA 4.0
 

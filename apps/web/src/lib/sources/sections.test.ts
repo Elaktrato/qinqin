@@ -235,6 +235,15 @@ describe('featureCredits', () => {
 		expect(house.notice).toMatch(/Day and qinqin Night/);
 	});
 
+	it('credits the Starter words (CC BY 4.0) and says who reviewed them (#275)', () => {
+		const starter = coreCredits.find((credit) => credit.name === 'qinqin Starter words')!;
+		expect(starter).toBeDefined();
+		expect(starter.url).toBe('https://github.com/Elaktrato/qinqin');
+		expect(starter.license).toBe('CC BY 4.0');
+		expect(starter.attribution).toBe('qinqin contributors, CC BY 4.0');
+		expect(starter.notice).toMatch(/reviewed by agents acting as native-speaker teachers/);
+	});
+
 	it('credits the feature sources from the real features', () => {
 		const result = featureCredits(coreFeatures, coreCredits);
 		expect(result.map((feature) => feature.id)).toEqual(['journal', 'scripts']);

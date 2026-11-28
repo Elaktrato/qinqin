@@ -127,6 +127,8 @@ pack, and a Go test checks every promise against the committed mapping `scripts/
   left out. `humanReviewed: false` says so in the file and in the API. A person must read the lists, add the missing
   everyday words (numbers, colours, family, verbs) to reach 100-300 per language and decide the ordering — that is a
   content task this change does not claim to finish.
+  **Grown 2026-11-28 (#275):** 146 Chinese and 145 Japanese words, reviewed by teacher agents
+  (`server/internal/starter/sets/REVIEW.md`, plan `docs/superpowers/plans/2026-11-28-275-starter-lists.md`).
 
 ## Contract and clients
 

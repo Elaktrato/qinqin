@@ -2,8 +2,9 @@
 // picturable words per language, written for this project and released under
 // CC BY 4.0 (LICENSING.md; the word choice is ours; the dictionary data it points
 // at stays in the dictionaries). A set says through humanReviewed whether a
-// person has read every word against the dictionary; the shipped seeds say
-// false. A set names words the way a level or frequency list does
+// person has read every word against the dictionary; the shipped sets say
+// false and were reviewed by agents acting as native-speaker teachers (#275,
+// sets/REVIEW.md), as their attribution says. A set names words the way a level or frequency list does
 // (a written form and optionally a reading) and the picture each word is
 // expected to have in an images pack; the server resolves the words to
 // dictionary entries and the web client copies them into the learner's own deck.
@@ -75,8 +76,8 @@ type Set struct {
 	Name        string `json:"name"`
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
-	// HumanReviewed says a person has read every word against the dictionary; false marks a seed that
-	// only the author (an agent) checked.
+	// HumanReviewed says a person has read every word against the dictionary; false: not yet (the shipped sets
+	// were reviewed by agents, which their attribution says).
 	HumanReviewed bool   `json:"humanReviewed"`
 	Words         []Word `json:"words"`
 }

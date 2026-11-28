@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -62,7 +63,7 @@ func TestRealDictionaries(t *testing.T) {
 			if len(e.Senses) > 0 && len(e.Senses[0].Glosses) > 0 {
 				gloss = e.Senses[0].Glosses[0]
 			}
-			if g.Word.Picture.Target != "" && g.Word.Picture.Target != e.Key {
+			if g.Word.Picture.Target != "" && !slices.Contains(pictureTargets(e), g.Word.Picture.Target) {
 				t.Errorf("%s: %s resolves to %s, but its picture is mapped to %s", set.ID, g.Word.Form, e.Key, g.Word.Picture.Target)
 			}
 			var readings []string
