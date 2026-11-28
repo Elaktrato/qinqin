@@ -5,6 +5,23 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #221 — courses: the pack, the fill rule and progress (contract 23)
+
+- **New pack type `course`** (format `course-json`, registry `course_packs`, no data package): one course's skeleton
+  in `course.json` (sections with a target level, units with stable ids, topics, grammar points, hanzi/kanji, scripts,
+  a reading text, a focus, a unit test; checkpoint rules). No level-list words. `packages/pack-types.json` has the row;
+  the manifest messages list the type and the format.
+- **New folder `courses/`:** `pack.json` (which files a server accepts, Go), `fill.json` (the unit fill rule, Go and
+  web), `derive.json` (the `course` payload builder and the path-state derivation, Go and web), `changes.json`
+  (content changes, Go and web).
+- **New routes** `GET /api/courses[?language=]` and `GET /api/courses/{id}` (signed-in users, no tokens, ETag and
+  304, not cached by the service worker).
+- **New event type `course`** (`events/README.md`, `events/payloads.json`: builder `coursePayload`): lesson started
+  or finished (with the words it taught), unit test (`passed`, `early`), section exam, placement. No activity rule yet.
+  Backups carry them like every event; nothing is remapped.
+- **Clients:** derive the path state as `courses/README.md` says; skip a lesson kind you do not know; mark the state's
+  `known` words known; write a finished lesson's words.
+
 ## #220 — topic labels of words (contract 22)
 
 - **New folder `topics/`:** the fixed topic list shared by every language (`topics.json`, rule `topics/list`: 49 ids

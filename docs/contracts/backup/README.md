@@ -64,6 +64,10 @@ reviews. A restore remaps the workspace and writes each into its table through t
 one that does not decode, that the store refuses, or a review whose entry the archive did not restore first is
 dropped and counted in `droppedRows`.
 
+Course progress (`courses/README.md`, #221) is `course` events and travels with the other events, unchanged: its
+words are dictionary keys, never entry ids, so a restore remaps nothing in it (`backup_roundtrip_test.go`). The
+courses themselves are packs, not in an archive.
+
 Grammar lesson runs (`grammar/README.md`, #277) are `grammar` events and travel with the other events; an export
 writes no grammar rows. An archive written before #277 carries the progress as a workspace row of the `rows` family
 per lesson, `grammar:progress:<packId>:<lessonId>` with `{completedAt, best, total}`: a restore turns each into the
