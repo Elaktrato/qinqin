@@ -75,20 +75,22 @@ export const TARGET_CUMULATIVE = [800, 1500, 3700, 6000, 10000];
  *
  * Fitted 2026-11-28 on jiten-frequency 2026-11-12, JMdict 2026-11-11,
  * jlpt-kanji kanjiapi.dev@76aa080+kanjidic2@2026-11-11 and the project lists
- * (core 518 words). By rank: 800 / 1,500 / 3,700 / 6,000 / 8,080 words; placed
- * (after the core, the lifts and the other rules): ≈ N5 1,185, ≈ N4 1,976,
- * ≈ N3 2,608, ≈ N2 2,626, ≈ N1 1,604 (cumulative 1,185 / 3,161 / 5,769 / 8,395
- * / 9,999). Checks (no ground truth exists; see the #219 plan):
- *   - core words placed by the rules alone: 251 of 518 exact, 455 (87.8 %)
- *     within one level, 14 not listed (the first estimate: about half);
+ * (core 538 words after the agent review). By rank: 800 / 1,500 / 3,700 /
+ * 6,000 / 8,067 words; placed (after the core, the lifts and the other
+ * rules): ≈ N5 544, ≈ N4 1,437, ≈ N3 3,798, ≈ N2 2,628, ≈ N1 1,592
+ * (cumulative 544 / 1,981 / 5,779 / 8,407 / 9,999). Checks (no ground truth
+ * exists; see the #219 plan, "Evaluation"):
  *   - anchors (scripts/jlpt-words/anchors.tsv): 81 of 81 at or under their
  *     level (the first estimate failed most of the review's examples);
- *   - left out within R1: 89 grammar expressions, 22 on the grammar list, 32
- *     written numbers, 12 one-kana fragments, 6 set phrases, 5 noise.
+ *   - core words placed by the rules alone (the core switched off): 70 of
+ *     538 exact, 391 (72.7 %) within one level, 12 not listed;
+ *   - blind teacher spot checks: see the plan;
+ *   - left out within R1: 92 grammar expressions, 25 on the grammar list, 37
+ *     noise, 33 written numbers, 12 one-kana fragments, 6 set phrases.
  * No base list was available (its licence is unconfirmed): accuracy against
  * a list is unmeasured. With one, run --calibrate --base <dir>.
  */
-export const THRESHOLDS = { R5: 1191, R4: 2053, R3: 4671, R2: 7321, R1: 9785 };
+export const THRESHOLDS = { R5: 1226, R4: 2095, R3: 4719, R2: 7381, R1: 9844 };
 
 /** The credit of the lists the project writes. */
 const PROJECT_CREDIT = 'qinqin contributors, CC BY 4.0';
@@ -97,11 +99,12 @@ export const JLPT_WORDS_NOTICE =
 	'The JLPT word levels are an estimate, not an official list: no official JLPT vocabulary list has been ' +
 	'published since 2010. qinqin computes them from data it already bundles. A word\'s level comes mainly from ' +
 	'how often it is used ([Jiten](https://jiten.moe/frequency-dictionaries) frequency ranks, CC BY-SA 4.0). A word ' +
-	'JMdict marks as basic and common goes one or two levels easier, to ≈ N4 at most. Hard kanji (from ' +
+	'JMdict marks as basic and common goes one or two levels easier, to ≈ N3 at most. Hard kanji (from ' +
 	'the approximate JLPT kanji list, itself from [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev), MIT, ' +
 	'and KANJIDIC2) make a word one level harder at most, and only when JMdict does not mark it as common. About ' +
-	'500 basic textbook words have their ≈ N5 or ≈ N4 level set directly, from a list written for qinqin (CC BY ' +
-	'4.0). The words and readings are ' +
+	'540 basic textbook words have their ≈ N5 or ≈ N4 level set directly, from a list written for qinqin (CC BY ' +
+	'4.0) and reviewed by agents; other words are ≈ N4 or harder, except particles and other function words. ' +
+	'The words and readings are ' +
 	'[JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) entries (CC BY-SA 4.0, ' +
 	'EDRDG). About 10,000 words in all, ' +
 	'as commonly cited for N1; a word can be a level off. The list is CC BY-SA 4.0.';
@@ -367,13 +370,26 @@ const nfOf = (e) => Math.min(Infinity, ...[...e.tags].filter((t) => /^nf\d\d$/.t
  * the basic N5/N4 words outright. Measured variants (core words placed by the
  * rules alone, within one level of their core level): this lift 87.8 %; one
  * level only 85.5 %; lifting into ≈ N5 too 87.8 % with ≈ N5 at 1,974 words;
- * no lift 58 %.
+ * no lift 58 %. The blind teacher spot check then showed lifted newspaper
+ * words far too easy (急性, 麻薬 and 名目 at ≈ N3, both teachers N1): the lift
+ * stops at ≈ N3 (LIFT_FROM) and needs the word to rank at ≈ N2 or harder.
  */
 export const LIFT_NF = 12;
 /** LIFT2_NF: up to this band a basic (ichi1) word is lifted two levels (今月, 図書館, 銀行). */
 export const LIFT2_NF = 6;
-/** LIFT_FROM: only a word the rank puts at ≈ N3 or harder is lifted, and no easier than ≈ N4. */
-export const LIFT_FROM = 2;
+/** LIFT_FROM: only a word the rank puts at ≈ N2 or harder is lifted, and no easier than ≈ N3. */
+export const LIFT_FROM = 3;
+/**
+ * NONCORE_FLOOR: a word outside the core list goes no easier than ≈ N4, except
+ * a kana function word (particle, pronoun, conjunction, auxiliary: は, これ,
+ * でも). The blind teacher spot check of 2026-11-28 put the non-core words the
+ * rank alone made ≈ N5 (先輩, 平気, 程度, 更に, 意外, 母親) mostly at N3: the
+ * N5 vocabulary is the textbook core, and frequency in media does not make a
+ * word N5.
+ */
+export const NONCORE_FLOOR = 1;
+const FUNCTION_POS = ['prt', 'pn', 'conj', 'aux', 'aux-v', 'aux-adj', 'cop'];
+const functionWord = (e) => kanaWritten(e) && FUNCTION_POS.some((p) => e.firstPos.has(p));
 
 /**
  * priorityLift is how many levels easier JMdict's priority tags place a
@@ -402,6 +418,8 @@ const GRAMMAR_HEAD = /^[のにとでかがはもをへだなや]/u;
 const SET_PHRASE = /\p{Script=Han}[\p{Script=Hiragana}]*?(?:を|が|に(?=\p{Script=Han}))./u;
 const DIGIT = /[0-9０-９]/u;
 const NOISE = /(.)\1\1/u;
+/** CLIPPED: a kana word that starts with a small kana or ends in a small っ (っつ, ゲッ, あっ): a sound, not a word. */
+const CLIPPED = /^[っッゃゅょぁぃぅぇぉャュョァィゥェォ]|[っッ]$/u;
 const SMALL_KANA = /[ゃゅょぁぃぅぇぉゎャュョァィゥェォヮ]/gu;
 const KANA = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 
@@ -413,7 +431,7 @@ const kanaText = (e) => e.rebs[0].text;
  * review): a grammar piece on the project's list (`grammar list`, the
  * curated scripts/jlpt-words/grammar.tsv), a grammar expression
  * (GRAMMAR_HEAD), a set phrase (SET_PHRASE), a written number (５分:
- * `number`), repeated-letter noise (あああ: `noise`) or a one-kana fragment
+ * `number`), noise (repeated letters, あああ; a clipped sound, っつ, ゲッ) or a one-kana fragment
  * that is not a particle (げ, ちょ: `fragment`).
  */
 export function dropReason(e, ctx) {
@@ -424,6 +442,7 @@ export function dropReason(e, ctx) {
 	if (e.expOnly && SET_PHRASE.test(form)) return 'phrase';
 	if (DIGIT.test(form)) return 'number';
 	if (NOISE.test(kanaText(e)) || NOISE.test(form)) return 'noise';
+	if (kanaWritten(e) && CLIPPED.test(kanaText(e))) return 'noise';
 	const kana = kanaText(e);
 	if (kanaWritten(e) && KANA.test(kana) && kana.replace(SMALL_KANA, '').length === 1 && !e.pos.has('prt')) return 'fragment';
 	return null;
@@ -455,6 +474,7 @@ export function prepareWord({ rank, entry }, ctx) {
 		pri: entry.tags.size > 0,
 		news: nfOf(entry) <= LIFT_NF && entry.tags.has('ichi1'),
 		floor: registerFloor(entry),
+		fn: functionWord(entry),
 		drop: dropReason(entry, ctx),
 		core: ctx.core?.get(entry.seq) ?? null
 	};
@@ -470,9 +490,11 @@ export function prepareWord({ rank, entry }, ctx) {
  *      unless it is a `news` word (then it starts at ≈ N1);
  *   4. kanji harder than that raise it by ONE level at most, and not at all
  *      when JMdict gives the word any priority tag;
- *   5. JMdict's priority tags lift a word the rank puts at ≈ N3 or harder
- *      one or two levels easier, to ≈ N4 at most (priorityLift);
- *   6. slang, colloquial words and interjections go no easier than ≈ N3.
+ *   5. JMdict's priority tags lift a word the rank puts at ≈ N2 or harder
+ *      one or two levels easier, to ≈ N3 at most (priorityLift);
+ *   6. outside the core, no easier than ≈ N4 except kana function words
+ *      (NONCORE_FLOOR);
+ *   7. slang, colloquial words and interjections go no easier than ≈ N3.
  */
 export function levelFor(p, thresholds, { useCore = true } = {}) {
 	if (useCore && p.core !== null) return p.core;
@@ -484,6 +506,7 @@ export function levelFor(p, thresholds, { useCore = true } = {}) {
 	}
 	if (p.k !== null && p.k > level && !p.pri) level += 1;
 	if (level >= LIFT_FROM) level = Math.max(LIFT_FROM - 1, level - p.lift);
+	if (!p.fn) level = Math.max(level, NONCORE_FLOOR);
 	if (p.floor) level = Math.max(level, 2);
 	return level;
 }
@@ -1075,8 +1098,8 @@ Method:
    grammar expressions (JMdict entries that are only expressions, start
    with a particle or the copula and have no form starting with a kanji:
    のだ, として), set phrases of a word, a particle and a verb (言葉を失う),
-   written numbers (５分), repeated-letter noise (あああ) and one-kana
-   fragments that are not particles (${Object.entries(drops).sort().map(([k, n]) => `${k} ${fmt(n)}`).join(', ')}).
+   written numbers (５分), noise (repeated letters, あああ; clipped sounds,
+   っつ, ゲッ) and one-kana fragments that are not particles (${Object.entries(drops).sort().map(([k, n]) => `${k} ${fmt(n)}`).join(', ')}).
 4. Frequency first: Jiten rank ≤ ${fmt(thresholds.R5)} → ≈ N5, ≤ ${fmt(thresholds.R4)} → ≈ N4, ≤ ${fmt(thresholds.R3)} → ≈ N3,
    ≤ ${fmt(thresholds.R2)} → ≈ N2, ≤ ${fmt(thresholds.R1)} → ≈ N1; beyond that a word is not listed (but see 1).
 5. Kanji: when the hardest JLPT kanji level of the word's written form is
@@ -1084,18 +1107,21 @@ Method:
    JMdict gives it any priority tag. Kana-only and usually-kana words,
    ateji spellings (綺麗) and spellings with a kanji outside the jōyō set
    count as kana words.
-6. JMdict's priority tags lift a word that rank puts at ≈ N3 or harder,
-   to ≈ N4 at most: two levels for a word on JMdict's basic list (ichi1)
+6. JMdict's priority tags lift a word that rank puts at ≈ N2 or harder,
+   to ≈ N3 at most: two levels for a word on JMdict's basic list (ichi1)
    among its 3,000 most frequent newspaper words (nf01–nf06), one level for
    one among the 6,000 most frequent (nf07–nf12), or tagged spec1 or gai1.
-7. Slang, vulgar and colloquial words and interjections go no easier than
-   ≈ N3.
+7. Outside the core list a word goes no easier than ≈ N4, except a kana
+   function word (a particle, pronoun, conjunction or auxiliary: は, これ,
+   でも): ≈ N5 is the textbook core, and frequency in media does not make a
+   word N5.
+8. Slang, vulgar and colloquial words and interjections not on JMdict's
+   basic lists go no easier than ≈ N3.
 
 The rank cuts are fitted on the rank alone to the commonly cited cumulative
 sizes of the JLPT vocabulary (${TARGET_CUMULATIVE.map(fmt).join(', ')} words up to N5 … N1;
 sizes, not a list), the last one on the whole list; the rules above then move
-words, so the easier levels hold more words than those sizes (see the level
-counts below). There is no ground truth to measure accuracy against; the
+words, so the level sizes differ from those (see the level counts below). There is no ground truth to measure accuracy against; the
 checks are:
 
 - the ${fmt(ce.words)} core words placed by the rules alone (the core switched off):

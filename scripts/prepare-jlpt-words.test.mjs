@@ -75,7 +75,7 @@ const JMDICT = `<?xml version="1.0" encoding="UTF-8"?>
 <JMdict>
 ${[
 	entry(101, k('為る', 'rK'), r('する', '<re_pri>ichi1</re_pri>'), sense('to do', 'uk')),
-	entry(102, k('此れ'), r('これ', '<re_pri>ichi1</re_pri>'), sense('this', 'uk')),
+	entry(102, k('此れ'), r('これ', '<re_pri>ichi1</re_pri>'), '<sense><pos>&pn;</pos><misc>&uk;</misc><gloss>this</gloss></sense>'),
 	entry(103, k('日本'), r('にほん', '<re_pri>news1</re_pri>'), r('にっぽん'), sense('Japan')),
 	entry(104, k('学校'), r('がっこう'), sense('school')),
 	entry(105, r('テレビ'), sense('television')),
@@ -255,7 +255,7 @@ test('priorityLift: basic (ichi1) words in nf01–nf06 two levels, in nf07–nf1
 });
 
 /** prepared builds a prepared word by hand: rank, kanji level, cap, priority, register floor. */
-const prepared = (o) => ({ rank: 1, k: null, lift: 0, pri: false, floor: false, drop: null, core: null, news: false, ...o });
+const prepared = (o) => ({ rank: 1, k: null, lift: 0, pri: false, floor: false, fn: true, drop: null, core: null, news: false, ...o });
 
 test('levelFor: frequency first; kanji raise by one at most and never a priority word; lifts, floors and the core', () => {
 	const t = TEST_THRESHOLDS;
@@ -264,9 +264,13 @@ test('levelFor: frequency first; kanji raise by one at most and never a priority
 	assert.equal(levelFor(prepared({ rank: 2, k: 4, pri: true }), t), 0); // not at all with a priority tag
 	assert.equal(levelFor(prepared({ rank: 9, k: 0 }), t), 2); // easy kanji never lower a word
 	assert.equal(levelFor(prepared({ rank: 14, lift: 2, pri: true }), t), 2); // ≈ N1 by rank, two levels easier
-	assert.equal(levelFor(prepared({ rank: 12, lift: 2, pri: true }), t), 1); // ≈ N2 by rank: lifted to ≈ N4, no easier
-	assert.equal(levelFor(prepared({ rank: 6, lift: 2, pri: true }), t), 1); // ≈ N4 by rank: frequent words are not lifted
+	assert.equal(levelFor(prepared({ rank: 14, lift: 1, pri: true }), t), 3); // one level easier
+	assert.equal(levelFor(prepared({ rank: 12, lift: 2, pri: true }), t), 2); // ≈ N2 by rank: lifted to ≈ N3, no easier
+	assert.equal(levelFor(prepared({ rank: 9, lift: 2, pri: true }), t), 2); // ≈ N3 by rank: not lifted
 	assert.equal(levelFor(prepared({ rank: 99, lift: 2, pri: true, news: true }), t), 2); // beyond R1: in by its tags, from ≈ N1
+	assert.equal(levelFor(prepared({ rank: 2 }), t), 0); // see below: a function word
+	assert.equal(levelFor(prepared({ rank: 2, fn: false }), t), 1); // outside the core, no easier than ≈ N4
+	assert.equal(levelFor(prepared({ rank: 2, fn: true }), t), 0); // kana function words (は, これ) can be ≈ N5
 	assert.equal(levelFor(prepared({ rank: 99, lift: 1, pri: true }), t), null); // beyond R1 without the newspaper tag: out
 	assert.equal(levelFor(prepared({ rank: 1, floor: true }), t), 2); // slang, interjections: ≈ N3 or harder
 	assert.equal(levelFor(prepared({ rank: 1, drop: 'noise' }), t), null);
@@ -284,6 +288,10 @@ test('dropReason: grammar, set phrases, numbers, noise and one-kana fragments go
 	assert.equal(dropReason(bySeq(121), ctx), 'noise'); // あああ
 	assert.equal(dropReason(bySeq(122), ctx), 'fragment'); // げ
 	assert.equal(dropReason(bySeq(128), ctx), null); // ね: a particle
+	const kana = (text, pos = 'int') => ({ seq: 1, kebs: [], rebs: [{ text, inf: [], restr: [], nokanji: false }], uk: false, expOnly: false, pos: new Set([pos]), firstPos: new Set([pos]) });
+	assert.equal(dropReason(kana('っつ'), ctx), 'noise'); // a clipped sound
+	assert.equal(dropReason(kana('ゲッ'), ctx), 'noise');
+	assert.equal(dropReason(kana('ちょっと', 'adv'), ctx), null);
 	assert.equal(dropReason(bySeq(118), ctx), null); // 有難う
 	assert.equal(dropReason(bySeq(126), { ...ctx, grammar: new Set([126]) }), 'grammar list'); // なんです
 });
@@ -320,8 +328,8 @@ test('buildLevels: levels easiest first, by rank; a newspaper-common word beyond
 	const { levels } = buildLevels({ words: matched.words, ctx: { ...ctx, thresholds: TEST_THRESHOLDS } });
 	assert.deepEqual(names(levels), LEVEL_NAMES);
 	assert.deepEqual(names(levels), ['≈ N5', '≈ N4', '≈ N3', '≈ N2', '≈ N1']);
-	assert.deepEqual(forms(levels[0]), ['為る/する', '此れ/これ', '日本/にほん', '学校/がっこう']);
-	assert.deepEqual(forms(levels[1]), ['テレビ', '風/かぜ', '食べる/たべる']);
+	assert.deepEqual(forms(levels[0]), ['此れ/これ']); // outside the core only a kana function word is ≈ N5
+	assert.deepEqual(forms(levels[1]), ['為る/する', '日本/にほん', '学校/がっこう', 'テレビ', '風/かぜ', '食べる/たべる']);
 	assert.deepEqual(forms(levels[2]), ['勉強/べんきょう', '猫/ねこ', '銀行/ぎんこう']); // 銀行 (30): beyond R1, in by ichi1 nf01, lifted two levels
 	assert.deepEqual(forms(levels[3]), ['犬/いぬ', '風/ふう']); // 犬: ≈ N3 by rank, its N1 kanji raise it one level
 	assert.deepEqual(forms(levels[4]), ['橋/はし', '鳥/とり']); // 箸 (15) and 事 (16) beyond R1
@@ -332,8 +340,8 @@ test('buildLevels applies the core list: its words take its level, ranked or not
 	const { words } = matchWords(jiten, index);
 	const core = new Map([[113, 0], [115, 1], [109, 0]]); // 箸 (beyond R1), 大人 (not ranked), 犬
 	const { levels } = buildLevels({ words, ctx: { ...ctx, core, thresholds: TEST_THRESHOLDS }, entries: index.bySeq });
-	assert.deepEqual(forms(levels[0]), ['為る/する', '此れ/これ', '日本/にほん', '学校/がっこう', '犬/いぬ', '箸/はし']);
-	assert.deepEqual(forms(levels[1]), ['テレビ', '風/かぜ', '食べる/たべる', '大人/おとな']);
+	assert.deepEqual(forms(levels[0]), ['此れ/これ', '犬/いぬ', '箸/はし']);
+	assert.deepEqual(forms(levels[1]), ['為る/する', '日本/にほん', '学校/がっこう', 'テレビ', '風/かぜ', '食べる/たべる', '大人/おとな']);
 });
 
 test('fitThresholds cuts at the target-th listable word by rank and reports the placed sizes', () => {
@@ -366,10 +374,10 @@ test('consistency: single-kanji agreement, the core estimate, monotonic levels, 
 	const c = consistency({ built, ctx: c0, sample: 2 });
 	// Single-kanji words with a JLPT kanji: 風 かぜ (N4/≈N4), 猫 (N3/≈N3), 風 ふう (core: ≈ N5), 鳥 (N2/≈N1).
 	assert.deepEqual(c.singleKanji, { words: 4, agree: 2 });
-	// The core words' levels without the core: 学校 ≈ N5 (exact), 風 ふう ≈ N2 (three off), 箸 not listed.
-	assert.deepEqual(c.coreEstimate, { words: 3, exact: 1, withinOne: 0, unlisted: 1 });
+	// The core words' levels without the core: 学校 ≈ N4 (one off), 風 ふう ≈ N2 (three off), 箸 not listed.
+	assert.deepEqual(c.coreEstimate, { words: 3, exact: 0, withinOne: 1, unlisted: 1 });
 	assert.equal(c.monotonic, true);
-	assert.deepEqual(c.samples[0], ['する', '学校']); // evenly spaced through する これ 日本 学校 風 箸; a usually-kana word in kana
+	assert.deepEqual(c.samples[0], ['これ', '風']); // evenly spaced through これ 学校 風 箸; a usually-kana word in kana
 	assert.equal(c.samples.length, 5);
 });
 
@@ -401,8 +409,8 @@ test('buildLevels with a base list keeps the base levels and estimates the rest'
 	const { words } = matchWords(jiten, index);
 	const base = baseLevels(BASE, index);
 	const { levels, fromBase } = buildLevels({ words, ctx: { ...ctx, thresholds: TEST_THRESHOLDS }, base, entries: index.bySeq });
-	assert.deepEqual(forms(levels[0]), ['為る/する', '此れ/これ', '日本/にほん', '学校/がっこう', '犬/いぬ']);
-	assert.deepEqual(forms(levels[1]), ['テレビ', '風/かぜ', '食べる/たべる', '風/ふう']);
+	assert.deepEqual(forms(levels[0]), ['此れ/これ', '学校/がっこう', '犬/いぬ']);
+	assert.deepEqual(forms(levels[1]), ['為る/する', '日本/にほん', 'テレビ', '風/かぜ', '食べる/たべる', '風/ふう']);
 	assert.deepEqual(forms(levels[2]), ['勉強/べんきょう', '猫/ねこ', '箸/はし', '銀行/ぎんこう']); // 箸 beyond R1 but in the base list
 	assert.deepEqual(forms(levels[3]), ['鳥/とり']);
 	assert.deepEqual(forms(levels[4]), ['橋/はし']);
@@ -519,10 +527,12 @@ test('the anchors hold, the core list matches JMdict, and the estimate agrees wi
 	const anchors = /^anchors: (\d+) of (\d+) at or under their level/m.exec(res.stdout);
 	assert.ok(anchors, res.stdout);
 	assert.equal(anchors[1], anchors[2], res.stdout.split('\n').filter((l) => l.startsWith('anchor miss')).join('\n'));
-	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 87.8 % within one
-	// level on 2026-11-28; the review asked for 90 %, which the bundled frequency data does not reach (the
-	// days of the week, 切手, 晴れ and the like rank 10,000–35,000 in Jiten). The floor keeps it from sliding.
+	// The core N5/N4 words, placed by the rules alone (the core switched off): measured 72.7 % within one
+	// level on 2026-11-28. The review asked for 90 %; the rules alone reached 87.8 % before the blind teacher
+	// spot check showed the non-core words far too easy, and the fix (outside the core, ≈ N4 or harder; lifts
+	// stop at ≈ N3) costs this measure. The days of the week, 切手, 晴れ and the like rank 10,000–35,000 in
+	// Jiten, so frequency alone cannot place them: the core does. The floor keeps it from sliding.
 	const core = /^core estimate: (\d+) words, (\d+) exact, (\d+) within one level/m.exec(res.stdout);
 	assert.ok(core, res.stdout);
-	assert.ok(Number(core[3]) / Number(core[1]) >= 0.85, core[0]);
+	assert.ok(Number(core[3]) / Number(core[1]) >= 0.7, core[0]);
 });
