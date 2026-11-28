@@ -15,6 +15,7 @@
 - [Grammar lessons](Grammar-lessons)
 - [Scripts trainer](Scripts-trainer)
 - [Practice and drills](Practice-and-drills)
+- [Mistake notebook](Mistake-notebook)
 - [Courses](Courses)
 - [Journal and AI](Journal-and-AI)
 - [Stats and heatmap](Stats-and-heatmap)
