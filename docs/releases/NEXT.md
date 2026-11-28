@@ -90,6 +90,11 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Japanese texts are read a whole sentence at a time (#348): the reader and course reading lessons no longer split
   kana across words (妹がいます is 妹 | が | います, 花がきれい is 花 | が | きれい), and particles such as は, が and の
   are never shown as new or unreached words, nor counted in a text's coverage. Japanese segmentation is also faster.
+- Chinese texts are read a whole sentence at a time too (#349): a character shows its common reading (那 nà, 打 dǎ,
+  看 kàn, not the first dictionary line), 的, 了, 着, 得, 吗, 呢, 吧 and the other particles are never new or unreached
+  words nor counted in coverage, words no longer swallow their neighbour (我有时间 is 我 | 有 | 时间, 在教室 is
+  在 | 教室), and a compound outside the HSK word list made of listed words is shown as those words (不是, 一个, 中国人,
+  明天见). In the reader, course reading lessons, smart readings and coverage.
 
 - Tones cards accept the tone a syllable is spoken with (#300): 不客气 is right as 4-4-neutral (the dictionary) and as 2-4-neutral (spoken, 不 before a fourth tone is bú); the same for 一 and for third tones in a row (你好). The answer shows both where they differ, bù → bú. Settings → Study → **Tones**: **Show tone sandhi** (on) and **Grade spoken tones** (off), per workspace.
 - Study: the study modal's "This session" is now the session's real length. A Word Salad, Cloze, Writing, Tone or

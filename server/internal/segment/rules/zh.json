@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "language": "zh",
+  "costs": {
+    "token": 100,
+    "weakReading": 0,
+    "noPriorityKana": 0,
+    "kanjiSplit": 0,
+    "unmatched": 300,
+    "levelStep": 10,
+    "unlisted": 80
+  },
+  "compounds": "parts",
+  "partFunctionWords": ["的", "了", "着", "得", "吗", "呢", "吧", "啊", "呀", "嘛"],
+  "functionPos": [],
+  "functionWords": ["的", "了", "着", "得", "地", "吗", "呢", "吧", "啊", "呀", "嘛"],
+  "functionReadings": {
+    "的": "de", "了": "le", "着": "zhe", "得": "de", "地": "de", "吗": "ma", "呢": "ne", "吧": "ba", "啊": "a",
+    "呀": "ya", "嘛": "ma"
+  },
+  "readings": {"几": "jǐ", "长": "cháng", "雨": "yǔ", "教": "jiāo", "胖": "pàng", "为": "wèi", "没": "méi", "重": "zhòng"}
+}

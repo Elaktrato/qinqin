@@ -73,9 +73,6 @@ func TestContractRulesAreEmbedded(t *testing.T) {
 	if _, err := segment.ParseRules(raw); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := segment.RulesFile("zh"); ok {
-		t.Error("zh has segmentation rules: Chinese must stay greedy until #349")
-	}
 }
 
 func TestContractSegmentCases(t *testing.T) {

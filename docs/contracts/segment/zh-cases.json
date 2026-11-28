@@ -1,0 +1,905 @@
+{
+ "version": 1,
+ "rule": "segment/zh-cases",
+ "language": "zh",
+ "rules": "zh.json",
+ "_doc": "CC-CEDICT lines (verbatim from the shipped dictionary, CC BY-SA 4.0, MDBG) and a word level list (levels-pack shaped: name, entries of form and marked reading), and texts with the tokens /api/segment must produce over them with the rules of zh.json: surface, reading (the match's reading, pinyin as the server sends it) and function (true only for a function word; absent otherwise). cases run with the level list installed, withoutLevels without it. greedy, when present, is what greedy longest match produced (the bug). Go: server/internal/segment/contract_zh_test.go; web: lib/features/reader/functionWords.contract.test.ts reads the tokens' function flags.",
+ "lexicon": [
+  "一 一 [yi1] /one/single/a (article)/as soon as/entire; whole; all; throughout/\"one\" radical in Chinese characters (Kangxi radical 1)/also pr. [yao1] for greater clarity when spelling out numbers digit by digit/",
+  "一個 一个 [yi1 ge5] /a; an; one/the whole (afternoon, summer vacation etc)/",
+  "上 上 [shang3] /used in 上聲|上声[shang3 sheng1]/",
+  "上 上 [shang4] /(bound form) up; upper; above; previous/first (of multiple parts)/to climb; to get onto; to go up/to attend (class or university)/(directional complement) up/(noun suffix) on; above/",
+  "不 不 [bu4] /no; not so/(bound form) not; un-/",
+  "不是 不是 [bu4 shi4] /no/is not/not/",
+  "不是 不是 [bu4 shi5] /fault; blame/",
+  "中國 中国 [Zhong1 guo2] /China/",
+  "中國人 中国人 [Zhong1 guo2 ren2] /Chinese person/",
+  "了 了 [le5] /(completed action marker)/(modal particle indicating change of state, situation now)/(modal particle intensifying preceding clause)/",
+  "了 了 [liao3] /to finish/(used with 得[de2] or 不[bu4] after a verb to express (im)possibility, as in 忘不了[wang4 bu5 liao3] \"cannot forget\")/(literary) (usually followed by a negative such as 無|无[wu2] or 不[bu4]) completely (not); entirely (not); (not) in the least/variant of 瞭|了[liao3]/",
+  "人 人 [ren2] /person; people/CL:個|个[ge4],位[wei4],名[ming2]/",
+  "他 他 [ta1] /(third-person singular) (since the early 20th century, usu. male) he; him; his/(bound form) other; another; some other (as in 他日[ta1 ri4] and 他人[ta1 ren2])/",
+  "你 你 [ni3] /you (informal, as opposed to courteous 您[nin2])/",
+  "你好 你好 [ni3 hao3] /hello; hi/",
+  "來 来 [lai2] /to come/(used as a substitute for a more specific verb)/hither (directional complement for motion toward the speaker, as in 回來|回来[hui2 lai5])/ever since (as in 自古以來|自古以来[zi4 gu3 yi3 lai2])/for the past (amount of time)/(prefix) the coming ...; the next ... (as in 來世|来世[lai2 shi4])/(between two verbs) in order to/(after a round number) approximately/(used after 得[de2] to indicate possibility, as in 談得來|谈得来[tan2 de5 lai2], or after 不[bu4] to indicate impossibility, as in 吃不來|吃不来[chi1 bu5 lai2])/",
+  "個 个 [ge3] /used in 自個兒|自个儿[zi4 ge3 r5]/",
+  "個 个 [ge4] /(classifier used before a noun that has no specific classifier)/(bound form) individual/",
+  "叫 叫 [jiao4] /to shout/to call/to order/to ask/to be called/by (indicates agent in the passive mood)/",
+  "吧 吧 [ba1] /bar (loanword) (serving drinks, or providing Internet access etc)/to puff (on a pipe etc)/(onom.) bang/abbr. for 貼吧|贴吧[tie1 ba1]/",
+  "吧 吧 [ba5] /(modal particle indicating suggestion or surmise)/...right?/...OK?/...I presume./",
+  "吧 吧 [bia1] /(onom.) smack!/",
+  "呌 叫 [jiao4] /variant of 叫[jiao4]/",
+  "喜歡 喜欢 [xi3 huan5] /to like; to be fond of/to be happy; to be pleased/to tend to/",
+  "嗎 吗 [ma2] /(coll.) what?/",
+  "嗎 吗 [ma3] /used in 嗎啡|吗啡[ma3 fei1]/",
+  "嗎 吗 [ma5] /(question particle for \"yes-no\" questions)/",
+  "在 在 [zai4] /to exist; to be alive/(of sb or sth) to be (located) at/(used before a verb to indicate an action in progress)/",
+  "在地 在地 [zai4 di4] /(Tw) local; native (from Taiwanese 在地, Tai-lo pr. [tsāi-tē])/",
+  "在教 在教 [zai4 jiao4] /to be a believer (in a religion, esp. Islam)/",
+  "地 地 [de5] /-ly/structural particle: used before a verb or adjective, linking it to preceding modifying adverbial adjunct/",
+  "地 地 [di4] /earth/ground/field/place/land/CL:片[pian4]/",
+  "地上 地上 [di4 shang5] /on the ground/on the floor/",
+  "坐 坐 [Zuo4] /surname Zuo/",
+  "坐 坐 [zuo4] /to sit/to take a seat/to take (a bus, airplane etc)/to bear fruit/variant of 座[zuo4]/",
+  "好 好 [hao3] /good/appropriate; proper/all right!/(before a verb) easy to/(before a verb) good to/(before an adjective for exclamatory effect) so/(verb complement indicating completion)/(of two people) close; on intimate terms/(after a form of address) hello/",
+  "好 好 [hao4] /to be fond of; to have a tendency to; to be prone to/",
+  "妳 你 [ni3] /you (Note: In Taiwan, 妳 is used to address females, but in mainland China, it is not commonly used. Instead, 你 is used to address both males and females.)/",
+  "學 学 [xue2] /to learn/to study/to imitate/science/-ology/",
+  "學習 学习 [xue2 xi2] /to learn; to study/",
+  "室 室 [Shi4] /surname Shi/",
+  "室 室 [shi4] /room/work unit/grave/scabbard/family or clan/one of the 28 constellations of Chinese astronomy/",
+  "很 很 [hen3] /very; quite/(also, often used before an adjective without intensifying its meaning, i.e. as a meaningless syntactic element)/",
+  "得 得 [de2] /to obtain/to get/to gain/to catch (a disease)/proper/suitable/proud/contented/to allow/to permit/ready/finished/",
+  "得 得 [de4] /used in 得瑟[de4 se5]/",
+  "得 得 [de5] /structural particle: used after a verb (or adjective as main verb), linking it to following phrase indicating effect, degree, possibility etc/",
+  "得 得 [dei3] /to have to/must/ought to/to need to/",
+  "得很 得很 [de5 hen3] /(after an adjective) very/",
+  "我 我 [wo3] /I; me; my/",
+  "我們 我们 [wo3 men5] /we; us; ourselves/",
+  "打 打 [da2] /(loanword) dozen/Taiwan pr. [da3]/",
+  "打 打 [da3] /to hit; to strike/to fight/(in many expressions) a semantically light transitive verb used with various objects to form expressions with a wide range of meanings, e.g. 打傘|打伞[da3 san3] \"to hold an umbrella\", 打電話|打电话[da3 dian4 hua4] \"to make a phone call\", 打針|打针[da3 zhen1] \"to get an injection\"/(coll.) from; since/",
+  "打電話 打电话 [da3 dian4 hua4] /to make a telephone call/",
+  "教 教 [Jiao4] /surname Jiao/",
+  "教 教 [jiao1] /to teach; to instruct/",
+  "教 教 [jiao4] /(bound form) to teach; to instruct/a religion/to cause (sb to do sth); to tell (sb to do sth)/",
+  "教室 教室 [jiao4 shi4] /classroom/CL:間|间[jian1]/",
+  "旹 时 [shi2] /old variant of 時|时[shi2]/",
+  "明天 明天 [ming2 tian1] /tomorrow/",
+  "明天見 明天见 [ming2 tian1 jian4] /see you tomorrow/(coll., jocular) food that passes through the digestive system more or less intact (esp. enoki mushrooms)/",
+  "是 是 [shi4] /to be (followed by substantives only)/correct; right; true/(respectful acknowledgement of a command) very well/(adverb for emphatic assertion)/",
+  "昰 是 [shi4] /variant of 是[shi4]/",
+  "時 时 [Shi2] /surname Shi/",
+  "時 时 [shi2] /(bound form) time; hour; period; season/(after a numeral) o'clock; hour(s)/(after a verb phrase or clause) when; while/",
+  "時間 时间 [shi2 jian1] /(concept of) time/(duration of) time/(point in) time/",
+  "書 书 [Shu1] /abbr. for 書經|书经[Shu1 jing1]/",
+  "書 书 [shu1] /book/letter/document/CL:本[ben3],冊|册[ce4],部[bu4]/to write/",
+  "有 有 [you3] /to have; there is/(bound form) having; with; -ful; -ed; -al (as in 有意[you3 yi4] intentional)/",
+  "有時 有时 [you3 shi2] /sometimes; now and then/",
+  "朋友 朋友 [peng2 you5] /friend/CL:個|个[ge4],位[wei4]/",
+  "沒 没 [mei2] /(negative prefix for verbs) have not; not/",
+  "沒 没 [mo4] /drowned/to end/to die/to inundate/",
+  "河 河 [he2] /river (CL:條|条[tiao2],道[dao4])/(bound form) the Yellow River/(bound form) the Milky Way/(bound form) (on restaurant menus) rice noodles 河粉[he2 fen3]/",
+  "漢語 汉语 [Han4 yu3] /Chinese language/",
+  "熊 熊 [Xiong2] /surname Xiong/",
+  "熊 熊 [xiong2] /bear/(coll.) to scold; to rebuke/(coll.) weak; incapable/",
+  "熊貓 熊猫 [xiong2 mao1] /panda/CL:隻|只[zhi1]/",
+  "的 的 [de5] /of; ~'s (possessive particle)/(used after an attribute when it modifies a noun)/(used at the end of a declarative sentence for emphasis)/(used after a noun, verb or adjective to form a nominal expression, as in 皮革的[pi2 ge2 de5] \"one made of leather\" or 跑堂兒的|跑堂儿的[pao3 tang2 r5 de5] \"a waiter (literally, one who runs back and forth in a restaurant)\" or 新的[xin1 de5] \"new one\")/also pr. [di4] or [di5] in poetry and songs/",
+  "的 的 [di1] /(bound form) a taxi; a cab (abbr. for 的士[di1 shi4])/",
+  "的 的 [di2] /really and truly/",
+  "的 的 [di4] /(bound form) bull's-eye; target/",
+  "看 看 [kan1] /to look after/to take care of/to watch/to guard/",
+  "看 看 [kan4] /to see; to look at/to read/to watch/to visit; to call on/to consider; to regard as/to look after/to treat (a patient or illness)/to depend on/to feel (that)/(after a verb) to give it a try/to watch out for/",
+  "着 着 [zhao1] /variant of 著|着[zhao1]/",
+  "着 着 [zhao2] /variant of 著|着[zhao2]/",
+  "着 着 [zhe5] /variant of 著|着[zhe5]/",
+  "着 着 [zhuo2] /variant of 著|着[zhuo2]/",
+  "瞭 了 [liao3] /(bound form) clear in one's mind; to understand clearly/",
+  "瞭 了 [liao4] /unofficial variant of 瞭[liao4]/",
+  "箇 个 [ge4] /variant of 個|个[ge4]/",
+  "著 着 [zhao1] /a move in chess (Taiwan pr. [zhuo2])/trick; tactic/(dialect) okay; all right/(dialect) to put in; to add/",
+  "著 着 [zhao2] /to touch/to come in contact with/to feel/to be affected by/to catch fire/to burn/(coll.) to fall asleep/(after a verb) hitting the mark/succeeding in/",
+  "著 着 [zhe5] /aspect particle indicating action in progress or ongoing state/",
+  "著 着 [zhuo2] /to wear (clothes)/to contact/to use/to apply/",
+  "見 见 [jian4] /to see/to meet/to appear (to be sth)/to interview/opinion/view/",
+  "見 见 [xian4] /to appear/also written 現|现[xian4]/",
+  "說 说 [shui4] /to persuade/",
+  "說 说 [shuo1] /to speak; to talk; to say/to explain; to comment/to scold; to tell off/(bound form) theory; doctrine/",
+  "説 说 [shuo1] /variant of 說|说[shuo1]/",
+  "貓 猫 [mao1] /cat (CL:隻|只[zhi1])/(dialect) to hide oneself/(loanword) (coll.) modem/",
+  "貓 猫 [mao2] /used in 貓腰|猫腰[mao2 yao1]/",
+  "走 走 [zou3] /to walk/to go/to run/to move (of vehicle)/to visit/to leave/to go away/to die (euph.)/from/through/away (in compound verbs, such as 撤走[che4 zou3])/to change (shape, form, meaning)/",
+  "這 这 [zhe4] /(pronoun) this; these/(bound form) this; the (followed by a noun)/(bound form) this; these (followed by a classifier) (in this sense, commonly pr. [zhei4], esp. in Beijing)/",
+  "這 这 [zhei4] /(coll.) this/",
+  "這不 这不 [zhe4 bu5] /(coll.) As a matter of fact, ... (used to introduce evidence for what one has just asserted)/",
+  "還 还 [Huan2] /surname Huan/",
+  "還 还 [hai2] /still/still in progress/still more/yet/even more/in addition/fairly/passably (good)/as early as/even/also/else/",
+  "還 还 [huan2] /to pay back/to return/",
+  "那 那 [Na1] /surname Na/",
+  "那 那 [Nuo2] /surname Nuo/",
+  "那 那 [na3] /variant of 哪[na3]/",
+  "那 那 [na4] /(specifier) that; the; those (colloquial pr. [nei4])/(pronoun) that (referring to persons, things or situations)/then (in that case)/",
+  "那 那 [nuo2] /(archaic) many/beautiful/how/old variant of 挪[nuo2]/",
+  "那是 那是 [na4 shi5] /(coll.) of course/naturally/indeed/",
+  "長 长 [chang2] /long/(bound form) length/(bound form) strong point; forte/(bound form) to be good at/(literary) surplus; spare (Taiwan pr. [zhang4])/",
+  "長 长 [zhang3] /chief/head/elder/to grow/to develop/to increase/to enhance/",
+  "間 间 [jian1] /between/among/within a definite time or space/room/section of a room or lateral space between two pairs of pillars/classifier for rooms/",
+  "間 间 [jian4] /gap/to separate/to thin out (seedlings)/to sow discontent/",
+  "電話 电话 [dian4 hua4] /telephone/CL:部[bu4]/phone call/CL:通[tong1]/phone number/",
+  "高興 高兴 [gao1 xing4] /happy/glad/willing (to do sth)/in a cheerful mood/"
+ ],
+ "levels": [
+  {
+   "name": "L1",
+   "entries": [
+    {
+     "form": "那",
+     "reading": "nà"
+    },
+    {
+     "form": "是",
+     "reading": "shì"
+    },
+    {
+     "form": "我",
+     "reading": "wǒ"
+    },
+    {
+     "form": "的",
+     "reading": "de"
+    },
+    {
+     "form": "书",
+     "reading": "shū"
+    },
+    {
+     "form": "他",
+     "reading": "tā"
+    },
+    {
+     "form": "看",
+     "reading": "kàn"
+    },
+    {
+     "form": "学",
+     "reading": "xué"
+    },
+    {
+     "form": "很",
+     "reading": "hěn"
+    },
+    {
+     "form": "好",
+     "reading": "hǎo"
+    },
+    {
+     "form": "有",
+     "reading": "yǒu"
+    },
+    {
+     "form": "时间",
+     "reading": "shíjiān"
+    },
+    {
+     "form": "在",
+     "reading": "zài"
+    },
+    {
+     "form": "这",
+     "reading": "zhè"
+    },
+    {
+     "form": "不",
+     "reading": "bù"
+    },
+    {
+     "form": "一",
+     "reading": "yī"
+    },
+    {
+     "form": "个",
+     "reading": "gè"
+    },
+    {
+     "form": "朋友",
+     "reading": "péngyou"
+    },
+    {
+     "form": "中国",
+     "reading": "Zhōngguó"
+    },
+    {
+     "form": "人",
+     "reading": "rén"
+    },
+    {
+     "form": "明天",
+     "reading": "míngtiān"
+    },
+    {
+     "form": "见",
+     "reading": "jiàn"
+    },
+    {
+     "form": "你",
+     "reading": "nǐ"
+    },
+    {
+     "form": "你好",
+     "reading": "nǐ hǎo"
+    },
+    {
+     "form": "吗",
+     "reading": "ma"
+    },
+    {
+     "form": "我们",
+     "reading": "wǒmen"
+    },
+    {
+     "form": "走",
+     "reading": "zǒu"
+    },
+    {
+     "form": "吧",
+     "reading": "ba"
+    },
+    {
+     "form": "来",
+     "reading": "lái"
+    },
+    {
+     "form": "了",
+     "reading": "le"
+    },
+    {
+     "form": "喜欢",
+     "reading": "xǐhuan"
+    },
+    {
+     "form": "学习",
+     "reading": "xuéxí"
+    },
+    {
+     "form": "汉语",
+     "reading": "Hànyǔ"
+    },
+    {
+     "form": "叫",
+     "reading": "jiào"
+    },
+    {
+     "form": "说",
+     "reading": "shuō"
+    },
+    {
+     "form": "打电话",
+     "reading": "dǎ diànhuà"
+    },
+    {
+     "form": "坐",
+     "reading": "zuò"
+    },
+    {
+     "form": "上",
+     "reading": "shàng"
+    },
+    {
+     "form": "还",
+     "reading": "hái"
+    },
+    {
+     "form": "没",
+     "reading": "méi"
+    }
+   ]
+  },
+  {
+   "name": "L2",
+   "entries": [
+    {
+     "form": "着",
+     "reading": "zhe"
+    },
+    {
+     "form": "得",
+     "reading": "de"
+    },
+    {
+     "form": "打",
+     "reading": "dǎ"
+    },
+    {
+     "form": "有时",
+     "reading": "yǒushí"
+    },
+    {
+     "form": "时",
+     "reading": "shí"
+    },
+    {
+     "form": "间",
+     "reading": "jiān"
+    },
+    {
+     "form": "教",
+     "reading": "jiāo"
+    },
+    {
+     "form": "教室",
+     "reading": "jiàoshì"
+    },
+    {
+     "form": "猫",
+     "reading": "māo"
+    },
+    {
+     "form": "河",
+     "reading": "hé"
+    },
+    {
+     "form": "长",
+     "reading": "cháng"
+    },
+    {
+     "form": "高兴",
+     "reading": "gāoxìng"
+    },
+    {
+     "form": "地",
+     "reading": "de"
+    }
+   ]
+  }
+ ],
+ "cases": [
+  {
+   "name": "issue: 那 is nà (not nā, the surname line); 那是 is not on the list but 那 and 是 are, so it splits",
+   "text": "那是我的书。",
+   "greedy": [
+    "那是",
+    "我",
+    "的",
+    "书"
+   ],
+   "tokens": [
+    {
+     "surface": "那",
+     "reading": "nà"
+    },
+    {
+     "surface": "是",
+     "reading": "shì"
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "的",
+     "reading": "de",
+     "function": true
+    },
+    {
+     "surface": "书",
+     "reading": "shū"
+    }
+   ]
+  },
+  {
+   "name": "issue: 着 after a verb is the function word zhe (not zhāo); 看 is kàn (the line with the most everyday glosses, not kān)",
+   "text": "他看着我。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "看",
+     "reading": "kàn"
+    },
+    {
+     "surface": "着",
+     "reading": "zhe",
+     "function": true
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    }
+   ]
+  },
+  {
+   "name": "issue: 学得很好 is 学｜得｜很｜好: 得很 is not on the list, its parts are; 得 is the function word de",
+   "text": "他学得很好。",
+   "greedy": [
+    "他",
+    "学",
+    "得很",
+    "好"
+   ],
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "学",
+     "reading": "xué"
+    },
+    {
+     "surface": "得",
+     "reading": "de",
+     "function": true
+    },
+    {
+     "surface": "很",
+     "reading": "hěn"
+    },
+    {
+     "surface": "好",
+     "reading": "hǎo"
+    }
+   ]
+  },
+  {
+   "name": "issue: 打 is dǎ (the listed entry's everyday line, not the loanword dá)",
+   "text": "他打我。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "打",
+     "reading": "dǎ"
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    }
+   ]
+  },
+  {
+   "name": "issue: 有时间 is 有｜时间, not 有时｜间 (间 is listed only through 时间, so it costs as unlisted)",
+   "text": "我有时间。",
+   "greedy": [
+    "我",
+    "有时",
+    "间"
+   ],
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "有",
+     "reading": "yǒu"
+    },
+    {
+     "surface": "时间",
+     "reading": "shí jiān"
+    }
+   ]
+  },
+  {
+   "name": "issue: 在教室 is 在｜教室, not 在教｜室 (在教 is not on the list, 在 and 教 are)",
+   "text": "我在教室。",
+   "greedy": [
+    "我",
+    "在教",
+    "室"
+   ],
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "在",
+     "reading": "zài"
+    },
+    {
+     "surface": "教室",
+     "reading": "jiào shì"
+    }
+   ]
+  },
+  {
+   "name": "issue: 不是 and 这不 split into listed words",
+   "text": "这不是我的。",
+   "greedy": [
+    "这不",
+    "是",
+    "我",
+    "的"
+   ],
+   "tokens": [
+    {
+     "surface": "这",
+     "reading": "zhè"
+    },
+    {
+     "surface": "不",
+     "reading": "bù"
+    },
+    {
+     "surface": "是",
+     "reading": "shì"
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "的",
+     "reading": "de",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "issue: 一个 splits into 一｜个",
+   "text": "我有一个朋友。",
+   "greedy": [
+    "我",
+    "有",
+    "一个",
+    "朋友"
+   ],
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "有",
+     "reading": "yǒu"
+    },
+    {
+     "surface": "一",
+     "reading": "yī"
+    },
+    {
+     "surface": "个",
+     "reading": "gè"
+    },
+    {
+     "surface": "朋友",
+     "reading": "péng you"
+    }
+   ]
+  },
+  {
+   "name": "issue: 中国人 splits into 中国｜人",
+   "text": "他是中国人。",
+   "greedy": [
+    "他",
+    "是",
+    "中国人"
+   ],
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "是",
+     "reading": "shì"
+    },
+    {
+     "surface": "中国",
+     "reading": "zhōng guó"
+    },
+    {
+     "surface": "人",
+     "reading": "rén"
+    }
+   ]
+  },
+  {
+   "name": "issue: 明天见 splits into 明天｜见",
+   "text": "明天见！",
+   "greedy": [
+    "明天见"
+   ],
+   "tokens": [
+    {
+     "surface": "明天",
+     "reading": "míng tiān"
+    },
+    {
+     "surface": "见",
+     "reading": "jiàn"
+    }
+   ]
+  },
+  {
+   "name": "a listed compound stays whole; 吗 is a function word",
+   "text": "你好吗？",
+   "tokens": [
+    {
+     "surface": "你好",
+     "reading": "nǐ hǎo"
+    },
+    {
+     "surface": "吗",
+     "reading": "ma",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "listed compounds stay whole",
+   "text": "我喜欢学习汉语。",
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "喜欢",
+     "reading": "xǐ huan"
+    },
+    {
+     "surface": "学习",
+     "reading": "xué xí"
+    },
+    {
+     "surface": "汉语",
+     "reading": "hàn yǔ"
+    }
+   ]
+  },
+  {
+   "name": "a listed three-character word stays whole",
+   "text": "我打电话。",
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "打电话",
+     "reading": "dǎ diàn huà"
+    }
+   ]
+  },
+  {
+   "name": "an unlisted compound stays whole when a part is unlisted (熊 is not on the list)",
+   "text": "我喜欢熊猫。",
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "喜欢",
+     "reading": "xǐ huan"
+    },
+    {
+     "surface": "熊猫",
+     "reading": "xióng māo"
+    }
+   ]
+  },
+  {
+   "name": "吧 and 了 are function words (ba, le)",
+   "text": "我们走吧。他来了。",
+   "tokens": [
+    {
+     "surface": "我们",
+     "reading": "wǒ men"
+    },
+    {
+     "surface": "走",
+     "reading": "zǒu"
+    },
+    {
+     "surface": "吧",
+     "reading": "ba",
+     "function": true
+    },
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "来",
+     "reading": "lái"
+    },
+    {
+     "surface": "了",
+     "reading": "le",
+     "function": true
+    }
+   ]
+  },
+  {
+   "name": "地 after an adjective is the function word de",
+   "text": "他高兴地说。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "高兴",
+     "reading": "gāo xìng"
+    },
+    {
+     "surface": "地",
+     "reading": "de",
+     "function": true
+    },
+    {
+     "surface": "说",
+     "reading": "shuō"
+    }
+   ]
+  },
+  {
+   "name": "长 reads cháng (the readings table): CC-CEDICT's zhǎng line has as many glosses",
+   "text": "河很长。",
+   "tokens": [
+    {
+     "surface": "河",
+     "reading": "hé"
+    },
+    {
+     "surface": "很",
+     "reading": "hěn"
+    },
+    {
+     "surface": "长",
+     "reading": "cháng"
+    }
+   ]
+  },
+  {
+   "name": "在地上 is 在｜地上: 地 is a function word that counts as the last part of a compound only (在地 splits; 地上 stays the noun, not 地*｜上)",
+   "text": "他坐在地上。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "坐",
+     "reading": "zuò"
+    },
+    {
+     "surface": "在",
+     "reading": "zài"
+    },
+    {
+     "surface": "地上",
+     "reading": "dì shang"
+    }
+   ]
+  },
+  {
+   "name": "没 reads méi (the readings table): CC-CEDICT's mò line has more glosses; 还 is hái",
+   "text": "他还没来。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "还",
+     "reading": "hái"
+    },
+    {
+     "surface": "没",
+     "reading": "méi"
+    },
+    {
+     "surface": "来",
+     "reading": "lái"
+    }
+   ]
+  },
+  {
+   "name": "Latin letters are no token",
+   "text": "我叫Anna。",
+   "tokens": [
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "叫",
+     "reading": "jiào"
+    }
+   ]
+  }
+ ],
+ "withoutLevels": [
+  {
+   "name": "without a level list nothing is split: 那是 stays one token",
+   "text": "那是我的书。",
+   "tokens": [
+    {
+     "surface": "那是",
+     "reading": "nà shi"
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    },
+    {
+     "surface": "的",
+     "reading": "de",
+     "function": true
+    },
+    {
+     "surface": "书",
+     "reading": "shū"
+    }
+   ]
+  },
+  {
+   "name": "without a level list the readings still come from the rules and CC-CEDICT's glosses",
+   "text": "他看着我。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "看",
+     "reading": "kàn"
+    },
+    {
+     "surface": "着",
+     "reading": "zhe",
+     "function": true
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    }
+   ]
+  },
+  {
+   "name": "without a level list 打 is dǎ (more everyday glosses than dá)",
+   "text": "他打我。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "打",
+     "reading": "dǎ"
+    },
+    {
+     "surface": "我",
+     "reading": "wǒ"
+    }
+   ]
+  },
+  {
+   "name": "without a level list 得很 stays one token (nothing tells it apart)",
+   "text": "他学得很好。",
+   "tokens": [
+    {
+     "surface": "他",
+     "reading": "tā"
+    },
+    {
+     "surface": "学",
+     "reading": "xué"
+    },
+    {
+     "surface": "得很",
+     "reading": "de hěn"
+    },
+    {
+     "surface": "好",
+     "reading": "hǎo"
+    }
+   ]
+  }
+ ]
+}
