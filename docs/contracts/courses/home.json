@@ -1,0 +1,465 @@
+{
+ "version": 1,
+ "rule": "courses/home",
+ "note": "Home's \"Continue course\" widget (#225): the model of a filled course and its derived state (derive.json). status: start (no lesson finished and no unit done), continue (a next step), done (no unit left and no catch-up lesson). section, unit: the next step's (null when done). next: the lesson id (test for the unit test) and the player's link; when every unit is done, the first catch-up lesson in course order. units: done of all. words: met (the state's met) of all the course's words. Web: apps/web/src/lib/features/courses/home.test.ts.",
+ "course": {
+  "id": "mini-course",
+  "sections": [
+   {
+    "id": "start",
+    "title": {
+     "en": "Start"
+    },
+    "units": [
+     {
+      "id": "sounds",
+      "title": {
+       "en": "sounds"
+      },
+      "test": false,
+      "words": [],
+      "lessons": [
+       {
+        "id": "listening"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "one",
+    "title": {
+     "en": "Level one"
+    },
+    "units": [
+     {
+      "id": "u1",
+      "title": {
+       "en": "u1"
+      },
+      "test": true,
+      "words": [
+       {
+        "key": "a"
+       },
+       {
+        "key": "b"
+       }
+      ],
+      "lessons": [
+       {
+        "id": "words-1"
+       },
+       {
+        "id": "practice"
+       }
+      ]
+     },
+     {
+      "id": "u2",
+      "title": {
+       "en": "u2"
+      },
+      "test": true,
+      "words": [
+       {
+        "key": "c"
+       }
+      ],
+      "lessons": [
+       {
+        "id": "words-1"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "two",
+    "title": {
+     "en": "Level two"
+    },
+    "units": [
+     {
+      "id": "u3",
+      "title": {
+       "en": "u3"
+      },
+      "test": true,
+      "words": [
+       {
+        "key": "d"
+       },
+       {
+        "key": "e"
+       }
+      ],
+      "lessons": [
+       {
+        "id": "words-1"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "nothing done: start at the first lesson",
+   "events": [],
+   "known": [],
+   "expect": {
+    "status": "start",
+    "section": "start",
+    "unit": "sounds",
+    "next": {
+     "lesson": "listening",
+     "href": "/courses/play/mini-course/sounds/listening"
+    },
+    "units": {
+     "done": 0,
+     "total": 4
+    },
+    "words": {
+     "met": 0,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "a lesson started but not finished is still the start",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0001",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-started",
+      "course": "mini-course",
+      "unit": "sounds",
+      "lesson": "listening"
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "start",
+    "section": "start",
+    "unit": "sounds",
+    "next": {
+     "lesson": "listening",
+     "href": "/courses/play/mini-course/sounds/listening"
+    },
+    "units": {
+     "done": 0,
+     "total": 4
+    },
+    "words": {
+     "met": 0,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "midway: continue at the unit's next lesson",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0002",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "sounds",
+      "lesson": "listening",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0003",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a",
+       "b"
+      ]
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "continue",
+    "section": "one",
+    "unit": "u1",
+    "next": {
+     "lesson": "practice",
+     "href": "/courses/play/mini-course/u1/practice"
+    },
+    "units": {
+     "done": 1,
+     "total": 4
+    },
+    "words": {
+     "met": 2,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "every lesson finished: the unit test is next",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0004",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "sounds",
+      "lesson": "listening",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0005",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a",
+       "b"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0006",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:20:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u1",
+      "lesson": "practice",
+      "score": 1,
+      "total": 1,
+      "words": []
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "continue",
+    "section": "one",
+    "unit": "u1",
+    "next": {
+     "lesson": "test",
+     "href": "/courses/play/mini-course/u1/test"
+    },
+    "units": {
+     "done": 1,
+     "total": 4
+    },
+    "words": {
+     "met": 2,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "a placement: continue at the first unit of its section",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0007",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "mini-course",
+      "section": "two"
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "continue",
+    "section": "two",
+    "unit": "u3",
+    "next": {
+     "lesson": "words-1",
+     "href": "/courses/play/mini-course/u3/words-1"
+    },
+    "units": {
+     "done": 3,
+     "total": 4
+    },
+    "words": {
+     "met": 0,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "every unit done: the course is done, nothing next",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0008",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u3",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0009",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u3",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": true
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "done",
+    "section": null,
+    "unit": null,
+    "next": null,
+    "units": {
+     "done": 4,
+     "total": 4
+    },
+    "words": {
+     "met": 5,
+     "total": 5
+    }
+   }
+  },
+  {
+   "name": "a done course with a word it gained later: its catch-up lesson is next",
+   "note": "u3 was studied (passed by its own test, not early) without meeting e: e is u3's catch-up lesson",
+   "events": [
+    {
+     "id": "01KB00000000000000000H0010",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "mini-course",
+      "section": "one",
+      "score": 1,
+      "total": 1,
+      "passed": true
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0011",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "mini-course",
+      "unit": "u3",
+      "lesson": "words-1",
+      "score": 1,
+      "total": 1,
+      "words": [
+       "d"
+      ]
+     }
+    },
+    {
+     "id": "01KB00000000000000000H0012",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-01T09:20:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "mini-course",
+      "unit": "u3",
+      "score": 1,
+      "total": 1,
+      "passed": true,
+      "early": false
+     }
+    }
+   ],
+   "known": [],
+   "expect": {
+    "status": "continue",
+    "section": "two",
+    "unit": "u3",
+    "next": {
+     "lesson": "catch-up-1",
+     "href": "/courses/play/mini-course/u3/catch-up-1"
+    },
+    "units": {
+     "done": 4,
+     "total": 4
+    },
+    "words": {
+     "met": 1,
+     "total": 5
+    }
+   }
+  }
+ ]
+}

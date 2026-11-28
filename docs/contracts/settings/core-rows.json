@@ -8,12 +8,14 @@
   "word-states",
   "reading-time",
   "scripts-progress",
+  "course-continue",
   "activity-heatmap",
   "character-map-summary",
   "summary-numbers",
   "reviews-per-day"
  ],
  "defaultLayout": [
+  "course-continue",
   "activity-heatmap",
   "flashcards-summary",
   "daily-goal",

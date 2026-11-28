@@ -19,6 +19,7 @@ Web: `apps/web/src/lib/api/courses.ts` (the routes and a strict decoder), `apps/
 | `derive.json` | `courses/derive`: the payload builder (`build`), and events → path state | Go: `courses/derive_contract_test.go` (`Derive`, `ParseProgress`); web: `lib/studycore/courseProgress.test.ts` (`coursePayload`, `deriveCourseState`) |
 | `changes.json` | `courses/changes`: events recorded against an earlier course, replayed over the course as it is now | as `derive.json` |
 | `tests.json` | `courses/tests`: how a unit test or section exam is assembled, scored and judged, a placement exam's early stop, the placement chain (#224) | web: `lib/features/courses/tests.test.ts` (a client rule: the server only stores the events) |
+| `home.json` | `courses/home`: the model of Home's "Continue course" widget over a filled course and its state (#225) | web: `lib/features/courses/home.test.ts` |
 | `counting.json` | `courses/counting`: which events are course steps, their activity cells, EXP and the streak (#225) | Go: `stats/contract_courses_test.go` (`activity`); web: `lib/studycore/courseCounting.test.ts` (`steps`, `xp`, `streak`) |
 
 ## The pack
@@ -232,4 +233,16 @@ Course work counts like grammar lesson runs (#277) and drill answers (`drills/`)
 - **EXP** (`xp`): `stepXp` 20 per step, whatever its score; no daily bonus (it stays a review bonus).
 - **Streak** (`streak`) and the milestones' `streak` and `days-active` families: a learner day with a step counts like a
   day with a review; vacation days are neutral.
+
+## Home: "Continue course" (#225, `home.json`)
+
+The widget `course-continue` (first in Home's default layout, `settings/` `home-layout`) shows the workspace's course
+(as the roadmap picks it). Its model over the filled course and the derived state:
+
+- `status`: `start` while no lesson is finished and no unit is done; `continue` while there is a next step; `done` when
+  no unit and no catch-up lesson is left.
+- `section`, `unit`, `next`: the state's `current` (`next` the lesson id, `test` for the unit test, with the player's
+  link); with every unit done, the first catch-up lesson in course order; null when done.
+- `units`: done of all; `words`: the state's `met` of all the course's words (the roadmap's "words met").
+- A client shows nothing for a workspace whose language has no course.
 

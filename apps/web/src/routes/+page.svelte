@@ -181,6 +181,11 @@
 		min-width: 0;
 	}
 
+	/* A widget with nothing to show renders nothing (Continue course without a course, #225): no empty grid cell. */
+	.widget:empty {
+		display: none;
+	}
+
 	.not-refreshed {
 		margin: var(--space-4) 0 0;
 		font-size: var(--font-size-s);

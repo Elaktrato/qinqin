@@ -35,6 +35,10 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   3000) and `course-graduated:<course>`; id, parse, enabled, order and title cases (titles name the course's words).
 - **New fixture `milestones/course.json`** (rule `milestones/course`, web): when each course milestone is reached over
   a filled course and the workspace's course events. `milestones/README.md` "Course milestones".
+- **New fixture `courses/home.json`** (rule `courses/home`, web): the model of Home's "Continue course" widget.
+- **`settings/core-rows.json`:** the widget id `course-continue` (Courses) and the default Home layout starts with it
+  (`course-continue`, `activity-heatmap`, `flashcards-summary`, `daily-goal`, `weekly-summary`). A stored layout is
+  unchanged.
 
 ## #348 — Japanese reads whole sentences; function words (contract 36)
 
