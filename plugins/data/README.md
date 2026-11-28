@@ -10,7 +10,7 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`, `images`) |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio`, `components` or `lemma-rules` (also `strokes`, `theme`, `font`, `images`, `course`) |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
@@ -45,7 +45,7 @@ directory. A reverse proxy in front of qinqin may cap request bodies lower
 import; the import itself keeps running on the server, and the list shows
 the pack once it is done.
 
-Committed (hand-written; the demo is a CC0 sample, the grammar and lemma packs are project-written content under CC BY 4.0, credited "qinqin contributors, CC BY 4.0"):
+Committed (hand-written; the demo is a CC0 sample, the grammar, lemma and course packs are project-written content under CC BY 4.0, credited "qinqin contributors, CC BY 4.0"):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
@@ -53,6 +53,8 @@ Committed (hand-written; the demo is a CC0 sample, the grammar and lemma packs a
 | `zh-grammar` | grammar | zh | HSK-aligned grammar lessons (≈ HSK 1 to 7–9), 4–8 examples per syllabus point, written for qinqin, CC BY 4.0; topic coverage follows the HSK 3.0 grammar outline (CLEC/CTI, 2025-11/2026-07) as a topic index only, no syllabus text reproduced, no reuse licence granted; not reviewed by a native speaker |
 | `ja-grammar` | grammar | ja | Japanese grammar lessons (≈ JLPT N5 to N1), 4–8 examples per grammar point with kana readings, written for qinqin, CC BY 4.0; qinqin's own selection and order of points (the JLPT publishes no grammar list); not reviewed by a native speaker |
 | `ja-lemma` | lemma-rules | ja | the Japanese lemmatizer rule table (`rules.json`, format `rules-json`, `docs/contracts/lemma/`), byte-identical to the table built into the server; written for qinqin, CC BY 4.0; a fresh server installs it and `qinqin serve` refreshes it from an upgraded image |
+| `zh-course` | course | zh | the Chinese course (≈ HSK 1–4): a start section and four level sections, 65 units with themes, grammar lessons, the hanzi each introduces and, in ≈ HSK 1–2, a reading text with a translation (`course.json`, format `course-json`, `docs/contracts/courses/`); no words: the server fills the units from `hsk-words`; written for qinqin, CC BY 4.0, reviewed by agents (`REVIEW.md`) |
+| `ja-course` | course | ja | the Japanese course (≈ JLPT N5–N3): a start section (sounds, hiragana, katakana) and three level sections, 73 units, the kanji each introduces and, in ≈ N5–N4, a reading text with a translation; filled from `jlpt-words`; written for qinqin, CC BY 4.0, reviewed by agents (`REVIEW.md`) |
 
 Components pack format (`format: components-tsv`): `components.tsv` holds one
 character per line, the character, a tab and its parts separated by spaces

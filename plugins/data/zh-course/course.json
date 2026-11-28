@@ -1,0 +1,2534 @@
+{
+ "version": 1,
+ "language": "zh",
+ "title": {
+  "en": "Chinese from the start to ≈ HSK 4"
+ },
+ "levels": {
+  "scheme": "hsk-words"
+ },
+ "checkpoints": {
+  "lesson": {
+   "questions": 5
+  },
+  "unit": {
+   "questions": 12,
+   "passPercent": 80
+  },
+  "section": {
+   "questions": 30,
+   "passPercent": 75
+  }
+ },
+ "sections": [
+  {
+   "id": "zh-start",
+   "level": null,
+   "title": {
+    "en": "Start: sounds and first characters"
+   },
+   "units": [
+    {
+     "id": "zh-start-sounds",
+     "title": {
+      "en": "Sounds and tones"
+     },
+     "focus": "listening",
+     "test": false
+    },
+    {
+     "id": "zh-start-hanzi",
+     "title": {
+      "en": "First characters"
+     },
+     "characters": [
+      "一",
+      "二",
+      "三",
+      "十",
+      "人",
+      "口",
+      "大",
+      "小",
+      "中",
+      "日",
+      "月",
+      "水",
+      "火",
+      "上",
+      "下"
+     ],
+     "test": false
+    }
+   ]
+  },
+  {
+   "id": "hsk1",
+   "level": 1,
+   "title": {
+    "en": "≈ HSK 1"
+   },
+   "units": [
+    {
+     "id": "hsk1-hello",
+     "title": {
+      "en": "Hello"
+     },
+     "topics": [
+      "greetings",
+      "people",
+      "function"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-personal-pronouns",
+      "zh-grammar:hsk1-shi",
+      "zh-grammar:hsk1-particles-ma-ba",
+      "zh-grammar:hsk1-subject"
+     ],
+     "characters": [
+      "你",
+      "好",
+      "我",
+      "是",
+      "不",
+      "吗",
+      "谢",
+      "再",
+      "见",
+      "对",
+      "起",
+      "没",
+      "关",
+      "系",
+      "客",
+      "气",
+      "请",
+      "很",
+      "也",
+      "问"
+     ],
+     "text": {
+      "title": "你好",
+      "body": "“你好！请问，你是王老师吗？”\n“不是，我不是王老师。”\n“对不起！”\n“没关系。”\n“请问，你是老师吗？”\n“是，我也是老师。”\n“谢谢你！再见！”\n“不客气。再见！”",
+      "translation": {
+       "en": "“Hello! Excuse me, are you Teacher Wang?”\n“No, I'm not Teacher Wang.”\n“Sorry!”\n“That's all right.”\n“Excuse me, are you a teacher?”\n“Yes, I'm a teacher too.”\n“Thank you! Goodbye!”\n“You're welcome. Goodbye!”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-names",
+     "title": {
+      "en": "Names"
+     },
+     "topics": [
+      "people",
+      "function",
+      "geography",
+      "language"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-question-words",
+      "zh-grammar:hsk1-de",
+      "zh-grammar:hsk1-predicate",
+      "zh-grammar:hsk1-declarative"
+     ],
+     "characters": [
+      "他",
+      "她",
+      "们",
+      "叫",
+      "什",
+      "么",
+      "名",
+      "字",
+      "呢",
+      "的",
+      "国",
+      "先",
+      "生",
+      "女",
+      "男",
+      "士",
+      "语",
+      "说",
+      "这",
+      "认",
+      "识"
+     ],
+     "text": {
+      "title": "你叫什么名字？",
+      "body": "“你好！请问，你叫什么名字？”\n“我叫王明。你呢？”\n“我叫文文，我是中国人。你也是中国人吗？”\n“是，我也是。这是什么字？”\n“这是‘文’，文文的‘文’。”\n“他是你先生吗？”\n“是，他是我先生。他也是中国人。”",
+      "translation": {
+       "en": "“Hello! Excuse me, what's your name?”\n“My name is Wang Ming. And yours?”\n“My name is Wenwen. I'm Chinese. Are you Chinese too?”\n“Yes, I am too. What character is this?”\n“It's ‘wen’, the ‘wen’ in Wenwen.”\n“Is he your husband?”\n“Yes, he's my husband. He's Chinese too.”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-family",
+     "title": {
+      "en": "Family and friends"
+     },
+     "topics": [
+      "family",
+      "relationships",
+      "function",
+      "qualities"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-you",
+      "zh-grammar:hsk1-negation",
+      "zh-grammar:hsk1-dou",
+      "zh-grammar:hsk1-suffixes"
+     ],
+     "characters": [
+      "家",
+      "爸",
+      "妈",
+      "哥",
+      "姐",
+      "弟",
+      "妹",
+      "儿",
+      "子",
+      "有",
+      "几",
+      "和",
+      "都",
+      "爱",
+      "朋",
+      "友",
+      "两",
+      "个"
+     ],
+     "text": {
+      "title": "我的家人",
+      "body": "这是我的家人。这是我爸爸，这是我妈妈。我有哥哥，也有妹妹。这是我哥哥，这是我的小妹妹。我哥哥的女朋友是中国人，她也是我的好朋友。爸爸妈妈都很爱我们。我爱我的家！",
+      "translation": {
+       "en": "This is my family. This is my dad, and this is my mum. I have an older brother and a younger sister. This is my brother, and this is my little sister. My brother's girlfriend is Chinese; she is a good friend of mine too. Mum and Dad both love us very much. I love my family!"
+      }
+     }
+    },
+    {
+     "id": "hsk1-numbers",
+     "title": {
+      "en": "Numbers and age"
+     },
+     "topics": [
+      "numbers",
+      "measures"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-numerals",
+      "zh-grammar:hsk1-measure-words",
+      "zh-grammar:hsk1-phrase-types-other"
+     ],
+     "characters": [
+      "四",
+      "五",
+      "六",
+      "七",
+      "八",
+      "九",
+      "零",
+      "百",
+      "千",
+      "岁",
+      "多",
+      "少",
+      "本",
+      "些",
+      "半"
+     ],
+     "text": {
+      "title": "你妹妹几岁？",
+      "body": "“你家有几口人？”\n“七口人。”\n“你妹妹几岁？”\n“她四岁。我弟弟七岁。”\n“你哥哥呢？”\n“我哥哥十九岁，我姐姐二十一岁。”\n“你爸爸妈妈多大？”\n“我爸爸四十八岁，我妈妈四十六岁。”",
+      "translation": {
+       "en": "“How many people are there in your family?”\n“Seven.”\n“How old is your little sister?”\n“She's four. My little brother is seven.”\n“And your older brother?”\n“My older brother is nineteen, and my older sister is twenty-one.”\n“How old are your parents?”\n“My dad is forty-eight, and my mum is forty-six.”"
+      }
+     },
+     "focus": "listening"
+    },
+    {
+     "id": "hsk1-dates",
+     "title": {
+      "en": "Days and dates"
+     },
+     "topics": [
+      "calendar",
+      "numbers",
+      "function"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-time-measures",
+      "zh-grammar:hsk1-time-expressions",
+      "zh-grammar:hsk1-question-types"
+     ],
+     "characters": [
+      "星",
+      "期",
+      "昨",
+      "吧",
+      "要",
+      "第",
+      "分",
+      "还",
+      "号",
+      "今",
+      "年",
+      "天",
+      "明",
+      "去"
+     ],
+     "text": {
+      "title": "今天几号？",
+      "body": "“今天几号？”\n“今天十号，星期三。”\n“明天是星期四吧？”\n“对。明天是我妈妈的生日。”\n“她今年多大？”\n“她今年五十岁。”",
+      "translation": {
+       "en": "“What's the date today?”\n“Today is the tenth, a Wednesday.”\n“Tomorrow is Thursday, right?”\n“That's right. Tomorrow is my mum's birthday.”\n“How old is she this year?”\n“She's fifty this year.”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-day",
+     "title": {
+      "en": "My day"
+     },
+     "topics": [
+      "time",
+      "routine",
+      "function"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-zai-preposition",
+      "zh-grammar:hsk1-le",
+      "zh-grammar:hsk1-le-completed",
+      "zh-grammar:hsk1-object"
+     ],
+     "characters": [
+      "现",
+      "怎",
+      "白",
+      "点",
+      "非",
+      "常",
+      "钟",
+      "可",
+      "以",
+      "了",
+      "能",
+      "床",
+      "午",
+      "时",
+      "候",
+      "间",
+      "睡",
+      "觉",
+      "晚"
+     ],
+     "text": {
+      "title": "我的时间",
+      "body": "“你几点起床？”\n“我六点起床。”\n“你几点睡觉？”\n“我晚上十一点睡觉。”\n“你明天下午有时间吗？”\n“有，三点以后可以。”\n“好，明天见！”",
+      "translation": {
+       "en": "“What time do you get up?”\n“I get up at six.”\n“What time do you go to bed?”\n“I go to bed at eleven at night.”\n“Do you have time tomorrow afternoon?”\n“Yes, any time after three.”\n“Great, see you tomorrow!”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-food",
+     "title": {
+      "en": "Food"
+     },
+     "topics": [
+      "food",
+      "function"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-modal-verbs",
+      "zh-grammar:hsk1-attributive",
+      "zh-grammar:hsk1-hai-ye"
+     ],
+     "characters": [
+      "包",
+      "吃",
+      "饭",
+      "给",
+      "会",
+      "面",
+      "您",
+      "苹",
+      "果",
+      "谁",
+      "太"
+     ],
+     "text": {
+      "title": "你吃什么？",
+      "body": "“你吃什么？”\n“我吃包子。你呢？”\n“我不要包子，我要饺子。”\n“你会做饺子吗？”\n“我妈妈会做，我不会。”\n“我有一点儿面包，你吃吗？”\n“谢谢，我不吃了。”",
+      "translation": {
+       "en": "“What are you eating?”\n“I'm having baozi. And you?”\n“I don't want baozi, I want dumplings.”\n“Can you make dumplings?”\n“My mum can; I can't.”\n“I have a little bread. Would you like some?”\n“Thanks, but I'm fine.”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-restaurant",
+     "title": {
+      "en": "At a restaurant"
+     },
+     "topics": [
+      "drink",
+      "food",
+      "shopping"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-imperative",
+      "zh-grammar:hsk1-zai-again",
+      "zh-grammar:hsk1-he-conjunction",
+      "zh-grammar:hsk1-double-object"
+     ],
+     "characters": [
+      "杯",
+      "菜",
+      "茶",
+      "狗",
+      "孩",
+      "看",
+      "喝",
+      "鸡",
+      "蛋",
+      "卖",
+      "米",
+      "条",
+      "牛",
+      "奶",
+      "早",
+      "做"
+     ],
+     "text": {
+      "title": "在饭店",
+      "body": "“你们好！请问，你们喝什么？”\n“我喝茶。”\n“我要一杯牛奶。”\n“你们吃什么？”\n“我们要两碗米饭和一个菜。”\n“好的。我们的面条儿也很好吃。”\n“那再要一碗面条儿。谢谢！”",
+      "translation": {
+       "en": "“Hello! What would you like to drink?”\n“Tea for me.”\n“I'd like a glass of milk.”\n“And to eat?”\n“Two bowls of rice and one dish, please.”\n“Sure. Our noodles are very good too.”\n“Then a bowl of noodles as well. Thank you!”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "hsk1-shopping",
+     "title": {
+      "en": "Shopping"
+     },
+     "topics": [
+      "shopping",
+      "money",
+      "clothing"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-number-expressions",
+      "zh-grammar:hsk1-demonstratives",
+      "zh-grammar:hsk1-degree-adverbs"
+     ],
+     "characters": [
+      "那",
+      "超",
+      "市",
+      "穿",
+      "东",
+      "西",
+      "贵",
+      "件",
+      "得",
+      "开",
+      "块",
+      "买",
+      "猫",
+      "事",
+      "便",
+      "宜",
+      "钱",
+      "商",
+      "书",
+      "衣",
+      "服",
+      "元"
+     ],
+     "text": {
+      "title": "这件衣服多少钱？",
+      "body": "“请问，这件衣服多少钱？”\n“两百块。”\n“太贵了！那件呢？”\n“那件很便宜，八十块。”\n“我看看……我觉得这件也很好看。”\n“你穿这件很好看！”\n“好，我买这件。”",
+      "translation": {
+       "en": "“Excuse me, how much is this top?”\n“Two hundred yuan.”\n“That's too expensive! What about that one?”\n“That one's cheap: eighty yuan.”\n“Let me see… I think this one looks nice too.”\n“It looks great on you!”\n“OK, I'll take this one.”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-school",
+     "title": {
+      "en": "At school"
+     },
+     "topics": [
+      "school",
+      "language"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-he-dui",
+      "zh-grammar:hsk1-phrase-types"
+     ],
+     "characters": [
+      "汉",
+      "学",
+      "读",
+      "课",
+      "老",
+      "师",
+      "同",
+      "写",
+      "习",
+      "校"
+     ],
+     "text": {
+      "title": "我的学校",
+      "body": "我是大学生。我们学校很大，学生很多。我们的汉语老师是中国人，她很好。上课的时候，我们读书、写汉字。下课以后，我和同学一起学习。我爱我的学校。",
+      "translation": {
+       "en": "I'm a university student. Our school is big and has lots of students. Our Chinese teacher is Chinese, and she is very nice. In class we read aloud from our books and write Chinese characters. After class I study with my classmates. I love my school."
+      }
+     }
+    },
+    {
+     "id": "hsk1-places",
+     "title": {
+      "en": "Where is it?"
+     },
+     "topics": [
+      "position",
+      "city",
+      "home"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-location-nouns",
+      "zh-grammar:hsk1-existential",
+      "zh-grammar:hsk1-prefixes"
+     ],
+     "characters": [
+      "哪",
+      "边",
+      "电",
+      "影",
+      "院",
+      "房",
+      "后",
+      "里",
+      "前",
+      "外",
+      "在",
+      "椅"
+     ],
+     "text": {
+      "title": "我的房间",
+      "body": "这是我的房间。房间里有一把椅子，椅子上有很多书。我的猫在哪儿？在那儿，在椅子下边！我家前边有一家电影院，后边是一个大学。",
+      "translation": {
+       "en": "This is my room. There's a chair in the room, and there are lots of books on it. Where's my cat? There it is, under the chair! In front of my home there's a cinema, and behind it there's a university."
+      }
+     }
+    },
+    {
+     "id": "hsk1-transport",
+     "title": {
+      "en": "Getting there"
+     },
+     "topics": [
+      "transport",
+      "movement",
+      "travel"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-serial-verbs",
+      "zh-grammar:hsk1-adverbial",
+      "zh-grammar:hsk1-action-measure"
+     ],
+     "characters": [
+      "车",
+      "出",
+      "租",
+      "到",
+      "飞",
+      "机",
+      "回",
+      "来",
+      "漂",
+      "亮",
+      "话",
+      "坐"
+     ],
+     "text": {
+      "title": "你怎么去？",
+      "body": "“明天你去哪儿？”\n“我去北京。”\n“你怎么去？坐飞机吗？”\n“不，我坐火车去。”\n“你什么时候回来？”\n“星期五回来。我爸爸开车去北京，我坐他的车回来。”",
+      "translation": {
+       "en": "“Where are you going tomorrow?”\n“I'm going to Beijing.”\n“How are you getting there? By plane?”\n“No, I'm going by train.”\n“When are you coming back?”\n“On Friday. My dad is driving to Beijing, and I'll come back in his car.”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-weather",
+     "title": {
+      "en": "The weather"
+     },
+     "topics": [
+      "weather",
+      "nature"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-le-change",
+      "zh-grammar:hsk1-particles-le-ne",
+      "zh-grammar:hsk1-exclamative",
+      "zh-grammar:hsk1-sentence-types",
+      "zh-grammar:hsk1-wei"
+     ],
+     "characters": [
+      "它",
+      "冷",
+      "热",
+      "喂",
+      "题",
+      "雨",
+      "想",
+      "新",
+      "休",
+      "息",
+      "雪"
+     ],
+     "text": {
+      "title": "今天天气怎么样？",
+      "body": "“喂，你好！你那儿天气怎么样？”\n“今天很冷，现在下雪了。”\n“我这儿很热，下午下雨了。”\n“你想来我这儿吗？”\n“想！我很想看雪。”\n“好，你明年一月来吧！”",
+      "translation": {
+       "en": "“Hello! What's the weather like where you are?”\n“It's very cold today. It's snowing now.”\n“It's very hot here. It rained in the afternoon.”\n“Would you like to come here?”\n“Yes! I'd love to see snow.”\n“OK, come next January!”"
+      }
+     }
+    },
+    {
+     "id": "hsk1-health",
+     "title": {
+      "en": "Feeling ill"
+     },
+     "topics": [
+      "health",
+      "body",
+      "feelings"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-coordinate-clauses",
+      "zh-grammar:hsk1-zai-zhengzai",
+      "zh-grammar:hsk1-progressive"
+     ],
+     "characters": [
+      "病",
+      "高",
+      "兴",
+      "听",
+      "喜",
+      "欢",
+      "医",
+      "样",
+      "找",
+      "真",
+      "正",
+      "只",
+      "知",
+      "道",
+      "文"
+     ],
+     "text": {
+      "title": "我病了",
+      "body": "“你怎么了？”\n“我生病了，不想吃饭。”\n“你去医院看病了吗？”\n“去了。医生说我要多喝水，多休息。”\n“你现在怎么样？”\n“好一点儿了。谢谢你！”\n“不客气。听医生的，早点儿睡觉。”",
+      "translation": {
+       "en": "“What's wrong?”\n“I'm ill and I don't feel like eating.”\n“Did you go to the hospital to see a doctor?”\n“I did. The doctor said I need to drink a lot of water and rest a lot.”\n“How are you now?”\n“A little better. Thank you!”\n“You're welcome. Do what the doctor says and go to bed early.”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "hsk1-work",
+     "title": {
+      "en": "Work and free time"
+     },
+     "topics": [
+      "work",
+      "hobbies",
+      "arts",
+      "media",
+      "technology"
+     ],
+     "grammar": [
+      "zh-grammar:hsk1-separable-verbs"
+     ],
+     "characters": [
+      "唱",
+      "打",
+      "脑",
+      "视",
+      "歌",
+      "工",
+      "作",
+      "公",
+      "司",
+      "玩",
+      "忙",
+      "班",
+      "手",
+      "住",
+      "桌"
+     ],
+     "text": {
+      "title": "下班以后",
+      "body": "我在一家电脑公司工作，每天都很忙。下班以后，我喜欢看电视、看电影。星期六我和朋友去唱歌，我们唱中国歌，很好玩儿。你喜欢唱歌吗？",
+      "translation": {
+       "en": "I work at a computer company and I'm busy every day. After work I like to watch TV and films. On Saturdays I go singing with my friends. We sing Chinese songs, and it's a lot of fun. Do you like singing?"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "hsk2",
+   "level": 2,
+   "title": {
+    "en": "≈ HSK 2"
+   },
+   "units": [
+    {
+     "id": "hsk2-directions",
+     "title": {
+      "en": "Left and right"
+     },
+     "topics": [
+      "position"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-suffix-mian",
+      "zh-grammar:hsk2-left-right",
+      "zh-grammar:hsk2-direction-prepositions",
+      "zh-grammar:hsk2-cong-time-place"
+     ],
+     "characters": [
+      "左",
+      "右",
+      "进",
+      "近",
+      "离",
+      "旁"
+     ],
+     "text": {
+      "title": "医院在哪儿？",
+      "body": "“请问，医院离这儿近吗？”\n“很近。你看，前面有一家超市，医院在超市的左边。”\n“左边还是右边？”\n“左边。超市右边是一家书店，后面是一个学校。”\n“谢谢你！”\n“不客气。”",
+      "translation": {
+       "en": "“Excuse me, is the hospital near here?”\n“Very near. Look, there's a supermarket ahead; the hospital is to the left of the supermarket.”\n“Left or right?”\n“Left. To the right of the supermarket is a bookshop, and behind it is a school.”\n“Thank you!”\n“You're welcome.”"
+      }
+     }
+    },
+    {
+     "id": "hsk2-around-town",
+     "title": {
+      "en": "Around town"
+     },
+     "topics": [
+      "transport",
+      "city",
+      "movement"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-directional-simple",
+      "zh-grammar:hsk2-directional-compound",
+      "zh-grammar:hsk2-contracted-complex",
+      "zh-grammar:hsk2-about-to",
+      "zh-grammar:hsk2-approximate-numbers"
+     ],
+     "characters": [
+      "站",
+      "门",
+      "地",
+      "铁",
+      "动",
+      "跟",
+      "交",
+      "过",
+      "场"
+     ],
+     "text": {
+      "title": "去机场",
+      "body": "明天我要去机场。我家离地铁站很近，一出门就能看见车站。坐地铁去机场很便宜，我不想打车，也不想坐公交车。回来的时候东西多，我就打车回家。",
+      "translation": {
+       "en": "Tomorrow I'm going to the airport. My home is very close to the metro station: as soon as I step out of the door I can see it. Taking the metro to the airport is cheap, so I don't want to take a taxi or the bus. On the way back I'll have a lot of luggage, so I'll take a taxi home."
+      }
+     }
+    },
+    {
+     "id": "hsk2-sports",
+     "title": {
+      "en": "Sport"
+     },
+     "topics": [
+      "sports",
+      "body",
+      "hobbies"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-separable-verbs",
+      "zh-grammar:hsk2-state-complement",
+      "zh-grammar:hsk2-de-particles",
+      "zh-grammar:hsk2-frequency-measure"
+     ],
+     "characters": [
+      "篮",
+      "球",
+      "累",
+      "游",
+      "跑",
+      "步",
+      "身",
+      "体",
+      "舒",
+      "疼",
+      "踢",
+      "跳",
+      "舞",
+      "头",
+      "眼",
+      "睛"
+     ],
+     "text": {
+      "title": "我的爱好",
+      "body": "我的爱好是跑步。星期六上午我去跑步，下午去踢球。跑步很累，可是很舒服。我哥哥个子很高，他喜欢打篮球，打得非常好。我妹妹喜欢跳舞。",
+      "translation": {
+       "en": "My hobby is running. On Saturday mornings I go running, and in the afternoon I play football. Running is tiring, but it feels great. My older brother is tall; he likes playing basketball and plays really well. My little sister likes dancing."
+      }
+     }
+    },
+    {
+     "id": "hsk2-colours",
+     "title": {
+      "en": "Colours and clothes"
+     },
+     "topics": [
+      "colours",
+      "clothing",
+      "shopping"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-adjective-reduplication",
+      "zh-grammar:hsk2-comparison-1",
+      "zh-grammar:hsk2-measure-words",
+      "zh-grammar:hsk2-zhe-particle",
+      "zh-grammar:hsk2-continuous-aspect",
+      "zh-grammar:hsk2-existential-zhe"
+     ],
+     "characters": [
+      "着",
+      "啊",
+      "色",
+      "比",
+      "别",
+      "错",
+      "长",
+      "从",
+      "黑",
+      "红",
+      "裤",
+      "绿",
+      "表",
+      "颜"
+     ],
+     "text": {
+      "title": "什么颜色？",
+      "body": "“你喜欢什么颜色？”\n“我喜欢红色和绿色。”\n“这块红色的手表怎么样？”\n“颜色不错，可是有点儿贵。”\n“那块黑色的比这块便宜。”\n“好啊，我买黑色的。”",
+      "translation": {
+       "en": "“What colours do you like?”\n“I like red and green.”\n“What about this red watch?”\n“The colour is nice, but it's a bit expensive.”\n“The black one is cheaper than this one.”\n“OK, I'll buy the black one.”"
+      }
+     }
+    },
+    {
+     "id": "hsk2-studying",
+     "title": {
+      "en": "Studying"
+     },
+     "topics": [
+      "school",
+      "language",
+      "thinking"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-result-complements",
+      "zh-grammar:hsk2-verb-complement-phrase",
+      "zh-grammar:hsk2-verb-reduplication",
+      "zh-grammar:hsk2-functional-phrases"
+     ],
+     "characters": [
+      "笔",
+      "词",
+      "但",
+      "画",
+      "教",
+      "室",
+      "考",
+      "试",
+      "意",
+      "思"
+     ],
+     "text": {
+      "title": "考试",
+      "body": "明天我们有汉语考试。今天下午，我在教室里看了看本子上的新词，写了写汉字。有的词我不认识，我去问老师是什么意思。老师说：“你学得很好，别怕。”考试以后，我想好好休息。",
+      "translation": {
+       "en": "Tomorrow we have a Chinese exam. This afternoon in the classroom I looked over the new words in my notebook and wrote out some characters. There were some words I didn't know, so I went to ask the teacher what they meant. The teacher said, “You're doing very well. Don't be afraid.” After the exam I want to have a good rest."
+      }
+     }
+    },
+    {
+     "id": "hsk2-time",
+     "title": {
+      "en": "Time and habits"
+     },
+     "topics": [
+      "time",
+      "calendar",
+      "routine"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-time-adverbs",
+      "zh-grammar:hsk2-frequency-adverbs",
+      "zh-grammar:hsk2-quantity-complements",
+      "zh-grammar:hsk2-dou-le",
+      "zh-grammar:hsk2-ordinal-numeral-measure"
+     ],
+     "characters": [
+      "次",
+      "坏",
+      "经",
+      "始",
+      "快",
+      "洗",
+      "已",
+      "周"
+     ],
+     "text": {
+      "title": "我的生日",
+      "body": "我的生日快要到了。我从小就喜欢过生日。小时候，妈妈每年都给我做一个大蛋糕。现在我已经是大学生了，不能经常回家。今年过生日的时候，我要回家跟爸爸妈妈吃饭。",
+      "translation": {
+       "en": "My birthday is coming soon. I've loved birthdays since I was little. When I was a child, my mum made me a big cake every year. Now I'm at university and can't go home often. This year for my birthday I'm going home to have a meal with my parents."
+      }
+     },
+     "focus": "listening"
+    },
+    {
+     "id": "hsk2-friends",
+     "title": {
+      "en": "Friends and relatives"
+     },
+     "topics": [
+      "people",
+      "relationships",
+      "family",
+      "feelings"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-self-pronoun",
+      "zh-grammar:hsk2-object-prepositions",
+      "zh-grammar:hsk2-conjunction-gen",
+      "zh-grammar:hsk2-pivotal-sentences",
+      "zh-grammar:hsk2-double-object-gei",
+      "zh-grammar:hsk2-together"
+     ],
+     "characters": [
+      "乐",
+      "妻",
+      "笑",
+      "姓",
+      "爷",
+      "丈",
+      "夫",
+      "自",
+      "己"
+     ],
+     "text": {
+      "title": "我的好朋友",
+      "body": "我的好朋友姓王，她是一个快乐的女孩儿，很爱笑。她的爷爷奶奶住在我家旁边，我们从小就认识。星期天我们经常一起玩。我们是好朋友，也像一家人。",
+      "translation": {
+       "en": "My good friend's surname is Wang. She's a cheerful girl who loves to laugh. Her grandparents live next door to us, and we've known each other since we were little. On Sundays we often play together. We're good friends, and we're like family too."
+      }
+     }
+    },
+    {
+     "id": "hsk2-home",
+     "title": {
+      "en": "Helping at home"
+     },
+     "topics": [
+      "home",
+      "actions"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-patient-subject",
+      "zh-grammar:hsk2-negative-bie",
+      "zh-grammar:hsk2-imperative-bi",
+      "zh-grammar:hsk2-fixed-phrases-shenme-de",
+      "zh-grammar:hsk2-other-phrases"
+     ],
+     "characters": [
+      "帮",
+      "等",
+      "就",
+      "楼",
+      "拿",
+      "让",
+      "情",
+      "送",
+      "完",
+      "准",
+      "备"
+     ],
+     "text": {
+      "title": "帮妈妈",
+      "body": "“妈妈，我可以帮忙吗？”\n“好啊。你帮我打开门吧，我拿着东西呢。”\n“还要我做什么？”\n“饭好了，你去洗手，准备吃饭吧。”\n“洗完了。我们等爸爸吗？”\n“等一下吧，他快要到门口了。”",
+      "translation": {
+       "en": "“Mum, can I help?”\n“Yes, please. Open the door for me; my hands are full.”\n“What else can I do?”\n“The food's ready. Go and wash your hands and get ready to eat.”\n“Done. Shall we wait for Dad?”\n“Let's wait a bit; he's almost at the door.”"
+      }
+     }
+    },
+    {
+     "id": "hsk2-eating-out",
+     "title": {
+      "en": "Eating and drinking"
+     },
+     "topics": [
+      "drink",
+      "food",
+      "health"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-degree-adverbs",
+      "zh-grammar:hsk2-haishi-ba",
+      "zh-grammar:hsk2-alternative-question",
+      "zh-grammar:hsk2-alternative-complex",
+      "zh-grammar:hsk2-numerals-extended"
+     ],
+     "characters": [
+      "馆",
+      "咖",
+      "啡",
+      "路",
+      "慢",
+      "每",
+      "肉",
+      "药",
+      "运"
+     ],
+     "text": {
+      "title": "在饭馆",
+      "body": "“你喝什么？咖啡还是茶？”\n“我不喝咖啡，我要一杯绿茶。你呢？”\n“我要奶茶。我们吃什么？”\n“这家饭馆的肉很好吃。”\n“我知道，但是我不能多吃肉。医生让我少吃肉，多吃菜，多运动。”\n“那我们还是吃菜吧。”",
+      "translation": {
+       "en": "“What will you drink? Coffee or tea?”\n“I don't drink coffee. I'd like a cup of green tea. And you?”\n“Milk tea for me. What shall we eat?”\n“The meat at this restaurant is really good.”\n“I know, but I can't eat much meat. My doctor told me to eat less meat, more vegetables, and get more exercise.”\n“Then we'd better have vegetable dishes.”"
+      }
+     },
+     "focus": "speaking"
+    },
+    {
+     "id": "hsk2-seasons",
+     "title": {
+      "en": "Weather and nature"
+     },
+     "topics": [
+      "weather",
+      "nature",
+      "animals",
+      "plants"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-modal-particles",
+      "zh-grammar:hsk2-nominal-predicate",
+      "zh-grammar:hsk2-subject-predicate-predicate",
+      "zh-grammar:hsk2-you-quantity",
+      "zh-grammar:hsk2-question-why",
+      "zh-grammar:hsk2-adversative-complex"
+     ],
+     "characters": [
+      "花",
+      "鸟",
+      "晴",
+      "虽",
+      "然",
+      "所",
+      "万",
+      "往",
+      "为",
+      "位",
+      "阴",
+      "鱼"
+     ],
+     "text": {
+      "title": "晴天",
+      "body": "今天是晴天，不冷也不热，所以我们出去看花。外面的花很多，很漂亮。树上有很多鸟，水里有鱼。虽然明天可能是阴天，但是我们还是想出去玩。",
+      "translation": {
+       "en": "Today is sunny, neither cold nor hot, so we're going out to look at the flowers. There are lots of flowers outside, and they're beautiful. There are many birds in the trees and fish in the water. Although it may be cloudy tomorrow, we still want to go out."
+      }
+     }
+    },
+    {
+     "id": "hsk2-travel",
+     "title": {
+      "en": "A trip"
+     },
+     "topics": [
+      "travel",
+      "festivals",
+      "geography"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-guo-experience",
+      "zh-grammar:hsk2-experiential-aspect",
+      "zh-grammar:hsk2-shi-de-emphasis",
+      "zh-grammar:hsk2-demonstratives-degree",
+      "zh-grammar:hsk2-attributives",
+      "zh-grammar:hsk2-yinwei"
+     ],
+     "characters": [
+      "票",
+      "酒",
+      "旅",
+      "因",
+      "泳",
+      "远"
+     ],
+     "text": {
+      "title": "第一次出国",
+      "body": "我还没有出过国。今年过年，我想出国旅游。我已经买了机票，也找好了酒店。酒店离海不远，我每天都可以去游泳。朋友说那儿很有意思。因为是第一次出国，我非常高兴。",
+      "translation": {
+       "en": "I've never been abroad. This Chinese New Year I'd like to travel abroad. I've already bought my plane ticket and found a hotel. The hotel isn't far from the sea, so I can go swimming every day. My friend says it's a really interesting place. Because it's my first trip abroad, I'm really happy."
+      }
+     }
+    },
+    {
+     "id": "hsk2-plans",
+     "title": {
+      "en": "Hopes and plans"
+     },
+     "topics": [
+      "thinking",
+      "work",
+      "communication",
+      "technology"
+     ],
+     "grammar": [
+      "zh-grammar:hsk2-connective-adverbs",
+      "zh-grammar:hsk2-modal-adverbs",
+      "zh-grammar:hsk2-clause-conjunctions",
+      "zh-grammar:hsk2-causal-complex",
+      "zh-grammar:hsk2-shi-explanation",
+      "zh-grammar:hsk2-modal-possibility"
+     ],
+     "characters": [
+      "懂",
+      "告",
+      "诉",
+      "记",
+      "介",
+      "绍",
+      "网",
+      "忘",
+      "希",
+      "望",
+      "走",
+      "足",
+      "最"
+     ],
+     "text": {
+      "title": "我的希望",
+      "body": "我希望明年去中国学习汉语。老师告诉我，在中国可以多说、多听，这样学汉语最快。我也想上网认识一些中国朋友，请他们给我介绍一下中国。我还记得第一次说汉语的时候，什么都听不懂。现在我懂得多了！",
+      "translation": {
+       "en": "I hope to go to China next year to study Chinese. My teacher told me that in China you can speak and listen a lot, and that this is the fastest way to learn Chinese. I'd also like to make some Chinese friends online and ask them to tell me about China. I still remember that the first time I spoke Chinese, I couldn't understand a thing. Now I understand much more!"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "hsk3",
+   "level": 3,
+   "title": {
+    "en": "≈ HSK 3"
+   },
+   "units": [
+    {
+     "id": "hsk3-daily-life",
+     "title": {
+      "en": "Daily life"
+     },
+     "topics": [
+      "routine",
+      "home"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-prefix-lao",
+      "zh-grammar:hsk3-suffixes-jia-zi-yuan",
+      "zh-grammar:hsk3-modal-verbs",
+      "zh-grammar:hsk3-separable-verbs",
+      "zh-grammar:hsk3-ba-bei-prepositions",
+      "zh-grammar:hsk3-ba-place-recipient"
+     ],
+     "characters": [
+      "把",
+      "搬",
+      "被",
+      "如",
+      "必",
+      "须",
+      "遍",
+      "冰",
+      "箱",
+      "层",
+      "扫",
+      "灯",
+      "梯",
+      "空",
+      "调",
+      "瓶",
+      "沙",
+      "发",
+      "活",
+      "刷",
+      "卫",
+      "屋",
+      "惯",
+      "澡",
+      "牙",
+      "脏"
+     ]
+    },
+    {
+     "id": "hsk3-people",
+     "title": {
+      "en": "People around me"
+     },
+     "topics": [
+      "people",
+      "relationships",
+      "family"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-question-zenyang",
+      "zh-grammar:hsk3-question-words-indefinite",
+      "zh-grammar:hsk3-bieren-zanmen",
+      "zh-grammar:hsk3-biede-qita",
+      "zh-grammar:hsk3-measure-words-objects"
+     ],
+     "characters": [
+      "阿",
+      "姨",
+      "助",
+      "久",
+      "心",
+      "结",
+      "婚",
+      "邻",
+      "居",
+      "叔",
+      "遇",
+      "员",
+      "照",
+      "顾"
+     ]
+    },
+    {
+     "id": "hsk3-feelings",
+     "title": {
+      "en": "Feelings"
+     },
+     "topics": [
+      "feelings",
+      "character"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-degree-adverbs-comparative",
+      "zh-grammar:hsk3-degree-adverbs-intensity"
+     ],
+     "characters": [
+      "矮",
+      "用",
+      "才",
+      "加",
+      "除",
+      "聪",
+      "带",
+      "担",
+      "放",
+      "感",
+      "害",
+      "怕",
+      "急",
+      "哭",
+      "满",
+      "难",
+      "轻",
+      "胖",
+      "瘦"
+     ]
+    },
+    {
+     "id": "hsk3-health",
+     "title": {
+      "en": "Health"
+     },
+     "topics": [
+      "health",
+      "body"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-scope-adverbs",
+      "zh-grammar:hsk3-time-adverbs",
+      "zh-grammar:hsk3-frequency-adverbs",
+      "zh-grammar:hsk3-yibian",
+      "zh-grammar:hsk3-modal-adverbs"
+     ],
+     "characters": [
+      "当",
+      "丢",
+      "饿",
+      "而",
+      "且",
+      "耳",
+      "朵",
+      "烧",
+      "该",
+      "冒",
+      "刚",
+      "检",
+      "查",
+      "健",
+      "康",
+      "脚",
+      "渴",
+      "脸",
+      "毛",
+      "声",
+      "音",
+      "腿",
+      "嘴"
+     ]
+    },
+    {
+     "id": "hsk3-cooking",
+     "title": {
+      "en": "Cooking and eating"
+     },
+     "topics": [
+      "food",
+      "drink"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-mood-adverbs",
+      "zh-grammar:hsk3-bubi-buyong",
+      "zh-grammar:hsk3-wei-xiang-guanyu"
+     ],
+     "characters": [
+      "饱",
+      "激",
+      "凌",
+      "单",
+      "尝",
+      "糕",
+      "方",
+      "根",
+      "据",
+      "更",
+      "斤",
+      "于",
+      "筷",
+      "矿",
+      "泉",
+      "盘",
+      "啤",
+      "勺",
+      "糖",
+      "甜",
+      "碗",
+      "瓜",
+      "香",
+      "蕉",
+      "鲜",
+      "饮",
+      "料"
+     ]
+    },
+    {
+     "id": "hsk3-shopping",
+     "title": {
+      "en": "Buying things"
+     },
+     "topics": [
+      "shopping",
+      "money",
+      "clothing"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-weile-wei",
+      "zh-grammar:hsk3-genju",
+      "zh-grammar:hsk3-huo-huozhe",
+      "zh-grammar:hsk3-measure-words-units",
+      "zh-grammar:hsk3-verbal-measures",
+      "zh-grammar:hsk3-measure-reduplication"
+     ],
+     "characters": [
+      "衬",
+      "衫",
+      "短",
+      "迎",
+      "换",
+      "黄",
+      "或",
+      "者",
+      "乎",
+      "极",
+      "坚",
+      "持",
+      "简",
+      "角",
+      "束",
+      "解",
+      "决",
+      "借",
+      "旧",
+      "定",
+      "卡",
+      "裙",
+      "鞋",
+      "信",
+      "共",
+      "银",
+      "行"
+     ]
+    },
+    {
+     "id": "hsk3-city",
+     "title": {
+      "en": "The city"
+     },
+     "topics": [
+      "city",
+      "position"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-zhiyou-zhiyao-ruguo",
+      "zh-grammar:hsk3-budan-erqie-keshi-ranhou",
+      "zh-grammar:hsk3-dehua",
+      "zh-grammar:hsk3-phrase-types-more",
+      "zh-grammar:hsk3-compass-directions",
+      "zh-grammar:hsk3-xiang-direction"
+     ],
+     "characters": [
+      "北",
+      "城",
+      "处",
+      "南",
+      "园",
+      "向",
+      "附",
+      "街",
+      "马",
+      "区",
+      "直"
+     ]
+    },
+    {
+     "id": "hsk3-travel",
+     "title": {
+      "en": "Travelling"
+     },
+     "topics": [
+      "travel",
+      "transport"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-bu-a-bu-b",
+      "zh-grammar:hsk3-fixed-phrases-time-degree",
+      "zh-grammar:hsk3-fixed-phrases-kan",
+      "zh-grammar:hsk3-fixed-formats-scope"
+     ],
+     "characters": [
+      "宾",
+      "船",
+      "图",
+      "假",
+      "护",
+      "刻",
+      "蓝",
+      "辆",
+      "拍",
+      "骑",
+      "汽",
+      "李"
+     ]
+    },
+    {
+     "id": "hsk3-school",
+     "title": {
+      "en": "School and study"
+     },
+     "topics": [
+      "school",
+      "language"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-fixed-formats-emphasis",
+      "zh-grammar:hsk3-fixed-formats-misc",
+      "zh-grammar:hsk3-phrase-subjects",
+      "zh-grammar:hsk3-multiple-attributives"
+     ],
+     "characters": [
+      "级",
+      "纸",
+      "成",
+      "绩",
+      "迟",
+      "初",
+      "典",
+      "段",
+      "复",
+      "板",
+      "句",
+      "历",
+      "史",
+      "练",
+      "留",
+      "努",
+      "力",
+      "铅",
+      "数",
+      "平"
+     ]
+    },
+    {
+     "id": "hsk3-work",
+     "title": {
+      "en": "At work"
+     },
+     "topics": [
+      "work",
+      "business"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-result-complements-2",
+      "zh-grammar:hsk3-directional-result",
+      "zh-grammar:hsk3-directional-start-continue",
+      "zh-grammar:hsk3-potential-complement"
+     ],
+     "characters": [
+      "办",
+      "展",
+      "务",
+      "干",
+      "议",
+      "理",
+      "其",
+      "实",
+      "奇",
+      "怪",
+      "清",
+      "楚",
+      "容",
+      "易",
+      "世",
+      "界",
+      "收",
+      "受"
+     ]
+    },
+    {
+     "id": "hsk3-sports",
+     "title": {
+      "en": "Sport and games"
+     },
+     "topics": [
+      "sports",
+      "hobbies"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-degree-complements",
+      "zh-grammar:hsk3-time-since-action",
+      "zh-grammar:hsk3-zenyang-questions",
+      "zh-grammar:hsk3-bushi-ma"
+     ],
+     "characters": [
+      "赛",
+      "参",
+      "锻",
+      "炼",
+      "爬",
+      "双",
+      "特",
+      "提",
+      "育",
+      "挺",
+      "突",
+      "相",
+      "需",
+      "选",
+      "择",
+      "页",
+      "般",
+      "羽"
+     ]
+    },
+    {
+     "id": "hsk3-nature",
+     "title": {
+      "en": "Nature"
+     },
+     "topics": [
+      "nature",
+      "weather",
+      "animals",
+      "plants"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-ba-complements",
+      "zh-grammar:hsk3-bei-passive",
+      "zh-grammar:hsk3-zhe-accompanying"
+     ],
+     "characters": [
+      "草",
+      "春",
+      "熊",
+      "冬",
+      "物",
+      "风",
+      "刮",
+      "海",
+      "河",
+      "环",
+      "境",
+      "季",
+      "节",
+      "凉",
+      "秋",
+      "伞",
+      "山",
+      "树",
+      "阳",
+      "夏",
+      "羊",
+      "养"
+     ]
+    },
+    {
+     "id": "hsk3-festivals",
+     "title": {
+      "en": "Festivals"
+     },
+     "topics": [
+      "festivals",
+      "culture",
+      "calendar"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-comparison-geng-bubi",
+      "zh-grammar:hsk3-comparison-yiyang-duo",
+      "zh-grammar:hsk3-existential-appear-vanish",
+      "zh-grammar:hsk3-shi-de-attitude"
+     ],
+     "characters": [
+      "礼",
+      "化",
+      "应",
+      "响",
+      "又",
+      "言",
+      "愿",
+      "末"
+     ]
+    },
+    {
+     "id": "hsk3-media",
+     "title": {
+      "en": "Phones and the internet"
+     },
+     "topics": [
+      "media",
+      "technology",
+      "communication"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-verb-copying",
+      "zh-grammar:hsk3-xian-zai-ranhou",
+      "zh-grammar:hsk3-huozhe-huozhe",
+      "zh-grammar:hsk3-you-you-yibian"
+     ],
+     "characters": [
+      "报",
+      "封",
+      "码",
+      "答",
+      "讲",
+      "接",
+      "目",
+      "聊",
+      "闻",
+      "求",
+      "邮",
+      "越",
+      "咱"
+     ]
+    },
+    {
+     "id": "hsk3-arts",
+     "title": {
+      "en": "Music and art"
+     },
+     "topics": [
+      "arts",
+      "hobbies"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-yihuir-yihuir",
+      "zh-grammar:hsk3-budan-erqie",
+      "zh-grammar:hsk3-suiran-keshi",
+      "zh-grammar:hsk3-ruguo-jiu"
+     ],
+     "characters": [
+      "演",
+      "趣",
+      "故",
+      "戏",
+      "张",
+      "片",
+      "终",
+      "种",
+      "重",
+      "主",
+      "注",
+      "总",
+      "业"
+     ]
+    },
+    {
+     "id": "hsk3-opinions",
+     "title": {
+      "en": "Opinions"
+     },
+     "topics": [
+      "thinking",
+      "qualities"
+     ],
+     "grammar": [
+      "zh-grammar:hsk3-zhiyou-zhiyao",
+      "zh-grammar:hsk3-weile-purpose",
+      "zh-grammar:hsk3-le-jiu-contracted",
+      "zh-grammar:hsk3-approx-numbers-2"
+     ],
+     "characters": [
+      "安",
+      "静",
+      "全",
+      "法",
+      "较",
+      "变",
+      "差",
+      "算",
+      "概",
+      "净",
+      "像",
+      "合",
+      "适"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hsk4",
+   "level": 4,
+   "title": {
+    "en": "≈ HSK 4"
+   },
+   "units": [
+    {
+     "id": "hsk4-life-changes",
+     "title": {
+      "en": "Changes in life"
+     },
+     "topics": [
+      "routine",
+      "time"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-time-adverbs-habit",
+      "zh-grammar:hsk4-time-adverbs-soon",
+      "zh-grammar:hsk4-frequency-adverbs"
+     ],
+     "characters": [
+      "按",
+      "断",
+      "此",
+      "赶",
+      "紧",
+      "程",
+      "忽",
+      "及",
+      "继",
+      "续",
+      "将",
+      "梦",
+      "秒",
+      "偶",
+      "尔",
+      "仍",
+      "散",
+      "纪",
+      "躺",
+      "醒",
+      "膏",
+      "夜"
+     ]
+    },
+    {
+     "id": "hsk4-family-life",
+     "title": {
+      "en": "Family life"
+     },
+     "topics": [
+      "family",
+      "relationships"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-measure-words-borrowed",
+      "zh-grammar:hsk4-verbal-measures",
+      "zh-grammar:hsk4-degree-adverbs"
+     ],
+     "characters": [
+      "背",
+      "并",
+      "管",
+      "光",
+      "仅",
+      "论",
+      "产",
+      "父",
+      "母",
+      "亲",
+      "互",
+      "入",
+      "庭",
+      "聚",
+      "浪",
+      "漫",
+      "陪",
+      "戚",
+      "孙",
+      "兄",
+      "邀",
+      "谊",
+      "约",
+      "支",
+      "尊"
+     ]
+    },
+    {
+     "id": "hsk4-character",
+     "title": {
+      "en": "Character"
+     },
+     "topics": [
+      "character",
+      "qualities"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-scope-adverbs"
+     ],
+     "characters": [
+      "棒",
+      "笨",
+      "标",
+      "功",
+      "诚",
+      "粗",
+      "误",
+      "低",
+      "式",
+      "丰",
+      "富",
+      "符",
+      "杂",
+      "键",
+      "羞",
+      "格",
+      "厚",
+      "泼",
+      "积",
+      "基",
+      "础",
+      "强",
+      "精",
+      "彩",
+      "速",
+      "困",
+      "懒",
+      "厉",
+      "流",
+      "乱",
+      "麻",
+      "烦",
+      "美",
+      "丽",
+      "耐"
+     ]
+    },
+    {
+     "id": "hsk4-emotions",
+     "title": {
+      "en": "Emotions"
+     },
+     "topics": [
+      "feelings"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-manner-adverbs",
+      "zh-grammar:hsk4-que",
+      "zh-grammar:hsk4-gan"
+     ],
+     "characters": [
+      "惊",
+      "达",
+      "待",
+      "戴",
+      "底",
+      "倒",
+      "掉",
+      "恼",
+      "松",
+      "敢",
+      "悔",
+      "骄",
+      "傲",
+      "惜",
+      "内",
+      "伤",
+      "失",
+      "讨",
+      "厌",
+      "无",
+      "羡",
+      "慕",
+      "奋",
+      "幸",
+      "福",
+      "压",
+      "愉"
+     ]
+    },
+    {
+     "id": "hsk4-health",
+     "title": {
+      "en": "A healthy life"
+     },
+     "topics": [
+      "health",
+      "body",
+      "sports"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-yexu-kongpa",
+      "zh-grammar:hsk4-mood-cai-jiu-bing-hai",
+      "zh-grammar:hsk4-mood-jingran-daodi"
+     ],
+     "characters": [
+      "鼻",
+      "败",
+      "针",
+      "肚",
+      "队",
+      "胳",
+      "膊",
+      "汗",
+      "获",
+      "奖",
+      "油",
+      "咳",
+      "嗽",
+      "排",
+      "皮",
+      "肤",
+      "乒",
+      "乓",
+      "迷",
+      "输",
+      "死",
+      "抬",
+      "温",
+      "痛",
+      "吸",
+      "血",
+      "烟",
+      "严",
+      "镜"
+     ]
+    },
+    {
+     "id": "hsk4-food-culture",
+     "title": {
+      "en": "Food culture"
+     },
+     "topics": [
+      "food",
+      "drink",
+      "culture"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-mood-zhenghao-qianwan",
+      "zh-grammar:hsk4-prep-zi-dang-suizhe",
+      "zh-grammar:hsk4-prep-jiang-you-jiao-rang"
+     ],
+     "characters": [
+      "饼",
+      "餐",
+      "厅",
+      "叶",
+      "刀",
+      "否",
+      "则",
+      "改",
+      "汁",
+      "烤",
+      "苦",
+      "辣",
+      "食",
+      "馒",
+      "葡",
+      "萄",
+      "巧",
+      "克",
+      "品",
+      "堂",
+      "熟",
+      "酸",
+      "汤",
+      "味",
+      "柿",
+      "咸",
+      "盐"
+     ]
+    },
+    {
+     "id": "hsk4-money",
+     "title": {
+      "en": "Money"
+     },
+     "topics": [
+      "money",
+      "shopping",
+      "business"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-youyu-prep",
+      "zh-grammar:hsk4-duiyu-yu",
+      "zh-grammar:hsk4-zuowei-anzhao"
+     ],
+     "characters": [
+      "存",
+      "折",
+      "袋",
+      "价",
+      "订",
+      "费",
+      "付",
+      "厂",
+      "购",
+      "货",
+      "取",
+      "即",
+      "使",
+      "金",
+      "降",
+      "账",
+      "济",
+      "竞",
+      "争",
+      "递",
+      "免",
+      "牌",
+      "省",
+      "值",
+      "质",
+      "量",
+      "赚"
+     ]
+    },
+    {
+     "id": "hsk4-housing",
+     "title": {
+      "en": "Housing"
+     },
+     "topics": [
+      "home",
+      "city"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-conj-bing-er-yu",
+      "zh-grammar:hsk4-conj-clauses-ciwai",
+      "zh-grammar:hsk4-conj-clauses-bujin"
+     ],
+     "characters": [
+      "擦",
+      "厕",
+      "厨",
+      "窗",
+      "户",
+      "村",
+      "址",
+      "盒",
+      "既",
+      "具",
+      "乡",
+      "减",
+      "落",
+      "郊",
+      "垃",
+      "圾",
+      "巾",
+      "农",
+      "桥",
+      "闹",
+      "拾",
+      "塑",
+      "停",
+      "桶",
+      "修",
+      "钥",
+      "匙",
+      "整"
+     ]
+    },
+    {
+     "id": "hsk4-journeys",
+     "title": {
+      "en": "Journeys"
+     },
+     "topics": [
+      "travel",
+      "transport",
+      "geography"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-particles-deng-zhe-zhi",
+      "zh-grammar:hsk4-interjections-a-ng",
+      "zh-grammar:hsk4-num-adj-measure"
+     ],
+     "characters": [
+      "部",
+      "观",
+      "乘",
+      "巴",
+      "导",
+      "登",
+      "堵",
+      "度",
+      "景",
+      "各",
+      "籍",
+      "际",
+      "航",
+      "警",
+      "通",
+      "签",
+      "证",
+      "份",
+      "首",
+      "售"
+     ]
+    },
+    {
+     "id": "hsk4-study",
+     "title": {
+      "en": "Learning"
+     },
+     "topics": [
+      "school",
+      "language"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-four-char-frames",
+      "zh-grammar:hsk4-fixed-phrases",
+      "zh-grammar:hsk4-frames-degree-scope"
+     ],
+     "characters": [
+      "科",
+      "毕",
+      "博",
+      "操",
+      "案",
+      "翻",
+      "译",
+      "寒",
+      "授",
+      "例",
+      "利",
+      "普",
+      "暑",
+      "硕",
+      "填",
+      "章",
+      "组",
+      "研",
+      "究"
+     ]
+    },
+    {
+     "id": "hsk4-career",
+     "title": {
+      "en": "Careers"
+     },
+     "topics": [
+      "work",
+      "business"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-frames-emphatic",
+      "zh-grammar:hsk4-frames-acceptance",
+      "zh-grammar:hsk4-frames-colloquial"
+     ],
+     "characters": [
+      "材",
+      "负",
+      "责",
+      "印",
+      "资",
+      "尽",
+      "竟",
+      "任",
+      "申",
+      "傅",
+      "供",
+      "推",
+      "辛",
+      "聘",
+      "增",
+      "招",
+      "职",
+      "专"
+     ]
+    },
+    {
+     "id": "hsk4-communication",
+     "title": {
+      "en": "Communication"
+     },
+     "topics": [
+      "communication",
+      "media"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-degree-sile-lihai",
+      "zh-grammar:hsk4-potential-liao",
+      "zh-grammar:hsk4-rhetorical-nandao"
+     ],
+     "characters": [
+      "保",
+      "示",
+      "扬",
+      "鼓",
+      "励",
+      "挂",
+      "广",
+      "播",
+      "喊",
+      "寄",
+      "建",
+      "释",
+      "举",
+      "拒",
+      "绝",
+      "拉",
+      "连",
+      "联",
+      "另",
+      "嗯",
+      "批",
+      "评",
+      "谈",
+      "消",
+      "指",
+      "转"
+     ]
+    },
+    {
+     "id": "hsk4-technology",
+     "title": {
+      "en": "Technology"
+     },
+     "topics": [
+      "technology",
+      "science"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-rhetorical-wh",
+      "zh-grammar:hsk4-ba-reduplicated-le",
+      "zh-grammar:hsk4-ba-measure-adverbial"
+     ],
+     "characters": [
+      "技",
+      "术",
+      "帽",
+      "密",
+      "性",
+      "够",
+      "弄",
+      "脾",
+      "破",
+      "敲",
+      "况",
+      "缺",
+      "却",
+      "扔",
+      "稍",
+      "微",
+      "深",
+      "甚",
+      "至",
+      "命",
+      "线"
+     ]
+    },
+    {
+     "id": "hsk4-environment",
+     "title": {
+      "en": "The environment"
+     },
+     "topics": [
+      "nature",
+      "weather",
+      "plants",
+      "animals"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-passive-jiao-rang",
+      "zh-grammar:hsk4-pivot-praise-choose",
+      "zh-grammar:hsk4-pivot-causative"
+     ],
+     "characters": [
+      "吹",
+      "洋",
+      "江",
+      "虎",
+      "暖",
+      "森",
+      "林",
+      "摄",
+      "氏",
+      "帅",
+      "顺",
+      "随",
+      "态",
+      "趟",
+      "土",
+      "污",
+      "染",
+      "云",
+      "植"
+     ]
+    },
+    {
+     "id": "hsk4-arts",
+     "title": {
+      "en": "Arts and entertainment"
+     },
+     "topics": [
+      "arts",
+      "hobbies",
+      "media"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-comparison-buru",
+      "zh-grammar:hsk4-double-negation",
+      "zh-grammar:hsk4-coordinate-clauses"
+     ],
+     "characters": [
+      "剧",
+      "钢",
+      "琴",
+      "众",
+      "逛",
+      "京",
+      "频",
+      "弹",
+      "止",
+      "脱",
+      "袜",
+      "套",
+      "细",
+      "艺",
+      "赢",
+      "志"
+     ]
+    },
+    {
+     "id": "hsk4-society",
+     "title": {
+      "en": "Society and rules"
+     },
+     "topics": [
+      "society",
+      "law"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-sequence-clauses",
+      "zh-grammar:hsk4-progressive-bujin",
+      "zh-grammar:hsk4-progressive-shenzhi-lian"
+     ],
+     "characters": [
+      "律",
+      "规",
+      "禁",
+      "察",
+      "民",
+      "族",
+      "社",
+      "危",
+      "险",
+      "反",
+      "详",
+      "项",
+      "效",
+      "许",
+      "亚",
+      "洲",
+      "切",
+      "引",
+      "永",
+      "勇",
+      "优",
+      "秀",
+      "幽",
+      "默",
+      "尤",
+      "由",
+      "允"
+     ]
+    },
+    {
+     "id": "hsk4-numbers",
+     "title": {
+      "en": "Numbers and measures"
+     },
+     "topics": [
+      "numbers",
+      "measures"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-measure-words-special",
+      "zh-grammar:hsk4-approx-numbers",
+      "zh-grammar:hsk4-decimals-fractions"
+     ],
+     "characters": [
+      "倍",
+      "顿",
+      "幅",
+      "距",
+      "棵",
+      "俩",
+      "列",
+      "篇",
+      "何",
+      "剩",
+      "序",
+      "台"
+     ]
+    },
+    {
+     "id": "hsk4-thinking",
+     "title": {
+      "en": "Thinking it through"
+     },
+     "topics": [
+      "thinking"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-condition-buguan-wulun",
+      "zh-grammar:hsk4-cause-jiran-yinci",
+      "zh-grammar:hsk4-purpose-hao",
+      "zh-grammar:hsk4-choice-bushi-jiushi",
+      "zh-grammar:hsk4-adversative-clauses",
+      "zh-grammar:hsk4-conditional-yaoshi-fouze"
+     ],
+     "characters": [
+      "猜",
+      "弃",
+      "估",
+      "计",
+      "怀",
+      "疑",
+      "忆",
+      "划",
+      "验",
+      "虑",
+      "肯",
+      "恐",
+      "判",
+      "确",
+      "悉",
+      "象",
+      "原"
+     ]
+    },
+    {
+     "id": "hsk4-traditions",
+     "title": {
+      "en": "Traditions"
+     },
+     "topics": [
+      "festivals",
+      "culture",
+      "calendar"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-concession-jishi-jiushi",
+      "zh-grammar:hsk4-contracted-sentences"
+     ],
+     "characters": [
+      "庆",
+      "祝",
+      "与",
+      "预",
+      "阅",
+      "暂",
+      "晨",
+      "之"
+     ]
+    },
+    {
+     "id": "hsk4-people",
+     "title": {
+      "en": "Meeting people"
+     },
+     "topics": [
+      "people",
+      "greetings",
+      "relationships"
+     ],
+     "grammar": [
+      "zh-grammar:hsk4-ge-renhe"
+     ],
+     "characters": [
+      "抱",
+      "歉",
+      "扰",
+      "呼",
+      "童",
+      "姑",
+      "娘",
+      "貌",
+      "龄",
+      "青",
+      "伙",
+      "谅",
+      "围",
+      "贺",
+      "著",
+      "装",
+      "仔",
+      "座"
+     ]
+    }
+   ]
+  }
+ ]
+}

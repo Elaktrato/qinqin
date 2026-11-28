@@ -1,0 +1,11 @@
+{
+  "id": "ja-course",
+  "name": "Japanese course (≈ JLPT N5–N3)",
+  "version": "1.0",
+  "type": "course",
+  "language": "ja",
+  "license": "CC-BY-4.0",
+  "attribution": "Japanese course (≈ JLPT N5–N3): a course skeleton and reading texts written for qinqin; qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin). The selection and order of units, themes, grammar placement and characters are qinqin's own. The words of each unit are not part of this pack: the server fills them from the installed jlpt-words level list. Reviewed by agents acting as native-speaker teachers, not yet by a person (REVIEW.md).",
+  "format": "course-json",
+  "notice": "Japanese course (≈ JLPT N5–N3), written for qinqin and released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Credit: qinqin contributors, CC BY 4.0, [the qinqin repository](https://github.com/Elaktrato/qinqin).\n\nThe course holds the skeleton (sections, units, themes, the placement of the ja-grammar lessons, the characters each unit introduces, checkpoints) and the reading texts with their translations. It contains no level-list words: each server fills the units from its installed `jlpt-words` level list, so the words follow that list's licence. The levels are qinqin's estimates (\"≈ N5\" to \"≈ N3\"), not official levels; the order is qinqin's own, not taken from a textbook or syllabus.\n\nThe texts and the skeleton were reviewed by agents acting as native-speaker teachers, not yet by a person; corrections are welcome."
+}
