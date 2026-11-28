@@ -118,7 +118,7 @@ type starterEntryBody struct {
 // docs/contracts/senses: never a folded slang or vulgar line), "" without
 // one.
 func firstGloss(e lexicon.Entry) string {
-	return lexicon.DisplayGloss(e.Senses)
+	return lexicon.DisplayGloss(e.Senses, "")
 }
 
 // handleFrequencyTop serves GET /api/frequency-packs/{id}/top?size=: the

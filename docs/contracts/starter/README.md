@@ -85,12 +85,14 @@ client shows the word count and that review state next to "Add the Starter words
 - `GET /api/starter-sets` (public, not access tokens): `[{id, language, name, license, attribution, wordCount,
   humanReviewed}]`.
 - `GET /api/starter-sets/{id}` (signed-in users, not access tokens): `{id, language, name, license, attribution,
-  humanReviewed, entries: [...]}`, each entry the base fields of `GET /api/schemes/{id}/entries` plus `gloss` (the first
-  gloss of the first sense) and `pictureConcept`, in the set's order, `written` as the set lists it (a kana row stays
+  humanReviewed, entries: [...]}`, each entry the base fields of `GET /api/schemes/{id}/entries` plus `reading` (the
+  word's pinned reading as the set lists it, `""` without one), `gloss` (the entry's one gloss for that reading, the
+  sense display rule of `senses/`) and `pictureConcept`, in the set's order, `written` as the set lists it (a kana row stays
   kana). 404 `not_found` for an unknown set.
 
 A client copies the entries into the deck `d-starter-<profile>` with the ordinary add-to-deck rule
-(`decks/add-to-deck.json`): a plain deck (no `source`), new cards created in the set's order, a word that already has a
+(`decks/add-to-deck.json`; a new card of an entry with a `reading` stores it as the card row's `extra.reading`, so its
+back shows only that reading's meanings, `senses/README.md`): a plain deck (no `source`), new cards created in the set's order, a word that already has a
 card joins the deck with its history, words marked known are left out, a second run adds nothing. A character entry is
 added with `entryKind: "character"`. The pictures are fetched per entry (`GET /api/images/entries/{id}`, #216); where
 no images pack is installed the cards are Starter cards without pictures.

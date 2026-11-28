@@ -390,12 +390,15 @@ export function cardOf(r: CardBody): StudyCard {
 	if (r.entryKind === 'character') card.entryKind = 'character';
 	if (r.sentenceId !== null) card.sentenceId = r.sentenceId;
 	if (r.kind === 'vocab' && r.skipKinds.length > 0) card.skipKinds = [...r.skipKinds];
+	// The pinned reading (#346) is a member of extra, not a typed one.
+	const reading = r.extra.reading;
+	if (typeof reading === 'string' && reading !== '') card.reading = reading;
 	// Key order as the legacy rows had it (tests compare objects).
 	return orderCard(card);
 }
 
 function orderCard(card: StudyCard): StudyCard {
-	const { id, kind, entryId, written, entryKind, sentenceId, skipKinds, deckIds, createdAt } = card;
+	const { id, kind, entryId, written, entryKind, sentenceId, skipKinds, deckIds, createdAt, reading } = card;
 	return {
 		id,
 		kind,
@@ -405,11 +408,12 @@ function orderCard(card: StudyCard): StudyCard {
 		...(sentenceId === undefined ? {} : { sentenceId }),
 		...(skipKinds === undefined ? {} : { skipKinds }),
 		deckIds,
-		createdAt
+		createdAt,
+		...(reading === undefined ? {} : { reading })
 	};
 }
 
-/** cardRow: the typed body of a study card; `extra` is the stored row's, echoed back. */
+/** cardRow: the typed body of a study card; `extra` is the stored row's, echoed back (with the card's pinned reading). */
 export function cardRow(c: StudyCard, extra: Extra = {}): CardBody {
 	const skipKinds = c.kind === 'vocab' ? cleanSkipKinds(c.skipKinds ?? []) : [];
 	const body: CardBody = {
@@ -424,7 +428,8 @@ export function cardRow(c: StudyCard, extra: Extra = {}): CardBody {
 		createdAt: c.createdAt,
 		extra: {}
 	};
-	body.extra = withoutShadowed('cards', { ...body, extra });
+	const kept = c.reading === undefined ? extra : { ...extra, reading: c.reading };
+	body.extra = withoutShadowed('cards', { ...body, extra: kept });
 	return body;
 }
 

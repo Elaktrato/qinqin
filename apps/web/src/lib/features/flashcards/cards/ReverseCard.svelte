@@ -39,11 +39,12 @@
 		audio?: CardAudio;
 	}
 
-	let { entry, revealed, language, onDone, audio }: Props = $props();
+	let { item, entry, revealed, language, onDone, audio }: Props = $props();
 	const roman = useRomanisation();
 
-	const front = $derived(buildReverseFront(entry));
-	const faces = $derived(buildVocabFaces(entry, null, language).back);
+	// A card pinned to a reading (#346) shows only that reading's meanings.
+	const front = $derived(buildReverseFront(entry, item.card?.reading));
+	const faces = $derived(buildVocabFaces(entry, null, language, item.card?.reading).back);
 	const accepted = $derived(acceptedReverseAnswers(entry));
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 

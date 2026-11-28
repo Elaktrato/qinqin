@@ -196,3 +196,32 @@ describe('VocabCard folds slang and vulgar glosses', () => {
 		expect(document.activeElement?.textContent).toContain('(slang) prostitute');
 	});
 });
+
+// #346: a card pinned to a reading (a Starter word's) shows only that reading's meanings on its back.
+describe('VocabCard pinned to a reading', () => {
+	const he = kanji({
+		language: 'zh',
+		written: '喝',
+		readings: [
+			{ type: 'pinyin', value: 'hē', plain: 'he', ord: 0 },
+			{ type: 'pinyin', value: 'hè', plain: 'he', ord: 1 }
+		],
+		sentences: [],
+		senseGroups: [
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', packId: 'c', license: 'x', attribution: 'x', pos: [], tags: ['reading:hē'], glosses: ['to drink'], xrefs: [] },
+			{ dictionaryId: 1, dictionaryName: 'CC-CEDICT', packId: 'c', license: 'x', attribution: 'x', pos: [], tags: ['reading:hè'], glosses: ['to shout'], xrefs: [] }
+		]
+	});
+	const card = { id: 'c-vocab-11', kind: 'vocab' as const, entryId: 11, deckIds: ['d-starter-zh'], createdAt: '2026-11-01T00:00:00Z', reading: 'hē' };
+
+	it('leaves the other reading out', () => {
+		renderCard({ item: { ...item, virtual: false, card }, entry: he, revealed: true, onDone: vi.fn() });
+		expect(screen.getByText('to drink')).toBeTruthy();
+		expect(screen.queryByText('to shout')).toBeNull();
+	});
+
+	it('shows every reading without a pin', () => {
+		renderCard({ item: { ...item, virtual: false, card: { ...card, reading: undefined } }, entry: he, revealed: true, onDone: vi.fn() });
+		expect(screen.getByText('to shout')).toBeTruthy();
+	});
+});

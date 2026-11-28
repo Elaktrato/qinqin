@@ -150,6 +150,17 @@ describe('typed rows <-> study shapes', () => {
 		expect(cardRow(bare, { color: 'red' })).toMatchObject({ written: null, sentenceId: null, extra: { color: 'red' } });
 	});
 
+	it('a pinned reading lives in extra.reading (#346, docs/contracts/senses)', () => {
+		const base = cardOf(parseRow('cards', (rowsFixture.cases as RowsCase[])[0].row) as CardRow);
+		const pinned = cardOf({ ...cardRow(base), extra: { reading: 'māo', color: 'red' } });
+		expect(pinned.reading).toBe('māo');
+		expect(cardRow(pinned, { reading: 'máo', color: 'red' }).extra).toEqual({ reading: 'māo', color: 'red' });
+		expect(cardOf({ ...cardRow(base), extra: { reading: 3 } }).reading).toBeUndefined();
+		expect(cardOf({ ...cardRow(base), extra: { reading: '' } }).reading).toBeUndefined();
+		expect('reading' in cardOf(cardRow(base))).toBe(false);
+		expect(cardRow(base, { reading: 'shé' }).extra).toEqual({ reading: 'shé' });
+	});
+
 	it('extra passes through unchanged', () => {
 		const withExtra = (rowsFixture.cases as RowsCase[]).find((c) => c.name.startsWith('extra members'))!;
 		const row = parseRow('cards', withExtra.row) as CardRow;

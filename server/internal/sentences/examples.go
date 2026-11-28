@@ -106,7 +106,7 @@ func RequestFor(e lexicon.Entry, existing []model.Sentence, level string, exact 
 	}
 	// The glosses in display order, folded slang and vulgar lines left out
 	// (docs/contracts/senses).
-	for _, u := range lexicon.DisplaySenses(e.Senses) {
+	for _, u := range lexicon.DisplaySenses(e.Senses, "") {
 		for _, g := range u.Glosses {
 			if !u.Folded && len(r.Glosses) < ai.MaxExampleGlosses {
 				r.Glosses = append(r.Glosses, g)

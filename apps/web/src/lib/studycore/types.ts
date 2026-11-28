@@ -102,6 +102,12 @@ export interface StudyCard {
 	skipKinds?: StudyCardKind[];
 	deckIds: string[];
 	createdAt: string;
+	/**
+	 * The reading the card is pinned to (#346): its back shows only that
+	 * reading's meanings (docs/contracts/senses). Stored as the row's
+	 * `extra.reading`; set when the Starter words are added.
+	 */
+	reading?: string;
 }
 
 /** The parsed `limits:*` rows of one workspace. */

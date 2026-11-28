@@ -201,6 +201,10 @@ describe('senseChips', () => {
 		expect(senseChips(sense({ pos: ['vs-i', 'vt'], tags: ['uk', 'col'] }))).toEqual(['vs-i', 'vt', 'col']);
 	});
 
+	it('leaves out reading tags (#346)', () => {
+		expect(senseChips(sense({ pos: ['n'], tags: ['reading:hē', 'col'] }))).toEqual(['n', 'col']);
+	});
+
 	it('leaves out the tags a mark chip says (#345)', () => {
 		expect(senseChips(sense({ pos: ['n'], tags: ['sl', 'uk', 'derog', 'vulg', 'net-sl', 'm-sl', 'arch'] }))).toEqual(['n', 'arch']);
 	});

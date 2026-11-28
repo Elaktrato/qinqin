@@ -83,7 +83,7 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 func firstGlosses(e lexicon.Entry) []searchGloss {
 	out := make([]searchGloss, 0, 3)
 	seen := map[int64]bool{}
-	for _, u := range lexicon.DisplaySenses(e.Senses) {
+	for _, u := range lexicon.DisplaySenses(e.Senses, "") {
 		id := e.Senses[u.Sense].DictionaryID
 		if len(out) == 3 {
 			break

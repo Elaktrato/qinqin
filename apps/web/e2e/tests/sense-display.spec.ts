@@ -70,3 +70,35 @@ test('the word page shows every meaning, the slang one last and marked', async (
 	await expect(items).toHaveText(['chicken', 'fowl', `vulgar${SLANG}`]);
 	await expectNoSidewaysScroll(page, 'word page');
 });
+
+// #346: the Starter words keep their pinned readings. 喝 is pinned to hē: its card back says "to drink", never "to
+// shout" (hè); 三's surname line comes after "three" on its card.
+test('a Starter word shows only its pinned reading, surname lines last', async ({ page, learner }) => {
+	await useWorkspace(page, learner, 'zh');
+	await page.goto('/settings?tab=study');
+	const add = page.getByTestId('starter-add');
+	await add.getByRole('button', { name: 'Add the Starter words to my decks' }).click();
+	await expect(add.getByRole('status')).toContainText(/Added \d+ Starter words?\./);
+
+	// The copy's deck page studies that deck.
+	await add.getByRole('link', { name: 'Open my copy' }).click();
+	await page.getByRole('button', { name: 'Study', exact: true }).click();
+	await expect(page).toHaveURL(/\/study\/session$/);
+	const seen: string[] = [];
+	for (let i = 0; i < 6 && seen.length < 2; i++) {
+		await page.getByRole('button', { name: 'Show answer' }).click();
+		const answer = page.getByRole('region', { name: 'Answer' });
+		await expect(answer).toBeVisible();
+		const text = await answer.innerText();
+		if (text.includes('to drink')) {
+			expect(text).not.toContain('to shout');
+			seen.push('喝');
+		} else if (text.includes('three')) {
+			expect(text.indexOf('three')).toBeLessThan(text.indexOf('surname San'));
+			seen.push('三');
+		}
+		await expectNoSidewaysScroll(page, 'Starter card back');
+		await page.getByRole('button', { name: /^Good\b/ }).click();
+	}
+	expect(seen.sort()).toEqual(['三', '喝']);
+});

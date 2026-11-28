@@ -57,6 +57,14 @@ describe('buildReverseFront', () => {
 		expect(buildReverseFront(entry({ senses: [sense('(slang) prostitute'), sense('fowl')] }))).toEqual({ pos: [], glosses: ['fowl'] });
 	});
 
+	it('prompts with the pinned reading\'s first meaning (#346)', () => {
+		const groups = [
+			{ pos: [], tags: ['reading:hē'], glosses: ['to drink'] },
+			{ pos: [], tags: ['reading:hè'], glosses: ['to shout'] }
+		] as unknown as Entry['senseGroups'];
+		expect(buildReverseFront(entry({ senseGroups: groups }), 'hè')).toEqual({ pos: [], glosses: ['to shout'] });
+	});
+
 	it('never contains the written form', () => {
 		const front = buildReverseFront(entry());
 		expect(JSON.stringify(front)).not.toContain('喜欢');

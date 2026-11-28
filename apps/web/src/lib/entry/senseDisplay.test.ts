@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/senses/display.json';
-import { EXPLICIT_WORDS, VULGAR_CHARACTERS, displayGloss, displaySenses, type SenseUnit } from './senseDisplay';
+import {
+	EXPLICIT_WORDS,
+	MINOR_PREFIXES,
+	MINOR_TAGS,
+	VULGAR_CHARACTERS,
+	displayGloss,
+	displaySenses,
+	type SenseUnit
+} from './senseDisplay';
 
 describe('displaySenses (senses/display.json)', () => {
 	it('is the sense display rule', () => {
@@ -8,11 +16,14 @@ describe('displaySenses (senses/display.json)', () => {
 		expect(fixture.cases.length).toBeGreaterThanOrEqual(15);
 		expect([...EXPLICIT_WORDS]).toEqual(fixture.explicitWords);
 		expect([...VULGAR_CHARACTERS]).toEqual(fixture.vulgarCharacters);
+		expect([...MINOR_PREFIXES]).toEqual(fixture.minorPrefixes);
+		expect([...MINOR_TAGS]).toEqual(fixture.minorTags);
 	});
 
 	it.each(fixture.cases)('$name', (c) => {
-		expect(displaySenses(c.senses)).toEqual(c.units as SenseUnit[]);
-		expect(displayGloss(c.senses)).toBe(c.gloss);
+		const pinned = 'pinned' in c ? (c.pinned as string) : undefined;
+		expect(displaySenses(c.senses, pinned)).toEqual(c.units as SenseUnit[]);
+		expect(displayGloss(c.senses, pinned)).toBe(c.gloss);
 	});
 
 	it('reads missing tags as none', () => {
