@@ -60,6 +60,8 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		`/search?q=${encodeURIComponent('学校')}`,
 		`/entry/${entry}`,
 		'/lookups',
+		'/notebook',
+		'/notebook/practise',
 		'/journal',
 		'/grammar',
 		'/grammar/review',
@@ -101,6 +103,22 @@ test('the tone-pair drill fits a 360 px phone (#180)', async ({ page, learner })
 		]
 	});
 	for (const path of ['/practice', '/practice/tone-pairs', '/practice/tone-pairs/weakest']) await check(page, path);
+});
+
+test('the mistake notebook with items fits a 360 px phone (#227)', async ({ page, learner }) => {
+	await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.zh);
+	await addCards(learner, 'zh', [{ kind: 'vocab', written: '你好', reviewedDaysAgo: 2 }]);
+	const entry = await learner.entryId('zh', '你好');
+	const now = Date.now();
+	const event = (n: number, type: string, payload: unknown) => ({ id: ulid(now - n), workspaceId: learner.workspaces.zh, device: 'web', ts: new Date(now - n).toISOString(), type, payload });
+	await learner.api.post('/api/events/batch', {
+		events: [
+			event(3000, 'review', { cardId: `c-vocab-${entry}`, mode: 'vocab', grade: 1 }),
+			event(2000, 'drill.tone-pairs', { item: '2-2', mode: 'mark', grade: 1 }),
+			event(1000, 'grammar', { point: `e2e:${LONG}`, mode: 'lesson', score: 1, total: 10 })
+		]
+	});
+	for (const path of ['/notebook', '/notebook/practise']) await check(page, path);
 });
 
 test.describe('signed out', () => {
