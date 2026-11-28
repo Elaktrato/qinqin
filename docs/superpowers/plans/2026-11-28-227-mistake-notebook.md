@@ -155,3 +155,17 @@ the links; `fix(studycore)` sent marks remembered; `test(e2e)`; `docs(notebook)`
   test with a card, a tone pair and a grammar point whose lesson id is 120 characters without a space.
 
 Not verified here: the Android shell (no SDK, Local follow-up), a hand check on a phone.
+
+The full vitest run found two route guards the targeted runs missed (`routeTitles.test.ts`, `pageFrame.test.ts`: a
+route sets its own document title, a path without a section has a phone title); fixed in
+`fix(notebook): the notebook's routes have a document and a phone title`.
+
+## Gates (final state)
+
+- Go `gofmt -l .` empty; `go vet ./...` clean; `go test -count=1 -p 2 ./...` (cmd/qinqin included, `ok 32.5s`): every
+  package ok except the known environment-only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6).
+- `npm run check`: 0 errors, 0 warnings (2210 files). `npm run build`: ok.
+- Full vitest: 797 files passed, 1 skipped; 15 982 tests passed, 3 skipped.
+- Full e2e: 83 passed.
+- `node --test scripts/*.test.mjs`: 244 tests, 243 pass, 1 skipped. `node scripts/gen-api-docs.mjs --check`: ok (no
+  new route).
