@@ -74,3 +74,11 @@ export function coursePayload(p: CoursePayload): CoursePayload {
 export function drillPayload(item: string, mode: string, grade: 1 | 2 | 3 | 4): { item: string; mode: string; grade: 1 | 2 | 3 | 4 } {
 	return { item, mode, grade };
 }
+
+/** The members of a `notebook` mark (#227, docs/contracts/notebook/): a removal by hand of one item, or a clear. */
+export type NotebookPayload = { action: 'remove'; item: string } | { action: 'clear' };
+
+/** `notebook`: a mark of the mistake notebook; the members come out in the contract's order (notebook.json `build`). */
+export function notebookPayload(p: NotebookPayload): NotebookPayload {
+	return p.action === 'remove' ? { action: p.action, item: p.item } : { action: p.action };
+}

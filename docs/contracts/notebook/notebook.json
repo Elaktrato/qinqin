@@ -1,0 +1,2150 @@
+{
+ "version": 1,
+ "rule": "notebook/notebook",
+ "note": "The mistake notebook (#227): what each study event says about an item (outcomes), the notebook replayed from the outcomes and the marks (notebook), the mark events (build, parse). Each case's events are one user's log; read workspace 1 through the study history (historyOf). Hand-written from the README.",
+ "constants": {
+  "eventType": "notebook",
+  "leaveAfter": 3,
+  "passPercent": 80,
+  "maxItemLength": 400,
+  "groups": [
+   "words",
+   "characters",
+   "tones",
+   "grammar",
+   "course"
+  ],
+  "drillGroups": {
+   "tone-pairs": "tones",
+   "conjugation": "grammar",
+   "measure-words": "words",
+   "counters": "words",
+   "counter-readings": "words",
+   "look-alikes": "characters"
+  },
+  "defaultDrillGroup": "words"
+ },
+ "cards": [
+  {
+   "id": "c-vocab-1",
+   "kind": "vocab",
+   "entryId": 1,
+   "deckIds": [
+    "general"
+   ],
+   "createdAt": "2026-11-01T00:00:00Z"
+  },
+  {
+   "id": "c-writing-2",
+   "kind": "writing",
+   "entryId": 2,
+   "deckIds": [
+    "general"
+   ],
+   "createdAt": "2026-11-01T00:00:00Z"
+  },
+  {
+   "id": "c-tone-3",
+   "kind": "tone",
+   "entryId": 3,
+   "deckIds": [
+    "general"
+   ],
+   "createdAt": "2026-11-01T00:00:00Z"
+  },
+  {
+   "id": "c-vocab-4",
+   "kind": "vocab",
+   "entryId": 4,
+   "deckIds": [
+    "general"
+   ],
+   "createdAt": "2026-11-01T00:00:00Z",
+   "entryKind": "character"
+  },
+  {
+   "id": "c-cloze-5",
+   "kind": "cloze",
+   "entryId": 5,
+   "deckIds": [
+    "general"
+   ],
+   "createdAt": "2026-11-01T00:00:00Z"
+  }
+ ],
+ "build": [
+  {
+   "name": "a removal by hand",
+   "input": {
+    "action": "remove",
+    "item": "grammar:hsk1:shi"
+   },
+   "payload": {
+    "action": "remove",
+    "item": "grammar:hsk1:shi"
+   }
+  },
+  {
+   "name": "a clear",
+   "input": {
+    "action": "clear"
+   },
+   "payload": {
+    "action": "clear"
+   }
+  }
+ ],
+ "parse": [
+  {
+   "name": "a removal",
+   "event": {
+    "id": "01KA0000000000000000000301",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:00:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "card:c-vocab-1"
+    }
+   },
+   "mark": {
+    "action": "remove",
+    "item": "card:c-vocab-1"
+   }
+  },
+  {
+   "name": "a clear",
+   "event": {
+    "id": "01KA0000000000000000000302",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:01:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "clear"
+    }
+   },
+   "mark": {
+    "action": "clear"
+   }
+  },
+  {
+   "name": "a clear ignores other members",
+   "event": {
+    "id": "01KA0000000000000000000303",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:02:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "clear",
+     "item": "card:c-vocab-1"
+    }
+   },
+   "mark": {
+    "action": "clear"
+   }
+  },
+  {
+   "name": "a removal keeps a drill item with a colon and Han characters",
+   "event": {
+    "id": "01KA0000000000000000000304",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:03:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "drill.look-alikes:未末"
+    }
+   },
+   "mark": {
+    "action": "remove",
+    "item": "drill.look-alikes:未末"
+   }
+  },
+  {
+   "name": "a removal without an item",
+   "event": {
+    "id": "01KA0000000000000000000305",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:04:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an empty item",
+   "event": {
+    "id": "01KA0000000000000000000306",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:05:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": ""
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an item with a space",
+   "event": {
+    "id": "01KA0000000000000000000307",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:06:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "card:c vocab"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an item with an ideographic space",
+   "event": {
+    "id": "01KA0000000000000000000308",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:07:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "drill.look-alikes:未　末"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an item that is not a string",
+   "event": {
+    "id": "01KA0000000000000000000309",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:08:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": 7
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an item of 400 code points",
+   "event": {
+    "id": "01KA0000000000000000000310",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:09:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未"
+    }
+   },
+   "mark": {
+    "action": "remove",
+    "item": "未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未"
+   }
+  },
+  {
+   "name": "an item of 401 code points",
+   "event": {
+    "id": "01KA0000000000000000000311",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:10:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "remove",
+     "item": "未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未未"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an unknown action",
+   "event": {
+    "id": "01KA0000000000000000000312",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:11:00Z",
+    "type": "notebook",
+    "payload": {
+     "action": "forget",
+     "item": "card:c-vocab-1"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "an array payload",
+   "event": {
+    "id": "01KA0000000000000000000313",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:12:00Z",
+    "type": "notebook",
+    "payload": [
+     "clear"
+    ]
+   },
+   "mark": null
+  },
+  {
+   "name": "a null payload",
+   "event": {
+    "id": "01KA0000000000000000000314",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:13:00Z",
+    "type": "notebook",
+    "payload": null
+   },
+   "mark": null
+  },
+  {
+   "name": "another type",
+   "event": {
+    "id": "01KA0000000000000000000315",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "2026-11-20T10:14:00Z",
+    "type": "notebooks",
+    "payload": {
+     "action": "clear"
+    }
+   },
+   "mark": null
+  },
+  {
+   "name": "a ts that does not parse",
+   "event": {
+    "id": "01KA0000000000000000000316",
+    "workspaceId": 1,
+    "device": "web",
+    "ts": "yesterday",
+    "type": "notebook",
+    "payload": {
+     "action": "clear"
+    }
+   },
+   "mark": null
+  }
+ ],
+ "outcomes": [
+  {
+   "name": "reviews: Again is wrong; Hard, Good and Easy are right; another workspace and an unreadable grade count nowhere",
+   "events": [
+    {
+     "id": "01KA0000000000000000000001",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000002",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KA0000000000000000000003",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000004",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KA0000000000000000000005",
+     "workspaceId": 2,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000006",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:05:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": "1"
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "01KA0000000000000000000001",
+     "item": "card:c-vocab-1",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000002",
+     "item": "card:c-vocab-1",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000003",
+     "item": "card:c-vocab-1",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000004",
+     "item": "card:c-vocab-1",
+     "outcome": "right"
+    }
+   ]
+  },
+  {
+   "name": "a replaced review counts nowhere (the changed grade does)",
+   "events": [
+    {
+     "id": "01KA0000000000000000000011",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:10:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-tone-3",
+      "mode": "tone",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000012",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:10:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-tone-3",
+      "mode": "tone",
+      "grade": 3,
+      "replaces": "01KA0000000000000000000011"
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "01KA0000000000000000000012",
+     "item": "card:c-tone-3",
+     "outcome": "right"
+    }
+   ]
+  },
+  {
+   "name": "drill answers: grade 1 is wrong, 2 to 4 right; every valid drill id is read; an invalid id or item is nothing",
+   "events": [
+    {
+     "id": "01KA0000000000000000000021",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:20:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000022",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:21:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KA0000000000000000000023",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:22:00Z",
+     "type": "drill.future-drill",
+     "payload": {
+      "item": "x",
+      "mode": "m",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000024",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:23:00Z",
+     "type": "drill.weakest",
+     "payload": {
+      "item": "x",
+      "mode": "m",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000025",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:24:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3 4",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000026",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:25:00Z",
+     "type": "drill.look-alikes",
+     "payload": {
+      "item": "未末",
+      "mode": "choose",
+      "grade": 1,
+      "given": "末"
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "01KA0000000000000000000021",
+     "item": "drill.tone-pairs:3-4",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000022",
+     "item": "drill.conjugation:1234:te-form",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000023",
+     "item": "drill.future-drill:x",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000026",
+     "item": "drill.look-alikes:未末",
+     "outcome": "wrong"
+    }
+   ]
+  },
+  {
+   "name": "grammar runs: below 80 % is wrong, at or above it right, lesson and review alike; no exercises or an unknown mode is nothing",
+   "events": [
+    {
+     "id": "01KA0000000000000000000031",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:30:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:shi",
+      "mode": "lesson",
+      "score": 7,
+      "total": 10
+     }
+    },
+    {
+     "id": "01KA0000000000000000000032",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:31:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:shi",
+      "mode": "lesson",
+      "score": 8,
+      "total": 10
+     }
+    },
+    {
+     "id": "01KA0000000000000000000033",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:32:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:de",
+      "mode": "review",
+      "score": 2,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000034",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:33:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:de",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000035",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:34:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:le",
+      "mode": "lesson",
+      "score": 0,
+      "total": 0
+     }
+    },
+    {
+     "id": "01KA0000000000000000000036",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:35:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:le",
+      "mode": "quiz",
+      "score": 0,
+      "total": 5
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "01KA0000000000000000000031",
+     "item": "grammar:hsk1:shi",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000032",
+     "item": "grammar:hsk1:shi",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000033",
+     "item": "grammar:hsk1:de",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000034",
+     "item": "grammar:hsk1:de",
+     "outcome": "right"
+    }
+   ]
+  },
+  {
+   "name": "course events: a lesson below 80 % is wrong; a failed test is wrong unless early; a failed exam is wrong unless the course's next event is a placement",
+   "events": [
+    {
+     "id": "01KA0000000000000000000041",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:40:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-started",
+      "course": "zh-path",
+      "unit": "u1",
+      "lesson": "words-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000042",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:41:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-path",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 3,
+      "total": 5,
+      "words": [
+       "你"
+      ]
+     }
+    },
+    {
+     "id": "01KA0000000000000000000043",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:42:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-path",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 4,
+      "total": 5,
+      "words": [
+       "你"
+      ]
+     }
+    },
+    {
+     "id": "01KA0000000000000000000044",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:43:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-path",
+      "unit": "u1",
+      "lesson": "reading",
+      "score": 0,
+      "total": 0,
+      "words": []
+     }
+    },
+    {
+     "id": "01KA0000000000000000000045",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:44:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-path",
+      "unit": "u1",
+      "score": 5,
+      "total": 10,
+      "passed": false,
+      "early": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000046",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:45:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-path",
+      "unit": "u2",
+      "score": 2,
+      "total": 10,
+      "passed": false,
+      "early": true
+     }
+    },
+    {
+     "id": "01KA0000000000000000000047",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:46:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-path",
+      "unit": "u2",
+      "score": 9,
+      "total": 10,
+      "passed": true,
+      "early": true
+     }
+    },
+    {
+     "id": "01KA0000000000000000000048",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:47:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "zh-path",
+      "section": "s1",
+      "score": 10,
+      "total": 20,
+      "passed": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000049",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:48:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-started",
+      "course": "zh-path",
+      "unit": "u3",
+      "lesson": "words-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000050",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:49:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "zh-path",
+      "section": "s2",
+      "score": 3,
+      "total": 20,
+      "passed": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000051",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:50:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "zh-path",
+      "section": "s2"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000052",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:51:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "zh-path",
+      "section": "s2",
+      "score": 18,
+      "total": 20,
+      "passed": true
+     }
+    },
+    {
+     "id": "01KA0000000000000000000053",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:52:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "ja-path",
+      "section": "s1",
+      "score": 1,
+      "total": 20,
+      "passed": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000054",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:53:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "zh-path",
+      "section": "s1"
+     }
+    }
+   ],
+   "expect": [
+    {
+     "id": "01KA0000000000000000000042",
+     "item": "course:zh-path:lesson:u1:words-1",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000043",
+     "item": "course:zh-path:lesson:u1:words-1",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000045",
+     "item": "course:zh-path:unit:u1",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000047",
+     "item": "course:zh-path:unit:u2",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000048",
+     "item": "course:zh-path:section:s1",
+     "outcome": "wrong"
+    },
+    {
+     "id": "01KA0000000000000000000052",
+     "item": "course:zh-path:section:s2",
+     "outcome": "right"
+    },
+    {
+     "id": "01KA0000000000000000000053",
+     "item": "course:ja-path:section:s1",
+     "outcome": "wrong"
+    }
+   ]
+  }
+ ],
+ "notebook": [
+  {
+   "name": "three right answers in a row take an item out",
+   "events": [
+    {
+     "id": "01KA0000000000000000000101",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000102",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000103",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000104",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "two right answers in a row: still in, two of three",
+   "events": [
+    {
+     "id": "01KA0000000000000000000111",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000112",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000113",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 2
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:00:00Z",
+     "last": "2026-11-20T10:00:00Z",
+     "mistakes": 1,
+     "right": 2,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "a wrong answer starts the run again",
+   "events": [
+    {
+     "id": "01KA0000000000000000000121",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000122",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000123",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000124",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000125",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:00:00Z",
+     "last": "2026-11-20T10:03:00Z",
+     "mistakes": 2,
+     "right": 1,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "out and back: a new mistake after leaving starts a fresh count",
+   "events": [
+    {
+     "id": "01KA0000000000000000000131",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000132",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000133",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000134",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KA0000000000000000000135",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:04:00Z",
+     "last": "2026-11-20T10:04:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "right answers before any mistake do nothing",
+   "events": [
+    {
+     "id": "01KA0000000000000000000141",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000142",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000143",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000144",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:03:00Z",
+     "last": "2026-11-20T10:03:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "the replay follows (instant, id), not the order of the log",
+   "events": [
+    {
+     "id": "01KA0000000000000000000154",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000152",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000151",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000153",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "removed by hand; a later mistake brings it back",
+   "events": [
+    {
+     "id": "01KA0000000000000000000161",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000162",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000163",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove",
+      "item": "card:c-vocab-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000164",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove",
+      "item": "drill.tone-pairs:3-4"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000165",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "choose",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "drill.tone-pairs:3-4",
+     "group": "tones",
+     "since": "2026-11-20T10:04:00Z",
+     "last": "2026-11-20T10:04:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "tone-pairs",
+      "item": "3-4"
+     },
+     "wrong": {
+      "mode": "choose",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "clear takes every item out",
+   "events": [
+    {
+     "id": "01KA0000000000000000000171",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000172",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:shi",
+      "mode": "lesson",
+      "score": 5,
+      "total": 10
+     }
+    },
+    {
+     "id": "01KA0000000000000000000173",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "clear"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000174",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:shi",
+      "mode": "lesson",
+      "score": 6,
+      "total": 10
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "grammar:hsk1:shi",
+     "group": "grammar",
+     "since": "2026-11-20T10:03:00Z",
+     "last": "2026-11-20T10:03:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "grammar",
+      "point": "hsk1:shi"
+     },
+     "wrong": {
+      "mode": "lesson",
+      "score": 6,
+      "total": 10
+     }
+    }
+   ]
+  },
+  {
+   "name": "marks of another workspace and unreadable marks count nowhere",
+   "events": [
+    {
+     "id": "01KA0000000000000000000181",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000182",
+     "workspaceId": 2,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove",
+      "item": "card:c-vocab-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000183",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000184",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "forget",
+      "item": "card:c-vocab-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000185",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "notebook",
+     "payload": [
+      "clear"
+     ]
+    },
+    {
+     "id": "01KA0000000000000000000186",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:05:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove",
+      "item": "card:c-vocab-1 "
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:00:00Z",
+     "last": "2026-11-20T10:00:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "a removal of an item that is out does nothing to a later mistake",
+   "events": [
+    {
+     "id": "01KA0000000000000000000191",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "notebook",
+     "payload": {
+      "action": "remove",
+      "item": "card:c-vocab-1"
+     }
+    },
+    {
+     "id": "01KA0000000000000000000192",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:01:00Z",
+     "last": "2026-11-20T10:01:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "groups in order, then the newest mistake first, then the key; a card that is gone is not shown",
+   "events": [
+    {
+     "id": "01KA0000000000000000000201",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000202",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:05:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-cloze-5",
+      "mode": "cloze",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000203",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:05:00Z",
+     "type": "drill.measure-words",
+     "payload": {
+      "item": "77",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000204",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "drill.future-drill",
+     "payload": {
+      "item": "x",
+      "mode": "m",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000205",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-writing-2",
+      "mode": "writing",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000206",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-4",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000207",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:04:00Z",
+     "type": "drill.look-alikes",
+     "payload": {
+      "item": "未末",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000208",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-tone-3",
+      "mode": "tone",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000209",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:06:00Z",
+     "type": "drill.tone-pairs",
+     "payload": {
+      "item": "3-4",
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000210",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:07:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "hsk1:shi",
+      "mode": "lesson",
+      "score": 1,
+      "total": 10
+     }
+    },
+    {
+     "id": "01KA0000000000000000000211",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "drill.conjugation",
+     "payload": {
+      "item": "1234:te-form",
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000212",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:08:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "unit-test",
+      "course": "zh-path",
+      "unit": "u1",
+      "score": 5,
+      "total": 10,
+      "passed": false,
+      "early": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000213",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:09:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "lesson-finished",
+      "course": "zh-path",
+      "unit": "u1",
+      "lesson": "words-1",
+      "score": 2,
+      "total": 5,
+      "words": [
+       "你"
+      ]
+     }
+    },
+    {
+     "id": "01KA0000000000000000000214",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:10:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c-vocab-9",
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:c-cloze-5",
+     "group": "words",
+     "since": "2026-11-20T10:05:00Z",
+     "last": "2026-11-20T10:05:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-cloze-5",
+      "entryId": 5,
+      "kind": "cloze"
+     },
+     "wrong": {
+      "mode": "cloze",
+      "grade": 1
+     }
+    },
+    {
+     "key": "drill.measure-words:77",
+     "group": "words",
+     "since": "2026-11-20T10:05:00Z",
+     "last": "2026-11-20T10:05:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "measure-words",
+      "item": "77"
+     },
+     "wrong": {
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "key": "drill.future-drill:x",
+     "group": "words",
+     "since": "2026-11-20T10:02:00Z",
+     "last": "2026-11-20T10:02:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "future-drill",
+      "item": "x"
+     },
+     "wrong": {
+      "mode": "m",
+      "grade": 1
+     }
+    },
+    {
+     "key": "card:c-vocab-1",
+     "group": "words",
+     "since": "2026-11-20T10:00:00Z",
+     "last": "2026-11-20T10:00:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-1",
+      "entryId": 1,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "key": "drill.look-alikes:未末",
+     "group": "characters",
+     "since": "2026-11-20T10:04:00Z",
+     "last": "2026-11-20T10:04:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "look-alikes",
+      "item": "未末"
+     },
+     "wrong": {
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "key": "card:c-vocab-4",
+     "group": "characters",
+     "since": "2026-11-20T10:03:00Z",
+     "last": "2026-11-20T10:03:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-vocab-4",
+      "entryId": 4,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "key": "card:c-writing-2",
+     "group": "characters",
+     "since": "2026-11-20T10:01:00Z",
+     "last": "2026-11-20T10:01:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-writing-2",
+      "entryId": 2,
+      "kind": "writing"
+     },
+     "wrong": {
+      "mode": "writing",
+      "grade": 1
+     }
+    },
+    {
+     "key": "drill.tone-pairs:3-4",
+     "group": "tones",
+     "since": "2026-11-20T10:06:00Z",
+     "last": "2026-11-20T10:06:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "tone-pairs",
+      "item": "3-4"
+     },
+     "wrong": {
+      "mode": "choose",
+      "grade": 1
+     }
+    },
+    {
+     "key": "card:c-tone-3",
+     "group": "tones",
+     "since": "2026-11-20T10:02:00Z",
+     "last": "2026-11-20T10:02:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "c-tone-3",
+      "entryId": 3,
+      "kind": "tone"
+     },
+     "wrong": {
+      "mode": "tone",
+      "grade": 1
+     }
+    },
+    {
+     "key": "grammar:hsk1:shi",
+     "group": "grammar",
+     "since": "2026-11-20T10:07:00Z",
+     "last": "2026-11-20T10:07:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "grammar",
+      "point": "hsk1:shi"
+     },
+     "wrong": {
+      "mode": "lesson",
+      "score": 1,
+      "total": 10
+     }
+    },
+    {
+     "key": "drill.conjugation:1234:te-form",
+     "group": "grammar",
+     "since": "2026-11-20T10:01:00Z",
+     "last": "2026-11-20T10:01:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "drill",
+      "drill": "conjugation",
+      "item": "1234:te-form"
+     },
+     "wrong": {
+      "mode": "produce",
+      "grade": 1
+     }
+    },
+    {
+     "key": "course:zh-path:lesson:u1:words-1",
+     "group": "course",
+     "since": "2026-11-20T10:09:00Z",
+     "last": "2026-11-20T10:09:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "course",
+      "course": "zh-path",
+      "check": "lesson",
+      "unit": "u1",
+      "lesson": "words-1"
+     },
+     "wrong": {
+      "score": 2,
+      "total": 5
+     }
+    },
+    {
+     "key": "course:zh-path:unit:u1",
+     "group": "course",
+     "since": "2026-11-20T10:08:00Z",
+     "last": "2026-11-20T10:08:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "course",
+      "course": "zh-path",
+      "check": "unit",
+      "unit": "u1"
+     },
+     "wrong": {
+      "score": 5,
+      "total": 10
+     }
+    }
+   ]
+  },
+  {
+   "name": "a merged duplicate card: its reviews count for the surviving card",
+   "cards": [
+    {
+     "id": "01OLDCARD",
+     "kind": "vocab",
+     "entryId": 6,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-01T00:00:00Z"
+    },
+    {
+     "id": "01NEWCARD",
+     "kind": "vocab",
+     "entryId": 6,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-02T00:00:00Z"
+    }
+   ],
+   "events": [
+    {
+     "id": "01KA0000000000000000000221",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "01NEWCARD",
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": [
+    {
+     "key": "card:01OLDCARD",
+     "group": "words",
+     "since": "2026-11-20T10:00:00Z",
+     "last": "2026-11-20T10:00:00Z",
+     "mistakes": 1,
+     "right": 0,
+     "ref": {
+      "source": "card",
+      "cardId": "01OLDCARD",
+      "entryId": 6,
+      "kind": "vocab"
+     },
+     "wrong": {
+      "mode": "vocab",
+      "grade": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "a section exam failed as a placement step is no mistake",
+   "events": [
+    {
+     "id": "01KA0000000000000000000231",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:00:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "section-exam",
+      "course": "zh-path",
+      "section": "s1",
+      "score": 2,
+      "total": 20,
+      "passed": false
+     }
+    },
+    {
+     "id": "01KA0000000000000000000232",
+     "workspaceId": 1,
+     "device": "web",
+     "ts": "2026-11-20T10:01:00Z",
+     "type": "course",
+     "payload": {
+      "kind": "placement",
+      "course": "zh-path",
+      "section": "s0"
+     }
+    }
+   ],
+   "expect": []
+  }
+ ]
+}

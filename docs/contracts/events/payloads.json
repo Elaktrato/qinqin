@@ -15,7 +15,8 @@
     {"type": "script", "write": true, "builder": "scriptPayload"},
     {"type": "grammar", "write": true, "builder": "grammarPayload"},
     {"type": "course", "write": true, "builder": "coursePayload"},
-    {"type": "drill.<id>", "write": true, "builder": "drillPayload"}
+    {"type": "drill.<id>", "write": true, "builder": "drillPayload"},
+    {"type": "notebook", "write": true, "builder": "notebookPayload"}
   ],
   "cases": [
     {
@@ -67,6 +68,12 @@
       "note": "{item, mode, grade} in this member order: one answer in a drill, type drill.<id> (one type per drill). Ids, item keys, parsing, schedules and rounds: drills/",
       "args": ["3-4", "produce", 3],
       "expect": {"item": "3-4", "mode": "produce", "grade": 3}
+    },
+    {
+      "kind": "build", "type": "notebook", "name": "a notebook mark removes one item by hand",
+      "note": "{action, item} in this member order (#227); {action: \"clear\"} clears the notebook. Item keys, parsing and the replay: notebook/",
+      "args": [{"item": "card:c-vocab-1", "action": "remove"}],
+      "expect": {"action": "remove", "item": "card:c-vocab-1"}
     },
     {
       "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",
