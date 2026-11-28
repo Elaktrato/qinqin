@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { entrySenses, shownGlosses, unitsOf } from '$lib/entry/entrySenses';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
@@ -73,7 +74,8 @@
 
 	const written = $derived(item.written ?? entry.written);
 	const masked = $derived(maskWritten(written, chars, done ? chars.length : position));
-	const glosses = $derived(entry.senses.slice(0, 3).map((sense) => sense.gloss));
+	// The prompt's meaning: shown glosses only, never a folded slang or vulgar one (docs/contracts/senses).
+	const glosses = $derived(shownGlosses(unitsOf(entrySenses(entry)), 3));
 
 	async function loadChar(index: number): Promise<void> {
 		busy = true;

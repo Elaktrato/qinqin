@@ -317,7 +317,9 @@ func isMetaGloss(g string) bool {
 
 // firstMeaning picks the gloss of a glossLists value: over every gloss
 // of every sense in order, the first non-empty one that is not a meta
-// line; when all are meta, the first non-empty one. Most characters stop
+// line nor marked slang, vulgar or derogatory (the sense display rule's
+// gloss marks, docs/contracts/senses); when all are, the first non-empty
+// one. Most characters stop
 // at the first gloss, so the later lists are decoded only when needed.
 func firstMeaning(lists string) (string, error) {
 	first := ""
@@ -330,7 +332,7 @@ func firstMeaning(lists string) (string, error) {
 			if g == "" {
 				continue
 			}
-			if !isMetaGloss(g) {
+			if !isMetaGloss(g) && glossMark(g, "") == "" {
 				return g, nil
 			}
 			if first == "" {

@@ -11,6 +11,7 @@ import {
 	parseXref,
 	readingLine,
 	rubyReading,
+	firstVisible,
 	senseChips,
 	shownSenses
 } from './entryDisplay';
@@ -165,11 +166,43 @@ describe('shownSenses', () => {
 		const r = result({ senses: [sense({ glosses: [] }), sense({ glosses: ['to do'] })] });
 		expect(shownSenses(r)).toHaveLength(1);
 	});
+
+	it('orders by the sense display rule: slang and vulgar units last, folded and marked (#345)', () => {
+		const r = result({
+			senses: [
+				sense({ dictionaryName: 'CC-CEDICT', glosses: ['fowl', 'chicken', '(slang) prostitute'], xrefs: ['雞'] }),
+				sense({ dictionaryName: 'CC-CEDICT', glosses: ['variant of 雞|鸡[ji1]'] })
+			]
+		});
+		expect(shownSenses(r).map((s) => [s.glosses, s.mark, s.folded, s.xrefs])).toEqual([
+			[['fowl', 'chicken'], null, false, ['雞']],
+			[['variant of 雞|鸡[ji1]'], null, false, []],
+			[['(slang) prostitute'], 'vulg', true, []]
+		]);
+	});
+});
+
+describe('firstVisible', () => {
+	it('never shows a folded sense before "more"', () => {
+		const ji = result({ senses: [sense({ glosses: ['fowl', '(slang) prostitute'] })] });
+		expect(firstVisible(shownSenses(ji))).toBe(1);
+		const many = result({ senses: ['a', 'b', 'c', 'd'].map((g) => sense({ glosses: [g] })) });
+		expect(firstVisible(shownSenses(many))).toBe(3);
+	});
+
+	it('shows a vulgar-only entry as usual', () => {
+		const only = result({ senses: [sense({ glosses: ['penis (vulgar)'] }), sense({ glosses: ['(slang) dick'] })] });
+		expect(firstVisible(shownSenses(only))).toBe(2);
+	});
 });
 
 describe('senseChips', () => {
 	it('is the part of speech plus the tags except uk', () => {
 		expect(senseChips(sense({ pos: ['vs-i', 'vt'], tags: ['uk', 'col'] }))).toEqual(['vs-i', 'vt', 'col']);
+	});
+
+	it('leaves out the tags a mark chip says (#345)', () => {
+		expect(senseChips(sense({ pos: ['n'], tags: ['sl', 'uk', 'derog', 'vulg', 'net-sl', 'm-sl', 'arch'] }))).toEqual(['n', 'arch']);
 	});
 });
 

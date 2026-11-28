@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Entry, Reading, SenseView, Sentence } from '$lib/api/types';
+import type { Entry, Reading, SenseGroup, SenseView, Sentence } from '$lib/api/types';
 import { buildVocabFaces, withShownWritten } from './cardView';
 
 function reading(type: string, value: string, ord = 0): Reading {
@@ -15,6 +15,24 @@ function sense(dictionaryName: string, gloss: string, dictionaryId = 1): SenseVi
 		license: 'CC BY-SA',
 		attribution: 'Test dictionary',
 		gloss
+	};
+}
+
+function plain(text: string): { text: string; mark: null } {
+	return { text, mark: null };
+}
+
+function group(dictionaryName: string, glosses: string[], dictionaryId = 1): SenseGroup {
+	return {
+		dictionaryId,
+		dictionaryName,
+		packId: 'test-pack',
+		license: 'CC BY-SA',
+		attribution: 'Test dictionary',
+		pos: [],
+		tags: [],
+		glosses,
+		xrefs: []
 	};
 }
 
@@ -109,10 +127,36 @@ describe('buildVocabFaces', () => {
 		);
 
 		expect(faces.back.glosses).toEqual([
-			{ dictionaryName: 'Alpha', glosses: ['hello', 'how do you do'] },
-			{ dictionaryName: 'Beta', glosses: ['hi', 'hey'] },
-			{ dictionaryName: 'Gamma', glosses: ['greetings'] }
+			{ dictionaryName: 'Alpha', glosses: [plain('hello'), plain('how do you do')] },
+			{ dictionaryName: 'Beta', glosses: [plain('hi'), plain('hey')] },
+			{ dictionaryName: 'Gamma', glosses: [plain('greetings')] }
 		]);
+		expect(faces.back.folded).toEqual([]);
+	});
+
+	it('folds slang and vulgar glosses behind the others (#345, senses/display.json)', () => {
+		const groups: SenseGroup[] = [
+			group('CC-CEDICT', ['fowl', 'chicken', 'CL:隻|只[zhi1]', '(slang) prostitute']),
+			group('CC-CEDICT', ['variant of 雞|鸡[ji1]'])
+		];
+		const faces = buildVocabFaces(entry({ written: '鸡', senseGroups: groups }), null, 'zh');
+		expect(faces.back.glosses).toEqual([
+			{
+				dictionaryName: 'CC-CEDICT',
+				glosses: [plain('fowl'), plain('chicken'), plain('CL:隻|只[zhi1]'), plain('variant of 雞|鸡[ji1]')]
+			}
+		]);
+		expect(faces.back.folded).toEqual([
+			{ dictionaryName: 'CC-CEDICT', glosses: [{ text: '(slang) prostitute', mark: 'vulg' }] }
+		]);
+	});
+
+	it('shows a vulgar-only word unfolded, marked', () => {
+		const faces = buildVocabFaces(entry({ written: '鸡巴', senseGroups: [group('CC-CEDICT', ['dick', 'penis (vulgar)'])] }), null, 'zh');
+		expect(faces.back.glosses).toEqual([
+			{ dictionaryName: 'CC-CEDICT', glosses: [{ text: 'dick', mark: 'vulg' }, { text: 'penis (vulgar)', mark: 'vulg' }] }
+		]);
+		expect(faces.back.folded).toEqual([]);
 	});
 
 	it('produces the same card for different languages', () => {
@@ -171,7 +215,7 @@ describe('buildVocabFaces for a character', () => {
 	it('puts every reading on the back, grouped by type, with the glosses', () => {
 		const { back } = buildVocabFaces(kanji, null, 'ja');
 		expect(back.readings.map((r) => r.value)).toEqual(['ガク', 'ガッ', 'まな.ぶ']);
-		expect(back.glosses).toEqual([{ dictionaryName: 'KANJIDIC', glosses: ['study'] }]);
+		expect(back.glosses).toEqual([{ dictionaryName: 'KANJIDIC', glosses: [plain('study')] }]);
 	});
 
 	it('keeps a word back equal to its front readings', () => {

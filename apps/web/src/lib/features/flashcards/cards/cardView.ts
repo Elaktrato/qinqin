@@ -1,10 +1,14 @@
 // The display content of one vocab card. The front shows the word, its
 // readings, and an example sentence with the word blanked; the back is
-// the same content plus glosses grouped by dictionary. Building this
-// separately from the page keeps the reveal rules testable.
+// the same content plus glosses grouped by dictionary, in the order of the
+// sense display rule (docs/contracts/senses: slang, vulgar and derogatory
+// glosses last, folded behind "more"). Building this separately from the
+// page keeps the reveal rules testable.
 
-import type { Entry, SenseView, Sentence } from '$lib/api/types';
+import type { Entry, Sentence } from '$lib/api/types';
 import { shownWritten } from '$lib/entry/displayForm';
+import { entrySenses, unitsOf } from '$lib/entry/entrySenses';
+import type { SenseMark } from '$lib/entry/senseDisplay';
 
 /**
  * withShownWritten is the entry a card is drawn with: its written form is
@@ -27,10 +31,16 @@ export interface VocabReading {
 	value: string;
 }
 
-/** One dictionary's glosses for the word, in API order. */
+/** One gloss on a card; mark: the slang, vulgar or derogatory mark of a sensitive gloss, else null. */
+export interface VocabGloss {
+	text: string;
+	mark: SenseMark | null;
+}
+
+/** One dictionary's glosses for the word, in display order. */
 export interface VocabGlossGroup {
 	dictionaryName: string;
-	glosses: string[];
+	glosses: VocabGloss[];
 }
 
 export interface VocabFace {
@@ -40,7 +50,10 @@ export interface VocabFace {
 }
 
 export interface VocabBackFace extends VocabFace {
+	/** The glosses shown at once. */
 	glosses: VocabGlossGroup[];
+	/** The folded ones, behind "Show n more meanings" (empty for most words). */
+	folded: VocabGlossGroup[];
 }
 
 export interface VocabFaces {
@@ -70,26 +83,28 @@ function sentenceLines(entry: Entry, sentence: Sentence | null | undefined): str
 }
 
 /**
- * groupGlosses keeps the API's sense order: a dictionary appears at its
- * first gloss, and later glosses from the same dictionary append to it.
+ * groupGlosses puts the entry's senses through the sense display rule and
+ * groups the shown and the folded units by dictionary: a dictionary appears
+ * at its first unit, and later units of the same dictionary append to it.
  * Grouping is by name because that is what the card shows; a dictionary
  * renamed between responses still collapses to one group.
  */
-function groupGlosses(senses: readonly SenseView[]): VocabGlossGroup[] {
-	const groups: VocabGlossGroup[] = [];
+function groupGlosses(entry: Entry): Pick<VocabBackFace, 'glosses' | 'folded'> {
+	const shown: VocabGlossGroup[] = [];
+	const folded: VocabGlossGroup[] = [];
 	const byName = new Map<string, VocabGlossGroup>();
-
-	for (const sense of senses) {
-		let group = byName.get(sense.dictionaryName);
+	for (const unit of unitsOf(entrySenses(entry))) {
+		const name = unit.of.dictionaryName;
+		const key = `${unit.folded ? 1 : 0}\u0000${name}`;
+		let group = byName.get(key);
 		if (group === undefined) {
-			group = { dictionaryName: sense.dictionaryName, glosses: [] };
-			byName.set(sense.dictionaryName, group);
-			groups.push(group);
+			group = { dictionaryName: name, glosses: [] };
+			byName.set(key, group);
+			(unit.folded ? folded : shown).push(group);
 		}
-		group.glosses.push(sense.gloss);
+		for (const text of unit.glosses) group.glosses.push({ text, mark: unit.mark });
 	}
-
-	return groups;
+	return { glosses: shown, folded };
 }
 
 /** groupReadings keeps the API order but gathers readings of one type (on, kun, pinyin). */
@@ -122,7 +137,7 @@ export function buildVocabFaces(
 				written: entry.written,
 				readings: groupReadings(readings),
 				sentenceLines: [],
-				glosses: groupGlosses(entry.senses)
+				...groupGlosses(entry)
 			}
 		};
 	}
@@ -137,7 +152,7 @@ export function buildVocabFaces(
 		front,
 		back: {
 			...front,
-			glosses: groupGlosses(entry.senses)
+			...groupGlosses(entry)
 		}
 	};
 }

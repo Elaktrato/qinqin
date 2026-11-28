@@ -161,3 +161,38 @@ describe('VocabCard and an AI example (#186)', () => {
 		expect(screen.queryByText('AI-written')).toBeNull();
 	});
 });
+
+// #345: 鸡's slang gloss is folded behind "Show 1 more meaning" on the back, marked once shown.
+describe('VocabCard folds slang and vulgar glosses', () => {
+	const ji = kanji({
+		language: 'zh',
+		written: '鸡',
+		readings: [{ type: 'pinyin', value: 'jī', plain: 'ji', ord: 0 }],
+		sentences: [],
+		senseGroups: [
+			{
+				dictionaryId: 1,
+				dictionaryName: 'CC-CEDICT',
+				packId: 'cedict',
+				license: 'CC-BY-SA-4.0',
+				attribution: 'x',
+				pos: [],
+				tags: [],
+				glosses: ['fowl', 'chicken', '(slang) prostitute'],
+				xrefs: []
+			}
+		]
+	});
+
+	it('shows the everyday glosses and hides the slang one behind a button', async () => {
+		renderCard({ item, entry: ji, revealed: true, onDone: vi.fn() });
+		expect(screen.getByText('fowl')).toBeTruthy();
+		expect(screen.queryByText('(slang) prostitute')).toBeNull();
+		const more = screen.getByRole('button', { name: 'Show 1 more meaning' });
+		more.click();
+		await vi.waitFor(() => expect(screen.getByText('(slang) prostitute')).toBeTruthy());
+		expect(screen.getByText('vulgar')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Show 1 more meaning' })).toBeNull();
+		expect(document.activeElement?.textContent).toContain('(slang) prostitute');
+	});
+});
