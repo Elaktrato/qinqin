@@ -114,4 +114,43 @@ teacher review. Nothing queued.
 
 ## Execution record
 
-(filled in as the tasks land)
+1. Plan — `e6bdbefa`.
+2. Review rules — `08655cf1`. **Test first:** `grammarReview.contract.test.ts` written against the oracle's
+   `review.json` and run red (module missing); the new `runs.json` parse case ran red on the old `parseGrammarRun`.
+   Changing `parseGrammarRun` then turned two older fixtures red, both pinned "review" as an unknown mode
+   (`scheduler/xp.json`, `events/payloads.json` one builder per type): the unknown-mode cases now use `quiz`, `xp.json`
+   gains "a review run earns what a lesson run does", and `grammarPayload` takes the mode as an optional fifth argument
+   (no second builder; #222's `recordRun` call is unchanged). The oracle's first pick rule repeated the first review
+   at the third (period 2 with six examples); the `lap` term was added before committing. Go decodes the new
+   `events/activity.json` case (`internal/stats` green, server unchanged). The contract CHANGELOG on the base carried
+   leftover merge markers (`<<<<<<< HEAD` … `>>>>>>> feature/v0.9.0` around the #180 and #347 entries); they are
+   removed in this commit (both entries kept).
+3. Grammar page and round — `af366543`. **Test first:** `review/review.test.ts` (candidates, exercises, status,
+   load, recording), `route.test.ts`, `browse.test.ts`, each run red first. **Not test-first:** the DOM tests
+   (`ReviewRound.dom.test.ts`, the new `GrammarBrowse.dom.test.ts` cases, the learned line in
+   `PracticeRun.dom.test.ts`) were written after the components and passed at once; one gap they then showed
+   (an ended round with nothing reviewed said "Nothing to review") was fixed. `ReviewExercise.svelte` is in the
+   romanisation lint's RENDERERS (it prints an example's reading through `useRomanisation()`).
+4. Sessions — `a53a1261`. **Test first:** `study/setup.json` with `grammar` ran red (22 cases) before `setup.ts`
+   changed. **Not test-first:** the `setupSessionConfig`/`loadConfig` cases, the study modal's chip tests and the
+   session page's block tests (a stub round, `lib/testing/FakeGrammarReview.svelte`) came after the code.
+5. e2e and docs — `ffa6b139`. `grammar-review.spec.ts` (two tests at 360 px: the page and round with a planted pack,
+   the event on the server; the study modal chip and a session of only grammar), written after the code; its first run
+   failed on a text match across a line break (fixed in the test). `/grammar/review` in `phone-width.spec.ts`. Wiki
+   Grammar lessons (Review), Flashcards and study sessions (the chip, the summary), README, `docs/releases/NEXT.md`.
+
+### Gates (final state)
+
+- Go: `gofmt -l .` empty; `go vet ./...` clean; `go test -count=1 -p 2 ./...`: 64 packages ok, 1 fail —
+  `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` only (the known no-IPv6 environment failure).
+- Web: `npm run check` 0 errors 0 warnings; `npm run build` ok; full vitest 765 files passed (1 skipped), 15494 tests
+  passed (3 skipped); full e2e 72 passed; `node --test scripts/*.test.mjs` 241 passed, 1 skipped;
+  `node scripts/gen-api-docs.mjs --check` ok (no new route); `gen-grammar-review-fixtures.mjs --check` ok (in vitest).
+
+### Not verified here
+
+- The Android WebView shell (no SDK or emulator): see Local follow-up.
+- A real grammar pack in a browser: the suite installs none, so the e2e plants one through `page.route`; the round
+  with a word-order exercise is not tested in this branch (every review test uses clozes); `ReviewExercise` renders it
+  with the same `WordSaladBoard` and `firstTry` rule as the lesson practice, and `reviewPick` (contract) decides when
+  it is asked.
