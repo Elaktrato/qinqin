@@ -70,7 +70,18 @@ export function coursePayload(p: CoursePayload): CoursePayload {
 	}
 }
 
-/** `drill.<id>`: one answer in a drill (docs/contracts/drills/): the item, the drill's mode and the FSRS grade (1 Again … 4 Easy). */
-export function drillPayload(item: string, mode: string, grade: 1 | 2 | 3 | 4): { item: string; mode: string; grade: 1 | 2 | 3 | 4 } {
-	return { item, mode, grade };
+/**
+ * `drill.<id>`: one answer in a drill (docs/contracts/drills/): the item, the drill's mode and the FSRS grade (1 Again …
+ * 4 Easy), then the drill's own members in their order (#228: the character asked and the one given); a member never
+ * replaces the three.
+ */
+export function drillPayload(
+	item: string,
+	mode: string,
+	grade: 1 | 2 | 3 | 4,
+	extra: Readonly<Record<string, string>> = {}
+): { item: string; mode: string; grade: 1 | 2 | 3 | 4 } & Record<string, string | number> {
+	const payload: { item: string; mode: string; grade: 1 | 2 | 3 | 4 } & Record<string, string | number> = { item, mode, grade };
+	for (const [name, value] of Object.entries(extra)) if (name !== 'item' && name !== 'mode' && name !== 'grade') payload[name] = value;
+	return payload;
 }

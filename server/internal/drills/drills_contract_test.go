@@ -1,6 +1,7 @@
 package drills
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"slices"
@@ -37,11 +38,12 @@ func TestDrillsContract(t *testing.T) {
 			Valid bool   `json:"valid"`
 		} `json:"items"`
 		Build []struct {
-			Name   string `json:"name"`
-			Drill  string `json:"drill"`
-			Item   string `json:"item"`
-			Mode   string `json:"mode"`
-			Grade  int    `json:"grade"`
+			Name   string          `json:"name"`
+			Drill  string          `json:"drill"`
+			Item   string          `json:"item"`
+			Mode   string          `json:"mode"`
+			Grade  int             `json:"grade"`
+			Extra  json.RawMessage `json:"extra"`
 			Expect struct {
 				Type    string          `json:"type"`
 				Payload json.RawMessage `json:"payload"`
@@ -89,7 +91,7 @@ func TestDrillsContract(t *testing.T) {
 		if got := EventType(tc.Drill); got != tc.Expect.Type {
 			t.Errorf("build %s: type %q, want %q", tc.Name, got, tc.Expect.Type)
 		}
-		if got := Payload(tc.Item, tc.Mode, tc.Grade); !sameText(got, tc.Expect.Payload) {
+		if got := Payload(tc.Item, tc.Mode, tc.Grade, orderedMembers(t, tc.Extra)...); !sameText(got, tc.Expect.Payload) {
 			t.Errorf("build %s: %s, want %s", tc.Name, got, tc.Expect.Payload)
 		}
 	}
@@ -116,4 +118,37 @@ func sameText(a, b json.RawMessage) bool {
 	ca, _ := json.Marshal(json.RawMessage(a))
 	cb, _ := json.Marshal(json.RawMessage(b))
 	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && string(ca) == string(cb)
+}
+
+// orderedMembers reads a JSON object of strings in its member order.
+func orderedMembers(t *testing.T, raw json.RawMessage) []Member {
+	t.Helper()
+	if len(raw) == 0 {
+		return nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
+		t.Fatalf("extra %s is not an object", raw)
+	}
+	var out []Member
+	for dec.More() {
+		var name, value string
+		tok, err := dec.Token()
+		if err != nil {
+			t.Fatal(err)
+		}
+		name, _ = tok.(string)
+		if err := dec.Decode(&value); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, Member{name, value})
+	}
+	return out
+}
+
+func TestPayloadKeepsItsThreeMembers(t *testing.T) {
+	got := string(Payload("sample-1", "self", 3, Member{"item", "x"}, Member{"given", "y"}, Member{"grade", "1"}))
+	if want := `{"item":"sample-1","mode":"self","grade":3,"given":"y"}`; got != want {
+		t.Errorf("Payload = %s, want %s", got, want)
+	}
 }
