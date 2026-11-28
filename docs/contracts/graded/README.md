@@ -49,7 +49,8 @@ null.
 5. The text **fits** level L when `within × 100 ≥ minCoveragePercent × counted` (95: the "read next" target of #183)
    and at most `maxAbove` (6) lemmas are above L. A text with no counted token fits every level.
 6. The **computed level** is the lowest level index at which the text fits, else null.
-7. **Unglossed:** the lemmas above the declared level whose lemma and surface are both missing from the glosses.
+7. **Unglossed:** the lemmas above the declared level whose lemma and surface are both in no gloss word (a gloss word
+   contains the word: 工作人员 glosses 人员, the part a segmenter reads above the level).
 8. A text is **at its level** (`ok`) when its computed level is its declared level and nothing is unglossed.
 
 The shipped texts are held to rule 8 by `server/internal/library/sources/graded/level_test.go`, on the shipped

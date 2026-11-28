@@ -275,6 +275,21 @@
       "want": { "counted": 157, "within": 150, "above": [ "甲", "乙", "丙", "丁", "戊", "己", "庚" ], "computedLevel": 1, "unglossed": [], "ok": false }
     },
     {
+      "name": "a gloss word that contains an above-level word glosses it",
+      "text": "工作人员来了。",
+      "names": [],
+      "levels": 4,
+      "declared": 0,
+      "glosses": ["工作人员"],
+      "tokens": [
+        { "start": 0, "end": 2, "surface": "工作", "lemma": "工作", "level": 0, "function": false },
+        { "start": 2, "end": 4, "surface": "人员", "lemma": "人员", "level": null, "function": false },
+        { "start": 4, "end": 5, "surface": "来", "lemma": "来", "level": 0, "function": false },
+        { "start": 5, "end": 6, "surface": "了", "lemma": "了", "level": null, "function": true }
+      ],
+      "want": { "counted": 3, "within": 2, "above": [ "人员" ], "computedLevel": null, "unglossed": [], "ok": false }
+    },
+    {
       "name": "Japanese: lemmas group inflected forms; particles are function words",
       "text": "猫が好きです。猫が好きでした。",
       "names": [],

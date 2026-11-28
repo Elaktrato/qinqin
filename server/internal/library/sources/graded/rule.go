@@ -37,7 +37,7 @@ type Report struct {
 	Above []string
 	// ComputedLevel is the lowest level index at which the text fits; nil when it fits none.
 	ComputedLevel *int
-	// Unglossed are the words of Above whose lemma and surface are both missing from the glosses.
+	// Unglossed are the words of Above whose lemma and surface are both in no gloss word.
 	Unglossed []string
 	// OK: the computed level is the declared one and every above-level word is glossed.
 	OK bool
@@ -154,12 +154,17 @@ func Check(text string, names []string, tokens []Token, levels, declared int, gl
 				break
 			}
 		}
-		if !slices.Contains(glosses, a) && !slices.Contains(glosses, surface) {
+		if !glossed(glosses, a) && !glossed(glosses, surface) {
 			r.Unglossed = append(r.Unglossed, a)
 		}
 	}
 	r.OK = r.ComputedLevel != nil && *r.ComputedLevel == declared && len(r.Unglossed) == 0
 	return r
+}
+
+// glossed: a gloss word contains the word (工作人员 glosses 人员, the part the segmenter reads above the level).
+func glossed(glosses []string, word string) bool {
+	return slices.ContainsFunc(glosses, func(g string) bool { return strings.Contains(g, word) })
 }
 
 // Body is a text's paragraphs joined by a line break: the text the level rule and the segmenter read.

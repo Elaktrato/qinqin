@@ -13,10 +13,10 @@
     "levels": 4,
     "kind": "dialogue",
     "title": "新朋友",
-    "length": 80,
+    "length": 82,
     "names": [
      "王明",
-     "文文"
+     "张文文"
     ],
     "glosses": [],
     "humanReviewed": false
@@ -30,7 +30,7 @@
     "levels": 4,
     "kind": "dialogue",
     "title": "在宾馆",
-    "length": 200,
+    "length": 207,
     "names": [
      "李文",
      "李先生",
@@ -46,6 +46,11 @@
       "word": "房卡",
       "reading": "fángkǎ",
       "meaning": "room key card"
+     },
+     {
+      "word": "餐厅",
+      "reading": "cāntīng",
+      "meaning": "restaurant, dining room"
      }
     ],
     "humanReviewed": false
@@ -59,18 +64,18 @@
     "levels": 3,
     "kind": "dialogue",
     "title": "パン屋で",
-    "length": 182,
+    "length": 183,
     "names": [],
     "glosses": [
      {
       "word": "ください",
       "reading": "ください",
-      "meaning": "please give me"
+      "meaning": "please (give me / do …)"
      },
      {
       "word": "人気",
       "reading": "にんき",
-      "meaning": "popularity"
+      "meaning": "popularity (人気がある = popular)"
      }
     ],
     "humanReviewed": false
@@ -84,7 +89,7 @@
     "levels": 3,
     "kind": "dialogue",
     "title": "パーティーにさそう",
-    "length": 245,
+    "length": 242,
     "names": [
      "山田"
     ],
