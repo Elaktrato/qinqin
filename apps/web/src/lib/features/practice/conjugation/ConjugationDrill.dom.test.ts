@@ -3,7 +3,7 @@
 // keeps its focus after the answer and Enter moves on), the choice fallback (Hard), hidden romaji, and the
 // drill.conjugation events through the outbox.
 import { testContext, type TestContext } from '$lib/testing/context';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/studycore/data', async (importOriginal) => ({
@@ -71,7 +71,14 @@ function history(events: StudyEvent[] = []) {
 }
 
 function open(settings: Record<string, unknown> = {}, events: StudyEvent[] = []) {
-	ctx = testContext({ routes: { 'POST /api/drills/conjugation/words': { words: [TABERU] } } });
+	ctx = testContext({
+		routes: {
+			'POST /api/drills/conjugation/words': { words: [TABERU] },
+			// The counter drills (#179): nothing to count here.
+			'POST /api/drills/measure-words/words': { words: [], pools: {} },
+			'GET /api/drills/counters': { counters: [] }
+		}
+	});
 	const ws = { id: 1, language: 'ja', name: 'ja', settings, updatedAt: 't' } as Workspace;
 	ctx.session.workspaces.set({ list: [ws], current: ws });
 	vi.mocked(loadStudyHistory).mockResolvedValue(history(events) as never);
@@ -188,7 +195,8 @@ describe('the conjugation drill', () => {
 	it('has no items with every family off', async () => {
 		open({ conjugation: { families: { polite: false, 'polite-past': false, negative: false, past: false, 'te-form': false } } });
 		show('');
-		expect(await screen.findByRole('heading', { level: 2, name: 'Conjugation' })).toBeTruthy();
-		expect(screen.getByText('Nothing to practise in this drill yet.')).toBeTruthy();
+		const heading = await screen.findByRole('heading', { level: 2, name: 'Conjugation' });
+		// Within the conjugation drill (the counter drills of #179 are listed too).
+		expect(within(heading.closest('li')!).getByText('Nothing to practise in this drill yet.')).toBeTruthy();
 	});
 });

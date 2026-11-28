@@ -38,8 +38,11 @@ var ReservedIDs = []string{"weakest"}
 // adds its id here, in the contract and in the web's DRILL_IDS
 // (docs/contracts/drills/README.md, "Adding a drill").
 var IDs = []string{
-	"tone-pairs",  // the tone-pair drill (#180)
-	"conjugation", // the conjugation trainer (#178)
+	"tone-pairs",       // the tone-pair drill (#180)
+	"conjugation",      // the conjugation trainer (#178)
+	"measure-words",    // Chinese measure words (#179)
+	"counters",         // Japanese counters (#179)
+	"counter-readings", // Japanese number + counter readings (#179)
 }
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)

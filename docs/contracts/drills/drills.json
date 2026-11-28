@@ -17,7 +17,7 @@
    4
   ]
  },
- "registry": ["tone-pairs", "conjugation"],
+ "registry": ["tone-pairs", "conjugation", "measure-words", "counters", "counter-readings"],
  "ids": [
   {
    "name": "a one-word id",

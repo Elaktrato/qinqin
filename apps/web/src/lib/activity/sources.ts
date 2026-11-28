@@ -26,7 +26,10 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
  */
 export const DRILL_WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {
 	'tone-pairs': { label: 'activity.source.drill.tonePairs.label', count: 'activity.source.drill.tonePairs.count' },
-	conjugation: { label: 'activity.source.drill.conjugation.label', count: 'activity.source.drill.conjugation.count' }
+	conjugation: { label: 'activity.source.drill.conjugation.label', count: 'activity.source.drill.conjugation.count' },
+	'measure-words': { label: 'activity.source.drill.measureWords.label', count: 'activity.source.drill.measureWords.count' },
+	counters: { label: 'activity.source.drill.counters.label', count: 'activity.source.drill.counters.count' },
+	'counter-readings': { label: 'activity.source.drill.counterReadings.label', count: 'activity.source.drill.counterReadings.count' }
 };
 
 const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {

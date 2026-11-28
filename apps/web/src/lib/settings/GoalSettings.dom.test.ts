@@ -219,8 +219,11 @@ describe('GoalSettings', () => {
 			'New cards',
 			'Flashcard study time',
 			'Conjugation drill',
+			'Counter readings',
+			'Counters',
 			'Grammar lessons',
 			'Journal entries',
+			'Measure words',
 			'Reading',
 			'Script practice',
 			// The registered drills (#180).
