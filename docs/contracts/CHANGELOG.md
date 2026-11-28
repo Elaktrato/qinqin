@@ -5,6 +5,17 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #345 — slang, vulgar and derogatory senses last and folded (contract 23)
+
+- **New folder `senses/`:** the sense display rule (`display.json`, rule `senses/display`), decoded by Go and web: a
+  gloss is marked `vulg`, `derog` or `sl` by its sense's JMdict tag (`vulg`, `derog`, `sl`, `net-sl`, `m-sl`), a
+  CC-CEDICT parenthesised note ("(slang)", "(vulgar)", "(derog.)"), an explicit word or a vulgar character; each sense
+  splits into an everyday and a sensitive unit; everyday units first, sensitive ones folded unless nothing else is
+  left. Stored senses are not reordered.
+- **Answers:** the one gloss of `GET /api/starter-sets/{id}` and `GET /api/frequency-packs/{id}/top` entries, the first
+  gloss per dictionary of `GET /api/search` hits and the `gloss` of an entry's `characters` follow the rule (鸡 shows
+  "fowl"; a list never shows a folded gloss). The lookup and entry answers are unchanged: clients apply the rule.
+
 ## #220 — topic labels of words (contract 22)
 
 - **New folder `topics/`:** the fixed topic list shared by every language (`topics.json`, rule `topics/list`: 49 ids
