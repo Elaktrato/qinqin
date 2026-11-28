@@ -6,7 +6,7 @@ import { GENERAL_DECK_ID } from '$lib/studycore/types';
 import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';
-import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';
+import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily, type ThresholdFamily } from './catalogue';
 import { journalEntryId, reachedFromLog, reachedStats, type LogInputs, type Reached } from './reached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
 import * as build from '$lib/testing/study';
@@ -126,7 +126,7 @@ describe('reachedFromLog properties (seeded)', () => {
 				const def = FAMILIES.find((f) => f.family === family)!;
 				for (const n of def.thresholds) {
 					const want = bruteForce(items, count as (p: readonly { at: number; id: string }[]) => number, n);
-					const id = milestoneId(family as Exclude<MilestoneFamily, 'level-complete'>, n);
+					const id = milestoneId(family as ThresholdFamily, n);
 					expect(byId.get(id) ?? null, id).toBe(want);
 					if (want !== null) checked += 1;
 				}

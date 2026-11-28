@@ -174,93 +174,138 @@ function catchUpLessons(keys: string[]): CatchUpLesson[] {
 
 const pair = (unit: string, lesson: string): string => `${unit}\u0000${lesson}`;
 
+/** courseEventsOf: the readable events of course `courseId` in replay order (instant, then id). */
+export function courseEventsOf(courseId: string, events: readonly StudyEvent[]): CourseEvent[] {
+	const ps: CourseEvent[] = [];
+	for (const e of events) {
+		const p = parseCourseEvent(e);
+		if (p !== null && p.course === courseId) ps.push(p);
+	}
+	return ps.sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+type ReplayUnit = DeriveCourse['sections'][number]['units'][number];
+
+/**
+ * CourseReplay applies a course's events one at a time (README "Derivation"): finished and started lessons, met
+ * words, and which units are passed (studied or skipped). deriveCourseState reads it after the last event; the
+ * milestones read it after each one.
+ */
+export class CourseReplay {
+	readonly course: DeriveCourse;
+	/** Every unit in course order: its section and unit index. */
+	readonly order: { section: number; unit: number }[] = [];
+	readonly unitAt = new Map<string, number>();
+	readonly sectionAt = new Map<string, number>();
+	readonly finished = new Set<string>();
+	readonly started = new Set<string>();
+	readonly met: string[] = [];
+	readonly metSet = new Set<string>();
+	/** Per unit in course order: 0 not passed, 1 studied, 2 skipped. */
+	readonly passed: (0 | 1 | 2)[];
+	readonly testPassed: boolean[];
+	readonly examPassed: boolean[];
+
+	constructor(course: DeriveCourse) {
+		this.course = course;
+		course.sections.forEach((s, si) => {
+			this.sectionAt.set(s.id, si);
+			s.units.forEach((u, ui) => {
+				this.unitAt.set(u.id, this.order.length);
+				this.order.push({ section: si, unit: ui });
+			});
+		});
+		this.passed = new Array<0 | 1 | 2>(this.order.length).fill(0);
+		this.testPassed = new Array<boolean>(this.order.length).fill(false);
+		this.examPassed = new Array<boolean>(course.sections.length).fill(false);
+	}
+
+	/** unit: the unit at a position in course order. */
+	unit(i: number): ReplayUnit {
+		const at = this.order[i]!;
+		return this.course.sections[at.section]!.units[at.unit]!;
+	}
+
+	/** isFinished: the lesson of the unit was finished. */
+	isFinished(unit: string, lesson: string): boolean {
+		return this.finished.has(pair(unit, lesson));
+	}
+
+	/** done: passed, or, for a unit without a test, every lesson finished. */
+	done(i: number): boolean {
+		if (this.passed[i] !== 0) return true;
+		const u = this.unit(i);
+		return !u.test && u.lessons.every((l) => this.finished.has(pair(u.id, l.id)));
+	}
+
+	apply(p: CourseEvent): void {
+		switch (p.kind) {
+			case 'lesson-started':
+				this.started.add(pair(p.unit, p.lesson));
+				break;
+			case 'lesson-finished':
+				this.finished.add(pair(p.unit, p.lesson));
+				for (const w of p.words) {
+					if (!this.metSet.has(w)) {
+						this.metSet.add(w);
+						this.met.push(w);
+					}
+				}
+				break;
+			case 'unit-test': {
+				const i = this.unitAt.get(p.unit);
+				if (i === undefined || !p.passed) break;
+				this.testPassed[i] = true;
+				if (p.early) this.#skipBefore(i + 1);
+				else if (this.passed[i] === 0) this.passed[i] = 1;
+				break;
+			}
+			case 'section-exam': {
+				const si = this.sectionAt.get(p.section);
+				if (si === undefined || !p.passed) break;
+				this.examPassed[si] = true;
+				this.#skipBefore(this.#endOf((s) => s <= si));
+				break;
+			}
+			case 'placement': {
+				const si = this.sectionAt.get(p.section);
+				if (si === undefined) break;
+				this.#skipBefore(this.#endOf((s) => s < si));
+				break;
+			}
+		}
+	}
+
+	#skipBefore(end: number): void {
+		for (let i = 0; i < end; i++) if (this.passed[i] === 0) this.passed[i] = 2;
+	}
+
+	#endOf(inSection: (section: number) => boolean): number {
+		let end = 0;
+		this.order.forEach((r, i) => {
+			if (inSection(r.section)) end = i + 1;
+		});
+		return end;
+	}
+}
+
 /**
  * deriveCourseState replays one workspace's events of course `courseId` over the filled course (README
  * "Derivation"). `known` is the words the learner has marked known. The result depends on the events' (ts, id) order,
  * never on their arrival.
  */
 export function deriveCourseState(course: DeriveCourse, courseId: string, events: readonly StudyEvent[], known: readonly string[]): CourseState {
-	const ps: CourseEvent[] = [];
-	for (const e of events) {
-		const p = parseCourseEvent(e);
-		if (p !== null && p.course === courseId) ps.push(p);
-	}
-	ps.sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-
-	const order: { section: number; unit: number }[] = [];
-	const unitAt = new Map<string, number>();
-	const sectionAt = new Map<string, number>();
-	course.sections.forEach((s, si) => {
-		sectionAt.set(s.id, si);
-		s.units.forEach((u, ui) => {
-			unitAt.set(u.id, order.length);
-			order.push({ section: si, unit: ui });
-		});
-	});
-	const unit = (i: number) => course.sections[order[i]!.section]!.units[order[i]!.unit]!;
-
-	const finished = new Set<string>();
-	const started = new Set<string>();
-	const met: string[] = [];
-	const metSet = new Set<string>();
-	const passed = new Array<0 | 1 | 2>(order.length).fill(0); // not passed, studied, skipped
-	const testPassed = new Array<boolean>(order.length).fill(false);
-	const examPassed = new Array<boolean>(course.sections.length).fill(false);
-	const skipBefore = (end: number) => {
-		for (let i = 0; i < end; i++) if (passed[i] === 0) passed[i] = 2;
-	};
-	const endOf = (inSection: (section: number) => boolean) => {
-		let end = 0;
-		order.forEach((r, i) => {
-			if (inSection(r.section)) end = i + 1;
-		});
-		return end;
-	};
-	for (const p of ps) {
-		switch (p.kind) {
-			case 'lesson-started':
-				started.add(pair(p.unit, p.lesson));
-				break;
-			case 'lesson-finished':
-				finished.add(pair(p.unit, p.lesson));
-				for (const w of p.words) {
-					if (!metSet.has(w)) {
-						metSet.add(w);
-						met.push(w);
-					}
-				}
-				break;
-			case 'unit-test': {
-				const i = unitAt.get(p.unit);
-				if (i === undefined || !p.passed) break;
-				testPassed[i] = true;
-				if (p.early) skipBefore(i + 1);
-				else if (passed[i] === 0) passed[i] = 1;
-				break;
-			}
-			case 'section-exam': {
-				const si = sectionAt.get(p.section);
-				if (si === undefined || !p.passed) break;
-				examPassed[si] = true;
-				skipBefore(endOf((s) => s <= si));
-				break;
-			}
-			case 'placement': {
-				const si = sectionAt.get(p.section);
-				if (si === undefined) break;
-				skipBefore(endOf((s) => s < si));
-				break;
-			}
-		}
-	}
+	const replay = new CourseReplay(course);
+	for (const p of courseEventsOf(courseId, events)) replay.apply(p);
+	const { order, unitAt, finished, started, met, metSet, passed, testPassed, examPassed } = replay;
+	const unit = (i: number) => replay.unit(i);
 
 	const knownIn = new Set(known);
 	const knownOut = new Set<string>();
 	const state: CourseState = { current: null, sections: [], met, known: [] };
 	const done = order.map((_, i) => {
 		const u = unit(i);
-		let d = passed[i] !== 0;
-		if (!d && !u.test) d = u.lessons.every((l) => finished.has(pair(u.id, l.id)));
+		const d = replay.done(i);
 		if (passed[i] === 2) {
 			for (const w of u.words) {
 				if (!metSet.has(w.key) && !knownIn.has(w.key) && !knownOut.has(w.key)) {

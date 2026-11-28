@@ -16,6 +16,10 @@ vi.mock('$lib/studycore/commands/keyed', async (importOriginal) => ({
 	saveSeenMilestones: vi.fn()
 }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
+vi.mock('$lib/features/courses/courseData', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/features/courses/courseData')>()),
+	workspaceCourse: vi.fn()
+}));
 
 import type { CharRow, Scheme } from '$lib/api/types';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
@@ -26,6 +30,8 @@ import { PartialPushError } from '$lib/sync/push';
 import { saveSeenMilestones } from '$lib/studycore/commands/keyed';
 import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/studycore/types';
 import { givenTimelines, replayStats } from '$lib/weekly/replay';
+import { workspaceCourse } from '$lib/features/courses/courseData';
+import { testCourse } from '$lib/features/courses/testing/course';
 import { levelMilestoneId } from './catalogue';
 import { flushOnOnline, loadMilestones, markSeen } from './loadMilestones';
 import { addPending, readPending } from './seen';
@@ -332,5 +338,42 @@ describe('markSeen', () => {
 	it('nothing to mark for no card', async () => {
 		await markSeen(ctx.session, { workspaceId: WS, plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() });
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
+	});
+});
+
+describe('course milestones (#225)', () => {
+	const lesson = (id: string, unit: string, lessonId: string, words: string[] = []): StudyEvent =>
+		event(id, 'course', { kind: 'lesson-finished', course: 'zh-test', unit, lesson: lessonId, score: 1, total: 1, words });
+
+	beforeEach(() => {
+		vi.mocked(workspaceCourse).mockResolvedValue(testCourse());
+		vi.mocked(loadStudyHistory).mockResolvedValue(history({ courseEvents: [lesson('k1', 'sounds', 'listening')] }));
+	});
+
+	it('Home shows the course milestones of the workspace\u2019s course, titled from it', async () => {
+		const view = await loadMilestones(ctx.session, WS, { scope: 'home', language: 'zh', states: ctx.session.features, now: NOW });
+		expect(view.plan.kind).not.toBe('none');
+		const planned = view.plan.kind === 'none' ? [] : view.plan.ids;
+		expect(planned).toEqual(expect.arrayContaining(['course-started:zh-test', 'course-unit:zh-test:sounds', 'course-section:zh-test:start']));
+		expect(view.titles.get('course-unit:zh-test:sounds')).toBe('Unit done: sounds');
+		expect(view.titles.get('course-section:zh-test:start')).toBe('Section done: Start');
+		expect(workspaceCourse).toHaveBeenCalledWith(ctx.session, { id: WS, language: 'zh' });
+	});
+
+	it('with Courses switched off, or without course events, no course is read and none is reached', async () => {
+		states([{ id: 'courses', enabled: false }]);
+		const off = await loadMilestones(ctx.session, WS, { scope: 'home', language: 'zh', states: ctx.session.features, now: NOW });
+		expect(off.reached.some((r) => r.id.startsWith('course-'))).toBe(false);
+		states();
+		vi.mocked(loadStudyHistory).mockResolvedValue(history());
+		const none = await loadMilestones(ctx.session, WS, { scope: 'home', language: 'zh', states: ctx.session.features, now: NOW });
+		expect(none.reached.some((r) => r.id.startsWith('course-'))).toBe(false);
+		expect(workspaceCourse).not.toHaveBeenCalled();
+	});
+
+	it('a course that cannot be read reaches nothing and lists nothing of it', async () => {
+		vi.mocked(workspaceCourse).mockResolvedValue(null);
+		const view = await loadMilestones(ctx.session, WS, { scope: 'home', language: 'zh', states: ctx.session.features, now: NOW });
+		expect(view.reached.some((r) => r.id.startsWith('course-'))).toBe(false);
 	});
 });

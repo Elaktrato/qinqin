@@ -29,6 +29,12 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   source `course` (feature `courses`, unit `count`).
 - **`milestones/reached.json`:** one case: a course step day keeps the streak (a course grammar lesson and a placement
   do not).
+- **`milestones/catalogue.json`:** seven families appended after `level-complete`, following the `courses` switch,
+  source `course`: `course-started:<course>`, `course-unit:<course>:<unit>`, `course-section:<course>:<section>`,
+  `course-script:<course>:<script>`, `course-characters:<course>:<n>` (100 … 1000), `course-words:<course>:<n>` (50 …
+  3000) and `course-graduated:<course>`; id, parse, enabled, order and title cases (titles name the course's words).
+- **New fixture `milestones/course.json`** (rule `milestones/course`, web): when each course milestone is reached over
+  a filled course and the workspace's course events. `milestones/README.md` "Course milestones".
 
 ## #348 — Japanese reads whole sentences; function words (contract 36)
 

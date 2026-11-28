@@ -1,14 +1,18 @@
 // The only I/O of the milestones: the cached study history and event log of
 // one workspace, the feature switches, the vacation runs, the pending list
 // and, on Stats → Week, the installed levels. Home computes the log families
-// only (no replay); the Week tab passes the timelines and the character
-// universe it already loaded. Rule: docs/contracts/milestones/.
+// and the course families (#225: the workspace's held course, read only when
+// the workspace has course events); the Week tab adds the replay families from
+// the timelines and the character universe it already loaded. Rule:
+// docs/contracts/milestones/.
 
+import { getLanguage } from '$lib/i18n';
 import type { Session } from '$lib/context/session.svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
 
-import { FLASHCARDS_ID, JOURNAL_ID, READER_ID, featureEnabled } from '$lib/features';
+import { COURSES_ID, FLASHCARDS_ID, JOURNAL_ID, READER_ID, featureEnabled } from '$lib/features';
+import { workspaceCourse } from '$lib/features/courses/courseData';
 import { levelDecks, levelItems, ownedLevelDeckId } from '$lib/features/flashcards/decks/systemDecks';
 import { usesHan } from '$lib/languages';
 import type { FeatureSwitchesValue } from '$lib/features/switches.svelte';
@@ -19,7 +23,8 @@ import { GENERAL_DECK_ID } from '$lib/studycore/types';
 import type { StudyCard } from '$lib/studycore/types';
 import { vacationRuns } from '$lib/studycore/vacation';
 import type { Timelines } from '$lib/weekly/replay';
-import { MILESTONE_KEY_PREFIX, enabledFamilies, logFamilies } from './catalogue';
+import { MILESTONE_KEY_PREFIX, courseFamilies, enabledFamilies, logFamilies } from './catalogue';
+import { courseNames, reachedFromCourse } from './courseReached';
 import { milestoneTitle } from './milestoneText';
 import { milestoneCard, milestoneHistory, unseenReached, type CardPlan, type HistoryItem } from './plan';
 import { reachedFromLog, type Reached } from './reached';
@@ -201,9 +206,10 @@ export async function loadMilestones(
 			flashcards: featureEnabled(FLASHCARDS_ID, states.list),
 			reader: featureEnabled(READER_ID, states.list),
 			journal: featureEnabled(JOURNAL_ID, states.list),
+			courses: featureEnabled(COURSES_ID, states.list),
 			han: usesHan(opts.language)
 		});
-		const families = opts.scope === 'home' || opts.week === undefined ? logFamilies(all) : all;
+		const families = opts.scope === 'home' || opts.week === undefined ? new Set([...logFamilies(all), ...courseFamilies(all)]) : all;
 		const deckIds = new Set([GENERAL_DECK_ID, ...data.decks.map((d) => d.id)]);
 		const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
 		// The log as loaded (filtered inside, keyed by content): a reload is a memo hit.
@@ -223,6 +229,13 @@ export async function loadMilestones(
 				levels: loaded?.levels ?? []
 			});
 			reached = [...reached, ...replayed].sort((a, b) => a.at - b.at);
+		}
+		if (courseFamilies(families).size > 0 && data.courseEvents.length > 0) {
+			const course = await workspaceCourse(session, { id: workspaceId, language: opts.language });
+			if (course !== null) {
+				names = new Map([...names, ...courseNames(course, getLanguage())]);
+				reached = [...reached, ...reachedFromCourse(course, data.courseEvents, day, now)].sort((a, b) => a.at - b.at);
+			}
 		}
 	}
 

@@ -98,6 +98,22 @@ export function chosenCourse(session: Held, workspaceId: number, list: readonly 
 	return list.find((c) => c.id === picked) ?? byId(list)[0] ?? null;
 }
 
+/**
+ * workspaceCourse: the filled course of a workspace (the device's pick, else the first by id), from what is held, read
+ * from the server only when nothing is; null without a course for the language or when it cannot be read. Never
+ * rejects: Home's widget and the milestones (#225) show nothing rather than an error.
+ */
+export async function workspaceCourse(session: Held, workspace: { id: number; language: string }): Promise<Course | null> {
+	try {
+		const list = heldCourseList(session, workspace.language) ?? (await refreshCourseList(session, workspace.language));
+		const info = chosenCourse(session, workspace.id, list);
+		if (info === null) return null;
+		return heldCourse(session, info.id) ?? (await refreshCourse(session, info.id));
+	} catch {
+		return null;
+	}
+}
+
 /** forgetCourseCopies removes every device copy (the sign-out). */
 export function forgetCourseCopies(storage: Storage | null): void {
 	if (storage === null) return;

@@ -4,7 +4,7 @@ vi.mock('$lib/api/courses', async (importOriginal) => ({ ...(await importOrigina
 
 import { course, courses, type CourseInfo } from '$lib/api/courses';
 import { memoryStorage, newSession, testContext, type TestContext } from '$lib/testing/context';
-import { COURSE_COPY_PREFIX, chosenCourse, heldCourse, heldCourseList, pickCourse, refreshCourse, refreshCourseList } from './courseData';
+import { COURSE_COPY_PREFIX, chosenCourse, heldCourse, heldCourseList, pickCourse, refreshCourse, refreshCourseList, workspaceCourse } from './courseData';
 import { testCourse } from './testing/course';
 
 const info = (id: string, language = 'zh'): CourseInfo => ({ id, name: id, version: '1', language, license: 'CC-BY-4.0', attribution: '', notice: '', title: { en: id } });
@@ -20,6 +20,26 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks());
 
 const copyKeys = () => [...Array(localStorage.length)].map((_, i) => localStorage.key(i)!).filter((k) => k.startsWith(COURSE_COPY_PREFIX));
+
+describe('the course of a workspace (#225)', () => {
+	it('reads the list and the course once, then answers from what is held', async () => {
+		vi.mocked(course).mockImplementation(async (id: string) => ({ ...testCourse(), id }));
+		const first = await workspaceCourse(ctx.session, { id: 1, language: 'zh' });
+		expect(first?.id).toBe('zh-a');
+		expect(courses).toHaveBeenCalledTimes(1);
+		expect(course).toHaveBeenCalledTimes(1);
+		expect((await workspaceCourse(ctx.session, { id: 1, language: 'zh' }))?.id).toBe('zh-a');
+		expect(courses).toHaveBeenCalledTimes(1);
+		expect(course).toHaveBeenCalledTimes(1);
+	});
+
+	it('is null without a course for the language, and when the server cannot be read', async () => {
+		vi.mocked(courses).mockResolvedValueOnce([]);
+		expect(await workspaceCourse(ctx.session, { id: 1, language: 'de' })).toBeNull();
+		vi.mocked(courses).mockRejectedValueOnce(new TypeError('offline'));
+		expect(await workspaceCourse(ctx.session, { id: 1, language: 'ko' })).toBeNull();
+	});
+});
 
 describe('the course data held for the session and the device (#222)', () => {
 	it('holds nothing before the first read; a read holds the list per language, by pack id', async () => {
