@@ -5,7 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #349 — Chinese reads whole sentences (contract 39)
+## #349 — Chinese reads whole sentences (contract 38)
 
 - **New `segment/zh.json`:** Chinese is read on the #348 lattice. The rules format gains optional keys:
   `costs.levelStep` and `costs.unlisted` (a token priced by the installed word level lists of the language),
