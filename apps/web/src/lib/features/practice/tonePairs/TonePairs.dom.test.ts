@@ -52,7 +52,7 @@ function answer(n: number, item: string, grade: number, minutesAgo: number): Stu
 }
 
 function history(events: StudyEvent[] = []) {
-	return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], drillAnswers: drillAnswersOf(1, events) };
+	return { decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [], drillAnswers: drillAnswersOf(1, events) };
 }
 
 function workspace(settings: Record<string, unknown> = {}): void {
