@@ -110,6 +110,7 @@ func TestStatsActivityDefaults(t *testing.T) {
 		{"journal", "journal", "count"},
 		{"script", "scripts", "count"},
 		{"grammar", "grammar", "count"},
+		{"course", "courses", "count"},
 	}
 	// Then one count source per registered drill (docs/contracts/drills/).
 	for _, id := range drills.IDs {

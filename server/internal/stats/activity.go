@@ -153,6 +153,11 @@ func ruleQuery(rule Rule, withWorkspace bool) string {
 			)
 		) GROUP BY d, ws`
 	case KindDistinct:
+		if item, ok := items[rule.Item]; ok {
+			return `SELECT d, ws, COUNT(DISTINCT v), COUNT(DISTINCT v) FROM (
+			SELECT w.value->>'d' AS d, workspace_id AS ws, ` + item + ` AS v ` + where + `
+		) GROUP BY d, ws`
+		}
 		return `SELECT d, ws, COUNT(DISTINCT v), COUNT(DISTINCT v) FROM (
 			SELECT w.value->>'d' AS d, workspace_id AS ws,
 				CASE WHEN json_valid(payload) THEN

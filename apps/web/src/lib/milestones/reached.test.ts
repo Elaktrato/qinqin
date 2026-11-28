@@ -218,6 +218,18 @@ describe('reachedFromLog', () => {
 		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: longer })).not.toBe(first);
 	});
 
+	it('a log that differs only in a grammar run, a drill answer or a course step is a different log (#225)', () => {
+		const events = [event(1, START, 'read', { seconds: 3600 })];
+		const first = reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events });
+		for (const extra of [
+			event(2, START + 86_400_000, 'grammar', { point: 'p:l', mode: 'lesson', score: 1, total: 1 }),
+			event(3, START + 86_400_000, 'drill.tone-pairs', { item: '3-4', mode: 'produce', grade: 3 }),
+			event(4, START + 86_400_000, 'course', { kind: 'unit-test', course: 'c', unit: 'u', score: 1, total: 1, passed: true, early: false })
+		]) {
+			expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: [...events, extra] })).not.toBe(first);
+		}
+	});
+
 	it('with workspaceId, events of another workspace are ignored', () => {
 		const events = [event(1, START, 'read', { seconds: 3600 }), { ...event(2, START, 'journal', { entryId: 'J' }), workspaceId: 2 }];
 		expect(reachedFromLog(reachedMemo, { ...base(), events, workspaceId: 1 }).map((r) => r.id)).toEqual(['reading-hours:1']);

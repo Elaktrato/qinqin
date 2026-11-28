@@ -36,6 +36,9 @@ type Rule struct {
 	Measure    *Measure `json:"measure,omitempty"`
 	PointsPer  int64    `json:"pointsPer,omitempty"`
 	DistinctBy string   `json:"distinctBy,omitempty"`
+	// Item names a fixed distinct value computed from the payload (items):
+	// a rule whose identity is more than one member. Only "course" exists.
+	Item string `json:"item,omitempty"`
 }
 
 // Kind reports the scoring kind, decided by which optional fields are set.
@@ -43,7 +46,7 @@ func (r Rule) Kind() Kind {
 	switch {
 	case r.Measure != nil:
 		return KindMeasure
-	case r.DistinctBy != "":
+	case r.DistinctBy != "" || r.Item != "":
 		return KindDistinct
 	default:
 		return KindCount
@@ -80,4 +83,29 @@ var coreRules = []Rule{
 	{Type: "script", Feature: "scripts"},
 	// A grammar lesson run (#277): one point per lesson finished, once per lesson per learner day.
 	{Type: "grammar", Feature: "grammar", DistinctBy: "point"},
+	// A course step (#225, docs/contracts/courses/counting.json): a finished lesson that is not a grammar lesson
+	// (its grammar run counts), a unit test or a section exam; one point per step per learner day.
+	{Type: "course", Feature: "courses", Item: ItemCourse},
+}
+
+// ItemCourse is the course step's identity: [kind, course, unit or section, lesson].
+const ItemCourse = "course"
+
+// items are the SQL expressions of the named distinct values, over a row's
+// payload; NULL scores nothing. Members are read by JSON type only.
+var items = map[string]string{
+	ItemCourse: `CASE WHEN json_valid(payload) AND json_type(payload, '$.course') = 'text' THEN
+		CASE json_extract(payload, '$.kind')
+		WHEN 'lesson-finished' THEN
+			CASE WHEN json_type(payload, '$.unit') = 'text' AND json_type(payload, '$.lesson') = 'text'
+				AND substr(json_extract(payload, '$.lesson'), 1, 8) <> 'grammar-'
+			THEN json_array('lesson', json_extract(payload, '$.course'), json_extract(payload, '$.unit'), json_extract(payload, '$.lesson')) END
+		WHEN 'unit-test' THEN
+			CASE WHEN json_type(payload, '$.unit') = 'text'
+			THEN json_array('unit-test', json_extract(payload, '$.course'), json_extract(payload, '$.unit')) END
+		WHEN 'section-exam' THEN
+			CASE WHEN json_type(payload, '$.section') = 'text'
+			THEN json_array('section-exam', json_extract(payload, '$.course'), json_extract(payload, '$.section')) END
+		END
+	END`,
 }

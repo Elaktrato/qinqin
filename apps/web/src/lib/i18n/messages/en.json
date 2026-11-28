@@ -151,6 +151,8 @@
 	"account.verify.newCodeSent": "A new code was sent to {address}.",
 	"account.verify.resendFailed": "Could not send a new code.",
 	"account.verify.sendNew": "Send a new code",
+	"activity.source.course.count": "{count, plural, one {{n} course lesson} other {{n} course lessons}}",
+	"activity.source.course.label": "Course lessons",
 	"activity.source.drill.conjugation.count": "{count, plural, one {{n} conjugation answer} other {{n} conjugation answers}}",
 	"activity.source.drill.conjugation.label": "Conjugation drill",
 	"activity.source.drill.counterReadings.count": "{count, plural, one {{n} counter-reading answer} other {{n} counter-reading answers}}",

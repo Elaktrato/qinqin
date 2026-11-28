@@ -15,6 +15,8 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
 	{ type: 'journal', feature: 'journal', unit: 'count' },
 	{ type: 'script', feature: 'scripts', unit: 'count' },
 	{ type: 'grammar', feature: 'grammar', unit: 'count' },
+	// A course step (#225, docs/contracts/courses/counting.json): one point per step per day.
+	{ type: 'course', feature: 'courses', unit: 'count' },
 	// One count rule per registered drill (docs/contracts/drills/, counting.json).
 	...DRILL_IDS.map((id): ActivitySource => ({ type: drillEventType(id), feature: DRILL_FEATURE, unit: 'count' }))
 ];
@@ -38,6 +40,7 @@ const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> 
 	journal: { label: 'activity.source.journal.label', count: 'activity.source.journal.count' },
 	script: { label: 'activity.source.script.label', count: 'activity.source.script.count' },
 	grammar: { label: 'activity.source.grammar.label', count: 'activity.source.grammar.count' },
+	course: { label: 'activity.source.course.label', count: 'activity.source.course.count' },
 	...Object.fromEntries(
 		DRILL_IDS.filter((id) => Object.hasOwn(DRILL_WORDS, id)).map((id) => [drillEventType(id), DRILL_WORDS[id]])
 	)

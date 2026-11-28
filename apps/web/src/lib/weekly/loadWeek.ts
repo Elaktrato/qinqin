@@ -81,6 +81,7 @@ export async function loadWeek(
 		reviews: data.reviews,
 		grammarRuns: data.grammarRuns,
 		drillAnswers: data.drillAnswers,
+		courseSteps: data.courseSteps,
 		vacation: vacationRuns(data.vacations ?? [], workspaceId, today),
 		activity,
 		goals: goalsOf(data.goals),

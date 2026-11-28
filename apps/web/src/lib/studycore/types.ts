@@ -5,6 +5,7 @@
 import type { ParsedGoals } from '$lib/goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrsParams';
+import type { CourseStep } from './courseCounting';
 import type { DrillAnswer } from './drills';
 import type { GrammarRun } from './grammarRuns';
 import type { StudyEvent } from '$lib/events';
@@ -154,6 +155,8 @@ export interface StudyHistory extends StudyData {
 	 * Practice area schedules them. `historyOf` always sets it; absent means none (test mocks).
 	 */
 	drillAnswers?: DrillAnswer[];
+	/** The workspace's course steps (#225, courseCounting.ts), in replay order: EXP and the streak count them. `historyOf` always sets it; absent means none (test mocks). */
+	courseSteps?: CourseStep[];
 	/** The workspace's `course` events (#222) as logged (queued ones included), for the course derivation. */
 	courseEvents: StudyEvent[];
 	/** How many stored duplicate cards were folded away. */

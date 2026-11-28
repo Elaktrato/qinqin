@@ -18,6 +18,18 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   "counter-readings"]`; **`events/activity.json`:** their count rules, feature `practice`; `GET /api/stats/activity`
   lists ten sources.
 
+## #225 — courses count; course milestones; the Home widget (contract 38)
+
+- **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
+  **step** is a finished lesson that is not a grammar lesson, a unit test or a section exam. Activity: one point per
+  step per learner day; EXP 20 per step; a step day keeps the streak and counts as active. `courses/README.md`
+  "Counting".
+- **`events/activity.json`:** a new core rule `course` (`{"feature": "courses", "item": "course"}`, after `grammar`):
+  a distinct rule whose value is the step's identity (`item`, a new rule member). `GET /api/stats/activity` lists the
+  source `course` (feature `courses`, unit `count`).
+- **`milestones/reached.json`:** one case: a course step day keeps the streak (a course grammar lesson and a placement
+  do not).
+
 ## #348 — Japanese reads whole sentences; function words (contract 36)
 
 - **New `segment/`:** a language's segmentation rules (`ja.json`, embedded by the server) and the lattice: every match

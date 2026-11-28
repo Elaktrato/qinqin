@@ -1,4 +1,4 @@
-# Courses: the pack, the fill rule, progress and tests (#221, #224)
+# Courses: the pack, the fill rule, progress, tests, counting and Home (#221, #224, #225)
 
 A course (design: `docs/superpowers/specs/2026-11-24-courses-design.md`; plan and rulings:
 `docs/superpowers/plans/2026-11-28-221-course-pack.md`) is a hand-written **skeleton** (sections, units, grammar,
@@ -19,6 +19,7 @@ Web: `apps/web/src/lib/api/courses.ts` (the routes and a strict decoder), `apps/
 | `derive.json` | `courses/derive`: the payload builder (`build`), and events → path state | Go: `courses/derive_contract_test.go` (`Derive`, `ParseProgress`); web: `lib/studycore/courseProgress.test.ts` (`coursePayload`, `deriveCourseState`) |
 | `changes.json` | `courses/changes`: events recorded against an earlier course, replayed over the course as it is now | as `derive.json` |
 | `tests.json` | `courses/tests`: how a unit test or section exam is assembled, scored and judged, a placement exam's early stop, the placement chain (#224) | web: `lib/features/courses/tests.test.ts` (a client rule: the server only stores the events) |
+| `counting.json` | `courses/counting`: which events are course steps, their activity cells, EXP and the streak (#225) | Go: `stats/contract_courses_test.go` (`activity`); web: `lib/studycore/courseCounting.test.ts` (`steps`, `xp`, `streak`) |
 
 ## The pack
 
@@ -213,3 +214,22 @@ ahead, and **placement** chains the section exams. Plan and rulings:
   of it); a fail records `placement` of the failed section, or of the course's first section when the first exam
   failed (nothing skipped). Passing the last exam ends it. A client offers placement while no unit of a section with
   an exam is done and nothing was skipped.
+
+## Counting (#225, `counting.json`)
+
+Course work counts like grammar lesson runs (#277) and drill answers (`drills/`). Plan and rulings:
+`docs/superpowers/plans/2026-11-28-225-course-home.md`. Web: `apps/web/src/lib/studycore/courseCounting.ts`.
+
+- **A step** is a readable course event (Parsing above) that is a `lesson-finished` whose `lesson` does not start
+  with `grammar-`, a `unit-test` (passed or not) or a `section-exam` (passed or not, placement exams too). A course
+  grammar lesson records a `grammar` run (`grammar/`), which counts on its own; a `lesson-started` and a `placement`
+  are no step. Its identity (`steps`): `["lesson", course, unit, lesson]`, `["unit-test", course, unit]`,
+  `["section-exam", course, section]`.
+- **Activity** (`activity`; `events/activity.json` rule `course`, feature `courses`, `item: "course"`): one point per
+  distinct step per learner day and workspace; `raw` the same number, so a daily goal `activity:course` counts steps
+  ("course lessons") and the weekly summary shows them as an activity row. The server reads the members by JSON type
+  only (text `course`, `unit`, `lesson`, `section`), not the full parse.
+- **EXP** (`xp`): `stepXp` 20 per step, whatever its score; no daily bonus (it stays a review bonus).
+- **Streak** (`streak`) and the milestones' `streak` and `days-active` families: a learner day with a step counts like a
+  day with a review; vacation days are neutral.
+

@@ -14,6 +14,7 @@ import { oldestWeek } from './week';
 import { drillPayload, grammarPayload } from '$lib/events/eventPayloads';
 import { parseGrammarRun, type GrammarRun } from '$lib/studycore/grammarRuns';
 import { parseDrillAnswer, type DrillAnswer } from '$lib/studycore/drills';
+import { courseStepOf, type CourseStep } from '$lib/studycore/courseCounting';
 
 // A fresh memo per test (record 0009: the session owns one).
 let weekPasses = new Map() as WeekPasses;
@@ -124,6 +125,24 @@ describe('weekSummary', () => {
 		const foreign = weekSummary(new Map() as WeekPasses, { ...input, drillAnswers: answers(input.workspaceId + 1) }).streak;
 		expect(plain).toBeLessThan(7);
 		expect(withAnswers).toBeGreaterThanOrEqual(7);
+		expect(foreign).toBe(plain);
+	});
+
+	it('counts course step days of the workspace in the streak (#225)', () => {
+		const input = inputsOf(base);
+		const plain = weekSummary(weekPasses, input).streak;
+		const stepAt = (id: string, ws: number, ts: string): CourseStep => {
+			const payload = { kind: 'unit-test', course: 'c', unit: 'u', score: 1, total: 2, passed: false, early: false };
+			const s = courseStepOf({ id, workspaceId: ws, ts, type: 'course', payload });
+			if (s === null) throw new Error('no step');
+			return s;
+		};
+		const steps = (ws: number) =>
+			Array.from({ length: 7 }, (_, i) => stepAt(`k${ws}-${i}`, ws, new Date(input.day.dayStart(addDays(input.monday, i)) + 60_000).toISOString()));
+		const withSteps = weekSummary(new Map() as WeekPasses, { ...input, vacation: [], courseSteps: steps(input.workspaceId) }).streak;
+		const foreign = weekSummary(new Map() as WeekPasses, { ...input, courseSteps: steps(input.workspaceId + 1) }).streak;
+		expect(plain).toBeLessThan(7);
+		expect(withSteps).toBeGreaterThanOrEqual(7);
 		expect(foreign).toBe(plain);
 	});
 

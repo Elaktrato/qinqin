@@ -42,6 +42,13 @@
    }
   },
   {
+   "type": "course",
+   "rule": {
+    "feature": "courses",
+    "item": "course"
+   }
+  },
+  {
    "type": "drill.tone-pairs",
    "rule": {
     "feature": "practice"
