@@ -10,6 +10,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures';
 import { PHONE, expectNoSidewaysScroll, sidewaysOverflow } from '../support/layout';
 import { addBook, addCards } from '../support/study';
+import { ulid } from '../support/api';
 
 test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
 // Many pages per test: a longer hang backstop than the suite's 60 s.
@@ -71,6 +72,24 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		...LEARNER_TABS.map((tab) => `/settings?tab=${tab}`)
 	];
 	for (const path of paths) await check(page, path);
+});
+
+test('the tone-pair drill fits a 360 px phone (#180)', async ({ page, learner }) => {
+	await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.zh);
+	// One answer, so the grid shows a weak pair and the weakest round has an item.
+	await learner.api.post('/api/events/batch', {
+		events: [
+			{
+				id: ulid(Date.now()),
+				workspaceId: learner.workspaces.zh,
+				device: 'web',
+				ts: new Date().toISOString(),
+				type: 'drill.tone-pairs',
+				payload: { item: '3-3', mode: 'mark', grade: 1 }
+			}
+		]
+	});
+	for (const path of ['/practice', '/practice/tone-pairs', '/practice/tone-pairs/weakest']) await check(page, path);
 });
 
 test.describe('signed out', () => {
