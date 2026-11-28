@@ -38,6 +38,8 @@ export interface ReaderDisplay {
 	font: ReaderFont;
 	/** Mark new and learning words in the text (#68). */
 	highlightWords: boolean;
+	/** Save each new sentence a studied word is looked up in, as a card (#279, reader/saved-sentences.json). */
+	saveSentences: boolean;
 }
 
 export const DEFAULT_DISPLAY: ReaderDisplay = {
@@ -46,7 +48,8 @@ export const DEFAULT_DISPLAY: ReaderDisplay = {
 	smartThreshold: 80,
 	rubyScale: 0.55,
 	font: 'default',
-	highlightWords: false
+	highlightWords: false,
+	saveSentences: false
 };
 
 function threshold(value: unknown): number | null {
@@ -84,7 +87,8 @@ export function parseDisplay(
 		smartThreshold: threshold(r.smartThreshold) ?? DEFAULT_DISPLAY.smartThreshold,
 		rubyScale: scale(r.rubyScale) ?? DEFAULT_DISPLAY.rubyScale,
 		font: READER_FONTS.includes(r.font as ReaderFont) ? (r.font as ReaderFont) : DEFAULT_DISPLAY.font,
-		highlightWords: typeof r.highlightWords === 'boolean' ? r.highlightWords : DEFAULT_DISPLAY.highlightWords
+		highlightWords: typeof r.highlightWords === 'boolean' ? r.highlightWords : DEFAULT_DISPLAY.highlightWords,
+		saveSentences: r.saveSentences === true
 	};
 }
 
@@ -104,5 +108,6 @@ export function displayPatch(
 	if (change.rubyScale !== undefined) clean.rubyScale = scale(change.rubyScale) ?? DEFAULT_DISPLAY.rubyScale;
 	if (change.font !== undefined) clean.font = change.font;
 	if (change.highlightWords !== undefined) clean.highlightWords = change.highlightWords === true;
+	if (change.saveSentences !== undefined) clean.saveSentences = change.saveSentences === true;
 	return { reader: { ...readerObject(settings), version: 1, ...clean } };
 }

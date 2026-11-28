@@ -135,10 +135,9 @@ export function bookSentence(paragraph: string, start: number, end: number): str
 	return sentence === word ? '' : sentence;
 }
 
-/** normalizeSentence collapses whitespace runs to one space and trims. */
-export function normalizeSentence(text: string): string {
-	return text.replace(/\s+/gu, ' ').trim();
-}
+import { normalizeSentence } from './savedSentences';
+// The contract's rule (reader/saved-sentences.json): whitespace runs become one space, the ends are trimmed.
+export { normalizeSentence };
 
 /** The calls resolveBookSentence makes (injected for tests). */
 export interface SentenceApi {
