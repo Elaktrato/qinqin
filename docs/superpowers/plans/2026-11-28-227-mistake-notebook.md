@@ -103,9 +103,15 @@ ContractVersion 38). This builder does **not** hold the text-heavy slot: UI stri
   its review; the page says so.
 - Ruling: **a drill item that is no longer a candidate** (the word left the decks) is listed but not asked in the
   round (as the drills' own rounds do) — cost if wrong: none.
-- Ruling: **the card session filter**: `StudySessionConfig.cardIds` limits a deck session to those card ids, over
-  every deck, every kind, no companions, study-all limits; a card not due is not asked — the same planner, one filter
-  — cost if wrong: none for other sessions (absent = no filter).
+- Ruling: **the card session filter**: `StudySessionConfig.cardIds` limits a deck session to those card ids (over the
+  decks those cards are in, every kind, no companions, Study all); the planner still asks a listed card only when it is
+  due (or new: the notebook lists none, every card in it has a review) — the same planner, one filter — cost if wrong:
+  none for other sessions (absent = no filter).
+- Ruling: **UI strings live under `study.notebook.*`**, not a new key area — a new area is an i18n contract change
+  (`i18n/README.md` lists the areas) for no gain — cost if wrong: a rename when the notebook gets its own area.
+- Ruling: **a sent mark is remembered like a sent answer** (`recentSent`, three days): the event log is cached for a few
+  seconds, and without it a removed item stays on the page after Remove until the log refreshes (the e2e found this)
+  — cost if wrong: none.
 - Ruling: **restore remaps a card mark**: a `notebook` event whose `item` is `card:<id>` gets the id through the same
   map as a review's `cardId` (export notes the card as a reference); other items are kept byte for byte — the drill
   items that name entry ids are not remapped today either (drills contract), a known gap — cost if wrong: a card
@@ -127,4 +133,25 @@ this base (#144/#145 translate the final strings last).
 
 ## Execution record
 
-(filled in as the tasks land)
+Commits (oldest first): the plan; `feat(studycore)` the rules and the mark event (contract 41); `feat(backup)` the
+restore remap; `feat(flashcards)` the `cardIds` session filter; `feat(notebook)` the page and the round; `feat(notebook)`
+the links; `fix(studycore)` sent marks remembered; `test(e2e)`; `docs(notebook)`.
+
+- **Rules, test first.** The fixture `notebook.json` (hand-written expectations, a scratch script only laid out the
+  JSON) and `notebook.contract.test.ts` were written first and failed (no module); `notebook.ts` made all 37 cases pass
+  on the first run. `historyOf` gained `notebookMarks` (one expectation in `data.load.test.ts` updated).
+- **Backup, test first.** The two `remap.json` cases failed (`TestRemapCases`) before `remap.go` handled `notebook`;
+  `notebook_test.go` (the export's entry ref) was written after `export.go` was changed, then shown to fail with the
+  change stashed (entry 3 missing from refs) and pass with it.
+- **Session filter, test first.** `onlyCards.test.ts` and the `cardIds` case of `session.test.ts` failed first; one
+  expectation was then corrected (a listed new card is still asked; the notebook never lists one).
+- **The page.** `view.ts` (the words and links) and `practise.ts` were written before their tests (`view.test.ts`,
+  `practise.test.ts`, 10 cases) — not test-first; `NotebookPage.dom.test.ts` (6 cases) was written after the component,
+  also not test-first. Two DOM expectations waited on the loading heading and were fixed in the test.
+- **The e2e** (`notebook.spec.ts`) failed on the first run: after Remove the item stayed, because the cached log did not
+  have the sent mark yet. Test first for the fix: a `recentSent` case failed, `notebook` joined the remembered types,
+  the e2e passed.
+- **Phone width.** `/notebook` and `/notebook/practise` are in the main page list (empty notebook) and in their own
+  test with a card, a tone pair and a grammar point whose lesson id is 120 characters without a space.
+
+Not verified here: the Android shell (no SDK, Local follow-up), a hand check on a phone.

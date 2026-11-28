@@ -36,6 +36,8 @@
 	// A new load after a mark or a finished round ("Practise again").
 	let generation = $state(0);
 	let seq = 0;
+	// The workspace the shown data is of: another workspace's notebook is never shown (or marked) meanwhile.
+	let loadedFor = -1;
 
 	$effect(() => {
 		const ws = workspace;
@@ -43,6 +45,8 @@
 		void generation;
 		if (ws === null) return;
 		const mine = ++seq;
+		if (ws.id !== loadedFor) data = null;
+		loadedFor = ws.id;
 		error = '';
 		loadNotebook(session, ws).then(
 			(loaded) => {
