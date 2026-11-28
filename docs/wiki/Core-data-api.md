@@ -6,7 +6,7 @@ qinqin has no plugins (#199, [record 0006](https://github.com/Elaktrato/qinqin/b
 
 | Route | Behaviour |
 |---|---|
-| `GET /api/features` | The caller's switch of each core feature, in the order `flashcards`, `reader`, `journal`, `grammar`, `scripts`, `stats`: `[{id, enabled, updatedAt}]`. A feature never switched is on (`updatedAt` null). |
+| `GET /api/features` | The caller's switch of each core feature, in the order `flashcards`, `reader`, `journal`, `grammar`, `scripts`, `practice`, `courses`, `stats`: `[{id, enabled, updatedAt}]`. A feature never switched is on (`updatedAt` null). |
 | `PUT /api/features/{id}` `{enabled}` | Stores one switch. Any other id is 404. |
 
 Switching a feature off only hides it in the app; nothing is deleted or refused. Contract: `docs/contracts/features/`.

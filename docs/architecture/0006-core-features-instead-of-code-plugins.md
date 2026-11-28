@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199, #185, #186, #204, #277. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #185, #186, #204, #277, #222 (courses). A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 

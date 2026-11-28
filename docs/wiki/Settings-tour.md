@@ -36,7 +36,7 @@ Your colour theme and adjustments (`/settings?tab=appearance`), saved to your ac
 
 ## Features
 
-Switch **Decks** (flashcards), the **Reader**, the **Journal**, **Grammar**, **Scripts**, **Practice** (the drills) or **Stats** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
+Switch **Decks** (flashcards), the **Reader**, the **Journal**, **Grammar**, **Scripts**, **Practice** (the drills), **Courses** or **Stats** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
 
 **Stats** off hides the Stats pages (Overview, Week, Characters), the Stats section in the bars and the menu, and the Stats widgets on the home page and in Settings → Home: Activity, Characters, Summary, Reviews per day and Words. Your streak, XP and daily goal stay where you study (the Flashcards widget, the study session, the Daily goal widget), and so do the **This week** widget, the weekly summary notification and the milestone cards.
 

@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #278 (the study core), #284 (the reading convention). A merge from an issue that changes what this record names adds it here and
+Touched by: #278 (the study core), #284 (the reading convention), #222 (the courses feature stays off flashcards). A merge from an issue that changes what this record names adds it here and
 updates the record.
 
 ## Context
@@ -107,7 +107,8 @@ Not allowed:
 - A loose module at the top of `lib/` (the guard's allow-list, `LOOSE_ALLOWED`, is empty).
 - A re-export left at an old path after a move.
 - A shipped file in `lib/studycore` or `lib/exercises` importing `lib/features/flashcards`, `routes/study` or
-  `routes/flashcards`.
+  `routes/flashcards`; the same for the courses feature (`lib/features/courses`, `routes/courses`, #222), whose
+  lessons build on the study core only.
 
 ## Enforcement
 
