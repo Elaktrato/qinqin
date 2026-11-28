@@ -25,6 +25,10 @@ const (
 	// states languages. It builds no data package: the web app fetches the
 	// pictures from the server (docs/contracts/images/).
 	TypeImages = "images"
+	// TypeCourse is a course pack (#221): one course's skeleton (course.json,
+	// docs/contracts/courses/) for one language. It builds no data package:
+	// the server fills its units with words and serves the filled course.
+	TypeCourse = "course"
 	// TypeTheme is a colour theme pack; it states no language.
 	TypeTheme = "theme"
 	// TypeFont is a hanzi/kanji font pack; it states no language.
@@ -107,6 +111,7 @@ var All = []Descriptor{
 	{Type: TypeTheme, Registry: "theme_packs", Languages: None, Uploadable: true, Format: FormatThemesJSON},
 	{Type: TypeFont, Registry: "font_packs", Languages: None, Uploadable: true, Format: FormatFontSlices},
 	{Type: TypeImages, Registry: "image_packs", Languages: Many, Uploadable: true, Format: FormatImagesSVG},
+	{Type: TypeCourse, Registry: "course_packs", Languages: One, Uploadable: true, Format: FormatCourseJSON},
 }
 
 // Index is the position of typ in All, -1 for an unknown type.

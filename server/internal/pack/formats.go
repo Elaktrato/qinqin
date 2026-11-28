@@ -32,6 +32,9 @@ const (
 	// FormatRulesJSON is a lemma-rules pack: rules.json, one lemmatizer rule
 	// table (docs/contracts/lemma/).
 	FormatRulesJSON = "rules-json"
+	// FormatCourseJSON is a course pack: course.json, one course's skeleton
+	// (docs/contracts/courses/).
+	FormatCourseJSON = "course-json"
 )
 
 // Formats is every valid manifest format, in the order the validation
@@ -39,5 +42,5 @@ const (
 var Formats = []string{
 	FormatJSON, FormatCedict, FormatUnihan, FormatJMdict, FormatKanjidic2,
 	FormatYomitanFreq, FormatFreqCSV,
-	FormatAudioIndex, FormatComponentsTSV, FormatStrokesJSONLGz, FormatThemesJSON, FormatFontSlices, FormatRulesJSON, FormatImagesSVG,
+	FormatAudioIndex, FormatComponentsTSV, FormatStrokesJSONLGz, FormatThemesJSON, FormatFontSlices, FormatRulesJSON, FormatImagesSVG, FormatCourseJSON,
 }
