@@ -42,6 +42,12 @@
    }
   },
   {
+   "type": "drill.tone-pairs",
+   "rule": {
+    "feature": "practice"
+   }
+  },
+  {
    "type": "drill.conjugation",
    "rule": {
     "feature": "practice"

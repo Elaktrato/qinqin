@@ -7,9 +7,11 @@
 import type { DrillDef } from './types';
 import { conjugationDrill } from './conjugation/conjugationDrill';
 import { sampleDrill } from './sample/sampleDrill';
+import { tonePairDrill } from './tonePairs/tonePairDrill';
 
 /** The registered drills, in the order the list shows them. */
 export const DRILLS: readonly DrillDef[] = Object.freeze<DrillDef[]>([
+	tonePairDrill, // #180
 	conjugationDrill // #178
 ]);
 

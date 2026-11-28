@@ -7,6 +7,7 @@ import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrsParams';
 import type { DrillAnswer } from './drills';
 import type { GrammarRun } from './grammarRuns';
+import type { StudyEvent } from '$lib/events';
 import type { KnownBatch } from './knownMarks';
 import type { LimitPair } from './limits';
 import type { SeenMilestone } from '$lib/milestones/seen';
@@ -153,6 +154,8 @@ export interface StudyHistory extends StudyData {
 	 * Practice area schedules them. `historyOf` always sets it; absent means none (test mocks).
 	 */
 	drillAnswers?: DrillAnswer[];
+	/** The workspace's `course` events (#222) as logged (queued ones included), for the course derivation. */
+	courseEvents: StudyEvent[];
 	/** How many stored duplicate cards were folded away. */
 	merged: number;
 }

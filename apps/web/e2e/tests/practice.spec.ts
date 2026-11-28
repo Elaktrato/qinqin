@@ -1,31 +1,20 @@
 // The Practice area (the drills framework) on a 360 px phone, with the sample drill behind the developer flag
 // (localStorage "qinqin.dev.drills" = "sample"): Practice joins the navigation, the
 // list, a round whose answers reach the server as drill.sample events, the result, the weakest round, and the back
-// button out of a round. Without the flag, /practice says no drill applies and Practice is not in the bar.
+// button out of a round. Without a drill for the language: practice-no-drill.spec.ts.
 
 import { expect, test } from '../support/fixtures';
 import { PHONE, expectNoSidewaysScroll } from '../support/layout';
 
 test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
 
-test('without a drill, /practice answers and Practice stays out of the navigation', async ({ page, learner }) => {
-	// Chinese: no registered drill yet (the conjugation drill is Japanese).
-	await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.zh);
-	await page.goto('/practice');
-	await expect(page.getByText('No drills for this language yet.')).toBeVisible();
-	await expectNoSidewaysScroll(page, '/practice (no drill)');
-	const bar = page.getByRole('navigation', { name: 'Main' });
-	await bar.getByRole('button', { name: 'More' }).click();
-	await expect(page.getByRole('dialog').getByRole('link', { name: 'Grammar' })).toBeVisible();
-	await expect(page.getByRole('dialog').getByRole('link', { name: 'Practice' })).toHaveCount(0);
-});
-
 test('the sample drill: a round, its answers on the server, the weakest round', async ({ page, learner }) => {
 	await page.addInitScript((id) => {
 		localStorage.setItem('qinqin.dev.drills', 'sample');
-		// Chinese: the sample drill is the only one listed.
+		// Japanese: the conjugation drill has no items there (the shared e2e pack has no parts of speech), so the
+		// sample drill is the only one to practise; Chinese has the tone-pair drill's words.
 		localStorage.setItem('qinqin.workspace', String(id));
-	}, learner.workspaces.zh);
+	}, learner.workspaces.ja);
 	await page.goto('/practice');
 	await expect(page.getByRole('heading', { level: 2, name: 'Sample drill' })).toBeVisible();
 	await expect(page.getByText('5 new')).toBeVisible();

@@ -65,6 +65,7 @@ function history(events: StudyEvent[] = []) {
 		reviews: [{ id: 'r1', workspaceId: 1, ts: '2026-11-02T00:00:00Z', type: 'review', payload: { cardId: 'c7', mode: 'vocab', grade: 3 } }],
 		merged: 0,
 		grammarRuns: [],
+		courseEvents: [],
 		drillAnswers: drillAnswersOf(1, events)
 	};
 }

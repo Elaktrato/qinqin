@@ -50,7 +50,7 @@ beforeEach(() => {
 		decks: [greetings, verbs],
 		cards: [card(1, ['d1']), card(2, ['d1', 'd2']), card(3, ['d1'])],
 		reviews: [],
-		merged: 0, grammarRuns: [],
+		merged: 0, grammarRuns: [], courseEvents: [],
 		deckSettings: { d1: { deckId: 'd1', cardTypes: ['cloze'], extra: {} } }
 	});
 	vi.mocked(renameDeck).mockResolvedValue({ ...greetings, name: 'Hello' });
@@ -205,7 +205,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0, grammarRuns: [],
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });
@@ -228,7 +228,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0, grammarRuns: [],
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });
@@ -245,7 +245,7 @@ describe('DeckSettingsView', () => {
 				decks: [greetings],
 				cards: [],
 				reviews: [],
-				merged: 0, grammarRuns: [],
+				merged: 0, grammarRuns: [], courseEvents: [],
 				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
 			});
 			render(DeckSettingsView, { props: { deckId: 'd1' }, context: ctx.context });

@@ -71,7 +71,7 @@ const text = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim();
 
 beforeEach(() => {
 	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
-	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [] });
+	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] });
 });
 afterEach(() => {
 	cleanup();
@@ -107,7 +107,7 @@ describe('FlashcardsWidget goal ring', () => {
 			type: 'review',
 			payload: { cardId: `c${i}`, mode: 'vocab', grade: 3 }
 		}));
-		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0, grammarRuns: [] });
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0, grammarRuns: [], courseEvents: [] });
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
 		const total = xpFromReviews(reviews, ctx.session.zone.day().dayOf);
 		const progress = levelProgress(total);
@@ -178,7 +178,7 @@ describe('FlashcardsWidget and the saved study setup', () => {
 	it('counts the kinds of the saved setup: a tone card counts only when the setup studies tone', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
 		const tone = { id: 'c-tone-5', kind: 'tone', entryId: 5, written: '好', entryKind: null, sentenceId: null, skipKinds: [], deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z', extra: {} };
-		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [tone], reviews: [], merged: 0, grammarRuns: [] } as never);
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [tone], reviews: [], merged: 0, grammarRuns: [], courseEvents: [] } as never);
 		const container = await ready();
 		await waitFor(() => expect(text(container)).toContain('Nothing due today'));
 		cleanup();

@@ -4,10 +4,21 @@
 	import { Button, Section } from '$lib/ui';
 	import { formatNumber } from '$lib/i18n/format';
 	import { practiceHref } from './route';
+	import type { DrillAnswer, DrillStates } from '$lib/studycore/drills';
 	import type { DrillSummary } from './overview';
-	import type { DrillDef } from './types';
+	import type { DrillDef, DrillItem } from './types';
 
-	let { summaries, weakestCount }: { summaries: readonly { drill: DrillDef; summary: DrillSummary }[]; weakestCount: number } = $props();
+	let {
+		summaries,
+		weakestCount,
+		states,
+		now
+	}: {
+		summaries: readonly { drill: DrillDef; summary: DrillSummary; items: readonly DrillItem[]; answers: readonly DrillAnswer[] }[];
+		weakestCount: number;
+		states: DrillStates;
+		now: number;
+	} = $props();
 </script>
 
 <h1>{t('practice.title')}</h1>
@@ -24,7 +35,7 @@
 		{/if}
 	</Section>
 	<ul class="drills">
-		{#each summaries as { drill, summary } (drill.id)}
+		{#each summaries as { drill, summary, items, answers } (drill.id)}
 			<li class="drill">
 				<h2>{drill.title}</h2>
 				<p class="muted">{drill.description}</p>
@@ -37,6 +48,10 @@
 						<span>{t('practice.drill.seen', { n: formatNumber(summary.seen) })}</span>
 					</p>
 					<Button href={practiceHref({ view: 'drill', drill: drill.id })}>{t('practice.drill.start')}</Button>
+				{/if}
+				{#if drill.overview !== undefined}
+					{@const Overview = drill.overview}
+					<Overview {drill} {items} {answers} {states} {now} />
 				{/if}
 			</li>
 		{/each}

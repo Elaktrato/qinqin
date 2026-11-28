@@ -28,6 +28,8 @@ const RENDERERS: readonly string[] = [
 	'lib/features/flashcards/decks/StarterDeckDetail.svelte',
 	'lib/features/flashcards/decks/SystemDeckDetail.svelte',
 	'lib/features/flashcards/face/HintShown.svelte',
+	'lib/features/courses/GrammarStep.svelte',
+	'lib/features/courses/ReadingStep.svelte',
 	'lib/features/grammar/LessonView.svelte',
 	'lib/features/grammar/PracticeRun.svelte',
 	'lib/features/practice/conjugation/ConjugationQuestion.svelte',

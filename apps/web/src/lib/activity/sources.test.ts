@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/events/activity.json';
 import { DRILL_IDS } from '$lib/studycore/drills';
+import { DRILL_WORDS } from './sources';
 import { ACTIVITY_SOURCES, LOG_CHANGING_TYPES, activityLabel, activityText, changesLog } from './sources';
 
 // docs/contracts/events/activity.json `rules` is the server's core table
@@ -22,6 +23,13 @@ describe('the activity sources', () => {
 			expect(ACTIVITY_SOURCES).toContainEqual({ type: `drill.${id}`, feature: 'practice', unit: 'count' });
 			expect(activityLabel({ type: `drill.${id}` })).not.toBe(`drill.${id}`);
 		}
+	});
+
+	it("a registered drill's words are literal catalogue keys, one pair per registered drill (#180)", () => {
+		expect(Object.keys(DRILL_WORDS)).toEqual([...DRILL_IDS]);
+		expect(activityLabel({ type: 'drill.tone-pairs' })).toBe('Tone pairs');
+		expect(activityText({ type: 'drill.tone-pairs' }, 2, '2')).toBe('2 tone-pair answers');
+		expect(activityText({ type: 'drill.tone-pairs' }, 1, '1')).toBe('1 tone-pair answer');
 	});
 
 	it('every drill answer changes what the log readers show, a registered drill or not', () => {

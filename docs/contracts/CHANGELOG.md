@@ -5,7 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 29)
+## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 31)
 
 - **New `conjugation/`:** the engine's classes (JMdict parts of speech), the ten form families (`families.json`:
   forms, defaults, the families of each class, per-word exclusions), every form with its canonical answer and the
@@ -13,9 +13,29 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   reach yet), the workspace-settings key `conjugation` (`settings.json`) and the route's answer (`words.json`).
 - **New route `POST /api/drills/conjugation/words`** `{"ids": [...]}` (1 to 500; signed in, no access token): the
   drilled words among the entries with their families and forms (written, kana, romaji).
-- **`drills/drills.json` `registry`:** `conjugation` (event type `drill.conjugation`, item `<entryId>:<family>`,
-  modes `produce` and `recognise`); **`events/activity.json`:** its count rule, feature `practice`.
+- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation"]` (`conjugation`: event type `drill.conjugation`, item `<entryId>:<family>`,
+  modes `produce` and `recognise`); **`events/activity.json`:** its count rule, feature `practice`, after the tone-pair rule;
+  `GET /api/stats/activity` lists seven sources.
 - **`settings/README.md`:** the key `conjugation: {families: {<family>: boolean}}`.
+
+## #222 — courses: the roadmap, the lesson player and progress (contract 30)
+
+- **New core feature `courses`** (`features/switches.json`, `features/README.md`): eight ids, `courses` after `practice` and before
+  `stats`; a client lists it in that place, and `PUT /api/features/courses` switches it.
+- **New catalogue key area `courses`** (`i18n/README.md`).
+
+## #180 — the tone-pair drill (contract 29)
+
+- **Registry:** `drills/drills.json` `registry` is `["tone-pairs"]` (Go `drills.IDs`, web `DRILL_IDS`): the drill's
+  answers (`drill.tone-pairs`) are an activity rule, a `count` of feature `practice`, after the core rules
+  (`events/activity.json` `rules` gains it). `GET /api/stats/activity` lists six sources.
+- **New fixture `tones/pairs.json`** (rule `tones/pairs`, Go and web): the drill's 20 item keys `<t1>-<t2>` (citation
+  tones, 5 neutral) in grid order, which dictionary word practises which pair (two Han characters, the clean
+  two-syllable readings agree, first tone not neutral), how a typed answer reads, and a pair's accuracy over its last
+  10 answers with its band. Grading is `tones/sandhi.json` `grading`; a right pair is grade 3, a wrong one 1; mode
+  `mark`.
+- **Clients:** no route or stored-data change. A client that does not offer the drill still counts its answers (EXP,
+  streak) as before.
 
 ## #347 — a search-only form never outranks a real written form in word resolution (contract 28)
 

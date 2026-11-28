@@ -3,7 +3,7 @@
 Mandarin tone exercises (the Tones flashcard; the tone-pair drill, #180) check the tones a learner marks against a
 word's reading. Every client works out the spoken tones and grades with the same rules and the same fixture.
 
-Fixture: `sandhi.json` (rule `tones/sandhi`): `cases` (a reading → its citation and spoken tones) and `grading` (the
+Fixtures: `pairs.json` (rule `tones/pairs`, the tone-pair drill, below; web `lib/exercises/tonePairs.contract.test.ts`, Go `server/internal/pinyin/pairs_contract_test.go`) and `sandhi.json` (rule `tones/sandhi`): `cases` (a reading → its citation and spoken tones) and `grading` (the
 verdict of the tone card). Web: `apps/web/src/lib/exercises/toneSandhi.ts` and `tones.ts` (`toneVerdict`), decoded
 by `toneSandhi.contract.test.ts`. Go: `server/internal/pinyin/sandhi_contract_test.go` (each case's CC-CEDICT
 numbered pinyin gives the marked reading the server sends, `pinyin.ToMarked`, and the citation tones,
@@ -58,3 +58,24 @@ Again).
 With "Show tone sandhi" on (the default) the answer of a sandhi syllable shows both, citation then spoken: `bù → bú`,
 or with pinyin hidden (`settings/romanisation.json`) tone numbers and contours, `4ˋ → 2ˊ`. Off, only citation tones
 are shown, also while spoken tones are graded; the card then says that spoken tones are graded.
+
+## Tone pairs (`pairs.json`, the tone-pair drill #180)
+
+The drill `tone-pairs` (`drills/`) has **20 items**, the two-syllable patterns of citation tones `<t1>-<t2>`: the
+first tone 1–4, the second 1–5 (`5` the neutral tone), in grid order `1-1`, `1-2` … `4-5`, which is also the order
+new pairs are introduced (`pairs`). The item is always the **citation** pair, also while spoken tones are graded
+(你好 is `3-3`).
+
+- **Which word practises which pair** (`words`): a word whose written form is exactly two Han characters, with at
+  least one clean two-syllable pinyin reading (letters only, as the tone card's `cleanReadings`; a lone `r` folds
+  into the syllable before it; a reading the server could not convert, such as CC-CEDICT's `r5`, is not clean),
+  whose clean two-syllable readings all have the same citation tones, the first not neutral. Any other word is left
+  out (polyphones whose readings differ in pattern, erhua, other lengths, mixed scripts). Readings of other lengths
+  do not count against the pair.
+- **A typed answer** (`typed`), read after NFKC (full-width digits): with digits, exactly two digits, each `1`–`5`
+  or `0` (`0` and `5` the neutral tone), anything else in between ignored (`34`, `3 4`, `3-4`, `ni3 hao3`); without a
+  digit, tone-marked pinyin of two syllables with at least one mark (`nǐ hǎo`, `mā ma`). Anything else is no answer.
+- **Grading** is the verdict above (`grading`) over the word's clean readings, with its characters; both syllables
+  right is the drill grade Good (3), anything wrong Again (1).
+- **A pair's accuracy** (`accuracy`): over its last `window` (10) answers, the share graded 2 or more; `new` without
+  an answer, `weak` below `weakBelow` (60 %), `strong` from `strongFrom` (85 %), else `fair`.

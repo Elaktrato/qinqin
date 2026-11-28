@@ -18,9 +18,10 @@ describe('core features', () => {
 			['grammar', 'Grammar'],
 			['scripts', 'Scripts'],
 			['practice', 'Practice'],
+			['courses', 'Courses'],
 			['stats', 'Stats']
 		]);
-		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar', '/scripts', '/practice', '/stats']);
+		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader', '/journal', '/grammar', '/scripts', '/practice', '/courses', '/stats']);
 	});
 
 	it('a feature without a switch row is on; its row switches it', () => {

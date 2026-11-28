@@ -34,7 +34,8 @@ const history = {
 	cards: [card('c-takai', 9), card('c-miru', 7), card('c-new', 11), card('c-char', 12, 'character')],
 	reviews: [review(2, 'c-takai', '2026-11-10T00:00:00Z'), review(1, 'c-miru', '2026-11-09T00:00:00Z'), review(3, 'c-takai', '2026-11-08T00:00:00Z'), review(4, 'c-char', '2026-11-01T00:00:00Z')],
 	merged: 0,
-	grammarRuns: []
+	grammarRuns: [],
+	courseEvents: []
 } as unknown as StudyHistory;
 
 describe('the conjugation items', () => {

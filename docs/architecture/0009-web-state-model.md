@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199, #278 (paths only), #290. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #278 (paths only), #290, #222 (the course device copy). A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -75,7 +75,8 @@ Allowed:
   context installs and removes it) and its in-memory token where storage is blocked, counters that tell objects
   apart, render queues of mounted components.
 - Component-local `$state`, and runes classes instantiated by a component for its own lifetime.
-- A device copy of a user's non-sensitive setup (Home's layout and widget options, #290) in Web Storage under a key
+- A device copy of a user's non-sensitive setup (Home's layout and widget options, #290) or of server data the app
+  needs offline and the worker does not keep (the installed and filled courses, #222) in Web Storage under a key
   that names the user id, read only for that user and removed at sign-out; the session's copy is still the one
   the page reads.
 

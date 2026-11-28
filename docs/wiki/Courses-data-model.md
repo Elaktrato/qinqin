@@ -1,8 +1,8 @@
 # Courses data model
 
-How a course is stored, filled with words and followed (#221). The screens come with later work (the roadmap and the
-lesson player, #222; the real Chinese and Japanese courses, #223; unit tests and section exams, #224). The rules are
-contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
+How a course is stored, filled with words and followed (#221). The screens, the roadmap and the lesson player (#222),
+are on the [Courses](Courses) page; later work brings the real Chinese and Japanese courses (#223) and the full unit
+tests and section exams (#224). The rules are contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts/courses).
 
 ## Three layers
 
@@ -32,3 +32,14 @@ contracts: [docs/contracts/courses](https://github.com/Elaktrato/qinqin/tree/dev
   learner's position is open but not in the way; words the learner met stay met even if they move.
 - **Licences.** The course pack holds only the project's own writing; the level-list words (the HSK list has no
   reuse licence) are never copied into it: they come from the packs installed on each server.
+
+## In the web app (#222)
+
+- `lib/features/courses/`: `courseData.ts` holds the installed courses and the filled course for the session and in a
+  device copy per user (`qinqin.course.v1.<user>.…`, removed at sign-out), since the service worker does not keep
+  the routes; `progress.ts` replays the study history's `courseEvents` with `deriveCourseState` (known marks by entry
+  id become word keys); `roadmap.ts` and `flow.ts` are the pure roadmap and lesson models; `cards.ts` writes the
+  course deck (`d-course-<course id>`), its cards and their first reviews through the study core, and the known marks
+  of skipped words as one declaration (`source: "placement"`).
+- The courses feature never imports the flashcards feature (`tests/repo/folderRules.ts`, `FLASHCARDS_FREE`).
+- Rulings: `docs/superpowers/plans/2026-11-28-222-course-roadmap.md`.

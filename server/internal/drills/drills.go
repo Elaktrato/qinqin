@@ -38,6 +38,7 @@ var ReservedIDs = []string{"weakest"}
 // adds its id here, in the contract and in the web's DRILL_IDS
 // (docs/contracts/drills/README.md, "Adding a drill").
 var IDs = []string{
+	"tone-pairs",  // the tone-pair drill (#180)
 	"conjugation", // the conjugation trainer (#178)
 }
 

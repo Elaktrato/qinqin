@@ -8,6 +8,7 @@
 import { PictureCache } from '../aids/pictures';
 import type { AudioResolution } from '../api/audio';
 import type { CharacterList, Pending } from '../api/characters';
+import type { Course, CourseInfo } from '../api/courses';
 import type { ComponentIndex } from '../api/components';
 import type { StarterEntry } from '../api/frequency';
 import type { EntryBase } from '../api/types';
@@ -21,6 +22,7 @@ import type { Reached } from '../milestones/reached';
 import type { Timelines } from '../weekly/replay';
 import type { WeekPasses } from '../weekly/summary';
 import type { WidgetOptions } from '../widgets/options';
+import type { PairWords } from '../features/practice/tonePairs/words';
 
 /** AudioCache: a per-session cache (record 0009). */
 export class AudioCache {
@@ -34,6 +36,18 @@ export class AudioCache {
 	}
 }
 
+
+/** CourseCache: the installed courses by language and the filled courses by id (features/courses/courseData.ts). */
+export class CourseCache {
+	readonly lists = new Map<string, CourseInfo[]>();
+	readonly courses = new Map<string, Course>();
+
+	/** clear forgets everything (the session end). */
+	clear(): void {
+		this.lists.clear();
+		this.courses.clear();
+	}
+}
 
 /** CharacterCache: a per-session cache (record 0009). */
 export class CharacterCache {
@@ -238,6 +252,8 @@ export class SessionCaches {
 	readonly milestones = new MilestoneFlushes();
 	/** Goal loads in flight, by workspace, day and force (goals/loadGoal.ts). */
 	readonly goals = new Map<string, Promise<unknown>>();
+	/** The tone-pair drill's level-list words by language (features/practice/tonePairs/words.ts levelWords). */
+	readonly tonePairWords = new Map<string, Promise<PairWords>>();
 	readonly audio = new AudioCache();
 	readonly characters = new CharacterCache();
 	readonly components = new ComponentsCache();
@@ -259,10 +275,13 @@ export class SessionCaches {
 	readonly home = new HomeCache();
 	/** The widgets' last values (widgets/widgetLoad.svelte.ts). */
 	readonly held = new HeldValues();
+	/** The installed and filled courses (features/courses/courseData.ts, #222). */
+	readonly courses = new CourseCache();
 
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
 		this.goals.clear();
+		this.tonePairWords.clear();
 		this.journalSent.clear();
 		this.timelines.clear();
 		this.weekPasses.clear();
@@ -285,7 +304,8 @@ export class SessionCaches {
 			this.strokes,
 			this.pictures,
 			this.home,
-			this.held
+			this.held,
+			this.courses
 		]) {
 			cache.clear();
 		}

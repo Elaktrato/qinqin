@@ -31,7 +31,7 @@ at most 120 characters. The first segment is one of this closed list:
 <!-- areas:start -->
 `app`, `nav`, `common`, `auth`, `account`, `search`, `entry`, `study`, `flashcards`, `reader`, `journal`,
 `grammar`, `stats`, `weekly`, `goals`, `notes`, `lookups`, `settings`, `admin`, `sources`, `packs`, `pwa`,
-`widgets`, `activity`, `apiError`, `format`, `features`, `milestones`, `scripts`, `topics`, `practice`
+`widgets`, `activity`, `apiError`, `format`, `features`, `milestones`, `scripts`, `topics`, `practice`, `courses`
 <!-- areas:end -->
 
 - A key is **stable and never reused**. Changing a message's meaning means a new key; a removed key is appended

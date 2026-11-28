@@ -24,6 +24,7 @@ export const DRILL_FEATURE = 'practice';
  * adds its id here, in Go and in the contract (docs/contracts/drills/README.md, "Adding a drill").
  */
 export const DRILL_IDS: readonly string[] = Object.freeze<string[]>([
+	'tone-pairs', // the tone-pair drill (#180)
 	'conjugation' // the conjugation trainer (#178)
 ]);
 
