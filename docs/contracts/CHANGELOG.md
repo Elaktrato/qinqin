@@ -5,6 +5,20 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #279 — saved sentences: each new book sentence of a studied word becomes another sentence card (contract 33)
+
+- **New fixture `reader/saved-sentences.json`** (rule `reader/saved-sentences`; Go and web): the whitespace set and
+  `normalize` (whitespace runs to one space, trimmed), `same` (the first sentence with equal normalised text), `plan`
+  (web: `none`, `already`, `card`, `save` from the entry's sentences and the workspace's cards; the card takes the
+  decks and written snapshot of the word's canonical vocab card; `card: null` when the word skips `sentence`), `auto`
+  (web: when the automatic mode runs) and `remove` (Go: who may delete what). `reader/README.md` "Saved sentences".
+- **`reader/display-settings.json`:** the `reader` object gains `saveSentences` (boolean, default `false`); two cases.
+- **`POST /api/entries/{id}/sentences`** answers **200 with the existing sentence** when the caller already sees one
+  with the same normalised text on the entry (pack or own); a new text is 201 as before. A duplicate's `pinyin` and
+  `translation` are dropped.
+- **`DELETE /api/entries/{id}/sentences/{sentenceId}`** deletes any of the caller's own sentences, not only kept AI
+  examples; `?reason=` on an own sentence the AI did not write is 400 `bad_request` (`examples/README.md`).
+
 ## #178 — the conjugation trainer: a Japanese drill, its engine and its route (contract 32)
 
 - **New `conjugation/`:** the engine's classes (JMdict parts of speech), the ten form families (`families.json`:

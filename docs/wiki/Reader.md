@@ -26,6 +26,14 @@ Hover a word in the text to see a ranked stack of dictionary entries just below 
 
 Words you look up are kept in the workspace's [lookup history](Searching-and-entries#lookup-history) (a popup that stays open a second, one you move into, a tap or a selection); a word you looked up three times or more without a card says so in its popup. Turn recording off on the history page.
 
+## Saving more sentences of a word
+
+A word you already study shows **In study** in its popup, and next to it **Save this sentence**: the sentence around the word becomes another of your example sentences and a new **Build the sentence** (Word Salad) card in the word's decks. There is no limit per word, so every book sentence you meet a word in can become a card. A sentence the word already has (the same text, ignoring extra spaces) is not saved twice: the popup says "This sentence is already saved", or adds the missing card for it. If you switched Build the sentence cards off for that word, the sentence is saved without a card. The new cards are new cards like any other: they count toward the deck's daily limit of new cards.
+
+To do this without pressing anything, turn on **Save new sentences of words in study** in the Display tab (off by default; saved per workspace). Then looking up a word you study (a popup, a tap or a selection, the first entry of it) saves its sentence, once per sentence, and the popup says "New sentence saved as a card". Saving works the same in grammar lessons and conversations, which use the same lookup.
+
+Remove a saved sentence on the word's page: each of your own sentences has **Remove**. Its Build the sentence cards go too, in every workspace of that language; their review history stays in your log. If you meet the word in that sentence again with the automatic setting on, it is saved again.
+
 ## I know this word
 
 Next to **Add to deck** every popup entry has an **I know this** toggle (a check mark shows when it is on). It marks the word as known without making a flashcard: the mark counts like a mastered card everywhere a word is called known (word highlighting, Smart readings, the Words tab, starter decks skip it). Press it again to take the mark back. Marks also come from Settings → Study → **What you already know** (a whole level range or a placement test result), where a declaration can be undone as a whole ([Settings tour](Settings-tour#study)). The mark belongs to the book's workspace and is synced and included in your backup. With word highlighting on, the popup also says how well you know the word ("New word", "Learning", "Known — memory score 85" or "Known — marked by you").
@@ -39,6 +47,8 @@ The **Display** tab of the side rail holds the reading display (for Chinese and 
 - **Smart** hides the reading of a word you know: its flashcard has a memory score at or above a threshold (10 to 100, default 80). A hidden reading is only transparent, so screen readers still read it and the text does not move. Hover a word, tap it (4 seconds), press **R** outside text fields, or use **Show all readings** to reveal them.
 - **Ruby size** (Small, Medium, Large, Extra large) and **Font**: **App setting** follows the hanzi and kanji font of Settings → Appearance (its current name in brackets); Sans, Serif or Kai override it for the reader. A face comes from an installed font pack (only the pieces the page's characters need are downloaded) or else your device's fonts.
 - **Mark words by how well I know them** (word highlighting, off by default): a **new** word (no flashcard) gets a thin solid underline in the theme's accent, a word you are **learning** (it has a flashcard below the threshold) a thin dotted underline; words you know stay plain. The underline style, not only the colour, tells the two apart (also in Windows high-contrast mode), and the text colour never changes. Nothing is drawn inside your own highlights. The threshold slider shows with Smart or with highlighting on: a word counts as known from that memory score, or when you marked it with **I know this**. Only the first dictionary entry of a word counts, the one whose reading is shown.
+
+- **Save new sentences of words in study** (off by default): see [Saving more sentences of a word](#saving-more-sentences-of-a-word).
 
 These apply in the Reader only; entry pages and flashcards always show readings.
 
