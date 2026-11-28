@@ -47,4 +47,15 @@ Japanese courses (#223, `plugins/data/zh-course`, `plugins/data/ja-course`). The
   (`lessonData.ts` `courseKnownIndex` builds that index from the study core); judging, what to review, and the
   placement chain with its early stop. Contract `courses/tests.json`.
 - The courses feature never imports the flashcards feature (`tests/repo/folderRules.ts`, `FLASHCARDS_FREE`).
-- Rulings: `docs/superpowers/plans/2026-11-28-222-course-roadmap.md`, `docs/superpowers/plans/2026-11-28-224-course-tests.md`.
+- `home.ts` (#225) is the model of Home's **Continue course** widget (`CourseWidget.svelte`, contract
+  `courses/home.json`); `graduation.ts` the guide shown once every unit is done; `courseData.ts` `workspaceCourse`
+  the held-first course of a workspace that Home and the milestones read.
+- Counting (#225): `lib/studycore/courseCounting.ts` turns the log's course events into steps (a finished lesson
+  that is not a grammar lesson, a unit test, a section exam) for EXP and the streak; the server's activity rule
+  `course` (`stats/rules.go`, `item: "course"`) gives one point per step per day. Contract `courses/counting.json`.
+- Course milestones (#225): `lib/milestones/courseReached.ts` over `studycore/courseProgress.ts` `CourseReplay` (the
+  derivation's own replay). Contract `milestones/course.json`.
+- The Home start card for a new workspace (`lib/starter/StartOffer.svelte`, `startOffer.ts`) lives outside the
+  feature folder because it hosts Starter mode's **Add the Starter words** (flashcards).
+- Rulings: `docs/superpowers/plans/2026-11-28-222-course-roadmap.md`, `docs/superpowers/plans/2026-11-28-224-course-tests.md`,
+  `docs/superpowers/plans/2026-11-28-225-course-home.md`.

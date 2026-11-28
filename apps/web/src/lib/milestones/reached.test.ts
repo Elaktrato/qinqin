@@ -6,7 +6,7 @@ import { GENERAL_DECK_ID } from '$lib/studycore/types';
 import type { ReviewEvent, StudyCard } from '$lib/studycore/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';
-import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';
+import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily, type ThresholdFamily } from './catalogue';
 import { journalEntryId, reachedFromLog, reachedStats, type LogInputs, type Reached } from './reached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
 import * as build from '$lib/testing/study';
@@ -126,7 +126,7 @@ describe('reachedFromLog properties (seeded)', () => {
 				const def = FAMILIES.find((f) => f.family === family)!;
 				for (const n of def.thresholds) {
 					const want = bruteForce(items, count as (p: readonly { at: number; id: string }[]) => number, n);
-					const id = milestoneId(family as Exclude<MilestoneFamily, 'level-complete'>, n);
+					const id = milestoneId(family as ThresholdFamily, n);
 					expect(byId.get(id) ?? null, id).toBe(want);
 					if (want !== null) checked += 1;
 				}
@@ -216,6 +216,18 @@ describe('reachedFromLog', () => {
 		// A changed payload is a different log.
 		const longer = events.map((e) => (e.type === 'read' ? { ...e, payload: { seconds: 7200 } } : e));
 		expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: longer })).not.toBe(first);
+	});
+
+	it('a log that differs only in a grammar run, a drill answer or a course step is a different log (#225)', () => {
+		const events = [event(1, START, 'read', { seconds: 3600 })];
+		const first = reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events });
+		for (const extra of [
+			event(2, START + 86_400_000, 'grammar', { point: 'p:l', mode: 'lesson', score: 1, total: 1 }),
+			event(3, START + 86_400_000, 'drill.tone-pairs', { item: '3-4', mode: 'produce', grade: 3 }),
+			event(4, START + 86_400_000, 'course', { kind: 'unit-test', course: 'c', unit: 'u', score: 1, total: 1, passed: true, early: false })
+		]) {
+			expect(reachedFromLog(reachedMemo, { ...base(), reviews: hundred, events: [...events, extra] })).not.toBe(first);
+		}
 	});
 
 	it('with workspaceId, events of another workspace are ignored', () => {

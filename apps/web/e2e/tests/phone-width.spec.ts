@@ -104,6 +104,31 @@ test('the tone-pair drill fits a 360 px phone (#180)', async ({ page, learner })
 	for (const path of ['/practice', '/practice/tone-pairs', '/practice/tone-pairs/weakest']) await check(page, path);
 });
 
+test('Home and the roadmap with a course fit a 360 px phone: the start card, the widget, the graduation guide (#225)', async ({ page, learner }) => {
+	await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.zh);
+	// A fresh Chinese workspace: the start card and the widget.
+	await check(page, '/');
+	await expect(page.getByTestId('course-start-offer')).toBeVisible();
+	await expect(page.getByTestId('course-widget')).toBeVisible();
+	// The last exam passed: the course is done, the roadmap shows what comes next and Home says so.
+	await learner.api.post('/api/events/batch', {
+		events: [
+			{
+				id: ulid(Date.now()),
+				workspaceId: learner.workspaces.zh,
+				device: 'web',
+				ts: new Date().toISOString(),
+				type: 'course',
+				payload: { kind: 'section-exam', course: 'e2e-zh-course', section: 'level-2', score: 3, total: 3, passed: true }
+			}
+		]
+	});
+	await check(page, '/courses');
+	await expect(page.getByTestId('course-graduation')).toBeVisible();
+	await check(page, '/');
+	await expect(page.getByTestId('course-widget').getByText('You have finished the course.')).toBeVisible();
+});
+
 test.describe('signed out', () => {
 	test.use({ signedIn: false });
 	test('the sign-in and registration pages fit a 360 px phone', async ({ page }) => {

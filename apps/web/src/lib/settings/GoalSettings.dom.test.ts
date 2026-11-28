@@ -221,6 +221,7 @@ describe('GoalSettings', () => {
 			'Conjugation drill',
 			'Counter readings',
 			'Counters',
+			'Course lessons',
 			'Grammar lessons',
 			'Journal entries',
 			'Look-alike characters',

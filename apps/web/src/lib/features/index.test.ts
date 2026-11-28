@@ -87,6 +87,7 @@ describe('feature widgets', () => {
 			['word-states', FLASHCARDS_ID],
 			['reading-time', READER_ID],
 			['scripts-progress', 'scripts'],
+			['course-continue', 'courses'],
 			['activity-heatmap', STATS_ID],
 			['character-map-summary', STATS_ID],
 			['summary-numbers', STATS_ID],

@@ -54,6 +54,25 @@ describe('the course roadmap (#222)', () => {
 		expect(screen.getByRole('link', { name: 'Already know some? Find your place' }).getAttribute('href')).toBe('/courses/play/zh-test/section/level-1/placement');
 	});
 
+	it('after the last section, a short guide to free study (#225)', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(history({ courseEvents: [ev('1', { kind: 'section-exam', section: 'level-2', score: 1, total: 1, passed: true })] }));
+		ctx.session.features.set({ list: [{ id: 'reader', enabled: false }], status: 'ready' });
+		render(Roadmap, { props: { courseId: null }, context: ctx.context });
+		const guide = await screen.findByTestId('course-graduation');
+		expect(within(guide).getByRole('heading', { level: 2, name: 'What comes next' })).toBeTruthy();
+		expect(within(guide).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+			['Your decks', '/flashcards'],
+			['Level sessions', '/study'],
+			['Grammar', '/grammar']
+		]);
+	});
+
+	it('no guide while units are left', async () => {
+		render(Roadmap, { props: { courseId: null }, context: ctx.context });
+		await screen.findByRole('heading', { level: 1, name: 'Test course' });
+		expect(screen.queryByTestId('course-graduation')).toBeNull();
+	});
+
 	it('says so when the language has no course', async () => {
 		vi.mocked(courses).mockResolvedValue([]);
 		render(Roadmap, { props: { courseId: null }, context: ctx.context });

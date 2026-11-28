@@ -164,14 +164,15 @@ last write wins; `sync/`).
 
 - Read (`parseLayout`): an object with an integer `version` ≥ 1 and an array `widgets`; entries that are not
   non-empty strings are dropped; a **newer version is read leniently** (its string ids count). Anything else
-  (or no row) is no layout: the default `defaultLayout` (`activity-heatmap`, `flashcards-summary`,
-  `daily-goal`, `weekly-summary`) applies. An empty list stays empty.
+  (or no row) is no layout: the default `defaultLayout` (`course-continue` (#225), `activity-heatmap`,
+  `flashcards-summary`, `daily-goal`, `weekly-summary`) applies; a widget that has nothing to show (no course for the
+  language) renders nothing. An empty list stays empty.
 - Show (`resolveLayout`): stored ids in order, each once (first position wins), skipping ids that are
   unknown, unavailable (feature off, another language) or not on the surface. Skipped ids **stay stored**.
 - Write (`serializeLayout`): always `version: 1` with the ids as given.
 - Widget ids the web registry knows (`widgets`), in registry order (the core widgets, then each feature's in the
   feature order, #295): `daily-goal`, `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`,
-  `scripts-progress`, then Stats' `activity-heatmap`, `character-map-summary`, `summary-numbers`, `reviews-per-day`.
+  `scripts-progress`, Courses' `course-continue` (#225), then Stats' `activity-heatmap`, `character-map-summary`, `summary-numbers`, `reviews-per-day`.
 
 Ruling: Android shares `home-layout` with the web (one per user) and keeps every widget id it does not know
 stored, in place — a per-platform key would be a new row type and the web already keeps unknown ids — cost: a

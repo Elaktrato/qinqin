@@ -15,6 +15,8 @@
 	import { CourseView } from './courseView.svelte';
 	import { loadWordInfo } from './lessonData';
 	import { roadmap as buildRoadmap, titleText, type RoadmapUnit } from './roadmap';
+	import { freeStudyGuide, graduated } from './graduation';
+	import { featureKnownOff } from '$lib/features';
 	import { courseHref } from './route';
 
 	let { courseId }: { courseId: string | null } = $props();
@@ -26,6 +28,8 @@
 	const view = workspace === null ? null : new CourseView(session, workspace, courseId);
 	const language = getLanguage();
 	const map = $derived(view?.course && view.state ? buildRoadmap(view.course, view.state, language) : null);
+	// Leaving the course (#225): with every unit done, a short guide to studying freely.
+	const guide = $derived(view?.state && graduated(view.state) ? freeStudyGuide((id) => !featureKnownOff(id, session.features)) : null);
 	let adding = $state<string | null>(null);
 	let message = $state('');
 	let marking = false;
@@ -141,6 +145,17 @@
 				<p class="quiet">{t('courses.roadmap.uncarded', { count: uncarded.length })}</p>
 				<Button busy={adding === 'met'} onclick={() => void addCards('met', uncarded)}>{t('courses.roadmap.addCards')}</Button>
 			{/if}
+			{#if guide !== null}
+				<section class="graduation" aria-labelledby="graduation-title" data-testid="course-graduation">
+					<h2 id="graduation-title">{t('courses.graduation.title')}</h2>
+					<p>{t('courses.graduation.text')}</p>
+					<ul>
+						{#each guide as item (item.href)}
+							<li><a href={item.href}>{item.title}</a> <span class="quiet">{item.text}</span></li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
 			{#if view.list.length > 1}
 				<Select
 					label={t('courses.roadmap.pick')}
@@ -215,6 +230,23 @@
 </div>
 
 <style>
+	.graduation {
+		display: grid;
+		gap: var(--space-2);
+	}
+	.graduation h2,
+	.graduation p,
+	.graduation ul {
+		margin: 0;
+	}
+	.graduation ul {
+		padding-inline-start: var(--space-4);
+		display: grid;
+		gap: var(--space-1);
+	}
+	.graduation li {
+		overflow-wrap: anywhere;
+	}
 	.head {
 		display: flex;
 		flex-direction: column;

@@ -55,7 +55,7 @@ describe('toggleWidget', () => {
 
 	it('starts from the default layout when nothing is stored', () => {
 		expect(toggleWidget(null, 'c', true)).toEqual([...DEFAULT_LAYOUT, 'c']);
-		expect(toggleWidget(null, 'activity-heatmap', false)).toEqual(['flashcards-summary', 'daily-goal', 'weekly-summary']);
+		expect(toggleWidget(null, 'activity-heatmap', false)).toEqual(['course-continue', 'flashcards-summary', 'daily-goal', 'weekly-summary']);
 	});
 
 	it('keeps unknown ids and collapses duplicates', () => {
@@ -99,6 +99,7 @@ describe('moveWidget', () => {
 	it('collapses duplicates and starts from the default', () => {
 		expect(moveWidget(['a', 'b', 'a'], 'b', -1, all)).toEqual(['b', 'a']);
 		expect(moveWidget(null, 'flashcards-summary', -1, [...DEFAULT_LAYOUT])).toEqual([
+			'course-continue',
 			'flashcards-summary',
 			'activity-heatmap',
 			'daily-goal',

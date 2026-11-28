@@ -156,7 +156,7 @@ alter every stored log and the pull's string comparison — cost: none.
 | `journal` | the journal | distinct `entryId` (`journal`) |
 | `script` | the scripts trainer | count (`scripts`) |
 | `grammar` | grammar (a finished lesson run, #277) | distinct `point` (`grammar`) |
-| `course` | courses (lesson, unit test, section exam, placement, #221) | none yet (#225 decides) |
+| `course` | courses (lesson, unit test, section exam, placement, #221) | distinct item `course` (`courses`): one point per course step per day (`courses/counting.json`, #225) |
 | `drill.<id>` | practice (one answer in a registered drill, `drills/`) | count (`practice`); a drill the server has not registered scores nothing |
 
 The activity rules are the server's core table (`server/internal/stats/rules.go`, `activity.json` `rules`);
@@ -273,6 +273,10 @@ members; `rules` in the fixture lists the built-in ones). A client that scores o
 - **distinct** (`journal`: `distinctBy` `entryId`; `grammar`: `distinctBy` `point`, one point per lesson finished,
   once per lesson per day): points = raw = the number of distinct JSON **string** values of the field that day; a
   number never counts. The server does not check that a `point` is valid; clients write only valid ones.
+- **distinct by item** (`course`: `item` `course`, #225): points = raw = the number of distinct **steps** that day; a
+  step is a `lesson-finished` whose `lesson` does not start with `grammar-` (identity: course, unit, lesson), a
+  `unit-test` (course, unit) or a `section-exam` (course, section), with those members JSON **strings**; every other
+  kind (`lesson-started`, `placement`) and anything else counts nothing. Cases: `courses/counting.json` `activity`.
 - `raw` is what goals and the weekly summary read (seconds for `read`).
 
 The web's per-event clamp (`stats/readingTime.ts` `readingPoints`, `readSeconds`) equals the server's for every

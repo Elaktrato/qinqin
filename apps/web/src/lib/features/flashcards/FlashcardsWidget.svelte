@@ -14,6 +14,7 @@
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/studycore/exp';
 	import type { GrammarRun } from '$lib/studycore/grammarRuns';
+	import type { CourseStep } from '$lib/studycore/courseCounting';
 	import type { DrillAnswer } from '$lib/studycore/drills';
 	import Mascot from './Mascot.svelte';
 	import { setupKinds } from './setup/setup';
@@ -38,6 +39,7 @@
 		reviews: ReviewEvent[];
 		grammarRuns: readonly GrammarRun[];
 		drillAnswers: readonly DrillAnswer[];
+		courseSteps: readonly CourseStep[];
 		weights: readonly number[];
 		deckSettings: Record<string, DeckSettings>;
 		ctx: StudyContext;
@@ -50,6 +52,7 @@
 	const reviews = $derived(shown.value?.reviews ?? []);
 	const grammarRuns = $derived(shown.value?.grammarRuns ?? []);
 	const drillAnswers = $derived(shown.value?.drillAnswers ?? []);
+	const courseSteps = $derived(shown.value?.courseSteps ?? []);
 	const weights = $derived(shown.value?.weights ?? DEFAULT_W);
 	const deckSettings = $derived(shown.value?.deckSettings ?? {});
 	const fallbackCtx = currentContext(session.zone);
@@ -104,7 +107,7 @@
 	let studyDay = $state.raw(session.zone.day());
 	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
-	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns, drillAnswers));
+	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf, grammarRuns, drillAnswers, courseSteps));
 	const vacationText = $derived(
 		workspaceId === null
 			? null
@@ -112,7 +115,7 @@
 	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns, drillAnswers));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation, grammarRuns, drillAnswers, courseSteps));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : shown.loading ? 'loading' : shown.error ? 'error' : 'ready'
 	);
@@ -134,6 +137,7 @@
 					reviews: data.reviews,
 					grammarRuns: data.grammarRuns,
 					drillAnswers: data.drillAnswers ?? [],
+					courseSteps: data.courseSteps ?? [],
 					deckSettings: data.deckSettings ?? {},
 					weights: activeWeights(data),
 					ctx: contextForData(session.zone, data, workspace),

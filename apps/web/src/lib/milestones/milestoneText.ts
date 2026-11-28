@@ -2,13 +2,13 @@
 // keys come with v0.4.0 item 8). Dates are civil dates formatted in UTC so
 // the browser's zone never shifts them (the weekly ruling).
 
-import { parseMilestoneId, type MilestoneFamily } from './catalogue';
+import { parseMilestoneId, type CourseFamily, type ThresholdFamily } from './catalogue';
 import type { CardPlan } from './plan';
 import { labelRecord, t, type MessageKey } from '$lib/i18n';
 import { formatDay, formatNumber } from '$lib/i18n/format';
 
 /** Titles per family: `{n}` the threshold, `{level}` the level's name (catalogue.json `titles`). */
-const TITLES: Record<Exclude<MilestoneFamily, 'level-complete'>, MessageKey> = {
+const TITLES: Record<ThresholdFamily, MessageKey> = {
 	reviews: 'milestones.title.reviews',
 	'words-studied': 'milestones.title.wordsStudied',
 	'words-mature': 'milestones.title.wordsMature',
@@ -19,16 +19,51 @@ const TITLES: Record<Exclude<MilestoneFamily, 'level-complete'>, MessageKey> = {
 	'journal-entries': 'milestones.title.journalEntries'
 };
 
+/** Course titles (#225): `{course}`, `{unit}`, `{section}`, `{script}` the names, `{n}` a threshold. */
+const COURSE_TITLES: Record<CourseFamily, MessageKey> = {
+	'course-started': 'milestones.title.courseStarted',
+	'course-unit': 'milestones.title.courseUnit',
+	'course-section': 'milestones.title.courseSection',
+	'course-script': 'milestones.title.courseScript',
+	'course-characters': 'milestones.title.courseCharacters',
+	'course-words': 'milestones.title.courseWords',
+	'course-graduated': 'milestones.title.courseGraduated'
+};
+
+/** The names key of a course part (courseReached.ts courseNames builds them). */
+const COURSE_NAME: Partial<Record<CourseFamily, (course: string, part: string) => string>> = {
+	'course-unit': (course, part) => `course:${course}:unit:${part}`,
+	'course-section': (course, part) => `course:${course}:section:${part}`,
+	'course-script': (_course, part) => `script:${part}`
+};
+
 /**
- * milestoneTitle: "1,000 reviews", "HSK Words · HSK 1 complete". `levels`
- * maps a level deck id to the level's name. Null for an id this client
- * does not know, or a level whose name is unknown (no longer installed).
+ * milestoneTitle: "1,000 reviews", "HSK Words · HSK 1 complete", "Unit done:
+ * Hello". `names` maps a level deck id to the level's name, and a course's
+ * keys (`course:<course>`, `course:<course>:unit:<unit>`,
+ * `course:<course>:section:<section>`, `script:<script>`) to theirs. Null for
+ * an id this client does not know, or one whose level or course it cannot name
+ * (no longer installed, not held on this device).
  */
-export function milestoneTitle(id: string, levels: ReadonlyMap<string, string>, locale?: string): string | null {
+export function milestoneTitle(id: string, names: ReadonlyMap<string, string>, locale?: string): string | null {
 	const parsed = parseMilestoneId(id);
 	if (parsed === null) return null;
+	if ('course' in parsed) {
+		const course = names.get(`course:${parsed.course}`);
+		if (course === undefined) return null;
+		const key = COURSE_TITLES[parsed.family];
+		if ('threshold' in parsed) {
+			return t(key, { count: parsed.threshold, n: formatNumber(parsed.threshold, {}, locale) });
+		}
+		if (!('part' in parsed)) return t(key, { course });
+		const name = names.get(COURSE_NAME[parsed.family]?.(parsed.course, parsed.part) ?? '');
+		if (name === undefined) return null;
+		if (parsed.family === 'course-unit') return t(key, { unit: name });
+		if (parsed.family === 'course-section') return t(key, { section: name });
+		return t(key, { script: name });
+	}
 	if (!('threshold' in parsed)) {
-		const name = levels.get(parsed.deckId);
+		const name = names.get(parsed.deckId);
 		return name === undefined ? null : t('milestones.title.levelComplete', { level: name });
 	}
 	const count = parsed.threshold;

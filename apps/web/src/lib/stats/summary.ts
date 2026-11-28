@@ -12,6 +12,7 @@ import {
 import { flashcardAmounts } from '$lib/goals/amounts';
 import type { DeckSettings } from '$lib/studycore/deckSettings';
 import { dailyStreak } from '$lib/studycore/exp';
+import type { CourseStep } from '$lib/studycore/courseCounting';
 import type { DrillAnswer } from '$lib/studycore/drills';
 import type { GrammarRun } from '$lib/studycore/grammarRuns';
 import { knownEntries } from '$lib/studycore/known';
@@ -36,6 +37,8 @@ export interface SummaryInput {
 	grammarRuns?: readonly GrammarRun[];
 	/** The drill answers (only the workspace's count): they keep the streak too. */
 	drillAnswers?: readonly DrillAnswer[];
+	/** The course steps (#225; only the workspace's count): they keep the streak too. */
+	courseSteps?: readonly CourseStep[];
 	/** The live manual `known:<entryId>` marks. */
 	known?: readonly number[];
 	/** The merged vacation runs of this workspace. */
@@ -130,7 +133,8 @@ export function summaryNumbers(input: SummaryInput): SummaryNumbers {
 			input.day,
 			vacation,
 			(input.grammarRuns ?? []).filter((run) => run.workspaceId === input.workspaceId),
-			(input.drillAnswers ?? []).filter((answer) => answer.workspaceId === input.workspaceId)
+			(input.drillAnswers ?? []).filter((answer) => answer.workspaceId === input.workspaceId),
+			(input.courseSteps ?? []).filter((step) => step.workspaceId === input.workspaceId)
 		).current,
 		wordsKnown: known.size,
 		recall: { share: recall.retention, base: recall.retentionBase },

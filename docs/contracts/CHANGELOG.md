@@ -5,6 +5,28 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #225 — courses count; course milestones; the Home widget (contract 40)
+
+- **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
+  **step** is a finished lesson that is not a grammar lesson, a unit test or a section exam. Activity: one point per
+  step per learner day; EXP 20 per step; a step day keeps the streak and counts as active. `courses/README.md`
+  "Counting".
+- **`events/activity.json`:** a new core rule `course` (`{"feature": "courses", "item": "course"}`, after `grammar`):
+  a distinct rule whose value is the step's identity (`item`, a new rule member). `GET /api/stats/activity` lists the
+  source `course` (feature `courses`, unit `count`).
+- **`milestones/reached.json`:** one case: a course step day keeps the streak (a course grammar lesson and a placement
+  do not).
+- **`milestones/catalogue.json`:** seven families appended after `level-complete`, following the `courses` switch,
+  source `course`: `course-started:<course>`, `course-unit:<course>:<unit>`, `course-section:<course>:<section>`,
+  `course-script:<course>:<script>`, `course-characters:<course>:<n>` (100 … 1000), `course-words:<course>:<n>` (50 …
+  3000) and `course-graduated:<course>`; id, parse, enabled, order and title cases (titles name the course's words).
+- **New fixture `milestones/course.json`** (rule `milestones/course`, web): when each course milestone is reached over
+  a filled course and the workspace's course events. `milestones/README.md` "Course milestones".
+- **New fixture `courses/home.json`** (rule `courses/home`, web): the model of Home's "Continue course" widget.
+- **`settings/core-rows.json`:** the widget id `course-continue` (Courses) and the default Home layout starts with it
+  (`course-continue`, `activity-heatmap`, `flashcards-summary`, `daily-goal`, `weekly-summary`). A stored layout is
+  unchanged.
+
 ## #228 — look-alike characters: the `look-alikes` drill, its sets and rules (contract 39)
 
 - **New `lookalikes/`:** the item of the drill `look-alikes` is a set, keyed by its members in order (`未末`, `ソン`; 2–5

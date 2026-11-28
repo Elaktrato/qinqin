@@ -15,7 +15,7 @@ describe('the activity sources', () => {
 				unit: 'measure' in r.rule && r.rule.measure?.field === 'seconds' ? 'seconds' : 'count'
 			}))
 		);
-		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script', 'grammar', ...DRILL_IDS.map((id) => `drill.${id}`)]);
+		expect([...LOG_CHANGING_TYPES]).toEqual(['review', 'read', 'journal', 'script', 'grammar', 'course', ...DRILL_IDS.map((id) => `drill.${id}`)]);
 	});
 
 	it('every registered drill is a count source of Practice, worded from the catalogue', () => {

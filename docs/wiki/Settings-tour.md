@@ -8,7 +8,7 @@ Create, rename and delete workspaces ([Workspaces and languages](Workspaces-and-
 
 ## Home
 
-Chooses and orders the home-page widgets. Each widget has an "On the home page" switch and **Move up** / **Move down** buttons (or drag a row by its handle). A preview shows the result and **Reset to default** restores the default layout (activity, flashcards, the daily goal, then this week). The Stats summary widgets **Summary** and **Reviews per day** can be added to the home page too. Changes save immediately to your account, so every device and workspace gets them. A widget whose plugin is disabled keeps its place and returns when the plugin is enabled again; one that does not fit the active workspace's language is marked "Not available for <language>".
+Chooses and orders the home-page widgets. Each widget has an "On the home page" switch and **Move up** / **Move down** buttons (or drag a row by its handle). A preview shows the result and **Reset to default** restores the default layout (continue course, activity, flashcards, the daily goal, then this week; **Continue course** shows only for a language with a [course](Courses)). The Stats summary widgets **Summary** and **Reviews per day** can be added to the home page too. Changes save immediately to your account, so every device and workspace gets them. A widget whose plugin is disabled keeps its place and returns when the plugin is enabled again; one that does not fit the active workspace's language is marked "Not available for <language>".
 
 While the Activity widget is on the home page its row also offers **Heatmap layout**: Garden grid (52 weeks), Month calendar or This week ([Stats and the heatmap](Stats-and-heatmap)). It saves at once to your account; Stats keeps the garden grid.
 

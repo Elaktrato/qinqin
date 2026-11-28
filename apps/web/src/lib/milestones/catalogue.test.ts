@@ -5,11 +5,14 @@ import {
 	FAMILIES,
 	MILESTONE_KEY_PREFIX,
 	compareIds,
+	courseMilestoneId,
 	enabledFamilies,
+	isCourseFamily,
 	levelMilestoneId,
 	milestoneId,
 	parseMilestoneId,
-	type MilestoneFamily
+	type MilestoneFamily,
+	type ThresholdFamily
 } from './catalogue';
 
 type Case = (typeof fixture.cases)[number] & Record<string, unknown>;
@@ -29,10 +32,13 @@ describe('milestones/catalogue.json', () => {
 	});
 
 	it.each(cases.filter((c) => c.op === 'id'))('id: $name', (c) => {
+		const family = c.family as MilestoneFamily;
 		const got =
-			c.family === 'level-complete'
+			family === 'level-complete'
 				? levelMilestoneId(c.packId as string, c.level as string)
-				: milestoneId(c.family as Exclude<MilestoneFamily, 'level-complete'>, c.threshold as number);
+				: isCourseFamily(family)
+					? courseMilestoneId(family, c.course as string, c.part as string | number | undefined)
+					: milestoneId(family, c.threshold as number);
 		expect(got).toBe(c.expect);
 	});
 
@@ -41,7 +47,7 @@ describe('milestones/catalogue.json', () => {
 	});
 
 	it.each(cases.filter((c) => c.op === 'enabled'))('enabled: $name', (c) => {
-		const sw = c.switches as { flashcards: boolean; reader: boolean; journal: boolean };
+		const sw = c.switches as { flashcards: boolean; reader: boolean; journal: boolean; courses?: boolean };
 		const got = enabledFamilies({ ...sw, han: c.han as boolean });
 		// In catalogue order.
 		expect(FAMILIES.map((f) => f.family).filter((f) => got.has(f))).toEqual(c.expect);
@@ -64,8 +70,12 @@ describe('catalogue', () => {
 
 	it('every catalogue id round-trips', () => {
 		for (const f of FAMILIES) {
+			if (isCourseFamily(f.family)) {
+				for (const n of f.thresholds) expect(parseMilestoneId(courseMilestoneId(f.family, 'c', n))).toEqual({ family: f.family, course: 'c', threshold: n });
+				continue;
+			}
 			for (const n of f.thresholds) {
-				const id = milestoneId(f.family as Exclude<MilestoneFamily, 'level-complete'>, n);
+				const id = milestoneId(f.family as ThresholdFamily, n);
 				expect(parseMilestoneId(id)).toEqual({ family: f.family, threshold: n });
 			}
 		}
@@ -77,5 +87,12 @@ describe('catalogue', () => {
 
 	it('milestoneId refuses a value that is not a threshold', () => {
 		expect(() => milestoneId('reviews', 7)).toThrow();
+	});
+
+	it('courseMilestoneId refuses a part the family does not take (#225)', () => {
+		expect(() => courseMilestoneId('course-words', 'c', 7)).toThrow();
+		expect(() => courseMilestoneId('course-unit', 'c')).toThrow();
+		expect(() => courseMilestoneId('course-started', 'c', 'x')).toThrow();
+		expect(() => courseMilestoneId('course-unit', 'c', 'Not An Id')).toThrow();
 	});
 });

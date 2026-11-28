@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/milestones/catalogue.json';
-import { FAMILIES } from './catalogue';
+import { FAMILIES, isCourseFamily } from './catalogue';
 import { cardHeading, milestoneTitle, reachedOn, titleWithDay } from './milestoneText';
 
 type Case = (typeof fixture.cases)[number] & Record<string, unknown>;
 
 describe('milestones/catalogue.json: titles', () => {
 	it.each((fixture.cases as Case[]).filter((c) => c.op === 'title'))('$name', (c) => {
-		const levels = new Map(Object.entries((c.levels as Record<string, string> | undefined) ?? {}));
+		const levels = new Map(Object.entries({ ...((c.levels as Record<string, string> | undefined) ?? {}), ...((c.names as Record<string, string> | undefined) ?? {}) }));
 		expect(milestoneTitle(c.id as string, levels, 'en')).toBe(c.expect);
 	});
 
@@ -15,7 +15,8 @@ describe('milestones/catalogue.json: titles', () => {
 		for (const f of FAMILIES) {
 			const forms = (fixture.titles as Record<string, { one: string; other: string }>)[f.family];
 			expect(forms, f.family).toBeDefined();
-			if (f.family === 'level-complete') continue;
+			// Levels and course families need names: their title cases cover them.
+			if (f.family === 'level-complete' || isCourseFamily(f.family)) continue;
 			const [first, second] = f.thresholds;
 			expect(milestoneTitle(`${f.family}:${first}`, new Map(), 'en')).toBe(
 				(first === 1 ? forms.one : forms.other).replace('{n}', String(first))
