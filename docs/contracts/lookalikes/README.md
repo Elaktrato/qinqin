@@ -25,7 +25,7 @@ key. Changing a set's members makes a new item (the old key's answers stay in th
 
 ```json
 { "version": 1, "language": "zh", "license": "CC-BY-4.0",
-  "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin", "review": "…",
+  "attribution": "… Credit: qinqin contributors, CC BY 4.0 (https://github.com/Elaktrato/qinqin).", "humanReviewed": false,
   "characters": {
     "未": { "pinyin": ["wèi"], "bopomofo": ["ㄨㄟˋ"], "meaning": "not yet", "strokes": 5,
            "example": { "word": "未来", "hant": "未來", "pinyin": "wèi lái", "bopomofo": "ㄨㄟˋ ㄌㄞˊ", "meaning": "future" } } },
@@ -34,7 +34,9 @@ key. Changing a set's members makes a new item (the old key's answers stay in th
               "marks": { "未": [0, 1], "末": [0, 1] } } ] }
 ```
 
-- `language` is `zh` or `ja`; `license` exactly `CC-BY-4.0`; `attribution` carries `qinqin contributors, CC BY 4.0`.
+- `language` is `zh` or `ja`; `license` exactly `CC-BY-4.0`; `attribution` carries `qinqin contributors, CC BY 4.0`;
+  `humanReviewed` says whether a person has reviewed the sets (`false`: reviewed by agents acting as teachers). Other
+  top-level members are ignored.
 - `characters`: every member once. A **Chinese** character has `pinyin` and `bopomofo` (non-empty lists of the same
   length, tone-marked pinyin with its bopomofo as the server's converter writes it), `meaning`, `strokes` (1–64) and
   an `example` (`word`, optional `hant` the traditional spelling, `pinyin`, `bopomofo`, `meaning`). A **kanji** has

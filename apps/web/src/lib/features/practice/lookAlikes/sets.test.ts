@@ -88,18 +88,19 @@ describe('the committed sets against the bundled stroke data (Hanzi Writer data,
 		it(`${name}: every character with stroke data has the file's stroke count`, async () => {
 			const parsed = parseSetsFile(file)!;
 			const missing: string[] = [];
+			const otherCount: string[] = [];
 			for (const [ch, c] of Object.entries(parsed.characters)) {
 				if (c.kind === 'kana') continue;
 				const load = strokeFiles[`/node_modules/hanzi-writer-data/${ch}.json`];
-				if (load === undefined) {
-					missing.push(ch);
-					continue;
-				}
-				expect((await load()).strokes.length, ch).toBe(c.strokes);
+				if (load === undefined) missing.push(ch);
+				else if ((await load()).strokes.length !== c.strokes) otherCount.push(ch);
 			}
-			// Chinese: every character has data. Japanese: the shinjitai forms the Chinese data lacks (KanjiVG, when
-			// installed, draws them; the answer otherwise shows the font's glyph).
-			expect(missing).toEqual(name === 'look-alikes-zh.json' ? [] : ['読', '続', '険', '検', '験', '緑', '縁']);
+			// Chinese: every character has data with its count. Japanese: the shinjitai forms the Chinese data lacks, and
+			// 象/像, written with one stroke more in Japanese (KanjiVG, when installed, draws them; with the Chinese data
+			// the count differs and the answer shows the font's glyph).
+			const zh = name === 'look-alikes-zh.json';
+			expect(missing).toEqual(zh ? [] : ['読', '続', '険', '検', '験', '緑', '縁']);
+			expect(otherCount).toEqual(zh ? [] : ['象', '像']);
 		});
 	}
 });

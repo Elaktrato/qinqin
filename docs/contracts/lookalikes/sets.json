@@ -92,7 +92,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -258,7 +258,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -392,7 +392,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -561,7 +561,7 @@
     "language": "ko",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -730,7 +730,7 @@
     "language": "zh",
     "license": "CC-BY-SA-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -899,7 +899,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "me",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -1068,7 +1068,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": [],
     "sets": [
      {
@@ -1138,7 +1138,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -1253,7 +1253,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -1439,7 +1439,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -1578,7 +1578,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -1745,7 +1745,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -1871,7 +1871,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -2040,7 +2040,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -2208,7 +2208,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -2377,7 +2377,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -2546,7 +2546,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -2675,7 +2675,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "hiragana",
@@ -2804,7 +2804,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -2933,7 +2933,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -3062,7 +3062,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -3230,7 +3230,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -3390,7 +3390,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -3570,7 +3570,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -3700,7 +3700,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -3869,7 +3869,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -4037,7 +4037,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -4207,7 +4207,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -4376,7 +4376,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -4545,7 +4545,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -4678,7 +4678,7 @@
     "language": "ja",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "ソ": {
       "script": "katakana",
@@ -4810,7 +4810,7 @@
     "language": "zh",
     "license": "CC-BY-4.0",
     "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-    "review": "Reviewed by agents.",
+    "humanReviewed": false,
     "characters": {
      "未": {
       "pinyin": [
@@ -4995,7 +4995,7 @@
    "language": "zh",
    "license": "CC-BY-4.0",
    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-   "review": "Reviewed by agents.",
+   "humanReviewed": false,
    "characters": {
     "未": {
      "pinyin": [
@@ -5157,7 +5157,7 @@
    "language": "ja",
    "license": "CC-BY-4.0",
    "attribution": "qinqin contributors, CC BY 4.0 — https://github.com/Elaktrato/qinqin",
-   "review": "Reviewed by agents.",
+   "humanReviewed": false,
    "characters": {
     "ソ": {
      "script": "katakana",
