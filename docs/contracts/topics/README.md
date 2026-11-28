@@ -24,11 +24,12 @@ list) ignores it. 49 topics today, including topics for words no theme owns: `fu
 
 One per language, `server/internal/topics/labels/<lang>.json`, embedded in the server, built by
 `scripts/build-topic-labels.mjs` from committed inputs (never edited by hand: change an input and rebuild; `--check`
-fails on drift). CC BY 4.0, written for the project. One label per line, so a change is a one-line diff.
+fails on drift). CC BY-SA 4.0: written for the project, and adapted from OpenMoji's groups and from CC-CEDICT and
+JMdict, whose words key it (all CC BY-SA 4.0); the file's `attribution` credits them. One label per line, so a change is a one-line diff.
 
 ```json
 {
- "version": 1, "language": "ja", "license": "CC-BY-4.0", "attribution": "…", "humanReviewed": false,
+ "version": 1, "language": "ja", "license": "CC-BY-SA-4.0", "attribution": "…", "humanReviewed": false,
  "reviewers": [{ "id": "ja-teacher-1", "kind": "agent", "stage": "review", "role": "…" }],
  "labels": [
   {"key":"j:1578850","form":"行く","reading":"いく","topics":["movement"],"confidence":0.95,"basis":"agent","review":"confirmed","by":["ja-teacher-1","ja-teacher-2"]}
@@ -36,7 +37,7 @@ fails on drift). CC BY 4.0, written for the project. One label per line, so a ch
 }
 ```
 
-A server accepts a file when: `version` is 1; `language` is `[a-z]{2,3}`; `license` is `CC-BY-4.0`; `attribution`
+A server accepts a file when: `version` is 1; `language` is `[a-z]{2,3}`; `license` is `CC-BY-SA-4.0`; `attribution`
 is set; reviewer ids are `[a-z0-9][a-z0-9-]{0,39}` and distinct; there are 1–50,000 labels; and each label has:
 
 - `key` — the dictionary entry key (zh: the simplified form; ja: `j:<ent_seq>`), and `form` — the word as a level list

@@ -1,8 +1,8 @@
 {
  "version": 1,
  "language": "ja",
- "license": "CC-BY-4.0",
- "attribution": "Topic labels for Japanese words, written for qinqin (qinqin contributors, CC BY 4.0): topics suggested by an agent from the JMdict senses and the word's OpenMoji picture, then reviewed by agents acting as teachers of Japanese. Not yet reviewed by a person.",
+ "license": "CC-BY-SA-4.0",
+ "attribution": "Topic labels for Japanese words, by qinqin contributors (https://github.com/Elaktrato/qinqin), CC BY-SA 4.0: topics suggested by an agent and reviewed by agents acting as teachers of Japanese, not yet by a person. Adapted from: JMdict (Electronic Dictionary Research and Development Group, https://www.edrdg.org/, CC BY-SA 4.0), whose entries key the labels and whose senses the agents read; OpenMoji 17.0.0 (OpenMoji – the open-source emoji and icon project, https://openmoji.org, CC BY-SA 4.0), whose emoji groups give the picture-based labels. Licence: https://creativecommons.org/licenses/by-sa/4.0/",
  "humanReviewed": false,
  "reviewers": [
   {

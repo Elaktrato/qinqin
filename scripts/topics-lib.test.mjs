@@ -200,7 +200,7 @@ test('buildLabels: words first in list order, sense rows after their word, then 
 	const meta = { attribution: 'A', reviewers: [{ id: 'zh-teacher-1', role: 'r' }] };
 	const file = buildLabels('zh', [BATCH], picture, IDS2, meta);
 	assert.equal(file.version, 1);
-	assert.equal(file.license, 'CC-BY-4.0');
+	assert.equal(file.license, 'CC-BY-SA-4.0');
 	assert.deepEqual(file.labels.map((l) => [l.key, l.sense ?? 0, l.topics.join(','), l.review, l.confidence]), [
 		['茶', 0, 'drink', 'confirmed', 0.95],
 		['行', 0, 'movement', 'adjudicated', 0.8],

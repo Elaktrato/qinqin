@@ -7,7 +7,10 @@
   `node scripts/build-topic-labels.mjs --groups <openmoji.json>` from the pinned file (`scripts/images/pins.json`) and
   is distributed under CC BY-SA 4.0.
 - `openmoji-topics.tsv` (group and subgroup → topic), `reviewers.json` and the batch files `zh/` and `ja/` (the words
-  to label and the answers of the labelling and teacher agents) are written for qinqin (qinqin contributors,
-  **CC BY 4.0**). The batch files hold words (forms, readings and JMdict sequence numbers), no dictionary glosses.
-- The labels files built from them, `server/internal/topics/labels/<lang>.json`, are CC BY 4.0 (see
-  `docs/sources.md`, "Topic labels").
+  to label and the answers of the labelling and teacher agents) are written for qinqin (qinqin contributors) and,
+  like the labels built from them, are shared under **CC BY-SA 4.0**: the batches are keyed to CC-CEDICT and JMdict
+  words (forms, readings and JMdict sequence numbers; no dictionary glosses), both CC BY-SA 4.0.
+- The labels files built from them, `server/internal/topics/labels/<lang>.json`, are **CC BY-SA 4.0**: adapted from
+  OpenMoji's groups and keyed to CC-CEDICT and JMdict; each file's `attribution` credits them (see `docs/sources.md`,
+  "Topic labels", and `LICENSING.md`). Legal code: <https://creativecommons.org/licenses/by-sa/4.0/legalcode>, the
+  same text as `plugins/data/cedict/LICENSE`.

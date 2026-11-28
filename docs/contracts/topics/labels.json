@@ -6,77 +6,77 @@
   {
    "name": "a minimal file",
    "valid": true,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "agent labels name their reviewers, a sense row, a note",
    "valid": true,
-   "file": { "version": 1, "language": "ja", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [{ "id": "ja-teacher-1", "kind": "agent", "stage": "review", "role": "R" }, { "id": "ja-teacher-2", "kind": "agent", "stage": "review", "role": "R" }], "labels": [{ "key": "j:1578850", "form": "行く", "reading": "いく", "topics": ["movement"], "confidence": 0.95, "basis": "agent", "review": "confirmed", "by": ["ja-teacher-1", "ja-teacher-2"] }, { "key": "j:1578850", "form": "行く", "reading": "いく", "sense": 3, "topics": ["health"], "confidence": 0.9, "basis": "agent", "review": "changed", "by": ["ja-teacher-1", "ja-teacher-2"], "note": "to die" }] }
+   "file": { "version": 1, "language": "ja", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [{ "id": "ja-teacher-1", "kind": "agent", "stage": "review", "role": "R" }, { "id": "ja-teacher-2", "kind": "agent", "stage": "review", "role": "R" }], "labels": [{ "key": "j:1578850", "form": "行く", "reading": "いく", "topics": ["movement"], "confidence": 0.95, "basis": "agent", "review": "confirmed", "by": ["ja-teacher-1", "ja-teacher-2"] }, { "key": "j:1578850", "form": "行く", "reading": "いく", "sense": 3, "topics": ["health"], "confidence": 0.9, "basis": "agent", "review": "changed", "by": ["ja-teacher-1", "ja-teacher-2"], "note": "to die" }] }
   },
   {
    "name": "an owner-reviewed label",
    "valid": true,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "culture"], "confidence": 1, "basis": "owner", "review": "owner" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "culture"], "confidence": 1, "basis": "owner", "review": "owner" }] }
   },
   {
    "name": "version 2 is refused",
    "valid": false,
-   "file": { "version": 2, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 2, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "another licence is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "no labels is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [] }
   },
   {
    "name": "an unknown topic is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["beverages"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["beverages"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "a topic twice is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "four topics are refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "food", "culture", "shopping"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink", "food", "culture", "shopping"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "a confidence outside (0, 1] is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "an unknown basis or review state is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "guess", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "guess", "review": "picture" }] }
   },
   {
    "name": "an agent label without reviewers is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.95, "basis": "agent", "review": "confirmed" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.95, "basis": "agent", "review": "confirmed" }] }
   },
   {
    "name": "a reviewer the file does not list is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [{ "id": "zh-teacher-1", "kind": "agent", "stage": "review", "role": "R" }], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.95, "basis": "agent", "review": "confirmed", "by": ["zh-teacher-9"] }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [{ "id": "zh-teacher-1", "kind": "agent", "stage": "review", "role": "R" }], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.95, "basis": "agent", "review": "confirmed", "by": ["zh-teacher-9"] }] }
   },
   {
    "name": "the same word and sense twice is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }, { "key": "茶", "form": "茶", "topics": ["food"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "茶", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }, { "key": "茶", "form": "茶", "topics": ["food"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   },
   {
    "name": "an empty form is refused",
    "valid": false,
-   "file": { "version": 1, "language": "zh", "license": "CC-BY-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
+   "file": { "version": 1, "language": "zh", "license": "CC-BY-SA-4.0", "attribution": "A", "humanReviewed": false, "reviewers": [], "labels": [{ "key": "茶", "form": "", "topics": ["drink"], "confidence": 0.6, "basis": "picture", "review": "picture" }] }
   }
  ],
  "lookup": [

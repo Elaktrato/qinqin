@@ -166,7 +166,10 @@ Licence confirmed by the owner on 2026-11-26.
 
 `server/internal/topics/labels/zh.json` and `ja.json` (embedded in the server) give words their **topics** (49
 themes such as food, family, travel, `docs/contracts/topics/topics.json`), so a course can fill its units by theme.
-The **project wrote them** and they are under **CC BY 4.0** (credit "qinqin contributors, CC BY 4.0"):
+The **project wrote them**, and they are shared under **CC BY-SA 4.0** (not the project's usual CC BY 4.0): they
+are adapted in part from OpenMoji's emoji groups and keyed to CC-CEDICT and JMdict words whose senses the agents read,
+all CC BY-SA 4.0. Credit: "qinqin contributors, CC BY-SA 4.0", with CC-CEDICT (MDBG and the CC-CEDICT community) or
+JMdict (EDRDG) and OpenMoji, as each file's `attribution` gives it:
 
 - Words of HSK 1–4 (the bundled `hsk-words` list, used only to choose which words to label; no levels are copied)
   and ≈ N5–N3 (the estimated JLPT word list of #219) were labelled by an agent from their CC-CEDICT or JMdict senses
@@ -175,8 +178,8 @@ The **project wrote them** and they are under **CC BY 4.0** (credit "qinqin cont
   (`humanReviewed: false`).
 - Other words with an OpenMoji picture (#216) get the topic of the picture's emoji group and subgroup, through the
   project's table `scripts/topics/openmoji-topics.tsv` (basis `picture`, not teacher-reviewed). The concept → group
-  table `scripts/topics/openmoji-groups.tsv` comes from OpenMoji 17.0.0 `openmoji.json` (CC BY-SA 4.0) and keeps that
-  licence; the labels files hold no emoji data and no dictionary glosses.
+  table `scripts/topics/openmoji-groups.tsv` comes from OpenMoji 17.0.0 `openmoji.json` (CC BY-SA 4.0); the labels
+  files hold no emoji ids and no dictionary glosses.
 
 They are built by `scripts/build-topic-labels.mjs` from the committed batches (`scripts/topics/`); the agent step is
 `scripts/topic-agents.mjs`, the coverage report `scripts/topic-coverage.mjs`. The Sources page credits them under

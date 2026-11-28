@@ -75,13 +75,13 @@ export const coreCredits: SourceCredit[] = [
 		licenseTexts: [licenceText('CC BY 4.0', '/QINQIN-LICENSE.TXT')]
 	}, { notice: 'sources.core.qinqinThemes' }),
 	// The topic labels of words (#220): built into the server (server/internal/topics/labels), written for the
-	// project; the same licence text as the house themes.
+	// project and shared under CC BY-SA 4.0 (adapted from OpenMoji's groups, keyed to CC-CEDICT and JMdict); the
+	// licence name links to the legal code.
 	credit({
 		name: 'qinqin topic labels',
 		url: 'https://github.com/Elaktrato/qinqin',
-		license: 'CC BY 4.0',
-		attribution: 'qinqin contributors, CC BY 4.0',
-		licenseTexts: [licenceText('CC BY 4.0', '/QINQIN-LICENSE.TXT')]
+		license: 'CC BY-SA 4.0',
+		attribution: 'qinqin contributors, CC BY-SA 4.0; from CC-CEDICT, JMdict (EDRDG) and OpenMoji, each CC BY-SA 4.0'
 	}, { notice: 'sources.core.topicLabels' }),
 	credit({
 		name: 'uqr',

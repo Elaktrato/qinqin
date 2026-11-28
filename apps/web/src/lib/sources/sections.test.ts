@@ -275,7 +275,6 @@ describe('declared credits', () => {
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
 			'/QINQIN-LICENSE.TXT',
-			'/QINQIN-LICENSE.TXT',
 			'/TESSERACT-APACHE-2.0.TXT',
 			'/UQR-LICENSE.TXT'
 		]);

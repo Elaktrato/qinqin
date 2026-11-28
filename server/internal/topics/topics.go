@@ -1,6 +1,7 @@
 // Package topics holds the fixed topic list and the topic labels of words (#220): which themes (food, family,
 // travel …) a word belongs to, so a course can fill its units by theme (#221). The labels are written for this
-// project and released under CC BY 4.0 (LICENSING.md): suggested by an agent, reviewed by agents acting as
+// project and released under CC BY-SA 4.0 (LICENSING.md: they draw on OpenMoji's groups and are keyed to CC-CEDICT
+// and JMdict, all CC BY-SA 4.0): suggested by an agent, reviewed by agents acting as
 // native-language teachers, or taken from the group of the word's OpenMoji picture; the owner reviews them later
 // (`humanReviewed`). The files are built by scripts/build-topic-labels.mjs and embedded here.
 //
@@ -121,8 +122,8 @@ func Parse(data []byte) (*File, error) {
 	if !languagePattern.MatchString(f.Language) {
 		return nil, fmt.Errorf("topic labels: language %q", f.Language)
 	}
-	if f.License != "CC-BY-4.0" {
-		return nil, fmt.Errorf("topic labels: license %q, want CC-BY-4.0", f.License)
+	if f.License != "CC-BY-SA-4.0" {
+		return nil, fmt.Errorf("topic labels: license %q, want CC-BY-SA-4.0", f.License)
 	}
 	if f.Attribution == "" {
 		return nil, errors.New("topic labels: no attribution")
