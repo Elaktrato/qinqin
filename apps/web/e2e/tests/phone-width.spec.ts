@@ -56,6 +56,7 @@ test('every main page fits a 360 px phone', async ({ page, learner }) => {
 		'/study/advanced',
 		'/reader',
 		`/reader/book/${bookId}/0`,
+		'/reader/sources',
 		'/search',
 		`/search?q=${encodeURIComponent('学校')}`,
 		`/entry/${entry}`,

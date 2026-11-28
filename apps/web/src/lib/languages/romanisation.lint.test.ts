@@ -39,6 +39,7 @@ const RENDERERS: readonly string[] = [
 	'lib/features/reader/ChapterText.svelte',
 	'lib/features/reader/EntryCard.svelte',
 	'lib/features/reader/SourceBrowser.svelte',
+	'lib/features/reader/graded/GradedPanel.svelte',
 	'lib/features/reader/WordsPanel.svelte',
 	'lib/features/scripts/ScriptsOverview.svelte',
 	'lib/features/scripts/ScriptsPracticeRun.svelte',

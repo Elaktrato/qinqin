@@ -12,6 +12,7 @@ import (
 	"qinqin/internal/library"
 	"qinqin/internal/library/epub"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/library/sources/graded"
 	"qinqin/internal/studyday"
 )
 
@@ -38,8 +39,9 @@ var sourceInfo = map[string]struct {
 	name      string
 	languages []string
 }{
-	"aozora":    {"Aozora Bunko", []string{"ja"}},
-	"gutenberg": {"Project Gutenberg", []string{"zh", "ja"}},
+	graded.SourceID: {"Graded readers", graded.Languages()},
+	"aozora":        {"Aozora Bunko", []string{"ja"}},
+	"gutenberg":     {"Project Gutenberg", []string{"zh", "ja"}},
 }
 
 // source returns the source named by the {source} path value, or answers
@@ -225,6 +227,20 @@ func (s *server) endImport(userID int64) {
 func sourceServes(sourceID, language string) bool {
 	info, ok := sourceInfo[sourceID]
 	return !ok || slices.Contains(info.languages, language)
+}
+
+// handleGradedCatalogue serves GET /api/library/graded?language=: the graded readers' catalogue
+// (docs/contracts/graded/README.md, Catalogue), every language or one; a language without texts is an empty list.
+func (s *server) handleGradedCatalogue(w http.ResponseWriter, r *http.Request) {
+	if s.requireUser(w, r) == nil {
+		return
+	}
+	language := r.URL.Query().Get("language")
+	if !validLanguageParam(language) {
+		writeError(w, http.StatusBadRequest, "bad_request", "language must be a language code such as ja or zh.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"texts": graded.Catalogue(language)})
 }
 
 // handleImportSource serves POST /api/library/sources/{source}/import

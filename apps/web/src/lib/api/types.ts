@@ -428,6 +428,29 @@ export interface SourceInfo {
 	languages: string[];
 }
 
+/** A glossed word of a graded text: above the text's level (docs/contracts/graded/). */
+export interface GradedGloss {
+	word: string;
+	reading: string;
+	meaning: string;
+}
+
+/** One graded reader of GET /api/library/graded (docs/contracts/graded/README.md, Catalogue). */
+export interface GradedText {
+	id: string;
+	language: string;
+	scheme: string;
+	level: number;
+	levelName: string;
+	levels: number;
+	kind: 'story' | 'dialogue' | 'info';
+	title: string;
+	length: number;
+	names: string[];
+	glosses: GradedGloss[];
+	humanReviewed: boolean;
+}
+
 export interface SourceResult {
 	sourceId: string;
 	title: string;

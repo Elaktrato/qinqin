@@ -102,7 +102,8 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
 | `POST /api/library/upload` | Multipart `file` (epub, up to 20 MiB) and `workspace` (required); `language` only matters for an epub without `dc:language`. 404 for a foreign workspace, 422 when the book's language differs from the workspace's |
-| `GET /api/library/sources` | The available online sources |
+| `GET /api/library/sources` | The available sources: the graded readers (`graded`) first, then the online sources |
+| `GET /api/library/graded?language=` | The graded readers' catalogue (#231): `{texts: [{id, language, scheme, level, levelName, levels, kind, title, length, names, glosses, humanReviewed}]}` without the text; add one with `POST /api/library/sources/graded/import`. Format: `docs/contracts/graded/` |
 | `GET /api/library/sources/{source}/search?q=&limit=` | Search a source's catalogue (limit up to 100) |
 | `GET /api/library/sources/{source}/browse?language=&seed=&limit=` | A deterministic assortment for the seed (default: today's UTC date; limit 1 to 50, default 12). 404 for an unknown source, 501 for one without suggestions |
 | `POST /api/library/sources/{source}/import` `{sourceId, workspaceId}` | Import one work into a workspace; a source with no books in the workspace language is refused with 422 before any download, a repeat in the same workspace is 409 |
