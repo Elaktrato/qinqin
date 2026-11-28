@@ -4,6 +4,9 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## Upgrading
 
+- Migration 059 adds the source of a saved sentence (#280). An upgrade wipes nothing; sentences saved earlier have no
+  source until they are saved again from a book.
+
 - Migration 057 adds the picture reports (#274). An upgrade wipes nothing. Images packs now build a data package; the
   server builds it at start. Re-seed (`qinqin seed`) to install the reviewed picture maps of a rebuilt image.
 - Run `qinqin seed` once after upgrading (#346): it re-imports CC-CEDICT and JMdict so each meaning knows its reading. Until then a Starter word's card shows the meanings of all its readings. Starter cards added before this release keep doing so (a pin is set when a word is first added); everyday meanings still come first on them. Nothing is wiped.
@@ -29,6 +32,10 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 - Grammar lessons count like the rest of study (#277): a finished lesson is a point on the heatmap and in the weekly summary (each lesson once a day), can be a daily goal, earns 20 XP and keeps your streak going, also for the streak and days-active milestones. The best score of each lesson is worked out from your finished runs, and a run made offline is sent when you are back online.
 
 ## New
+
+- Reader: a sentence saved from a book keeps where you read it (#280). The word's page shows "From *title*, chapter n"
+  under it, linked to the book at that place with the word marked; cards show the line as text. A deleted book's
+  title stays, without the link. Backups carry it.
 
 - Reader: a word you already study offers **Save this sentence** in its popup (#279): the book sentence becomes another example sentence of the word and a new Build the sentence card in its decks, with no limit per word; a sentence it already has is not saved twice. **Save new sentences of words in study** in the Display tab (off by default) does it whenever you look such a word up. The word's page has **Remove** on each of your own sentences, which also removes the cards made from them. Adding the same sentence text to a word twice through the API now answers the existing sentence.
 - **Grammar review** (#181): a grammar point you finish with 80 % or more comes back for spaced review (FSRS). The Grammar page shows how many points are due (**Review now**) and, on each learned lesson, when it is due and when you last reviewed it; a review asks up to three exercises from the lesson's own examples (fill the gap, word order), different sentences each time. At most 5 new points start their reviews a day. The study modal's **Grammar review** chip adds the due points to a study session, after its cards. Reviews count like lesson runs: XP, the streak, the heatmap and daily goals.

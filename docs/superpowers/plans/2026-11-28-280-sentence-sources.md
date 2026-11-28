@@ -113,7 +113,13 @@ Nothing: this issue adds UI strings only. The `de`/`ja` catalogues do not exist 
 
 ## Local follow-up
 
-(Filled in at the end.)
+- **#280, Android WebView:** in the APK (`apps/android`, a debug build on an emulator or phone), open a book, tap a word
+  that has a card and press **Save this sentence**; open the word's page (the sheet's "Open entry"), tap
+  **From *title*, chapter n**: the reader opens with the sentence's paragraph at the top and the word underlined; the
+  hardware back button returns to the word's page (not to the library or out of the app). Not checked here (no
+  Android SDK or emulator); the same flow passed in headless Chromium at 360 × 740 with touch, `page.goBack()` as the
+  back button (`e2e/tests/sentence-sources.spec.ts`). The Android System WebView must support the CSS Custom
+  Highlight API (Chromium 105+) for the mark; without it the reader still scrolls there.
 
 ## Execution record
 

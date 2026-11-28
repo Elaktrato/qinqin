@@ -5,6 +5,24 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #280 — sentence sources: a saved book sentence keeps its book and place (contract 43)
+
+- **New fixture `reader/sentence-sources.json`** (rule `reader/sentence-sources`; Go `check`, `merge`, `detach`; web
+  `link`, `at`, `label`): an own sentence saved from the reader carries `source`
+  `{kind: "book", bookId, title, chapter, paragraph, start, end}` (the word's code-point range in the paragraph, as
+  highlights address it). `reader/README.md` "Sentence sources".
+- **`POST /api/entries/{id}/sentences`** takes an optional `source: {bookId, chapter, paragraph, start, end}`: one of
+  the caller's books of the entry's language, a chapter it has, a paragraph 0 … 100000, `0 ≤ start < end ≤ 100000`;
+  anything else (another user's book included) is **422 `invalid_request`**. The title is the server's. On the same
+  text (200), an own sentence without a source takes it; a sourced one keeps its own.
+- **Sentence answers** (`GET /api/entries/{id}`, the POST) carry `source` on own sentences that have one (absent
+  otherwise). Deleting a book or its workspace sets `bookId` to null and keeps the title and place.
+- **`sync/pull-page.json`:** `sentences` rows gain the member `source` (always present, null without one).
+- **Backup:** `sentences.jsonl` lines take `source` (`bookId` a book of `books.json` or null; a restore maps it to the
+  new book). The sample archive's sentence has one; `reject.json` adds two cases (an unlisted book, a malformed
+  place).
+- **The reader** opens at `/reader/book/{bookId}/{chapter}?at={paragraph}:{start}-{end}`.
+
 ## #225 — courses count; course milestones; the Home widget (contract 40)
 
 - **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
