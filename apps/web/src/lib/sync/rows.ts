@@ -16,7 +16,7 @@ const SHAPES: Record<string, readonly string[]> = {
 	bookmarks: ['id', 'bookId', 'position', 'label', 'createdAt', 'updatedAt', 'deletedAt'],
 	highlights: ['id', 'bookId', 'chapter', 'paragraph', 'start', 'end', 'text', 'color', 'note', 'createdAt', 'updatedAt', 'deletedAt'],
 	overlays: ['entryId', 'written', 'readings', 'updatedAt'],
-	sentences: ['id', 'entryId', 'sourcePack', 'userId', 'hanzi', 'pinyin', 'translation', 'updatedAt', 'deletedAt', 'ai'],
+	sentences: ['id', 'entryId', 'sourcePack', 'userId', 'hanzi', 'pinyin', 'translation', 'updatedAt', 'deletedAt', 'ai', 'source'],
 	events: ['id', 'workspaceId', 'device', 'ts', 'type', 'payload', 'updatedAt']
 };
 const LIBRARY = new Set(['books', 'bookmarks', 'highlights']);
@@ -46,8 +46,14 @@ export function readableRow(collection: string, raw: unknown): boolean {
 		case 'events':
 			return raw.type !== 'lookup' && typeof raw.id === 'string';
 		case 'sentences':
-			// `ai` marks a kept AI example (#186): {provider, model} or null.
-			return raw.sourcePack === '' && Number.isInteger(raw.userId) && (raw.ai === null || isRecord(raw.ai));
+			// `ai` marks a kept AI example (#186): {provider, model} or null;
+			// `source` is where the reader saved it (#280) or null.
+			return (
+				raw.sourcePack === '' &&
+				Number.isInteger(raw.userId) &&
+				(raw.ai === null || isRecord(raw.ai)) &&
+				(raw.source === null || isRecord(raw.source))
+			);
 		default:
 			return true;
 	}

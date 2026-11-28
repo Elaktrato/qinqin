@@ -179,6 +179,25 @@ type Sentence struct {
 	// Credit says who wrote a pack sentence and its translation (Tatoeba, CC BY
 	// 2.0 FR needs the author named); absent for a sentence without one.
 	Credit *SentenceCredit `json:"credit,omitempty"`
+	// Source is where the learner read an own sentence (#280,
+	// docs/contracts/reader/sentence-sources.json); absent for every other
+	// sentence. Own sentences are private, so the source is too.
+	Source *SentenceSource `json:"source,omitempty"`
+}
+
+// SentenceSource is the place an own sentence was saved from: kind "book",
+// the library book (nil once the book is deleted: the title and the place
+// stay as text), the book's title when saved, and the word's place in it:
+// chapter and paragraph (zero-based) and the code-point range [Start, End)
+// of the paragraph's plain text, as highlights address it.
+type SentenceSource struct {
+	Kind      string `json:"kind"`
+	BookID    *int64 `json:"bookId"`
+	Title     string `json:"title"`
+	Chapter   int    `json:"chapter"`
+	Paragraph int    `json:"paragraph"`
+	Start     int    `json:"start"`
+	End       int    `json:"end"`
 }
 
 // SentenceCredit is the credit of a pack sentence: the source, the sentence's

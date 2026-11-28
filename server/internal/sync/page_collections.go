@@ -93,7 +93,8 @@ func v2Segments() []segment {
 		segment{coll: "overlays", table: "user_edits", stamp: "updated_at", cols: "entry_id, written, readings, updated_at",
 			extra: byLanguage, encode: encodeOverlay},
 		segment{coll: "sentences", table: "sentences", stamp: "updated_at", tomb: true,
-			cols:  "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at, ai_provider, ai_model",
+			cols: "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at, ai_provider, ai_model, " +
+				"source_kind, source_book_id, source_title, source_chapter, source_paragraph, source_start, source_end",
 			extra: byLanguage, encode: encodeSentence},
 		segment{coll: "events", table: "study_events", stamp: "updated_at",
 			cols: "id, workspace_id, device, ts, type, payload, updated_at",
@@ -317,6 +318,13 @@ func encodeOverlay(sc scanner) (string, int64, []byte, error) {
 	return marshalRow(updated, rowid, o)
 }
 
+// syncSentence is a sentence row of the pull: `source` is always present
+// (null without one, #280), as every key of a pull row is.
+type syncSentence struct {
+	model.Sentence
+	Source *model.SentenceSource `json:"source"`
+}
+
 func encodeSentence(sc scanner) (string, int64, []byte, error) {
 	var rowid int64
 	var s model.Sentence
@@ -324,8 +332,19 @@ func encodeSentence(sc scanner) (string, int64, []byte, error) {
 	var updated string
 	var deleted sql.NullString
 	var aiProvider, aiModel string
-	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted, &aiProvider, &aiModel); err != nil {
+	var src model.SentenceSource
+	var srcBook sql.NullInt64
+	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted, &aiProvider, &aiModel,
+		&src.Kind, &srcBook, &src.Title, &src.Chapter, &src.Paragraph, &src.Start, &src.End); err != nil {
 		return "", 0, nil, err
+	}
+	var source *model.SentenceSource
+	if src.Kind != "" { // a sentence saved from the reader (#280)
+		if srcBook.Valid {
+			id := srcBook.Int64
+			src.BookID = &id
+		}
+		source = &src
 	}
 	if aiProvider != "" || aiModel != "" { // an AI example (#186)
 		s.AI = &model.SentenceAI{Provider: aiProvider, Model: aiModel}
@@ -341,7 +360,7 @@ func encodeSentence(sc scanner) (string, int64, []byte, error) {
 	if s.DeletedAt, err = parseDeleted(deleted); err != nil {
 		return "", 0, nil, err
 	}
-	return marshalRow(updated, rowid, s)
+	return marshalRow(updated, rowid, syncSentence{Sentence: s, Source: source})
 }
 
 func encodeEvent(sc scanner) (string, int64, []byte, error) {

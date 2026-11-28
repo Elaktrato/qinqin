@@ -128,7 +128,7 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 | `cards` … `fsrsActive` | the typed rows of `docs/contracts/study/rows.json` (strict decode) |
 | `books`, `bookmarks`, `highlights` | the rows of `docs/contracts/library/rows.json` plus `deletedAt: null`; a tombstone is exactly `{id, workspaceId, updatedAt, deletedAt}` (from `library_deletions`, `updatedAt` = `deletedAt`) |
 | `overlays` | `{entryId, written, readings, updatedAt}` (`null` = untouched; no tombstones) |
-| `sentences` | own sentences only: `{id, entryId, sourcePack: "", userId, hanzi, pinyin, translation, updatedAt, deletedAt, ai}`; `ai` is `{provider, model}` for a kept AI example (#186, `examples/`), else `null` |
+| `sentences` | own sentences only: `{id, entryId, sourcePack: "", userId, hanzi, pinyin, translation, updatedAt, deletedAt, ai, source}`; `ai` is `{provider, model}` for a kept AI example (#186, `examples/`), else `null`; `source` is where the reader saved it (`{kind: "book", bookId, title, chapter, paragraph, start, end}`, `bookId` null once the book is deleted, #280, `reader/sentence-sources.json`), else `null` |
 | `events` | `{id, workspaceId, device, ts, type, payload, updatedAt}`, every type but `lookup` (no tombstones) |
 
 ### Reading rows (`unreadable-rows.json`, #167)
