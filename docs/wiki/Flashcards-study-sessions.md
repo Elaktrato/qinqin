@@ -9,6 +9,7 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 - one line with what is waiting: "12 due · 8 new · 4 decks", or for a level "HSK 2 · 12 due · 8 new";
 - **This session: 20 cards**, exactly the cards **Start studying** will plan under your limits, and the session's count starts there: before it counts, the server tells the app which of your words can make a Word Salad or Cloze card (an example sentence), a Writing card (a character with stroke order), a Tone card (a clean pinyin reading) or a Reverse card (a gloss), so no card is promised that the session would then drop; or why nothing can start, such as "Nothing is due and no new cards are left in the selected decks", with Start disabled; on a vacation day the vacation line and a link to change it instead;
 - the **card types** as chips: only the types your workspace language has (Spanish has no Writing or Tone), Reverse and Cloze only when one of your decks switches them on, and only the types that have something to study now in the chosen decks or level, due or new. A type without cards is left out, with one short line saying why ("Word Salad and Cloze: no example sentences for these words yet."; an administrator is also told that example sentences are installed with `qinqin seed`); your choice of it is kept and the chip comes back once it has cards. At least one visible chip stays selected. A change is saved at once (only what you changed, so a change made on another device meanwhile stays); right after signing in on a new device the chips wait until your saved setup has arrived;
+- **Grammar review** (while Grammar is switched on in Settings → Features), a chip with the number of grammar points to review now: on, a session runs the [grammar review](Grammar-lessons#review) after its cards, and Start is possible with only grammar points due. It is saved with the setup like the card types;
 - **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; it is enabled when that session would hold something;
 - **Advanced settings →**, the full setup.
 
@@ -159,7 +160,7 @@ Back belongs to the open session: after a reload, a workspace switch or a new se
 
 ## The end of a session
 
-**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the XP this session by card type and the daily bonus, the progress to your next level and your streak. **Done** returns to the page the session was started from. A session with nothing to study, or one that could not load, has **Back to study** instead, which returns there with the study modal open.
+**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the grammar points reviewed when the session included grammar review, the XP this session by card type (and Grammar) and the daily bonus, the progress to your next level and your streak. **Done** returns to the page the session was started from. A session with nothing to study, or one that could not load, has **Back to study** instead, which returns there with the study modal open.
 
 ## Scheduling, XP and streaks
 
@@ -170,7 +171,7 @@ XP, level and streak are derived from the history per workspace:
 - base XP per review: Vocab 10, Word Salad 15, Writing 20, Tone 8 (Reverse and Cloze count too);
 - a grade bonus: Good +5, Easy +10, Again and Hard nothing;
 - a daily bonus of +10 for each learner day with at least one review;
-- 20 XP for each finished [grammar lesson](Grammar-lessons) run.
+- 20 XP for each finished [grammar lesson](Grammar-lessons) run or grammar review.
 
 Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review or a finished grammar lesson (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
 

@@ -30,6 +30,8 @@ Notes collected for the next release; they move into its `vX.Y.Z.md` when it is 
 
 ## New
 
+- **Grammar review** (#181): a grammar point you finish with 80 % or more comes back for spaced review (FSRS). The Grammar page shows how many points are due (**Review now**) and, on each learned lesson, when it is due and when you last reviewed it; a review asks up to three exercises from the lesson's own examples (fill the gap, word order), different sentences each time. At most 5 new points start their reviews a day. The study modal's **Grammar review** chip adds the due points to a study session, after its cards. Reviews count like lesson runs: XP, the streak, the heatmap and daily goals.
+
 - **Tone pairs** (Chinese workspaces), the first drill in Practice: the 20 two-syllable tone patterns, each practised with words from your decks, then the HSK word list. Type the two tones (the phone keeps its number keyboard open between words) or tap them; grading and tone sandhi follow the Tones settings (citation tones by default, spoken tones counted too). A grid shows each pair's recent accuracy, and **Practise my weakest pairs** drills the weak ones. Tone-pair answers count on the heatmap, in the weekly summary and as a daily goal (#180).
 
 - **Practice** (`/practice`), the home of the drills: each drill item has its own spaced schedule (FSRS, apart from your flashcards), a round per drill and **Practise weakest** across them; drill answers count for the heatmap, the weekly summary, daily goals, XP and the streak. It is a feature you can switch off in Settings → Features. The drills themselves (conjugation, counters, tone pairs, look-alike characters) come next; until one applies to your language, Practice is not in the navigation.
