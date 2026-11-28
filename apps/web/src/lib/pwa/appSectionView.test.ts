@@ -49,9 +49,9 @@ describe('appSectionView', () => {
 });
 
 describe('clearOfflineData', () => {
-	it('deletes the API partitions and the receipts, never the review outbox', async () => {
+	it('deletes the API partitions, the kept packages (#274) and the receipts, never the review outbox', async () => {
 		const caches = new FakeCacheStorage();
-		for (const n of ['qinqin-api-v1-aaa', 'qinqin-api-v1-bbb', 'qinqin-shell-x', 'qinqin-hanzi-v1', 'qinqin-fonts-v1']) await caches.open(n);
+		for (const n of ['qinqin-api-v1-aaa', 'qinqin-api-v1-bbb', 'qinqin-shell-x', 'qinqin-hanzi-v1', 'qinqin-fonts-v1', 'qinqin-packages-v1']) await caches.open(n);
 		const data = new Map<string, string>([
 			['qinqin.pwa.prepared.1.7', '{}'],
 			['qinqin.pwa.prepared.2.3', '{}'],

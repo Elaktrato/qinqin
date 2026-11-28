@@ -1,5 +1,5 @@
 import { testContext, updateWorkspaces, type TestContext } from '$lib/testing/context';
-import { cleanup, render, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EntryPicture as Picture } from '$lib/api/images';
 import type { Workspace } from '$lib/api/types';
@@ -88,5 +88,62 @@ describe('EntryPicture (#212)', () => {
 		const view = render(EntryPicture, { props: { entryId: 7 } });
 		expect(view.queryByTestId('entry-picture')).toBeNull();
 		expect(entryPicture).not.toHaveBeenCalled();
+	});
+});
+
+describe('Report picture (#274)', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	function stubReports(status: number) {
+		const sent: unknown[] = [];
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (path: string, init?: RequestInit) => {
+				if (path === '/api/images/reports' && init?.method === 'POST') {
+					sent.push(JSON.parse(String(init.body)));
+					return new Response(status === 204 ? null : '{"error":"internal","message":"x"}', { status });
+				}
+				return new Response('{}', { status: 404 });
+			})
+		);
+		return sent;
+	}
+
+	it('asks why, sends the report, hides the picture and says so', async () => {
+		const sent = stubReports(204);
+		entryPicture.mockResolvedValueOnce(picture).mockResolvedValueOnce(null);
+		const view = open();
+		await view.findByTestId('entry-picture');
+		await fireEvent.click(view.getByRole('button', { name: 'Report picture' }));
+		const wrong = view.getByRole('button', { name: 'It shows something else' });
+		expect(view.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+		await fireEvent.click(wrong);
+		await waitFor(() => expect(view.getByRole('status').textContent).toContain('Thanks'));
+		expect(sent).toEqual([{ entryId: 7, packId: 'images-openmoji', concept: '1F34E', reason: 'wrong' }]);
+		await waitFor(() => expect(view.queryByTestId('entry-picture')).toBeNull());
+		expect(entryPicture).toHaveBeenCalledTimes(2);
+	});
+
+	it('cancel closes the question and sends nothing', async () => {
+		const sent = stubReports(204);
+		entryPicture.mockResolvedValue(picture);
+		const view = open();
+		await view.findByTestId('entry-picture');
+		await fireEvent.click(view.getByRole('button', { name: 'Report picture' }));
+		await fireEvent.click(view.getByRole('button', { name: 'Cancel' }));
+		expect(view.queryByRole('button', { name: 'It shows something else' })).toBeNull();
+		expect(view.getByRole('button', { name: 'Report picture' })).toBeTruthy();
+		expect(sent).toEqual([]);
+	});
+
+	it('keeps the picture and shows the error when the report fails', async () => {
+		stubReports(500);
+		entryPicture.mockResolvedValue(picture);
+		const view = open();
+		await view.findByTestId('entry-picture');
+		await fireEvent.click(view.getByRole('button', { name: 'Report picture' }));
+		await fireEvent.click(view.getByRole('button', { name: 'It is hard to recognise' }));
+		await waitFor(() => expect(view.getByRole('alert').textContent).not.toBe(''));
+		expect(view.getByTestId('entry-picture')).toBeTruthy();
 	});
 });

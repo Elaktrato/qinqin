@@ -4,6 +4,7 @@
 import { cleanupPartitions, type CachesLike } from './partitions';
 import { t } from '$lib/i18n';
 import { formatBytes } from './install';
+import { clearPackages } from '$lib/packages/store';
 import { clearReceipts } from './prepareOffline';
 import type { OfflineState } from './offlineState.svelte';
 
@@ -59,8 +60,8 @@ export function appSectionView(i: AppViewInput): AppView {
 }
 
 /**
- * clearOfflineData deletes every saved API copy (all credentials) and the
- * "prepared" receipts. The review outbox is never touched: unsent reviews are
+ * clearOfflineData deletes every saved API copy (all credentials), the kept
+ * packages (#274) and the "prepared" receipts. The review outbox is never touched: unsent reviews are
  * not a cache.
  */
 export async function clearOfflineData(
@@ -68,5 +69,6 @@ export async function clearOfflineData(
 	storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null
 ): Promise<void> {
 	await cleanupPartitions(caches, null);
+	await clearPackages(caches);
 	clearReceipts(storage);
 }

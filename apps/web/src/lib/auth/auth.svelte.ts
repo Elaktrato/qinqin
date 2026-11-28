@@ -8,6 +8,7 @@ import { resolveInterfaceLanguage, writeMirror } from '$lib/i18n/interfaceLangua
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from '$lib/account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from '$lib/api/mfa';
 import { cleanupPartitions, ownPartition } from '$lib/pwa/partitions';
+import { clearPackages } from '$lib/packages/store';
 import { clearReceipts } from '$lib/pwa/prepareOffline';
 import { browserPushEnv, forgetThisDevice } from '$lib/pwa/push';
 import { TOKEN_KEY, clearToken, getToken, setToken } from '$lib/api/client';
@@ -267,9 +268,10 @@ export class Auth {
 		return { kind: 'session', user: await this.signInWithToken(response.token), step };
 	}
 
-	/** Offline copies of the API (all partitions) and the "prepared" receipts. Best effort. */
+	/** Offline copies of the API (all partitions), the kept packages (#274) and the "prepared" receipts. Best effort. */
 	#forgetOfflineCopies(): void {
 		void cleanupPartitions(undefined, null);
+		void clearPackages();
 		try {
 			clearReceipts(this.#deps.local());
 		} catch {
