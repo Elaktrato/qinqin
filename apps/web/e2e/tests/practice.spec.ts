@@ -1,5 +1,5 @@
 // The Practice area (the drills framework) on a 360 px phone, with the sample drill behind the developer flag
-// (localStorage "qinqin.dev.drills" = "sample"; no drill is registered yet): Practice joins the navigation, the
+// (localStorage "qinqin.dev.drills" = "sample"): Practice joins the navigation, the
 // list, a round whose answers reach the server as drill.sample events, the result, the weakest round, and the back
 // button out of a round. Without the flag, /practice says no drill applies and Practice is not in the bar.
 
@@ -8,7 +8,9 @@ import { PHONE, expectNoSidewaysScroll } from '../support/layout';
 
 test.use({ viewport: PHONE, hasTouch: true, isMobile: true });
 
-test('without a drill, /practice answers and Practice stays out of the navigation', async ({ page }) => {
+test('without a drill, /practice answers and Practice stays out of the navigation', async ({ page, learner }) => {
+	// Chinese: no registered drill yet (the conjugation drill is Japanese).
+	await page.addInitScript((id) => localStorage.setItem('qinqin.workspace', String(id)), learner.workspaces.zh);
 	await page.goto('/practice');
 	await expect(page.getByText('No drills for this language yet.')).toBeVisible();
 	await expectNoSidewaysScroll(page, '/practice (no drill)');
@@ -19,7 +21,11 @@ test('without a drill, /practice answers and Practice stays out of the navigatio
 });
 
 test('the sample drill: a round, its answers on the server, the weakest round', async ({ page, learner }) => {
-	await page.addInitScript(() => localStorage.setItem('qinqin.dev.drills', 'sample'));
+	await page.addInitScript((id) => {
+		localStorage.setItem('qinqin.dev.drills', 'sample');
+		// Chinese: the sample drill is the only one listed.
+		localStorage.setItem('qinqin.workspace', String(id));
+	}, learner.workspaces.zh);
 	await page.goto('/practice');
 	await expect(page.getByRole('heading', { level: 2, name: 'Sample drill' })).toBeVisible();
 	await expect(page.getByText('5 new')).toBeVisible();

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY v5k "Godan verb with 'ku' ending">
+<!ENTITY vt "transitive verb">
+<!ENTITY adj-i "adjective (keiyoushi)">
+]>
+<JMdict>
+<entry><ent_seq>9000001</ent_seq><k_ele><keb>書く</keb></k_ele><r_ele><reb>かく</reb></r_ele><sense><pos>&v5k;</pos><pos>&vt;</pos><gloss>to write</gloss></sense></entry>
+<entry><ent_seq>9000002</ent_seq><k_ele><keb>高い</keb></k_ele><r_ele><reb>たかい</reb></r_ele><sense><pos>&adj-i;</pos><gloss>high; expensive</gloss></sense></entry>
+</JMdict>
