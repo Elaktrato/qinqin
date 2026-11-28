@@ -104,7 +104,7 @@ func TestShippedSetsResolveInTheCommittedDictionaries(t *testing.T) {
 			if w.Reading != "" && !carries(e, "", w.Reading) {
 				t.Errorf("%s: %s resolves to %s, which does not have the reading %s", s.ID, w.Form, e.Key, w.Reading)
 			}
-			if w.Picture.Target != "" && w.Picture.Target != e.Key {
+			if w.Picture.Target != "" && !slices.Contains(pictureTargets(e), w.Picture.Target) {
 				t.Errorf("%s: %s resolves to %s, but its picture is mapped to %s", s.ID, w.Form, e.Key, w.Picture.Target)
 			}
 			served, ok := pictures.best(s.Language, pictureTargets(e))
@@ -112,8 +112,8 @@ func TestShippedSetsResolveInTheCommittedDictionaries(t *testing.T) {
 			case !ok:
 				t.Errorf("%s: %s (%s): no images mapping gives it a picture", s.ID, w.Form, e.Key)
 			case served.pack != w.Picture.Pack || served.concept != w.Picture.Concept:
-				t.Errorf("%s: %s (%s): the server serves %s/%s (score %d, %s), the set names %s/%s",
-					s.ID, w.Form, e.Key, served.pack, served.concept, served.score, served.note, w.Picture.Pack, w.Picture.Concept)
+				t.Errorf("%s: %s (%s): the server serves %s/%s (row %s, score %d, %s), the set names %s/%s",
+					s.ID, w.Form, e.Key, served.pack, served.concept, served.target, served.score, served.note, w.Picture.Pack, w.Picture.Concept)
 			}
 			var themes []string
 			if labels != nil {

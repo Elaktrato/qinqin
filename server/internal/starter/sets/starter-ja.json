@@ -4,503 +4,153 @@
  "language": "ja",
  "name": "Starter words (Japanese)",
  "license": "CC-BY-4.0",
- "attribution": "Starter words: a short list of common, picturable words chosen for this project (the word choice is by qinqin contributors, CC BY 4.0; the dictionaries and pictures it points at keep their own licences).",
+ "attribution": "Starter words: common, picturable words for beginners, chosen for this project by qinqin contributors (CC BY 4.0; https://github.com/Elaktrato/qinqin) and reviewed by agents acting as native-speaker teachers, not yet by a person. The dictionaries and pictures they point at keep their own licences.",
  "humanReviewed": false,
  "words": [
-  {
-   "form": "犬",
-   "reading": "いぬ",
-   "gloss": "dog",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F415"
-   }
-  },
-  {
-   "form": "猫",
-   "reading": "ねこ",
-   "gloss": "cat",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F408"
-   }
-  },
-  {
-   "form": "魚",
-   "reading": "さかな",
-   "gloss": "fish",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F41F"
-   }
-  },
-  {
-   "form": "馬",
-   "reading": "うま",
-   "gloss": "horse",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F40E"
-   }
-  },
-  {
-   "form": "鳥",
-   "reading": "とり",
-   "gloss": "bird",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F426"
-   }
-  },
-  {
-   "form": "林檎",
-   "reading": "りんご",
-   "gloss": "apple",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F34E"
-   }
-  },
-  {
-   "form": "蜜柑",
-   "reading": "みかん",
-   "gloss": "mandarin orange",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F34A"
-   }
-  },
-  {
-   "form": "バナナ",
-   "gloss": "banana",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F34C",
-    "target": "j:1099420"
-   }
-  },
-  {
-   "form": "卵",
-   "reading": "たまご",
-   "gloss": "egg",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F95A"
-   }
-  },
-  {
-   "form": "ご飯",
-   "reading": "ごはん",
-   "gloss": "cooked rice",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F35A"
-   }
-  },
-  {
-   "form": "寿司",
-   "reading": "すし",
-   "gloss": "sushi",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F363"
-   }
-  },
-  {
-   "form": "パン",
-   "gloss": "bread",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F35E",
-    "target": "j:1103090"
-   }
-  },
-  {
-   "form": "ピザ",
-   "gloss": "pizza",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F355",
-    "target": "j:1106620"
-   }
-  },
-  {
-   "form": "ハンバーガー",
-   "gloss": "hamburger",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F354",
-    "target": "j:1096860"
-   }
-  },
-  {
-   "form": "アイスクリーム",
-   "gloss": "ice cream",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F368",
-    "target": "j:1013980"
-   }
-  },
-  {
-   "form": "クッキー",
-   "gloss": "cookie",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F36A",
-    "target": "j:1043760"
-   }
-  },
-  {
-   "form": "サンドイッチ",
-   "gloss": "sandwich",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F96A",
-    "target": "j:1058580"
-   }
-  },
-  {
-   "form": "牛乳",
-   "reading": "ぎゅうにゅう",
-   "gloss": "milk",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F95B"
-   }
-  },
-  {
-   "form": "茶",
-   "reading": "ちゃ",
-   "gloss": "tea",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F375"
-   }
-  },
-  {
-   "form": "水",
-   "reading": "みず",
-   "gloss": "water",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4A7"
-   }
-  },
-  {
-   "form": "手",
-   "reading": "て",
-   "gloss": "hand",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "270B"
-   }
-  },
-  {
-   "form": "目",
-   "reading": "め",
-   "gloss": "eye",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F440"
-   }
-  },
-  {
-   "form": "耳",
-   "reading": "みみ",
-   "gloss": "ear",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F442"
-   }
-  },
-  {
-   "form": "火",
-   "reading": "ひ",
-   "gloss": "fire",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F525"
-   }
-  },
-  {
-   "form": "雨",
-   "reading": "あめ",
-   "gloss": "rain",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F327"
-   }
-  },
-  {
-   "form": "雪",
-   "reading": "ゆき",
-   "gloss": "snow",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2744"
-   }
-  },
-  {
-   "form": "花",
-   "reading": "はな",
-   "gloss": "flower",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F33C"
-   }
-  },
-  {
-   "form": "木",
-   "reading": "き",
-   "gloss": "tree",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F333"
-   }
-  },
-  {
-   "form": "太陽",
-   "reading": "たいよう",
-   "gloss": "sun",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2600"
-   }
-  },
-  {
-   "form": "月",
-   "reading": "つき",
-   "gloss": "moon",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F319"
-   }
-  },
-  {
-   "form": "家",
-   "reading": "いえ",
-   "gloss": "house",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3E0"
-   }
-  },
-  {
-   "form": "扉",
-   "reading": "とびら",
-   "gloss": "door",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F6AA"
-   }
-  },
-  {
-   "form": "椅子",
-   "reading": "いす",
-   "gloss": "chair",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1FA91"
-   }
-  },
-  {
-   "form": "時計",
-   "reading": "とけい",
-   "gloss": "clock",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "23F0"
-   }
-  },
-  {
-   "form": "鍵",
-   "reading": "かぎ",
-   "gloss": "key",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F511"
-   }
-  },
-  {
-   "form": "本",
-   "reading": "ほん",
-   "gloss": "book",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4D6"
-   }
-  },
-  {
-   "form": "帽子",
-   "reading": "ぼうし",
-   "gloss": "hat",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F9E2"
-   }
-  },
-  {
-   "form": "靴",
-   "reading": "くつ",
-   "gloss": "shoes",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F45F"
-   }
-  },
-  {
-   "form": "贈り物",
-   "reading": "おくりもの",
-   "gloss": "gift",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F381"
-   }
-  },
-  {
-   "form": "カメラ",
-   "gloss": "camera",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4F7",
-    "target": "j:1038350"
-   }
-  },
-  {
-   "form": "ギター",
-   "gloss": "guitar",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3B8",
-    "target": "j:1042820"
-   }
-  },
-  {
-   "form": "テレビ",
-   "gloss": "television",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F4FA",
-    "target": "j:1080510"
-   }
-  },
-  {
-   "form": "電話",
-   "reading": "でんわ",
-   "gloss": "telephone",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "260E"
-   }
-  },
-  {
-   "form": "車",
-   "reading": "くるま",
-   "gloss": "car",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F697"
-   }
-  },
-  {
-   "form": "バス",
-   "gloss": "bus",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F68C",
-    "target": "j:1098390"
-   }
-  },
-  {
-   "form": "タクシー",
-   "gloss": "taxi",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F695",
-    "target": "j:1076190"
-   }
-  },
-  {
-   "form": "電車",
-   "reading": "でんしゃ",
-   "gloss": "train",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F682"
-   }
-  },
-  {
-   "form": "自転車",
-   "reading": "じてんしゃ",
-   "gloss": "bicycle",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F6B2"
-   }
-  },
-  {
-   "form": "飛行機",
-   "reading": "ひこうき",
-   "gloss": "airplane",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "2708"
-   }
-  },
-  {
-   "form": "学校",
-   "reading": "がっこう",
-   "gloss": "school",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3EB"
-   }
-  },
-  {
-   "form": "病院",
-   "reading": "びょういん",
-   "gloss": "hospital",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3E5"
-   }
-  },
-  {
-   "form": "ホテル",
-   "gloss": "hotel",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3E8",
-    "target": "j:1122650"
-   }
-  },
-  {
-   "form": "コンビニ",
-   "gloss": "convenience store",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3EA",
-    "target": "j:1053280"
-   }
-  },
-  {
-   "form": "サッカー",
-   "gloss": "soccer",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "26BD",
-    "target": "j:1056700"
-   }
-  },
-  {
-   "form": "音楽",
-   "reading": "おんがく",
-   "gloss": "music",
-   "picture": {
-    "pack": "images-openmoji",
-    "concept": "1F3B5"
-   }
-  }
+  {"form": "男の人", "reading": "おとこのひと", "gloss": "man", "picture": {"pack": "images-openmoji", "concept": "1F468", "target": "j:1420020"}},
+  {"form": "家族", "reading": "かぞく", "gloss": "family", "picture": {"pack": "images-openmoji", "concept": "1F46A", "target": "j:1192150"}},
+  {"form": "女の人", "reading": "おんなのひと", "gloss": "woman", "picture": {"pack": "images-openmoji", "concept": "1F469", "target": "j:1344980"}},
+  {"form": "おまわりさん", "gloss": "police officer (everyday word)", "picture": {"pack": "images-openmoji", "concept": "1F46E", "target": "j:1002120"}},
+  {"form": "赤ちゃん", "reading": "あかちゃん", "gloss": "baby", "picture": {"pack": "images-openmoji", "concept": "1F476", "target": "j:1383260"}},
+  {"form": "医者", "reading": "いしゃ", "gloss": "doctor", "picture": {"pack": "images-mulberry", "concept": "doctor_1a", "target": "j:1159980"}},
+  {"form": "子供", "reading": "こども", "gloss": "child", "picture": {"pack": "images-openmoji", "concept": "1F9D2", "target": "j:1307850"}},
+  {"form": "先生", "reading": "せんせい", "gloss": "teacher", "picture": {"pack": "images-openmoji", "concept": "1F9D1-200D-1F3EB", "target": "j:1387990"}},
+  {"form": "学生", "reading": "がくせい", "gloss": "student", "picture": {"pack": "images-openmoji", "concept": "1F9D1-200D-1F393", "target": "j:1206900"}},
+  {"form": "学校", "reading": "がっこう", "gloss": "school", "picture": {"pack": "images-openmoji", "concept": "1F3EB"}},
+  {"form": "本", "reading": "ほん", "gloss": "book", "picture": {"pack": "images-openmoji", "concept": "1F4D6"}},
+  {"form": "ノート", "gloss": "notebook", "picture": {"pack": "images-openmoji", "concept": "1F4D3", "target": "j:1093450"}},
+  {"form": "ペン", "gloss": "pen", "picture": {"pack": "images-openmoji", "concept": "1F58A", "target": "j:1121380"}},
+  {"form": "机", "reading": "つくえ", "gloss": "desk", "picture": {"pack": "images-mulberry", "concept": "desk", "target": "j:1220210"}},
+  {"form": "時計", "reading": "とけい", "gloss": "clock", "picture": {"pack": "images-openmoji", "concept": "23F0"}},
+  {"form": "鉛筆", "reading": "えんぴつ", "gloss": "pencil", "picture": {"pack": "images-openmoji", "concept": "270F", "target": "j:1178590"}},
+  {"form": "椅子", "reading": "いす", "gloss": "chair", "picture": {"pack": "images-openmoji", "concept": "1FA91"}},
+  {"form": "一", "reading": "いち", "gloss": "one", "picture": {"pack": "images-mulberry", "concept": "one", "target": "j:1160790"}},
+  {"form": "二", "reading": "に", "gloss": "two", "picture": {"pack": "images-mulberry", "concept": "two", "target": "j:1461140"}},
+  {"form": "三", "reading": "さん", "gloss": "three", "picture": {"pack": "images-mulberry", "concept": "three", "target": "j:1579350"}},
+  {"form": "四", "reading": "よん", "gloss": "four", "picture": {"pack": "images-mulberry", "concept": "four", "target": "j:1579470"}},
+  {"form": "五", "reading": "ご", "gloss": "five", "picture": {"pack": "images-mulberry", "concept": "five", "target": "j:1268060"}},
+  {"form": "六", "reading": "ろく", "gloss": "six", "picture": {"pack": "images-mulberry", "concept": "six", "target": "j:1585310"}},
+  {"form": "七", "reading": "なな", "gloss": "seven", "picture": {"pack": "images-mulberry", "concept": "seven", "target": "j:1319210"}},
+  {"form": "八", "reading": "はち", "gloss": "eight", "picture": {"pack": "images-mulberry", "concept": "eight", "target": "j:1583090"}},
+  {"form": "九", "reading": "きゅう", "gloss": "nine", "picture": {"pack": "images-mulberry", "concept": "nine", "target": "j:1578150"}},
+  {"form": "十", "reading": "じゅう", "gloss": "ten", "picture": {"pack": "images-mulberry", "concept": "ten", "target": "j:1579840"}},
+  {"form": "ご飯", "reading": "ごはん", "gloss": "cooked rice", "picture": {"pack": "images-openmoji", "concept": "1F35A"}},
+  {"form": "卵", "reading": "たまご", "gloss": "egg", "picture": {"pack": "images-openmoji", "concept": "1F95A"}},
+  {"form": "パン", "gloss": "bread", "picture": {"pack": "images-openmoji", "concept": "1F35E", "target": "j:1103090"}},
+  {"form": "おにぎり", "gloss": "rice ball", "picture": {"pack": "images-openmoji", "concept": "1F359", "target": "j:1001620"}},
+  {"form": "寿司", "reading": "すし", "gloss": "sushi", "picture": {"pack": "images-openmoji", "concept": "1F363"}},
+  {"form": "肉", "reading": "にく", "gloss": "meat", "picture": {"pack": "images-mulberry", "concept": "meat", "target": "j:1463520"}},
+  {"form": "ラーメン", "gloss": "ramen", "picture": {"pack": "images-openmoji", "concept": "1F35C", "target": "j:1137720"}},
+  {"form": "弁当", "reading": "べんとう", "gloss": "boxed lunch", "picture": {"pack": "images-openmoji", "concept": "1F371", "target": "j:1513060"}},
+  {"form": "ピザ", "gloss": "pizza", "picture": {"pack": "images-openmoji", "concept": "1F355", "target": "j:1106620"}},
+  {"form": "ハンバーガー", "gloss": "hamburger", "picture": {"pack": "images-openmoji", "concept": "1F354", "target": "j:1096860"}},
+  {"form": "サンドイッチ", "gloss": "sandwich", "picture": {"pack": "images-openmoji", "concept": "1F96A", "target": "j:1058580"}},
+  {"form": "カレーライス", "gloss": "curry and rice", "picture": {"pack": "images-openmoji", "concept": "1F35B", "target": "j:1610810"}},
+  {"form": "ケーキ", "gloss": "cake", "picture": {"pack": "images-openmoji", "concept": "E0C7", "target": "j:1047860"}},
+  {"form": "アイスクリーム", "gloss": "ice cream", "picture": {"pack": "images-openmoji", "concept": "1F368", "target": "j:1013980"}},
+  {"form": "クッキー", "gloss": "cookie", "picture": {"pack": "images-openmoji", "concept": "1F36A", "target": "j:1043760"}},
+  {"form": "チョコレート", "gloss": "chocolate", "picture": {"pack": "images-openmoji", "concept": "1F36B", "target": "j:1078270"}},
+  {"form": "団子", "reading": "だんご", "gloss": "dango (sweet rice dumplings on a skewer)", "picture": {"pack": "images-openmoji", "concept": "1F361", "target": "j:1419240"}},
+  {"form": "りんご", "gloss": "apple", "picture": {"pack": "images-openmoji", "concept": "1F34E", "target": "林檎"}},
+  {"form": "バナナ", "gloss": "banana", "picture": {"pack": "images-openmoji", "concept": "1F34C", "target": "j:1099420"}},
+  {"form": "みかん", "gloss": "mandarin orange", "picture": {"pack": "images-openmoji", "concept": "1F34A", "target": "蜜柑"}},
+  {"form": "いちご", "gloss": "strawberry", "picture": {"pack": "images-openmoji", "concept": "1F353", "target": "j:1571460"}},
+  {"form": "すいか", "gloss": "watermelon", "picture": {"pack": "images-openmoji", "concept": "1F349", "target": "j:1380890"}},
+  {"form": "レモン", "gloss": "lemon", "picture": {"pack": "images-openmoji", "concept": "1F34B", "target": "j:1146020"}},
+  {"form": "トマト", "gloss": "tomato", "picture": {"pack": "images-openmoji", "concept": "1F345", "target": "j:1085420"}},
+  {"form": "にんじん", "gloss": "carrot", "picture": {"pack": "images-openmoji", "concept": "1F955", "target": "j:1367800"}},
+  {"form": "じゃがいも", "gloss": "potato", "picture": {"pack": "images-openmoji", "concept": "1F954", "target": "j:1005930"}},
+  {"form": "水", "reading": "みず", "gloss": "water", "picture": {"pack": "images-openmoji", "concept": "1F4A7"}},
+  {"form": "お茶", "reading": "おちゃ", "gloss": "tea", "picture": {"pack": "images-mulberry", "concept": "tea", "target": "j:1002430"}},
+  {"form": "牛乳", "reading": "ぎゅうにゅう", "gloss": "milk", "picture": {"pack": "images-openmoji", "concept": "1F95B"}},
+  {"form": "コーヒー", "gloss": "coffee", "picture": {"pack": "images-mulberry", "concept": "coffee", "target": "j:1049180"}},
+  {"form": "飲む", "reading": "のむ", "gloss": "to drink", "picture": {"pack": "images-mulberry", "concept": "drink_to", "target": "j:1169870"}},
+  {"form": "箸", "reading": "はし", "gloss": "chopsticks", "picture": {"pack": "images-openmoji", "concept": "1F962", "target": "j:1476410"}},
+  {"form": "皿", "reading": "さら", "gloss": "plate", "picture": {"pack": "images-mulberry", "concept": "plate", "target": "j:1299680"}},
+  {"form": "スプーン", "gloss": "spoon", "picture": {"pack": "images-openmoji", "concept": "1F944", "target": "j:1072590"}},
+  {"form": "フォーク", "gloss": "fork", "picture": {"pack": "images-mulberry", "concept": "fork", "target": "j:1110110"}},
+  {"form": "家", "reading": "いえ", "gloss": "house", "picture": {"pack": "images-openmoji", "concept": "1F3E0"}},
+  {"form": "ドア", "gloss": "door", "picture": {"pack": "images-openmoji", "concept": "1F6AA", "target": "j:1087820"}},
+  {"form": "窓", "reading": "まど", "gloss": "window", "picture": {"pack": "images-openmoji", "concept": "1FA9F", "target": "j:1401400"}},
+  {"form": "ベッド", "gloss": "bed", "picture": {"pack": "images-openmoji", "concept": "1F6CF", "target": "j:1119650"}},
+  {"form": "鍵", "reading": "かぎ", "gloss": "key", "picture": {"pack": "images-openmoji", "concept": "1F511"}},
+  {"form": "電話", "reading": "でんわ", "gloss": "telephone", "picture": {"pack": "images-openmoji", "concept": "260E"}},
+  {"form": "テレビ", "gloss": "television", "picture": {"pack": "images-openmoji", "concept": "1F4FA", "target": "j:1080510"}},
+  {"form": "携帯電話", "reading": "けいたいでんわ", "gloss": "mobile phone", "picture": {"pack": "images-openmoji", "concept": "1F4F1", "target": "j:1250690"}},
+  {"form": "カメラ", "gloss": "camera", "picture": {"pack": "images-openmoji", "concept": "1F4F7", "target": "j:1038350"}},
+  {"form": "ギター", "gloss": "guitar", "picture": {"pack": "images-openmoji", "concept": "1F3B8", "target": "j:1042820"}},
+  {"form": "プレゼント", "gloss": "present", "picture": {"pack": "images-openmoji", "concept": "1F381", "target": "j:1116840"}},
+  {"form": "手紙", "reading": "てがみ", "gloss": "letter", "picture": {"pack": "images-mulberry", "concept": "letter", "target": "j:1327720"}},
+  {"form": "新聞", "reading": "しんぶん", "gloss": "newspaper", "picture": {"pack": "images-openmoji", "concept": "1F4F0", "target": "j:1362360"}},
+  {"form": "眼鏡", "reading": "めがね", "gloss": "glasses", "picture": {"pack": "images-openmoji", "concept": "1F453", "target": "j:1577670"}},
+  {"form": "お金", "reading": "おかね", "gloss": "money", "picture": {"pack": "images-mulberry", "concept": "money", "target": "j:1001820"}},
+  {"form": "財布", "reading": "さいふ", "gloss": "wallet", "picture": {"pack": "images-mulberry", "concept": "wallet", "target": "j:1296970"}},
+  {"form": "手", "reading": "て", "gloss": "hand", "picture": {"pack": "images-openmoji", "concept": "270B"}},
+  {"form": "目", "reading": "め", "gloss": "eye", "picture": {"pack": "images-openmoji", "concept": "1F440"}},
+  {"form": "耳", "reading": "みみ", "gloss": "ear", "picture": {"pack": "images-openmoji", "concept": "1F442"}},
+  {"form": "口", "reading": "くち", "gloss": "mouth", "picture": {"pack": "images-openmoji", "concept": "1F444", "target": "j:1275640"}},
+  {"form": "鼻", "reading": "はな", "gloss": "nose", "picture": {"pack": "images-openmoji", "concept": "1F443", "target": "j:1486720"}},
+  {"form": "歯", "reading": "は", "gloss": "tooth", "picture": {"pack": "images-openmoji", "concept": "1F9B7", "target": "j:1313000"}},
+  {"form": "足", "reading": "あし", "gloss": "foot; leg", "picture": {"pack": "images-openmoji", "concept": "1F9B6", "target": "j:1404630"}},
+  {"form": "帽子", "reading": "ぼうし", "gloss": "hat", "picture": {"pack": "images-openmoji", "concept": "1F9E2"}},
+  {"form": "靴", "reading": "くつ", "gloss": "shoes", "picture": {"pack": "images-openmoji", "concept": "1F45F"}},
+  {"form": "靴下", "reading": "くつした", "gloss": "socks", "picture": {"pack": "images-openmoji", "concept": "1F9E6", "target": "j:1246740"}},
+  {"form": "シャツ", "gloss": "shirt", "picture": {"pack": "images-mulberry", "concept": "shirt", "target": "j:1061520"}},
+  {"form": "コート", "gloss": "coat", "picture": {"pack": "images-openmoji", "concept": "1F9E5", "target": "j:1049000"}},
+  {"form": "スカート", "gloss": "skirt", "picture": {"pack": "images-mulberry", "concept": "skirt", "target": "j:1067470"}},
+  {"form": "車", "reading": "くるま", "gloss": "car", "picture": {"pack": "images-openmoji", "concept": "1F697"}},
+  {"form": "自転車", "reading": "じてんしゃ", "gloss": "bicycle", "picture": {"pack": "images-openmoji", "concept": "1F6B2"}},
+  {"form": "バス", "gloss": "bus", "picture": {"pack": "images-openmoji", "concept": "1F68C", "target": "j:1098390"}},
+  {"form": "電車", "reading": "でんしゃ", "gloss": "train", "picture": {"pack": "images-openmoji", "concept": "1F682"}},
+  {"form": "切符", "reading": "きっぷ", "gloss": "ticket", "picture": {"pack": "images-openmoji", "concept": "1F3AB", "target": "j:1385170"}},
+  {"form": "駅", "reading": "えき", "gloss": "station", "picture": {"pack": "images-openmoji", "concept": "1F689", "target": "j:1175140"}},
+  {"form": "飛行機", "reading": "ひこうき", "gloss": "airplane", "picture": {"pack": "images-openmoji", "concept": "2708"}},
+  {"form": "船", "reading": "ふね", "gloss": "ship", "picture": {"pack": "images-openmoji", "concept": "1F6A2", "target": "j:1602800"}},
+  {"form": "病院", "reading": "びょういん", "gloss": "hospital", "picture": {"pack": "images-openmoji", "concept": "1F3E5"}},
+  {"form": "薬", "reading": "くすり", "gloss": "medicine", "picture": {"pack": "images-openmoji", "concept": "1F48A", "target": "j:1538160"}},
+  {"form": "銀行", "reading": "ぎんこう", "gloss": "bank", "picture": {"pack": "images-openmoji", "concept": "1F3E6", "target": "j:1243490"}},
+  {"form": "トイレ", "gloss": "toilet", "picture": {"pack": "images-openmoji", "concept": "1F6BB", "target": "j:1084810"}},
+  {"form": "コンビニ", "gloss": "convenience store", "picture": {"pack": "images-openmoji", "concept": "1F3EA", "target": "j:1053280"}},
+  {"form": "赤", "reading": "あか", "gloss": "red", "picture": {"pack": "images-mulberry", "concept": "red", "target": "j:2013900"}},
+  {"form": "青", "reading": "あお", "gloss": "blue", "picture": {"pack": "images-mulberry", "concept": "blue", "target": "j:1381380"}},
+  {"form": "白", "reading": "しろ", "gloss": "white", "picture": {"pack": "images-mulberry", "concept": "white", "target": "j:1474900"}},
+  {"form": "黒", "reading": "くろ", "gloss": "black", "picture": {"pack": "images-mulberry", "concept": "black", "target": "j:1287410"}},
+  {"form": "黄色", "reading": "きいろ", "gloss": "yellow", "picture": {"pack": "images-mulberry", "concept": "yellow", "target": "j:1576760"}},
+  {"form": "緑", "reading": "みどり", "gloss": "green", "picture": {"pack": "images-mulberry", "concept": "green", "target": "j:1555300"}},
+  {"form": "太陽", "reading": "たいよう", "gloss": "sun", "picture": {"pack": "images-openmoji", "concept": "2600"}},
+  {"form": "月", "reading": "つき", "gloss": "moon", "picture": {"pack": "images-openmoji", "concept": "1F319"}},
+  {"form": "星", "reading": "ほし", "gloss": "star", "picture": {"pack": "images-openmoji", "concept": "2B50", "target": "j:1376310"}},
+  {"form": "雲", "reading": "くも", "gloss": "cloud", "picture": {"pack": "images-openmoji", "concept": "2601", "target": "j:1173100"}},
+  {"form": "山", "reading": "やま", "gloss": "mountain", "picture": {"pack": "images-openmoji", "concept": "26F0", "target": "j:1302680"}},
+  {"form": "雨", "reading": "あめ", "gloss": "rain", "picture": {"pack": "images-openmoji", "concept": "1F327"}},
+  {"form": "傘", "reading": "かさ", "gloss": "umbrella", "picture": {"pack": "images-openmoji", "concept": "2602", "target": "j:1301940"}},
+  {"form": "雪", "reading": "ゆき", "gloss": "snow", "picture": {"pack": "images-openmoji", "concept": "2744"}},
+  {"form": "花", "reading": "はな", "gloss": "flower", "picture": {"pack": "images-openmoji", "concept": "1F33C"}},
+  {"form": "木", "reading": "き", "gloss": "tree", "picture": {"pack": "images-openmoji", "concept": "1F333"}},
+  {"form": "葉っぱ", "reading": "はっぱ", "gloss": "leaf", "picture": {"pack": "images-mulberry", "concept": "leaf", "target": "j:1611230"}},
+  {"form": "石", "reading": "いし", "gloss": "stone", "picture": {"pack": "images-mulberry", "concept": "stone", "target": "j:1382440"}},
+  {"form": "火", "reading": "ひ", "gloss": "fire", "picture": {"pack": "images-openmoji", "concept": "1F525"}},
+  {"form": "サッカー", "gloss": "soccer", "picture": {"pack": "images-openmoji", "concept": "26BD", "target": "j:1056700"}},
+  {"form": "走る", "reading": "はしる", "gloss": "to run", "picture": {"pack": "images-mulberry", "concept": "run_to", "target": "j:1402540"}},
+  {"form": "野球", "reading": "やきゅう", "gloss": "baseball", "picture": {"pack": "images-openmoji", "concept": "26BE", "target": "j:1537300"}},
+  {"form": "泳ぐ", "reading": "およぐ", "gloss": "to swim", "picture": {"pack": "images-mulberry", "concept": "swim_to", "target": "j:1174340"}},
+  {"form": "音楽", "reading": "おんがく", "gloss": "music", "picture": {"pack": "images-openmoji", "concept": "1F3B5"}},
+  {"form": "聞く", "reading": "きく", "gloss": "to listen", "picture": {"pack": "images-mulberry", "concept": "hear_to", "target": "j:1591110"}},
+  {"form": "犬", "reading": "いぬ", "gloss": "dog", "picture": {"pack": "images-openmoji", "concept": "1F415"}},
+  {"form": "猫", "reading": "ねこ", "gloss": "cat", "picture": {"pack": "images-openmoji", "concept": "1F408"}},
+  {"form": "魚", "reading": "さかな", "gloss": "fish", "picture": {"pack": "images-openmoji", "concept": "1F41F"}},
+  {"form": "鳥", "reading": "とり", "gloss": "bird", "picture": {"pack": "images-openmoji", "concept": "1F426"}},
+  {"form": "馬", "reading": "うま", "gloss": "horse", "picture": {"pack": "images-openmoji", "concept": "1F40E"}},
+  {"form": "豚", "reading": "ぶた", "gloss": "pig", "picture": {"pack": "images-openmoji", "concept": "1F416", "target": "j:1457390"}},
+  {"form": "うさぎ", "gloss": "rabbit", "picture": {"pack": "images-openmoji", "concept": "1F407", "target": "j:1443970"}},
+  {"form": "熊", "reading": "くま", "gloss": "bear", "picture": {"pack": "images-openmoji", "concept": "1F43B", "target": "j:1246850"}},
+  {"form": "さる", "gloss": "monkey", "picture": {"pack": "images-openmoji", "concept": "1F412", "target": "j:1177390"}},
+  {"form": "象", "reading": "ぞう", "gloss": "elephant", "picture": {"pack": "images-openmoji", "concept": "1F418", "target": "j:1351830"}},
+  {"form": "虎", "reading": "とら", "gloss": "tiger", "picture": {"pack": "images-openmoji", "concept": "1F405", "target": "j:1267610"}},
+  {"form": "パンダ", "gloss": "panda", "picture": {"pack": "images-openmoji", "concept": "1F43C", "target": "j:1103210"}},
+  {"form": "鼠", "reading": "ねずみ", "gloss": "mouse; rat", "picture": {"pack": "images-openmoji", "concept": "1F400", "target": "j:1397840"}},
+  {"form": "蛇", "reading": "へび", "gloss": "snake", "picture": {"pack": "images-openmoji", "concept": "1F40D", "target": "j:1323350"}},
+  {"form": "ライオン", "gloss": "lion", "picture": {"pack": "images-openmoji", "concept": "1F981", "target": "j:1137760"}},
+  {"form": "蝶", "reading": "ちょう", "gloss": "butterfly", "picture": {"pack": "images-openmoji", "concept": "1F98B", "target": "j:1429010"}}
  ]
 }
