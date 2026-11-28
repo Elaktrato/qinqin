@@ -43,6 +43,7 @@ var IDs = []string{
 	"measure-words",    // Chinese measure words (#179)
 	"counters",         // Japanese counters (#179)
 	"counter-readings", // Japanese number + counter readings (#179)
+	"look-alikes",      // look-alike characters (#228)
 }
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)

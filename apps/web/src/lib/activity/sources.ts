@@ -29,7 +29,8 @@ export const DRILL_WORDS: Readonly<Record<string, { label: MessageKey; count: Me
 	conjugation: { label: 'activity.source.drill.conjugation.label', count: 'activity.source.drill.conjugation.count' },
 	'measure-words': { label: 'activity.source.drill.measureWords.label', count: 'activity.source.drill.measureWords.count' },
 	counters: { label: 'activity.source.drill.counters.label', count: 'activity.source.drill.counters.count' },
-	'counter-readings': { label: 'activity.source.drill.counterReadings.label', count: 'activity.source.drill.counterReadings.count' }
+	'counter-readings': { label: 'activity.source.drill.counterReadings.label', count: 'activity.source.drill.counterReadings.count' },
+	'look-alikes': { label: 'activity.source.drill.lookAlikes.label', count: 'activity.source.drill.lookAlikes.count' }
 };
 
 const WORDS: Readonly<Record<string, { label: MessageKey; count: MessageKey }>> = {

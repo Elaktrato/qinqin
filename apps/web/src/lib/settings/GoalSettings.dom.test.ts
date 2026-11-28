@@ -223,6 +223,7 @@ describe('GoalSettings', () => {
 			'Counters',
 			'Grammar lessons',
 			'Journal entries',
+			'Look-alike characters',
 			'Measure words',
 			'Reading',
 			'Script practice',

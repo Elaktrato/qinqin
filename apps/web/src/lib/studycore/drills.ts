@@ -28,7 +28,8 @@ export const DRILL_IDS: readonly string[] = Object.freeze<string[]>([
 	'conjugation', // the conjugation trainer (#178)
 	'measure-words', // Chinese measure words (#179)
 	'counters', // Japanese counters (#179)
-	'counter-readings' // Japanese number + counter readings (#179)
+	'counter-readings', // Japanese number + counter readings (#179)
+	'look-alikes' // look-alike characters (#228)
 ]);
 
 export const MAX_DRILL_ID_LENGTH = 32;
