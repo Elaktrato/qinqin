@@ -613,39 +613,3 @@ func DiscardDraft(ctx context.Context, sqlDB *sql.DB, userID, entryID, draftID i
 	}
 	return tx.Commit()
 }
-
-// DeleteAI deletes the caller's AI example sentenceID of entryID (a
-// tombstone, so the pull ships the deletion); with a reason it is also
-// reported. Any other sentence (a pack one, another user's, an own sentence
-// the AI did not write) is ErrSentenceNotFound.
-func DeleteAI(ctx context.Context, sqlDB *sql.DB, userID, entryID, sentenceID int64, reason string) error {
-	if err := checkReason(reason); err != nil {
-		return err
-	}
-	tx, err := pack.BeginWrite(ctx, sqlDB)
-	if err != nil {
-		return fmt.Errorf("delete AI example: %w", err)
-	}
-	defer tx.Rollback()
-	var hanzi, pinyin, translation, level, provider, modelID string
-	err = tx.QueryRowContext(ctx, `
-		SELECT hanzi, pinyin, translation, ai_level, ai_provider, ai_model FROM sentences
-		WHERE id = ? AND entry_id = ? AND user_id = ? AND deleted_at IS NULL AND (ai_provider <> '' OR ai_model <> '')`,
-		sentenceID, entryID, userID).Scan(&hanzi, &pinyin, &translation, &level, &provider, &modelID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrSentenceNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("delete AI example: %w", err)
-	}
-	if reason != "" {
-		if err := report(ctx, tx, userID, entryID, reason, hanzi, pinyin, translation, level, provider, modelID); err != nil {
-			return err
-		}
-	}
-	stamp := pack.Now()
-	if _, err := tx.ExecContext(ctx, `UPDATE sentences SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, sentenceID); err != nil {
-		return fmt.Errorf("delete AI example: %w", err)
-	}
-	return tx.Commit()
-}

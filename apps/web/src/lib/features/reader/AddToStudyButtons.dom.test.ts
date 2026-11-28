@@ -1,9 +1,9 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, updateWorkspaces, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import popupFixture from '../../../../../../docs/contracts/reader/popup-written.json';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
-import type { LookupResult } from '$lib/api/types';
+import type { LookupResult, Workspace } from '$lib/api/types';
 
 vi.mock('$lib/api/entries', () => ({ addSentence: vi.fn(), getEntry: vi.fn() }));
 vi.mock('$lib/features/flashcards/commands/cards', async (importOriginal) => ({
@@ -22,6 +22,7 @@ vi.mock('$lib/studycore/data', async (importOriginal) => ({
 
 
 import { LookupRecorder } from '$lib/lookups/recorder';
+import { addSentence, getEntry } from '$lib/api/entries';
 import { addCard } from '$lib/features/flashcards/commands/cards';
 import { setKnownMark } from '$lib/studycore/commands/keyed';
 import { getStudyData, hasCard } from '$lib/studycore/data';
@@ -266,5 +267,123 @@ describe('the lighter popup actions (#102)', () => {
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
 		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(opts.written).toBe('の');
+	});
+});
+
+describe('Save this sentence (#279)', () => {
+	// 学 at offsets 2..3 of the paragraph's first sentence.
+	const paragraph = '我在学中文。他也学。';
+	const studied = () => {
+		vi.mocked(getStudyData).mockResolvedValue({
+			decks: [],
+			cards: [{ id: 'v11', kind: 'vocab', entryId: 11, written: '学', deckIds: ['d1'], createdAt: '2026-11-01T00:00:00Z' }]
+		});
+		vi.mocked(hasCard).mockReturnValue(true);
+		vi.mocked(getEntry).mockResolvedValue({ sentences: [] } as never);
+		vi.mocked(addSentence).mockResolvedValue({ id: 5 } as never);
+	};
+	const word = (): LookupResult => ({ ...result('word'), start: 2, end: 3 });
+	const withSettings = (settings: Record<string, unknown>) => {
+		const ws: Workspace = { id: 3, language: 'zh', name: '', settings, updatedAt: 't' };
+		updateWorkspaces(ctx.session.workspaces, () => ({ list: [ws], current: ws }));
+	};
+	const mount = (over: Record<string, unknown> = {}) =>
+		render(AddToStudyButtons, {
+			props: { result: word(), workspaceId: 3, paragraph, first: true, hold: vi.fn(), ...over } as never,
+			context: ctx.context
+		});
+
+	afterEach(() => {
+		vi.mocked(getStudyData).mockReset();
+		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
+		vi.mocked(hasCard).mockReset();
+		vi.mocked(hasCard).mockReturnValue(false);
+	});
+
+	it('saves the book sentence of a studied word as a sentence card in its decks', async () => {
+		studied();
+		mount();
+		const save = await screen.findByRole('button', { name: 'Save this sentence for 学' });
+		await fireEvent.click(save);
+		await screen.findByText('Sentence saved as a new card.');
+		expect(addSentence).toHaveBeenCalledWith(11, '我在学中文。');
+		expect(addCard).toHaveBeenCalledWith(expect.anything(), 3, 11, { kind: 'sentence', sentenceId: 5, deckIds: ['d1'], written: '学' });
+		expect(screen.queryByRole('button', { name: 'Save this sentence for 学' })).toBeNull();
+	});
+
+	it('says so when the sentence is already saved', async () => {
+		studied();
+		vi.mocked(getEntry).mockResolvedValue({ sentences: [{ id: 2, hanzi: '我在学中文。' }] } as never);
+		vi.mocked(getStudyData).mockResolvedValue({
+			decks: [],
+			cards: [
+				{ id: 'v11', kind: 'vocab', entryId: 11, deckIds: ['general'], createdAt: '2026-11-01T00:00:00Z' },
+				{ id: 's11', kind: 'sentence', entryId: 11, sentenceId: 2, deckIds: ['general'], createdAt: '2026-11-01T00:00:00Z' }
+			]
+		});
+		mount();
+		await fireEvent.click(await screen.findByRole('button', { name: 'Save this sentence for 学' }));
+		await screen.findByText('This sentence is already saved.');
+		expect(addSentence).not.toHaveBeenCalled();
+		expect(addCard).not.toHaveBeenCalled();
+	});
+
+	it('a failed save says so and keeps the button', async () => {
+		studied();
+		vi.mocked(addSentence).mockRejectedValue(new Error('offline'));
+		mount();
+		await fireEvent.click(await screen.findByRole('button', { name: 'Save this sentence for 学' }));
+		await screen.findByText('Could not save this sentence.');
+		expect(screen.getByRole('button', { name: 'Save this sentence for 学' })).toBeTruthy();
+	});
+
+	it('is not offered without a sentence, for a character, or for a word not in study', async () => {
+		studied();
+		mount({ paragraph: null });
+		await screen.findByText('In study');
+		expect(screen.queryByRole('button', { name: /Save this sentence/ })).toBeNull();
+		cleanup();
+		mount({ result: { ...result('character'), start: 2, end: 3 } });
+		await screen.findByText('In study');
+		expect(screen.queryByRole('button', { name: /Save this sentence/ })).toBeNull();
+		cleanup();
+		vi.mocked(hasCard).mockReturnValue(false);
+		mount();
+		await screen.findByRole('button', { name: 'Add to deck: 学' });
+		expect(screen.queryByRole('button', { name: /Save this sentence/ })).toBeNull();
+	});
+
+	it('the automatic mode saves on look-up when the workspace turns it on', async () => {
+		studied();
+		withSettings({ reader: { saveSentences: true } });
+		mount();
+		await screen.findByText('New sentence saved as a card.');
+		expect(addSentence).toHaveBeenCalledWith(11, '我在学中文。');
+		expect(addCard).toHaveBeenCalledOnce();
+	});
+
+	it('the automatic mode is off by default and never runs for a later result', async () => {
+		studied();
+		withSettings({});
+		mount();
+		await screen.findByRole('button', { name: 'Save this sentence for 学' });
+		cleanup();
+		withSettings({ reader: { saveSentences: true } });
+		mount({ first: false });
+		await screen.findByRole('button', { name: 'Save this sentence for 学' });
+		await tick();
+		expect(addSentence).not.toHaveBeenCalled();
+		expect(getEntry).not.toHaveBeenCalled();
+	});
+
+	it('a failed automatic save shows no error', async () => {
+		studied();
+		vi.mocked(addSentence).mockRejectedValue(new Error('offline'));
+		withSettings({ reader: { saveSentences: true } });
+		mount();
+		await waitFor(() => expect(addSentence).toHaveBeenCalled());
+		await tick();
+		expect(screen.queryByText('Could not save this sentence.')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Save this sentence for 学' })).toBeTruthy();
 	});
 });

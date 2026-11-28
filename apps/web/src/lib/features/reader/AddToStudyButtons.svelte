@@ -12,6 +12,7 @@
 	import { popupWritten } from './browse';
 	import { Button, Chip, Menu, MenuItem } from '$lib/ui';
 	import { bookSentence, resolveBookSentence } from './sentence';
+	import { autoSaveApplies, saveBookSentence, type SaveDeps, type SaveOutcome } from './savedSentences';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
@@ -21,7 +22,10 @@
 	// added from the book also saves the sentence it was found in (when
 	// `paragraph` is known: the root popup) as its example sentence.
 	// "I know this" (#68) toggles the manual known mark (no card); with word
-	// highlighting on, `stateLine` says how well the word is known.
+	// highlighting on, `stateLine` says how well the word is known. A word
+	// already in study offers "Save this sentence" (#279): the book sentence
+	// becomes another Word Salad card; with the workspace's automatic mode
+	// on, the root popup's first result does that by itself.
 	let {
 		result,
 		workspaceId,
@@ -69,12 +73,72 @@
 	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 	const disabled = $derived(busy || inStudy !== false);
 
+	// The book sentence of this result (#279); '' hides Save this sentence.
+	const sentenceText = $derived(
+		paragraph && result.kind !== 'character' ? bookSentence(paragraph, result.start, result.end) : ''
+	);
+	let savingSentence = $state(false);
+	// The sentence was saved (or found saved) in this popup: the button goes.
+	let sentenceDone = $state(false);
+	let sentenceNote = $state('');
+	let sentenceError = $state('');
+
+	const saveDeps: SaveDeps = {
+		cards: async (ws) => (await getStudyData(session.study, ws)).cards,
+		getEntry,
+		addSentence,
+		addCard: (ws, entryId, opts) => addCard(session.study, ws, entryId, opts)
+	};
+
+	function outcomeNote(out: SaveOutcome, auto: boolean): string {
+		switch (out.outcome) {
+			case 'saved':
+				return t(auto ? 'reader.study.sentenceAutoSaved' : 'reader.study.sentenceSaved');
+			case 'savedNoCard':
+				return t('reader.study.sentenceSavedNoCard');
+			case 'already':
+				return auto ? '' : t('reader.study.sentenceAlready');
+			case 'none':
+				return '';
+		}
+	}
+
+	/** Saves the book sentence; `auto` (the automatic mode) reports no error. */
+	async function saveSentence(auto: boolean): Promise<void> {
+		if (savingSentence || sentenceDone || !sentenceText) return;
+		const hadFocus = !auto && !!root?.contains(document.activeElement);
+		savingSentence = true;
+		sentenceError = '';
+		const entryId = result.entryId;
+		try {
+			const out = await saveBookSentence(saveDeps, {
+				workspaceId,
+				entryId,
+				entryKind: result.kind,
+				text: sentenceText
+			});
+			if (out.outcome !== 'none') {
+				sentenceDone = true;
+				if (out.outcome !== 'already') session.eligibility.forget(entryId);
+			}
+			sentenceNote = outcomeNote(out, auto);
+		} catch {
+			if (!auto) sentenceError = t('reader.study.saveSentenceFailed');
+		} finally {
+			savingSentence = false;
+			if (hadFocus) await restoreFocus();
+		}
+	}
+
 	$effect(() => {
 		const entryId = result.entryId;
 		const ws = workspaceId;
 		let stale = false;
 		inStudy = null;
 		marked = null;
+		sentenceDone = false;
+		sentenceNote = '';
+		sentenceError = '';
 		getStudyData(session.study, ws).then(
 			(data) => {
 				if (stale) return;
@@ -83,6 +147,15 @@
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
 				);
 				inStudy = hasCard(data.cards, entryId);
+				const settings = session.workspaces.list.find((w) => w.id === ws)?.settings ?? null;
+				const auto = autoSaveApplies({
+					settings,
+					first,
+					paragraph: paragraph !== null,
+					entryKind: result.kind,
+					inStudyAtOpen: inStudy
+				});
+				if (auto) void saveSentence(true);
 			},
 			() => {
 				if (stale) return;
@@ -188,6 +261,15 @@
 	<div class="actions">
 		{#if inStudy}
 			<span class="in-study" tabindex="-1" bind:this={pill}><Chip tone="good">{t('reader.study.inStudy')}</Chip></span>
+			{#if sentenceText && !sentenceDone}
+				<Button
+					icon="add"
+					aria-label={t('reader.study.saveSentenceNamed', { term })}
+					aria-disabled={savingSentence}
+					aria-busy={savingSentence}
+					onclick={() => void saveSentence(false)}>{t('reader.study.saveSentence')}</Button
+				>
+			{/if}
 		{:else}
 			<Button
 				variant="primary"
@@ -217,6 +299,8 @@
 	{#if stateLine}<p class="state">{stateLine}</p>{/if}
 	{#if showLookedUp}<p class="state looked-up">{t('reader.study.lookedUp', { count: lookedUp })}</p>{/if}
 	{#if note}<p class="note" role="status">{note}</p>{/if}
+	{#if sentenceNote}<p class="note" role="status">{sentenceNote}</p>{/if}
+	{#if sentenceError}<p class="error" role="alert">{sentenceError}</p>{/if}
 	{#if markError}<p class="error" role="alert">{markError}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 </div>

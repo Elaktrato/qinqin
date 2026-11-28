@@ -188,6 +188,20 @@
 				</label>
 			{/each}
 		</fieldset>
+
+		<!-- Saved sentences (#279): off by default; the popup's Save this sentence works either way. -->
+		<div class="save-sentences">
+			<label class="row">
+				<input
+					type="checkbox"
+					checked={display.saveSentences}
+					aria-describedby="{id}-save-hint"
+					onchange={(e) => onchange({ saveSentences: e.currentTarget.checked })}
+				/>
+				{t('reader.display.saveSentences')}
+			</label>
+			<p id="{id}-save-hint" class="hint">{t('reader.display.saveSentencesHint')}</p>
+		</div>
 	</div>
 </div>
 
@@ -208,7 +222,8 @@
 	}
 
 	.panel > :global(* + fieldset),
-	.panel > :global(* + .threshold) {
+	.panel > :global(* + .threshold),
+	.panel > :global(* + .save-sentences) {
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--hair);
 	}
@@ -232,7 +247,8 @@
 		overflow-wrap: anywhere;
 	}
 
-	.threshold {
+	.threshold,
+	.save-sentences {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);

@@ -10,13 +10,14 @@ updates are fine):
 
 ```json
 { "reader": { "version": 1, "bookRuby": true, "readings": "never", "smartThreshold": 80,
-              "rubyScale": 0.55, "font": "default", "highlightWords": false } }
+              "rubyScale": 0.55, "font": "default", "highlightWords": false, "saveSentences": false } }
 ```
 
 Parsing is per field; an invalid or missing field takes its default: `bookRuby` boolean (default: the
 client's old local furigana pref, else true), `readings` `never|always|smart` (default `never`),
 `smartThreshold` a number rounded and clamped to 10..100 (default 80), `rubyScale` snapped to the nearest
-of 0.45, 0.55, 0.65, 0.75 (default 0.55), `font` `default|sans|serif|kai` (default `default`), `highlightWords` boolean (default `false`). A client
+of 0.45, 0.55, 0.65, 0.75 (default 0.55), `font` `default|sans|serif|kai` (default `default`), `highlightWords` boolean (default `false`), `saveSentences` boolean (default `false`, the automatic mode of
+"Saved sentences" below). A client
 writing the object keeps every key it does not know. `default` means the app-wide hanzi font (the `appearance` row's
 `hanziFont`, docs/contracts/themes/README.md); `sans`, `serif` and `kai` override it in the reader. Each face is an
 installed font pack's (docs/contracts/fonts/README.md, "Choosing a face") or else the platform's system fonts.
@@ -105,6 +106,39 @@ highlight no state is drawn. The text and its offsets are unchanged.
   paragraph, start).
 
 Offsets are code points of the displayed paragraph text, as for readings.
+
+## Saved sentences (`saved-sentences.json`, #279)
+
+The book sentence a **studied** word is met in becomes an own sentence of the entry and a `sentence` (Word Salad)
+card of the word. A word is studied when the workspace has a live `vocab` card of the entry. No limit per word.
+
+- **The sentence** is `bookSentence(paragraph, start, end)` of the popup's result (the sentence rule the add-to-deck
+  path uses; empty when nothing but the word is there). Character results never save one.
+- **Normalised text** (`normalize`, `whitespace`): every run of the listed whitespace characters becomes one space and
+  the ends are trimmed; nothing else is folded (punctuation, width, case). Clients post the normalised text.
+- **The same sentence** (`same`): the first sentence of the entry the learner sees (`GET /api/entries/{id}`:
+  pack sentences, then their own, AI examples included) whose normalised text is equal. The server applies the same
+  rule: `POST /api/entries/{id}/sentences` answers **200 with the existing sentence** when there is one, else stores
+  the text (201).
+- **The plan** (`plan`), from the entry's sentences and the workspace's cards: `none` (a character, no sentence, or
+  the word has no vocab card); `already` + `sentenceId` (that sentence has a live `sentence` card of the word, or the
+  word skips `sentence` cards and the sentence is on the entry); `card` + `sentenceId` (on the entry, no card yet);
+  `save` + `text` (post it, then add the card). `card` names what the card takes from the word's **canonical vocab
+  card** (the oldest `createdAt`, then the smaller id): its `deckIds` and, when it has one, its `written` snapshot;
+  `card: null` means the word's vocab row lists `sentence` in `skipKinds`: the sentence is saved, no card is added.
+- **What is stored:** the own sentence row (text only; `sentences.jsonl` in a backup) and a card row
+  `{kind: "sentence", entryId, sentenceId, written?, deckIds}` (`cards/`, `cardKey` `sentence:<entryId>:<sentenceId>`,
+  so one card per word and sentence). It is an ordinary unreviewed card: it counts as a new card under the deck's
+  daily new-card limit.
+- **The automatic mode** (`auto`): on when `reader.saveSentences` is `true` (anything else is off); it runs the plan
+  for a result only when it is the root popup's first result (the look-up the history records) with its paragraph
+  known, not a character, and the word had a vocab card when the popup opened. A word added in the same popup is not
+  saved twice.
+- **Removal** (`remove`): `DELETE /api/entries/{id}/sentences/{sentenceId}` deletes any own sentence (a tombstone);
+  `?reason=` is for AI examples only (400 on another own sentence); pack sentences and other users' are 404. A
+  client then tombstones the `sentence` cards of that sentence (every row with that `cardKey`) in each workspace of
+  the entry's language; their reviews stay in the log. A removed sentence is not remembered: meeting it again saves it
+  again.
 
 ## Real-app check (#68, 2026-11-16, API only)
 

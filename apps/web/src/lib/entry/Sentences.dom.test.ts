@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createRawSnippet } from 'svelte';
 import type { Sentence } from '$lib/api/types';
 import Sentences from './Sentences.svelte';
 import source from './Sentences.svelte?raw';
@@ -60,5 +61,19 @@ describe('Sentences (#186)', () => {
 	it('says "AI-written" without a label', () => {
 		render(Sentences, { props: { sentences: list } });
 		expect(screen.getByText('AI-written')).toBeTruthy();
+	});
+});
+
+describe('Sentences: own sentences can be removed (#279)', () => {
+	const marker = (kind: string) =>
+		createRawSnippet((sentence: () => Sentence, id: () => string) => ({
+			render: () => `<button data-kind="${kind}" data-id="${sentence().id}" aria-describedby="${id()}">x</button>`
+		}));
+
+	it('renders ownActions after the learner own sentences only, actions after AI ones', () => {
+		const { container } = render(Sentences, { props: { sentences: list, actions: marker('ai'), ownActions: marker('own') } });
+		const buttons = [...container.querySelectorAll('button[data-kind]')].map((b) => `${b.getAttribute('data-kind')}:${b.getAttribute('data-id')}`);
+		expect(buttons).toEqual(['ai:2', 'own:3']);
+		expect(container.querySelector('button[data-kind="own"]')?.getAttribute('aria-describedby')).toBe('sentence-3');
 	});
 });

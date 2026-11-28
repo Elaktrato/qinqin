@@ -367,7 +367,7 @@ func (s *server) routes() []route {
 		{"POST /api/entries/{id}/examples", s.handleGenerateExamples, accUser, nil, noTok},
 		{"POST /api/entries/{id}/examples/{draftId}/keep", s.handleKeepExample, accUser, nil, noTok},
 		{"DELETE /api/entries/{id}/examples/{draftId}", s.handleDiscardExample, accUser, nil, noTok},
-		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteAIExample, accUser, nil, noTok},
+		{"DELETE /api/entries/{id}/sentences/{sentenceId}", s.handleDeleteOwnSentence, accUser, nil, noTok},
 		{"GET /api/search", s.handleSearch, accPublic, nil, tokReadGlobal},
 		{"GET /api/segment/at", s.handleSegmentAt, accPublic, nil, tokReadGlobal},
 		{"POST /api/segment", s.handleSegment, accUser, nil, tokReadGlobal},

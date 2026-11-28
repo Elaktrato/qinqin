@@ -234,6 +234,17 @@ describe('deckSessionItems', () => {
 		]);
 		expect(items[0]).toMatchObject({ kind: 'sentence', virtual: false, sentenceId: 7 });
 	});
+
+	// #279: the reader's saved sentences are stored sentence cards, one per
+	// sentence (no limit per word); unreviewed, they are new cards and share
+	// the deck's daily new-card limit.
+	it('saved sentence cards of one word are new cards under the new-card limit', () => {
+		const reviews = [review('v1', '2026-01-05T00:00:00Z'), review('v2', '2026-01-05T00:00:00Z'), review('v3', '2026-01-05T00:00:00Z')];
+		const saved = [1, 2, 3, 4].map((n) => card(`s${n}`, 'sentence', 1, { sentenceId: n, createdAt: `2026-02-0${n}T00:00:00Z` }));
+		const items = deckSessionItems({ ...base, now: new Date('2026-01-05T01:00:00Z'), reviews, cards: [...cards, ...saved], kinds: ['sentence'], newLimit: 2 });
+		expect(items.map((item) => item.cardId)).toEqual(['s1', 's2']);
+		expect(items.map((item) => item.sentenceId)).toEqual([1, 2]);
+	});
 });
 
 describe('Round 1 cards without a written snapshot', () => {

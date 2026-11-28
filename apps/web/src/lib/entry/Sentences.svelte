@@ -16,7 +16,8 @@
 		language = '',
 		term = '',
 		aiLabelOf,
-		actions
+		actions,
+		ownActions
 	}: {
 		sentences: Sentence[];
 		/** The entry's language. */
@@ -27,6 +28,8 @@
 		aiLabelOf?: (mark: SentenceAi) => string;
 		/** Controls after an AI-written sentence (delete, report); `id` is its text's element id. */
 		actions?: Snippet<[Sentence, string]>;
+		/** Controls after the learner's own other sentences (remove, #279); `id` is its text's element id. */
+		ownActions?: Snippet<[Sentence, string]>;
 	} = $props();
 
 	const parts = (hanzi: string) => markTerm(hanzi, term);
@@ -64,6 +67,7 @@
 						<SentenceCredit credit={sentence.credit} />
 					{:else}
 						<span class="origin">{origin(sentence)}</span>
+						{#if sentence.userId !== null}{@render ownActions?.(sentence, `sentence-${sentence.id}`)}{/if}
 					{/if}
 					<span class="share"><ShareButton text={sentenceShareText(sentence, mark === null ? (sentence.credit ? creditText(sentence.credit) : origin(sentence)) : '')} label={t('entry.sentences.shareLabel')} /></span>
 				</li>
