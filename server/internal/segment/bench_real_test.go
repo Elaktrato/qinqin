@@ -4,10 +4,12 @@ import (
 	"compress/gzip"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/levels"
 	"qinqin/internal/pack"
 )
 
@@ -38,7 +41,7 @@ func TestBenchLongChapter(t *testing.T) {
 				t.Fatal(err)
 			}
 			t.Cleanup(func() { sqlDB.Close() })
-			benchSegment(t, sqlDB, data)
+			benchSegment(t, sqlDB, data, "ja")
 			return
 		}
 	}
@@ -81,13 +84,59 @@ func TestBenchLongChapter(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	benchSegment(t, sqlDB, data)
+	benchSegment(t, sqlDB, data, "ja")
 }
 
-// benchSegment segments the long chapter three times and logs the times.
-func benchSegment(t *testing.T, sqlDB *sql.DB, data string) {
+// QINQIN_SEGMENT_BENCH=1 also segments a long Chinese chapter (5,000 runes
+// of the Tatoeba pack's Chinese sentences) on the whole shipped CC-CEDICT
+// and the HSK word list (#349: the segmenter before and after).
+// QINQIN_SEGMENT_BENCH_ZH_DB keeps the imported database between runs.
+func TestBenchLongChapterZh(t *testing.T) {
+	if os.Getenv("QINQIN_SEGMENT_BENCH") == "" {
+		t.Skip("set QINQIN_SEGMENT_BENCH=1")
+	}
+	data := filepath.Join("..", "..", "..", "plugins", "data")
 	ctx := context.Background()
-	raw, err := os.ReadFile(filepath.Join(data, "ja-sentences-tatoeba", "sentences.json"))
+	cache := os.Getenv("QINQIN_SEGMENT_BENCH_ZH_DB")
+	if cache != "" {
+		if _, err := os.Stat(cache); err == nil {
+			sqlDB, err := db.Open(cache) // reopen: an earlier run of this test wrote it
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { sqlDB.Close() })
+			benchSegment(t, sqlDB, data, "zh")
+			return
+		}
+	}
+	sqlDB := dbtest.Open(t)
+	p, err := pack.LoadPack(filepath.Join(data, "cedict"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := dict.ImportLexicon(ctx, sqlDB, &p); err != nil {
+		t.Fatal(err)
+	}
+	lp, err := pack.LoadPack(filepath.Join(data, "hsk-words"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := levels.Import(ctx, sqlDB, lp); err != nil {
+		t.Fatal(err)
+	}
+	if cache != "" {
+		if _, err := sqlDB.Exec(`VACUUM INTO ?`, cache); err != nil {
+			t.Fatal(err)
+		}
+	}
+	benchSegment(t, sqlDB, data, "zh")
+}
+
+// benchSegment segments the long chapter of language three times and logs
+// the times.
+func benchSegment(t *testing.T, sqlDB *sql.DB, data, language string) {
+	ctx := context.Background()
+	raw, err := os.ReadFile(filepath.Join(data, language+"-sentences-tatoeba", "sentences.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,10 +151,22 @@ func benchSegment(t *testing.T, sqlDB *sql.DB, data string) {
 	svc := service(sqlDB)
 	for run := range 3 {
 		start := time.Now()
-		ms, err := svc.Segment(ctx, "ja", string(text))
+		ms, err := svc.Segment(ctx, language, string(text))
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("run %d: 5,000 runes, %d tokens in %v", run, len(ms), time.Since(start))
+		// QINQIN_SEGMENT_BENCH_DUMP names a file for the first run's tokens
+		// (one per line: start, surface, lemma, first entry, function), to
+		// compare two builds.
+		if dump := os.Getenv("QINQIN_SEGMENT_BENCH_DUMP"); dump != "" && run == 0 {
+			var b strings.Builder
+			for _, m := range ms {
+				fmt.Fprintf(&b, "%d\t%s\t%s\t%d\t%v\n", m.Start, m.Surface, m.Lemma, m.Entries[0].ID, m.Function)
+			}
+			if err := os.WriteFile(dump, []byte(b.String()), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }

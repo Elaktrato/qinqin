@@ -5,20 +5,7 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
-## #179 — measure words and counters: three drills, their rules and two routes (contract 37)
-
-- **New `counters/`:** item keys of the drills `measure-words` (Chinese, item `<entryId>`), `counters` (Japanese, item
-  `<entryId>`) and `counter-readings` (Japanese, item `<counterId>:<number>`) (`items.json`); Chinese measure words from
-  CC-CEDICT's CL notes with the project's corrections, the 个 fallback, the pool and the choice rules (`measures.json`);
-  every counter × number of the Japanese counters table with its readings and common mistakes (`readings.json`); the
-  route's answer (`words.json`); how a typed answer is checked (`check.json`).
-- **New routes** (signed in, no access token, not cached): `POST /api/drills/measure-words/words` `{"ids": [...]}`
-  (1 to 500) and `GET /api/drills/counters`.
-- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation", "measure-words", "counters",
-  "counter-readings"]`; **`events/activity.json`:** their count rules, feature `practice`; `GET /api/stats/activity`
-  lists ten sources.
-
-## #225 — courses count; course milestones; the Home widget (contract 38)
+## #225 — courses count; course milestones; the Home widget (contract 39)
 
 - **New fixture `courses/counting.json`** (rule `courses/counting`; Go `activity`, web `steps`, `xp`, `streak`): a course
   **step** is a finished lesson that is not a grammar lesson, a unit test or a section exam. Activity: one point per
@@ -39,6 +26,32 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **`settings/core-rows.json`:** the widget id `course-continue` (Courses) and the default Home layout starts with it
   (`course-continue`, `activity-heatmap`, `flashcards-summary`, `daily-goal`, `weekly-summary`). A stored layout is
   unchanged.
+
+## #349 — Chinese reads whole sentences (contract 38)
+
+- **New `segment/zh.json`:** Chinese is read on the #348 lattice. The rules format gains optional keys:
+  `costs.levelStep` and `costs.unlisted` (a token priced by the installed word level lists of the language),
+  `compounds: "parts"` (an unlisted compound that listed words and function words read is no edge: 不是 is 不 | 是),
+  `partFunctionWords`, `functionReadings` (a function word by its reading: 着 zhe) and `readings` (长 cháng);
+  `functionPos` may be empty when every function word has a reading. `ja.json` is unchanged.
+- **New fixture `segment/zh-cases.json`** (CC-CEDICT lines, a word level list, texts with tokens, readings and function
+  flags, with and without the list; Go and web).
+- **`POST /api/segment` (zh):** matches can differ from before (我 | 有 | 时间, not 有时 | 间; 中国 | 人, not 中国人),
+  的, 了, 着, 得, 地, 吗, 呢, 吧, 啊, 呀 and 嘛 carry `function: true`, and with `readings` a match shows the common
+  reading (那 nà, 打 dǎ, 看 kàn), not CC-CEDICT's first line. `/api/segment/at` and `/api/lookup` are unchanged.
+
+## #179 — measure words and counters: three drills, their rules and two routes (contract 37)
+
+- **New `counters/`:** item keys of the drills `measure-words` (Chinese, item `<entryId>`), `counters` (Japanese, item
+  `<entryId>`) and `counter-readings` (Japanese, item `<counterId>:<number>`) (`items.json`); Chinese measure words from
+  CC-CEDICT's CL notes with the project's corrections, the 个 fallback, the pool and the choice rules (`measures.json`);
+  every counter × number of the Japanese counters table with its readings and common mistakes (`readings.json`); the
+  route's answer (`words.json`); how a typed answer is checked (`check.json`).
+- **New routes** (signed in, no access token, not cached): `POST /api/drills/measure-words/words` `{"ids": [...]}`
+  (1 to 500) and `GET /api/drills/counters`.
+- **`drills/drills.json` `registry`:** `["tone-pairs", "conjugation", "measure-words", "counters",
+  "counter-readings"]`; **`events/activity.json`:** their count rules, feature `practice`; `GET /api/stats/activity`
+  lists ten sources.
 
 ## #348 — Japanese reads whole sentences; function words (contract 36)
 
