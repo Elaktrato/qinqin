@@ -16,6 +16,11 @@ describe('parseGrammarRoute', () => {
 			lesson: 'shi'
 		});
 	});
+	it('routes the review round (#181)', () => {
+		expect(parseGrammarRoute('review')).toEqual({ view: 'review' });
+		expect(parseGrammarRoute('/review/')).toEqual({ view: 'review' });
+		expect(grammarHref({ view: 'review' })).toBe('/grammar/review');
+	});
 	it('falls back to browse for anything else', () => {
 		expect(parseGrammarRoute('a')).toEqual({ view: 'browse' });
 		expect(parseGrammarRoute('a/b/c')).toEqual({ view: 'browse' });

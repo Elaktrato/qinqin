@@ -8,6 +8,7 @@
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { loadProgress, progressKey, recordRun } from './progress';
+	import { isLearned } from '$lib/studycore/grammarReview';
 	import { grammarHref } from './route';
 	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
@@ -148,6 +149,9 @@
 			</p>
 			{#if saved}
 				<p>{t('grammar.practice.best', { best: saved.best, total: saved.total })}</p>
+			{/if}
+			{#if isLearned(score, exercises.length)}
+				<p class="learned">{t('grammar.practice.learned')}</p>
 			{/if}
 			{#if saveError}
 				<p class="error" role="alert">{saveError}</p>

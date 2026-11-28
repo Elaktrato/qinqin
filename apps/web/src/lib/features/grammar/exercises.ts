@@ -32,7 +32,8 @@ export function clozeParts(text: string, focus: string): { before: string; after
 	return { before: text.slice(0, at), after: text.slice(at + focus.length) };
 }
 
-function hasCloze(e: Example): boolean {
+/** hasCloze: the example can be a fill-the-gap exercise (a focus found in its text, two distractors). */
+export function hasCloze(e: Example): boolean {
 	return e.focus !== '' && e.distractors.length >= 2 && clozeParts(e.text, e.focus) !== null;
 }
 

@@ -84,6 +84,8 @@ describe('grammar practice in the lighter look (#106)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: '学生' }));
 		await fireEvent.click(await screen.findByRole('button', { name: 'Finish' }));
 		await screen.findByText('Best so far: 1/1');
+		// 1/1 is at least 80 %: the point is learned and comes back for review (#181).
+		expect(screen.getByText('Learned: this point comes back for review on the Grammar page.')).toBeTruthy();
 		expect(recordRun).toHaveBeenCalledWith(expect.anything(), 1, 'basics', 'l1', 1, 1, { best: 0, total: 1, completedAt: '2026-11-26T10:00:00Z', runs: 1 });
 	});
 });
