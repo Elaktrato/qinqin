@@ -82,6 +82,14 @@ export const coreCredits: SourceCredit[] = [
 		license: 'CC BY 4.0',
 		attribution: 'qinqin contributors, CC BY 4.0'
 	}, { notice: 'sources.core.starterWords' }),
+	// The graded readers (#231): built into the server (server/internal/library/sources/graded/texts), written for
+	// the project under CC BY 4.0; reviewed by agents acting as teachers, not yet by a person.
+	credit({
+		name: 'qinqin graded readers',
+		url: 'https://github.com/Elaktrato/qinqin',
+		license: 'CC BY 4.0',
+		attribution: 'qinqin contributors, CC BY 4.0'
+	}, { notice: 'sources.core.gradedReaders' }),
 	// The topic labels of words (#220): built into the server (server/internal/topics/labels), written for the
 	// project and shared under CC BY-SA 4.0 (adapted from OpenMoji's groups, keyed to CC-CEDICT and JMdict); the
 	// licence name links to the legal code.

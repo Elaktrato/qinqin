@@ -973,7 +973,7 @@ text was copied. They are checked against the bundled word level lists (`hsk-wor
 dictionaries (CC-CEDICT, JMdict), which are not part of the files. They were **reviewed by agents acting as teachers,
 not yet by a person** (two teachers and an adjudicator per language; notes: `texts/REVIEW.md`); `humanReviewed` stays
 `false`. A text added to a library keeps the credit as the book's attribution and licence note; the Sources page credits
-them under Reader. Format: `docs/contracts/graded/README.md`. No pack type (record 0008; plan Ruling 2).
+them under "Built into the app" (`apps/web/src/lib/sources/coreCredits.ts`). Format: `docs/contracts/graded/README.md`. No pack type (record 0008; plan Ruling 2).
 
 ## Reader text sources
 
