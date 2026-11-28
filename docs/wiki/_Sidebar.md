@@ -52,6 +52,7 @@
 
 - [Data and licences](Data-and-licences)
 - [Dictionary data model](Dictionary-data-model)
+- [Courses data model](Courses-data-model)
 - [Troubleshooting](Troubleshooting)
 - [FAQ](FAQ)
 
