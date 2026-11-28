@@ -1,4 +1,4 @@
-// Reviews (and grammar lesson runs, #277, and drill answers) this device sent in the last days. Offline, the cached event log may
+// Reviews (and grammar lesson runs, #277, drill answers and course events, #222/#224) this device sent in the last days. Offline, the cached event log may
 // be older than the reviews done online since; without these a card answered
 // minutes ago would show as due again. Merged into the history like queued
 // reviews (store.ts), deduplicated by id, so a refreshed log makes them moot.
@@ -10,8 +10,8 @@ export const RECENT_SENT_KEY = 'qinqin.study.sent.v1';
 export const RECENT_SENT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 export const RECENT_SENT_MAX = 300;
 
-/** The events the study history reads: reviews, grammar lesson runs (#277) and drill answers. */
-const REMEMBERED_TYPES: ReadonlySet<string> = new Set(['review', 'grammar']);
+/** The events the study history reads: reviews, grammar lesson runs (#277), drill answers and course events. */
+const REMEMBERED_TYPES: ReadonlySet<string> = new Set(['review', 'grammar', 'course']);
 const remembered = (type: string): boolean => REMEMBERED_TYPES.has(type) || drillOfType(type) !== null;
 
 // Kept per user id, so another account never reads them; an explicit sign-out

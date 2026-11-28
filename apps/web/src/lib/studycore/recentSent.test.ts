@@ -51,6 +51,12 @@ describe('recent sent reviews', () => {
 		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['g']);
 	});
 
+	it('keeps sent course events too (#224): a test passed online shows on the roadmap before the log refreshes', () => {
+		const typed = (id: string, type: string) => ({ ...(ev(id) as object), type }) as never;
+		rememberSent(1, [typed('c', 'course'), typed('r', 'read')], NOW, store);
+		expect(recentSentReviews(1, 7, NOW, store).map((e) => e.id)).toEqual(['c']);
+	});
+
 	it('forgets entries older than three days', () => {
 		rememberSent(1, [ev('old')], NOW - RECENT_SENT_TTL_MS - 1, store);
 		rememberSent(1, [ev('new')], NOW, store);

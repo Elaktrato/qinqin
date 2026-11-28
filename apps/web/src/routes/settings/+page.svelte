@@ -26,6 +26,7 @@
 	import RomanisationSettings from '$lib/settings/RomanisationSettings.svelte';
 	import WorkspaceLanguageSettings from '$lib/settings/WorkspaceLanguageSettings.svelte';
 	import ToneSettings from '$lib/settings/ToneSettings.svelte';
+	import ConjugationSettings from '$lib/settings/ConjugationSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
@@ -329,6 +330,7 @@
 				<VisualAidsSettings />
 				<RomanisationSettings />
 				<ToneSettings />
+				<ConjugationSettings />
 				<KnownSettings />
 				<LevelCheck />
 				<FeedbackSettings />

@@ -18,7 +18,7 @@ across them. Drill work counts in the heatmap, the weekly summary, goals, EXP an
 
   | Drill | Item | Example |
   | --- | --- | --- |
-  | conjugation (#178) | word × form family: `<entryId>:<formFamily>` | `1234:te-form` |
+  | conjugation (#178, `conjugation/`; modes `produce`, `recognise`) | word × form family: `<entryId>:<family>` | `1234:te-form` |
   | measure words and counters (#179) | the noun: `<entryId>` | `5678` |
   | tone pairs (#180) | the pair of citation tones: `<t1>-<t2>` (`5` neutral) | `3-4` |
   | look-alike characters (#228) | the set: its characters in the set's order | `未末` |
@@ -50,7 +50,8 @@ answer and counts nowhere.
 ## The registry
 
 `registry` in `drills.json` lists the drills a **server counts as activity** and a client offers as an activity
-source (goals, the weekly summary): `tone-pairs` (#180, items and rules in `tones/pairs.json`). Go `drills.IDs` and the web's `DRILL_IDS`
+source (goals, the weekly summary): `tone-pairs` (#180, items and rules in `tones/pairs.json`) and `conjugation`
+(#178, `conjugation/`). Go `drills.IDs` and the web's `DRILL_IDS`
 (`lib/studycore/drills.ts`) must equal it (both decode the fixture).
 
 ### Adding a drill

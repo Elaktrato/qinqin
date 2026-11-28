@@ -113,7 +113,9 @@ describe('the tone-pair grid on the Practice list', () => {
 	it('is not offered in a Japanese workspace', async () => {
 		ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'ja', name: 'ja', settings: {} } as never });
 		show('');
-		expect(await screen.findByText('No drills for this language yet.')).toBeTruthy();
+		// Japanese has the conjugation drill (#178), not this one.
+		expect(await screen.findByRole('heading', { level: 2, name: 'Conjugation' })).toBeTruthy();
+		expect(screen.queryByRole('heading', { level: 2, name: 'Tone pairs' })).toBeNull();
 	});
 });
 

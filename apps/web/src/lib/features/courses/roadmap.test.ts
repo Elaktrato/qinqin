@@ -99,4 +99,12 @@ describe('the roadmap model (#222)', () => {
 		expect(titleText({ en: 'Hello', de: 'Hallo' }, 'de')).toBe('Hallo');
 		expect(titleText({ en: 'Hello' }, 'ja')).toBe('Hello');
 	});
+
+	it('placement (#224): "Find your place" starts at the first section with an exam while no unit of one is done', () => {
+		expect(map([]).placement).toBe('/courses/play/zh-test/section/level-1/placement');
+		// The start section's unit done: still offered.
+		expect(map([finished('sounds', 'listening')]).placement).toBe('/courses/play/zh-test/section/level-1/placement');
+		expect(map([ev({ kind: 'unit-test', unit: 'hello', score: 1, total: 1, passed: true, early: true })]).placement).toBeNull();
+		expect(map([ev({ kind: 'placement', section: 'level-1' })]).placement).toBeNull();
+	});
 });

@@ -676,6 +676,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "POST /api/drills/conjugation/words",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/entries/bases",
 		"access": "user"
 	},

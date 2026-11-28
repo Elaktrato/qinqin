@@ -1,0 +1,7048 @@
+{
+ "version": 1,
+ "rule": "conjugation/forms",
+ "classify": [
+  {
+   "name": "a godan verb",
+   "pos": [
+    [
+     "v5k",
+     "vt"
+    ]
+   ],
+   "class": "v5k"
+  },
+  {
+   "name": "the first class tag wins, sense by sense",
+   "pos": [
+    [
+     "n"
+    ],
+    [
+     "v1",
+     "vt"
+    ],
+    [
+     "v5r"
+    ]
+   ],
+   "class": "v1"
+  },
+  {
+   "name": "tags before the class tag are skipped",
+   "pos": [
+    [
+     "vt",
+     "v5m"
+    ]
+   ],
+   "class": "v5m"
+  },
+  {
+   "name": "a な-adjective listed after a noun tag",
+   "pos": [
+    [
+     "n",
+     "adj-na"
+    ]
+   ],
+   "class": "adj-na"
+  },
+  {
+   "name": "a noun that takes する is not drilled",
+   "pos": [
+    [
+     "n",
+     "vs"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "する itself",
+   "pos": [
+    [
+     "vs-i",
+     "vt"
+    ]
+   ],
+   "class": "vs-i"
+  },
+  {
+   "name": "来る",
+   "pos": [
+    [
+     "vk",
+     "vi"
+    ]
+   ],
+   "class": "vk"
+  },
+  {
+   "name": "ある",
+   "pos": [
+    [
+     "v5r-i",
+     "vi"
+    ]
+   ],
+   "class": "v5r-i"
+  },
+  {
+   "name": "an honorific",
+   "pos": [
+    [
+     "v5aru",
+     "vi"
+    ]
+   ],
+   "class": "v5aru"
+  },
+  {
+   "name": "いい",
+   "pos": [
+    [
+     "adj-ix"
+    ]
+   ],
+   "class": "adj-ix"
+  },
+  {
+   "name": "の-adjective only",
+   "pos": [
+    [
+     "adj-no",
+     "n"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "たる-adjective",
+   "pos": [
+    [
+     "adj-t",
+     "adv-to"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "ずる verb (not drilled)",
+   "pos": [
+    [
+     "vz",
+     "vt"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "archaic nidan verb",
+   "pos": [
+    [
+     "v2r-s"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "an expression",
+   "pos": [
+    [
+     "exp"
+    ]
+   ],
+   "class": null
+  },
+  {
+   "name": "no part of speech",
+   "pos": [],
+   "class": null
+  },
+  {
+   "name": "a sense without tags",
+   "pos": [
+    [],
+    [
+     "adj-i"
+    ]
+   ],
+   "class": "adj-i"
+  }
+ ],
+ "conjugate": [
+  {
+   "name": "ichidan 食べる",
+   "written": "食べる",
+   "reading": "たべる",
+   "class": "v1",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "食べます"
+     ],
+     "reading": [
+      "たべます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "食べません"
+     ],
+     "reading": [
+      "たべません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "食べました"
+     ],
+     "reading": [
+      "たべました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "食べませんでした"
+     ],
+     "reading": [
+      "たべませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "食べない"
+     ],
+     "reading": [
+      "たべない"
+     ]
+    },
+    "past": {
+     "written": [
+      "食べた"
+     ],
+     "reading": [
+      "たべた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "食べなかった"
+     ],
+     "reading": [
+      "たべなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "食べて"
+     ],
+     "reading": [
+      "たべて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "食べられる",
+      "食べれる"
+     ],
+     "reading": [
+      "たべられる",
+      "たべれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "食べよう"
+     ],
+     "reading": [
+      "たべよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "食べましょう"
+     ],
+     "reading": [
+      "たべましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "食べれば"
+     ],
+     "reading": [
+      "たべれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "食べたら"
+     ],
+     "reading": [
+      "たべたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "食べられる"
+     ],
+     "reading": [
+      "たべられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "食べさせる"
+     ],
+     "reading": [
+      "たべさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "ichidan 見る",
+   "written": "見る",
+   "reading": "みる",
+   "class": "v1",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "見ます"
+     ],
+     "reading": [
+      "みます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "見ません"
+     ],
+     "reading": [
+      "みません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "見ました"
+     ],
+     "reading": [
+      "みました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "見ませんでした"
+     ],
+     "reading": [
+      "みませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "見ない"
+     ],
+     "reading": [
+      "みない"
+     ]
+    },
+    "past": {
+     "written": [
+      "見た"
+     ],
+     "reading": [
+      "みた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "見なかった"
+     ],
+     "reading": [
+      "みなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "見て"
+     ],
+     "reading": [
+      "みて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "見られる",
+      "見れる"
+     ],
+     "reading": [
+      "みられる",
+      "みれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "見よう"
+     ],
+     "reading": [
+      "みよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "見ましょう"
+     ],
+     "reading": [
+      "みましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "見れば"
+     ],
+     "reading": [
+      "みれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "見たら"
+     ],
+     "reading": [
+      "みたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "見られる"
+     ],
+     "reading": [
+      "みられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "見させる"
+     ],
+     "reading": [
+      "みさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "ichidan in kana いる",
+   "written": "いる",
+   "reading": "いる",
+   "class": "v1",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "います"
+     ],
+     "reading": [
+      "います"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "いません"
+     ],
+     "reading": [
+      "いません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "いました"
+     ],
+     "reading": [
+      "いました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "いませんでした"
+     ],
+     "reading": [
+      "いませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "いない"
+     ],
+     "reading": [
+      "いない"
+     ]
+    },
+    "past": {
+     "written": [
+      "いた"
+     ],
+     "reading": [
+      "いた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "いなかった"
+     ],
+     "reading": [
+      "いなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "いて"
+     ],
+     "reading": [
+      "いて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "いられる"
+     ],
+     "reading": [
+      "いられる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "いよう"
+     ],
+     "reading": [
+      "いよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "いましょう"
+     ],
+     "reading": [
+      "いましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "いれば"
+     ],
+     "reading": [
+      "いれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "いたら"
+     ],
+     "reading": [
+      "いたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "いられる"
+     ],
+     "reading": [
+      "いられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "いさせる"
+     ],
+     "reading": [
+      "いさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan く 書く",
+   "written": "書く",
+   "reading": "かく",
+   "class": "v5k",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "書きます"
+     ],
+     "reading": [
+      "かきます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "書きません"
+     ],
+     "reading": [
+      "かきません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "書きました"
+     ],
+     "reading": [
+      "かきました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "書きませんでした"
+     ],
+     "reading": [
+      "かきませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "書かない"
+     ],
+     "reading": [
+      "かかない"
+     ]
+    },
+    "past": {
+     "written": [
+      "書いた"
+     ],
+     "reading": [
+      "かいた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "書かなかった"
+     ],
+     "reading": [
+      "かかなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "書いて"
+     ],
+     "reading": [
+      "かいて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "書ける"
+     ],
+     "reading": [
+      "かける"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "書こう"
+     ],
+     "reading": [
+      "かこう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "書きましょう"
+     ],
+     "reading": [
+      "かきましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "書けば"
+     ],
+     "reading": [
+      "かけば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "書いたら"
+     ],
+     "reading": [
+      "かいたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "書かれる"
+     ],
+     "reading": [
+      "かかれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "書かせる"
+     ],
+     "reading": [
+      "かかせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan ぐ 泳ぐ",
+   "written": "泳ぐ",
+   "reading": "およぐ",
+   "class": "v5g",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "泳ぎます"
+     ],
+     "reading": [
+      "およぎます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "泳ぎません"
+     ],
+     "reading": [
+      "およぎません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "泳ぎました"
+     ],
+     "reading": [
+      "およぎました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "泳ぎませんでした"
+     ],
+     "reading": [
+      "およぎませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "泳がない"
+     ],
+     "reading": [
+      "およがない"
+     ]
+    },
+    "past": {
+     "written": [
+      "泳いだ"
+     ],
+     "reading": [
+      "およいだ"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "泳がなかった"
+     ],
+     "reading": [
+      "およがなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "泳いで"
+     ],
+     "reading": [
+      "およいで"
+     ]
+    },
+    "potential": {
+     "written": [
+      "泳げる"
+     ],
+     "reading": [
+      "およげる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "泳ごう"
+     ],
+     "reading": [
+      "およごう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "泳ぎましょう"
+     ],
+     "reading": [
+      "およぎましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "泳げば"
+     ],
+     "reading": [
+      "およげば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "泳いだら"
+     ],
+     "reading": [
+      "およいだら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "泳がれる"
+     ],
+     "reading": [
+      "およがれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "泳がせる"
+     ],
+     "reading": [
+      "およがせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan す 話す",
+   "written": "話す",
+   "reading": "はなす",
+   "class": "v5s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "話します"
+     ],
+     "reading": [
+      "はなします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "話しません"
+     ],
+     "reading": [
+      "はなしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "話しました"
+     ],
+     "reading": [
+      "はなしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "話しませんでした"
+     ],
+     "reading": [
+      "はなしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "話さない"
+     ],
+     "reading": [
+      "はなさない"
+     ]
+    },
+    "past": {
+     "written": [
+      "話した"
+     ],
+     "reading": [
+      "はなした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "話さなかった"
+     ],
+     "reading": [
+      "はなさなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "話して"
+     ],
+     "reading": [
+      "はなして"
+     ]
+    },
+    "potential": {
+     "written": [
+      "話せる"
+     ],
+     "reading": [
+      "はなせる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "話そう"
+     ],
+     "reading": [
+      "はなそう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "話しましょう"
+     ],
+     "reading": [
+      "はなしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "話せば"
+     ],
+     "reading": [
+      "はなせば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "話したら"
+     ],
+     "reading": [
+      "はなしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "話される"
+     ],
+     "reading": [
+      "はなされる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "話させる"
+     ],
+     "reading": [
+      "はなさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan つ 待つ",
+   "written": "待つ",
+   "reading": "まつ",
+   "class": "v5t",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "待ちます"
+     ],
+     "reading": [
+      "まちます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "待ちません"
+     ],
+     "reading": [
+      "まちません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "待ちました"
+     ],
+     "reading": [
+      "まちました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "待ちませんでした"
+     ],
+     "reading": [
+      "まちませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "待たない"
+     ],
+     "reading": [
+      "またない"
+     ]
+    },
+    "past": {
+     "written": [
+      "待った"
+     ],
+     "reading": [
+      "まった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "待たなかった"
+     ],
+     "reading": [
+      "またなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "待って"
+     ],
+     "reading": [
+      "まって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "待てる"
+     ],
+     "reading": [
+      "まてる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "待とう"
+     ],
+     "reading": [
+      "まとう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "待ちましょう"
+     ],
+     "reading": [
+      "まちましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "待てば"
+     ],
+     "reading": [
+      "まてば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "待ったら"
+     ],
+     "reading": [
+      "まったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "待たれる"
+     ],
+     "reading": [
+      "またれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "待たせる"
+     ],
+     "reading": [
+      "またせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan ぬ 死ぬ (no volitional: content)",
+   "written": "死ぬ",
+   "reading": "しぬ",
+   "class": "v5n",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "死にます"
+     ],
+     "reading": [
+      "しにます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "死にません"
+     ],
+     "reading": [
+      "しにません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "死にました"
+     ],
+     "reading": [
+      "しにました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "死にませんでした"
+     ],
+     "reading": [
+      "しにませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "死なない"
+     ],
+     "reading": [
+      "しなない"
+     ]
+    },
+    "past": {
+     "written": [
+      "死んだ"
+     ],
+     "reading": [
+      "しんだ"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "死ななかった"
+     ],
+     "reading": [
+      "しななかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "死んで"
+     ],
+     "reading": [
+      "しんで"
+     ]
+    },
+    "potential": {
+     "written": [
+      "死ねる"
+     ],
+     "reading": [
+      "しねる"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "死ねば"
+     ],
+     "reading": [
+      "しねば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "死んだら"
+     ],
+     "reading": [
+      "しんだら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "死なれる"
+     ],
+     "reading": [
+      "しなれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "死なせる"
+     ],
+     "reading": [
+      "しなせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan ぶ 遊ぶ",
+   "written": "遊ぶ",
+   "reading": "あそぶ",
+   "class": "v5b",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "遊びます"
+     ],
+     "reading": [
+      "あそびます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "遊びません"
+     ],
+     "reading": [
+      "あそびません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "遊びました"
+     ],
+     "reading": [
+      "あそびました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "遊びませんでした"
+     ],
+     "reading": [
+      "あそびませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "遊ばない"
+     ],
+     "reading": [
+      "あそばない"
+     ]
+    },
+    "past": {
+     "written": [
+      "遊んだ"
+     ],
+     "reading": [
+      "あそんだ"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "遊ばなかった"
+     ],
+     "reading": [
+      "あそばなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "遊んで"
+     ],
+     "reading": [
+      "あそんで"
+     ]
+    },
+    "potential": {
+     "written": [
+      "遊べる"
+     ],
+     "reading": [
+      "あそべる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "遊ぼう"
+     ],
+     "reading": [
+      "あそぼう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "遊びましょう"
+     ],
+     "reading": [
+      "あそびましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "遊べば"
+     ],
+     "reading": [
+      "あそべば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "遊んだら"
+     ],
+     "reading": [
+      "あそんだら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "遊ばれる"
+     ],
+     "reading": [
+      "あそばれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "遊ばせる"
+     ],
+     "reading": [
+      "あそばせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan む 飲む",
+   "written": "飲む",
+   "reading": "のむ",
+   "class": "v5m",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "飲みます"
+     ],
+     "reading": [
+      "のみます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "飲みません"
+     ],
+     "reading": [
+      "のみません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "飲みました"
+     ],
+     "reading": [
+      "のみました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "飲みませんでした"
+     ],
+     "reading": [
+      "のみませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "飲まない"
+     ],
+     "reading": [
+      "のまない"
+     ]
+    },
+    "past": {
+     "written": [
+      "飲んだ"
+     ],
+     "reading": [
+      "のんだ"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "飲まなかった"
+     ],
+     "reading": [
+      "のまなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "飲んで"
+     ],
+     "reading": [
+      "のんで"
+     ]
+    },
+    "potential": {
+     "written": [
+      "飲める"
+     ],
+     "reading": [
+      "のめる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "飲もう"
+     ],
+     "reading": [
+      "のもう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "飲みましょう"
+     ],
+     "reading": [
+      "のみましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "飲めば"
+     ],
+     "reading": [
+      "のめば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "飲んだら"
+     ],
+     "reading": [
+      "のんだら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "飲まれる"
+     ],
+     "reading": [
+      "のまれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "飲ませる"
+     ],
+     "reading": [
+      "のませる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan る 帰る (looks like ichidan)",
+   "written": "帰る",
+   "reading": "かえる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "帰ります"
+     ],
+     "reading": [
+      "かえります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "帰りません"
+     ],
+     "reading": [
+      "かえりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "帰りました"
+     ],
+     "reading": [
+      "かえりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "帰りませんでした"
+     ],
+     "reading": [
+      "かえりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "帰らない"
+     ],
+     "reading": [
+      "かえらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "帰った"
+     ],
+     "reading": [
+      "かえった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "帰らなかった"
+     ],
+     "reading": [
+      "かえらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "帰って"
+     ],
+     "reading": [
+      "かえって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "帰れる"
+     ],
+     "reading": [
+      "かえれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "帰ろう"
+     ],
+     "reading": [
+      "かえろう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "帰りましょう"
+     ],
+     "reading": [
+      "かえりましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "帰れば"
+     ],
+     "reading": [
+      "かえれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "帰ったら"
+     ],
+     "reading": [
+      "かえったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "帰られる"
+     ],
+     "reading": [
+      "かえられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "帰らせる"
+     ],
+     "reading": [
+      "かえらせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan う 買う (negative with わ)",
+   "written": "買う",
+   "reading": "かう",
+   "class": "v5u",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "買います"
+     ],
+     "reading": [
+      "かいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "買いません"
+     ],
+     "reading": [
+      "かいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "買いました"
+     ],
+     "reading": [
+      "かいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "買いませんでした"
+     ],
+     "reading": [
+      "かいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "買わない"
+     ],
+     "reading": [
+      "かわない"
+     ]
+    },
+    "past": {
+     "written": [
+      "買った"
+     ],
+     "reading": [
+      "かった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "買わなかった"
+     ],
+     "reading": [
+      "かわなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "買って"
+     ],
+     "reading": [
+      "かって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "買える"
+     ],
+     "reading": [
+      "かえる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "買おう"
+     ],
+     "reading": [
+      "かおう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "買いましょう"
+     ],
+     "reading": [
+      "かいましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "買えば"
+     ],
+     "reading": [
+      "かえば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "買ったら"
+     ],
+     "reading": [
+      "かったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "買われる"
+     ],
+     "reading": [
+      "かわれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "買わせる"
+     ],
+     "reading": [
+      "かわせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular 行く: 行って, 行った",
+   "written": "行く",
+   "reading": "いく",
+   "class": "v5k-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "行きます"
+     ],
+     "reading": [
+      "いきます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "行きません"
+     ],
+     "reading": [
+      "いきません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "行きました"
+     ],
+     "reading": [
+      "いきました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "行きませんでした"
+     ],
+     "reading": [
+      "いきませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "行かない"
+     ],
+     "reading": [
+      "いかない"
+     ]
+    },
+    "past": {
+     "written": [
+      "行った"
+     ],
+     "reading": [
+      "いった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "行かなかった"
+     ],
+     "reading": [
+      "いかなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "行って"
+     ],
+     "reading": [
+      "いって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "行ける"
+     ],
+     "reading": [
+      "いける"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "行こう"
+     ],
+     "reading": [
+      "いこう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "行きましょう"
+     ],
+     "reading": [
+      "いきましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "行けば"
+     ],
+     "reading": [
+      "いけば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "行ったら"
+     ],
+     "reading": [
+      "いったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "行かれる"
+     ],
+     "reading": [
+      "いかれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "行かせる"
+     ],
+     "reading": [
+      "いかせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular 問う: 問うて, 問うた",
+   "written": "問う",
+   "reading": "とう",
+   "class": "v5u-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "問います"
+     ],
+     "reading": [
+      "といます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "問いません"
+     ],
+     "reading": [
+      "といません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "問いました"
+     ],
+     "reading": [
+      "といました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "問いませんでした"
+     ],
+     "reading": [
+      "といませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "問わない"
+     ],
+     "reading": [
+      "とわない"
+     ]
+    },
+    "past": {
+     "written": [
+      "問うた"
+     ],
+     "reading": [
+      "とうた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "問わなかった"
+     ],
+     "reading": [
+      "とわなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "問うて"
+     ],
+     "reading": [
+      "とうて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "問える"
+     ],
+     "reading": [
+      "とえる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "問おう"
+     ],
+     "reading": [
+      "とおう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "問いましょう"
+     ],
+     "reading": [
+      "といましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "問えば"
+     ],
+     "reading": [
+      "とえば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "問うたら"
+     ],
+     "reading": [
+      "とうたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "問われる"
+     ],
+     "reading": [
+      "とわれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "問わせる"
+     ],
+     "reading": [
+      "とわせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular ある: ない, なかった",
+   "written": "ある",
+   "reading": "ある",
+   "class": "v5r-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "あります"
+     ],
+     "reading": [
+      "あります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "ありません",
+      "ないです"
+     ],
+     "reading": [
+      "ありません",
+      "ないです"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "ありました"
+     ],
+     "reading": [
+      "ありました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "ありませんでした",
+      "なかったです"
+     ],
+     "reading": [
+      "ありませんでした",
+      "なかったです"
+     ]
+    },
+    "negative": {
+     "written": [
+      "ない"
+     ],
+     "reading": [
+      "ない"
+     ]
+    },
+    "past": {
+     "written": [
+      "あった"
+     ],
+     "reading": [
+      "あった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "なかった"
+     ],
+     "reading": [
+      "なかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "あって"
+     ],
+     "reading": [
+      "あって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "あれば"
+     ],
+     "reading": [
+      "あれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "あったら"
+     ],
+     "reading": [
+      "あったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "honorific なさる: なさいます",
+   "written": "なさる",
+   "reading": "なさる",
+   "class": "v5aru",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "なさいます"
+     ],
+     "reading": [
+      "なさいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "なさいません"
+     ],
+     "reading": [
+      "なさいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "なさいました"
+     ],
+     "reading": [
+      "なさいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "なさいませんでした"
+     ],
+     "reading": [
+      "なさいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "なさらない"
+     ],
+     "reading": [
+      "なさらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "なさった"
+     ],
+     "reading": [
+      "なさった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "なさらなかった"
+     ],
+     "reading": [
+      "なさらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "なさって"
+     ],
+     "reading": [
+      "なさって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "なされば"
+     ],
+     "reading": [
+      "なされば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "なさったら"
+     ],
+     "reading": [
+      "なさったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "honorific いらっしゃる",
+   "written": "いらっしゃる",
+   "reading": "いらっしゃる",
+   "class": "v5aru",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "いらっしゃいます"
+     ],
+     "reading": [
+      "いらっしゃいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "いらっしゃいません"
+     ],
+     "reading": [
+      "いらっしゃいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "いらっしゃいました"
+     ],
+     "reading": [
+      "いらっしゃいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "いらっしゃいませんでした"
+     ],
+     "reading": [
+      "いらっしゃいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "いらっしゃらない"
+     ],
+     "reading": [
+      "いらっしゃらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "いらっしゃった",
+      "いらした"
+     ],
+     "reading": [
+      "いらっしゃった",
+      "いらした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "いらっしゃらなかった"
+     ],
+     "reading": [
+      "いらっしゃらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "いらっしゃって",
+      "いらして"
+     ],
+     "reading": [
+      "いらっしゃって",
+      "いらして"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "いらっしゃれば"
+     ],
+     "reading": [
+      "いらっしゃれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "いらっしゃったら",
+      "いらしたら"
+     ],
+     "reading": [
+      "いらっしゃったら",
+      "いらしたら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "honorific 下さる in kanji",
+   "written": "下さる",
+   "reading": "くださる",
+   "class": "v5aru",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "下さいます"
+     ],
+     "reading": [
+      "くださいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "下さいません"
+     ],
+     "reading": [
+      "くださいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "下さいました"
+     ],
+     "reading": [
+      "くださいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "下さいませんでした"
+     ],
+     "reading": [
+      "くださいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "下さらない"
+     ],
+     "reading": [
+      "くださらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "下さった"
+     ],
+     "reading": [
+      "くださった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "下さらなかった"
+     ],
+     "reading": [
+      "くださらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "下さって"
+     ],
+     "reading": [
+      "くださって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "下されば"
+     ],
+     "reading": [
+      "くだされば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "下さったら"
+     ],
+     "reading": [
+      "くださったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "くれる (v1-s)",
+   "written": "くれる",
+   "reading": "くれる",
+   "class": "v1-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "くれます"
+     ],
+     "reading": [
+      "くれます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "くれません"
+     ],
+     "reading": [
+      "くれません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "くれました"
+     ],
+     "reading": [
+      "くれました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "くれませんでした"
+     ],
+     "reading": [
+      "くれませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "くれない"
+     ],
+     "reading": [
+      "くれない"
+     ]
+    },
+    "past": {
+     "written": [
+      "くれた"
+     ],
+     "reading": [
+      "くれた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "くれなかった"
+     ],
+     "reading": [
+      "くれなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "くれて"
+     ],
+     "reading": [
+      "くれて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "くれれば"
+     ],
+     "reading": [
+      "くれれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "くれたら"
+     ],
+     "reading": [
+      "くれたら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular 来る in kanji",
+   "written": "来る",
+   "reading": "くる",
+   "class": "vk",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "来ます"
+     ],
+     "reading": [
+      "きます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "来ません"
+     ],
+     "reading": [
+      "きません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "来ました"
+     ],
+     "reading": [
+      "きました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "来ませんでした"
+     ],
+     "reading": [
+      "きませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "来ない"
+     ],
+     "reading": [
+      "こない"
+     ]
+    },
+    "past": {
+     "written": [
+      "来た"
+     ],
+     "reading": [
+      "きた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "来なかった"
+     ],
+     "reading": [
+      "こなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "来て"
+     ],
+     "reading": [
+      "きて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "来られる",
+      "来れる"
+     ],
+     "reading": [
+      "こられる",
+      "これる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "来よう"
+     ],
+     "reading": [
+      "こよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "来ましょう"
+     ],
+     "reading": [
+      "きましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "来れば"
+     ],
+     "reading": [
+      "くれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "来たら"
+     ],
+     "reading": [
+      "きたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "来られる"
+     ],
+     "reading": [
+      "こられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "来させる"
+     ],
+     "reading": [
+      "こさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular くる in kana",
+   "written": "くる",
+   "reading": "くる",
+   "class": "vk",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "きます"
+     ],
+     "reading": [
+      "きます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "きません"
+     ],
+     "reading": [
+      "きません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "きました"
+     ],
+     "reading": [
+      "きました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "きませんでした"
+     ],
+     "reading": [
+      "きませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "こない"
+     ],
+     "reading": [
+      "こない"
+     ]
+    },
+    "past": {
+     "written": [
+      "きた"
+     ],
+     "reading": [
+      "きた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "こなかった"
+     ],
+     "reading": [
+      "こなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "きて"
+     ],
+     "reading": [
+      "きて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "こられる",
+      "これる"
+     ],
+     "reading": [
+      "こられる",
+      "これる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "こよう"
+     ],
+     "reading": [
+      "こよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "きましょう"
+     ],
+     "reading": [
+      "きましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "くれば"
+     ],
+     "reading": [
+      "くれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "きたら"
+     ],
+     "reading": [
+      "きたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "こられる"
+     ],
+     "reading": [
+      "こられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "こさせる"
+     ],
+     "reading": [
+      "こさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular する",
+   "written": "する",
+   "reading": "する",
+   "class": "vs-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "します"
+     ],
+     "reading": [
+      "します"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "しません"
+     ],
+     "reading": [
+      "しません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "しました"
+     ],
+     "reading": [
+      "しました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "しませんでした"
+     ],
+     "reading": [
+      "しませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "しない"
+     ],
+     "reading": [
+      "しない"
+     ]
+    },
+    "past": {
+     "written": [
+      "した"
+     ],
+     "reading": [
+      "した"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "しなかった"
+     ],
+     "reading": [
+      "しなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "して"
+     ],
+     "reading": [
+      "して"
+     ]
+    },
+    "potential": {
+     "written": [
+      "できる",
+      "出来る"
+     ],
+     "reading": [
+      "できる",
+      "できる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "しよう"
+     ],
+     "reading": [
+      "しよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "しましょう"
+     ],
+     "reading": [
+      "しましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "すれば"
+     ],
+     "reading": [
+      "すれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "したら"
+     ],
+     "reading": [
+      "したら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "される"
+     ],
+     "reading": [
+      "される"
+     ]
+    },
+    "causative": {
+     "written": [
+      "させる"
+     ],
+     "reading": [
+      "させる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "する compound 勉強する",
+   "written": "勉強する",
+   "reading": "べんきょうする",
+   "class": "vs-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "勉強します"
+     ],
+     "reading": [
+      "べんきょうします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "勉強しません"
+     ],
+     "reading": [
+      "べんきょうしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "勉強しました"
+     ],
+     "reading": [
+      "べんきょうしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "勉強しませんでした"
+     ],
+     "reading": [
+      "べんきょうしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "勉強しない"
+     ],
+     "reading": [
+      "べんきょうしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "勉強した"
+     ],
+     "reading": [
+      "べんきょうした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "勉強しなかった"
+     ],
+     "reading": [
+      "べんきょうしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "勉強して"
+     ],
+     "reading": [
+      "べんきょうして"
+     ]
+    },
+    "potential": {
+     "written": [
+      "勉強できる",
+      "勉強出来る"
+     ],
+     "reading": [
+      "べんきょうできる",
+      "べんきょうできる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "勉強しよう"
+     ],
+     "reading": [
+      "べんきょうしよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "勉強しましょう"
+     ],
+     "reading": [
+      "べんきょうしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "勉強すれば"
+     ],
+     "reading": [
+      "べんきょうすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "勉強したら"
+     ],
+     "reading": [
+      "べんきょうしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "勉強される"
+     ],
+     "reading": [
+      "べんきょうされる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "勉強させる"
+     ],
+     "reading": [
+      "べんきょうさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "special する 愛する (vs-s)",
+   "written": "愛する",
+   "reading": "あいする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "愛します"
+     ],
+     "reading": [
+      "あいします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "愛しません"
+     ],
+     "reading": [
+      "あいしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "愛しました"
+     ],
+     "reading": [
+      "あいしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "愛しませんでした"
+     ],
+     "reading": [
+      "あいしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "愛さない",
+      "愛しない"
+     ],
+     "reading": [
+      "あいさない",
+      "あいしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "愛した"
+     ],
+     "reading": [
+      "あいした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "愛さなかった",
+      "愛しなかった"
+     ],
+     "reading": [
+      "あいさなかった",
+      "あいしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "愛して"
+     ],
+     "reading": [
+      "あいして"
+     ]
+    },
+    "potential": {
+     "written": [
+      "愛せる"
+     ],
+     "reading": [
+      "あいせる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "愛そう"
+     ],
+     "reading": [
+      "あいそう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "愛しましょう"
+     ],
+     "reading": [
+      "あいしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "愛すれば",
+      "愛せば"
+     ],
+     "reading": [
+      "あいすれば",
+      "あいせば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "愛したら"
+     ],
+     "reading": [
+      "あいしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "愛される"
+     ],
+     "reading": [
+      "あいされる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "愛させる"
+     ],
+     "reading": [
+      "あいさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "分かる: no potential, volitional or passive",
+   "written": "分かる",
+   "reading": "わかる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "分かります"
+     ],
+     "reading": [
+      "わかります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "分かりません"
+     ],
+     "reading": [
+      "わかりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "分かりました"
+     ],
+     "reading": [
+      "わかりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "分かりませんでした"
+     ],
+     "reading": [
+      "わかりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "分からない"
+     ],
+     "reading": [
+      "わからない"
+     ]
+    },
+    "past": {
+     "written": [
+      "分かった"
+     ],
+     "reading": [
+      "わかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "分からなかった"
+     ],
+     "reading": [
+      "わからなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "分かって"
+     ],
+     "reading": [
+      "わかって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "分かれば"
+     ],
+     "reading": [
+      "わかれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "分かったら"
+     ],
+     "reading": [
+      "わかったら"
+     ]
+    },
+    "causative": {
+     "written": [
+      "分からせる"
+     ],
+     "reading": [
+      "わからせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "分かる with its other spellings 判る, 解る: accepted after the headword's",
+   "written": "分かる",
+   "spellings": [
+    "判る",
+    "解る"
+   ],
+   "reading": "わかる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "分かります",
+      "判ります",
+      "解ります"
+     ],
+     "reading": [
+      "わかります",
+      "わかります",
+      "わかります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "分かりません",
+      "判りません",
+      "解りません"
+     ],
+     "reading": [
+      "わかりません",
+      "わかりません",
+      "わかりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "分かりました",
+      "判りました",
+      "解りました"
+     ],
+     "reading": [
+      "わかりました",
+      "わかりました",
+      "わかりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "分かりませんでした",
+      "判りませんでした",
+      "解りませんでした"
+     ],
+     "reading": [
+      "わかりませんでした",
+      "わかりませんでした",
+      "わかりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "分からない",
+      "判らない",
+      "解らない"
+     ],
+     "reading": [
+      "わからない",
+      "わからない",
+      "わからない"
+     ]
+    },
+    "past": {
+     "written": [
+      "分かった",
+      "判った",
+      "解った"
+     ],
+     "reading": [
+      "わかった",
+      "わかった",
+      "わかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "分からなかった",
+      "判らなかった",
+      "解らなかった"
+     ],
+     "reading": [
+      "わからなかった",
+      "わからなかった",
+      "わからなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "分かって",
+      "判って",
+      "解って"
+     ],
+     "reading": [
+      "わかって",
+      "わかって",
+      "わかって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "分かれば",
+      "判れば",
+      "解れば"
+     ],
+     "reading": [
+      "わかれば",
+      "わかれば",
+      "わかれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "分かったら",
+      "判ったら",
+      "解ったら"
+     ],
+     "reading": [
+      "わかったら",
+      "わかったら",
+      "わかったら"
+     ]
+    },
+    "causative": {
+     "written": [
+      "分からせる",
+      "判らせる",
+      "解らせる"
+     ],
+     "reading": [
+      "わからせる",
+      "わからせる",
+      "わからせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "い-adjective 高い",
+   "written": "高い",
+   "reading": "たかい",
+   "class": "adj-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "高いです"
+     ],
+     "reading": [
+      "たかいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "高くないです",
+      "高くありません"
+     ],
+     "reading": [
+      "たかくないです",
+      "たかくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "高かったです"
+     ],
+     "reading": [
+      "たかかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "高くなかったです",
+      "高くありませんでした"
+     ],
+     "reading": [
+      "たかくなかったです",
+      "たかくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "高くない"
+     ],
+     "reading": [
+      "たかくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "高かった"
+     ],
+     "reading": [
+      "たかかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "高くなかった"
+     ],
+     "reading": [
+      "たかくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "高くて"
+     ],
+     "reading": [
+      "たかくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "高ければ"
+     ],
+     "reading": [
+      "たかければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "高かったら"
+     ],
+     "reading": [
+      "たかかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "い-adjective 大きい",
+   "written": "大きい",
+   "reading": "おおきい",
+   "class": "adj-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "大きいです"
+     ],
+     "reading": [
+      "おおきいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "大きくないです",
+      "大きくありません"
+     ],
+     "reading": [
+      "おおきくないです",
+      "おおきくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "大きかったです"
+     ],
+     "reading": [
+      "おおきかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "大きくなかったです",
+      "大きくありませんでした"
+     ],
+     "reading": [
+      "おおきくなかったです",
+      "おおきくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "大きくない"
+     ],
+     "reading": [
+      "おおきくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "大きかった"
+     ],
+     "reading": [
+      "おおきかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "大きくなかった"
+     ],
+     "reading": [
+      "おおきくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "大きくて"
+     ],
+     "reading": [
+      "おおきくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "大きければ"
+     ],
+     "reading": [
+      "おおきければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "大きかったら"
+     ],
+     "reading": [
+      "おおきかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "いい: よくない, よかった",
+   "written": "いい",
+   "reading": "いい",
+   "class": "adj-ix",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "いいです",
+      "よいです"
+     ],
+     "reading": [
+      "いいです",
+      "よいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "よくないです",
+      "よくありません"
+     ],
+     "reading": [
+      "よくないです",
+      "よくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "よかったです"
+     ],
+     "reading": [
+      "よかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "よくなかったです",
+      "よくありませんでした"
+     ],
+     "reading": [
+      "よくなかったです",
+      "よくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "よくない"
+     ],
+     "reading": [
+      "よくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "よかった"
+     ],
+     "reading": [
+      "よかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "よくなかった"
+     ],
+     "reading": [
+      "よくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "よくて"
+     ],
+     "reading": [
+      "よくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "よければ"
+     ],
+     "reading": [
+      "よければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "よかったら"
+     ],
+     "reading": [
+      "よかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "いい written 良い",
+   "written": "良い",
+   "reading": "いい",
+   "class": "adj-ix",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "良いです",
+      "良いです"
+     ],
+     "reading": [
+      "いいです",
+      "よいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "良くないです",
+      "良くありません"
+     ],
+     "reading": [
+      "よくないです",
+      "よくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "良かったです"
+     ],
+     "reading": [
+      "よかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "良くなかったです",
+      "良くありませんでした"
+     ],
+     "reading": [
+      "よくなかったです",
+      "よくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "良くない"
+     ],
+     "reading": [
+      "よくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "良かった"
+     ],
+     "reading": [
+      "よかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "良くなかった"
+     ],
+     "reading": [
+      "よくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "良くて"
+     ],
+     "reading": [
+      "よくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "良ければ"
+     ],
+     "reading": [
+      "よければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "良かったら"
+     ],
+     "reading": [
+      "よかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "かっこいい",
+   "written": "かっこいい",
+   "reading": "かっこいい",
+   "class": "adj-ix",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "かっこいいです"
+     ],
+     "reading": [
+      "かっこいいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "かっこよくないです",
+      "かっこよくありません"
+     ],
+     "reading": [
+      "かっこよくないです",
+      "かっこよくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "かっこよかったです"
+     ],
+     "reading": [
+      "かっこよかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "かっこよくなかったです",
+      "かっこよくありませんでした"
+     ],
+     "reading": [
+      "かっこよくなかったです",
+      "かっこよくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "かっこよくない"
+     ],
+     "reading": [
+      "かっこよくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "かっこよかった"
+     ],
+     "reading": [
+      "かっこよかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "かっこよくなかった"
+     ],
+     "reading": [
+      "かっこよくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "かっこよくて"
+     ],
+     "reading": [
+      "かっこよくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "かっこよければ"
+     ],
+     "reading": [
+      "かっこよければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "かっこよかったら"
+     ],
+     "reading": [
+      "かっこよかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "な-adjective 静か",
+   "written": "静か",
+   "reading": "しずか",
+   "class": "adj-na",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "静かです"
+     ],
+     "reading": [
+      "しずかです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "静かじゃありません",
+      "静かじゃないです",
+      "静かではありません",
+      "静かではないです"
+     ],
+     "reading": [
+      "しずかじゃありません",
+      "しずかじゃないです",
+      "しずかではありません",
+      "しずかではないです"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "静かでした"
+     ],
+     "reading": [
+      "しずかでした"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "静かじゃありませんでした",
+      "静かじゃなかったです",
+      "静かではありませんでした",
+      "静かではなかったです"
+     ],
+     "reading": [
+      "しずかじゃありませんでした",
+      "しずかじゃなかったです",
+      "しずかではありませんでした",
+      "しずかではなかったです"
+     ]
+    },
+    "negative": {
+     "written": [
+      "静かじゃない",
+      "静かではない"
+     ],
+     "reading": [
+      "しずかじゃない",
+      "しずかではない"
+     ]
+    },
+    "past": {
+     "written": [
+      "静かだった"
+     ],
+     "reading": [
+      "しずかだった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "静かじゃなかった",
+      "静かではなかった"
+     ],
+     "reading": [
+      "しずかじゃなかった",
+      "しずかではなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "静かで"
+     ],
+     "reading": [
+      "しずかで"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "静かなら",
+      "静かならば",
+      "静かであれば"
+     ],
+     "reading": [
+      "しずかなら",
+      "しずかならば",
+      "しずかであれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "静かだったら"
+     ],
+     "reading": [
+      "しずかだったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "な-adjective 好き (な-adjective tag first, noun after)",
+   "written": "好き",
+   "reading": "すき",
+   "class": "adj-na",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "好きです"
+     ],
+     "reading": [
+      "すきです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "好きじゃありません",
+      "好きじゃないです",
+      "好きではありません",
+      "好きではないです"
+     ],
+     "reading": [
+      "すきじゃありません",
+      "すきじゃないです",
+      "すきではありません",
+      "すきではないです"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "好きでした"
+     ],
+     "reading": [
+      "すきでした"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "好きじゃありませんでした",
+      "好きじゃなかったです",
+      "好きではありませんでした",
+      "好きではなかったです"
+     ],
+     "reading": [
+      "すきじゃありませんでした",
+      "すきじゃなかったです",
+      "すきではありませんでした",
+      "すきではなかったです"
+     ]
+    },
+    "negative": {
+     "written": [
+      "好きじゃない",
+      "好きではない"
+     ],
+     "reading": [
+      "すきじゃない",
+      "すきではない"
+     ]
+    },
+    "past": {
+     "written": [
+      "好きだった"
+     ],
+     "reading": [
+      "すきだった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "好きじゃなかった",
+      "好きではなかった"
+     ],
+     "reading": [
+      "すきじゃなかった",
+      "すきではなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "好きで"
+     ],
+     "reading": [
+      "すきで"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "好きなら",
+      "好きならば",
+      "好きであれば"
+     ],
+     "reading": [
+      "すきなら",
+      "すきならば",
+      "すきであれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "好きだったら"
+     ],
+     "reading": [
+      "すきだったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "有る in kanji: the negatives in kana",
+   "written": "有る",
+   "reading": "ある",
+   "class": "v5r-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "有ります"
+     ],
+     "reading": [
+      "あります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "有りません",
+      "ないです"
+     ],
+     "reading": [
+      "ありません",
+      "ないです"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "有りました"
+     ],
+     "reading": [
+      "ありました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "有りませんでした",
+      "なかったです"
+     ],
+     "reading": [
+      "ありませんでした",
+      "なかったです"
+     ]
+    },
+    "negative": {
+     "written": [
+      "ない"
+     ],
+     "reading": [
+      "ない"
+     ]
+    },
+    "past": {
+     "written": [
+      "有った"
+     ],
+     "reading": [
+      "あった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "なかった"
+     ],
+     "reading": [
+      "なかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "有って"
+     ],
+     "reading": [
+      "あって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "有れば"
+     ],
+     "reading": [
+      "あれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "有ったら"
+     ],
+     "reading": [
+      "あったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "vs-s without a godan twin 察する: the する forms",
+   "written": "察する",
+   "reading": "さっする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "volitional",
+    "conditional",
+    "passive"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "察します"
+     ],
+     "reading": [
+      "さっします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "察しません"
+     ],
+     "reading": [
+      "さっしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "察しました"
+     ],
+     "reading": [
+      "さっしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "察しませんでした"
+     ],
+     "reading": [
+      "さっしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "察しない"
+     ],
+     "reading": [
+      "さっしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "察した"
+     ],
+     "reading": [
+      "さっした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "察しなかった"
+     ],
+     "reading": [
+      "さっしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "察して"
+     ],
+     "reading": [
+      "さっして"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "察しよう"
+     ],
+     "reading": [
+      "さっしよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "察しましょう"
+     ],
+     "reading": [
+      "さっしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "察すれば"
+     ],
+     "reading": [
+      "さっすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "察したら"
+     ],
+     "reading": [
+      "さっしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "察せられる",
+      "察される"
+     ],
+     "reading": [
+      "さっせられる",
+      "さっされる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "vs-s without a godan twin 罰する",
+   "written": "罰する",
+   "reading": "ばっする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "volitional",
+    "conditional",
+    "passive"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "罰します"
+     ],
+     "reading": [
+      "ばっします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "罰しません"
+     ],
+     "reading": [
+      "ばっしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "罰しました"
+     ],
+     "reading": [
+      "ばっしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "罰しませんでした"
+     ],
+     "reading": [
+      "ばっしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "罰しない"
+     ],
+     "reading": [
+      "ばっしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "罰した"
+     ],
+     "reading": [
+      "ばっした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "罰しなかった"
+     ],
+     "reading": [
+      "ばっしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "罰して"
+     ],
+     "reading": [
+      "ばっして"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "罰しよう"
+     ],
+     "reading": [
+      "ばっしよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "罰しましょう"
+     ],
+     "reading": [
+      "ばっしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "罰すれば"
+     ],
+     "reading": [
+      "ばっすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "罰したら"
+     ],
+     "reading": [
+      "ばっしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "罰せられる",
+      "罰される"
+     ],
+     "reading": [
+      "ばっせられる",
+      "ばっされる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "vs-s without a godan twin 要する: 要しない",
+   "written": "要する",
+   "reading": "ようする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "要します"
+     ],
+     "reading": [
+      "ようします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "要しません"
+     ],
+     "reading": [
+      "ようしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "要しました"
+     ],
+     "reading": [
+      "ようしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "要しませんでした"
+     ],
+     "reading": [
+      "ようしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "要しない"
+     ],
+     "reading": [
+      "ようしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "要した"
+     ],
+     "reading": [
+      "ようした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "要しなかった"
+     ],
+     "reading": [
+      "ようしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "要して"
+     ],
+     "reading": [
+      "ようして"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "要すれば"
+     ],
+     "reading": [
+      "ようすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "要したら"
+     ],
+     "reading": [
+      "ようしたら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "vs-s with a godan twin 訳する: 訳さない, 訳せば",
+   "written": "訳する",
+   "reading": "やくする",
+   "class": "vs-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "訳します"
+     ],
+     "reading": [
+      "やくします"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "訳しません"
+     ],
+     "reading": [
+      "やくしません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "訳しました"
+     ],
+     "reading": [
+      "やくしました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "訳しませんでした"
+     ],
+     "reading": [
+      "やくしませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "訳さない",
+      "訳しない"
+     ],
+     "reading": [
+      "やくさない",
+      "やくしない"
+     ]
+    },
+    "past": {
+     "written": [
+      "訳した"
+     ],
+     "reading": [
+      "やくした"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "訳さなかった",
+      "訳しなかった"
+     ],
+     "reading": [
+      "やくさなかった",
+      "やくしなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "訳して"
+     ],
+     "reading": [
+      "やくして"
+     ]
+    },
+    "potential": {
+     "written": [
+      "訳せる"
+     ],
+     "reading": [
+      "やくせる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "訳そう"
+     ],
+     "reading": [
+      "やくそう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "訳しましょう"
+     ],
+     "reading": [
+      "やくしましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "訳せば",
+      "訳すれば"
+     ],
+     "reading": [
+      "やくせば",
+      "やくすれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "訳したら"
+     ],
+     "reading": [
+      "やくしたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "訳される"
+     ],
+     "reading": [
+      "やくされる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "訳させる"
+     ],
+     "reading": [
+      "やくさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "行く compound 出て行く",
+   "written": "出て行く",
+   "reading": "でていく",
+   "class": "v5k-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "出て行きます"
+     ],
+     "reading": [
+      "でていきます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "出て行きません"
+     ],
+     "reading": [
+      "でていきません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "出て行きました"
+     ],
+     "reading": [
+      "でていきました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "出て行きませんでした"
+     ],
+     "reading": [
+      "でていきませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "出て行かない"
+     ],
+     "reading": [
+      "でていかない"
+     ]
+    },
+    "past": {
+     "written": [
+      "出て行った"
+     ],
+     "reading": [
+      "でていった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "出て行かなかった"
+     ],
+     "reading": [
+      "でていかなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "出て行って"
+     ],
+     "reading": [
+      "でていって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "出て行ける"
+     ],
+     "reading": [
+      "でていける"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "出て行こう"
+     ],
+     "reading": [
+      "でていこう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "出て行きましょう"
+     ],
+     "reading": [
+      "でていきましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "出て行けば"
+     ],
+     "reading": [
+      "でていけば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "出て行ったら"
+     ],
+     "reading": [
+      "でていったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "出て行かれる"
+     ],
+     "reading": [
+      "でていかれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "出て行かせる"
+     ],
+     "reading": [
+      "でていかせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan る 入る (potential 入れる read はいれる)",
+   "written": "入る",
+   "reading": "はいる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "入ります"
+     ],
+     "reading": [
+      "はいります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "入りません"
+     ],
+     "reading": [
+      "はいりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "入りました"
+     ],
+     "reading": [
+      "はいりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "入りませんでした"
+     ],
+     "reading": [
+      "はいりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "入らない"
+     ],
+     "reading": [
+      "はいらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "入った"
+     ],
+     "reading": [
+      "はいった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "入らなかった"
+     ],
+     "reading": [
+      "はいらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "入って"
+     ],
+     "reading": [
+      "はいって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "入れる"
+     ],
+     "reading": [
+      "はいれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "入ろう"
+     ],
+     "reading": [
+      "はいろう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "入りましょう"
+     ],
+     "reading": [
+      "はいりましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "入れば"
+     ],
+     "reading": [
+      "はいれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "入ったら"
+     ],
+     "reading": [
+      "はいったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "入られる"
+     ],
+     "reading": [
+      "はいられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "入らせる"
+     ],
+     "reading": [
+      "はいらせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan る 切る",
+   "written": "切る",
+   "reading": "きる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "切ります"
+     ],
+     "reading": [
+      "きります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "切りません"
+     ],
+     "reading": [
+      "きりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "切りました"
+     ],
+     "reading": [
+      "きりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "切りませんでした"
+     ],
+     "reading": [
+      "きりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "切らない"
+     ],
+     "reading": [
+      "きらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "切った"
+     ],
+     "reading": [
+      "きった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "切らなかった"
+     ],
+     "reading": [
+      "きらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "切って"
+     ],
+     "reading": [
+      "きって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "切れる"
+     ],
+     "reading": [
+      "きれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "切ろう"
+     ],
+     "reading": [
+      "きろう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "切りましょう"
+     ],
+     "reading": [
+      "きりましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "切れば"
+     ],
+     "reading": [
+      "きれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "切ったら"
+     ],
+     "reading": [
+      "きったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "切られる"
+     ],
+     "reading": [
+      "きられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "切らせる"
+     ],
+     "reading": [
+      "きらせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "ichidan 着る (same reading as 切る)",
+   "written": "着る",
+   "reading": "きる",
+   "class": "v1",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "着ます"
+     ],
+     "reading": [
+      "きます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "着ません"
+     ],
+     "reading": [
+      "きません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "着ました"
+     ],
+     "reading": [
+      "きました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "着ませんでした"
+     ],
+     "reading": [
+      "きませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "着ない"
+     ],
+     "reading": [
+      "きない"
+     ]
+    },
+    "past": {
+     "written": [
+      "着た"
+     ],
+     "reading": [
+      "きた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "着なかった"
+     ],
+     "reading": [
+      "きなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "着て"
+     ],
+     "reading": [
+      "きて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "着られる",
+      "着れる"
+     ],
+     "reading": [
+      "きられる",
+      "きれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "着よう"
+     ],
+     "reading": [
+      "きよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "着ましょう"
+     ],
+     "reading": [
+      "きましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "着れば"
+     ],
+     "reading": [
+      "きれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "着たら"
+     ],
+     "reading": [
+      "きたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "着られる"
+     ],
+     "reading": [
+      "きられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "着させる"
+     ],
+     "reading": [
+      "きさせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan る 要る: only the forms it uses",
+   "written": "要る",
+   "reading": "いる",
+   "class": "v5r",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "要ります"
+     ],
+     "reading": [
+      "いります"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "要りません"
+     ],
+     "reading": [
+      "いりません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "要りました"
+     ],
+     "reading": [
+      "いりました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "要りませんでした"
+     ],
+     "reading": [
+      "いりませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "要らない"
+     ],
+     "reading": [
+      "いらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "要った"
+     ],
+     "reading": [
+      "いった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "要らなかった"
+     ],
+     "reading": [
+      "いらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "要って"
+     ],
+     "reading": [
+      "いって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "要れば"
+     ],
+     "reading": [
+      "いれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "要ったら"
+     ],
+     "reading": [
+      "いったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "出来る is ichidan, not 来る",
+   "written": "出来る",
+   "reading": "できる",
+   "class": "v1",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "出来ます"
+     ],
+     "reading": [
+      "できます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "出来ません"
+     ],
+     "reading": [
+      "できません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "出来ました"
+     ],
+     "reading": [
+      "できました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "出来ませんでした"
+     ],
+     "reading": [
+      "できませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "出来ない"
+     ],
+     "reading": [
+      "できない"
+     ]
+    },
+    "past": {
+     "written": [
+      "出来た"
+     ],
+     "reading": [
+      "できた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "出来なかった"
+     ],
+     "reading": [
+      "できなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "出来て"
+     ],
+     "reading": [
+      "できて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "出来れば"
+     ],
+     "reading": [
+      "できれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "出来たら"
+     ],
+     "reading": [
+      "できたら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "godan う 言う",
+   "written": "言う",
+   "reading": "いう",
+   "class": "v5u",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "言います"
+     ],
+     "reading": [
+      "いいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "言いません"
+     ],
+     "reading": [
+      "いいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "言いました"
+     ],
+     "reading": [
+      "いいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "言いませんでした"
+     ],
+     "reading": [
+      "いいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "言わない"
+     ],
+     "reading": [
+      "いわない"
+     ]
+    },
+    "past": {
+     "written": [
+      "言った"
+     ],
+     "reading": [
+      "いった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "言わなかった"
+     ],
+     "reading": [
+      "いわなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "言って"
+     ],
+     "reading": [
+      "いって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "言える"
+     ],
+     "reading": [
+      "いえる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "言おう"
+     ],
+     "reading": [
+      "いおう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "言いましょう"
+     ],
+     "reading": [
+      "いいましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "言えば"
+     ],
+     "reading": [
+      "いえば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "言ったら"
+     ],
+     "reading": [
+      "いったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "言われる"
+     ],
+     "reading": [
+      "いわれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "言わせる"
+     ],
+     "reading": [
+      "いわせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "行う is godan う, not 行く",
+   "written": "行う",
+   "reading": "おこなう",
+   "class": "v5u",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "行います"
+     ],
+     "reading": [
+      "おこないます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "行いません"
+     ],
+     "reading": [
+      "おこないません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "行いました"
+     ],
+     "reading": [
+      "おこないました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "行いませんでした"
+     ],
+     "reading": [
+      "おこないませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "行わない"
+     ],
+     "reading": [
+      "おこなわない"
+     ]
+    },
+    "past": {
+     "written": [
+      "行った"
+     ],
+     "reading": [
+      "おこなった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "行わなかった"
+     ],
+     "reading": [
+      "おこなわなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "行って"
+     ],
+     "reading": [
+      "おこなって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "行える"
+     ],
+     "reading": [
+      "おこなえる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "行おう"
+     ],
+     "reading": [
+      "おこなおう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "行いましょう"
+     ],
+     "reading": [
+      "おこないましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "行えば"
+     ],
+     "reading": [
+      "おこなえば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "行ったら"
+     ],
+     "reading": [
+      "おこなったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "行われる"
+     ],
+     "reading": [
+      "おこなわれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "行わせる"
+     ],
+     "reading": [
+      "おこなわせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "irregular 請う: 請うて, 請うた",
+   "written": "請う",
+   "reading": "こう",
+   "class": "v5u-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "請います"
+     ],
+     "reading": [
+      "こいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "請いません"
+     ],
+     "reading": [
+      "こいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "請いました"
+     ],
+     "reading": [
+      "こいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "請いませんでした"
+     ],
+     "reading": [
+      "こいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "請わない"
+     ],
+     "reading": [
+      "こわない"
+     ]
+    },
+    "past": {
+     "written": [
+      "請うた"
+     ],
+     "reading": [
+      "こうた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "請わなかった"
+     ],
+     "reading": [
+      "こわなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "請うて"
+     ],
+     "reading": [
+      "こうて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "請える"
+     ],
+     "reading": [
+      "こえる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "請おう"
+     ],
+     "reading": [
+      "こおう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "請いましょう"
+     ],
+     "reading": [
+      "こいましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "請えば"
+     ],
+     "reading": [
+      "こえば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "請うたら"
+     ],
+     "reading": [
+      "こうたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "請われる"
+     ],
+     "reading": [
+      "こわれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "請わせる"
+     ],
+     "reading": [
+      "こわせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "honorific おっしゃる",
+   "written": "おっしゃる",
+   "reading": "おっしゃる",
+   "class": "v5aru",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "おっしゃいます"
+     ],
+     "reading": [
+      "おっしゃいます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "おっしゃいません"
+     ],
+     "reading": [
+      "おっしゃいません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "おっしゃいました"
+     ],
+     "reading": [
+      "おっしゃいました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "おっしゃいませんでした"
+     ],
+     "reading": [
+      "おっしゃいませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "おっしゃらない"
+     ],
+     "reading": [
+      "おっしゃらない"
+     ]
+    },
+    "past": {
+     "written": [
+      "おっしゃった"
+     ],
+     "reading": [
+      "おっしゃった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "おっしゃらなかった"
+     ],
+     "reading": [
+      "おっしゃらなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "おっしゃって"
+     ],
+     "reading": [
+      "おっしゃって"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "おっしゃれば"
+     ],
+     "reading": [
+      "おっしゃれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "おっしゃったら"
+     ],
+     "reading": [
+      "おっしゃったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "ござる: the polite forms only",
+   "written": "ござる",
+   "reading": "ござる",
+   "class": "v5aru",
+   "families": [
+    "polite",
+    "polite-past"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "ございます"
+     ],
+     "reading": [
+      "ございます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "ございません"
+     ],
+     "reading": [
+      "ございません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "ございました"
+     ],
+     "reading": [
+      "ございました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "ございませんでした"
+     ],
+     "reading": [
+      "ございませんでした"
+     ]
+    }
+   }
+  },
+  {
+   "name": "い-adjective かわいい (not いい)",
+   "written": "かわいい",
+   "reading": "かわいい",
+   "class": "adj-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "かわいいです"
+     ],
+     "reading": [
+      "かわいいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "かわいくないです",
+      "かわいくありません"
+     ],
+     "reading": [
+      "かわいくないです",
+      "かわいくありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "かわいかったです"
+     ],
+     "reading": [
+      "かわいかったです"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "かわいくなかったです",
+      "かわいくありませんでした"
+     ],
+     "reading": [
+      "かわいくなかったです",
+      "かわいくありませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "かわいくない"
+     ],
+     "reading": [
+      "かわいくない"
+     ]
+    },
+    "past": {
+     "written": [
+      "かわいかった"
+     ],
+     "reading": [
+      "かわいかった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "かわいくなかった"
+     ],
+     "reading": [
+      "かわいくなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "かわいくて"
+     ],
+     "reading": [
+      "かわいくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "かわいければ"
+     ],
+     "reading": [
+      "かわいければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "かわいかったら"
+     ],
+     "reading": [
+      "かわいかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "ない: no double negatives",
+   "written": "ない",
+   "reading": "ない",
+   "class": "adj-i",
+   "families": [
+    "polite",
+    "polite-past",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "ないです",
+      "ありません"
+     ],
+     "reading": [
+      "ないです",
+      "ありません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "なかったです",
+      "ありませんでした"
+     ],
+     "reading": [
+      "なかったです",
+      "ありませんでした"
+     ]
+    },
+    "past": {
+     "written": [
+      "なかった"
+     ],
+     "reading": [
+      "なかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "なくて"
+     ],
+     "reading": [
+      "なくて"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "なければ"
+     ],
+     "reading": [
+      "なければ"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "なかったら"
+     ],
+     "reading": [
+      "なかったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "な-adjective ending in い: きれい",
+   "written": "きれい",
+   "reading": "きれい",
+   "class": "adj-na",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "conditional"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "きれいです"
+     ],
+     "reading": [
+      "きれいです"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "きれいじゃありません",
+      "きれいじゃないです",
+      "きれいではありません",
+      "きれいではないです"
+     ],
+     "reading": [
+      "きれいじゃありません",
+      "きれいじゃないです",
+      "きれいではありません",
+      "きれいではないです"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "きれいでした"
+     ],
+     "reading": [
+      "きれいでした"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "きれいじゃありませんでした",
+      "きれいじゃなかったです",
+      "きれいではありませんでした",
+      "きれいではなかったです"
+     ],
+     "reading": [
+      "きれいじゃありませんでした",
+      "きれいじゃなかったです",
+      "きれいではありませんでした",
+      "きれいではなかったです"
+     ]
+    },
+    "negative": {
+     "written": [
+      "きれいじゃない",
+      "きれいではない"
+     ],
+     "reading": [
+      "きれいじゃない",
+      "きれいではない"
+     ]
+    },
+    "past": {
+     "written": [
+      "きれいだった"
+     ],
+     "reading": [
+      "きれいだった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "きれいじゃなかった",
+      "きれいではなかった"
+     ],
+     "reading": [
+      "きれいじゃなかった",
+      "きれいではなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "きれいで"
+     ],
+     "reading": [
+      "きれいで"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "きれいなら",
+      "きれいならば",
+      "きれいであれば"
+     ],
+     "reading": [
+      "きれいなら",
+      "きれいならば",
+      "きれいであれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "きれいだったら"
+     ],
+     "reading": [
+      "きれいだったら"
+     ]
+    }
+   }
+  },
+  {
+   "name": "行く read ゆく: いった, いって",
+   "written": "行く",
+   "reading": "ゆく",
+   "class": "v5k-s",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "行きます"
+     ],
+     "reading": [
+      "ゆきます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "行きません"
+     ],
+     "reading": [
+      "ゆきません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "行きました"
+     ],
+     "reading": [
+      "ゆきました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "行きませんでした"
+     ],
+     "reading": [
+      "ゆきませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "行かない"
+     ],
+     "reading": [
+      "ゆかない"
+     ]
+    },
+    "past": {
+     "written": [
+      "行った"
+     ],
+     "reading": [
+      "いった"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "行かなかった"
+     ],
+     "reading": [
+      "ゆかなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "行って"
+     ],
+     "reading": [
+      "いって"
+     ]
+    },
+    "potential": {
+     "written": [
+      "行ける"
+     ],
+     "reading": [
+      "ゆける"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "行こう"
+     ],
+     "reading": [
+      "ゆこう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "行きましょう"
+     ],
+     "reading": [
+      "ゆきましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "行けば"
+     ],
+     "reading": [
+      "ゆけば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "行ったら"
+     ],
+     "reading": [
+      "いったら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "行かれる"
+     ],
+     "reading": [
+      "ゆかれる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "行かせる"
+     ],
+     "reading": [
+      "ゆかせる"
+     ]
+    }
+   }
+  },
+  {
+   "name": "来る compound 持って来る",
+   "written": "持って来る",
+   "reading": "もってくる",
+   "class": "vk",
+   "families": [
+    "polite",
+    "polite-past",
+    "negative",
+    "past",
+    "te-form",
+    "potential",
+    "volitional",
+    "conditional",
+    "passive",
+    "causative"
+   ],
+   "forms": {
+    "polite": {
+     "written": [
+      "持って来ます"
+     ],
+     "reading": [
+      "もってきます"
+     ]
+    },
+    "polite-negative": {
+     "written": [
+      "持って来ません"
+     ],
+     "reading": [
+      "もってきません"
+     ]
+    },
+    "polite-past": {
+     "written": [
+      "持って来ました"
+     ],
+     "reading": [
+      "もってきました"
+     ]
+    },
+    "polite-past-negative": {
+     "written": [
+      "持って来ませんでした"
+     ],
+     "reading": [
+      "もってきませんでした"
+     ]
+    },
+    "negative": {
+     "written": [
+      "持って来ない"
+     ],
+     "reading": [
+      "もってこない"
+     ]
+    },
+    "past": {
+     "written": [
+      "持って来た"
+     ],
+     "reading": [
+      "もってきた"
+     ]
+    },
+    "past-negative": {
+     "written": [
+      "持って来なかった"
+     ],
+     "reading": [
+      "もってこなかった"
+     ]
+    },
+    "te": {
+     "written": [
+      "持って来て"
+     ],
+     "reading": [
+      "もってきて"
+     ]
+    },
+    "potential": {
+     "written": [
+      "持って来られる",
+      "持って来れる"
+     ],
+     "reading": [
+      "もってこられる",
+      "もってこれる"
+     ]
+    },
+    "volitional": {
+     "written": [
+      "持って来よう"
+     ],
+     "reading": [
+      "もってこよう"
+     ]
+    },
+    "polite-volitional": {
+     "written": [
+      "持って来ましょう"
+     ],
+     "reading": [
+      "もってきましょう"
+     ]
+    },
+    "conditional-ba": {
+     "written": [
+      "持って来れば"
+     ],
+     "reading": [
+      "もってくれば"
+     ]
+    },
+    "conditional-tara": {
+     "written": [
+      "持って来たら"
+     ],
+     "reading": [
+      "もってきたら"
+     ]
+    },
+    "passive": {
+     "written": [
+      "持って来られる"
+     ],
+     "reading": [
+      "もってこられる"
+     ]
+    },
+    "causative": {
+     "written": [
+      "持って来させる"
+     ],
+     "reading": [
+      "もってこさせる"
+     ]
+    }
+   }
+  }
+ ],
+ "ineligible": [
+  {
+   "name": "the reading does not end in the class's ending",
+   "written": "書く",
+   "reading": "かか",
+   "class": "v5k"
+  },
+  {
+   "name": "the written form does not end in the ending",
+   "written": "書",
+   "reading": "かく",
+   "class": "v5k"
+  },
+  {
+   "name": "a reading that is not hiragana",
+   "written": "書く",
+   "reading": "kaku",
+   "class": "v5k"
+  },
+  {
+   "name": "a reading in katakana",
+   "written": "カク",
+   "reading": "カク",
+   "class": "v5k"
+  },
+  {
+   "name": "only the ending",
+   "written": "る",
+   "reading": "る",
+   "class": "v1"
+  },
+  {
+   "name": "する written 為る",
+   "written": "為る",
+   "reading": "する",
+   "class": "vs-i"
+  },
+  {
+   "name": "an unknown class",
+   "written": "書く",
+   "reading": "かく",
+   "class": "v4k"
+  },
+  {
+   "name": "an empty な-adjective",
+   "written": "",
+   "reading": "",
+   "class": "adj-na"
+  },
+  {
+   "name": "関する: every form excluded",
+   "written": "関する",
+   "reading": "かんする",
+   "class": "vs-s"
+  },
+  {
+   "name": "要る in kana: not drilled (いる could be 居る)",
+   "written": "いる",
+   "reading": "いる",
+   "class": "v5r"
+  },
+  {
+   "name": "来る read きたる (literary)",
+   "written": "来る",
+   "reading": "きたる",
+   "class": "v5r"
+  },
+  {
+   "name": "a ずる verb is not a class",
+   "written": "信ずる",
+   "reading": "しんずる",
+   "class": "vz"
+  }
+ ],
+ "lemmaGaps": [
+  "あいする あいさない",
+  "あいする あいさなかった",
+  "あいする あいしたら",
+  "あいする あいせば",
+  "あいする あいせる",
+  "あいする あいそう",
+  "ある ない",
+  "ある ないです",
+  "ある なかった",
+  "ある なかったです",
+  "いい いいです",
+  "いい よいです",
+  "いい よかった",
+  "いい よかったです",
+  "いい よかったら",
+  "いい よくありません",
+  "いい よくありませんでした",
+  "いい よくて",
+  "いい よくない",
+  "いい よくないです",
+  "いい よくなかった",
+  "いい よくなかったです",
+  "いい よければ",
+  "いく いったら",
+  "いらっしゃる いらした",
+  "いらっしゃる いらしたら",
+  "いらっしゃる いらして",
+  "いらっしゃる いらっしゃいました",
+  "いらっしゃる いらっしゃいます",
+  "いらっしゃる いらっしゃいません",
+  "いらっしゃる いらっしゃいませんでした",
+  "おおきい おおきいです",
+  "おおきい おおきかったです",
+  "おおきい おおきかったら",
+  "おおきい おおきくありません",
+  "おおきい おおきくありませんでした",
+  "おおきい おおきくないです",
+  "おおきい おおきくなかったです",
+  "おっしゃる おっしゃいました",
+  "おっしゃる おっしゃいます",
+  "おっしゃる おっしゃいません",
+  "おっしゃる おっしゃいませんでした",
+  "かっこいい かっこいいです",
+  "かっこいい かっこよかった",
+  "かっこいい かっこよかったです",
+  "かっこいい かっこよかったら",
+  "かっこいい かっこよくありません",
+  "かっこいい かっこよくありませんでした",
+  "かっこいい かっこよくて",
+  "かっこいい かっこよくない",
+  "かっこいい かっこよくないです",
+  "かっこいい かっこよくなかった",
+  "かっこいい かっこよくなかったです",
+  "かっこいい かっこよければ",
+  "かわいい かわいいです",
+  "かわいい かわいかったです",
+  "かわいい かわいかったら",
+  "かわいい かわいくありません",
+  "かわいい かわいくありませんでした",
+  "かわいい かわいくないです",
+  "かわいい かわいくなかったです",
+  "くださる くださいました",
+  "くださる くださいます",
+  "くださる くださいません",
+  "くださる くださいませんでした",
+  "くる きたら",
+  "くる くれば",
+  "くる こさせる",
+  "くる こよう",
+  "くる こられる",
+  "くる これる",
+  "こう こうた",
+  "こう こうたら",
+  "こう こうて",
+  "ござる ございました",
+  "ござる ございます",
+  "ござる ございません",
+  "ござる ございませんでした",
+  "さっする さっしたら",
+  "さっする さっせられる",
+  "する したら",
+  "する できる",
+  "する 出来る",
+  "たかい たかいです",
+  "たかい たかかったです",
+  "たかい たかかったら",
+  "たかい たかくありません",
+  "たかい たかくありませんでした",
+  "たかい たかくないです",
+  "たかい たかくなかったです",
+  "でていく でていったら",
+  "とう とうた",
+  "とう とうたら",
+  "とう とうて",
+  "ない ありません",
+  "ない ありませんでした",
+  "ない ないです",
+  "ない なかったです",
+  "ない なかったら",
+  "なさる なさいました",
+  "なさる なさいます",
+  "なさる なさいません",
+  "なさる なさいませんでした",
+  "ばっする ばっしたら",
+  "ばっする ばっせられる",
+  "べんきょうする べんきょうしたら",
+  "べんきょうする べんきょうできる",
+  "もってくる もってこさせる",
+  "もってくる もってこられる",
+  "もってくる もってこれる",
+  "やくする やくさない",
+  "やくする やくさなかった",
+  "やくする やくしたら",
+  "やくする やくせば",
+  "やくする やくせる",
+  "やくする やくそう",
+  "ゆく いった",
+  "ゆく いったら",
+  "ゆく いって",
+  "ようする ようしたら",
+  "下さる 下さいました",
+  "下さる 下さいます",
+  "下さる 下さいません",
+  "下さる 下さいませんでした",
+  "出て行く 出て行ったら",
+  "勉強する 勉強したら",
+  "勉強する 勉強できる",
+  "勉強する 勉強出来る",
+  "問う 問うた",
+  "問う 問うたら",
+  "問う 問うて",
+  "大きい 大きいです",
+  "大きい 大きかったです",
+  "大きい 大きかったら",
+  "大きい 大きくありません",
+  "大きい 大きくありませんでした",
+  "大きい 大きくないです",
+  "大きい 大きくなかったです",
+  "察する 察したら",
+  "察する 察せられる",
+  "愛する 愛さない",
+  "愛する 愛さなかった",
+  "愛する 愛したら",
+  "愛する 愛せば",
+  "愛する 愛せる",
+  "愛する 愛そう",
+  "有る ない",
+  "有る ないです",
+  "有る なかった",
+  "有る なかったです",
+  "罰する 罰したら",
+  "罰する 罰せられる",
+  "良い 良いです",
+  "良い 良かった",
+  "良い 良かったです",
+  "良い 良かったら",
+  "良い 良くありません",
+  "良い 良くありませんでした",
+  "良い 良くて",
+  "良い 良くない",
+  "良い 良くないです",
+  "良い 良くなかった",
+  "良い 良くなかったです",
+  "良い 良ければ",
+  "行く 行ったら",
+  "要する 要したら",
+  "訳する 訳さない",
+  "訳する 訳さなかった",
+  "訳する 訳したら",
+  "訳する 訳せば",
+  "訳する 訳せる",
+  "訳する 訳そう",
+  "請う 請うた",
+  "請う 請うたら",
+  "請う 請うて",
+  "高い 高いです",
+  "高い 高かったです",
+  "高い 高かったら",
+  "高い 高くありません",
+  "高い 高くありませんでした",
+  "高い 高くないです",
+  "高い 高くなかったです"
+ ]
+}

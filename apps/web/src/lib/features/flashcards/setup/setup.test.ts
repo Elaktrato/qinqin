@@ -118,4 +118,10 @@ describe('setupSessionConfig', () => {
 		const config = setupSessionConfig(defaultSetup(), ['general'], ['vocab'], { seed: 1, from: '/', studyAll: true });
 		expect(config.studyAll).toBe(true);
 	});
+	it('includes grammar review only when the setup has it and the grammar feature is on (#181)', () => {
+		const on = { ...defaultSetup(), grammar: true };
+		expect(setupSessionConfig(on, ['general'], ['vocab'], { seed: 1, from: '/', grammar: true }).grammar).toBe(true);
+		expect(setupSessionConfig(on, ['general'], ['vocab'], { seed: 1, from: '/', grammar: false }).grammar).toBeUndefined();
+		expect(setupSessionConfig(defaultSetup(), ['general'], ['vocab'], { seed: 1, from: '/', grammar: true }).grammar).toBeUndefined();
+	});
 });

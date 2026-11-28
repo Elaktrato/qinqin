@@ -526,7 +526,7 @@
      "type": "grammar",
      "payload": {
       "point": "p:l",
-      "mode": "review",
+      "mode": "quiz",
       "score": 1,
       "total": 1
      }
@@ -547,6 +547,37 @@
    ],
    "expect": {
     "xp": 0,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "a grammar review run (#181) earns what a lesson run does",
+   "note": "a review run is a grammar run: 20 EXP (lessonRunXp) whatever its score; no daily bonus without a review",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA00000000000000000000G4",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "grammar",
+     "payload": {
+      "point": "p:l",
+      "mode": "review",
+      "score": 1,
+      "total": 3
+     }
+    }
+   ],
+   "expect": {
+    "xp": 20,
     "byKind": {
      "vocab": 0,
      "sentence": 0,

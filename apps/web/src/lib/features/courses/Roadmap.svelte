@@ -1,6 +1,6 @@
 <script lang="ts">
 	// The course roadmap (#222): the path of sections and units, the next step one tap away, the unit tests and
-	// section exams to skip ahead, the words of skipped units to add as cards, and the word marks along the way. The
+	// section exams to skip ahead, placement for a learner who knows some already (#224), the words of skipped units to add as cards, and the word marks along the way. The
 	// model is roadmap.ts; loading is CourseView.
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -131,6 +131,9 @@
 				<Button variant="primary" href={map.next.href}>{t('courses.roadmap.continue', { lesson: map.next.label })}</Button>
 			{:else}
 				<p role="status">{t('courses.roadmap.finished')}</p>
+			{/if}
+			{#if map.placement}
+				<Button href={map.placement}>{t('courses.roadmap.findPlace')}</Button>
 			{/if}
 			{#if view.stale}<p class="quiet" role="status">{t('courses.roadmap.stale')}</p>{/if}
 			{#if message}<p role="status">{message}</p>{/if}

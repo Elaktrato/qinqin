@@ -14,6 +14,8 @@
 	import { here } from '$lib/routing/here';
 	import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 	import { enabledKinds } from '$lib/studycore/deckSettings';
+	import { GRAMMAR_ID, featureEnabled } from '$lib/features';
+	import { loadReview } from '$lib/features/grammar/review/review';
 	import { newSessionSeed, saveConfig } from '../session/session';
 	import { repairSetup, setupDeckIds, setupKinds, setupSessionConfig } from './setup';
 	import { planSetup } from './setupPlan';
@@ -48,6 +50,25 @@
 		const lang = session.workspaces.current?.language ?? null;
 		void data.load(ws, lang);
 		if (ws !== null) void session.setups.refresh(ws);
+	});
+
+	// Grammar review (#181): a setup choice while the grammar feature is on, with the points due now.
+	const grammarOn = $derived(session.features.status === 'ready' && featureEnabled(GRAMMAR_ID, session.features.list));
+	let grammarDue = $state<number | null>(null);
+	$effect(() => {
+		const ws = session.workspaces.current;
+		grammarDue = null;
+		if (!modal.open || !grammarOn || ws === null) return;
+		let cancelled = false;
+		void loadReview(session, ws).then(
+			(d) => {
+				if (!cancelled) grammarDue = d.round.due + d.round.new;
+			},
+			() => undefined
+		);
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	const entry = $derived(workspaceId === null ? null : session.setups.of(workspaceId));
@@ -119,7 +140,11 @@
 			: vacationBanner(vacationStatus(data.vacations, workspaceId, data.ctx.day.today()), data.ctx.day.today())
 	);
 	const note = $derived(repaired === null ? null : noteText(repaired.notes));
-	const canStart = $derived(plan !== null && ready && plan.guidance === '' && vacationText === null);
+	const withGrammar = $derived(grammarOn && setup?.grammar === true);
+	// Cards to study, or due grammar points in a session that includes them.
+	const canStart = $derived(
+		plan !== null && ready && vacationText === null && (plan.guidance === '' || (withGrammar && (grammarDue ?? 0) > 0))
+	);
 	const canStudyAll = $derived(
 		plan !== null && ready && vacationText === null && (plan.guidance === '' || plan.allCounts.due + plan.allCounts.fresh > 0)
 	);
@@ -150,9 +175,15 @@
 		void session.setups.update(ws, chipPatch(setup, id, enabled, language, available));
 	}
 
+	function toggleGrammar(): void {
+		const ws = workspaceId;
+		if (ws === null || setup === null) return;
+		void session.setups.update(ws, { grammar: !setup.grammar });
+	}
+
 	function start(studyAll = false): void {
 		if (setup === null || workspaceId === null) return;
-		saveConfig(setupSessionConfig(setup, deckIds, kinds, { studyAll, seed: newSessionSeed(), from: here() }));
+		saveConfig(setupSessionConfig(setup, deckIds, kinds, { studyAll, seed: newSessionSeed(), from: here(), grammar: grammarOn }));
 		modal.hide();
 		void goto('/study/session');
 	}
@@ -199,6 +230,12 @@
 						<span>{chip.label}</span>
 					</label>
 				{/each}
+				{#if grammarOn}
+					<label class="chip" class:checked={setup.grammar}>
+						<input type="checkbox" checked={setup.grammar} disabled={!entry?.known} onchange={toggleGrammar} />
+						<span>{grammarDue === null ? t('study.modal.grammar') : t('study.modal.grammarCount', { count: grammarDue })}</span>
+					</label>
+				{/if}
 			</fieldset>
 			{#each hiddenLines as line (line)}<p class="line muted hidden-types">{line}</p>{/each}
 			{#if ready && plan.warnings.length > 0}

@@ -6,6 +6,7 @@ import type { Course, CourseLesson, CourseTitle } from '$lib/api/courses';
 import { t } from '$lib/i18n';
 import { NEXT_TEST, type CourseState, type LessonStatus, type Status } from '$lib/studycore/courseProgress';
 import { courseHref } from './route';
+import { placementFirst } from './tests';
 
 /** The words-met marks shown along the path (Ruling 26). */
 export const MILESTONE_WORDS: readonly number[] = [50, 100, 250, 500, 1000, 1500, 2000, 3000];
@@ -60,6 +61,8 @@ export interface Roadmap {
 	met: number;
 	/** Words in the course. */
 	total: number;
+	/** "Find your place" (#224): the first placement exam, while the learner has not started past the start; else null. */
+	placement: string | null;
 }
 
 /** titleText: a course title in the interface language, else English. */
@@ -163,5 +166,12 @@ export function roadmap(course: Course, state: CourseState, language = 'en'): Ro
 		// Every unit is done: a catch-up lesson is what is left, if any.
 		for (const s of sections) for (const u of s.units) if (next === null && u.catchUp.length > 0) next = { href: u.catchUp[0].href!, label: u.catchUp[0].label, unit: u.id };
 	}
-	return { sections, next, met: state.met.length, total };
+	// Placement is offered until a unit of a section with an exam is done or anything was skipped (#224, Ruling 15).
+	const started = course.sections.some((s) => {
+		const ss = sectionStates.get(s.id)!;
+		return ss.units.some((u) => u.skipped || (s.exam && u.status === 'done'));
+	});
+	const first = placementFirst(course.sections);
+	const placement = started || first === null ? null : courseHref({ view: 'placement', course: course.id, section: first });
+	return { sections, next, met: state.met.length, total, placement };
 }

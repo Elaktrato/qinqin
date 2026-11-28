@@ -7,7 +7,8 @@ describe('course routes (#222)', () => {
 		['zh-course', { view: 'roadmap', course: 'zh-course' }],
 		['play/zh-course/hello/words-1', { view: 'lesson', course: 'zh-course', unit: 'hello', lesson: 'words-1' }],
 		['play/zh-course/hello/test', { view: 'test', course: 'zh-course', unit: 'hello' }],
-		['play/zh-course/section/level-1/exam', { view: 'exam', course: 'zh-course', section: 'level-1' }]
+		['play/zh-course/section/level-1/exam', { view: 'exam', course: 'zh-course', section: 'level-1' }],
+		['play/zh-course/section/level-1/placement', { view: 'placement', course: 'zh-course', section: 'level-1' }]
 	];
 	it.each(cases)('parses %s and builds it back', (rest, route) => {
 		expect(parseCourseRoute(rest)).toEqual(route);

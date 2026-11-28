@@ -49,6 +49,7 @@ vi.mock('$lib/notes/store', () => ({
 	loadNoteCfg: vi.fn(async () => ({ onAnswer: true, extra: {} }))
 }));
 vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/features/grammar/review/ReviewRound.svelte', async () => ({ default: (await import('$lib/testing/FakeGrammarReview.svelte')).default }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/features/flashcards/session/sessionMix', async (importOriginal) => {
 	const real = await importOriginal<typeof import('$lib/features/flashcards/session/sessionMix')>();
@@ -1158,5 +1159,54 @@ describe('the eligibility index plans the session (#288)', () => {
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(32));
 		expect(getEntry).not.toHaveBeenCalledWith(31);
 		expect(getEntry).not.toHaveBeenCalledWith(33);
+	});
+});
+
+describe('grammar review in a session (#181)', () => {
+	function configure(grammar: boolean): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], grammar })
+		);
+	}
+	const grammarOn = (enabled: boolean) => ctx.session.features.set({ list: [{ id: 'grammar', enabled }], status: 'ready' });
+	const word = (id: number): StudyCard => build.card({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'] });
+
+	it('runs the round after the cards, then the summary counts the points and their EXP', async () => {
+		configure(true);
+		grammarOn(true);
+		history([word(11)], []);
+		render(Page, { context: ctx.context });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(screen.getByRole('button', { name: /^Good/ }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Finish grammar' }));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		expect(screen.getByText('grammar point')).toBeTruthy();
+		expect(screen.getByRole('list', { name: 'XP by card type' }).textContent).toContain('Grammar +20');
+	});
+
+	it('runs the round when no card is due', async () => {
+		configure(true);
+		grammarOn(true);
+		history([], []);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByRole('heading', { name: 'Grammar review', level: 1 })).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Finish grammar' }));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+	});
+
+	it('runs no round when the setup leaves it out or the grammar feature is off', async () => {
+		configure(true);
+		grammarOn(false);
+		history([], []);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText('Nothing to study')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Finish grammar' })).toBeNull();
+		cleanup();
+		configure(false);
+		grammarOn(true);
+		render(Page, { context: ctx.context });
+		expect(await screen.findByText('Nothing to study')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Finish grammar' })).toBeNull();
 	});
 });

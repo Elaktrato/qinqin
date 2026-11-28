@@ -28,6 +28,8 @@ export interface StudySetup {
 	reviewLimit: number;
 	newOrder: SessionNewOrder;
 	typeOrder: TypeOrder;
+	/** Run the grammar review round after the cards (#181); only while the grammar feature is on. */
+	grammar: boolean;
 }
 
 /** Why a read setup was repaired (the modal says so in one line). */
@@ -48,7 +50,8 @@ export function defaultSetup(): StudySetup {
 		newLimit: 20,
 		reviewLimit: 100,
 		newOrder: 'random',
-		typeOrder: 'mixed'
+		typeOrder: 'mixed',
+		grammar: false
 	};
 }
 
@@ -102,7 +105,8 @@ export function parseSetup(raw: unknown): StudySetup {
 		newLimit: limit(row.newLimit, defaults.newLimit),
 		reviewLimit: limit(row.reviewLimit, defaults.reviewLimit),
 		newOrder: parseOrder(row.newOrder),
-		typeOrder: row.typeOrder === 'grouped' ? 'grouped' : 'mixed'
+		typeOrder: row.typeOrder === 'grouped' ? 'grouped' : 'mixed',
+		grammar: row.grammar === true
 	};
 }
 
@@ -183,10 +187,11 @@ export function setupSessionConfig(
 	setup: StudySetup,
 	deckIds: readonly string[],
 	kinds: readonly StudyCardKind[],
-	opts: { studyAll?: boolean; seed: number; from: string }
+	opts: { studyAll?: boolean; seed: number; from: string; grammar?: boolean }
 ): StudySessionConfig {
 	return {
 		...(opts.studyAll ? { studyAll: true } : {}),
+		...(opts.grammar === true && setup.grammar ? { grammar: true } : {}),
 		mode: setup.mode,
 		schemeId: setup.schemeId,
 		levelName: setup.levelName,

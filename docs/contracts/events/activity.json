@@ -46,6 +46,12 @@
    "rule": {
     "feature": "practice"
    }
+  },
+  {
+   "type": "drill.conjugation",
+   "rule": {
+    "feature": "practice"
+   }
   }
  ],
  "cases": [
@@ -152,6 +158,71 @@
      "type": "grammar",
      "points": 3,
      "raw": 3
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "grammar",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "grammar: a review run (#181) counts like a lesson run, one point per grammar point a day",
+   "note": "grammar review runs (mode review, grammar/review.json) are grammar runs: the distinct rule on point does not read the mode, so a lesson and a review of one point on one day are one point, and a review of another point is another",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "lesson",
+      "score": 4,
+      "total": 4
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "grammar"
+    },
+    {
+     "payload": {
+      "point": "zh-grammar:le-change",
+      "mode": "review",
+      "score": 2,
+      "total": 3
+     },
+     "ts": "2026-11-01T18:00:00Z",
+     "type": "grammar"
+    },
+    {
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     },
+     "ts": "2026-11-01T19:00:00Z",
+     "type": "grammar"
+    },
+    {
+     "payload": {
+      "point": "zh-grammar:shi",
+      "mode": "review",
+      "score": 3,
+      "total": 3
+     },
+     "ts": "2026-11-02T09:00:00Z",
+     "type": "grammar"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "grammar",
+     "points": 2,
+     "raw": 2
     },
     {
      "day": "2026-11-02",
